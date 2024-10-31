@@ -2,7 +2,7 @@
   "name": "datastore",
   "version": "1.0.0",
   "description": "API boilerplate for datastore",
-  "author": "",
+  "author": "DNA Micro",
   "license": "MIT",
   "main": "./dist/main.js",
   "scripts": {
