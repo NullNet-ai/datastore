@@ -1,0 +1,22 @@
+{
+  "prettier.singleQuote": false,
+  "files.exclude": {
+    "bin": false,
+    "bunfig.toml": false,
+    "node_modules": false,
+    "package-lock.json": false,
+    "dist": false,
+    ".eslintrc.js": false,
+    ".gitignore": false,
+    ".npmrc": false,
+    ".npmignore": false,
+    ".prettierrc": false,
+    "tsconfig.json": false,
+    "nest-cli.json": false,
+    "bun.lockb": false,
+    "yarn.lock": false,
+    "static": false,
+    "tailwind.config.js": false,
+    "src/views": false
+  }
+}

@@ -1,0 +1,3 @@
+[install.scopes]
+# registry as string
+"@dna-platform" = "https://npm.platform.dnadev.net"

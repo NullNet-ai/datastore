@@ -1,0 +1,8 @@
+/node_modules
+/src
+/test
+.eslintrc.js
+.prettierrc
+nest-cli.json
+tsconfig.*
+TODO.md
