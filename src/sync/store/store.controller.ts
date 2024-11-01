@@ -24,7 +24,7 @@ import { QueryDriverInterface } from '../modules/drivers/query/enums';
 import { AuthGuard } from '../modules/auth/auth.guard';
 
 @UseGuards(AuthGuard)
-@Controller('store')
+@Controller('api/store')
 export class StoreController {
   @Inject(QueryDriverInterface) private readonly queryService: QueryDriver;
   constructor(private readonly storeService: StoreService) {}

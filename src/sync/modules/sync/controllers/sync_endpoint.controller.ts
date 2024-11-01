@@ -5,7 +5,7 @@ import { sync_endpoints } from '../../../schema';
 export type ResponsePackage = {
   data: Array<PostOpts>;
 };
-@Controller('sync_endpoints')
+@Controller('api/sync_endpoints')
 export class SyncEndpointsController {
   constructor(private readonly syncEndpointsService: SyncEndpointsService) {}
 

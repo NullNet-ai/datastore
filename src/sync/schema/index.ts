@@ -6,14 +6,13 @@ export * from './crdt/queue';
 export * from './crdt/sync_endpoints';
 
 // export all from ./application folder
-export * from './application/contact_emails';
-export * from './application/contact_phone_numbers';
-export * from './application/contacts';
-export * from './application/organization_contact_accounts.schema';
-export * from './application/organization_contacts.schema';
-export * from './application/organization_domains.schema';
-export * from './application/organization_files.schema';
-export * from './application/organizations.schema';
-export * from './application/config_applications';
-
-export * from './config/config_sync.schema';
+export { table as contact_emails } from './application/contact_emails';
+export { table as contact_phone_numbers } from './application/contact_phone_numbers';
+export { table as contacts } from './application/contacts';
+export { table as organization_contact_accounts } from './application/organization_contact_accounts';
+export { table as organization_contacts } from './application/organization_contacts';
+export { table as oraganization_domains } from './application/organization_domains';
+export { table as organization_files } from './application/organization_files';
+export { table as organizations } from './application/organizations';
+export { table as config_applications } from './application/config_applications';
+export { table as config_sync } from './config/config_sync';
