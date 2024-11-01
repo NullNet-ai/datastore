@@ -9,12 +9,14 @@ export const system_fields = {
   updated_date: text(),
   updated_time: text(),
 };
-export const getDefaultIndices = (table) => {
-  return Object.keys(system_fields).reduce((acc, field) => {
-    const index_name = `${field}_idx`;
-    return {
-      ...acc,
-      [index_name]: index(index_name).on(table[field]),
-    };
-  }, {});
+export const getDefaultIndices = (table_name: string) => {
+  return (table) => {
+    return Object.keys(system_fields).reduce((acc, field) => {
+      const index_name = `${table_name}_${field}_idx`;
+      return {
+        ...acc,
+        [index_name]: index(index_name).on(table[field]),
+      };
+    }, {});
+  };
 };

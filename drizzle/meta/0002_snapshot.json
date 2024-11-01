@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5452f409-8f35-4957-8d06-cb48350c20d3",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "457b2eb6-b638-42e1-9780-0a5db6e8976c",
+  "prevId": "8f77cb4f-116a-4a05-ab8b-abc173e49e79",
   "tables": {
     "config_applications": {
       "name": "config_applications",
@@ -90,20 +90,6 @@
     "config_sync": {
       "name": "config_sync",
       "columns": {
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -162,9 +148,80 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "config_sync_id_idx": {
+          "name": "config_sync_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "config_sync_tombstone_idx": {
+          "name": "config_sync_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "config_sync_status_idx": {
+          "name": "config_sync_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "config_sync_version_idx": {
+          "name": "config_sync_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "config_sync_created_date_idx": {
+          "name": "config_sync_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "config_sync_created_time_idx": {
+          "name": "config_sync_created_time_idx",
+          "columns": [
+            "created_time"
+          ],
+          "isUnique": false
+        },
+        "config_sync_updated_date_idx": {
+          "name": "config_sync_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        },
+        "config_sync_updated_time_idx": {
+          "name": "config_sync_updated_time_idx",
+          "columns": [
+            "updated_time"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

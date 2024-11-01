@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5452f409-8f35-4957-8d06-cb48350c20d3",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "8f77cb4f-116a-4a05-ab8b-abc173e49e79",
+  "prevId": "5452f409-8f35-4957-8d06-cb48350c20d3",
   "tables": {
     "config_applications": {
       "name": "config_applications",
@@ -90,20 +90,6 @@
     "config_sync": {
       "name": "config_sync",
       "columns": {
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -162,9 +148,80 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "id_idx": {
+          "name": "id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "tombstone_idx": {
+          "name": "tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "status_idx": {
+          "name": "status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "version_idx": {
+          "name": "version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "created_date_idx": {
+          "name": "created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "created_time_idx": {
+          "name": "created_time_idx",
+          "columns": [
+            "created_time"
+          ],
+          "isUnique": false
+        },
+        "updated_date_idx": {
+          "name": "updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        },
+        "updated_time_idx": {
+          "name": "updated_time_idx",
+          "columns": [
+            "updated_time"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

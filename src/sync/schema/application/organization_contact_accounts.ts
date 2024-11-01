@@ -2,9 +2,13 @@ import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { table as organization_contacts } from './organization_contacts';
 import { table as organizations } from './organizations';
 import { sql } from 'drizzle-orm';
-import { getDefaultIndices, system_fields } from '../system_fields';
 import * as path from 'path';
-const filename = path.basename(__filename).replace('.js', '');
+import { getDefaultIndices, system_fields } from '../system_fields';
+const filename = path
+  .basename(__filename)
+  .replace('.ts', '')
+  .replace('.js', '');
+const indices = getDefaultIndices(filename);
 export const table = sqliteTable(
   filename,
   {
@@ -17,5 +21,5 @@ export const table = sqliteTable(
     email: text(),
     password: text(),
   },
-  getDefaultIndices,
+  indices,
 );
