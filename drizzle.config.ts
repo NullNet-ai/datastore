@@ -8,5 +8,5 @@ import { defineConfig } from 'drizzle-kit';
 */
 export default defineConfig({
   dialect: 'sqlite',
-  schema: './src/sync/schema/index.ts',
+  schema: './src/xstate/modules/schemas/drizzle/index.ts',
 });

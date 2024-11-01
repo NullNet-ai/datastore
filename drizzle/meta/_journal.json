@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1730462005784,
-      "tag": "0000_steep_monster_badoon",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1730462359710,
-      "tag": "0001_normal_synch",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1730462440992,
-      "tag": "0002_overconfident_tenebrous",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1730462933379,
-      "tag": "0003_clumsy_gressill",
+      "when": 1730463769306,
+      "tag": "0000_slippery_turbo",
       "breakpoints": true
     }
   ]

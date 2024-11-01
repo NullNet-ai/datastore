@@ -1,26 +1,12 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5452f409-8f35-4957-8d06-cb48350c20d3",
+  "id": "9767ec27-7469-46f1-9541-f37b700e91f7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "config_applications": {
       "name": "config_applications",
       "columns": {
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -79,9 +65,66 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "config_applications_id_idx": {
+          "name": "config_applications_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "config_applications_tombstone_idx": {
+          "name": "config_applications_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "config_applications_status_idx": {
+          "name": "config_applications_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "config_applications_version_idx": {
+          "name": "config_applications_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "config_applications_created_date_idx": {
+          "name": "config_applications_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "config_applications_updated_date_idx": {
+          "name": "config_applications_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -90,20 +133,6 @@
     "config_sync": {
       "name": "config_sync",
       "columns": {
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -162,9 +191,66 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "config_sync_id_idx": {
+          "name": "config_sync_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "config_sync_tombstone_idx": {
+          "name": "config_sync_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "config_sync_status_idx": {
+          "name": "config_sync_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "config_sync_version_idx": {
+          "name": "config_sync_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "config_sync_created_date_idx": {
+          "name": "config_sync_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "config_sync_updated_date_idx": {
+          "name": "config_sync_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -173,6 +259,65 @@
     "contact_emails": {
       "name": "contact_emails",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tombstone": {
+          "name": "tombstone",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Active'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_time": {
+          "name": "created_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_date": {
+          "name": "updated_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_time": {
+          "name": "updated_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "categories": {
           "name": "categories",
           "type": "text",
@@ -194,68 +339,52 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tombstone": {
-          "name": "tombstone",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 0
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'Active'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "created_date": {
-          "name": "created_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_time": {
-          "name": "created_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_date": {
-          "name": "updated_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_time": {
-          "name": "updated_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "contact_emails_id_idx": {
+          "name": "contact_emails_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "contact_emails_tombstone_idx": {
+          "name": "contact_emails_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "contact_emails_status_idx": {
+          "name": "contact_emails_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "contact_emails_version_idx": {
+          "name": "contact_emails_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "contact_emails_created_date_idx": {
+          "name": "contact_emails_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "contact_emails_updated_date_idx": {
+          "name": "contact_emails_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "contact_emails_contact_id_contacts_id_fk": {
           "name": "contact_emails_contact_id_contacts_id_fk",
@@ -278,28 +407,6 @@
     "contact_phone_numbers": {
       "name": "contact_phone_numbers",
       "columns": {
-        "categories": {
-          "name": "categories",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(json_array())"
-        },
-        "contact_id": {
-          "name": "contact_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "phone_number_raw": {
-          "name": "phone_number_raw",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -358,9 +465,74 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "categories": {
+          "name": "categories",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(json_array())"
+        },
+        "contact_id": {
+          "name": "contact_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "phone_number_raw": {
+          "name": "phone_number_raw",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "contact_phone_numbers_id_idx": {
+          "name": "contact_phone_numbers_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "contact_phone_numbers_tombstone_idx": {
+          "name": "contact_phone_numbers_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "contact_phone_numbers_status_idx": {
+          "name": "contact_phone_numbers_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "contact_phone_numbers_version_idx": {
+          "name": "contact_phone_numbers_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "contact_phone_numbers_created_date_idx": {
+          "name": "contact_phone_numbers_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "contact_phone_numbers_updated_date_idx": {
+          "name": "contact_phone_numbers_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "contact_phone_numbers_contact_id_contacts_id_fk": {
           "name": "contact_phone_numbers_contact_id_contacts_id_fk",
@@ -383,6 +555,65 @@
     "contacts": {
       "name": "contacts",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tombstone": {
+          "name": "tombstone",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Active'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_time": {
+          "name": "created_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_date": {
+          "name": "updated_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_time": {
+          "name": "updated_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "categories": {
           "name": "categories",
           "type": "text",
@@ -418,7 +649,60 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        }
+      },
+      "indexes": {
+        "contacts_id_idx": {
+          "name": "contacts_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
         },
+        "contacts_tombstone_idx": {
+          "name": "contacts_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "contacts_status_idx": {
+          "name": "contacts_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "contacts_version_idx": {
+          "name": "contacts_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "contacts_created_date_idx": {
+          "name": "contacts_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "contacts_updated_date_idx": {
+          "name": "contacts_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "organization_domains": {
+      "name": "organization_domains",
+      "columns": {
         "id": {
           "name": "id",
           "type": "text",
@@ -477,17 +761,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "organization_domains": {
-      "name": "organization_domains",
-      "columns": {
+        },
         "categories": {
           "name": "categories",
           "type": "text",
@@ -509,65 +783,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tombstone": {
-          "name": "tombstone",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 0
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'Active'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "created_date": {
-          "name": "created_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_time": {
-          "name": "created_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_date": {
-          "name": "updated_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_time": {
-          "name": "updated_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
@@ -577,6 +792,48 @@
             "domain_name"
           ],
           "isUnique": true
+        },
+        "organization_domains_id_idx": {
+          "name": "organization_domains_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "organization_domains_tombstone_idx": {
+          "name": "organization_domains_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "organization_domains_status_idx": {
+          "name": "organization_domains_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "organization_domains_version_idx": {
+          "name": "organization_domains_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "organization_domains_created_date_idx": {
+          "name": "organization_domains_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "organization_domains_updated_date_idx": {
+          "name": "organization_domains_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -601,6 +858,65 @@
     "organization_contact_accounts": {
       "name": "organization_contact_accounts",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tombstone": {
+          "name": "tombstone",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Active'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_time": {
+          "name": "created_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_date": {
+          "name": "updated_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_time": {
+          "name": "updated_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "categories": {
           "name": "categories",
           "type": "text",
@@ -636,68 +952,52 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tombstone": {
-          "name": "tombstone",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 0
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'Active'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "created_date": {
-          "name": "created_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_time": {
-          "name": "created_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_date": {
-          "name": "updated_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_time": {
-          "name": "updated_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organization_contact_accounts_id_idx": {
+          "name": "organization_contact_accounts_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "organization_contact_accounts_tombstone_idx": {
+          "name": "organization_contact_accounts_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "organization_contact_accounts_status_idx": {
+          "name": "organization_contact_accounts_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "organization_contact_accounts_version_idx": {
+          "name": "organization_contact_accounts_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "organization_contact_accounts_created_date_idx": {
+          "name": "organization_contact_accounts_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "organization_contact_accounts_updated_date_idx": {
+          "name": "organization_contact_accounts_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "organization_contact_accounts_organization_contact_id_organization_contacts_id_fk": {
           "name": "organization_contact_accounts_organization_contact_id_organization_contacts_id_fk",
@@ -733,28 +1033,6 @@
     "organization_contacts": {
       "name": "organization_contacts",
       "columns": {
-        "categories": {
-          "name": "categories",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(json_array())"
-        },
-        "contact_id": {
-          "name": "contact_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -813,9 +1091,74 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "categories": {
+          "name": "categories",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(json_array())"
+        },
+        "contact_id": {
+          "name": "contact_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organization_contacts_id_idx": {
+          "name": "organization_contacts_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "organization_contacts_tombstone_idx": {
+          "name": "organization_contacts_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "organization_contacts_status_idx": {
+          "name": "organization_contacts_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "organization_contacts_version_idx": {
+          "name": "organization_contacts_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "organization_contacts_created_date_idx": {
+          "name": "organization_contacts_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "organization_contacts_updated_date_idx": {
+          "name": "organization_contacts_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "organization_contacts_contact_id_contacts_id_fk": {
           "name": "organization_contacts_contact_id_contacts_id_fk",
@@ -851,6 +1194,65 @@
     "organization_files": {
       "name": "organization_files",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tombstone": {
+          "name": "tombstone",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Active'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_time": {
+          "name": "created_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_date": {
+          "name": "updated_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_time": {
+          "name": "updated_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "categories": {
           "name": "categories",
           "type": "text",
@@ -907,68 +1309,52 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tombstone": {
-          "name": "tombstone",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 0
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'Active'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "created_date": {
-          "name": "created_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_time": {
-          "name": "created_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_date": {
-          "name": "updated_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_time": {
-          "name": "updated_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organization_files_id_idx": {
+          "name": "organization_files_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "organization_files_tombstone_idx": {
+          "name": "organization_files_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "organization_files_status_idx": {
+          "name": "organization_files_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "organization_files_version_idx": {
+          "name": "organization_files_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "organization_files_created_date_idx": {
+          "name": "organization_files_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "organization_files_updated_date_idx": {
+          "name": "organization_files_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "organization_files_organizaion_id_organizations_id_fk": {
           "name": "organization_files_organizaion_id_organizations_id_fk",
@@ -1004,29 +1390,6 @@
     "organizations": {
       "name": "organizations",
       "columns": {
-        "categories": {
-          "name": "categories",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(json_array())"
-        },
-        "parent_organization_id": {
-          "name": "parent_organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "(null)"
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "id": {
           "name": "id",
           "type": "text",
@@ -1085,9 +1448,75 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "categories": {
+          "name": "categories",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(json_array())"
+        },
+        "parent_organization_id": {
+          "name": "parent_organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(null)"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organizations_id_idx": {
+          "name": "organizations_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "organizations_tombstone_idx": {
+          "name": "organizations_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "organizations_status_idx": {
+          "name": "organizations_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "organizations_version_idx": {
+          "name": "organizations_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "organizations_created_date_idx": {
+          "name": "organizations_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "organizations_updated_date_idx": {
+          "name": "organizations_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "organizations_parent_organization_id_organizations_id_fk": {
           "name": "organizations_parent_organization_id_organizations_id_fk",

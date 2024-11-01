@@ -1,11 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AppModule } from './controllers/app/app.module';
-import { ExecModule } from './sync/modules/exec/exec.module';
+import { CoreModule } from './core/core.module';
 
 @Module({
-  imports: [
-    ExecModule.registerCommand(['bun run drizzle:generate']),
-    AppModule,
-  ],
+  imports: [CoreModule, AppModule],
 })
 export class MainModule {}
