@@ -14,8 +14,6 @@ export class TemplateController {
   constructor(private templateService: TemplateService) {}
   @Get('/')
   async template(@Res() _res: Response, @Req() _req: Request) {
-    const result = await this.templateService.helloWorldMessageFn('sample');
-    console.log('@result', result);
     return this.templateService.getTemplate(_res, _req);
   }
 }
