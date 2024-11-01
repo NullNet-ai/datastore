@@ -21,6 +21,9 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "jsx": "react",
-    "jsxFactory": "elements.createElement"
-  }
+    "jsxFactory": "elements.createElement",
+    "allowJs": true
+  },
+  "exclude": ["node_modules", "dist", "test", "drizzle*"],
+  "include": ["src/**/*"]
 }

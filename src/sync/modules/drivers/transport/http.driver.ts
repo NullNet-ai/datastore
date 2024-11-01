@@ -61,6 +61,7 @@ export class HttpTransportDriver implements TransportDriver {
     this.logger.debug(`Got all chunks of client_id${client_id} - deleted`);
   }
   async post(data: PostDto, opts: PostOpts) {
+    this.logger.debug(`Posting to`, opts);
     const SYNC_ENDPOINT = opts.url;
     const { username, password } = opts;
     if (!username || !password)

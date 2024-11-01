@@ -1,5 +1,5 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { contacts } from './contacts.schema';
+import { contacts } from './contacts';
 import { organizations } from './organizations.schema';
 import { sql } from 'drizzle-orm';
 

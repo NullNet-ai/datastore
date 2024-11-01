@@ -75,10 +75,8 @@ export class MessagesService {
     for await (const pack of this.findExistingMessages(messages)) {
       const [msg1, existingMessages] = pack;
       if (!msg1) throw new BadRequestException('Message not found');
-      if (!existingMessages)
-        throw new BadRequestException('Existing message not found');
 
-      existingMessagesMap.set(msg1, existingMessages);
+      existingMessagesMap.set(msg1, existingMessages as any);
     }
     return existingMessagesMap;
   }

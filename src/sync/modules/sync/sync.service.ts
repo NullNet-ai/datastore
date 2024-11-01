@@ -45,6 +45,7 @@ export class SyncService {
   async onModuleInit() {
     this.GROUP_ID = await this.configSyncService.getConfig('GROUP_ID');
     this.SYNC_ENABLED = await this.configSyncService.getConfig('SYNC_ENABLED');
+    this.logger.debug(`Sync Service Initialized`);
     await this.bgSync();
   }
 
@@ -117,7 +118,7 @@ export class SyncService {
   async bgSync() {
     const endpoints =
       (await this.syncEndpointsService.getSyncEndpoints()) as Array<any>;
-
+    this.logger.debug('endpoints', endpoints);
     if (endpoints.length !== 0) {
       if ((await this.queueService.size()) == 0) {
         await bluebird.mapSeries(endpoints, async (endpoint) => {
@@ -244,12 +245,19 @@ export class SyncService {
 
     let result;
     try {
-      result = await this.transportService.post({
-        group_id: this.GROUP_ID,
-        client_id: clock.timestamp.node(),
-        messages,
-        merkle: clock.merkle,
-      });
+      result = await this.transportService.post(
+        {
+          group_id: this.GROUP_ID,
+          client_id: clock.timestamp.node(),
+          messages,
+          merkle: clock.merkle,
+        },
+        {
+          url: opts.url,
+          username: opts.username,
+          password: opts.password,
+        },
+      );
     } catch (e) {
       this.logger.error(`Network Failure - ${e.message}`);
       return {
@@ -274,7 +282,7 @@ export class SyncService {
       this.logger.debug(`No new remote updates`);
     }
 
-    const diffTime = await this.clockService.diff(result.merkle);
+    const diffTime: any = await this.clockService.diff(result.merkle);
     if (diffTime) {
       this.logger.debug(
         `Timeline lag detected: since:${since} diff:${diffTime}`,

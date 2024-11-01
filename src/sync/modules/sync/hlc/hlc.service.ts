@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MerklesService } from '../../../modules/sync/merkles.service';
 import { Clock } from './dto/clock.dto';
 import { MutableTimestamp, Timestamp } from './classes/Timestamp';
-const merkle = require('../../../../deps/merkle.js');
+import * as merkle from '../../../../deps/merkle';
 const { v4: uuidv4 } = require('uuid');
 const { GROUP_ID = 'my-group' } = process.env;
 

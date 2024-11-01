@@ -1,6 +1,6 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-export const config_applications = sqliteTable(`config_applications`, {
+export const class_type = sqliteTable(`class_type`, {
   id: text().primaryKey(),
   type: text(),
   value: text(),

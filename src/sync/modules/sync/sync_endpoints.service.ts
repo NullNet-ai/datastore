@@ -22,6 +22,7 @@ export class SyncEndpointsService {
     endpoint: typeof schema.sync_endpoints.$inferInsert,
   ): Promise<{ message: 'ok' }> {
     const db = await this.drizzleService.getClient();
+    console.log('@schema.sync_endpoints', endpoint);
     await db.insert(schema.sync_endpoints).values(endpoint).onConflictDoUpdate({
       target: schema.sync_endpoints.id,
       set: endpoint,
@@ -41,7 +42,7 @@ export class SyncEndpointsService {
         password: schema.sync_endpoints.password,
       })
       .from(schema.sync_endpoints)
-      .where(eq(schema.sync_endpoints.status, 'active'))) as PostOpts[];
+      .where(eq(schema.sync_endpoints.status, 'Active'))) as PostOpts[];
 
     return endpoints;
   }

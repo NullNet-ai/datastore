@@ -12,7 +12,12 @@ import { ZodError } from 'zod';
 import * as fs from 'fs';
 // const cookieParser = require('cookie-parser');
 
-const { PORT = '3060', DB_FILE_DIR = '', DEBUG = 'false' } = process.env;
+const {
+  PORT = '3060',
+  DB_FILE_DIR = '',
+  DEBUG = 'false',
+  NODE_ENV = 'local',
+} = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 
 @Catch(BadRequestException)
@@ -55,10 +60,9 @@ async function bootstrap() {
 
   const app = await NestFactory.create(MainModule);
   app.useGlobalFilters(new HttpExceptionFilter());
-  await app.listen(+(PORT || '3000')).then((server) => {
-    logger.log(
-      `Application is listening ${server._connectionKey} [${process.env.NODE_ENV}]`,
-    );
+  await app.listen(+(PORT || '5001')).then(() => {
+    if (DEBUG === 'true') logger.debug(`DEBUG MODE ENABLED`);
+    logger.log(`Application is listening at ${PORT} [${NODE_ENV}]`);
   });
 }
 

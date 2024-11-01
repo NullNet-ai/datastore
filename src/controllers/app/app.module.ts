@@ -1,5 +1,5 @@
 import { Logger, Module, Provider } from '@nestjs/common';
-import { AuthModule, XstateModule } from '@dna-platform/common';
+import { XstateModule } from '@dna-platform/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { TemplateController } from '../template/template.controller';
@@ -14,6 +14,7 @@ import { SyncModule } from '../../sync/modules/sync/sync.module';
 
 import { StoreModule } from '../../sync/store/store.module';
 import { OrganizationsModule } from '../../sync/organizations/organizations.module';
+import { AuthModule } from '../../sync/modules/auth/auth.module';
 const additional_providers: Provider[] = [Logger];
 const machines_providers = machine_providers(machines_instance);
 const base_classes = [AppController, TemplateController];
