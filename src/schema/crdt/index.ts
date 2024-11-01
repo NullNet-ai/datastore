@@ -1,14 +1,17 @@
 export {
-  //crdt
+  // application
+  contact_emails,
+  contact_phone_numbers,
+  // ! This schema is required for the core functionality to work
+  // crdt
   merkles,
   messages,
   transactions,
   queue_items,
   queues,
   sync_endpoints,
-  // application
-  contact_emails,
-  contact_phone_numbers,
+  config_sync,
+  // system
   contacts,
   organization_contact_accounts,
   organization_contacts,
@@ -16,5 +19,4 @@ export {
   organization_files,
   organizations,
   config_applications,
-  config_sync,
 } from '@dna-platform/crdt-lww';
