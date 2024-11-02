@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get_schema/get_schema.schema';
-let local_storage = {};
 @Injectable()
 export class GetSchemaActorsImplementations {
   /**
@@ -30,7 +29,6 @@ export class GetSchemaActorsImplementations {
       console.log('@req', Object.keys(_req));
       console.log('@params', _req.params);
       console.log('@body', _req.body);
-      console.log('@local_storage', local_storage);
       return Promise.resolve({
         payload: {
           success: true,
