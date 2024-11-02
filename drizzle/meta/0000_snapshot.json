@@ -1,261 +1,9 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "af5704b1-c82f-47b2-9f5d-07c6ba47dab5",
+  "id": "1dd31ab4-0125-4c64-b8b0-e79cc48d9a5d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "config_applications": {
-      "name": "config_applications",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tombstone": {
-          "name": "tombstone",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 0
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'Active'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "created_date": {
-          "name": "created_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_time": {
-          "name": "created_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_date": {
-          "name": "updated_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_time": {
-          "name": "updated_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "config_applications_id_idx": {
-          "name": "config_applications_id_idx",
-          "columns": [
-            "id"
-          ],
-          "isUnique": false
-        },
-        "config_applications_tombstone_idx": {
-          "name": "config_applications_tombstone_idx",
-          "columns": [
-            "tombstone"
-          ],
-          "isUnique": false
-        },
-        "config_applications_status_idx": {
-          "name": "config_applications_status_idx",
-          "columns": [
-            "status"
-          ],
-          "isUnique": false
-        },
-        "config_applications_version_idx": {
-          "name": "config_applications_version_idx",
-          "columns": [
-            "version"
-          ],
-          "isUnique": false
-        },
-        "config_applications_created_date_idx": {
-          "name": "config_applications_created_date_idx",
-          "columns": [
-            "created_date"
-          ],
-          "isUnique": false
-        },
-        "config_applications_updated_date_idx": {
-          "name": "config_applications_updated_date_idx",
-          "columns": [
-            "updated_date"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "config_sync": {
-      "name": "config_sync",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tombstone": {
-          "name": "tombstone",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 0
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'Active'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "created_date": {
-          "name": "created_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_time": {
-          "name": "created_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_date": {
-          "name": "updated_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_time": {
-          "name": "updated_time",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "config_sync_id_idx": {
-          "name": "config_sync_id_idx",
-          "columns": [
-            "id"
-          ],
-          "isUnique": false
-        },
-        "config_sync_tombstone_idx": {
-          "name": "config_sync_tombstone_idx",
-          "columns": [
-            "tombstone"
-          ],
-          "isUnique": false
-        },
-        "config_sync_status_idx": {
-          "name": "config_sync_status_idx",
-          "columns": [
-            "status"
-          ],
-          "isUnique": false
-        },
-        "config_sync_version_idx": {
-          "name": "config_sync_version_idx",
-          "columns": [
-            "version"
-          ],
-          "isUnique": false
-        },
-        "config_sync_created_date_idx": {
-          "name": "config_sync_created_date_idx",
-          "columns": [
-            "created_date"
-          ],
-          "isUnique": false
-        },
-        "config_sync_updated_date_idx": {
-          "name": "config_sync_updated_date_idx",
-          "columns": [
-            "updated_date"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "contact_emails": {
       "name": "contact_emails",
       "columns": {
@@ -697,121 +445,6 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "crdt_merkles": {
-      "name": "crdt_merkles",
-      "columns": {
-        "group_id": {
-          "name": "group_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "merkle": {
-          "name": "merkle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "crdt_merkles_group_id_unique": {
-          "name": "crdt_merkles_group_id_unique",
-          "columns": [
-            "group_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "crdt_messages": {
-      "name": "crdt_messages",
-      "columns": {
-        "database": {
-          "name": "database",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "dataset": {
-          "name": "dataset",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "group_id": {
-          "name": "group_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "row": {
-          "name": "row",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "column": {
-          "name": "column",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "client_id": {
-          "name": "client_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "crdt_messages_timestamp_group_id_row_column_pk": {
-          "columns": [
-            "timestamp",
-            "group_id",
-            "row",
-            "column"
-          ],
-          "name": "crdt_messages_timestamp_group_id_row_column_pk"
-        }
-      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -1651,8 +1284,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "queue_items": {
-      "name": "queue_items",
+    "config_applications": {
+      "name": "config_applications",
       "columns": {
         "id": {
           "name": "id",
@@ -1661,15 +1294,334 @@
           "notNull": true,
           "autoincrement": false
         },
-        "order": {
-          "name": "order",
+        "tombstone": {
+          "name": "tombstone",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Active'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_time": {
+          "name": "created_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_date": {
+          "name": "updated_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_time": {
+          "name": "updated_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "config_applications_id_idx": {
+          "name": "config_applications_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "config_applications_tombstone_idx": {
+          "name": "config_applications_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "config_applications_status_idx": {
+          "name": "config_applications_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "config_applications_version_idx": {
+          "name": "config_applications_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "config_applications_created_date_idx": {
+          "name": "config_applications_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "config_applications_updated_date_idx": {
+          "name": "config_applications_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "config_sync": {
+      "name": "config_sync",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tombstone": {
+          "name": "tombstone",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'Active'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_date": {
+          "name": "created_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_time": {
+          "name": "created_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_date": {
+          "name": "updated_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_time": {
+          "name": "updated_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "config_sync_id_idx": {
+          "name": "config_sync_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "config_sync_tombstone_idx": {
+          "name": "config_sync_tombstone_idx",
+          "columns": [
+            "tombstone"
+          ],
+          "isUnique": false
+        },
+        "config_sync_status_idx": {
+          "name": "config_sync_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "config_sync_version_idx": {
+          "name": "config_sync_version_idx",
+          "columns": [
+            "version"
+          ],
+          "isUnique": false
+        },
+        "config_sync_created_date_idx": {
+          "name": "config_sync_created_date_idx",
+          "columns": [
+            "created_date"
+          ],
+          "isUnique": false
+        },
+        "config_sync_updated_date_idx": {
+          "name": "config_sync_updated_date_idx",
+          "columns": [
+            "updated_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "crdt_merkles": {
+      "name": "crdt_merkles",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "queue_id": {
-          "name": "queue_id",
+        "merkle": {
+          "name": "merkle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "crdt_merkles_group_id_unique": {
+          "name": "crdt_merkles_group_id_unique",
+          "columns": [
+            "group_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "crdt_messages": {
+      "name": "crdt_messages",
+      "columns": {
+        "database": {
+          "name": "database",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "dataset": {
+          "name": "dataset",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "row": {
+          "name": "row",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "column": {
+          "name": "column",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "client_id": {
+          "name": "client_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -1685,7 +1637,17 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "crdt_messages_timestamp_group_id_row_column_pk": {
+          "columns": [
+            "timestamp",
+            "group_id",
+            "row",
+            "column"
+          ],
+          "name": "crdt_messages_timestamp_group_id_row_column_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -1716,6 +1678,44 @@
         "size": {
           "name": "size",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "queue_items": {
+      "name": "queue_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "queue_id": {
+          "name": "queue_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

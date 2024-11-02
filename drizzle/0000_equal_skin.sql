@@ -1,41 +1,3 @@
-CREATE TABLE `config_applications` (
-	`id` text PRIMARY KEY NOT NULL,
-	`tombstone` integer DEFAULT 0,
-	`status` text DEFAULT 'Active',
-	`version` integer DEFAULT 1,
-	`created_date` text,
-	`created_time` text,
-	`updated_date` text,
-	`updated_time` text,
-	`type` text,
-	`value` text
-);
---> statement-breakpoint
-CREATE INDEX `config_applications_id_idx` ON `config_applications` (`id`);--> statement-breakpoint
-CREATE INDEX `config_applications_tombstone_idx` ON `config_applications` (`tombstone`);--> statement-breakpoint
-CREATE INDEX `config_applications_status_idx` ON `config_applications` (`status`);--> statement-breakpoint
-CREATE INDEX `config_applications_version_idx` ON `config_applications` (`version`);--> statement-breakpoint
-CREATE INDEX `config_applications_created_date_idx` ON `config_applications` (`created_date`);--> statement-breakpoint
-CREATE INDEX `config_applications_updated_date_idx` ON `config_applications` (`updated_date`);--> statement-breakpoint
-CREATE TABLE `config_sync` (
-	`id` text PRIMARY KEY NOT NULL,
-	`tombstone` integer DEFAULT 0,
-	`status` text DEFAULT 'Active',
-	`version` integer DEFAULT 1,
-	`created_date` text,
-	`created_time` text,
-	`updated_date` text,
-	`updated_time` text,
-	`type` text,
-	`value` text
-);
---> statement-breakpoint
-CREATE INDEX `config_sync_id_idx` ON `config_sync` (`id`);--> statement-breakpoint
-CREATE INDEX `config_sync_tombstone_idx` ON `config_sync` (`tombstone`);--> statement-breakpoint
-CREATE INDEX `config_sync_status_idx` ON `config_sync` (`status`);--> statement-breakpoint
-CREATE INDEX `config_sync_version_idx` ON `config_sync` (`version`);--> statement-breakpoint
-CREATE INDEX `config_sync_created_date_idx` ON `config_sync` (`created_date`);--> statement-breakpoint
-CREATE INDEX `config_sync_updated_date_idx` ON `config_sync` (`updated_date`);--> statement-breakpoint
 CREATE TABLE `contact_emails` (
 	`id` text PRIMARY KEY NOT NULL,
 	`tombstone` integer DEFAULT 0,
@@ -100,25 +62,6 @@ CREATE INDEX `contacts_status_idx` ON `contacts` (`status`);--> statement-breakp
 CREATE INDEX `contacts_version_idx` ON `contacts` (`version`);--> statement-breakpoint
 CREATE INDEX `contacts_created_date_idx` ON `contacts` (`created_date`);--> statement-breakpoint
 CREATE INDEX `contacts_updated_date_idx` ON `contacts` (`updated_date`);--> statement-breakpoint
-CREATE TABLE `crdt_merkles` (
-	`group_id` text PRIMARY KEY NOT NULL,
-	`timestamp` text NOT NULL,
-	`merkle` text NOT NULL
-);
---> statement-breakpoint
-CREATE UNIQUE INDEX `crdt_merkles_group_id_unique` ON `crdt_merkles` (`group_id`);--> statement-breakpoint
-CREATE TABLE `crdt_messages` (
-	`database` text,
-	`dataset` text NOT NULL,
-	`group_id` text NOT NULL,
-	`timestamp` text NOT NULL,
-	`row` text NOT NULL,
-	`column` text NOT NULL,
-	`client_id` text NOT NULL,
-	`value` text NOT NULL,
-	PRIMARY KEY(`timestamp`, `group_id`, `row`, `column`)
-);
---> statement-breakpoint
 CREATE TABLE `organization_contact_accounts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`tombstone` integer DEFAULT 0,
@@ -235,11 +178,61 @@ CREATE INDEX `organizations_status_idx` ON `organizations` (`status`);--> statem
 CREATE INDEX `organizations_version_idx` ON `organizations` (`version`);--> statement-breakpoint
 CREATE INDEX `organizations_created_date_idx` ON `organizations` (`created_date`);--> statement-breakpoint
 CREATE INDEX `organizations_updated_date_idx` ON `organizations` (`updated_date`);--> statement-breakpoint
-CREATE TABLE `queue_items` (
+CREATE TABLE `config_applications` (
 	`id` text PRIMARY KEY NOT NULL,
-	`order` integer NOT NULL,
-	`queue_id` text NOT NULL,
-	`value` text NOT NULL
+	`tombstone` integer DEFAULT 0,
+	`status` text DEFAULT 'Active',
+	`version` integer DEFAULT 1,
+	`created_date` text,
+	`created_time` text,
+	`updated_date` text,
+	`updated_time` text,
+	`type` text,
+	`value` text
+);
+--> statement-breakpoint
+CREATE INDEX `config_applications_id_idx` ON `config_applications` (`id`);--> statement-breakpoint
+CREATE INDEX `config_applications_tombstone_idx` ON `config_applications` (`tombstone`);--> statement-breakpoint
+CREATE INDEX `config_applications_status_idx` ON `config_applications` (`status`);--> statement-breakpoint
+CREATE INDEX `config_applications_version_idx` ON `config_applications` (`version`);--> statement-breakpoint
+CREATE INDEX `config_applications_created_date_idx` ON `config_applications` (`created_date`);--> statement-breakpoint
+CREATE INDEX `config_applications_updated_date_idx` ON `config_applications` (`updated_date`);--> statement-breakpoint
+CREATE TABLE `config_sync` (
+	`id` text PRIMARY KEY NOT NULL,
+	`tombstone` integer DEFAULT 0,
+	`status` text DEFAULT 'Active',
+	`version` integer DEFAULT 1,
+	`created_date` text,
+	`created_time` text,
+	`updated_date` text,
+	`updated_time` text,
+	`type` text,
+	`value` text
+);
+--> statement-breakpoint
+CREATE INDEX `config_sync_id_idx` ON `config_sync` (`id`);--> statement-breakpoint
+CREATE INDEX `config_sync_tombstone_idx` ON `config_sync` (`tombstone`);--> statement-breakpoint
+CREATE INDEX `config_sync_status_idx` ON `config_sync` (`status`);--> statement-breakpoint
+CREATE INDEX `config_sync_version_idx` ON `config_sync` (`version`);--> statement-breakpoint
+CREATE INDEX `config_sync_created_date_idx` ON `config_sync` (`created_date`);--> statement-breakpoint
+CREATE INDEX `config_sync_updated_date_idx` ON `config_sync` (`updated_date`);--> statement-breakpoint
+CREATE TABLE `crdt_merkles` (
+	`group_id` text PRIMARY KEY NOT NULL,
+	`timestamp` text NOT NULL,
+	`merkle` text NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `crdt_merkles_group_id_unique` ON `crdt_merkles` (`group_id`);--> statement-breakpoint
+CREATE TABLE `crdt_messages` (
+	`database` text,
+	`dataset` text NOT NULL,
+	`group_id` text NOT NULL,
+	`timestamp` text NOT NULL,
+	`row` text NOT NULL,
+	`column` text NOT NULL,
+	`client_id` text NOT NULL,
+	`value` text NOT NULL,
+	PRIMARY KEY(`timestamp`, `group_id`, `row`, `column`)
 );
 --> statement-breakpoint
 CREATE TABLE `queue` (
@@ -247,6 +240,13 @@ CREATE TABLE `queue` (
 	`name` text NOT NULL,
 	`count` integer NOT NULL,
 	`size` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `queue_items` (
+	`id` text PRIMARY KEY NOT NULL,
+	`order` integer NOT NULL,
+	`queue_id` text NOT NULL,
+	`value` text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `sync_endpoints` (

@@ -7,11 +7,11 @@ import {
 import {
   IActors,
   IGuards,
-  ISchemaContext,
-  ISchemaEvent,
-} from '../schemas/schema/schema.schema';
+  IGetSchemaContext,
+  IGetSchemaEvent,
+} from '../schemas/get_schema/get_schema.schema';
 /**
- * Represents the configuration for the schema machine.
+ * Represents the configuration for the get_schema machine.
  *
  * @param implementations - Optional implementations for the machine options.
  * @returns The configured machine.
@@ -21,8 +21,8 @@ import {
 // TODO: Define common action definitions
 export const config = (
   implementations: InternalMachineImplementations<StateMachineTypes>,
-  context: ISchemaContext = {
-    param_args: [],
+  context: IGetSchemaContext = {
+    controller_args: [],
     start_time: 0,
     end_time: 0,
     duration: 0,
@@ -30,14 +30,15 @@ export const config = (
 ) =>
   setup({
     types: {
-      context: {} as ISchemaContext,
-      events: {} as ISchemaEvent,
+      context: {} as IGetSchemaContext,
+      events: {} as IGetSchemaEvent,
     },
     actions: implementations?.actions as { [key: string]: typeof assign },
     actors: implementations?.actors as IActors,
     guards: implementations?.guards as IGuards,
   }).createMachine({
-    id: 'schema',
+    id: 'get_schema',
+
     initial: 'waiting',
     context: {
       ...context,
@@ -45,25 +46,25 @@ export const config = (
     states: {
       waiting: {
         on: {
-          PARAM_RECEIVED: [
+          REQUEST_RECEIVED: [
             {
-              guard: 'hasParamArgs',
+              guard: 'hasControllerArgs',
             },
             {
-              actions: ['assignParamArgs', 'assignStartTime'],
-              target: 'processing',
+              actions: ['assignControllerArgs', 'assignStartTime'],
+              target: 'processingRequest',
             },
           ],
         },
       },
-      processing: {
-        entry: 'schemaEntry',
-        initial: 'schema',
+      processingRequest: {
+        entry: 'getSchemaEntry',
+        initial: 'getSchema',
         states: {
-          schema: {
+          getSchema: {
             invoke: {
-              id: 'schema',
-              src: 'schema',
+              id: 'getSchema',
+              src: 'getSchema',
               input: ({ context }) => ({ context }),
               onDone: {
                 target: 'success',
@@ -74,22 +75,21 @@ export const config = (
             },
           },
           success: {
-            entry: ['assignEndTime', 'assignDuration', 'assignOutput'],
+            entry: ['assignEndTime', 'assignDuration', 'success'],
             type: 'final',
           },
           error: {
-            entry: ['assignEndTime', 'assignDuration', 'assignOutput'],
+            entry: ['assignEndTime', 'assignDuration', 'error'],
             type: 'final',
           },
         },
         onDone: {
-          target: 'return',
+          target: 'responseToClient',
         },
       },
-      return: {
+      responseToClient: {
         exit: ['assignEndTime', 'assignDuration', 'completed'],
         type: 'final',
       },
     },
-    output: ({ context }) => context.output,
   });

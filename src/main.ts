@@ -58,10 +58,12 @@ async function bootstrap() {
     timestamp: DEBUG === 'true',
   });
 
-  const app = await NestFactory.create(MainModule);
+  const app = await NestFactory.create(MainModule, {
+    logger: ['local', 'development', 'dev'].includes(NODE_ENV) ? logger : false,
+  });
+  app.useLogger(logger);
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(+(PORT || '5001')).then(() => {
-    if (DEBUG === 'true') logger.debug(`DEBUG MODE ENABLED`);
     logger.log(`Application is listening at ${PORT} [${NODE_ENV}]`);
   });
 }

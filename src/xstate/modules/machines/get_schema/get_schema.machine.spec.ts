@@ -15,23 +15,23 @@ import {
   MockResponse,
 } from 'node-mocks-http';
 import { createActor } from 'xstate';
-import { SchemaMachine } from './schema.machine';
 import {
-  HelloWorldActionsImplementations,
-  HelloWorldActorsImplementations,
-  HelloWorldGuardsImplementations,
-} from '../../implementations/schema';
-describe('SchemaMachine', () => {
-  let schemaMachine: SchemaMachine;
+  GetSchemaActionsImplementations,
+  GetSchemaActorsImplementations,
+  GetSchemaGuardsImplementations,
+} from '../../implementations/get_schema';
+import { GetSchemaMachine } from './get_schema.machine';
+describe('GetSchemaMachine', () => {
+  let get_schemaMachine: GetSchemaMachine;
   let machine_with_config;
   let request: MockRequest<Request>;
   let response: MockResponse<Response>;
   beforeEach(async () => {
-    const machines_providers = machine_providers({ SchemaMachine });
+    const machines_providers = machine_providers({ GetSchemaMachine });
     const additional_providers: Provider[] = [
-      HelloWorldActionsImplementations,
-      HelloWorldActorsImplementations,
-      HelloWorldGuardsImplementations,
+      GetSchemaActionsImplementations,
+      GetSchemaActorsImplementations,
+      GetSchemaGuardsImplementations,
     ];
     /**
      * Represents the testing module used for creating a testing environment.
@@ -46,32 +46,32 @@ describe('SchemaMachine', () => {
       providers: [
         Logger,
         HelperService,
-        SchemaMachine,
+        GetSchemaMachine,
         ...additional_providers,
       ],
     }).compile();
-    schemaMachine = module.get<SchemaMachine>(SchemaMachine);
+    get_schemaMachine = module.get<GetSchemaMachine>(GetSchemaMachine);
     request = createRequest<Request>({
       method: 'GET',
-      url: '/schema',
+      url: '/get_schema',
     });
     response = createResponse<Response>();
-    schemaMachine.onModuleInit({
+    get_schemaMachine.onModuleInit({
       controller_args: [response, request],
       start_time: 0,
       end_time: 0,
       duration: 0,
     });
-    machine_with_config = schemaMachine.machine;
+    machine_with_config = get_schemaMachine.machine;
   });
 
-  it('HelloWorld machine must be defined', () => {
-    expect(schemaMachine).toBeDefined();
+  it('GetSchema machine must be defined', () => {
+    expect(get_schemaMachine).toBeDefined();
   });
-  it('HelloWorld machine with config must be defined', () => {
+  it('GetSchema machine with config must be defined', () => {
     expect(machine_with_config).toBeDefined();
   });
-  it('HelloWorld machine actor', () => {
+  it('GetSchema machine actor', () => {
     const actor = createActor(machine_with_config);
     // Action
     // # Start the actor

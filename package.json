@@ -10,9 +10,9 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "bun run build && bun --watch run ./dist/main.js",
+    "start:dev": "bun run build && NODE_ENV=development bun --watch run ./dist/main.js",
     "start:debug": "bun run build && DEBUG=true bun --watch --debug run ./dist/main.js",
-    "start:prod": "NODE_ENV='production' bun dist/main",
+    "start:prod": "bun run build && NODE_ENV='production' bun run ./dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "start:test:prod": "bun run test && bun run build && bun run start:prod",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.14",
-    "@dna-platform/crdt-lww": "^1.0.6",
+    "@dna-platform/crdt-lww": "^1.0.14",
     "@elastic/elasticsearch": "^8.10.0",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.4.6",
@@ -45,7 +45,7 @@
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.35.3",
     "drizzle-zod": "^0.5.1",
-    "express": "^4.21.1",
+    "express": "3",
     "jsonwebtoken": "^9.0.2",
     "lowdb": "1.0.0",
     "murmurhash": "^2.0.1",
@@ -89,7 +89,7 @@
     "ts-loader": "^9.2.3",
     "ts-node": "^10.0.0",
     "tsconfig-paths": "4.0.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.0.0"
   },
   "jest": {
     "moduleFileExtensions": [

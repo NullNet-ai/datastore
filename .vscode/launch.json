@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "bun",
+      "request": "launch",
+      "name": "Launch Bun Program",
+      "cwd": "${workspaceFolder}",
+      "runtime": "bun",
+      "runtimeArgs": ["run-script", "start:debug"]
+    }
+  ]
+}

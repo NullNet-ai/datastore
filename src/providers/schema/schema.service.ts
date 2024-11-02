@@ -3,6 +3,6 @@ import { Response, Request } from 'express';
 import { Machine } from '@dna-platform/common';
 @Injectable()
 export class SchemaService {
-  @Machine('schema')
+  @Machine('getSchema')
   getSchema(_res: Response, _req: Request) {}
 }

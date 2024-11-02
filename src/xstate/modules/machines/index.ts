@@ -1,5 +1,2 @@
-
 export * from './template/template.machine';
-
-export * from './schema/schema.machine';
-  
+export * from './get_schema/get_schema.machine';

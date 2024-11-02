@@ -38,7 +38,6 @@ export const config = (
     guards: implementations?.guards as IGuards,
   }).createMachine({
     id: 'template',
-
     initial: 'waiting',
     context: {
       ...context,

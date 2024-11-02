@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-// import { SchemaModule } from '../schema/schema.module';
+import { SchemaModule } from '../schema/schema.module';
 @Module({
-  imports: [],
+  imports: [SchemaModule],
   controllers: [AppController],
 })
 export class AppModule {}

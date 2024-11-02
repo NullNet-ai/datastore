@@ -14,11 +14,11 @@ export enum EEvents {
   RESTART = 'RESTART',
 }
 
-export interface ISchemaContext extends IRootContext {
+export interface IGetSchemaContext extends IRootContext {
   [key: string]: any;
 }
 
-export type ISchemaEvent =
+export type IGetSchemaEvent =
   | TRootEvent
   | {
       type: EEvents.RESTART;
@@ -26,13 +26,15 @@ export type ISchemaEvent =
     };
 
 export interface IActors extends IRootActors {
-  schema: PromiseActorLogic<Record<string, any>, IActorInput>;
+  getSchema: PromiseActorLogic<Record<string, any>, IActorInput>;
 }
 
 export interface IActions extends IRootActions {
-  schemaEntry: () => void;
+  getSchemaEntry: () => void;
 }
 
 export interface IGuards extends IRootGuards {
-  hasParamArgs: (input: GuardArgs<ISchemaContext, ISchemaEvent>) => boolean;
+  hasControllerArgs: (
+    input: GuardArgs<IGetSchemaContext, IGetSchemaEvent>,
+  ) => boolean;
 }

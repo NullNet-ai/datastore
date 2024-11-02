@@ -6,15 +6,19 @@ import {
   IMachineProperties,
   MachineInit,
 } from '@dna-platform/common';
-import { IActions, IActors, IGuards } from '../../schemas/schema/schema.schema';
 import {
-  SchemaActionsImplementations,
-  SchemaActorsImplementations,
-  SchemaGuardsImplementations,
-} from '../../implementations/schema';
+  IActions,
+  IActors,
+  IGuards,
+} from '../../schemas/get_schema/get_schema.schema';
+import {
+  GetSchemaActionsImplementations,
+  GetSchemaActorsImplementations,
+  GetSchemaGuardsImplementations,
+} from '../../implementations/get_schema';
 import * as path from 'path';
 @Injectable()
-export class SchemaMachine
+export class GetSchemaMachine
   extends MachineInit
   implements IMachineProperties, OnModuleInit
 {
@@ -27,9 +31,9 @@ export class SchemaMachine
     @Inject('IMPLEMENTATIONS')
     implementation_providers: IImplementationProviders[],
     logger: Logger,
-    private ai: SchemaActionsImplementations,
-    private si: SchemaActorsImplementations,
-    private gi: SchemaGuardsImplementations,
+    private ai: GetSchemaActionsImplementations,
+    private si: GetSchemaActorsImplementations,
+    private gi: GetSchemaGuardsImplementations,
     private helper: HelperService,
   ) {
     // @ts-ignore
@@ -42,7 +46,7 @@ export class SchemaMachine
     this.actors = this.si.actors;
     this.guards = this.gi.guards;
     // this.delays = {};
-    // Define the correct path to the machine schema config
+    // Define the correct path to the machine get_schema config
     this.machine_config_path = path.resolve(
       __dirname,
       `../../configs/${this.helper.snakeCase(
