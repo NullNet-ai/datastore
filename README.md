@@ -6,8 +6,18 @@ An SQLite API Wrapper that implements `Hybrid-Logical-Clocks (HLC)` in combinati
 
 This application primariy uses `drizzle-orm` to interface with SQLite.
 
+## Installation
+
+```bash
+$ bun i
+```
+
 ## Usage
 
 ```javascript
-  bun 
+$  bun start:dev
+```
+
+```javascript
+$  bun start:debug
 ```
