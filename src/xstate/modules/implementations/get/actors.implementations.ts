@@ -1,38 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
-import { IActors } from '../../schemas/get_schema/get_schema.schema';
+import { IActors } from '../../schemas/get/get.schema';
+
 @Injectable()
-export class GetSchemaActorsImplementations {
+export class GetActorsImplementations {
   /**
-   * Implementation of actors for the get_schema machine.
+   * Implementation of actors for the get machine.
    */
   public readonly actors: IActors = {
     /**
-     * get_schema step actor implementation.
+     * Sample step actor implementation.
      * @param input - The input object containing the context.
      * @returns A promise that resolves to an IResponse object.
      */
-    getSchema: fromPromise(async ({ input }): Promise<IResponse> => {
+    get: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)
         return Promise.reject({
           payload: {
             success: false,
-            message: 'Unable to fetch schema',
+            message: 'sampleStep fail Message',
             count: 0,
             data: [],
           },
         });
 
       const [_res, _req] = context?.controller_args;
-      console.log('@req', Object.keys(_req));
-      console.log('@params', _req.params);
-      console.log('@body', _req.body);
+      console.log('@_reqParams', _req.params);
       return Promise.resolve({
         payload: {
           success: true,
-          message: 'getSchema Message',
+          message: 'get Message',
           count: 0,
           data: [],
         },

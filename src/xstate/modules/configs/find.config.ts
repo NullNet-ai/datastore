@@ -1,3 +1,4 @@
+
 import {
   InternalMachineImplementations,
   StateMachineTypes,
@@ -7,11 +8,11 @@ import {
 import {
   IActors,
   IGuards,
-  IGetSchemaContext,
-  IGetSchemaEvent,
-} from '../schemas/get_schema/get_schema.schema';
+  IFindContext,
+  IFindEvent,
+} from '../schemas/find/find.schema';
 /**
- * Represents the configuration for the get_schema machine.
+ * Represents the configuration for the find machine.
  *
  * @param implementations - Optional implementations for the machine options.
  * @returns The configured machine.
@@ -21,7 +22,7 @@ import {
 // TODO: Define common action definitions
 export const config = (
   implementations: InternalMachineImplementations<StateMachineTypes>,
-  context: IGetSchemaContext = {
+  context: IFindContext = {
     controller_args: [],
     start_time: 0,
     end_time: 0,
@@ -30,14 +31,14 @@ export const config = (
 ) =>
   setup({
     types: {
-      context: {} as IGetSchemaContext,
-      events: {} as IGetSchemaEvent,
+      context: {} as IFindContext,
+      events: {} as IFindEvent,
     },
     actions: implementations?.actions as { [key: string]: typeof assign },
     actors: implementations?.actors as IActors,
     guards: implementations?.guards as IGuards,
   }).createMachine({
-    id: 'get_schema',
+    id: 'find',
 
     initial: 'waiting',
     context: {
@@ -58,13 +59,13 @@ export const config = (
         },
       },
       processingRequest: {
-        entry: 'getSchemaEntry',
-        initial: 'getSchema',
+        entry: 'findEntry',
+        initial: 'find',
         states: {
-          getSchema: {
+          find: {
             invoke: {
-              id: 'getSchema',
-              src: 'getSchema',
+              id: 'find',
+              src: 'find',
               input: ({ context }) => ({ context }),
               onDone: {
                 target: 'success',

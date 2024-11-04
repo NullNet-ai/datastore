@@ -16,22 +16,22 @@ import {
 } from 'node-mocks-http';
 import { createActor } from 'xstate';
 import {
-  GetSchemaActionsImplementations,
-  GetSchemaActorsImplementations,
-  GetSchemaGuardsImplementations,
-} from '../../implementations/get_schema';
-import { GetSchemaMachine } from './get_schema.machine';
-describe('GetSchemaMachine', () => {
-  let get_schemaMachine: GetSchemaMachine;
+  FindActionsImplementations,
+  FindActorsImplementations,
+  FindGuardsImplementations,
+} from '../../implementations/find';
+import { FindMachine } from './find.machine';
+describe('FindMachine', () => {
+  let findMachine: FindMachine;
   let machine_with_config;
   let request: MockRequest<Request>;
   let response: MockResponse<Response>;
   beforeEach(async () => {
-    const machines_providers = machine_providers({ GetSchemaMachine });
+    const machines_providers = machine_providers({ FindMachine });
     const additional_providers: Provider[] = [
-      GetSchemaActionsImplementations,
-      GetSchemaActorsImplementations,
-      GetSchemaGuardsImplementations,
+      FindActionsImplementations,
+      FindActorsImplementations,
+      FindGuardsImplementations,
     ];
     /**
      * Represents the testing module used for creating a testing environment.
@@ -43,35 +43,30 @@ describe('GetSchemaMachine', () => {
           exports: [...machines_providers, ...additional_providers],
         }),
       ],
-      providers: [
-        Logger,
-        HelperService,
-        GetSchemaMachine,
-        ...additional_providers,
-      ],
+      providers: [Logger, HelperService, FindMachine, ...additional_providers],
     }).compile();
-    get_schemaMachine = module.get<GetSchemaMachine>(GetSchemaMachine);
+    findMachine = module.get<FindMachine>(FindMachine);
     request = createRequest<Request>({
       method: 'GET',
-      url: '/get_schema',
+      url: '/find',
     });
     response = createResponse<Response>();
-    get_schemaMachine.onModuleInit({
+    findMachine.onModuleInit({
       controller_args: [response, request],
       start_time: 0,
       end_time: 0,
       duration: 0,
     });
-    machine_with_config = get_schemaMachine.machine;
+    machine_with_config = findMachine.machine;
   });
 
-  it('GetSchema machine must be defined', () => {
-    expect(get_schemaMachine).toBeDefined();
+  it('Find machine must be defined', () => {
+    expect(findMachine).toBeDefined();
   });
-  it('GetSchema machine with config must be defined', () => {
+  it('Find machine with config must be defined', () => {
     expect(machine_with_config).toBeDefined();
   });
-  it('GetSchema machine actor', () => {
+  it('Find machine actor', () => {
     const actor = createActor(machine_with_config);
     // Action
     // # Start the actor

@@ -1,14 +1,14 @@
 
 import { Injectable, Logger } from '@nestjs/common';
-import { GetSchemaMachine } from '../../machines/get_schema/get_schema.machine';
-import { IGuards } from '../../schemas/get_schema/get_schema.schema';
+import { GetMachine } from '../../machines/get/get.machine';
+import { IGuards } from '../../schemas/get/get.schema';
 /**
- * Implementation of guards for the GetSchemaMachine.
+ * Implementation of guards for the GetMachine.
  */
 @Injectable()
-export class GetSchemaGuardsImplementations {
+export class GetGuardsImplementations {
   constructor(private logger: Logger) {}
-  public readonly guards: typeof GetSchemaMachine.prototype.guards & IGuards = {
+  public readonly guards: typeof GetMachine.prototype.guards & IGuards = {
     hasControllerArgs: ({ context }) => {
       if (!context.controller_args) return false;
       const hasNoControllerArgs = !!context.controller_args.length;
