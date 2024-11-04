@@ -360,11 +360,11 @@ CREATE TABLE `class_types` (
 	`requested_by` text,
 	`timestamp` text,
 	`type` text,
-	`company` text NOT NULL,
-	`entity` text NOT NULL,
+	`company` text,
+	`entity` text,
 	`is_list` integer DEFAULT false,
 	`is_with_version` integer DEFAULT false,
-	`schema_version` text NOT NULL
+	`schema_version` text
 );
 --> statement-breakpoint
 CREATE INDEX `class_types_id_idx` ON `class_types` (`id`);--> statement-breakpoint
@@ -395,9 +395,10 @@ CREATE TABLE `fields` (
 	`deleted_by` text,
 	`requested_by` text,
 	`timestamp` text,
-	`label` text NOT NULL,
-	`name` text NOT NULL,
-	`type` text NOT NULL
+	`label` text,
+	`name` text,
+	`type` text,
+	`assigned_to` text
 );
 --> statement-breakpoint
 CREATE INDEX `fields_id_idx` ON `fields` (`id`);--> statement-breakpoint
@@ -428,15 +429,15 @@ CREATE TABLE `allowed_fields` (
 	`deleted_by` text,
 	`requested_by` text,
 	`timestamp` text,
-	`label` text NOT NULL,
-	`name` text NOT NULL,
-	`type` text NOT NULL,
-	`class_type_id` text NOT NULL,
+	`label` text,
+	`name` text,
+	`type` text,
+	`class_type_id` text,
 	`is_optional` integer DEFAULT false,
 	`is_primary_key` integer DEFAULT false,
 	`reference_to` text,
-	`data_type` text NOT NULL,
-	`default_value` text NOT NULL,
+	`data_type` text,
+	`default_value` text,
 	FOREIGN KEY (`class_type_id`) REFERENCES `class_types`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint

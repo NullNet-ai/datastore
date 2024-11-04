@@ -1,13 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
-import * as schema from '../../../../schema';
 import { Utility } from '../../../../utils/utility.service';
 import { eq, asc, desc, SQL } from 'drizzle-orm';
 @Injectable()
@@ -38,7 +33,6 @@ export class FindActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-
       const { table } = _req.params;
       const {
         order_direction = 'asc',
@@ -48,11 +42,8 @@ export class FindActorsImplementations {
         pluck = '',
         ..._query
       } = _req.query;
-      const table_schema = schema[table];
-      if (!table_schema) {
-        throw new NotFoundException('Table not found');
-      }
 
+      const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, pluck);
       const where_clause =
         Object.keys(_query).length > 0

@@ -2,9 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get/get.schema';
+import { DrizzleService } from '@dna-platform/crdt-lww';
+import { Utility } from 'src/utils/utility.service';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class GetActorsImplementations {
+  private db;
+  constructor(private readonly drizzleService: DrizzleService) {
+    this.db = this.drizzleService.getClient();
+  }
   /**
    * Implementation of actors for the get machine.
    */
@@ -27,13 +34,24 @@ export class GetActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-      console.log('@_reqParams', _req.params);
+      const { table, id } = _req.params;
+      const { pluck = '' } = _req.query;
+
+      const table_schema = Utility.checkTable(table);
+      const _plucked_fields = Utility.parsePluckedFields(table, pluck);
+      const selections = _plucked_fields === null ? undefined : _plucked_fields;
+
+      const result = await this.db
+        .select(selections)
+        .from(table_schema)
+        .where(eq(table_schema.id, id));
+
       return Promise.resolve({
         payload: {
           success: true,
-          message: 'get Message',
+          message: `Successfully got data [${id}] from ${table}`,
           count: 0,
-          data: [],
+          data: result,
         },
       });
     }),
