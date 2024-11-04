@@ -20,6 +20,8 @@
     "src/views": true,
     "src/xstate": true,
     "src/providers": true,
-    "drizzle.config.ts": true
+    "drizzle.config.ts": true,
+    "src/schema/crdt": true,
+    "src/schema/index.ts": true
   }
 }
