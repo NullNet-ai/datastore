@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
@@ -74,6 +78,15 @@ export class FindActorsImplementations {
         )
         .offset(Number(offset))
         .limit(Number(limit));
+
+      if (!result || !result.length) {
+        throw new NotFoundException({
+          success: false,
+          message: `No data found in ${table}`,
+          count: 0,
+          data: [],
+        });
+      }
 
       return Promise.resolve({
         payload: {

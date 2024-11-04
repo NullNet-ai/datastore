@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get/get.schema';
@@ -46,11 +46,20 @@ export class GetActorsImplementations {
         .from(table_schema)
         .where(eq(table_schema.id, id));
 
+      if (!result || !result.length) {
+        throw new NotFoundException({
+          success: false,
+          message: `No data [${id}] found in ${table}`,
+          count: 0,
+          data: [],
+        });
+      }
+
       return Promise.resolve({
         payload: {
           success: true,
           message: `Successfully got data [${id}] from ${table}`,
-          count: 1,
+          count: result.length,
           data: result,
         },
       });
