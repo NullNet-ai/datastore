@@ -4,20 +4,15 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from 'src/utils/utility.service';
 import { SyncService } from '@dna-platform/crdt-lww';
-import { GetActorsImplementations } from '../get/actors.implementations';
 @Injectable()
 export class UpdateActorsImplementations {
-  constructor(
-    private readonly syncService: SyncService,
-    private readonly getActorImplementation: GetActorsImplementations,
-  ) {}
+  constructor(private readonly syncService: SyncService) {}
   /**
    * Implementation of actors for the update machine.
    */
   public readonly actors: IActors = {
-    get: this.getActorImplementation.actors.get,
     update: fromPromise(async ({ input }): Promise<IResponse> => {
-      const { context, event } = input;
+      const { context } = input;
       if (!context?.controller_args)
         return Promise.reject({
           payload: {
@@ -32,25 +27,9 @@ export class UpdateActorsImplementations {
       const { meta, data } = body;
       const { table, id } = params;
       const { schema } = Utility.checkCreateSchema(table, meta, data);
-      const { payload } = event.output;
-      const { success, data: get_data } = payload;
-      if (!success) {
-        return Promise.reject({
-          payload: {
-            success: false,
-            message: `Failed to get data [${id}] from get actor in update actor`,
-            count: 0,
-            data: [],
-          },
-        });
-      }
-      const [old_data] = get_data;
-      console.log('@ old_data', old_data);
-      const result = await this.syncService.update(
-        table,
-        Utility.updateParse({ schema, data }),
-        id,
-      );
+      const updated_data = Utility.updateParse({ schema, data });
+      delete updated_data.id;
+      const result = await this.syncService.update(table, updated_data, id);
       return Promise.resolve({
         payload: {
           success: true,

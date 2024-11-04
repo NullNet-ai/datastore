@@ -79,7 +79,7 @@ export class FindActorsImplementations {
         payload: {
           success: true,
           message: `Successfully fetched ${table} records`,
-          count: 0,
+          count: result.length,
           data: result,
         },
       });

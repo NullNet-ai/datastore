@@ -50,7 +50,7 @@ export class GetActorsImplementations {
         payload: {
           success: true,
           message: `Successfully got data [${id}] from ${table}`,
-          count: 0,
+          count: 1,
           data: result,
         },
       });

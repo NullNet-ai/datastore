@@ -59,26 +59,13 @@ export const config = (
       },
       processingRequest: {
         entry: 'updateEntry',
-        initial: 'get',
+        initial: 'update',
         states: {
-          get: {
-            invoke: {
-              id: 'get',
-              src: 'get',
-              input: ({ context }) => ({ context }),
-              onDone: {
-                target: 'update',
-              },
-              onError: {
-                target: 'error',
-              },
-            },
-          },
           update: {
             invoke: {
               id: 'update',
               src: 'update',
-              input: ({ context, event }) => ({ context, event }),
+              input: ({ context }) => ({ context }),
               onDone: {
                 target: 'success',
               },

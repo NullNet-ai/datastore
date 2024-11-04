@@ -57,11 +57,11 @@ export class Utility {
   public static format(data: any, is_insert = true) {
     const date = new Date();
     const _data = {
-      id: data.id ? data.id : ulid(),
-      tombstone: 0,
-      status: 'Active',
+      id: data?.id ? data.id : ulid(),
       ...(is_insert
         ? {
+            tombstone: 0,
+            status: 'Active',
             created_date: date.toLocaleDateString(),
             created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
             updated_date: date.toLocaleDateString(),
@@ -70,7 +70,7 @@ export class Utility {
           }
         : {
             updated_date: date.toLocaleDateString(),
-            updated_time: this.convertTime12to24(date.toLocaleTimeString()),
+            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           }),
       ...data,
     };

@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/delete/delete.schema';
+import { SyncService } from '@dna-platform/crdt-lww';
 
 @Injectable()
 export class DeleteActorsImplementations {
+  constructor(private readonly syncService: SyncService) {}
   /**
    * Implementation of actors for the delete machine.
    */
@@ -20,19 +22,21 @@ export class DeleteActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: 'sampleStep fail Message',
+            message: `Failed to get controller args in delete actor`,
             count: 0,
             data: [],
           },
         });
-
       const [_res, _req] = context?.controller_args;
+      const { params } = _req;
+      const { table, id } = params;
+      const result = await this.syncService.delete(table, id);
       return Promise.resolve({
         payload: {
           success: true,
-          message: 'delete Message',
-          count: 0,
-          data: [],
+          message: `Successfully deleted in ${table}`,
+          count: 1,
+          data: [result],
         },
       });
     }),

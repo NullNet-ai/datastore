@@ -6,3 +6,5 @@
 nest-cli.json
 tsconfig.*
 TODO.md
+/drizzle
+/sql
