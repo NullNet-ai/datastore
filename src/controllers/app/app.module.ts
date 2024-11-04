@@ -7,6 +7,7 @@ import {
 import { CoreModule, DriversModule } from '@dna-platform/crdt-lww';
 import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drivers/query/enums';
 import { StoreQueryDriver } from '../../providers/store/store.service';
+import * as schema from '../../schema';
 @Module({
   imports: [
     MachineStoreModule,
@@ -18,6 +19,10 @@ import { StoreQueryDriver } from '../../providers/store/store.service';
             {
               useClass: StoreQueryDriver,
               provide: QueryDriverInterface,
+            },
+            {
+              useValue: schema,
+              provide: 'LOCAL_SCHEMA',
             },
           ],
         }),

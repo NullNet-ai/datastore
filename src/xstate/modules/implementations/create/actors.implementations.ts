@@ -34,11 +34,11 @@ export class CreateActorsImplementations {
       const { meta, data } = body;
       const { table } = params;
       const { schema } = Utility.checkCreateSchema(table, meta, data);
-
       const result = await this.syncService.insert(
         table,
         Utility.createParse({ schema, data }),
       );
+      console.log('@table after', table);
       return Promise.resolve({
         payload: {
           success: true,
