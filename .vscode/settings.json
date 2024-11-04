@@ -1,30 +1,25 @@
 {
   "prettier.singleQuote": false,
   "files.exclude": {
-    "bin": false,
-    "bunfig.toml": false,
-    "node_modules": false,
-    "package-lock.json": false,
-    "dist": false,
-    ".eslintrc.js": false,
-    ".gitignore": false,
-    ".npmrc": false,
-    ".npmignore": false,
-    ".prettierrc": false,
-    "tsconfig.json": false,
-    "nest-cli.json": false,
-    "bun.lockb": false,
-    "yarn.lock": false,
-    "static": false,
-    "tailwind.config.js": false,
-    "src/views": false
-  },
-  // The path to the `bun` executable.
-  "bun.runtime": "/Users/chaosumaru/.bun/bin/bun",
-
-  // If support for Bun should be added to the default "JavaScript Debug Terminal".
-  "bun.debugTerminal.enabled": true,
-
-  // If the debugger should stop on the first line of the program.
-  "bun.debugTerminal.stopOnEntry": false
+    "bin": true,
+    "bunfig.toml": true,
+    "node_modules": true,
+    "package-lock.json": true,
+    "dist": true,
+    ".eslintrc.js": true,
+    ".gitignore": true,
+    ".npmrc": true,
+    ".npmignore": true,
+    ".prettierrc": true,
+    "tsconfig.json": true,
+    "nest-cli.json": true,
+    "bun.lockb": true,
+    "yarn.lock": true,
+    "static": true,
+    "tailwind.config.js": true,
+    "src/views": true,
+    "src/xstate": true,
+    "src/providers": true,
+    "drizzle.config.ts": true
+  }
 }
