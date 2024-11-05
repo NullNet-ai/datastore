@@ -3,7 +3,7 @@
   "files.exclude": {
     "bin": true,
     "bunfig.toml": true,
-    "node_modules": true,
+    "node_modules": false,
     "package-lock.json": true,
     "dist": true,
     ".eslintrc.js": true,

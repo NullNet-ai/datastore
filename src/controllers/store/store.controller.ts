@@ -7,12 +7,15 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import {
   StoreMutationDriver,
   StoreQueryDriver,
 } from '../../providers/store/store.service';
+import { AuthGuard } from '@dna-platform/crdt-lww';
+@UseGuards(AuthGuard)
 @Controller('/api/store')
 export class StoreController {
   constructor(

@@ -2,15 +2,10 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
 import { LoggerService, HttpExceptionFilter } from '@dna-platform/common';
-import {
-  ArgumentsHost,
-  BadRequestException,
-  Catch,
-  ExceptionFilter,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { ZodError } from 'zod';
 import * as fs from 'fs';
-// const cookieParser = require('cookie-parser');
+import * as cookieParser from 'cookie-parser';
 
 const {
   PORT = '3060',
@@ -19,22 +14,6 @@ const {
   NODE_ENV = 'local',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
-
-@Catch(BadRequestException)
-export class BadExceptionFilter implements ExceptionFilter {
-  catch(exception: BadRequestException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const request = ctx.getRequest();
-    const table = request.params.table;
-    const response = ctx.getResponse();
-    const status = 400;
-    response.status(status).json({
-      status,
-      table,
-      message: exception.message,
-    });
-  }
-}
 
 @Catch(ZodError)
 export class ZodFilter<T extends ZodError> implements ExceptionFilter {
@@ -61,6 +40,7 @@ async function bootstrap() {
   const app = await NestFactory.create(MainModule, {
     logger: ['local', 'development', 'dev'].includes(NODE_ENV) ? logger : false,
   });
+  app.use(cookieParser());
   app.useLogger(logger);
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(+(PORT || '5001')).then(() => {
