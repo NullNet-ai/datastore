@@ -1,14 +1,10 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
-import { eq, asc, desc, SQL } from 'drizzle-orm';
+import { asc, desc } from 'drizzle-orm';
 @Injectable()
 export class FindActorsImplementations {
   private db;
@@ -41,43 +37,44 @@ export class FindActorsImplementations {
       const {
         order_direction = 'asc',
         order_by = 'id',
-        limit = '100',
-        offset = '0',
-        pluck = '',
-        ..._query
-      } = _req.query;
+        limit = 50,
+        offset = 0,
+        pluck = [],
+        advance_filters = [],
+        logical_operator: outer_logic_operator = 'AND',
+      } = _req.body;
 
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, pluck);
-      const where_clause =
-        Object.keys(_query).length > 0
-          ? Object.keys(_query).reduce(
-              (acc, key) => {
-                const column = table_schema[key];
-                if (!column) {
-                  throw new BadRequestException(
-                    `Column ${key} not found in table ${table}`,
-                  );
-                }
-                return [...acc, eq(table_schema[key], _req.query[key])];
-              },
-              [eq(table_schema.tombstone, 0)],
-            )
-          : eq(table_schema.tombstone, 0);
-
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
+      let _db = this.db.select(selections).from(table_schema);
 
-      const result = await this.db
-        .select(selections)
-        .from(table_schema)
-        .where(where_clause as SQL<unknown>)
-        .orderBy(
+      if (advance_filters.length > 0) {
+        _db = Utility.sqliteFilterAnalyzer(
+          _db,
+          table_schema,
+          outer_logic_operator,
+          advance_filters,
+        );
+      }
+
+      if (order_direction && order_by) {
+        _db = _db.orderBy(
           order_direction === 'asc'
             ? asc(table_schema[order_by])
             : desc(table_schema[order_by]),
-        )
-        .offset(Number(offset))
-        .limit(Number(limit));
+        );
+      }
+
+      if (offset) {
+        _db = _db.offset(offset);
+      }
+
+      if (limit) {
+        _db = _db.limit(limit);
+      }
+
+      const result = await _db;
 
       if (!result || !result.length) {
         throw new NotFoundException({

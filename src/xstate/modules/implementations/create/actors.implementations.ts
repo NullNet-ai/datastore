@@ -38,7 +38,6 @@ export class CreateActorsImplementations {
         table,
         Utility.createParse({ schema, data }),
       );
-      console.log('@table after', table);
       return Promise.resolve({
         payload: {
           success: true,

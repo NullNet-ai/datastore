@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://gitlab.platform.dnadev.net/platform/db/api/api/datastore.git"
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.14",

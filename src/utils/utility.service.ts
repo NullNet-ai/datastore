@@ -3,6 +3,26 @@ import * as schema from '../schema';
 import { createInsertSchema } from 'drizzle-zod';
 import { ulid } from 'ulid';
 import { ZodValidationException } from '@dna-platform/common';
+import {
+  EOperator,
+  IAdvanceFilters,
+} from '../xstate/modules/schemas/find/find.schema';
+import {
+  and,
+  between,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  ne,
+  notBetween,
+  notInArray,
+  or,
+} from 'drizzle-orm';
 export class Utility {
   public static createParse({
     schema,
@@ -104,14 +124,14 @@ export class Utility {
   }
   public static parsePluckedFields(
     table: string,
-    pluck?: string,
+    pluck: string[],
   ): Record<string, any> | null {
     const table_schema = schema[table];
 
-    if (pluck === '' || !pluck) {
+    if (!pluck?.length || !pluck) {
       return null;
     }
-    const _plucked_fields = pluck.split(',').reduce((acc, field) => {
+    const _plucked_fields = pluck.reduce((acc, field) => {
       if (table_schema[field]) {
         return {
           ...acc,
@@ -125,5 +145,71 @@ export class Utility {
       return null;
     }
     return _plucked_fields;
+  }
+  public static sqliteFilterAnalyzer(
+    db,
+    table_schema,
+    outer_logic_operator: 'AND' | 'OR ',
+    advance_filters: IAdvanceFilters[],
+  ) {
+    let _db = db;
+    let where_classes: any = [];
+    let outer_lo: any = outer_logic_operator === 'AND' ? and : or;
+    advance_filters.forEach((filters: IAdvanceFilters) => {
+      const { field, operator, values = [] } = filters;
+
+      switch (operator) {
+        case EOperator.EQUAL:
+          where_classes.push(eq(table_schema[field], values[0]));
+          break;
+        case EOperator.NOT_EQUAL:
+          where_classes.push(ne(table_schema[field], values[0]));
+          break;
+        case EOperator.GREATER_THAN:
+          where_classes.push(gt(table_schema[field], values[0]));
+          break;
+        case EOperator.GREATER_THAN_OR_EQUAL:
+          where_classes.push(gte(table_schema[field], values[0]));
+          break;
+        case EOperator.LESS_THAN:
+          where_classes.push(lt(table_schema[field], values[0]));
+          break;
+        case EOperator.LESS_THAN_OR_EQUAL:
+          where_classes.push(lte(table_schema[field], values[0]));
+          break;
+        case EOperator.IS_NULL:
+          where_classes.push(isNull(table_schema[field]));
+          break;
+        case EOperator.IS_NOT_NULL:
+          where_classes.push(isNotNull(table_schema[field]));
+          break;
+        case EOperator.CONTAINS:
+          where_classes.push(inArray(table_schema[field], values));
+          break;
+        case EOperator.NOT_CONTAINS:
+          where_classes.push(notInArray(table_schema[field], values));
+          break;
+        case EOperator.IS_BETWEEN:
+          where_classes.push(
+            between(table_schema[field], values[0], values[1]),
+          );
+          break;
+        case EOperator.IS_NOT_BETWEEN:
+          where_classes.push(
+            notBetween(table_schema[field], values[0], values[1]),
+          );
+          break;
+        case EOperator.IS_EMPTY:
+          where_classes.push(eq(table_schema[field], ''));
+          break;
+        case EOperator.IS_NOT_EMPTY:
+          where_classes.push(ne(table_schema[field], ''));
+          break;
+        default:
+          throw new BadRequestException('Invalid Operator');
+      }
+    });
+
+    return _db.where(outer_lo(...where_classes));
   }
 }
