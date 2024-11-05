@@ -4,6 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
 import { SyncService } from '@dna-platform/crdt-lww';
 import { Utility } from 'src/utils/utility.service';
+import { pick } from 'lodash';
 
 @Injectable()
 export class CreateActorsImplementations {
@@ -30,9 +31,9 @@ export class CreateActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-      const { params, body } = _req;
-      // const { meta, data } = body;
+      const { params, body, query } = _req;
       const { table } = params;
+      const { pluck = 'id' } = query;
       const { schema } = Utility.checkCreateSchema(
         table,
         undefined as any,
@@ -47,7 +48,7 @@ export class CreateActorsImplementations {
           success: true,
           message: `Successfully created in ${table}`,
           count: 1,
-          data: [result],
+          data: [pick(result, pluck.split(','))],
         },
       });
     }),
