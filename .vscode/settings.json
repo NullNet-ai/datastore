@@ -18,7 +18,7 @@
     "static": true,
     "tailwind.config.js": true,
     "src/views": true,
-    "src/xstate": false,
+    "src/xstate": true,
     "src/providers": true,
     "drizzle.config.ts": true,
     "src/schema/crdt": true,
