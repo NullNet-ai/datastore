@@ -1,4 +1,3 @@
-
 import {
   InternalMachineImplementations,
   StateMachineTypes,
@@ -60,13 +59,26 @@ export const config = (
       },
       processingRequest: {
         entry: 'deleteEntry',
-        initial: 'delete',
+        initial: 'get',
         states: {
+          get: {
+            invoke: {
+              id: 'get',
+              src: 'get',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                target: 'delete',
+              },
+              onError: {
+                target: 'delete',
+              },
+            },
+          },
           delete: {
             invoke: {
               id: 'delete',
               src: 'delete',
-              input: ({ context }) => ({ context }),
+              input: ({ context, event }) => ({ context, event }),
               onDone: {
                 target: 'success',
               },
