@@ -38,7 +38,10 @@ export class GetActorsImplementations {
       const { pluck = '' } = _req.query;
 
       const table_schema = Utility.checkTable(table);
-      const _plucked_fields = Utility.parsePluckedFields(table, pluck);
+      const _plucked_fields = Utility.parsePluckedFields(
+        table,
+        pluck.split(','),
+      );
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
 
       const result = await this.db
