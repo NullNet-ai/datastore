@@ -39,10 +39,13 @@ export class FindActorsImplementations {
         order_by = 'id',
         limit = 50,
         offset = 0,
-        pluck = [],
+        pluck = ['id'],
         advance_filters = [],
         logical_operator: outer_logic_operator = 'AND',
       } = _req.body;
+
+      // add tombstone to pluck if not already present
+      pluck.push('tombstone');
 
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, pluck);
