@@ -31,12 +31,16 @@ export class CreateActorsImplementations {
 
       const [_res, _req] = context?.controller_args;
       const { params, body } = _req;
-      const { meta, data } = body;
+      // const { meta, data } = body;
       const { table } = params;
-      const { schema } = Utility.checkCreateSchema(table, meta, data);
+      const { schema } = Utility.checkCreateSchema(
+        table,
+        undefined as any,
+        body,
+      );
       const result = await this.syncService.insert(
         table,
-        Utility.createParse({ schema, data }),
+        Utility.createParse({ schema, data: body }),
       );
       return Promise.resolve({
         payload: {
