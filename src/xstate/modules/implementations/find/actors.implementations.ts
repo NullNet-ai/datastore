@@ -4,7 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
-import { asc, desc } from 'drizzle-orm';
+import { asc, desc, eq } from 'drizzle-orm';
 @Injectable()
 export class FindActorsImplementations {
   private db;
@@ -56,6 +56,9 @@ export class FindActorsImplementations {
           outer_logic_operator,
           advance_filters,
         );
+      } else {
+        // fetched only non-tombstoned records
+        _db = _db.where(eq(table_schema.tombstone, 0));
       }
 
       if (order_direction && order_by) {
@@ -74,7 +77,11 @@ export class FindActorsImplementations {
         _db = _db.limit(limit);
       }
 
-      const result = await _db;
+      let result = await _db;
+
+      if (advance_filters.length > 0) {
+        result = result.filter((item) => item.tombstone === 0);
+      }
 
       if (!result || !result.length) {
         throw new NotFoundException({

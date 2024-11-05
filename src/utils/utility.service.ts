@@ -155,6 +155,7 @@ export class Utility {
     let _db = db;
     let where_classes: any = [];
     let outer_lo: any = outer_logic_operator === 'AND' ? and : or;
+
     advance_filters.forEach((filters: IAdvanceFilters) => {
       const { field, operator, values = [] } = filters;
 
@@ -209,7 +210,6 @@ export class Utility {
           throw new BadRequestException('Invalid Operator');
       }
     });
-
     return _db.where(outer_lo(...where_classes));
   }
 }
