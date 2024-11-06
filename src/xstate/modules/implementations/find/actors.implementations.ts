@@ -5,7 +5,7 @@ import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
 import { asc, desc, eq } from 'drizzle-orm';
-import { pick } from 'lodash';
+// import { pick } from 'lodash';
 @Injectable()
 export class FindActorsImplementations {
   private db;
@@ -42,24 +42,15 @@ export class FindActorsImplementations {
         offset = 0,
         pluck = ['id'],
         advance_filters = [],
-        logical_operator: outer_logic_operator = 'AND',
       } = _req.body;
       const _pluck = pluck;
-      // add tombstone to pluck if not already present
-      _pluck.push('tombstone');
-
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db.select(selections).from(table_schema);
 
       if (advance_filters.length > 0) {
-        _db = Utility.sqliteFilterAnalyzer(
-          _db,
-          table_schema,
-          outer_logic_operator,
-          advance_filters,
-        );
+        _db = Utility.sqliteFilterAnalyzer(_db, table_schema, advance_filters);
       } else {
         // fetched only non-tombstoned records
         _db = _db.where(eq(table_schema.tombstone, 0));
@@ -82,12 +73,6 @@ export class FindActorsImplementations {
       }
 
       let result = await _db;
-
-      if (advance_filters.length > 0) {
-        result = result
-          .filter((item) => item.tombstone === 0)
-          .map((item) => pick(item, pluck));
-      }
 
       if (!result || !result.length) {
         throw new NotFoundException({

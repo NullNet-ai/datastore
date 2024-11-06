@@ -149,16 +149,14 @@ export class Utility {
   public static sqliteFilterAnalyzer(
     db,
     table_schema,
-    outer_logic_operator: 'AND' | 'OR ',
     advance_filters: IAdvanceFilters[],
   ) {
     let _db = db;
     let where_classes: any = [];
-    let outer_lo: any = outer_logic_operator === 'AND' ? and : or;
 
     advance_filters.forEach((filters: IAdvanceFilters) => {
-      const { field, operator, values = [] } = filters;
-
+      const { field, operator, values = [], type = 'criteria' } = filters;
+      // AB AND C
       switch (operator) {
         case EOperator.EQUAL:
           where_classes.push(eq(table_schema[field], values[0]));
@@ -210,6 +208,30 @@ export class Utility {
           throw new BadRequestException('Invalid Operator');
       }
     });
-    return _db.where(outer_lo(...where_classes));
+    
+    // 1 - 5
+    return _db.where(
+      // ------------------------------------------------------
+      // A AND B OR C => (A AND B) OR C
+      and(
+        eq(table_schema['tombstone'], 0),
+        isNull(table_schema['organization_id']),
+        or(
+          // builder
+          // TODO: - implement the type operator as one of the filter
+          ...where_classes,
+          // and(
+          //   eq(table_schema['sample_text'], 'testing 3'),
+          //   eq(table_schema['status'], 'Pending'),
+          // ),
+          // and(
+          //   or(
+          //     eq(table_schema['sample_text'], 'testing 3'),
+          //     eq(table_schema['status'], 'Active'),
+          //   ),
+          // ),
+        ),
+      ),
+    );
   }
 }

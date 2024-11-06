@@ -102,6 +102,7 @@ export interface IAdvanceFilters<f = string> {
   operator: EOperator;
   values?: string[] | number[] | boolean[];
   logical_operator?: 'AND' | 'OR';
+  type: 'criteria' | 'operator';
 }
 
 export interface IOrder<fs = Record<string, any>> {
