@@ -34,20 +34,13 @@ export class VerifyActorsImplementations {
       const [_res, _req] = context?.controller_args;
       const { authorization } = _req.headers;
       const result = await this.authService
-        .verify(authorization.replace('Bearer ', ''))
+        .verify(authorization?.replace('Bearer ', ''))
         .catch((err) => {
-          this.logger.debug(err);
-          return {
-            success: false,
-            message: `Token Verification Failed: ${err.message}`,
-            count: 0,
-            data: [],
-          };
+          this.logger.debug(err.message);
+          throw new BadRequestException(
+            `Token Verification Failed: ${err.message}`,
+          );
         });
-
-      if (!result.success) {
-        throw new BadRequestException(result.message);
-      }
 
       return Promise.resolve({
         payload: {
