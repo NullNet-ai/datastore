@@ -1,5 +1,5 @@
 import { Module, Provider } from '@nestjs/common';
-import { StoreController } from './store.controller';
+import { StoreController, TokenController } from './store.controller';
 import { machine_providers, MachineModule } from '@dna-platform/common';
 import { XstateModule } from '@dna-platform/common';
 import * as machines from '../../xstate/modules/machines';
@@ -13,6 +13,7 @@ import { CreateImplementationModule } from '../../xstate/modules/implementations
 import { UpdateImplementationModule } from '../../xstate/modules/implementations/update/update.implementation.module';
 import { DeleteImplementationModule } from '../../xstate/modules/implementations/delete/delete.implementation.module';
 import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drivers/query/enums';
+import { VerifyImplementationModule } from 'src/xstate/modules/implementations/verify/verify.implementation.module';
 
 const machines_providers = machine_providers([
   machines.GetMachine,
@@ -20,16 +21,18 @@ const machines_providers = machine_providers([
   machines.CreateMachine,
   machines.UpdateMachine,
   machines.DeleteMachine,
+  machines.VerifyMachine,
 ]);
 const additional_providers: Provider[] = [];
 const base_classes = [StoreController];
-const additional_controllers = [];
+const additional_controllers = [TokenController];
 const shared_machine_imports = [
   GetImplementationModule,
   FindImplementationModule,
   CreateImplementationModule,
   UpdateImplementationModule,
   DeleteImplementationModule,
+  VerifyImplementationModule,
 ];
 export const shared_imports = [
   XstateModule.register({

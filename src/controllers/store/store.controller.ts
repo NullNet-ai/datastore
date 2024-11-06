@@ -50,7 +50,7 @@ export class StoreController {
 }
 
 @Controller('/api/token')
-export class TokenService {
+export class TokenController {
   constructor(private storeMutation: StoreMutationDriver) {}
   @Post('/verify')
   async create(@Res() _res: Response, @Req() _req: Request) {
