@@ -23,6 +23,7 @@ import {
   notInArray,
   or,
 } from 'drizzle-orm';
+import _ from 'lodash';
 export class Utility {
   public static createParse({
     schema,
@@ -149,67 +150,122 @@ export class Utility {
   public static sqliteFilterAnalyzer(
     db,
     table_schema,
-    outer_logic_operator: 'AND' | 'OR ',
-    advance_filters: IAdvanceFilters[],
+    _advance_filters: IAdvanceFilters[],
   ) {
-    let _db = db;
-    let where_classes: any = [];
-    let outer_lo: any = outer_logic_operator === 'AND' ? and : or;
+    return db.where(
+      and(
+        eq(table_schema['tombstone'], 0),
+        isNotNull(table_schema['organization_id']),
+        ...Utility.constructFilters(_advance_filters, table_schema),
+      ),
+    );
+  }
 
-    advance_filters.forEach((filters: IAdvanceFilters) => {
-      const { field, operator, values = [] } = filters;
+  public static evaluateFilter({
+    operator,
+    table_schema,
+    field,
+    values,
+    dz_filter_queue,
+  }) {
+    switch (operator) {
+      case EOperator.EQUAL:
+        return eq(table_schema[field], values[0]);
+      case EOperator.NOT_EQUAL:
+        return ne(table_schema[field], values[0]);
+      case EOperator.GREATER_THAN:
+        return gt(table_schema[field], values[0]);
+      case EOperator.GREATER_THAN_OR_EQUAL:
+        return gte(table_schema[field], values[0]);
+      case EOperator.LESS_THAN:
+        return lt(table_schema[field], values[0]);
+      case EOperator.LESS_THAN_OR_EQUAL:
+        return lte(table_schema[field], values[0]);
+      case EOperator.IS_NULL:
+        return isNull(table_schema[field]);
+      case EOperator.IS_NOT_NULL:
+        return isNotNull(table_schema[field]);
+      case EOperator.CONTAINS:
+        return inArray(table_schema[field], values);
+      case EOperator.NOT_CONTAINS:
+        return notInArray(table_schema[field], values);
+      case EOperator.IS_BETWEEN:
+        return between(table_schema[field], values[0], values[1]);
+      case EOperator.IS_NOT_BETWEEN:
+        return notBetween(table_schema[field], values[0], values[1]);
+      case EOperator.IS_EMPTY:
+        return eq(table_schema[field], '');
+      case EOperator.IS_NOT_EMPTY:
+        return ne(table_schema[field], '');
+      case EOperator.AND:
+        return and(...dz_filter_queue);
+      case EOperator.OR:
+        return or(...dz_filter_queue);
+      default:
+        return null;
+    }
+  }
 
-      switch (operator) {
-        case EOperator.EQUAL:
-          where_classes.push(eq(table_schema[field], values[0]));
-          break;
-        case EOperator.NOT_EQUAL:
-          where_classes.push(ne(table_schema[field], values[0]));
-          break;
-        case EOperator.GREATER_THAN:
-          where_classes.push(gt(table_schema[field], values[0]));
-          break;
-        case EOperator.GREATER_THAN_OR_EQUAL:
-          where_classes.push(gte(table_schema[field], values[0]));
-          break;
-        case EOperator.LESS_THAN:
-          where_classes.push(lt(table_schema[field], values[0]));
-          break;
-        case EOperator.LESS_THAN_OR_EQUAL:
-          where_classes.push(lte(table_schema[field], values[0]));
-          break;
-        case EOperator.IS_NULL:
-          where_classes.push(isNull(table_schema[field]));
-          break;
-        case EOperator.IS_NOT_NULL:
-          where_classes.push(isNotNull(table_schema[field]));
-          break;
-        case EOperator.CONTAINS:
-          where_classes.push(inArray(table_schema[field], values));
-          break;
-        case EOperator.NOT_CONTAINS:
-          where_classes.push(notInArray(table_schema[field], values));
-          break;
-        case EOperator.IS_BETWEEN:
-          where_classes.push(
-            between(table_schema[field], values[0], values[1]),
-          );
-          break;
-        case EOperator.IS_NOT_BETWEEN:
-          where_classes.push(
-            notBetween(table_schema[field], values[0], values[1]),
-          );
-          break;
-        case EOperator.IS_EMPTY:
-          where_classes.push(eq(table_schema[field], ''));
-          break;
-        case EOperator.IS_NOT_EMPTY:
-          where_classes.push(ne(table_schema[field], ''));
-          break;
-        default:
-          throw new BadRequestException('Invalid Operator');
+  public static constructFilters(advance_filters, table_schema): any[] {
+    let dz_filter_queue: any[] = [];
+    let where_clause_queue: any[] = [];
+    let _filter_queue: any[] = [];
+
+    advance_filters.forEach((filter, index: number) => {
+      const { operator, type = 'criteria', field = '' } = filter;
+      if (
+        (index % 2 === 0 && type != 'criteria') ||
+        (index % 2 === 1 && type != 'operator')
+      ) {
+        let _type = index % 2 === 0 ? 'a criteria' : 'an operator';
+        throw new BadRequestException(
+          `Invalid filter at index ${index}. Must be ${_type}`,
+        );
+      }
+
+      _filter_queue.push(filter);
+      dz_filter_queue.push(
+        Utility.evaluateFilter({
+          operator,
+          table_schema,
+          field,
+          values: filter.values,
+          dz_filter_queue,
+        }),
+      );
+
+      if (dz_filter_queue.length > 2) {
+        const [_1, _op, _2]: any = _filter_queue;
+        const [_c1, _, _c2]: any = dz_filter_queue;
+        const allowed_to_merged = _1.operator ? [_c1, _c2] : [_c2];
+        where_clause_queue.push(
+          Utility.evaluateFilter({
+            operator: _op.operator,
+            table_schema,
+            field,
+            values: filter.values,
+            dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
+          }),
+        );
+        if (where_clause_queue.length > 1) where_clause_queue.shift();
+        _filter_queue = [
+          // dummy
+          {
+            type: 'criteria',
+            field: '',
+            operator: '',
+          },
+        ];
+        dz_filter_queue = [
+          // dummy
+          {
+            type: 'criteria',
+            field: '',
+            operator: '',
+          },
+        ];
       }
     });
-    return _db.where(outer_lo(...where_classes));
+    return where_clause_queue;
   }
 }

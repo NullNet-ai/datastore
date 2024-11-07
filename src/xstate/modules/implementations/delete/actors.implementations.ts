@@ -23,6 +23,9 @@ export class DeleteActorsImplementations {
     delete: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context, event } = input;
       const { error } = event;
+      if (error) {
+        throw error;
+      }
 
       if (!context?.controller_args)
         return Promise.reject({
@@ -33,12 +36,18 @@ export class DeleteActorsImplementations {
             data: [],
           },
         });
-      const [_res, _req] = context?.controller_args;
-      const { params } = _req;
+
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+      const [_res, _req] = controller_args;
+      const { params, body } = _req;
       const { table, id } = params;
-      if (error) {
-        throw error;
+
+      if (body?.organization_id) {
+        body.organization_id = organization_id;
+        body.deleted_by = responsible_account.contact.id;
       }
+
       const result = await this.syncService.delete(table, id);
       return Promise.resolve({
         payload: {
