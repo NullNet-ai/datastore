@@ -39,6 +39,11 @@ export class CreateActorsImplementations {
         undefined as any,
         body,
       );
+
+      if (body?.organization_id) {
+        body.organization_id = _req.user.organization_id;
+      }
+
       const result = await this.syncService.insert(
         table,
         Utility.createParse({ schema, data: body }),

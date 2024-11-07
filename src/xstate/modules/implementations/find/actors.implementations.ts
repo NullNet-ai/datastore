@@ -49,9 +49,7 @@ export class FindActorsImplementations {
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db.select(selections).from(table_schema);
 
-      if (advance_filters.length > 0) {
-        _db = Utility.sqliteFilterAnalyzer(_db, table_schema, advance_filters);
-      }
+      _db = Utility.sqliteFilterAnalyzer(_db, table_schema, advance_filters);
 
       if (order_direction && order_by) {
         _db = _db.orderBy(
