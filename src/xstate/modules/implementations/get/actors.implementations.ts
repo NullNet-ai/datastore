@@ -4,7 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get/get.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from 'src/utils/utility.service';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNotNull } from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
 
 @Injectable()
@@ -58,7 +58,14 @@ export class GetActorsImplementations {
       const result = await this.db
         .select(selections)
         .from(table_schema)
-        .where(and(eq(table_schema.tombstone, 0), eq(table_schema.id, id)));
+        .where(
+          and(
+            eq(table_schema.tombstone, 0),
+            isNotNull(table_schema.organization_id),
+            eq(table_schema.organization_id, organization_id),
+            eq(table_schema.id, id),
+          ),
+        );
 
       if (!result || !result.length) {
         throw new NotFoundException({
