@@ -23,6 +23,7 @@ import {
   notInArray,
   or,
 } from 'drizzle-orm';
+import _ from 'lodash';
 export class Utility {
   public static createParse({
     schema,
@@ -154,7 +155,7 @@ export class Utility {
     return db.where(
       and(
         eq(table_schema['tombstone'], 0),
-        isNull(table_schema['organization_id']),
+        isNotNull(table_schema['organization_id']),
         ...Utility.constructFilters(_advance_filters, table_schema),
       ),
     );
@@ -165,7 +166,7 @@ export class Utility {
     table_schema,
     field,
     values,
-    filter_stack,
+    dz_filter_queue,
   }) {
     switch (operator) {
       case EOperator.EQUAL:
@@ -197,70 +198,74 @@ export class Utility {
       case EOperator.IS_NOT_EMPTY:
         return ne(table_schema[field], '');
       case EOperator.AND:
-        return and(...filter_stack);
+        return and(...dz_filter_queue);
       case EOperator.OR:
-        return or(...filter_stack);
+        return or(...dz_filter_queue);
       default:
         return null;
     }
   }
 
   public static constructFilters(advance_filters, table_schema): any[] {
-    let filter_stack: any[] = [];
-    let where_clause_stack: any[] = [];
+    let dz_filter_queue: any[] = [];
+    let where_clause_queue: any[] = [];
+    let _filter_queue: any[] = [];
 
     advance_filters.forEach((filter, index: number) => {
       const { operator, type = 'criteria', field = '' } = filter;
-      if (type === 'criteria') {
-        filter_stack.push(
+      if (
+        (index % 2 === 0 && type != 'criteria') ||
+        (index % 2 === 1 && type != 'operator')
+      ) {
+        let _type = index % 2 === 0 ? 'a criteria' : 'an operator';
+        throw new BadRequestException(
+          `Invalid filter at index ${index}. Must be ${_type}`,
+        );
+      }
+
+      _filter_queue.push(filter);
+      dz_filter_queue.push(
+        Utility.evaluateFilter({
+          operator,
+          table_schema,
+          field,
+          values: filter.values,
+          dz_filter_queue,
+        }),
+      );
+
+      if (dz_filter_queue.length > 2) {
+        const [_1, _op, _2]: any = _filter_queue;
+        const [_c1, _, _c2]: any = dz_filter_queue;
+        const allowed_to_merged = _1.operator ? [_c1, _c2] : [_c2];
+        where_clause_queue.push(
           Utility.evaluateFilter({
-            operator,
+            operator: _op.operator,
             table_schema,
             field,
             values: filter.values,
-            filter_stack,
+            dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
           }),
         );
-      } else {
-        if (filter_stack.length) {
-          where_clause_stack.push(
-            Utility.evaluateFilter({
-              operator,
-              table_schema,
-              field,
-              values: filter.values,
-              filter_stack: where_clause_stack.concat(filter_stack),
-            }),
-          );
-          if (where_clause_stack.length > 1) where_clause_stack.shift();
-        }
-        filter_stack = [];
-      }
-
-      // last iteration
-      if (index === advance_filters.length - 1) {
-        // if (!filter_stack.length) {
-        //   where_clause_stack.push(
-        //     Utility.evaluateFilter({
-        //       operator,
-        //       table_schema,
-        //       field,
-        //       values: filter.values,
-        //       filter_stack: where_clause_stack,
-        //     }),
-        //   );
-        //   where_clause_stack = where_clause_stack.slice(
-        //     where_clause_stack.length - 1,
-        //     where_clause_stack.length,
-        //   );
-        // }
-        if (type !== 'operator') {
-          throw new Error(
-            'Invalid Advance Filter. Please add an Operator [And | OR] at the end of the filter list',
-          );
-        }
+        if (where_clause_queue.length > 1) where_clause_queue.shift();
+        _filter_queue = [
+          // dummy
+          {
+            type: 'criteria',
+            field: '',
+            operator: '',
+          },
+        ];
+        dz_filter_queue = [
+          // dummy
+          {
+            type: 'criteria',
+            field: '',
+            operator: '',
+          },
+        ];
       }
     });
-    return where_clause_stack;
+    return where_clause_queue;
   }
 }

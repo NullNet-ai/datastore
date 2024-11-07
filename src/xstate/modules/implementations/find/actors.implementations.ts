@@ -63,7 +63,7 @@ export class FindActorsImplementations {
 
       if (offset) {
         _db = _db.offset(offset);
-      } 
+      }
 
       if (limit) {
         _db = _db.limit(limit);
