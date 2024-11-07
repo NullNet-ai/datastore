@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Global, Logger, Module } from '@nestjs/common';
 import {
   VerifyActionsImplementations,
   VerifyActorsImplementations,
@@ -11,6 +11,7 @@ const providers = [
   VerifyGuardsImplementations,
   Logger,
 ];
+@Global()
 @Module({
   providers,
   exports: providers,

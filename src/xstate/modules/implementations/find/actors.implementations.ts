@@ -4,18 +4,23 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
-import { asc, desc, eq } from 'drizzle-orm';
-import { pick } from 'lodash';
+import { asc, desc } from 'drizzle-orm';
+import { VerifyActorsImplementations } from '../verify';
+// import { pick } from 'lodash';
 @Injectable()
 export class FindActorsImplementations {
   private db;
-  constructor(private readonly drizzleService: DrizzleService) {
+  constructor(
+    private readonly drizzleService: DrizzleService,
+    private readonly verifyActorImplementations: VerifyActorsImplementations,
+  ) {
     this.db = this.drizzleService.getClient();
   }
   /**
    * Implementation of actors for the find machine.
    */
   public readonly actors: IActors = {
+    verify: this.verifyActorImplementations.actors.verify,
     /**
      * Sample step actor implementation.
      * @param input - The input object containing the context.
@@ -33,8 +38,16 @@ export class FindActorsImplementations {
           },
         });
 
-      const [_res, _req] = context?.controller_args;
-      const { table } = _req.params;
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+      const [_res, _req] = controller_args;
+      const { params, body } = _req;
+      const { table } = params;
+
+      if (body?.organization_id) {
+        body.organization_id = organization_id;
+      }
+
       const {
         order_direction = 'asc',
         order_by = 'id',
@@ -42,28 +55,19 @@ export class FindActorsImplementations {
         offset = 0,
         pluck = ['id'],
         advance_filters = [],
-        logical_operator: outer_logic_operator = 'AND',
       } = _req.body;
       const _pluck = pluck;
-      // add tombstone to pluck if not already present
-      _pluck.push('tombstone');
-
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db.select(selections).from(table_schema);
 
-      if (advance_filters.length > 0) {
-        _db = Utility.sqliteFilterAnalyzer(
-          _db,
-          table_schema,
-          outer_logic_operator,
-          advance_filters,
-        );
-      } else {
-        // fetched only non-tombstoned records
-        _db = _db.where(eq(table_schema.tombstone, 0));
-      }
+      _db = Utility.sqliteFilterAnalyzer(
+        _db,
+        table_schema,
+        advance_filters,
+        organization_id,
+      );
 
       if (order_direction && order_by) {
         _db = _db.orderBy(
@@ -82,12 +86,6 @@ export class FindActorsImplementations {
       }
 
       let result = await _db;
-
-      if (advance_filters.length > 0) {
-        result = result
-          .filter((item) => item.tombstone === 0)
-          .map((item) => pick(item, pluck));
-      }
 
       if (!result || !result.length) {
         throw new NotFoundException({

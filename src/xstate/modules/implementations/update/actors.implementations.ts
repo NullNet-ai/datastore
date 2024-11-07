@@ -5,13 +5,18 @@ import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from 'src/utils/utility.service';
 import { SyncService } from '@dna-platform/crdt-lww';
 import { pick } from 'lodash';
+import { VerifyActorsImplementations } from '../verify';
 @Injectable()
 export class UpdateActorsImplementations {
-  constructor(private readonly syncService: SyncService) {}
+  constructor(
+    private readonly syncService: SyncService,
+    private readonly verifyActorImplementations: VerifyActorsImplementations,
+  ) {}
   /**
    * Implementation of actors for the update machine.
    */
   public readonly actors: IActors = {
+    verify: this.verifyActorImplementations.actors.verify,
     update: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)
@@ -23,10 +28,18 @@ export class UpdateActorsImplementations {
             data: [],
           },
         });
-      const [_res, _req] = context?.controller_args;
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+      const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table, id } = params;
       const { pluck = 'id' } = query;
+
+      if (body?.organization_id) {
+        body.organization_id = organization_id;
+        body.updated_by = responsible_account.contact.id;
+      }
+
       const { schema } = Utility.checkCreateSchema(
         table,
         undefined as any,
