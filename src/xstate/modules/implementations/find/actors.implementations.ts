@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
-import { EOperator, IActors } from '../../schemas/find/find.schema';
+import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
 import { asc, desc } from 'drizzle-orm';
@@ -61,15 +61,13 @@ export class FindActorsImplementations {
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db.select(selections).from(table_schema);
-      // add filter by organization id from token
-      advance_filters.push({
-        type: 'criteria',
-        field: 'organization_id',
-        operator: EOperator.EQUAL,
-        values: [organization_id],
-      });
 
-      _db = Utility.sqliteFilterAnalyzer(_db, table_schema, advance_filters);
+      _db = Utility.sqliteFilterAnalyzer(
+        _db,
+        table_schema,
+        advance_filters,
+        organization_id,
+      );
 
       if (order_direction && order_by) {
         _db = _db.orderBy(

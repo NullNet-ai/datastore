@@ -151,11 +151,13 @@ export class Utility {
     db,
     table_schema,
     _advance_filters: IAdvanceFilters[],
+    organization_id,
   ) {
     return db.where(
       and(
         eq(table_schema['tombstone'], 0),
         isNotNull(table_schema['organization_id']),
+        eq(table_schema['organization_id'], organization_id),
         ...Utility.constructFilters(_advance_filters, table_schema),
       ),
     );
