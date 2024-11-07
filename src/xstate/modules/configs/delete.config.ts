@@ -59,8 +59,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'deleteEntry',
-        initial: 'get',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'get',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           get: {
             invoke: {
               id: 'get',

@@ -59,8 +59,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'updateEntry',
-        initial: 'update',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'update',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           update: {
             invoke: {
               id: 'update',

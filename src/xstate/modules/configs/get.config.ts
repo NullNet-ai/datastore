@@ -1,4 +1,3 @@
-
 import {
   InternalMachineImplementations,
   StateMachineTypes,
@@ -60,8 +59,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'getEntry',
-        initial: 'get',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'get',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           get: {
             invoke: {
               id: 'get',

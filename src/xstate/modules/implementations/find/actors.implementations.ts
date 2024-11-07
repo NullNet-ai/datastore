@@ -5,17 +5,22 @@ import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
 import { asc, desc } from 'drizzle-orm';
+import { VerifyActorsImplementations } from '../verify';
 // import { pick } from 'lodash';
 @Injectable()
 export class FindActorsImplementations {
   private db;
-  constructor(private readonly drizzleService: DrizzleService) {
+  constructor(
+    private readonly drizzleService: DrizzleService,
+    private readonly verifyActorImplementations: VerifyActorsImplementations,
+  ) {
     this.db = this.drizzleService.getClient();
   }
   /**
    * Implementation of actors for the find machine.
    */
   public readonly actors: IActors = {
+    verify: this.verifyActorImplementations.actors.verify,
     /**
      * Sample step actor implementation.
      * @param input - The input object containing the context.
@@ -33,8 +38,16 @@ export class FindActorsImplementations {
           },
         });
 
-      const [_res, _req] = context?.controller_args;
-      const { table } = _req.params;
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+      const [_res, _req] = controller_args;
+      const { params, body } = _req;
+      const { table } = params;
+
+      if (body?.organization_id) {
+        body.organization_id = organization_id;
+      }
+
       const {
         order_direction = 'asc',
         order_by = 'id',

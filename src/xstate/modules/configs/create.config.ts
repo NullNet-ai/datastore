@@ -59,8 +59,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'createEntry',
-        initial: 'create',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'create',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           create: {
             invoke: {
               id: 'create',

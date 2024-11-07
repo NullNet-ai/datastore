@@ -67,6 +67,7 @@ export const config = (
               src: 'verify',
               input: ({ context }) => ({ context }),
               onDone: {
+                actions: ['assignResponsibleAccount'],
                 target: 'success',
               },
               onError: {

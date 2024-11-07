@@ -5,17 +5,22 @@ import { IActors } from '../../schemas/get/get.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from 'src/utils/utility.service';
 import { eq, and } from 'drizzle-orm';
+import { VerifyActorsImplementations } from '../verify';
 
 @Injectable()
 export class GetActorsImplementations {
   private db;
-  constructor(private readonly drizzleService: DrizzleService) {
+  constructor(
+    private readonly drizzleService: DrizzleService,
+    private readonly verifyActorImplementations: VerifyActorsImplementations,
+  ) {
     this.db = this.drizzleService.getClient();
   }
   /**
    * Implementation of actors for the get machine.
    */
   public readonly actors: IActors = {
+    verify: this.verifyActorImplementations.actors.verify,
     /**
      * Sample step actor implementation.
      * @param input - The input object containing the context.
@@ -33,10 +38,17 @@ export class GetActorsImplementations {
           },
         });
 
-      const [_res, _req] = context?.controller_args;
-      const { table, id } = _req.params;
-      const { pluck = '' } = _req.query;
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+      const [_res, _req] = controller_args;
+      const { params, body, query } = _req;
+      const { table, id } = params;
 
+      if (body?.organization_id) {
+        body.organization_id = organization_id;
+      }
+
+      const { pluck = '' } = query;
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(
         table,
