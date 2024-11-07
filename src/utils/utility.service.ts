@@ -229,30 +229,31 @@ export class Utility {
               table_schema,
               field,
               values: filter.values,
-              filter_stack: filter_stack,
+              filter_stack: where_clause_stack.concat(filter_stack),
             }),
           );
+          if (where_clause_stack.length > 1) where_clause_stack.shift();
         }
         filter_stack = [];
       }
 
       // last iteration
       if (index === advance_filters.length - 1) {
-        if (!filter_stack.length) {
-          where_clause_stack.push(
-            Utility.evaluateFilter({
-              operator,
-              table_schema,
-              field,
-              values: filter.values,
-              filter_stack: where_clause_stack,
-            }),
-          );
-          where_clause_stack = where_clause_stack.slice(
-            where_clause_stack.length - 1,
-            where_clause_stack.length,
-          );
-        }
+        // if (!filter_stack.length) {
+        //   where_clause_stack.push(
+        //     Utility.evaluateFilter({
+        //       operator,
+        //       table_schema,
+        //       field,
+        //       values: filter.values,
+        //       filter_stack: where_clause_stack,
+        //     }),
+        //   );
+        //   where_clause_stack = where_clause_stack.slice(
+        //     where_clause_stack.length - 1,
+        //     where_clause_stack.length,
+        //   );
+        // }
         if (type !== 'operator') {
           throw new Error(
             'Invalid Advance Filter. Please add an Operator [And | OR] at the end of the filter list',
