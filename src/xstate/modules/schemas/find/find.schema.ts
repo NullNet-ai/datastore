@@ -52,6 +52,8 @@ export enum EOperator {
   IS_NOT_NULL = 'is_not_null',
   IS_BETWEEN = 'is_between',
   IS_NOT_BETWEEN = 'is_not_between',
+  AND = 'and',
+  OR = 'or',
 }
 
 export enum EOrderDirection {
@@ -103,6 +105,10 @@ export interface IAdvanceFilters<f = string> {
   values?: string[] | number[] | boolean[];
   logical_operator?: 'AND' | 'OR';
   type: 'criteria' | 'operator';
+}
+export interface IWhereClauses {
+  and: Array<IAdvanceFilters>;
+  or: Array<IAdvanceFilters>;
 }
 
 export interface IOrder<fs = Record<string, any>> {

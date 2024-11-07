@@ -11,6 +11,9 @@ export class StoreMutationDriver {
 
   @Machine('delete')
   async delete(_res: Response, _req: Request) {}
+
+  @Machine('verify')
+  async verify(_res: Response, _req: Request) {}
 }
 
 @Injectable()

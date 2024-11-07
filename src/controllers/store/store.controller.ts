@@ -48,3 +48,12 @@ export class StoreController {
     return this.storeMutation.delete(_res, _req);
   }
 }
+
+@Controller('/api/token')
+export class TokenController {
+  constructor(private storeMutation: StoreMutationDriver) {}
+  @Post('/verify')
+  async create(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeMutation.verify(_res, _req);
+  }
+}

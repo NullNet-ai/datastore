@@ -151,87 +151,112 @@ export class Utility {
     table_schema,
     advance_filters: IAdvanceFilters[],
   ) {
-    let _db = db;
-    let where_classes: any = [];
-
-    advance_filters.forEach((filters: IAdvanceFilters) => {
-      const { field, operator, values = [], type = 'criteria' } = filters;
-      // AB AND C
-      switch (operator) {
-        case EOperator.EQUAL:
-          where_classes.push(eq(table_schema[field], values[0]));
-          break;
-        case EOperator.NOT_EQUAL:
-          where_classes.push(ne(table_schema[field], values[0]));
-          break;
-        case EOperator.GREATER_THAN:
-          where_classes.push(gt(table_schema[field], values[0]));
-          break;
-        case EOperator.GREATER_THAN_OR_EQUAL:
-          where_classes.push(gte(table_schema[field], values[0]));
-          break;
-        case EOperator.LESS_THAN:
-          where_classes.push(lt(table_schema[field], values[0]));
-          break;
-        case EOperator.LESS_THAN_OR_EQUAL:
-          where_classes.push(lte(table_schema[field], values[0]));
-          break;
-        case EOperator.IS_NULL:
-          where_classes.push(isNull(table_schema[field]));
-          break;
-        case EOperator.IS_NOT_NULL:
-          where_classes.push(isNotNull(table_schema[field]));
-          break;
-        case EOperator.CONTAINS:
-          where_classes.push(inArray(table_schema[field], values));
-          break;
-        case EOperator.NOT_CONTAINS:
-          where_classes.push(notInArray(table_schema[field], values));
-          break;
-        case EOperator.IS_BETWEEN:
-          where_classes.push(
-            between(table_schema[field], values[0], values[1]),
-          );
-          break;
-        case EOperator.IS_NOT_BETWEEN:
-          where_classes.push(
-            notBetween(table_schema[field], values[0], values[1]),
-          );
-          break;
-        case EOperator.IS_EMPTY:
-          where_classes.push(eq(table_schema[field], ''));
-          break;
-        case EOperator.IS_NOT_EMPTY:
-          where_classes.push(ne(table_schema[field], ''));
-          break;
-        default:
-          throw new BadRequestException('Invalid Operator');
-      }
-    });
-    
-    // 1 - 5
-    return _db.where(
-      // ------------------------------------------------------
-      // A AND B OR C => (A AND B) OR C
+    return db.where(
       and(
         eq(table_schema['tombstone'], 0),
         isNull(table_schema['organization_id']),
-        or(
-          // builder
-          // TODO: - implement the type operator as one of the filter
-          ...where_classes,
-          // and(
-          //   eq(table_schema['sample_text'], 'testing 3'),
-          //   eq(table_schema['status'], 'Pending'),
-          // ),
-          // and(
-          //   or(
-          //     eq(table_schema['sample_text'], 'testing 3'),
-          //     eq(table_schema['status'], 'Active'),
-          //   ),
-          // ),
-        ),
+        ...Utility.constructFilters(advance_filters, table_schema),
       ),
     );
+  }
+
+  public static evaluateFilter({
+    operator,
+    table_schema,
+    field,
+    values,
+    filter_stack,
+  }) {
+    switch (operator) {
+      case EOperator.EQUAL:
+        return eq(table_schema[field], values[0]);
+      case EOperator.NOT_EQUAL:
+        return ne(table_schema[field], values[0]);
+      case EOperator.GREATER_THAN:
+        return gt(table_schema[field], values[0]);
+      case EOperator.GREATER_THAN_OR_EQUAL:
+        return gte(table_schema[field], values[0]);
+      case EOperator.LESS_THAN:
+        return lt(table_schema[field], values[0]);
+      case EOperator.LESS_THAN_OR_EQUAL:
+        return lte(table_schema[field], values[0]);
+      case EOperator.IS_NULL:
+        return isNull(table_schema[field]);
+      case EOperator.IS_NOT_NULL:
+        return isNotNull(table_schema[field]);
+      case EOperator.CONTAINS:
+        return inArray(table_schema[field], values);
+      case EOperator.NOT_CONTAINS:
+        return notInArray(table_schema[field], values);
+      case EOperator.IS_BETWEEN:
+        return between(table_schema[field], values[0], values[1]);
+      case EOperator.IS_NOT_BETWEEN:
+        return notBetween(table_schema[field], values[0], values[1]);
+      case EOperator.IS_EMPTY:
+        return eq(table_schema[field], '');
+      case EOperator.IS_NOT_EMPTY:
+        return ne(table_schema[field], '');
+      case EOperator.AND:
+        return and(...filter_stack);
+      case EOperator.OR:
+        return or(...filter_stack);
+      default:
+        return null;
+    }
+  }
+
+  public static constructFilters(advance_filters, table_schema): any[] {
+    let filter_stack: any[] = [];
+    let where_clause_stack: any[] = [];
+
+    advance_filters.forEach((filter, index: number) => {
+      const { operator, type = 'criteria', field = '' } = filter;
+      if (type === 'criteria') {
+        filter_stack.push(
+          Utility.evaluateFilter({
+            operator,
+            table_schema,
+            field,
+            values: filter.values,
+            filter_stack,
+          }),
+        );
+      } else {
+        if (filter_stack.length > 0) {
+          where_clause_stack.push(
+            Utility.evaluateFilter({
+              operator,
+              table_schema,
+              field,
+              values: filter.values,
+              filter_stack: where_clause_stack.concat(filter_stack),
+            }),
+          );
+          if (where_clause_stack?.length > 1) where_clause_stack.shift();
+        }
+
+        filter_stack = [];
+      }
+
+      // last iteration
+      if (index === advance_filters.length - 1) {
+        where_clause_stack.push(
+          Utility.evaluateFilter({
+            operator,
+            table_schema,
+            field,
+            values: filter.values,
+            filter_stack: [where_clause_stack[0]],
+          }),
+        );
+        where_clause_stack.shift();
+        if (type !== 'operator') {
+          throw new Error(
+            'Invalid Advance Filter. Please add an Operator [And | OR] at the end of the filter list',
+          );
+        }
+      }
+    });
+    return where_clause_stack;
   }
 }

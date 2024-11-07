@@ -4,7 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { Utility } from '../../../../utils/utility.service';
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc } from 'drizzle-orm';
 // import { pick } from 'lodash';
 @Injectable()
 export class FindActorsImplementations {
@@ -51,9 +51,6 @@ export class FindActorsImplementations {
 
       if (advance_filters.length > 0) {
         _db = Utility.sqliteFilterAnalyzer(_db, table_schema, advance_filters);
-      } else {
-        // fetched only non-tombstoned records
-        _db = _db.where(eq(table_schema.tombstone, 0));
       }
 
       if (order_direction && order_by) {
@@ -66,7 +63,7 @@ export class FindActorsImplementations {
 
       if (offset) {
         _db = _db.offset(offset);
-      }
+      } 
 
       if (limit) {
         _db = _db.limit(limit);
