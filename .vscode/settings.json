@@ -7,7 +7,7 @@
     "package-lock.json": true,
     "dist": true,
     ".eslintrc.js": true,
-    ".gitignore": true,
+    ".gitignore": false,
     ".npmrc": true,
     ".npmignore": true,
     ".prettierrc": true,
@@ -19,11 +19,7 @@
     "tailwind.config.js": true,
     "src/views": true,
     "src/xstate": false,
-<<<<<<< HEAD
-    "src/providers": false,
-=======
     "src/providers": true,
->>>>>>> 0f3b891241f4a3ecd60552bbf1e1928b2395fe6c
     "drizzle.config.ts": true,
     "src/schema/crdt": true,
     "src/schema/index.ts": true
