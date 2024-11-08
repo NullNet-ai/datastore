@@ -118,7 +118,7 @@ export class FileController {
     return this.storeMutation.uploads(_res, _req, _files);
   }
 
-  @Post('/:id/download')
+  @Get('/:id/download')
   async download(@Res() _res: Response, @Req() _req: Request) {
     return this.storeMutation.download(_res, _req);
   }
