@@ -44,7 +44,11 @@ async function bootstrap() {
   app.useLogger(logger);
   app.useGlobalFilters(new HttpExceptionFilter());
   await app.listen(+(PORT || '5001')).then(() => {
-    logger.log(`Application is listening at ${PORT} [${NODE_ENV}]`);
+    logger.log(
+      `Application is listening at ${PORT} [${NODE_ENV}]${
+        DEBUG === 'true' ? ' with debugger ON' : ''
+      }`,
+    );
   });
 }
 

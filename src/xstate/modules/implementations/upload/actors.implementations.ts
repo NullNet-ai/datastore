@@ -8,11 +8,12 @@ import * as Minio from 'minio';
 import * as path from 'path';
 import * as https from 'https';
 import * as fs from 'fs';
+// import storage_policy from './storage_policy';
 const {
   STORAGE_ENDPOINT,
   STORAGE_ACCESS_KEY,
   STORAGE_SECRET_KEY,
-  NODE_ENV,
+  NODE_ENV = 'local',
   STORAGE_BUCKET_NAME = 'test',
   STORAGE_REGION = 'us-east-1',
   STORAGE_PORT = '9000',
@@ -41,7 +42,7 @@ export class UploadActorsImplementations {
     ) {
       throw new Error('Upload credentials not found');
     }
-
+    if (['local'].includes(NODE_ENV)) return;
     try {
       this.client = new Minio.Client({
         endPoint: STORAGE_ENDPOINT,
@@ -73,6 +74,13 @@ export class UploadActorsImplementations {
         await this.client.makeBucket(STORAGE_BUCKET_NAME, STORAGE_REGION, {
           // ObjectLocking: true,
         });
+
+        // Set the bucket policy of `my-bucketname`
+        // await this.client.setBucketPolicy(
+        //   STORAGE_BUCKET_NAME,
+        //   JSON.stringify(storage_policy(STORAGE_BUCKET_NAME)),
+        // );
+
         this.logger.log(
           `Bucket ${STORAGE_BUCKET_NAME} created successfully in ${STORAGE_REGION}.`,
         );
@@ -115,14 +123,23 @@ export class UploadActorsImplementations {
       };
 
       const filepath = path.join(process.cwd(), _file.path);
-      const uploaded = await this.client
-        .fPutObject(STORAGE_BUCKET_NAME, _file.originalname, filepath, metadata)
-        .catch((err) => {
-          this.logger.error(`[ERROR][fPutObject]: ${err.message}`);
-          return null;
-        });
+      let uploaded_from_remote;
+      if (!['local'].includes(NODE_ENV)) {
+        uploaded_from_remote = await this.client
+          .fPutObject(
+            STORAGE_BUCKET_NAME,
+            _file.originalname,
+            filepath,
+            metadata,
+          )
+          .catch((err) => {
+            this.logger.error(`[ERROR][fPutObject]: ${err.message}`);
+            return null;
+          });
 
-      this.logger.debug(`[UPLOADED]: ${JSON.stringify(uploaded)}`);
+        this.logger.log(`[UPLOADED]: ${JSON.stringify(uploaded_from_remote)}`);
+      }
+
       // TODO: create a file copy of the record in the database that has uploaded_by key
       return Promise.resolve({
         payload: {
@@ -133,6 +150,8 @@ export class UploadActorsImplementations {
             {
               ..._file,
               uploaded_by: responsible_account.contact.id,
+              etag: uploaded_from_remote?.etag,
+              versionId: uploaded_from_remote?.versionId,
             },
           ],
         },
