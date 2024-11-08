@@ -8,7 +8,7 @@ import { UploadActorsImplementations } from '../upload';
 import * as Minio from 'minio';
 import * as fs from 'fs';
 import * as path from 'path';
-const { UPLOAD_BUCKET_NAME = 'test', NODE_ENV = 'local' } = process.env;
+const { NODE_ENV = 'local' } = process.env;
 @Injectable()
 export class DownloadActorsImplementations {
   private client: Minio.Client;
@@ -67,7 +67,7 @@ export class DownloadActorsImplementations {
 
         if (!merged_chunked) {
           const dataStream = await this.client.getObject(
-            UPLOAD_BUCKET_NAME,
+            this.file.organization_id,
             _file.originalname,
           );
           merged_chunked = await new Promise((resolve, reject) => {
