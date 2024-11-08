@@ -32,7 +32,7 @@ export class GetActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: 'sampleStep fail Message',
+            message: `No controller args found`,
             count: 0,
             data: [],
           },
@@ -42,13 +42,13 @@ export class GetActorsImplementations {
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
-      const { table, id } = params;
+      const { table = 'files', id } = params;
 
       if (body?.organization_id) {
         body.organization_id = organization_id;
       }
 
-      const { pluck = '' } = query;
+      const { pluck = 'id' } = query;
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(
         table,

@@ -25,7 +25,7 @@ export class VerifyActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: `Invalid controller args`,
+            message: `No controller args found`,
             count: 0,
             data: [],
           },

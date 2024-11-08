@@ -3,11 +3,17 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/upload/upload.schema';
 import { CreateActorsImplementations } from '../create/actors.implementations';
+import { VerifyActorsImplementations } from '../verify';
 @Injectable()
 export class UploadActorsImplementations {
   constructor(
     private readonly createActorsImplementations: CreateActorsImplementations,
+    private readonly verifyActorImplementations: VerifyActorsImplementations,
   ) {}
+
+  async onModuleInit() {
+    
+  }
   /**
    * Implementation of actors for the upload machine.
    */
@@ -17,19 +23,23 @@ export class UploadActorsImplementations {
      * @param input - The input object containing the context.
      * @returns A promise that resolves to an IResponse object.
      */
+    verify: this.verifyActorImplementations.actors.verify,
     create: this.createActorsImplementations.actors.create,
     upload: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
+
       if (!context?.controller_args)
         return Promise.reject({
           payload: {
             success: false,
-            message: `No file uploaded`,
+            message: `No controller args found`,
             count: 0,
             data: [],
           },
         });
       const [_res, _req, _file] = context?.controller_args;
+      
+      // Do some upload logic here
       return Promise.resolve({
         payload: {
           success: true,

@@ -31,7 +31,7 @@ export class DeleteActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: `Failed to get controller args in delete actor`,
+            message: `No controller args found`,
             count: 0,
             data: [],
           },

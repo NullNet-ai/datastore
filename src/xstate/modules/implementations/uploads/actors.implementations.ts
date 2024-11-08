@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
@@ -21,7 +20,7 @@ export class UploadsActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: 'sampleStep fail Message',
+            message: `No controller args found`,
             count: 0,
             data: [],
           },

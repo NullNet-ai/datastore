@@ -11,7 +11,7 @@ export const table = sqliteTable(
   filename,
   {
     ...system_fields,
-    fieldName: text(),
+    fieldname: text(),
     originalname: text(),
     encoding: text(),
     mimetype: text(),

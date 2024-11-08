@@ -38,7 +38,6 @@ export const config = (
     guards: implementations?.guards as IGuards,
   }).createMachine({
     id: 'upload',
-
     initial: 'waiting',
     context: {
       ...context,
@@ -59,8 +58,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'uploadEntry',
-        initial: 'upload',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'upload',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           upload: {
             invoke: {
               id: 'upload',

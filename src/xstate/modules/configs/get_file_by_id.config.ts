@@ -1,4 +1,3 @@
-
 import {
   InternalMachineImplementations,
   StateMachineTypes,
@@ -60,8 +59,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'getFileByIdEntry',
-        initial: 'getFileById',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'getFileById',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           getFileById: {
             invoke: {
               id: 'getFileById',

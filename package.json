@@ -50,6 +50,7 @@
     "jsonwebtoken": "^9.0.2",
     "lodash.pick": "^4.4.0",
     "lowdb": "1.0.0",
+    "minio": "^8.0.2",
     "murmurhash": "^2.0.1",
     "nest-winston": "^1.9.4",
     "node-mocks-http": "^1.14.1",
