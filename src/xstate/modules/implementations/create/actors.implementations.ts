@@ -36,11 +36,11 @@ export class CreateActorsImplementations {
       const { params, body, query } = _req;
       const { table } = params;
       const { pluck = 'id' } = query;
-      if (body?.organization_id) {
+      if (!body?.organization_id) {
         body.organization_id = organization_id;
-        body.created_by = responsible_account.contact.id;
       }
 
+      body.created_by = responsible_account.contact.id;
       const { schema } = Utility.checkCreateSchema(
         table,
         undefined as any,

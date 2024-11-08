@@ -32,9 +32,11 @@ export class VerifyActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-      const { authorization } = _req.headers;
+      const { query, headers } = _req;
+      const { authorization } = headers;
+      const { t = '' } = query;
       const result = await this.authService
-        .verify(authorization?.replace('Bearer ', ''))
+        .verify(t || authorization?.replace('Bearer ', ''))
         .catch((err) => {
           this.logger.debug(err.message);
           throw new BadRequestException(

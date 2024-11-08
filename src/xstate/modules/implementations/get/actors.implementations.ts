@@ -41,13 +41,8 @@ export class GetActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body, query } = _req;
+      const { params, query } = _req;
       const { table = 'files', id } = params;
-
-      if (body?.organization_id) {
-        body.organization_id = organization_id;
-      }
-
       const { pluck = 'id' } = query;
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(

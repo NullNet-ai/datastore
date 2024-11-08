@@ -1,69 +1,85 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/upload/upload.schema';
 import { CreateActorsImplementations } from '../create/actors.implementations';
 import { VerifyActorsImplementations } from '../verify';
-// import * as Minio from 'minio';
-
+import * as Minio from 'minio';
+import * as path from 'path';
+import * as https from 'https';
+import * as fs from 'fs';
 const {
-  UPLOAD_ENDPOINT,
-  UPLOAD_ACCESS_KEY,
-  UPLOAD_SECRET_KEY,
-  // NODE_ENV,
-  UPLOAD_BUCKET_NAME = 'test',
-  UPLOAD_REGION = 'us-east-1',
-  UPLOAD_PORT = '9000',
+  STORAGE_ENDPOINT,
+  STORAGE_ACCESS_KEY,
+  STORAGE_SECRET_KEY,
+  NODE_ENV,
+  STORAGE_BUCKET_NAME = 'test',
+  STORAGE_REGION = 'us-east-1',
+  STORAGE_PORT = '9000',
+  STORAGE_TIMEOUT = '10000',
+  STORAGE_TRANSPORT_KEEPALIVE,
+  SSL_CA = '',
+  SSL_CERT = '',
+  SSL_SECRET_KEY = '',
 } = process.env;
 @Injectable()
 export class UploadActorsImplementations {
-  // private client: Minio.Client;
-  // File to upload
-  sourceFile = '/tmp/test-file.txt';
-
-  // Destination object name
-  destinationObject = 'my-test-file.txt';
+  public client: Minio.Client;
   constructor(
     private readonly createActorsImplementations: CreateActorsImplementations,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
+    private readonly logger: Logger,
   ) {}
 
   async onModuleInit() {
     if (
-      !UPLOAD_ENDPOINT ||
-      !UPLOAD_ACCESS_KEY ||
-      !UPLOAD_SECRET_KEY ||
-      !UPLOAD_BUCKET_NAME ||
-      !UPLOAD_REGION
+      !STORAGE_ENDPOINT ||
+      !STORAGE_ACCESS_KEY ||
+      !STORAGE_SECRET_KEY ||
+      !STORAGE_BUCKET_NAME ||
+      !STORAGE_REGION
     ) {
       throw new Error('Upload credentials not found');
     }
-    console.log('UPLOAD_ENDPOINT', UPLOAD_ENDPOINT, UPLOAD_PORT);
-    // this.client = new Minio.Client({
-    //   endPoint: UPLOAD_ENDPOINT,
-    //   port: +UPLOAD_PORT,
-    //   useSSL: NODE_ENV === 'local',
-    //   accessKey: UPLOAD_ACCESS_KEY,
-    //   secretKey: UPLOAD_SECRET_KEY,
-    //   // pathStyle: true,
-    //   // region: UPLOAD_REGION,
-    // });
 
-    // // Check if the bucket exists
-    // // If it doesn't, create it
-    // const exists = await this.client.bucketExists(UPLOAD_BUCKET_NAME);
-    // if (exists) {
-    //   console.log(
-    //     `Bucket ${UPLOAD_BUCKET_NAME} already exists in ${UPLOAD_REGION}.`,
-    //   );
-    // } else {
-    //   await this.client.makeBucket(UPLOAD_BUCKET_NAME, UPLOAD_REGION, {
-    //     // ObjectLocking: true,
-    //   });
-    //   console.log(
-    //     `Bucket ${UPLOAD_BUCKET_NAME} created successfully in ${UPLOAD_REGION}.`,
-    //   );
-    // }
+    try {
+      this.client = new Minio.Client({
+        endPoint: STORAGE_ENDPOINT,
+        port: +STORAGE_PORT,
+        useSSL: NODE_ENV === 'production',
+        accessKey: STORAGE_ACCESS_KEY,
+        secretKey: STORAGE_SECRET_KEY,
+        ...(NODE_ENV === 'production' && {
+          transportAgent: new https.Agent({
+            timeout: +STORAGE_TIMEOUT,
+            ca: fs.readFileSync(SSL_CA),
+            cert: fs.readFileSync(SSL_CERT),
+            key: fs.readFileSync(SSL_SECRET_KEY),
+            keepAlive: STORAGE_TRANSPORT_KEEPALIVE === 'true',
+          }),
+        }),
+        // pathStyle: true,
+        // region: STORAGE_REGION,
+      });
+
+      // Check if the bucket exists
+      // If it doesn't, create it
+      const exists = await this.client.bucketExists(STORAGE_BUCKET_NAME);
+      if (exists) {
+        this.logger.warn(
+          `Bucket ${STORAGE_BUCKET_NAME} already exists in ${STORAGE_REGION}.`,
+        );
+      } else {
+        await this.client.makeBucket(STORAGE_BUCKET_NAME, STORAGE_REGION, {
+          // ObjectLocking: true,
+        });
+        this.logger.log(
+          `Bucket ${STORAGE_BUCKET_NAME} created successfully in ${STORAGE_REGION}.`,
+        );
+      }
+    } catch (e) {
+      this.logger.error(`[ERROR][MinioClient]:`, e);
+    }
   }
   /**
    * Implementation of actors for the upload machine.
@@ -88,27 +104,37 @@ export class UploadActorsImplementations {
             data: [],
           },
         });
-      const [_res, _req, _file] = context?.controller_args;
-      console.log('@_file', _file);
-      // Do some upload logic here
-      // Set the object metadata
-      // const metaData = {};
-      // // Upload the file with fPutObject
-      // // If an object with the same name exists,
-      // // it is updated with new data
-      // await this.client.fPutObject(
-      //   UPLOAD_BUCKET_NAME,
-      //   _file.filename,
-      //   _req.url,
-      //   metaData,
-      // );
 
+      const { controller_args, responsible_account } = context;
+      const [_res, _req, _file] = controller_args;
+      // Set the object metadata
+      const metadata = {
+        'Content-Type': 'text/plain',
+        'X-Amz-Meta-Testing': 1234,
+        example: 5678,
+      };
+
+      const filepath = path.join(process.cwd(), _file.path);
+      const uploaded = await this.client
+        .fPutObject(STORAGE_BUCKET_NAME, _file.originalname, filepath, metadata)
+        .catch((err) => {
+          this.logger.error(`[ERROR][fPutObject]: ${err.message}`);
+          return null;
+        });
+
+      this.logger.debug(`[UPLOADED]: ${JSON.stringify(uploaded)}`);
+      // TODO: create a file copy of the record in the database that has uploaded_by key
       return Promise.resolve({
         payload: {
           success: true,
-          message: `File uploaded successfully to ${_req.url}`,
+          message: `File uploaded successfully to ${_req.url}.`,
           count: 1,
-          data: [_file],
+          data: [
+            {
+              ..._file,
+              uploaded_by: responsible_account.contact.id,
+            },
+          ],
         },
       });
     }),

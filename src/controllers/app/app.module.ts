@@ -8,8 +8,10 @@ import { CoreModule, DriversModule } from '@dna-platform/crdt-lww';
 import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drivers/query/enums';
 import { StoreQueryDriver } from '../../providers/store/store.service';
 import * as schema from '../../schema';
+import { AppViewModule } from 'src/views/app.view.module';
 @Module({
   imports: [
+    AppViewModule,
     MachineStoreModule,
     CoreModule.register({
       imports: [

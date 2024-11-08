@@ -19,6 +19,8 @@ export const table = sqliteTable(
     filename: text(),
     path: text(),
     size: integer(),
+    uploaded_by: text(),
+    downloaded_by: text(),
   },
   config,
 );

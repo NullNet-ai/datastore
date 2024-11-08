@@ -17,7 +17,7 @@
     "yarn.lock": true,
     "static": true,
     "tailwind.config.js": true,
-    "src/views": true,
+    "src/views": false,
     "src/xstate": false,
     "src/providers": true,
     "drizzle.config.ts": true,

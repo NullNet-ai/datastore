@@ -120,6 +120,11 @@ export class FileController {
 
   @Get('/:id/download')
   async download(@Res() _res: Response, @Req() _req: Request) {
+    _req.query = {
+      pluck:
+        'id,organization_id,fieldname,originalname,encoding,mimetype,destination,filename,path,size',
+      ..._req.query,
+    };
     return this.storeMutation.download(_res, _req);
   }
 }

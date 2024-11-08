@@ -1,4 +1,3 @@
-
 import {
   InternalMachineImplementations,
   StateMachineTypes,
@@ -60,13 +59,40 @@ export const config = (
       },
       processingRequest: {
         entry: 'downloadEntry',
-        initial: 'download',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'getFileById',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
+          getFileById: {
+            invoke: {
+              id: 'getFileById',
+              src: 'getFileById',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                target: 'download',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           download: {
             invoke: {
               id: 'download',
               src: 'download',
-              input: ({ context }) => ({ context }),
+              input: ({ context, event }) => ({ context, event }),
               onDone: {
                 target: 'success',
               },
@@ -76,7 +102,7 @@ export const config = (
             },
           },
           success: {
-            entry: ['assignEndTime', 'assignDuration', 'success'],
+            entry: ['assignEndTime', 'assignDuration', 'sendToImageToClient'],
             type: 'final',
           },
           error: {

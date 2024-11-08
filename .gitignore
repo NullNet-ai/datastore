@@ -17,7 +17,7 @@ bun.lockdb
 /drizzle
 /sql
 /test/*.test.ts
-
+/tmp/**/*
 TODO
 
 # Tests
