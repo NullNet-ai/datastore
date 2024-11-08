@@ -6,6 +6,8 @@ import { GetFileByIdActorsImplementations } from '../get_file_by_id';
 import { IActors } from '../../schemas/download/download.schema';
 import { UploadActorsImplementations } from '../upload';
 import * as Minio from 'minio';
+import * as fs from 'fs';
+import * as path from 'path';
 const { UPLOAD_BUCKET_NAME = 'test', NODE_ENV = 'local' } = process.env;
 @Injectable()
 export class DownloadActorsImplementations {
@@ -52,17 +54,30 @@ export class DownloadActorsImplementations {
 
       let merged_chunked;
       if (!['local'].includes(NODE_ENV)) {
-        const dataStream = await this.client.getObject(
-          UPLOAD_BUCKET_NAME,
-          _file.originalname,
-        );
-        merged_chunked = await new Promise((resolve, reject) => {
-          dataStream.on('data', this.onData);
-          dataStream.on('end', () => {
-            resolve(Buffer.concat(this.chunks).toString('base64'));
+        const extention = path.extname(this.file.originalname);
+        const file_name = `${this.file.id}-${organization_id}${extention}`;
+        const temp_file_path = path.join(process.cwd(), 'tmp', file_name);
+        // Check if the file or directory exists synchronously
+        if (fs.existsSync(temp_file_path)) {
+          merged_chunked = {
+            is_temp: true,
+            temp_file_path,
+          };
+        }
+
+        if (!merged_chunked) {
+          const dataStream = await this.client.getObject(
+            UPLOAD_BUCKET_NAME,
+            _file.originalname,
+          );
+          merged_chunked = await new Promise((resolve, reject) => {
+            dataStream.on('data', this.onData);
+            dataStream.on('end', () => {
+              resolve(Buffer.concat(this.chunks).toString('base64'));
+            });
+            dataStream.on('error', reject);
           });
-          dataStream.on('error', reject);
-        });
+        }
       } else {
         // In local environment, we don't have Minio, so we just return the file as is
         merged_chunked = _file;
@@ -91,7 +106,7 @@ export class DownloadActorsImplementations {
   private onData(chunk: any) {
     this.chunks.push(chunk);
     this.size += chunk.length;
-    this.logger.log(
+    this.logger.debug(
       'Data [' +
         this.file.originalname +
         ']: ' +

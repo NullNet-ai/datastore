@@ -35,6 +35,7 @@ export class DownloadActionsImplementations {
         const file_path = path.join(process.cwd(), _file_path);
         const extention = path.extname(originalname);
         const file_name = `${id}-${organization_id}${extention}`;
+
         switch (typeof actual_file) {
           case 'string':
             const img = Buffer.from(actual_file, 'base64');
@@ -56,7 +57,9 @@ export class DownloadActionsImplementations {
               'Content-Type': mimetype,
               'Content-Disposition': `attachment; filename="${file_name}"`,
             });
-            (_res as Response).sendFile(file_path);
+            if (actual_file?.is_temp)
+              (_res as Response).sendFile(actual_file?.temp_file_path);
+            else (_res as Response).sendFile(file_path);
             break;
         }
       },
