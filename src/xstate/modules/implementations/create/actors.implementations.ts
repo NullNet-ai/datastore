@@ -24,23 +24,23 @@ export class CreateActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: `Failed to get controller args in create actor`,
+            message: `No controller args found`,
             count: 0,
             data: [],
           },
         });
-        
+
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table } = params;
       const { pluck = 'id' } = query;
-      if (body?.organization_id) {
+      if (!body?.organization_id) {
         body.organization_id = organization_id;
-        body.created_by = responsible_account.contact.id;
       }
 
+      body.created_by = responsible_account.contact.id;
       const { schema } = Utility.checkCreateSchema(
         table,
         undefined as any,

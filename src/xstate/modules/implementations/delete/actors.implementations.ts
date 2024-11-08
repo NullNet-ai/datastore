@@ -31,7 +31,7 @@ export class DeleteActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: `Failed to get controller args in delete actor`,
+            message: `No controller args found`,
             count: 0,
             data: [],
           },
@@ -45,9 +45,9 @@ export class DeleteActorsImplementations {
 
       if (body?.organization_id) {
         body.organization_id = organization_id;
-        body.deleted_by = responsible_account.contact.id;
       }
-
+      // TODO: update deleted_by to responsible_account.contact.id
+      body.deleted_by = responsible_account.contact.id;
       const result = await this.syncService.delete(table, id);
       return Promise.resolve({
         payload: {

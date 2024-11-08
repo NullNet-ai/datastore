@@ -1,5 +1,9 @@
 import { Module, Provider } from '@nestjs/common';
-import { StoreController, TokenController } from './store.controller';
+import {
+  FileController,
+  StoreController,
+  TokenController,
+} from './store.controller';
 import { machine_providers, MachineModule } from '@dna-platform/common';
 import { XstateModule } from '@dna-platform/common';
 import * as machines from '../../xstate/modules/machines';
@@ -13,26 +17,45 @@ import { CreateImplementationModule } from '../../xstate/modules/implementations
 import { UpdateImplementationModule } from '../../xstate/modules/implementations/update/update.implementation.module';
 import { DeleteImplementationModule } from '../../xstate/modules/implementations/delete/delete.implementation.module';
 import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drivers/query/enums';
-import { VerifyImplementationModule } from 'src/xstate/modules/implementations/verify/verify.implementation.module';
+import { VerifyImplementationModule } from '../../xstate/modules/implementations/verify/verify.implementation.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { DownloadImplementationModule } from '../../xstate/modules/implementations/download/download.implementation.module';
+import { GetFileByIdImplementationModule } from '../../xstate/modules/implementations/get_file_by_id/get_file_by_id.implementation.module';
+import { UploadImplementationModule } from '../../xstate/modules/implementations/upload/upload.implementation.module';
+import { UploadsImplementationModule } from '../../xstate/modules/implementations/uploads/uploads.implementation.module';
 
 const machines_providers = machine_providers([
+  // CRUD
   machines.GetMachine,
   machines.FindMachine,
   machines.CreateMachine,
   machines.UpdateMachine,
   machines.DeleteMachine,
+  // Token
   machines.VerifyMachine,
+  // File
+  machines.DownloadMachine,
+  machines.GetFileByIdMachine,
+  machines.UploadMachine,
+  machines.UploadsMachine,
 ]);
 const additional_providers: Provider[] = [];
 const base_classes = [StoreController];
-const additional_controllers = [TokenController];
+const additional_controllers = [TokenController, FileController];
 const shared_machine_imports = [
+  // CRUD
   GetImplementationModule,
   FindImplementationModule,
   CreateImplementationModule,
   UpdateImplementationModule,
   DeleteImplementationModule,
+  // Token
   VerifyImplementationModule,
+  // File
+  DownloadImplementationModule,
+  GetFileByIdImplementationModule,
+  UploadImplementationModule,
+  UploadsImplementationModule,
 ];
 export const shared_imports = [
   XstateModule.register({
@@ -46,7 +69,14 @@ export const shared_imports = [
   }),
 ];
 @Module({
-  imports: [...shared_imports],
+  imports: [
+    ...shared_imports,
+    MulterModule.registerAsync({
+      useFactory: () => ({
+        dest: process.env.STORAGE_UPLOAD_PATH,
+      }),
+    }),
+  ],
   controllers: [...base_classes, ...additional_controllers],
   providers: [
     ...additional_providers,

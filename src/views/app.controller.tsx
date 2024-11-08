@@ -9,7 +9,10 @@ export class AppController {
   app() {
     return (
       <main class="flex flex-col gap-2 mx-2">
-        <Container title="Views">Hello World</Container>
+        <Container title="Views">
+          Hello World
+          <img src="/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/datastore/upload/1b951babbc6852a3ed97fa76471001cb" />
+        </Container>
       </main>
     );
   }

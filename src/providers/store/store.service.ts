@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Response, Request, Express } from 'express';
 import { Machine } from '@dna-platform/common';
 @Injectable()
 export class StoreMutationDriver {
@@ -14,6 +14,19 @@ export class StoreMutationDriver {
 
   @Machine('verify')
   async verify(_res: Response, _req: Request) {}
+
+  @Machine('upload')
+  async upload(_res: Response, _req: Request, _file: Express.Multer.File) {}
+
+  @Machine('uploads')
+  async uploads(
+    _res: Response,
+    _req: Request,
+    _files: Array<Express.Multer.File>,
+  ) {}
+
+  @Machine('download')
+  async download(_res: Response, _req: Request) {}
 }
 
 @Injectable()
@@ -23,4 +36,7 @@ export class StoreQueryDriver {
 
   @Machine('find')
   async find(_res: Response, _req: Request) {}
+
+  @Machine('getFileById')
+  async getFileById(_res: Response, _req: Request) {}
 }

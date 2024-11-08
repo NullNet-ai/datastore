@@ -1,14 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
-import { IActors } from '../../schemas/get/get.schema';
-import { DrizzleService } from '@dna-platform/crdt-lww';
+import { IActors } from '../../schemas/get_file_by_id/get_file_by_id.schema';
 import { Utility } from 'src/utils/utility.service';
-import { eq, and, isNotNull } from 'drizzle-orm';
+import { DrizzleService } from '@dna-platform/crdt-lww';
 import { VerifyActorsImplementations } from '../verify';
+import { isNotNull, and, eq } from 'drizzle-orm';
 
 @Injectable()
-export class GetActorsImplementations {
+export class GetFileByIdActorsImplementations {
   private db;
   constructor(
     private readonly drizzleService: DrizzleService,
@@ -17,16 +17,11 @@ export class GetActorsImplementations {
     this.db = this.drizzleService.getClient();
   }
   /**
-   * Implementation of actors for the get machine.
+   * Implementation of actors for the get_file_by_id machine.
    */
   public readonly actors: IActors = {
     verify: this.verifyActorImplementations.actors.verify,
-    /**
-     * Sample step actor implementation.
-     * @param input - The input object containing the context.
-     * @returns A promise that resolves to an IResponse object.
-     */
-    get: fromPromise(async ({ input }): Promise<IResponse> => {
+    getFileById: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)
         return Promise.reject({
@@ -40,7 +35,7 @@ export class GetActorsImplementations {
 
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
-      const [_res, _req] = controller_args;
+      const [_res, _req, _file] = controller_args;
       const { params, query } = _req;
       const { table = 'files', id } = params;
       const { pluck = 'id' } = query;
@@ -62,20 +57,11 @@ export class GetActorsImplementations {
           ),
         );
 
-      if (!result || !result.length) {
-        throw new NotFoundException({
-          success: false,
-          message: `No data [${id}] found in ${table}`,
-          count: 0,
-          data: [],
-        });
-      }
-
       return Promise.resolve({
         payload: {
           success: true,
-          message: `Successfully got data [${id}] from ${table}`,
-          count: result.length,
+          message: `Successfully fetched from ${table}`,
+          count: 1,
           data: result,
         },
       });

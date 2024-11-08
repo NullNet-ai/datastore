@@ -23,7 +23,7 @@ export class UpdateActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: `Failed to get controller args in update actor`,
+            message: `No controller args found`,
             count: 0,
             data: [],
           },
@@ -35,11 +35,11 @@ export class UpdateActorsImplementations {
       const { table, id } = params;
       const { pluck = 'id' } = query;
 
-      if (body?.organization_id) {
+      if (!body?.organization_id) {
         body.organization_id = organization_id;
-        body.updated_by = responsible_account.contact.id;
       }
 
+      body.updated_by = responsible_account.contact.id;
       const { schema } = Utility.checkCreateSchema(
         table,
         undefined as any,

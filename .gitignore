@@ -10,13 +10,14 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
-
+upload
+bun.lockdb
 # OS
 .DS_Store
 /drizzle
 /sql
 /test/*.test.ts
-
+/tmp/**/*
 TODO
 
 # Tests
