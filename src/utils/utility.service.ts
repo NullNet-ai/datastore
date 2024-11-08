@@ -212,6 +212,23 @@ export class Utility {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
     let _filter_queue: any[] = [];
+    if (advance_filters.length === 1) {
+      const [{ operator, field, values, type }] = advance_filters;
+      if (type === 'operator') {
+        throw new BadRequestException(
+          `Invalid filter at index 0. Must be a criteria`,
+        );
+      }
+      return [
+        Utility.evaluateFilter({
+          operator,
+          table_schema,
+          field,
+          values,
+          dz_filter_queue: [],
+        }),
+      ];
+    }
 
     advance_filters.forEach((filter, index: number) => {
       const { operator, type = 'criteria', field = '' } = filter;
