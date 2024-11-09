@@ -33,6 +33,7 @@ export class UploadActorsImplementations {
   ) {}
 
   async onModuleInit() {
+    // TODO - create bucket during organization where parent is null
     if (
       !STORAGE_ENDPOINT ||
       !STORAGE_ACCESS_KEY ||
@@ -71,6 +72,7 @@ export class UploadActorsImplementations {
           `Bucket ${STORAGE_BUCKET_NAME} already exists in ${STORAGE_REGION}.`,
         );
       } else {
+        // TODO - move this to organization creation
         await this.client.makeBucket(STORAGE_BUCKET_NAME, STORAGE_REGION, {
           // ObjectLocking: true,
         });

@@ -6,9 +6,9 @@ import { GetFileByIdActorsImplementations } from '../get_file_by_id';
 import { IActors } from '../../schemas/download/download.schema';
 import { UploadActorsImplementations } from '../upload';
 import * as Minio from 'minio';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-const { NODE_ENV = 'local' } = process.env;
+const { NODE_ENV = 'local', STORAGE_BUCKET_NAME = 'test' } = process.env;
 @Injectable()
 export class DownloadActorsImplementations {
   private client: Minio.Client;
@@ -55,19 +55,22 @@ export class DownloadActorsImplementations {
       let merged_chunked;
       if (!['local'].includes(NODE_ENV)) {
         const extention = path.extname(this.file.originalname);
-        const file_name = `${this.file.id}-${organization_id}${extention}`;
+        const file_name = `temp-${this.file.id}-${organization_id}${extention}`;
         const temp_file_path = path.join(process.cwd(), 'tmp', file_name);
         // Check if the file or directory exists synchronously
-        if (fs.existsSync(temp_file_path)) {
+        let dataStream: any = null;
+        const fileExists = await fs.exists(temp_file_path);
+        if (fileExists) {
           merged_chunked = {
             is_temp: true,
             temp_file_path,
           };
+          if (dataStream) dataStream = null;
         }
 
         if (!merged_chunked) {
-          const dataStream = await this.client.getObject(
-            this.file.organization_id,
+          dataStream = await this.client.getObject(
+            STORAGE_BUCKET_NAME,
             _file.originalname,
           );
           merged_chunked = await new Promise((resolve, reject) => {
