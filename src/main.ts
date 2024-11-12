@@ -2,8 +2,6 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
 import { LoggerService, HttpExceptionFilter } from '@dna-platform/common';
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
-import { ZodError } from 'zod';
 import * as fs from 'fs';
 import * as cookieParser from 'cookie-parser';
 import { OrganizationsService } from '@dna-platform/crdt-lww';
@@ -18,21 +16,13 @@ const {
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 
-@Catch(ZodError)
-export class ZodFilter<T extends ZodError> implements ExceptionFilter {
-  catch(exception: T, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const request = ctx.getRequest();
-    const table = request.params.table;
-    const response = ctx.getResponse();
-    const status = 400;
-    response.status(status).json({
-      status,
-      message: 'Invalid Schema',
-      table,
-      errors: exception.errors,
-    });
-  }
+async function initialOrganization(
+  organization: OrganizationsService,
+  storage: MinioService,
+) {
+  // default for super admin
+  await organization.initialize();
+  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
 }
 
 async function bootstrap() {
@@ -58,9 +48,9 @@ async function bootstrap() {
   const storage = app.get(MinioService);
   // initialize the organization
   const organization = app.get(OrganizationsService);
-  // default for super admin
-  await organization.initialize();
-  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
+
+  // create own default organization here
+  await initialOrganization(organization, storage);
 }
 
 bootstrap();
