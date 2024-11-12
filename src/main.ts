@@ -23,6 +23,18 @@ async function initialOrganization(
   // default for super admin
   await organization.initialize();
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
+
+  // create own default organization here
+  // await organization.initialize({
+  //   id: 'company-id',
+  //   name: 'company-name',
+  //   // @ts-ignore - set the company's organization parent
+  //   parent_organization_id: DEFAULT_ORGANIZATION_ID,
+  //   email: 'sample-company@sample.com',
+  //   password: 'sample-passwd',
+  //   first_name: 'Company',
+  //   last_name: 'Orgs',
+  // });
 }
 
 async function bootstrap() {
@@ -49,7 +61,6 @@ async function bootstrap() {
   // initialize the organization
   const organization = app.get(OrganizationsService);
 
-  // create own default organization here
   await initialOrganization(organization, storage);
 }
 
