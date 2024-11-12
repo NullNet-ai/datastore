@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { IResponse, LoggerService } from '@dna-platform/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { VerifyActorsImplementations } from '../verify';
 import { GetFileByIdActorsImplementations } from '../get_file_by_id';
 import { IActors } from '../../schemas/download/download.schema';
-import { UploadActorsImplementations } from '../upload';
 import * as Minio from 'minio';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { MinioService } from '../../../../providers/files/minio.service';
 const { NODE_ENV = 'local', STORAGE_BUCKET_NAME = 'test' } = process.env;
 @Injectable()
 export class DownloadActorsImplementations {
@@ -18,8 +18,8 @@ export class DownloadActorsImplementations {
   constructor(
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly getFileByIdActorImplementations: GetFileByIdActorsImplementations,
-    private readonly uploadActorsImplementations: UploadActorsImplementations,
-    private readonly logger: LoggerService,
+    private readonly minioService: MinioService,
+    private readonly logger: Logger,
   ) {
     this.onData = this.onData.bind(this);
   }
@@ -40,7 +40,7 @@ export class DownloadActorsImplementations {
             data: [],
           },
         });
-      this.client = this.uploadActorsImplementations.client;
+      this.client = this.minioService.client;
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;

@@ -5,13 +5,11 @@ import {
   DownloadGuardsImplementations,
 } from './';
 import { GetFileByIdActorsImplementations } from '../get_file_by_id';
-import { UploadActorsImplementations } from '../upload';
-import { CreateActorsImplementations } from '../create';
 import { LoggerService } from '@dna-platform/common';
+import { MinioService } from '../../../../providers/files/minio.service';
 
 const providers = [
-  CreateActorsImplementations,
-  UploadActorsImplementations,
+  MinioService,
   GetFileByIdActorsImplementations,
   DownloadActionsImplementations,
   DownloadActorsImplementations,

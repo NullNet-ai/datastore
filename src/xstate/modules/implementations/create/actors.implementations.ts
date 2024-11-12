@@ -6,12 +6,14 @@ import { SyncService } from '@dna-platform/crdt-lww';
 import { Utility } from 'src/utils/utility.service';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
+import { MinioService } from 'src/providers/files/minio.service';
 
 @Injectable()
 export class CreateActorsImplementations {
   constructor(
     private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
+    private readonly minioService: MinioService,
   ) {}
   /**
    * Implementation of actors for the create machine.
@@ -31,7 +33,7 @@ export class CreateActorsImplementations {
         });
 
       const { controller_args, responsible_account } = context;
-      const { organization_id = '' } = responsible_account;
+      const { organization_id = '', organization } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table } = params;
@@ -41,6 +43,11 @@ export class CreateActorsImplementations {
       }
 
       body.created_by = responsible_account.contact.id;
+
+      if (table === 'organizations' && body?.organization_id) {
+        await this.minioService.makeBucket(organization.name);
+      }
+
       const { schema } = Utility.checkCreateSchema(
         table,
         undefined as any,

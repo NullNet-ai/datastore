@@ -6,12 +6,15 @@ import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { ZodError } from 'zod';
 import * as fs from 'fs';
 import * as cookieParser from 'cookie-parser';
+import { OrganizationsService } from '@dna-platform/crdt-lww';
+import { MinioService } from './providers/files/minio.service';
 
 const {
   PORT = '3060',
   DB_FILE_DIR = '',
   DEBUG = 'false',
   NODE_ENV = 'local',
+  DEFAULT_ORGANIZATION_NAME = 'super-organization',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 
@@ -43,6 +46,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useLogger(logger);
   app.useGlobalFilters(new HttpExceptionFilter());
+
   await app.listen(+(PORT || '5001')).then(() => {
     logger.log(
       `Application is listening at ${PORT} [${NODE_ENV}]${
@@ -50,6 +54,13 @@ async function bootstrap() {
       }`,
     );
   });
+
+  const storage = app.get(MinioService);
+  // initialize the organization
+  const organization = app.get(OrganizationsService);
+  // default for super admin
+  await organization.initialize();
+  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
 }
 
 bootstrap();

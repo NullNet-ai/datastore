@@ -4,8 +4,12 @@ import {
   CreateActorsImplementations,
   CreateGuardsImplementations,
 } from './';
+import { UploadActorsImplementations } from '../upload';
+import { MinioService } from '../../../../providers/files/minio.service';
 
 const providers = [
+  MinioService,
+  UploadActorsImplementations,
   CreateActionsImplementations,
   CreateActorsImplementations,
   CreateGuardsImplementations,

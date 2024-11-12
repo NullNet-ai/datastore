@@ -20,7 +20,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "clean:build": "rm -rf node_modules bun.lockb dist drizzle package-lock.json && bun i",
+    "clean:build": "rm -rf node_modules bun.lockb dist drizzle sql tmp upload package-lock.json && bun i",
     "generate": "node node_modules/@dna-platform/common/build/generator/index.js",
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:cleanup": "rm -rf drizzle sql"
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.14",
-    "@dna-platform/crdt-lww": "^1.0.62",
+    "@dna-platform/crdt-lww": "^1.0.67",
     "@elastic/elasticsearch": "^8.10.0",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.4.6",

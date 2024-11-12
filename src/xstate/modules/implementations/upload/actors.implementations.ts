@@ -4,93 +4,19 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/upload/upload.schema';
 import { CreateActorsImplementations } from '../create/actors.implementations';
 import { VerifyActorsImplementations } from '../verify';
-import * as Minio from 'minio';
 import * as path from 'path';
-import * as https from 'https';
-import * as fs from 'fs';
+import { MinioService } from '../../../../providers/files/minio.service';
 // import storage_policy from './storage_policy';
-const {
-  STORAGE_ENDPOINT,
-  STORAGE_ACCESS_KEY,
-  STORAGE_SECRET_KEY,
-  NODE_ENV = 'local',
-  STORAGE_BUCKET_NAME = 'test',
-  STORAGE_REGION = 'us-east-1',
-  STORAGE_PORT = '9000',
-  STORAGE_TIMEOUT = '10000',
-  STORAGE_TRANSPORT_KEEPALIVE,
-  SSL_CA = '',
-  SSL_CERT = '',
-  SSL_SECRET_KEY = '',
-} = process.env;
+const { NODE_ENV = 'local', STORAGE_BUCKET_NAME = 'test' } = process.env;
 @Injectable()
 export class UploadActorsImplementations {
-  public client: Minio.Client;
   constructor(
+    private readonly minioService: MinioService,
     private readonly createActorsImplementations: CreateActorsImplementations,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly logger: Logger,
   ) {}
 
-  async onModuleInit() {
-    // TODO - create bucket during organization where parent is null
-    if (
-      !STORAGE_ENDPOINT ||
-      !STORAGE_ACCESS_KEY ||
-      !STORAGE_SECRET_KEY ||
-      !STORAGE_BUCKET_NAME ||
-      !STORAGE_REGION
-    ) {
-      throw new Error('Upload credentials not found');
-    }
-    if (['local'].includes(NODE_ENV)) return;
-    try {
-      this.client = new Minio.Client({
-        endPoint: STORAGE_ENDPOINT,
-        port: +STORAGE_PORT,
-        useSSL: NODE_ENV === 'production',
-        accessKey: STORAGE_ACCESS_KEY,
-        secretKey: STORAGE_SECRET_KEY,
-        ...(NODE_ENV === 'production' && {
-          transportAgent: new https.Agent({
-            timeout: +STORAGE_TIMEOUT,
-            ca: fs.readFileSync(SSL_CA),
-            cert: fs.readFileSync(SSL_CERT),
-            key: fs.readFileSync(SSL_SECRET_KEY),
-            keepAlive: STORAGE_TRANSPORT_KEEPALIVE === 'true',
-          }),
-        }),
-        // pathStyle: true,
-        // region: STORAGE_REGION,
-      });
-
-      // Check if the bucket exists
-      // If it doesn't, create it
-      const exists = await this.client.bucketExists(STORAGE_BUCKET_NAME);
-      if (exists) {
-        this.logger.warn(
-          `Bucket ${STORAGE_BUCKET_NAME} already exists in ${STORAGE_REGION}.`,
-        );
-      } else {
-        // TODO - move this to organization creation
-        await this.client.makeBucket(STORAGE_BUCKET_NAME, STORAGE_REGION, {
-          // ObjectLocking: true,
-        });
-
-        // Set the bucket policy of `my-bucketname`
-        // await this.client.setBucketPolicy(
-        //   STORAGE_BUCKET_NAME,
-        //   JSON.stringify(storage_policy(STORAGE_BUCKET_NAME)),
-        // );
-
-        this.logger.log(
-          `Bucket ${STORAGE_BUCKET_NAME} created successfully in ${STORAGE_REGION}.`,
-        );
-      }
-    } catch (e) {
-      this.logger.error(`[ERROR][MinioClient]:`, e);
-    }
-  }
   /**
    * Implementation of actors for the upload machine.
    */
@@ -127,7 +53,7 @@ export class UploadActorsImplementations {
       const filepath = path.join(process.cwd(), _file.path);
       let uploaded_from_remote;
       if (!['local'].includes(NODE_ENV)) {
-        uploaded_from_remote = await this.client
+        uploaded_from_remote = await this.minioService.client
           .fPutObject(
             STORAGE_BUCKET_NAME,
             _file.originalname,
