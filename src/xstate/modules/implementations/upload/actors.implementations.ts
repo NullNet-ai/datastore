@@ -6,6 +6,7 @@ import { CreateActorsImplementations } from '../create/actors.implementations';
 import { VerifyActorsImplementations } from '../verify';
 import * as path from 'path';
 import { MinioService } from '../../../../providers/files/minio.service';
+import { ulid } from 'ulid';
 // import storage_policy from './storage_policy';
 const { NODE_ENV = 'local', STORAGE_BUCKET_NAME = 'test' } = process.env;
 @Injectable()
@@ -50,9 +51,9 @@ export class UploadActorsImplementations {
         example: 5678,
       };
 
-      const filepath = path.join(process.cwd(), _file.path);
       let uploaded_from_remote;
       if (!['local'].includes(NODE_ENV)) {
+        const filepath = path.join(process.cwd(), _file.path);
         uploaded_from_remote = await this.minioService.client
           .fPutObject(
             STORAGE_BUCKET_NAME,
@@ -68,6 +69,7 @@ export class UploadActorsImplementations {
         this.logger.log(`[UPLOADED]: ${JSON.stringify(uploaded_from_remote)}`);
       }
 
+      const download_id = ulid();
       // TODO: create a file copy of the record in the database that has uploaded_by key
       return Promise.resolve({
         payload: {
@@ -77,9 +79,11 @@ export class UploadActorsImplementations {
           data: [
             {
               ..._file,
+              id: download_id,
               uploaded_by: responsible_account.contact.id,
               etag: uploaded_from_remote?.etag,
               versionId: uploaded_from_remote?.versionId,
+              download_path: `/api/file/${download_id}/download`,
             },
           ],
         },

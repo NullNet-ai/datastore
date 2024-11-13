@@ -23,6 +23,7 @@ export const table = sqliteTable(
     downloaded_by: text(),
     etag: text(),
     versionId: text(),
+    download_path: text(),
   },
   config,
 );

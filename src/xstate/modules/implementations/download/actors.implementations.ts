@@ -83,13 +83,12 @@ export class DownloadActorsImplementations {
         }
       } else {
         // In local environment, we don't have Minio, so we just return the file as is
-        merged_chunked = _file;
+        merged_chunked = this.file;
       }
-
       const data = [
         {
           ...body,
-          ..._file,
+          ...this.file,
           downloaded_by: responsible_account.contact.id,
           merged_chunked,
         },

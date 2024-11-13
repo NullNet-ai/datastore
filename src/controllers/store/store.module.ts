@@ -73,7 +73,7 @@ export const shared_imports = [
     ...shared_imports,
     MulterModule.registerAsync({
       useFactory: () => ({
-        dest: process.env.UPLOAD_PATH,
+        dest: process.env.STORAGE_UPLOAD_PATH,
       }),
     }),
   ],

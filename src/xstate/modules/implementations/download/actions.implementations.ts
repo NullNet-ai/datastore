@@ -32,7 +32,7 @@ export class DownloadActionsImplementations {
           id,
           organization_id,
         } = file;
-        const file_path = path.join(process.cwd(), _file_path);
+        const file_path = path.join(process.cwd(), _file_path || '');
         const extention = path.extname(originalname);
         const file_name = `${id}-${organization_id}${extention}`;
         switch (typeof actual_file) {
