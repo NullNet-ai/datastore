@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.14",
-    "@dna-platform/crdt-lww": "^1.0.72",
+    "@dna-platform/crdt-lww": "^1.0.73",
     "@elastic/elasticsearch": "^8.10.0",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.4.6",
