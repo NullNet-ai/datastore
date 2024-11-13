@@ -23,6 +23,7 @@ export class MinioService {
   constructor(private readonly logger: Logger) {}
 
   async onModuleInit() {
+    if (['local'].includes(NODE_ENV)) return;
     // TODO - create bucket during organization where parent is null
     if (
       !STORAGE_ENDPOINT ||
@@ -32,7 +33,6 @@ export class MinioService {
     ) {
       throw new Error('Upload credentials not found');
     }
-    if (['local'].includes(NODE_ENV)) return;
     try {
       this.client = new Minio.Client({
         endPoint: STORAGE_ENDPOINT,
