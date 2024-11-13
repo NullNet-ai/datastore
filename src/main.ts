@@ -16,6 +16,9 @@ const {
   // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
+const logger = new LoggerService(process.env.npm_package_name ?? 'unknown', {
+  timestamp: DEBUG === 'true',
+});
 
 async function initialOrganization(
   organization: OrganizationsService,
@@ -38,11 +41,33 @@ async function initialOrganization(
   // });
 }
 
-async function bootstrap() {
-  const logger = new LoggerService(process.env.npm_package_name ?? 'unknown', {
-    timestamp: DEBUG === 'true',
-  });
+async function cleanupTemporaryFiles() {
+  if (['local'].includes(NODE_ENV)) return;
+  let file_cleanup_interval: any = null;
+  const time_in_ms = 60000;
+  if (process.env.STORAGE_UPLOAD_PATH) {
+    clearInterval(file_cleanup_interval);
+    logger.warn('cleanupTemporaryFiles started running every 1 minute');
+    file_cleanup_interval = setInterval(() => {
+      try {
+        logger.log('deleting files in upload and tmp path');
+        fs.rmdirSync(process.env.STORAGE_UPLOAD_PATH || '', {
+          recursive: true,
+        });
+        fs.rmdirSync('./tmp', { recursive: true });
+        logger.log('recreating upload and tmp path');
+        fs.mkdirSync(process.env.STORAGE_UPLOAD_PATH || '', {
+          recursive: true,
+        });
+        fs.mkdirSync('./tmp', { recursive: true });
+      } catch (error) {
+        logger.error(error);
+      }
+    }, time_in_ms);
+  }
+}
 
+async function bootstrap() {
   const app = await NestFactory.create(MainModule, {
     logger: ['local', 'development', 'dev'].includes(NODE_ENV) ? logger : false,
   });
@@ -63,6 +88,9 @@ async function bootstrap() {
   const organization = app.get(OrganizationsService);
 
   await initialOrganization(organization, storage);
+
+  // cleanup the temporary files every 1 minute in remote environment
+  cleanupTemporaryFiles();
 }
 
 bootstrap();
