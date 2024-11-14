@@ -181,9 +181,9 @@ export class Utility {
         switch (type) {
           case 'left':
             _db = _db.leftJoin(
-              schema.organizations,
+              schema[_to.entity],
               eq(
-                schema['contacts'][_from.field],
+                schema[_from.entity][_from.field],
                 schema[_to.entity][_to.field],
               ),
             );
