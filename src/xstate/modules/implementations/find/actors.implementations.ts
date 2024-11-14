@@ -83,7 +83,6 @@ export class FindActorsImplementations {
       }
 
       let result = await _db;
-      console.log('result', result);
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,

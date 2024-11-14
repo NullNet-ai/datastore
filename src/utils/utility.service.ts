@@ -155,12 +155,9 @@ export class Utility {
     organization_id,
     joins?: IJoins[],
   ) {
-    console.log('@IJoins', joins);
     let _db = db;
-
     if (joins?.length) {
-      joins.forEach(({ type, entity, field_relation, aliases = [] }) => {
-        console.log('@entity', entity);
+      joins.forEach(({ type, field_relation, aliases = [] }) => {
         const { from, to } = field_relation;
         let _from = from;
         let _to = to;
@@ -171,12 +168,6 @@ export class Utility {
           // _from = _from_a ? _from_a : _from;
           // _to = _to_a ? _to_a : _to;
         }
-
-        console.log({
-          _from,
-          _to,
-          schema: Object.keys(schema[_from.entity]),
-        });
 
         switch (type) {
           case 'left':
