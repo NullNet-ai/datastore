@@ -6,8 +6,10 @@ import { ZodValidationException } from '@dna-platform/common';
 import {
   EOperator,
   IAdvanceFilters,
+  IJoins,
 } from '../xstate/modules/schemas/find/find.schema';
 import {
+  // aliasedTable,
   and,
   between,
   eq,
@@ -23,7 +25,6 @@ import {
   notInArray,
   or,
 } from 'drizzle-orm';
-import _ from 'lodash';
 export class Utility {
   public static createParse({
     schema,
@@ -152,8 +153,48 @@ export class Utility {
     table_schema,
     _advance_filters: IAdvanceFilters[],
     organization_id,
+    joins?: IJoins[],
   ) {
-    return db.where(
+    console.log('@IJoins', joins);
+    let _db = db;
+
+    if (joins?.length) {
+      joins.forEach(({ type, entity, field_relation, aliases = [] }) => {
+        console.log('@entity', entity);
+        const { from, to } = field_relation;
+        let _from = from;
+        let _to = to;
+
+        if (aliases?.length) {
+          // const parent = aliasedTable(user, 'parent');
+          // const [_from_a, _to_a] = aliases;
+          // _from = _from_a ? _from_a : _from;
+          // _to = _to_a ? _to_a : _to;
+        }
+
+        console.log({
+          _from,
+          _to,
+          schema: Object.keys(schema[_from.entity]),
+        });
+
+        switch (type) {
+          case 'left':
+            _db = _db.leftJoin(
+              schema.organizations,
+              eq(
+                schema['contacts'][_from.field],
+                schema[_to.entity][_to.field],
+              ),
+            );
+            return _db;
+          default:
+            throw new BadRequestException('Invalid join type');
+        }
+      });
+    }
+
+    return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
         isNotNull(table_schema['organization_id']),

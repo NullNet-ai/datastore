@@ -13,7 +13,7 @@ const {
   DEBUG = 'false',
   NODE_ENV = 'local',
   DEFAULT_ORGANIZATION_NAME = 'super-organization',
-  // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
+  DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown', {
@@ -28,17 +28,17 @@ async function initialOrganization(
   await organization.initialize();
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
 
-  // // create own default organization here
-  // await organization.initialize({
-  //   id: 'company-id',
-  //   name: 'company-name',
-  //   // 01JBHKXHYSKPP247HZZWHA3JCT = super-organization's ID
-  //   parent_organization_id: DEFAULT_ORGANIZATION_ID,
-  //   email: 'sample-company@sample.com',
-  //   password: 'sample-passwd',
-  //   first_name: 'Company',
-  //   last_name: 'Orgs',
-  // });
+  // create own default organization here
+  await organization.initialize({
+    id: 'company-id',
+    name: 'company-name',
+    // 01JBHKXHYSKPP247HZZWHA3JCT = super-organization's ID
+    parent_organization_id: DEFAULT_ORGANIZATION_ID,
+    email: 'sample-company@sample.com',
+    password: 'sample-passwd',
+    first_name: 'Company',
+    last_name: 'Orgs',
+  });
 }
 
 async function cleanupTemporaryFiles() {
