@@ -178,7 +178,7 @@ export class Utility {
                 schema[_to.entity][_to.field],
               ),
             );
-            return _db;
+            break;
           default:
             throw new BadRequestException('Invalid join type');
         }

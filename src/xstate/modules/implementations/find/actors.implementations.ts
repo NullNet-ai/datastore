@@ -52,7 +52,7 @@ export class FindActorsImplementations {
         advance_filters = [],
         joins = [],
       } = body;
-      const _pluck = pluck;
+      const _pluck = joins?.length ? ['*'] : pluck;
       const table_schema = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
