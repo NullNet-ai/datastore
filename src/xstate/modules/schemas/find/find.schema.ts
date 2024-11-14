@@ -127,3 +127,18 @@ export interface IOrder<fs = Record<string, any>> {
   by_direction?: EOrderDirection;
   by_field?: keyof fs;
 }
+
+export interface IJoins {
+  type: 'inner' | 'left' | 'right' | 'full';
+  aliases?: string[];
+  field_relation: {
+    from: {
+      entity: string;
+      field: string;
+    };
+    to: {
+      entity: string;
+      field: string;
+    };
+  };
+}

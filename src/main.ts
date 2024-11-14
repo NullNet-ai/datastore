@@ -28,7 +28,7 @@ async function initialOrganization(
   await organization.initialize();
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
 
-  // // create own default organization here
+  // create own default organization here
   // await organization.initialize({
   //   id: 'company-id',
   //   name: 'company-name',

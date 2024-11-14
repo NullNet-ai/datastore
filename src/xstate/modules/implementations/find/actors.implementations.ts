@@ -50,6 +50,7 @@ export class FindActorsImplementations {
         offset = 0,
         pluck = ['id'],
         advance_filters = [],
+        joins = [],
       } = body;
       const _pluck = pluck;
       const table_schema = Utility.checkTable(table);
@@ -62,6 +63,7 @@ export class FindActorsImplementations {
         table_schema,
         advance_filters,
         organization_id,
+        joins,
       );
 
       if (order_direction && order_by) {
@@ -81,7 +83,6 @@ export class FindActorsImplementations {
       }
 
       let result = await _db;
-
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,
