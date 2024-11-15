@@ -129,14 +129,15 @@ export interface IOrder<fs = Record<string, any>> {
 }
 
 export interface IJoins {
-  type: 'inner' | 'left' | 'right' | 'full';
-  aliases?: string[];
+  type: 'inner' | 'left' | 'right' | 'full' | 'self';
   field_relation: {
     from: {
+      alias?: string;
       entity: string;
       field: string;
     };
     to: {
+      alias?: string;
       entity: string;
       field: string;
     };

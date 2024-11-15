@@ -9,7 +9,7 @@ import {
   IJoins,
 } from '../xstate/modules/schemas/find/find.schema';
 import {
-  // aliasedTable,
+  aliasedTable,
   and,
   between,
   eq,
@@ -157,17 +157,10 @@ export class Utility {
   ) {
     let _db = db;
     if (joins?.length) {
-      joins.forEach(({ type, field_relation, aliases = [] }) => {
+      joins.forEach(({ type, field_relation }) => {
         const { from, to } = field_relation;
         let _from = from;
         let _to = to;
-
-        if (aliases?.length) {
-          // const parent = aliasedTable(user, 'parent');
-          // const [_from_a, _to_a] = aliases;
-          // _from = _from_a ? _from_a : _from;
-          // _to = _to_a ? _to_a : _to;
-        }
 
         switch (type) {
           case 'left':
@@ -177,6 +170,18 @@ export class Utility {
                 schema[_from.entity][_from.field],
                 schema[_to.entity][_to.field],
               ),
+            );
+            break;
+          case 'self':
+            if (!_from.alias) {
+              throw new BadRequestException(
+                '[from]: Alias are required for self join',
+              );
+            }
+            const parent = aliasedTable(schema[_from.entity], _from.alias);
+            _db = _db.leftJoin(
+              parent,
+              eq(parent[_from.field], schema[_to.entity][_to.field]),
             );
             break;
           default:
