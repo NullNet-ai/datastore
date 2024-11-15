@@ -12,7 +12,7 @@ const {
   DB_FILE_DIR = '',
   DEBUG = 'false',
   NODE_ENV = 'local',
-  DEFAULT_ORGANIZATION_NAME = 'super-organization',
+  DEFAULT_ORGANIZATION_NAME = 'global-organization',
   // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
