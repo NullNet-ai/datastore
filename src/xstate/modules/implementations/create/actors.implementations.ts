@@ -72,9 +72,10 @@ export class CreateActorsImplementations {
           },
         })
         .returning({
-          code: sql`${counter_schema.prefix} || '' || ${counter_schema.counter}`,
+          prefix: counter_schema.prefix,
+          code: sql`${counter_schema.default_code} + ${counter_schema.counter}`,
         })
-        .then(([data]) => data.code)
+        .then(([{ prefix, code }]) => prefix + code)
         .catch(() => null);
 
       const result = await this.syncService.insert(
