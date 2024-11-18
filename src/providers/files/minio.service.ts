@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import * as https from 'https';
-import * as fs from 'fs';
+// import * as https from 'https';
+// import * as fs from 'fs';
 import * as Minio from 'minio';
 // import storage_policy from './storage_policy';
 const {
@@ -11,11 +11,11 @@ const {
   STORAGE_BUCKET_NAME = 'test',
   STORAGE_REGION = 'us-east-1',
   STORAGE_PORT = '9000',
-  STORAGE_TIMEOUT = '10000',
-  STORAGE_TRANSPORT_KEEPALIVE,
-  SSL_CA = '',
-  SSL_CERT = '',
-  SSL_SECRET_KEY = '',
+  // STORAGE_TIMEOUT = '10000',
+  // STORAGE_TRANSPORT_KEEPALIVE,
+  // SSL_CA = '',
+  // SSL_CERT = '',
+  // SSL_SECRET_KEY = '',
 } = process.env;
 @Injectable()
 export class MinioService {
@@ -37,18 +37,18 @@ export class MinioService {
       this.client = new Minio.Client({
         endPoint: STORAGE_ENDPOINT,
         port: +STORAGE_PORT,
-        useSSL: NODE_ENV === 'production',
+        // useSSL: NODE_ENV === 'production',
         accessKey: STORAGE_ACCESS_KEY,
         secretKey: STORAGE_SECRET_KEY,
-        ...(NODE_ENV === 'production' && {
-          transportAgent: new https.Agent({
-            timeout: +STORAGE_TIMEOUT,
-            ca: fs.readFileSync(SSL_CA),
-            cert: fs.readFileSync(SSL_CERT),
-            key: fs.readFileSync(SSL_SECRET_KEY),
-            keepAlive: STORAGE_TRANSPORT_KEEPALIVE === 'true',
-          }),
-        }),
+        // ...(NODE_ENV === 'production' && {
+        //   transportAgent: new https.Agent({
+        //     timeout: +STORAGE_TIMEOUT,
+        //     ca: fs.readFileSync(SSL_CA),
+        //     cert: fs.readFileSync(SSL_CERT),
+        //     key: fs.readFileSync(SSL_SECRET_KEY),
+        //     keepAlive: STORAGE_TRANSPORT_KEEPALIVE === 'true',
+        //   }),
+        // }),
       });
     } catch (e) {
       this.logger.error(`[ERROR][MinioClient]:`, e);
