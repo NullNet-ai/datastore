@@ -72,13 +72,10 @@ export class CreateActorsImplementations {
           },
         })
         .returning({
-          code: sql`${counter_schema.prefix} || '-' || ${counter_schema.counter}`,
+          code: sql`${counter_schema.prefix} || '' || ${counter_schema.counter}`,
         })
         .then(([data]) => data.code)
-        .catch((err) => {
-          console.error('@err', err);
-          return null;
-        });
+        .catch(() => null);
 
       const result = await this.syncService.insert(
         table,
