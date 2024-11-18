@@ -21,7 +21,7 @@
     "src/xstate": false,
     "src/providers": true,
     "drizzle.config.ts": true,
-    "src/schema/crdt": true,
+    "src/schema/crdt": false,
     "src/schema/index.ts": true
   }
 }

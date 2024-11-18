@@ -2,19 +2,25 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
-import { SyncService } from '@dna-platform/crdt-lww';
-import { Utility } from 'src/utils/utility.service';
+import { DrizzleService, SyncService } from '@dna-platform/crdt-lww';
+import { Utility } from '../../../../utils/utility.service';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
-import { MinioService } from 'src/providers/files/minio.service';
+import { MinioService } from '../../../../providers/files/minio.service';
+import { sql } from 'drizzle-orm';
+import * as local_schema from '../../../../schema';
 
 @Injectable()
 export class CreateActorsImplementations {
+  private db;
   constructor(
     private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly minioService: MinioService,
-  ) {}
+    private readonly drizzleService: DrizzleService,
+  ) {
+    this.db = this.drizzleService.getClient();
+  }
   /**
    * Implementation of actors for the create machine.
    */
@@ -48,11 +54,31 @@ export class CreateActorsImplementations {
         await this.minioService.makeBucket(organization.name);
       }
 
-      const { schema } = Utility.checkCreateSchema(
+      const { schema }: any = Utility.checkCreateSchema(
         table,
         undefined as any,
         body,
       );
+
+      // auto generate code
+      const counter_schema = local_schema['counters'];
+      body.code = await this.db
+        .insert(counter_schema)
+        .values({ entity: table, counter: 1 })
+        .onConflictDoUpdate({
+          target: [counter_schema.entity],
+          set: {
+            counter: sql`${counter_schema.counter} + 1`,
+          },
+        })
+        .returning({
+          code: sql`${counter_schema.prefix} || '-' || ${counter_schema.counter}`,
+        })
+        .then(([data]) => data.code)
+        .catch((err) => {
+          console.error('@err', err);
+          return null;
+        });
 
       const result = await this.syncService.insert(
         table,
