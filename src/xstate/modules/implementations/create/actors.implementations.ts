@@ -61,22 +61,28 @@ export class CreateActorsImplementations {
       );
 
       // auto generate code
-      const counter_schema = local_schema['counters'];
-      body.code = await this.db
-        .insert(counter_schema)
-        .values({ entity: table, counter: 1 })
-        .onConflictDoUpdate({
-          target: [counter_schema.entity],
-          set: {
-            counter: sql`${counter_schema.counter} + 1`,
-          },
-        })
-        .returning({
-          prefix: counter_schema.prefix,
-          code: sql`${counter_schema.default_code} + ${counter_schema.counter}`,
-        })
-        .then(([{ prefix, code }]) => prefix + code)
-        .catch(() => null);
+      if (table !== 'counters') {
+        const counter_schema = local_schema['counters'];
+        body.code = await this.db
+          .insert(counter_schema)
+          .values({ entity: table, counter: 1 })
+          .onConflictDoUpdate({
+            target: [counter_schema.entity],
+            set: {
+              counter: sql`${counter_schema.counter} + 1`,
+            },
+          })
+          .returning({
+            prefix: counter_schema.prefix,
+            default_code: counter_schema.default_code,
+            counter: counter_schema.counter,
+          })
+          .then(
+            ([{ prefix, default_code, counter }]) =>
+              prefix + (default_code + counter),
+          )
+          .catch(() => null);
+      }
 
       const result = await this.syncService.insert(
         table,

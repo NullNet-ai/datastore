@@ -2,16 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
-import { Utility } from 'src/utils/utility.service';
-import { SyncService } from '@dna-platform/crdt-lww';
+import { Utility } from '../../../../utils/utility.service';
+import { DrizzleService, SyncService } from '@dna-platform/crdt-lww';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
+import * as local_schema from '../../../../schema';
+import { eq } from 'drizzle-orm';
 @Injectable()
 export class UpdateActorsImplementations {
+  private db;
   constructor(
     private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
-  ) {}
+    private readonly drizzleService: DrizzleService,
+  ) {
+    this.db = this.drizzleService.getClient();
+  }
   /**
    * Implementation of actors for the update machine.
    */
@@ -33,7 +39,29 @@ export class UpdateActorsImplementations {
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table, id } = params;
-      const { pluck = 'id' } = query;
+      let { pluck = 'id' } = query;
+
+      if (table === 'counters') {
+        pluck = 'entity,default_code,prefix';
+        const [result] = await this.db
+          .update(local_schema[table])
+          .set(body)
+          .where(eq(local_schema[table].entity, id))
+          .returning({
+            entity: local_schema[table].entity,
+            default_code: local_schema[table].default_code,
+            prefix: local_schema[table].prefix,
+          });
+
+        return Promise.resolve({
+          payload: {
+            success: true,
+            message: `Successfully updated in ${table}`,
+            count: 1,
+            data: [pick(result, pluck.split(','))],
+          },
+        });
+      }
 
       if (!body?.organization_id) {
         body.organization_id = organization_id;

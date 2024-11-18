@@ -3,7 +3,7 @@
   "files.exclude": {
     "bin": true,
     "bunfig.toml": true,
-    "node_modules": true,
+    "node_modules": false,
     "package-lock.json": true,
     "dist": true,
     ".eslintrc.js": true,
@@ -19,7 +19,7 @@
     "tailwind.config.js": true,
     "src/views": true,
     "src/xstate": false,
-    "src/providers": true,
+    "src/providers": false,
     "drizzle.config.ts": true,
     "src/schema/crdt": false,
     "src/schema/index.ts": true
