@@ -64,6 +64,7 @@ export class TokenController {
   }
 }
 
+@UseGuards(AuthGuard)
 @Controller('/api/file')
 export class FileController {
   constructor(

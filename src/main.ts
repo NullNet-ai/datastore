@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
-import { LoggerService, HttpExceptionFilter } from '@dna-platform/common';
+import { LoggerService } from '@dna-platform/common';
 import * as fs from 'fs';
 import * as cookieParser from 'cookie-parser';
 import { OrganizationsService } from '@dna-platform/crdt-lww';
@@ -73,7 +73,6 @@ async function bootstrap() {
   });
   app.use(cookieParser());
   app.useLogger(logger);
-  app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(+(PORT || '5001')).then(() => {
     logger.log(
