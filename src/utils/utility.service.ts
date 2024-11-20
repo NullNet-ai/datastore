@@ -156,6 +156,13 @@ export class Utility {
     joins?: IJoins[],
   ) {
     let _db = db;
+    const get_all_special_conditions_for_join = _advance_filters.filter(
+      (filter) => filter?.entity,
+    );
+    const get_all_special_conditions_for_where = _advance_filters.filter(
+      (filter) => filter.entity === undefined,
+    );
+
     if (joins?.length) {
       joins.forEach(({ type, field_relation }) => {
         const { from, to } = field_relation;
@@ -166,6 +173,10 @@ export class Utility {
           case 'left':
             _db = _db.leftJoin(
               schema[_to.entity],
+              ...Utility.constructFilters(
+                get_all_special_conditions_for_join,
+                schema[_to.entity],
+              ),
               eq(
                 schema[_from.entity][_from.field],
                 schema[_to.entity][_to.field],
@@ -195,7 +206,10 @@ export class Utility {
         eq(table_schema['tombstone'], 0),
         isNotNull(table_schema['organization_id']),
         eq(table_schema['organization_id'], organization_id),
-        ...Utility.constructFilters(_advance_filters, table_schema),
+        ...Utility.constructFilters(
+          get_all_special_conditions_for_where,
+          table_schema,
+        ),
       ),
     );
   }
@@ -250,16 +264,17 @@ export class Utility {
     let where_clause_queue: any[] = [];
     let _filter_queue: any[] = [];
     if (advance_filters.length === 1) {
-      const [{ operator, field, values, type }] = advance_filters;
+      const [{ operator, field, values, type, entity }] = advance_filters;
       if (type === 'operator') {
         throw new BadRequestException(
           `Invalid filter at index 0. Must be a criteria`,
         );
       }
+      const _table_schema = entity ? schema[entity] : table_schema;
       return [
         Utility.evaluateFilter({
           operator,
-          table_schema,
+          table_schema: _table_schema,
           field,
           values,
           dz_filter_queue: [],

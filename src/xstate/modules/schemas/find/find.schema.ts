@@ -105,6 +105,7 @@ export interface IAdvanceFilters<f = string> {
   values?: string[] | number[] | boolean[];
   logical_operator?: 'AND' | 'OR';
   type: 'criteria' | 'operator';
+  entity?: string;
 }
 export interface IWhereClauses {
   and: Array<IAdvanceFilters>;
