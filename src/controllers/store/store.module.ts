@@ -3,6 +3,7 @@ import {
   FileController,
   StoreController,
   TokenController,
+  TransactionController,
 } from './store.controller';
 import { machine_providers, MachineModule } from '@dna-platform/common';
 import { XstateModule } from '@dna-platform/common';
@@ -23,6 +24,7 @@ import { DownloadImplementationModule } from '../../xstate/modules/implementatio
 import { GetFileByIdImplementationModule } from '../../xstate/modules/implementations/get_file_by_id/get_file_by_id.implementation.module';
 import { UploadImplementationModule } from '../../xstate/modules/implementations/upload/upload.implementation.module';
 import { UploadsImplementationModule } from '../../xstate/modules/implementations/uploads/uploads.implementation.module';
+import { TransactionsImplementationModule } from 'src/xstate/modules/implementations/transactions/transactions.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -38,10 +40,16 @@ const machines_providers = machine_providers([
   machines.GetFileByIdMachine,
   machines.UploadMachine,
   machines.UploadsMachine,
+  // Transactions
+  machines.TransactionsMachine,
 ]);
 const additional_providers: Provider[] = [];
 const base_classes = [StoreController];
-const additional_controllers = [TokenController, FileController];
+const additional_controllers = [
+  TokenController,
+  FileController,
+  TransactionController,
+];
 const shared_machine_imports = [
   // CRUD
   GetImplementationModule,
@@ -56,6 +64,8 @@ const shared_machine_imports = [
   GetFileByIdImplementationModule,
   UploadImplementationModule,
   UploadsImplementationModule,
+  // Transaction
+  TransactionsImplementationModule,
 ];
 export const shared_imports = [
   XstateModule.register({

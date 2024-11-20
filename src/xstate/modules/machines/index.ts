@@ -3,6 +3,7 @@
 
 
 
+
 export * from './get/get.machine';
 
 export * from './find/find.machine';
@@ -22,4 +23,6 @@ export * from './download/download.machine';
 export * from './upload/upload.machine';
   
 export * from './uploads/uploads.machine';
+  
+export * from './transactions/transactions.machine';
   

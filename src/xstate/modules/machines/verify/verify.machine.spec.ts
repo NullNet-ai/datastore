@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, Provider } from '@nestjs/common';
 import {
@@ -7,7 +6,7 @@ import {
   HelperService,
   MachineModule,
   machine_providers,
-} from '@dnamicro/common';
+} from '@dna-platform/common';
 import { Request, Response } from 'express';
 import {
   createRequest,

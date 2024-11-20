@@ -27,6 +27,9 @@ export class StoreMutationDriver {
 
   @Machine('download')
   async download(_res: Response, _req: Request) {}
+
+  @Machine('transactions')
+  async transactions(_res: Response, _req: Request) {}
 }
 
 @Injectable()

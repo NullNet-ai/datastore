@@ -129,3 +129,13 @@ export class FileController {
     return this.storeMutation.download(_res, _req);
   }
 }
+
+@UseGuards(AuthGuard)
+@Controller('/api/transactions')
+export class TransactionController {
+  constructor(private storeMutation: StoreMutationDriver) {}
+  @Post('/')
+  async transactions(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeMutation.transactions(_res, _req);
+  }
+}

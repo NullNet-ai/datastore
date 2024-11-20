@@ -16,22 +16,22 @@ import {
 } from 'node-mocks-http';
 import { createActor } from 'xstate';
 import {
-  DownloadActionsImplementations,
-  DownloadActorsImplementations,
-  DownloadGuardsImplementations,
-} from '../../implementations/download';
-import { DownloadMachine } from './download.machine';
-describe('DownloadMachine', () => {
-  let downloadMachine: DownloadMachine;
+  TransactionsActionsImplementations,
+  TransactionsActorsImplementations,
+  TransactionsGuardsImplementations,
+} from '../../implementations/transactions';
+import { TransactionsMachine } from './transactions.machine';
+describe('TransactionsMachine', () => {
+  let transactionsMachine: TransactionsMachine;
   let machine_with_config;
   let request: MockRequest<Request>;
   let response: MockResponse<Response>;
   beforeEach(async () => {
-    const machines_providers = machine_providers({ DownloadMachine });
+    const machines_providers = machine_providers({ TransactionsMachine });
     const additional_providers: Provider[] = [
-      DownloadActionsImplementations,
-      DownloadActorsImplementations,
-      DownloadGuardsImplementations,
+      TransactionsActionsImplementations,
+      TransactionsActorsImplementations,
+      TransactionsGuardsImplementations,
     ];
     /**
      * Represents the testing module used for creating a testing environment.
@@ -46,32 +46,32 @@ describe('DownloadMachine', () => {
       providers: [
         Logger,
         HelperService,
-        DownloadMachine,
+        TransactionsMachine,
         ...additional_providers,
       ],
     }).compile();
-    downloadMachine = module.get<DownloadMachine>(DownloadMachine);
+    transactionsMachine = module.get<TransactionsMachine>(TransactionsMachine);
     request = createRequest<Request>({
       method: 'GET',
-      url: '/download',
+      url: '/transactions',
     });
     response = createResponse<Response>();
-    downloadMachine.onModuleInit({
+    transactionsMachine.onModuleInit({
       controller_args: [response, request],
       start_time: 0,
       end_time: 0,
       duration: 0,
     });
-    machine_with_config = downloadMachine.machine;
+    machine_with_config = transactionsMachine.machine;
   });
 
-  it('Download machine must be defined', () => {
-    expect(downloadMachine).toBeDefined();
+  it('Transactions machine must be defined', () => {
+    expect(transactionsMachine).toBeDefined();
   });
-  it('Download machine with config must be defined', () => {
+  it('Transactions machine with config must be defined', () => {
     expect(machine_with_config).toBeDefined();
   });
-  it('Download machine actor', () => {
+  it('Transactions machine actor', () => {
     const actor = createActor(machine_with_config);
     // Action
     // # Start the actor

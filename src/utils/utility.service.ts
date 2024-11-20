@@ -156,14 +156,14 @@ export class Utility {
     joins?: IJoins[],
   ) {
     let _db = db;
-    const get_all_special_conditions_for_join = _advance_filters.filter(
-      (filter) => filter?.entity,
-    );
     const get_all_special_conditions_for_where = _advance_filters.filter(
       (filter) => filter.entity === undefined,
     );
 
     if (joins?.length) {
+      const get_all_special_conditions_for_join = _advance_filters.filter(
+        (filter) => filter?.entity,
+      );
       joins.forEach(({ type, field_relation }) => {
         const { from, to } = field_relation;
         let _from = from;
