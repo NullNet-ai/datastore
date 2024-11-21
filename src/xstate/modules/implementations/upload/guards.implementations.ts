@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { UploadMachine } from '../../machines/upload/upload.machine';
 import { IGuards } from '../../schemas/upload/upload.schema';
@@ -13,7 +12,7 @@ export class UploadGuardsImplementations {
       if (!context.controller_args) return false;
       const hasNoControllerArgs = !!context.controller_args.length;
       this.logger.log(
-        `Sample guard is called [hasNoControllerArgs:${hasNoControllerArgs}]`,
+        `[hasNoControllerArgs:${hasNoControllerArgs}] guard is called.`,
       );
       return hasNoControllerArgs;
     },

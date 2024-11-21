@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { FindMachine } from '../../machines/find/find.machine';
 import { IGuards } from '../../schemas/find/find.schema';
@@ -13,7 +12,7 @@ export class FindGuardsImplementations {
       if (!context.controller_args) return false;
       const hasNoControllerArgs = !!context.controller_args.length;
       this.logger.log(
-        `Sample guard is called [hasNoControllerArgs:${hasNoControllerArgs}]`,
+        `[hasNoControllerArgs:${hasNoControllerArgs}] guard is called.`,
       );
       return hasNoControllerArgs;
     },

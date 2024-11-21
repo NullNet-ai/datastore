@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { DownloadMachine } from '../../machines/download/download.machine';
 import { IGuards } from '../../schemas/download/download.schema';
@@ -13,7 +12,7 @@ export class DownloadGuardsImplementations {
       if (!context.controller_args) return false;
       const hasNoControllerArgs = !!context.controller_args.length;
       this.logger.log(
-        `Sample guard is called [hasNoControllerArgs:${hasNoControllerArgs}]`,
+        `[hasNoControllerArgs:${hasNoControllerArgs}] guard is called.`,
       );
       return hasNoControllerArgs;
     },

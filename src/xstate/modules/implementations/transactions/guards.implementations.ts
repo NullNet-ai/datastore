@@ -1,4 +1,3 @@
-
 import { Injectable, Logger } from '@nestjs/common';
 import { TransactionsMachine } from '../../machines/transactions/transactions.machine';
 import { IGuards } from '../../schemas/transactions/transactions.schema';
@@ -8,12 +7,13 @@ import { IGuards } from '../../schemas/transactions/transactions.schema';
 @Injectable()
 export class TransactionsGuardsImplementations {
   constructor(private logger: Logger) {}
-  public readonly guards: typeof TransactionsMachine.prototype.guards & IGuards = {
+  public readonly guards: typeof TransactionsMachine.prototype.guards &
+    IGuards = {
     hasControllerArgs: ({ context }) => {
       if (!context.controller_args) return false;
       const hasNoControllerArgs = !!context.controller_args.length;
       this.logger.log(
-        `Sample guard is called [hasNoControllerArgs:${hasNoControllerArgs}]`,
+        `[hasNoControllerArgs:${hasNoControllerArgs}] guard is called.`,
       );
       return hasNoControllerArgs;
     },
