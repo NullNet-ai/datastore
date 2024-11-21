@@ -24,7 +24,7 @@ import { DownloadImplementationModule } from '../../xstate/modules/implementatio
 import { GetFileByIdImplementationModule } from '../../xstate/modules/implementations/get_file_by_id/get_file_by_id.implementation.module';
 import { UploadImplementationModule } from '../../xstate/modules/implementations/upload/upload.implementation.module';
 import { UploadsImplementationModule } from '../../xstate/modules/implementations/uploads/uploads.implementation.module';
-import { TransactionsImplementationModule } from 'src/xstate/modules/implementations/transactions/transactions.implementation.module';
+import { TransactionsImplementationModule } from '../../xstate/modules/implementations/transactions/transactions.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
