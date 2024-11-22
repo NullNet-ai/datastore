@@ -69,7 +69,9 @@ async function cleanupTemporaryFiles() {
 
 async function bootstrap() {
   const app = await NestFactory.create(MainModule, {
-    logger: ['local', 'development', 'dev'].includes(NODE_ENV) ? logger : false,
+    logger: ['local', 'development', 'dev'].includes(NODE_ENV)
+      ? logger
+      : ['error'],
   });
   app.use(cookieParser());
   app.useLogger(logger);
