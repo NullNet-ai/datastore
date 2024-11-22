@@ -1,15 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UploadMachine } from '../../machines/upload/upload.machine';
 import { IActions } from '../../schemas/upload/upload.schema';
 import { assign } from 'xstate';
 import { VerifyActionsImplementations } from '../verify';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of actions for the UploadMachine.
  */
 @Injectable()
 export class UploadActionsImplementations {
   constructor(
-    private logger: Logger,
+    private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
   ) {}
   public readonly actions: typeof UploadMachine.prototype.actions & IActions = {

@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateMachine } from '../../machines/create/create.machine';
 import { IGuards } from '../../schemas/create/create.schema';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of guards for the CreateMachine.
  */
 @Injectable()
 export class CreateGuardsImplementations {
-  constructor(private logger: Logger) {}
+  constructor(private logger: LoggerService) {}
   public readonly guards: typeof CreateMachine.prototype.guards & IGuards = {
     hasControllerArgs: ({ context }) => {
       if (!context.controller_args) return false;

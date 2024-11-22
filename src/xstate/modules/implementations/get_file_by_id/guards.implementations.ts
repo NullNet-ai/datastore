@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { GetFileByIdMachine } from '../../machines/get_file_by_id/get_file_by_id.machine';
 import { IGuards } from '../../schemas/get_file_by_id/get_file_by_id.schema';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of guards for the GetFileByIdMachine.
  */
 @Injectable()
 export class GetFileByIdGuardsImplementations {
-  constructor(private logger: Logger) {}
+  constructor(private logger: LoggerService) {}
   public readonly guards: typeof GetFileByIdMachine.prototype.guards & IGuards =
     {
       hasControllerArgs: ({ context }) => {

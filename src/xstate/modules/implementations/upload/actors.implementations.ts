@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { Injectable } from '@nestjs/common';
+import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/upload/upload.schema';
 import { CreateActorsImplementations } from '../create/actors.implementations';
@@ -15,7 +15,7 @@ export class UploadActorsImplementations {
     private readonly minioService: MinioService,
     private readonly createActorsImplementations: CreateActorsImplementations,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
-    private readonly logger: Logger,
+    private readonly logger: LoggerService,
   ) {}
 
   /**

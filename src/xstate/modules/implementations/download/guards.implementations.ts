@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DownloadMachine } from '../../machines/download/download.machine';
 import { IGuards } from '../../schemas/download/download.schema';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of guards for the DownloadMachine.
  */
 @Injectable()
 export class DownloadGuardsImplementations {
-  constructor(private logger: Logger) {}
+  constructor(private logger: LoggerService) {}
   public readonly guards: typeof DownloadMachine.prototype.guards & IGuards = {
     hasControllerArgs: ({ context }) => {
       if (!context.controller_args) return false;

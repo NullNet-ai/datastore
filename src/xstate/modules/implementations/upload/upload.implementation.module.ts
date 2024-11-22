@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import {
   UploadActionsImplementations,
   UploadActorsImplementations,
@@ -13,7 +13,6 @@ const providers = [
   UploadActionsImplementations,
   UploadActorsImplementations,
   UploadGuardsImplementations,
-  Logger,
 ];
 @Module({
   providers,

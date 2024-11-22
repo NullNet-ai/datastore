@@ -1,17 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DownloadMachine } from '../../machines/download/download.machine';
 import { IActions } from '../../schemas/download/download.schema';
 import { VerifyActionsImplementations } from '../verify';
 import * as path from 'path';
 import * as fs from 'fs';
 import type { Response } from 'express';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of actions for the DownloadMachine.
  */
 @Injectable()
 export class DownloadActionsImplementations {
   constructor(
-    private logger: Logger,
+    private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
   ) {}
   public readonly actions: typeof DownloadMachine.prototype.actions & IActions =

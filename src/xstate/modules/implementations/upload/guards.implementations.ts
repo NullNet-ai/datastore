@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UploadMachine } from '../../machines/upload/upload.machine';
 import { IGuards } from '../../schemas/upload/upload.schema';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of guards for the UploadMachine.
  */
 @Injectable()
 export class UploadGuardsImplementations {
-  constructor(private logger: Logger) {}
+  constructor(private logger: LoggerService) {}
   public readonly guards: typeof UploadMachine.prototype.guards & IGuards = {
     hasControllerArgs: ({ context }) => {
       if (!context.controller_args) return false;

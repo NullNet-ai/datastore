@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { Injectable } from '@nestjs/common';
+import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { VerifyActorsImplementations } from '../verify';
 import { GetFileByIdActorsImplementations } from '../get_file_by_id';
@@ -19,7 +19,7 @@ export class DownloadActorsImplementations {
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly getFileByIdActorImplementations: GetFileByIdActorsImplementations,
     private readonly minioService: MinioService,
-    private readonly logger: Logger,
+    private readonly logger: LoggerService,
   ) {
     this.onData = this.onData.bind(this);
   }

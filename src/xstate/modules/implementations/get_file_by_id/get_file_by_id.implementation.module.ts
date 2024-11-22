@@ -1,5 +1,4 @@
-
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import {
   GetFileByIdActionsImplementations,
   GetFileByIdActorsImplementations,
@@ -10,7 +9,6 @@ const providers = [
   GetFileByIdActionsImplementations,
   GetFileByIdActorsImplementations,
   GetFileByIdGuardsImplementations,
-  Logger
 ];
 @Module({
   providers,

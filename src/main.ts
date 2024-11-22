@@ -16,12 +16,7 @@ const {
   // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
-const logger = new LoggerService(process.env.npm_package_name ?? 'unknown', {
-  timestamp: DEBUG === 'true',
-  logLevels: ['production'].includes(NODE_ENV)
-    ? ['error']
-    : ['log', 'warn', 'error', 'debug'],
-});
+const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
 
 async function initialOrganization(
   organization: OrganizationsService,

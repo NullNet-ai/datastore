@@ -1,5 +1,4 @@
-
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import {
   GetActionsImplementations,
   GetActorsImplementations,
@@ -10,7 +9,6 @@ const providers = [
   GetActionsImplementations,
   GetActorsImplementations,
   GetGuardsImplementations,
-  Logger
 ];
 @Module({
   providers,

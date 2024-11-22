@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/verify/verify.schema';
 import { AuthService } from '@dna-platform/crdt-lww/build/modules/auth/auth.service';
@@ -8,7 +8,7 @@ import { AuthService } from '@dna-platform/crdt-lww/build/modules/auth/auth.serv
 export class VerifyActorsImplementations {
   constructor(
     private readonly authService: AuthService,
-    private readonly logger: Logger,
+    private readonly logger: LoggerService,
   ) {}
   /**
    * Implementation of actors for the verify machine.

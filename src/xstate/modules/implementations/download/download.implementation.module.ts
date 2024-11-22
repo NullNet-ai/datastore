@@ -5,7 +5,6 @@ import {
   DownloadGuardsImplementations,
 } from './';
 import { GetFileByIdActorsImplementations } from '../get_file_by_id';
-import { LoggerService } from '@dna-platform/common';
 import { MinioService } from '../../../../providers/files/minio.service';
 
 const providers = [
@@ -14,7 +13,6 @@ const providers = [
   DownloadActionsImplementations,
   DownloadActorsImplementations,
   DownloadGuardsImplementations,
-  LoggerService,
 ];
 @Module({
   providers,

@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FindMachine } from '../../machines/find/find.machine';
 import { IGuards } from '../../schemas/find/find.schema';
+import { LoggerService } from '@dna-platform/common';
 /**
  * Implementation of guards for the FindMachine.
  */
 @Injectable()
 export class FindGuardsImplementations {
-  constructor(private logger: Logger) {}
+  constructor(private logger: LoggerService) {}
   public readonly guards: typeof FindMachine.prototype.guards & IGuards = {
     hasControllerArgs: ({ context }) => {
       if (!context.controller_args) return false;
