@@ -18,6 +18,9 @@ const {
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown', {
   timestamp: DEBUG === 'true',
+  logLevels: ['production'].includes(NODE_ENV)
+    ? ['error']
+    : ['log', 'warn', 'error', 'debug'],
 });
 
 async function initialOrganization(
@@ -69,9 +72,7 @@ async function cleanupTemporaryFiles() {
 
 async function bootstrap() {
   const app = await NestFactory.create(MainModule, {
-    logger: ['local', 'development', 'dev'].includes(NODE_ENV)
-      ? logger
-      : ['error'],
+    logger,
   });
   app.use(cookieParser());
   app.useLogger(logger);

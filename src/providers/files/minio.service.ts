@@ -37,7 +37,7 @@ export class MinioService {
       this.client = new Minio.Client({
         endPoint: STORAGE_ENDPOINT,
         port: +STORAGE_PORT,
-        // useSSL: NODE_ENV === 'production',
+        useSSL: false,
         accessKey: STORAGE_ACCESS_KEY,
         secretKey: STORAGE_SECRET_KEY,
         // ...(NODE_ENV === 'production' && {

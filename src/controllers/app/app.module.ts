@@ -9,6 +9,7 @@ import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drive
 import { StoreQueryDriver } from '../../providers/store/store.service';
 import * as schema from '../../schema';
 import { AppViewModule } from 'src/views/app.view.module';
+import { LoggerService } from '@dna-platform/common';
 @Module({
   imports: [
     AppViewModule,
@@ -18,6 +19,7 @@ import { AppViewModule } from 'src/views/app.view.module';
         DriversModule.forRoot({
           imports: [...shared_imports],
           providers: [
+            LoggerService,
             {
               useClass: StoreQueryDriver,
               provide: QueryDriverInterface,

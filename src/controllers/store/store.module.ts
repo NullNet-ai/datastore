@@ -5,7 +5,11 @@ import {
   TokenController,
   TransactionController,
 } from './store.controller';
-import { machine_providers, MachineModule } from '@dna-platform/common';
+import {
+  LoggerService,
+  machine_providers,
+  MachineModule,
+} from '@dna-platform/common';
 import { XstateModule } from '@dna-platform/common';
 import * as machines from '../../xstate/modules/machines';
 import {
@@ -43,7 +47,7 @@ const machines_providers = machine_providers([
   // Transactions
   machines.TransactionsMachine,
 ]);
-const additional_providers: Provider[] = [];
+const additional_providers: Provider[] = [LoggerService];
 const base_classes = [StoreController];
 const additional_controllers = [
   TokenController,
