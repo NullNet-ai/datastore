@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { LoggerService } from '@dna-platform/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 // import * as https from 'https';
 // import * as fs from 'fs';
 import * as Minio from 'minio';
@@ -20,7 +21,7 @@ const {
 @Injectable()
 export class MinioService {
   public client: Minio.Client;
-  constructor(private readonly logger: Logger) {}
+  constructor(private readonly logger: LoggerService) {}
 
   async onModuleInit() {
     if (['local'].includes(NODE_ENV)) return;

@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import {
   HelperService,
   IImplementationFunctions,
   IImplementationProviders,
   IMachineProperties,
+  LoggerService,
   MachineInit,
 } from '@dna-platform/common';
 import { IActions, IActors, IGuards } from '../../schemas/create/create.schema';
@@ -26,7 +27,7 @@ export class CreateMachine
   constructor(
     @Inject('IMPLEMENTATIONS')
     implementation_providers: IImplementationProviders[],
-    logger: Logger,
+    logger: LoggerService,
     private ai: CreateActionsImplementations,
     private si: CreateActorsImplementations,
     private gi: CreateGuardsImplementations,

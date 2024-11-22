@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, Provider } from '@nestjs/common';
+import { Provider } from '@nestjs/common';
 import {
   EEvents,
   TRootEvent,
@@ -43,12 +43,7 @@ describe('UploadMachine', () => {
           exports: [...machines_providers, ...additional_providers],
         }),
       ],
-      providers: [
-        Logger,
-        HelperService,
-        UploadMachine,
-        ...additional_providers,
-      ],
+      providers: [HelperService, UploadMachine, ...additional_providers],
     }).compile();
     uploadMachine = module.get<UploadMachine>(UploadMachine);
     request = createRequest<Request>({

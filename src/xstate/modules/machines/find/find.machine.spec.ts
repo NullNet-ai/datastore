@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, Provider } from '@nestjs/common';
+import { Provider } from '@nestjs/common';
 import {
   EEvents,
   TRootEvent,
@@ -43,7 +43,7 @@ describe('FindMachine', () => {
           exports: [...machines_providers, ...additional_providers],
         }),
       ],
-      providers: [Logger, HelperService, FindMachine, ...additional_providers],
+      providers: [HelperService, FindMachine, ...additional_providers],
     }).compile();
     findMachine = module.get<FindMachine>(FindMachine);
     request = createRequest<Request>({

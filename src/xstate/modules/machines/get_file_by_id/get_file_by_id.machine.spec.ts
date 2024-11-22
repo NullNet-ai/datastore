@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, Provider } from '@nestjs/common';
+import { Provider } from '@nestjs/common';
 import {
   EEvents,
   TRootEvent,
@@ -43,12 +43,7 @@ describe('GetFileByIdMachine', () => {
           exports: [...machines_providers, ...additional_providers],
         }),
       ],
-      providers: [
-        Logger,
-        HelperService,
-        GetFileByIdMachine,
-        ...additional_providers,
-      ],
+      providers: [HelperService, GetFileByIdMachine, ...additional_providers],
     }).compile();
     get_file_by_idMachine = module.get<GetFileByIdMachine>(GetFileByIdMachine);
     request = createRequest<Request>({

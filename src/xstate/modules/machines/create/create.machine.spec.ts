@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, Provider } from '@nestjs/common';
+import { Provider } from '@nestjs/common';
 import {
   EEvents,
   TRootEvent,
@@ -43,12 +43,7 @@ describe('CreateMachine', () => {
           exports: [...machines_providers, ...additional_providers],
         }),
       ],
-      providers: [
-        Logger,
-        HelperService,
-        CreateMachine,
-        ...additional_providers,
-      ],
+      providers: [HelperService, CreateMachine, ...additional_providers],
     }).compile();
     createMachine = module.get<CreateMachine>(CreateMachine);
     request = createRequest<Request>({

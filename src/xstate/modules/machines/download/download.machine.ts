@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import {
   HelperService,
   IImplementationFunctions,
   IImplementationProviders,
   IMachineProperties,
+  LoggerService,
   MachineInit,
 } from '@dna-platform/common';
 import {
@@ -30,7 +31,7 @@ export class DownloadMachine
   constructor(
     @Inject('IMPLEMENTATIONS')
     implementation_providers: IImplementationProviders[],
-    logger: Logger,
+    logger: LoggerService,
     private ai: DownloadActionsImplementations,
     private si: DownloadActorsImplementations,
     private gi: DownloadGuardsImplementations,

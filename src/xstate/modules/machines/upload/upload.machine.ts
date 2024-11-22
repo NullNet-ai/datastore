@@ -1,17 +1,13 @@
-
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import {
   HelperService,
   IImplementationFunctions,
   IImplementationProviders,
   IMachineProperties,
+  LoggerService,
   MachineInit,
 } from '@dna-platform/common';
-import {
-  IActions,
-  IActors,
-  IGuards,
-} from '../../schemas/upload/upload.schema';
+import { IActions, IActors, IGuards } from '../../schemas/upload/upload.schema';
 import {
   UploadActionsImplementations,
   UploadActorsImplementations,
@@ -31,7 +27,7 @@ export class UploadMachine
   constructor(
     @Inject('IMPLEMENTATIONS')
     implementation_providers: IImplementationProviders[],
-    logger: Logger,
+    logger: LoggerService,
     private ai: UploadActionsImplementations,
     private si: UploadActorsImplementations,
     private gi: UploadGuardsImplementations,

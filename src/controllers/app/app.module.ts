@@ -10,8 +10,10 @@ import { StoreQueryDriver } from '../../providers/store/store.service';
 import * as schema from '../../schema';
 import { AppViewModule } from 'src/views/app.view.module';
 import { LoggerService } from '@dna-platform/common';
+import { GlobalModule } from 'src/providers/global/global.module';
 @Module({
   imports: [
+    GlobalModule,
     AppViewModule,
     MachineStoreModule,
     CoreModule.register({

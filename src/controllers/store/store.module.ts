@@ -54,6 +54,7 @@ const additional_controllers = [
   FileController,
   TransactionController,
 ];
+
 const shared_machine_imports = [
   // CRUD
   GetImplementationModule,
@@ -61,8 +62,10 @@ const shared_machine_imports = [
   CreateImplementationModule,
   UpdateImplementationModule,
   DeleteImplementationModule,
+
   // Token
   VerifyImplementationModule,
+
   // File
   DownloadImplementationModule,
   GetFileByIdImplementationModule,
