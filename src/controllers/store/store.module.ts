@@ -29,6 +29,7 @@ import { GetFileByIdImplementationModule } from '../../xstate/modules/implementa
 import { UploadImplementationModule } from '../../xstate/modules/implementations/upload/upload.implementation.module';
 import { UploadsImplementationModule } from '../../xstate/modules/implementations/uploads/uploads.implementation.module';
 import { TransactionsImplementationModule } from '../../xstate/modules/implementations/transactions/transactions.implementation.module';
+import { CountImplementationModule } from '../../xstate/modules/implementations/count/count.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -46,6 +47,8 @@ const machines_providers = machine_providers([
   machines.UploadsMachine,
   // Transactions
   machines.TransactionsMachine,
+  // Count
+  machines.CountMachine,
 ]);
 const additional_providers: Provider[] = [LoggerService];
 const base_classes = [StoreController];
@@ -73,6 +76,8 @@ const shared_machine_imports = [
   UploadsImplementationModule,
   // Transaction
   TransactionsImplementationModule,
+  // Count
+  CountImplementationModule,
 ];
 export const shared_imports = [
   XstateModule.register({

@@ -34,6 +34,11 @@ export class StoreController {
     return this.storeQuery.get(_res, _req);
   }
 
+  @Get('/:table')
+  async count(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeQuery.getCount(_res, _req);
+  }
+
   @Post('/:table/filter')
   async find(@Res() _res: Response, @Req() _req: Request) {
     return this.storeQuery.find(_res, _req);

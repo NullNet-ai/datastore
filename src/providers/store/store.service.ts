@@ -42,4 +42,7 @@ export class StoreQueryDriver {
 
   @Machine('getFileById')
   async getFileById(_res: Response, _req: Request) {}
+
+  @Machine('count')
+  async getCount(_res: Response, _req: Request) {}
 }
