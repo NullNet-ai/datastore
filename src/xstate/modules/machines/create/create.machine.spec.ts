@@ -6,6 +6,7 @@ import {
   HelperService,
   MachineModule,
   machine_providers,
+  LoggerService,
 } from '@dna-platform/common';
 import { Request, Response } from 'express';
 import {
@@ -21,6 +22,14 @@ import {
   CreateGuardsImplementations,
 } from '../../implementations/create';
 import { CreateMachine } from './create.machine';
+import { VerifyActionsImplementations } from '../../implementations/verify';
+import { CoreModule, DriversModule } from '@dna-platform/crdt-lww';
+import { GlobalModule } from '../../../../providers/global/global.module';
+import { shared_imports } from '../../../../controllers/store/store.module';
+import { StoreQueryDriver } from '../../../../providers/store/store.service';
+import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drivers/query/enums';
+import * as schema from '../../../../schema';
+import { MinioService } from '../../../../providers/files/minio.service';
 describe('CreateMachine', () => {
   let createMachine: CreateMachine;
   let machine_with_config;
@@ -29,15 +38,38 @@ describe('CreateMachine', () => {
   beforeEach(async () => {
     const machines_providers = machine_providers({ CreateMachine });
     const additional_providers: Provider[] = [
+      MinioService,
       CreateActionsImplementations,
       CreateActorsImplementations,
       CreateGuardsImplementations,
+      LoggerService,
+      VerifyActionsImplementations,
     ];
     /**
      * Represents the testing module used for creating a testing environment.
      */
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        GlobalModule,
+        CoreModule.register({
+          imports: [
+            DriversModule.forRoot({
+              imports: [...shared_imports],
+              providers: [
+                LoggerService,
+                {
+                  useClass: StoreQueryDriver,
+                  provide: QueryDriverInterface,
+                },
+                {
+                  useValue: schema,
+                  provide: 'LOCAL_SCHEMA',
+                },
+              ],
+            }),
+            // StoreModule,
+          ],
+        }),
         MachineModule.register({
           providers: [...machines_providers, ...additional_providers],
           exports: [...machines_providers, ...additional_providers],

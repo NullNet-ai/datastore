@@ -1,7 +1,5 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { Provider } from '@nestjs/common';
-import { LoggerService } from '@dna-platform/common';
 import {
   EEvents,
   TRootEvent,
@@ -45,7 +43,7 @@ describe('CountMachine', () => {
           exports: [...machines_providers, ...additional_providers],
         }),
       ],
-      providers: [HelperService, TemplateMachine, ...additional_providers],
+      providers: [HelperService, CountMachine, ...additional_providers],
     }).compile();
     countMachine = module.get<CountMachine>(CountMachine);
     request = createRequest<Request>({

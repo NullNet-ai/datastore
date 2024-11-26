@@ -13,8 +13,8 @@ import { LoggerService } from '@dna-platform/common';
 import { GlobalModule } from 'src/providers/global/global.module';
 @Module({
   imports: [
-    GlobalModule,
     AppViewModule,
+    GlobalModule,
     MachineStoreModule,
     CoreModule.register({
       imports: [

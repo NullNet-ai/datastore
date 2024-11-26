@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get_file_by_id/get_file_by_id.schema';
-import { Utility } from 'src/utils/utility.service';
+import { Utility } from '../../../../utils/utility.service';
 import { DrizzleService } from '@dna-platform/crdt-lww';
 import { VerifyActorsImplementations } from '../verify';
 import { isNotNull, and, eq } from 'drizzle-orm';
