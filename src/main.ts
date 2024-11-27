@@ -16,6 +16,7 @@ const {
   // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
+fs.mkdirSync('./tmp', { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
 
 async function initialOrganization(

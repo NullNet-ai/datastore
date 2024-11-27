@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "start": "nest start",
     "start:dev": "NODE_ENV=development nest start --watch",
     "start:debug": "DEBUG=true nest start --watch --debug",
-    "start:prod": "bun run build && NODE_ENV='production' bun run ./dist/main.js",
+    "start:prod": "bun run build && NODE_ENV=production node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "start:test:prod": "bun run test && bun run build && bun run start:prod",
