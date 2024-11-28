@@ -25,10 +25,6 @@
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:cleanup": "rm -rf drizzle sql"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://gitlab.platform.dnadev.net/platform/db/api/api/datastore.git"
-  },
   "dependencies": {
     "@dna-platform/common": "^1.0.39",
     "@dna-platform/crdt-lww": "^1.1.2",
