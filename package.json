@@ -23,6 +23,7 @@
     "clean:build": "rm -rf node_modules bun.lockb dist drizzle sql tmp upload logs package-lock.json && npm i",
     "generate": "node node_modules/@dna-platform/common/build/generator/index.js",
     "drizzle:generate": "drizzle-kit generate",
+    "drizzle:migrate": "drizzle-kit migrate",
     "drizzle:cleanup": "rm -rf drizzle sql"
   },
   "dependencies": {

@@ -2,8 +2,9 @@ import { Module, Provider } from '@nestjs/common';
 import {
   FileController,
   StoreController,
+  TestController,
   TokenController,
-  TransactionController,
+  // TransactionController,
 } from './store.controller';
 import {
   LoggerService,
@@ -55,7 +56,8 @@ const base_classes = [StoreController];
 const additional_controllers = [
   TokenController,
   FileController,
-  TransactionController,
+  // TransactionController,
+  TestController,
 ];
 
 const shared_machine_imports = [

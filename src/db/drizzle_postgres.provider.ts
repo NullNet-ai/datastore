@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { Client} from 'pg';
+import { Client } from 'pg';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DrizzlePostgresProvider {
-  private readonly db: NodePgDatabase<Record<string, never>> & { $client: Client; };
+  private readonly db: NodePgDatabase<Record<string, never>> & {
+    $client: Client;
+  };
 
   constructor(private readonly configService: ConfigService) {
     // Retrieve connection details from environment variables
@@ -16,16 +18,22 @@ export class DrizzlePostgresProvider {
     const database = this.configService.get<string>('DB_NAME');
 
     if (!host || !port || !user || !password || !database) {
-      throw new Error('DB config incomplete in the environment variables, refer to env_sample...');
+      throw new Error(
+        'DB config incomplete in the environment variables, refer to env_sample...',
+      );
     }
 
     // Create the PostgreSQL connection pool
-    const client  = new Client({
+    const client = new Client({
       host,
       user,
       database,
       password,
       port,
+    });
+
+    client.on('error', (err) => {
+      console.error('Connection error', err);
     });
 
     // Initialize Drizzle ORM

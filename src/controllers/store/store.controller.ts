@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Controller,
   Delete,
@@ -21,6 +22,8 @@ import {
 } from '../../providers/store/store.service';
 import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DrizzlePostgresProvider } from 'src/db/drizzle_postgres.provider';
+import { samples } from '../../schema';
 @UseGuards(AuthGuard)
 @Controller('/api/store')
 export class StoreController {
@@ -135,12 +138,26 @@ export class FileController {
   }
 }
 
-@UseGuards(AuthGuard)
-@Controller('/api/transactions')
-export class TransactionController {
-  constructor(private storeMutation: StoreMutationDriver) {}
-  @Post('/')
-  async transactions(@Res() _res: Response, @Req() _req: Request) {
-    return this.storeMutation.transactions(_res, _req);
+// @UseGuards(AuthGuard)
+// @Controller('/api/transactions')
+// export class TransactionController {
+//   constructor(private storeMutation: StoreMutationDriver) {}
+//   @Post('/')
+//   async transactions(@Res() _res: Response, @Req() _req: Request) {
+//     return this.storeMutation.transactions(_res, _req);
+//   }
+// }
+
+@Controller('/api/test')
+export class TestController {
+  private db;
+  constructor(private drizzle: DrizzlePostgresProvider) {
+    this.db = this.drizzle.getDatabase();
+  }
+  @Get()
+  async test(@Res() _res: Response, @Req() _req: Request) {
+    const results = await this.db.select().from(samples);
+    console.log(results);
+    _res.send('wews');
   }
 }
