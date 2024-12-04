@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/transactions/transactions.schema';
-import { DrizzleService } from '@dna-platform/crdt-lww';
+import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import * as schema from '../../../../schema';
 import { eq } from 'lodash';
 

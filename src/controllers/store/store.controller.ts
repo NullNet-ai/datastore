@@ -19,7 +19,7 @@ import {
   StoreMutationDriver,
   StoreQueryDriver,
 } from '../../providers/store/store.service';
-import { AuthGuard } from '@dna-platform/crdt-lww';
+import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
 @UseGuards(AuthGuard)
 @Controller('/api/store')

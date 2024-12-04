@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/delete/delete.schema';
-import { SyncService } from '@dna-platform/crdt-lww';
+import { SyncService } from '@dna-platform/crdt-lww-postgres';
 import { GetActorsImplementations } from '../get//actors.implementations';
 @Injectable()
 export class DeleteActorsImplementations {

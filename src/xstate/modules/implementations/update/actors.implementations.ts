@@ -3,7 +3,7 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from '../../../../utils/utility.service';
-import { DrizzleService, SyncService } from '@dna-platform/crdt-lww';
+import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';

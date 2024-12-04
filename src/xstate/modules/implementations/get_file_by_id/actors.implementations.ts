@@ -3,7 +3,7 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get_file_by_id/get_file_by_id.schema';
 import { Utility } from '../../../../utils/utility.service';
-import { DrizzleService } from '@dna-platform/crdt-lww';
+import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { VerifyActorsImplementations } from '../verify';
 import { isNotNull, and, eq } from 'drizzle-orm';
 

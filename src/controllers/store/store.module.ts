@@ -21,7 +21,7 @@ import { FindImplementationModule } from '../../xstate/modules/implementations/f
 import { CreateImplementationModule } from '../../xstate/modules/implementations/create/create.implementation.module';
 import { UpdateImplementationModule } from '../../xstate/modules/implementations/update/update.implementation.module';
 import { DeleteImplementationModule } from '../../xstate/modules/implementations/delete/delete.implementation.module';
-import { QueryDriverInterface } from '@dna-platform/crdt-lww/build/modules/drivers/query/enums';
+import { QueryDriverInterface } from '@dna-platform/crdt-lww-postgres/build/modules/drivers/query/enums';
 import { VerifyImplementationModule } from '../../xstate/modules/implementations/verify/verify.implementation.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { DownloadImplementationModule } from '../../xstate/modules/implementations/download/download.implementation.module';

@@ -1,1 +1,1 @@
-export * from '@dna-platform/crdt-lww/build/schema';
+export * from '@dna-platform/crdt-lww-postgres/build/schema';

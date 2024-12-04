@@ -3,14 +3,14 @@ import * as path from 'path';
 import {
   fileRegex,
   getConfigDefaults,
-  system_fields,
-} from '@dna-platform/crdt-lww/build/schema/system';
+  // system_fields,
+} from '@dna-platform/crdt-lww-postgres/build/schema/system';
 const filename = path.basename(__filename).replace(fileRegex, '');
 const config = getConfigDefaults.byIndex(filename);
 export const table = sqliteTable(
   filename,
   {
-    ...system_fields,
+    // ...system_fields,
     fieldname: text(),
     originalname: text(),
     encoding: text(),

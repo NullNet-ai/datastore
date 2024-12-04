@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/verify/verify.schema';
-import { AuthService } from '@dna-platform/crdt-lww/build/modules/auth/auth.service';
+import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
 
 @Injectable()
 export class VerifyActorsImplementations {

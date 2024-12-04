@@ -4,7 +4,7 @@ import { MainModule } from './main.module';
 import { LoggerService } from '@dna-platform/common';
 import * as fs from 'fs';
 import * as cookieParser from 'cookie-parser';
-import { OrganizationsService } from '@dna-platform/crdt-lww';
+import { OrganizationsService } from '@dna-platform/crdt-lww-postgres';
 import { MinioService } from './providers/files/minio.service';
 
 const {
@@ -17,6 +17,7 @@ const {
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 fs.mkdirSync('./tmp', { recursive: true });
+fs.mkdirSync('./upload', { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
 
 async function initialOrganization(

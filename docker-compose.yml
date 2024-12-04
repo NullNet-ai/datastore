@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb
+    ports:
+      - "5432:5432" # Expose PostgreSQL on port 5432
+    environment:
+      POSTGRES_USER: admin        # Replace with your desired username
+      POSTGRES_PASSWORD: admin    # Replace with your desired password
+      POSTGRES_DB: nullnet          # Replace with your desired database name
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  timescale-data:
