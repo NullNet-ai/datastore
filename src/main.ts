@@ -83,14 +83,14 @@ async function bootstrap() {
     );
   });
 
-  // const storage = app.get(MinioService);
-  // // initialize the organization
-  // const organization = app.get(OrganizationsService);
+  const storage = app.get(MinioService);
+  // initialize the organization
+  const organization = app.get(OrganizationsService);
 
-  // await initialOrganization(organization, storage);
+  await initialOrganization(organization, storage);
 
-  // // cleanup the temporary files every 1 minute in remote environment
-  // cleanupTemporaryFiles();
+  // cleanup the temporary files every 1 minute in remote environment
+  cleanupTemporaryFiles();
 }
 
 bootstrap();
