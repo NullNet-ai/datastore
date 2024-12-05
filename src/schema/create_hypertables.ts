@@ -42,16 +42,16 @@ function getUncommentedTables() {
     return [];
   }
 }
-
 /**
  * Deletes all files with "hypertables" in their name except the latest one.
  */
+// @ts-ignore
+
 function cleanHypertableFiles() {
   try {
     const files = fs
       .readdirSync(DRIZZLE_DIR_PATH)
       .filter((file) => file.includes('hypertables') && file.endsWith('.sql'));
-    console.log(files);
 
     if (files.length < 1) return;
 
@@ -63,7 +63,7 @@ function cleanHypertableFiles() {
     });
 
     // Keep the latest file and delete the rest
-    for (let i = 0; i < sortedFiles.length - 1; i++) {
+    for (let i = 0; i <= sortedFiles.length - 1; i++) {
       const filePath = path.join(DRIZZLE_DIR_PATH, sortedFiles[i]);
       fs.unlinkSync(filePath);
       console.log(`Deleted old hypertables file: ${filePath}`);
@@ -111,7 +111,7 @@ function writeHypertableQueriesToDrizzleFile(tableNames: string[]) {
     const queries = tableNames
       .map(
         (tableName) =>
-          `SELECT create_hypertable('${tableName}', 'time', chunk_time_interval => INTERVAL '7 days, if_not_exists => TRUE');`,
+          `SELECT create_hypertable('${tableName}', 'time', chunk_time_interval => INTERVAL '7 days', if_not_exists => TRUE);`,
       )
       .join('\n');
 
@@ -138,21 +138,20 @@ function processHypertableQueries() {
   }
 
   try {
-    const hypertableFiles = fs
-      .readdirSync(DRIZZLE_DIR_PATH)
-      .filter((file) => file.includes('hypertables') && file.endsWith('.sql'));
-
-    // Run the drizzle:generate-hypertables command
+    // const hypertableFiles = fs
+    //   .readdirSync(DRIZZLE_DIR_PATH)
+    //   .filter((file) => file.includes('hypertables') && file.endsWith('.sql'));
+    //
+    // // Run the drizzle:generate-hypertables command
+    // // If files exist, clean them
+    // if (hypertableFiles.length > 0) {
+    //   console.log('Cleaning old hypertable files...');
+    //   cleanHypertableFiles();
+    // }
     console.log('Running command: npm run drizzle:generate-hypertables');
     child_process.execSync('npm run drizzle:generate-hypertables', {
       stdio: 'inherit',
     });
-    // If files exist, clean them
-    if (hypertableFiles.length > 0) {
-      console.log('Cleaning old hypertable files...');
-      cleanHypertableFiles();
-    }
-
     // Write queries to the latest SQL file
     writeHypertableQueriesToDrizzleFile(tableNames);
   } catch (error) {
