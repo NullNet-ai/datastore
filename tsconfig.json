@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "lib": ["ES2021", "ESNext"],
+    "lib": ["ES2021"],
     "declaration": false,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -21,6 +21,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
+    "moduleResolution": "node",
     "jsx": "react",
     "jsxFactory": "elements.createElement",
     "allowJs": true

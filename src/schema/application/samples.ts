@@ -1,4 +1,4 @@
-import { pgTable, timestamp, doublePrecision } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -11,9 +11,10 @@ export const table = pgTable(
   filename,
   {
     ...system_fields,
-    time: timestamp('time', { withTimezone: true }).notNull(), // NOT NULL timestamp
-    temperature: doublePrecision('temperature').notNull(), // NOT NULL double precision
-    humidity: doublePrecision('humidity').notNull(), // NOT NULL double precision
+    sample_text: text(),
+    // time: timestamp('time', { withTimezone: true }).notNull(), // NOT NULL timestamp
+    // temperature: doublePrecision('temperature').notNull(), // NOT NULL double precision
+    // humidity: doublePrecision('humidity').notNull(), // NOT NULL double precision
   },
   config,
 );

@@ -22,7 +22,7 @@ import {
 } from '../../providers/store/store.service';
 import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DrizzlePostgresProvider } from 'src/db/drizzle_postgres.provider';
+// import { DrizzlePostgresProvider } from '../db/drizzle_postgres.provider';
 import { samples } from '../../schema';
 import { sql } from 'drizzle-orm';
 import { processHypertableQueries } from '../../schema/create_hypertables';
@@ -150,30 +150,30 @@ export class FileController {
 //   }
 // }
 
-@Controller('/api/test')
-export class TestController {
-  private db;
-  constructor(private drizzle: DrizzlePostgresProvider) {
-    this.db = DrizzlePostgresProvider.getDatabase();
-  }
-  @Get()
-  async test(@Res() _res: Response, @Req() _req: Request) {
-    console.log('hitting the test route....');
-    processHypertableQueries();
-    const results = await this.db.select().from(samples);
+// @Controller('/api/test')
+// export class TestController {
+//   private db;
+//   constructor(private drizzle: DrizzlePostgresProvider) {
+//     this.db = DrizzlePostgresProvider.getDatabase();
+//   }
+//   @Get()
+//   async test(@Res() _res: Response, @Req() _req: Request) {
+//     console.log('hitting the test route....');
+//     processHypertableQueries();
+//     const results = await this.db.select().from(samples);
 
-    // const results = await this.db.execute(
-    //   sql`
-    //   SELECT time_bucket('1 hour', time) AS bucket,
-    //          AVG(temperature) AS avg_temperature,
-    //          MAX(temperature) AS max_temperature,
-    //          MIN(temperature) AS min_temperature
-    //   FROM samples
-    //   GROUP BY bucket
-    //   ORDER BY bucket;
-    // `,
-    // );
-    console.log(results);
-    _res.send(results);
-  }
-}
+//     // const results = await this.db.execute(
+//     //   sql`
+//     //   SELECT time_bucket('1 hour', time) AS bucket,
+//     //          AVG(temperature) AS avg_temperature,
+//     //          MAX(temperature) AS max_temperature,
+//     //          MIN(temperature) AS min_temperature
+//     //   FROM samples
+//     //   GROUP BY bucket
+//     //   ORDER BY bucket;
+//     // `,
+//     // );
+//     console.log(results);
+//     _res.send(results);
+//   }
+// }

@@ -1,6 +1,13 @@
 import { LoggerService } from '@dna-platform/common';
 import { DynamicModule, Global, Module, ModuleMetadata } from '@nestjs/common';
-const global_providers = [LoggerService];
+import * as schema from '../../schema';
+const global_providers = [
+  LoggerService,
+  {
+    useValue: schema,
+    provide: 'LOCAL_SCHEMA',
+  },
+];
 @Global()
 @Module({
   providers: global_providers,
