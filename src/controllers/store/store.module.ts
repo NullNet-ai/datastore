@@ -1,6 +1,7 @@
 import { Module, Provider } from '@nestjs/common';
 import {
   FileController,
+  HypertableController,
   StoreController,
   TokenController,
 } from './store.controller';
@@ -29,6 +30,7 @@ import { UploadImplementationModule } from '../../xstate/modules/implementations
 import { UploadsImplementationModule } from '../../xstate/modules/implementations/uploads/uploads.implementation.module';
 import { TransactionsImplementationModule } from '../../xstate/modules/implementations/transactions/transactions.implementation.module';
 import { CountImplementationModule } from '../../xstate/modules/implementations/count/count.implementation.module';
+import { CreateHypertablesImplementationModule } from '../../xstate/modules/implementations/create_hypertables/create_hypertables.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -37,6 +39,10 @@ const machines_providers = machine_providers([
   machines.CreateMachine,
   machines.UpdateMachine,
   machines.DeleteMachine,
+
+  // Hypertable
+  machines.CreateHypertablesMachine,
+
   // Token
   machines.VerifyMachine,
   // File
@@ -54,6 +60,7 @@ const base_classes = [StoreController];
 const additional_controllers = [
   TokenController,
   FileController,
+  HypertableController,
   // TransactionController,
 ];
 
@@ -64,6 +71,9 @@ const shared_machine_imports = [
   CreateImplementationModule,
   UpdateImplementationModule,
   DeleteImplementationModule,
+
+  //Hypertable
+  CreateHypertablesImplementationModule,
 
   // Token
   VerifyImplementationModule,

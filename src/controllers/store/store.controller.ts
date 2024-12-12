@@ -65,6 +65,15 @@ export class StoreController {
   }
 }
 
+@Controller('/api/hypertable')
+export class HypertableController {
+  constructor(private storeMutation: StoreMutationDriver) {}
+  @Post()
+  async createHypertables(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeMutation.createHypertables(_res, _req);
+  }
+}
+
 @Controller('/api/token')
 export class TokenController {
   constructor(private storeMutation: StoreMutationDriver) {}

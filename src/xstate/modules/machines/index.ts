@@ -5,6 +5,7 @@
 
 
 
+
 export * from './get/get.machine';
 
 export * from './find/find.machine';
@@ -28,4 +29,6 @@ export * from './uploads/uploads.machine';
 export * from './transactions/transactions.machine';
   
 export * from './count/count.machine';
+  
+export * from './create_hypertables/create_hypertables.machine';
   

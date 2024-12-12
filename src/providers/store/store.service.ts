@@ -30,6 +30,9 @@ export class StoreMutationDriver {
 
   @Machine('transactions')
   async transactions(_res: Response, _req: Request) {}
+
+  @Machine('createHypertables')
+  async createHypertables(_res: Response, _req: Request) {}
 }
 
 @Injectable()

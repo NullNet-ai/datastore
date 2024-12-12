@@ -27,9 +27,10 @@ function getUncommentedTables() {
     // Read the contents of the file
     const fileContents = fs.readFileSync(INDEX_FILE_PATH, 'utf-8');
 
-    // Regex to match uncommented table exports
+    // Regex to match export statements with an inline "//hypertable" comment
     const tableRegex =
-      /^\s*export\s+\{[^}]*\s+as\s+(\w+)\s*\}\s+from\s+['"].*['"]\s*;$/gm;
+      /^\s*export\s+\{[^}]*\s+as\s+(\w+)\s*\}\s+from\s+['"].*['"]\s*;\s*\/\/\s*hypertable$/gm;
+
     const matches = Array.from(fileContents.matchAll(tableRegex));
 
     // Extract and return table names from matches
@@ -111,7 +112,7 @@ function writeHypertableQueriesToDrizzleFile(tableNames: string[]) {
     const queries = tableNames
       .map(
         (tableName) =>
-          `SELECT create_hypertable('${tableName}', 'time', chunk_time_interval => INTERVAL '7 days', if_not_exists => TRUE);`,
+          `SELECT create_hypertable('${tableName}', 'timestamp', chunk_time_interval => INTERVAL '7 days', if_not_exists => TRUE);`,
       )
       .join('\n');
 
@@ -130,8 +131,9 @@ function writeHypertableQueriesToDrizzleFile(tableNames: string[]) {
  * Main function to process the tables and write queries.
  */
 function processHypertableQueries() {
+  console.log('mthos is running');
   const tableNames: any = getUncommentedTables();
-
+  console.log('check check');
   if (tableNames.length === 0) {
     console.warn('No uncommented tables found.');
     return;
@@ -148,7 +150,6 @@ function processHypertableQueries() {
     //   console.log('Cleaning old hypertable files...');
     //   cleanHypertableFiles();
     // }
-    console.log('Running command: npm run drizzle:generate-hypertables');
     child_process.execSync('npm run drizzle:generate-hypertables', {
       stdio: 'inherit',
     });
