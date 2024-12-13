@@ -1,10 +1,5 @@
-import {
-  pgTable,
-  text,
-  integer,
-  primaryKey,
-  serial,
-} from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, primaryKey } from 'drizzle-orm/pg-core';
+import { system_fields } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { uuid, timestamp } from 'drizzle-orm/pg-core';
 
 const config = (table) => ({
@@ -14,7 +9,8 @@ const config = (table) => ({
 export const table = pgTable(
   'packets',
   {
-    id: serial('id'),
+    ...system_fields,
+    id: uuid('id'),
     firewall_uuid: uuid('firewall_uuid'), // Firewall UUID String
     network_interface: text('network_interface'), // Network Interface name
     timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // Epoch timestamp when the packet was captured, // Epoch timestamp (int32)

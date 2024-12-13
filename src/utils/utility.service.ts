@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import * as schema from '../schema';
-import { createInsertSchema } from 'drizzle-zod';
+import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { ulid } from 'ulid';
 import { ZodValidationException } from '@dna-platform/common';
 import {
@@ -76,6 +76,139 @@ export class Utility {
 
     return `${hours}:${minutes}`;
   }
+  public static advanceFilter(advance_filters) {
+    if (
+      !advance_filters ||
+      !Array.isArray(advance_filters) ||
+      advance_filters.length === 0
+    ) {
+      return ''; // Return an empty string if no filters are provided
+    }
+
+    const supported_operators = {
+      equal: '=',
+      not_equal: '!=',
+      greater_than: '>',
+      greater_than_or_equal: '>=',
+      less_than: '<',
+      less_than_or_equal: '<=',
+      is_null: 'IS NULL',
+      is_not_null: 'IS NOT NULL',
+      is_empty: "=''",
+      is_not_empty: "!=''",
+    };
+
+    let where_clauses: any = [];
+    let last_type: any = null;
+
+    for (let i = 0; i < advance_filters.length; i++) {
+      const filter = advance_filters[i];
+
+      if (filter.type === 'criteria') {
+        const { field, operator, value } = filter;
+
+        if (!field || !operator || !supported_operators[operator]) {
+          throw new Error(`Unsupported or missing operator: ${operator}`);
+        }
+
+        if (
+          ['is_null', 'is_not_null', 'is_empty', 'is_not_empty'].includes(
+            operator,
+          )
+        ) {
+          // Handle operators without a value (e.g., IS NULL, IS NOT NULL)
+          where_clauses.push(`${field} ${supported_operators[operator]}`);
+        } else {
+          // Handle operators with a value
+          where_clauses.push(
+            `${field} ${supported_operators[operator]} '${value}'`,
+          );
+        }
+
+        last_type = 'criteria';
+      } else if (filter.type === 'operator' && last_type === 'criteria') {
+        const { operator } = filter;
+
+        if (operator && (operator === 'AND' || operator === 'OR')) {
+          where_clauses.push(operator);
+        } else {
+          throw new Error(`Unsupported logical operator: ${operator}`);
+        }
+
+        last_type = 'operator';
+      }
+    }
+
+    // Remove trailing operator if present
+    if (last_type === 'operator') {
+      where_clauses.pop();
+    }
+
+    // Return the WHERE clause if there are valid criteria
+    return where_clauses.length > 0 ? `WHERE ${where_clauses.join(' ')}` : '';
+  }
+
+  public static queryGenerator(params) {
+    const {
+      entity, // Name of the table
+      aggregations, // Array of aggregation objects
+      bucket_size, // Time bucket size (e.g., 1 hour, 1 day)
+      advance_filters,
+      order: { order_direction, order_by }, // Column to order by
+    } = params;
+
+    // Validate required parameters
+    if (!entity || !bucket_size || !aggregations || aggregations.length === 0) {
+      throw new Error(
+        'Missing required parameters: entity, bucket_size, or aggregations.',
+      );
+    }
+
+    // Generate the SELECT clause
+    const selectClauses = aggregations.map(
+      ({ aggregation, aggregate_on, bucket_name }) => {
+        if (!aggregation || !aggregate_on || !bucket_name) {
+          throw new Error(
+            'Missing aggregation details: aggregation, aggregate_on, or bucket_name.',
+          );
+        }
+        return `${aggregation}(${aggregate_on}) AS ${bucket_name}`;
+      },
+    );
+
+    const selectClause = `
+        SELECT time_bucket('${bucket_size}', timestamp) AS bucket,
+               ${selectClauses.join(',\n               ')}
+    `;
+
+    // Generate the FROM clause
+    const fromClause = `FROM ${entity}`;
+
+    // Generate the WHERE clause
+    let whereClause = this.advanceFilter(advance_filters);
+
+    // Generate the GROUP BY clause
+    const groupByClause = `GROUP BY bucket`;
+
+    // Generate the ORDER BY clause
+    const orderDirection = order_direction
+      ? order_direction.toUpperCase()
+      : 'ASC';
+    const orderByClause = order_by
+      ? `ORDER BY ${order_by} ${orderDirection}`
+      : '';
+
+    // Combine all clauses into the final query
+    const query = `
+        ${selectClause}
+        ${fromClause}
+        ${whereClause}
+        ${groupByClause}
+        ${orderByClause};
+    `;
+
+    return query.trim();
+  }
   public static format(data: any, is_insert = true) {
     const date = new Date();
     const _data = {
@@ -110,6 +243,19 @@ export class Utility {
     }
 
     return { schema: createInsertSchema(schema_table), data, meta };
+  }
+
+  public static checkUpdateSchema(
+    table: string,
+    meta: Record<string, any>,
+    data: Record<string, any>,
+  ) {
+    const schema_table = Utility.checkTable(table);
+    if (!data) {
+      throw new BadRequestException('Data is required in Body');
+    }
+
+    return { schema: createUpdateSchema(schema_table), data, meta };
   }
   public static checkTable(table: string) {
     const table_schema = schema[table];

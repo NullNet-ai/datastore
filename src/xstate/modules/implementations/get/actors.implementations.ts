@@ -4,7 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get/get.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNotNull } from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
 
 @Injectable()
@@ -38,10 +38,9 @@ export class GetActorsImplementations {
           },
         });
 
-      // const { controller_args, _responsible_account } = context;
-      const { controller_args } = context;
+      const { controller_args, responsible_account } = context;
 
-      // const { organization_id = '' } = responsible_account;
+      const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, query } = _req;
       const { table = 'files', id } = params;
@@ -58,8 +57,8 @@ export class GetActorsImplementations {
         .where(
           and(
             eq(table_schema.tombstone, 0),
-            // isNotNull(table_schema.organization_id),
-            // eq(table_schema.organization_id, organization_id),
+            isNotNull(table_schema.organization_id),
+            eq(table_schema.organization_id, organization_id),
             eq(table_schema.id, id),
           ),
         );

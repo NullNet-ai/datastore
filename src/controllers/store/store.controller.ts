@@ -22,10 +22,6 @@ import {
 } from '../../providers/store/store.service';
 import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
-// import { DrizzlePostgresProvider } from '../db/drizzle_postgres.provider';
-import { samples } from '../../schema';
-import { sql } from 'drizzle-orm';
-import { processHypertableQueries } from '../../schema/create_hypertables';
 @UseGuards(AuthGuard)
 @Controller('/api/store')
 export class StoreController {
@@ -42,6 +38,11 @@ export class StoreController {
   @Get('/:table')
   async count(@Res() _res: Response, @Req() _req: Request) {
     return this.storeQuery.getCount(_res, _req);
+  }
+
+  @Post('/aggregate')
+  async aggregate(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeQuery.aggregationFilter(_res, _req);
   }
 
   @Post('/:table/filter')

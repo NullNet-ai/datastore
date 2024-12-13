@@ -40,6 +40,9 @@ export class StoreQueryDriver {
   @Machine('get')
   async get(_res: Response, _req: Request) {}
 
+  @Machine('aggregationFilter')
+  async aggregationFilter(_res: Response, _req: Request) {}
+
   @Machine('find')
   async find(_res: Response, _req: Request) {}
 

@@ -7,7 +7,7 @@ import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 @Injectable()
 export class UpdateActorsImplementations {
   private db;
@@ -66,16 +66,26 @@ export class UpdateActorsImplementations {
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
-
-      body.updated_by = responsible_account.contact.id;
-      const { schema } = Utility.checkCreateSchema(
+      body.id = id;
+      const { schema } = Utility.checkUpdateSchema(
         table,
         undefined as any,
         body,
       );
       const updated_data = Utility.updateParse({ schema, data: body });
+
+      body.updated_by = responsible_account.contact.id;
+      const table_schema = local_schema[table];
+      delete body.id;
+      const result = await this.db
+        .update(table_schema)
+        .set({ ...body, version: sql`${table_schema.version} + 1` })
+        .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
+        .returning({ table_schema })
+        .then(([{ table_schema }]) => table_schema);
+
       delete updated_data.id;
-      const result = await this.syncService.update(table, updated_data, id);
+      await this.syncService.update(table, updated_data, id);
       return Promise.resolve({
         payload: {
           success: true,

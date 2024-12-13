@@ -9,6 +9,7 @@ import { VerifyActorsImplementations } from '../verify';
 import { MinioService } from '../../../../providers/files/minio.service';
 import { sql } from 'drizzle-orm';
 import * as local_schema from '../../../../schema';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CreateActorsImplementations {
@@ -59,7 +60,9 @@ export class CreateActorsImplementations {
         undefined as any,
         body,
       );
-
+      body.timestamp = new Date(body.timestamp);
+      body.id = uuidv4();
+      body.created_date = new Date().toISOString();
       // auto generate code
       if (table !== 'counters') {
         const counter_schema = local_schema['counters'];
@@ -83,8 +86,14 @@ export class CreateActorsImplementations {
           )
           .catch(() => null);
       }
+      const table_schema = local_schema[table];
+      const results = await this.db
+        .insert(table_schema)
+        .values(body)
+        .returning({ table_schema })
+        .then(([{ table_schema }]) => table_schema);
 
-      const result = await this.syncService.insert(
+      await this.syncService.insert(
         table,
         Utility.createParse({ schema, data: body }),
       );
@@ -93,7 +102,7 @@ export class CreateActorsImplementations {
           success: true,
           message: `Successfully created in ${table}`,
           count: 1,
-          data: [pick(result, pluck.split(','))],
+          data: [pick(results, pluck.split(','))],
         },
       });
     }),
