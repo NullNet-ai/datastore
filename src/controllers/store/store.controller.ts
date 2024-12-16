@@ -66,6 +66,18 @@ export class StoreController {
   }
 
   @Post('/:table/filter')
+  @ValidateZod({
+    body: z.object({
+      pluck: z
+        .string()
+        .min(1, 'pluck fields is required, for getting all fields use ' * ''),
+      advance_filters: z.array(advanceFilterValidation),
+      order_by: z.string().optional(),
+      limit: z.number().optional().default(50),
+      offset: z.number().default(0),
+      order_direction: z.enum(['asc', 'desc']).default('asc'),
+    }),
+  })
   async find(@Res() _res: Response, @Req() _req: Request) {
     return this.storeQuery.find(_res, _req);
   }
