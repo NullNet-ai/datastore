@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DeleteMachine } from '../../machines/delete/delete.machine';
+import { DeleteMachine } from '../../machines';
 import { IActions } from '../../schemas/delete/delete.schema';
 import { VerifyActionsImplementations } from '../verify';
 import { LoggerService } from '@dna-platform/common';

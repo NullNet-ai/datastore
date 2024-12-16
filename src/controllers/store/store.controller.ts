@@ -22,6 +22,13 @@ import {
 } from '../../providers/store/store.service';
 import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ValidateZod } from '../../decorator/validator';
+import { z } from 'zod';
+import {
+  advanceFilterValidation,
+  aggregationValidation,
+  orderValidation,
+} from '../../types/zod.types';
 @UseGuards(AuthGuard)
 @Controller('/api/store')
 export class StoreController {
@@ -41,8 +48,21 @@ export class StoreController {
   }
 
   @Post('/aggregate')
+  @ValidateZod({
+    body: z.object({
+      entity: z.string().min(1, 'entity is required'),
+      aggregations: z.array(aggregationValidation),
+      advance_filters: z.array(advanceFilterValidation),
+      bucket_size: z.string().min(1, 'bucket_size is required'),
+      order: orderValidation,
+    }),
+  })
   async aggregate(@Res() _res: Response, @Req() _req: Request) {
     return this.storeQuery.aggregationFilter(_res, _req);
+  }
+  @Post('/batch/:table')
+  async batchInsert(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeMutation.batchInsert(_res, _req);
   }
 
   @Post('/:table/filter')

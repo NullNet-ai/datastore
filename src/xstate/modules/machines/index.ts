@@ -7,6 +7,7 @@
 
 
 
+
 export * from './get/get.machine';
 
 export * from './find/find.machine';
@@ -34,4 +35,6 @@ export * from './count/count.machine';
 export * from './create_hypertables/create_hypertables.machine';
   
 export * from './aggregation_filter/aggregation_filter.machine';
+  
+export * from './batch_insert/batch_insert.machine';
   

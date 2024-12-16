@@ -73,7 +73,7 @@ export class UpdateActorsImplementations {
         body,
       );
       const updated_data = Utility.updateParse({ schema, data: body });
-
+      body.updated_date = new Date().toISOString();
       body.updated_by = responsible_account.contact.id;
       const table_schema = local_schema[table];
       delete body.id;

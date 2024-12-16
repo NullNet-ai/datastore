@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/aggregation_filter/aggregation_filter.schema';
@@ -29,15 +29,27 @@ export class AggregationFilterActorsImplementations {
             data: [],
           },
         });
-      const [_res, _req] = context?.controller_args;
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+      const [_res, _req] = controller_args;
+      const table = _req.body?.entity;
+      Utility.checkTable(table);
       let { rows } = await this.db.execute(
-        sql.raw(Utility.queryGenerator(_req.body)),
+        sql.raw(Utility.queryGenerator(_req.body, organization_id)),
       );
+      if (rows.length === 0) {
+        throw new NotFoundException({
+          success: false,
+          message: `No data found in ${table}`,
+          count: 0,
+          data: [],
+        });
+      }
       return Promise.resolve({
         payload: {
           success: true,
-          message: 'aggregationFilter Message',
-          count: 0,
+          message: 'Data fetched successfully',
+          count: rows.length,
           data: rows,
         },
       });

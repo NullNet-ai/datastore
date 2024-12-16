@@ -19,7 +19,7 @@ export class CreateHypertablesActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: 'sampleStep fail Message',
+            message: 'No controller args found',
             count: 0,
             data: [],
           },
@@ -30,7 +30,7 @@ export class CreateHypertablesActorsImplementations {
         return Promise.reject({
           payload: {
             success: false,
-            message: 'sampleStep fail Message',
+            message: error.message,
             count: 0,
             data: [],
           },
@@ -40,7 +40,7 @@ export class CreateHypertablesActorsImplementations {
       return Promise.resolve({
         payload: {
           success: true,
-          message: 'createHypertables Message',
+          message: 'Hypertables generated successfully',
           count: 0,
           data: [],
         },

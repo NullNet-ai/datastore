@@ -57,7 +57,6 @@ export class FindActorsImplementations {
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db.select(selections).from(table_schema);
-
       _db = Utility.sqliteFilterAnalyzer(
         _db,
         table_schema,

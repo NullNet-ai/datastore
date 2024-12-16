@@ -32,6 +32,7 @@ import { TransactionsImplementationModule } from '../../xstate/modules/implement
 import { CountImplementationModule } from '../../xstate/modules/implementations/count/count.implementation.module';
 import { CreateHypertablesImplementationModule } from '../../xstate/modules/implementations/create_hypertables/create_hypertables.implementation.module';
 import { AggregationFilterImplementationModule } from '../../xstate/modules/implementations/aggregation_filter/aggregation_filter.implementation.module';
+import { BatchInsertImplementationModule } from '../../xstate/modules/implementations/batch_insert/batch_insert.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -41,6 +42,7 @@ const machines_providers = machine_providers([
   machines.UpdateMachine,
   machines.DeleteMachine,
   machines.AggregationFilterMachine,
+  machines.BatchInsertMachine,
 
   // Hypertable
   machines.CreateHypertablesMachine,
@@ -74,6 +76,7 @@ const shared_machine_imports = [
   UpdateImplementationModule,
   DeleteImplementationModule,
   AggregationFilterImplementationModule,
+  BatchInsertImplementationModule,
 
   //Hypertable
   CreateHypertablesImplementationModule,

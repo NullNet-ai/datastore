@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ZodObject } from 'zod';
 import * as schema from '../schema';
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { ulid } from 'ulid';
@@ -76,15 +77,7 @@ export class Utility {
 
     return `${hours}:${minutes}`;
   }
-  public static advanceFilter(advance_filters) {
-    if (
-      !advance_filters ||
-      !Array.isArray(advance_filters) ||
-      advance_filters.length === 0
-    ) {
-      return ''; // Return an empty string if no filters are provided
-    }
-
+  public static advanceFilter(advance_filters, organization_id) {
     const supported_operators = {
       equal: '=',
       not_equal: '!=',
@@ -96,59 +89,111 @@ export class Utility {
       is_not_null: 'IS NOT NULL',
       is_empty: "=''",
       is_not_empty: "!=''",
+      contains: 'IN',
+      not_contains: 'NOT IN',
+      is_between: 'BETWEEN',
+      is_not_between: 'NOT BETWEEN',
     };
 
     let where_clauses: any = [];
-    let last_type: any = null;
 
-    for (let i = 0; i < advance_filters.length; i++) {
-      const filter = advance_filters[i];
+    where_clauses.push(`tombstone = 0`);
+    where_clauses.push(`organization_id = '${organization_id}'`);
 
-      if (filter.type === 'criteria') {
-        const { field, operator, value } = filter;
+    if (
+      advance_filters &&
+      Array.isArray(advance_filters) &&
+      advance_filters.length > 0
+    ) {
+      let advance_filter_clauses: any = [];
+      let last_type: any = null;
 
-        if (!field || !operator || !supported_operators[operator]) {
-          throw new Error(`Unsupported or missing operator: ${operator}`);
-        }
-
+      for (let i = 0; i < advance_filters.length; i++) {
         if (
-          ['is_null', 'is_not_null', 'is_empty', 'is_not_empty'].includes(
-            operator,
-          )
+          (i % 2 === 0 && advance_filters[i].type != 'criteria') ||
+          (i % 2 === 1 && advance_filters[i].type != 'operator')
         ) {
-          // Handle operators without a value (e.g., IS NULL, IS NOT NULL)
-          where_clauses.push(`${field} ${supported_operators[operator]}`);
-        } else {
-          // Handle operators with a value
-          where_clauses.push(
-            `${field} ${supported_operators[operator]} '${value}'`,
+          let _type = i % 2 === 0 ? 'a criteria' : 'an operator';
+          throw new BadRequestException(
+            `Invalid filter at index ${i}. Must be ${_type}`,
           );
         }
 
-        last_type = 'criteria';
-      } else if (filter.type === 'operator' && last_type === 'criteria') {
-        const { operator } = filter;
+        const filter = advance_filters[i];
 
-        if (operator && (operator === 'AND' || operator === 'OR')) {
-          where_clauses.push(operator);
-        } else {
-          throw new Error(`Unsupported logical operator: ${operator}`);
+        if (filter.type === 'criteria') {
+          const { field, operator, values } = filter;
+
+          if (!field || !operator || !supported_operators[operator]) {
+            throw new Error(`Unsupported or missing operator: ${operator}`);
+          }
+
+          if (
+            ['is_null', 'is_not_null', 'is_empty', 'is_not_empty'].includes(
+              operator,
+            )
+          ) {
+            advance_filter_clauses.push(
+              `${field} ${supported_operators[operator]}`,
+            );
+          } else if (['contains', 'not_contains'].includes(operator)) {
+            if (!Array.isArray(values) || values.length === 0) {
+              throw new Error(
+                `Values must be a non-empty array for ${operator}`,
+              );
+            }
+            advance_filter_clauses.push(
+              `${field} ${supported_operators[operator]} (${values
+                .map((v) => `'${v}'`)
+                .join(', ')})`,
+            );
+          } else if (['is_between', 'is_not_between'].includes(operator)) {
+            if (!Array.isArray(values) || values.length !== 2) {
+              throw new Error(
+                `Values must be an array with exactly two elements for ${operator}`,
+              );
+            }
+            advance_filter_clauses.push(
+              `${field} ${supported_operators[operator]} '${values[0]}' AND '${values[1]}'`,
+            );
+          } else {
+            if (!values || values.length !== 1) {
+              throw new Error(
+                `Values must be an array with a single element for ${operator}`,
+              );
+            }
+            advance_filter_clauses.push(
+              `${field} ${supported_operators[operator]} '${values[0]}'`,
+            );
+          }
+
+          last_type = 'criteria';
+        } else if (filter.type === 'operator' && last_type === 'criteria') {
+          const { operator } = filter;
+
+          if (operator && (operator === 'and' || operator === 'or')) {
+            advance_filter_clauses.push(operator.toUpperCase());
+          } else {
+            throw new Error(`Unsupported logical operator: ${operator}`);
+          }
+
+          last_type = 'operator';
         }
+      }
 
-        last_type = 'operator';
+      if (last_type === 'operator') {
+        advance_filter_clauses.pop();
+      }
+
+      if (advance_filter_clauses.length > 0) {
+        where_clauses.push(`(${advance_filter_clauses.join(' ')})`);
       }
     }
 
-    // Remove trailing operator if present
-    if (last_type === 'operator') {
-      where_clauses.pop();
-    }
-
-    // Return the WHERE clause if there are valid criteria
-    return where_clauses.length > 0 ? `WHERE ${where_clauses.join(' ')}` : '';
+    return `WHERE ${where_clauses.join(' AND ')}`;
   }
 
-  public static queryGenerator(params) {
+  public static queryGenerator(params, organization_id: string) {
     const {
       entity, // Name of the table
       aggregations, // Array of aggregation objects
@@ -185,15 +230,15 @@ export class Utility {
     const fromClause = `FROM ${entity}`;
 
     // Generate the WHERE clause
-    let whereClause = this.advanceFilter(advance_filters);
-
+    let whereClause = this.advanceFilter(advance_filters, organization_id);
+    console.log(whereClause);
     // Generate the GROUP BY clause
     const groupByClause = `GROUP BY bucket`;
 
     // Generate the ORDER BY clause
     const orderDirection = order_direction
       ? order_direction.toUpperCase()
-      : 'ASC';
+      : 'asc';
     const orderByClause = order_by
       ? `ORDER BY ${order_by} ${orderDirection}`
       : '';
@@ -402,6 +447,17 @@ export class Utility {
         return or(...dz_filter_queue);
       default:
         return null;
+    }
+  }
+  static validateZodSchema(
+    zodObject: { zod: ZodObject<any> | any; params: any }[],
+  ) {
+    for (const { zod, params } of zodObject) {
+      try {
+        zod.parse(params);
+      } catch (error) {
+        throw new Error(`${JSON.stringify(error)}`);
+      }
     }
   }
 

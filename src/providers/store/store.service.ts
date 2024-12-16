@@ -15,6 +15,9 @@ export class StoreMutationDriver {
   @Machine('verify')
   async verify(_res: Response, _req: Request) {}
 
+  @Machine('batchInsert')
+  async batchInsert(_res: Response, _req: Request) {}
+
   @Machine('upload')
   async upload(_res: Response, _req: Request, _file: Express.Multer.File) {}
 

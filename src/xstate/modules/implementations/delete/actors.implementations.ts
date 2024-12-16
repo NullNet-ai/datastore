@@ -50,7 +50,13 @@ export class DeleteActorsImplementations {
       const table_schema = local_schema[table];
       const result = await this.db
         .update(table_schema)
-        .set({ tombstone: 1, version: sql`${table_schema.version} + 1` })
+        .set({
+          tombstone: 1,
+          version: sql`${table_schema.version} + 1`,
+          deleted_by: responsible_account.contact.id,
+          updated_date: new Date().toISOString(),
+          status: 'Deleted',
+        })
         .where(and(eq(table_schema.id, id)))
         .returning({ table_schema })
         .then(([{ table_schema }]) => {
