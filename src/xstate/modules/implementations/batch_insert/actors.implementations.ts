@@ -49,47 +49,50 @@ export class BatchInsertActorsImplementations {
         });
       }
 
-      const records = await map(body.records, async (record) => {
-        const counter_schema = local_schema['counters'];
-        record.code = await this.db
-          .insert(counter_schema)
-          .values({ entity: table, counter: 1 })
-          .onConflictDoUpdate({
-            target: [counter_schema.entity],
-            set: {
-              counter: sql`${counter_schema.counter} + 1`,
-            },
-          })
-          .returning({
-            prefix: counter_schema.prefix,
-            default_code: counter_schema.default_code,
-            counter: counter_schema.counter,
-          })
-          .then(
-            ([{ prefix, default_code, counter }]) =>
-              prefix + (default_code + counter),
-          )
-          .catch(() => null);
-        record = {
-          ...record,
-          timestamp: new Date(record.timestamp),
-          id: uuidv4(),
-          created_by: responsible_account.contact.id,
-          created_date: new Date().toISOString(),
-          organization_id: responsible_account.organization_id,
-        };
-        const { schema }: any = Utility.checkCreateSchema(
-          table,
-          undefined as any,
-          record,
-        );
-        Utility.createParse({ schema, data: record });
-        // await this.syncService.insert(
-        //   table,
-        //   Utility.createParse({ schema, data: body }),
-        // );
-        return record;
-      });
+      const records = await map(
+        body.records,
+        async (record: Record<string, any>) => {
+          const counter_schema = local_schema['counters'];
+          record.code = await this.db
+            .insert(counter_schema)
+            .values({ entity: table, counter: 1 })
+            .onConflictDoUpdate({
+              target: [counter_schema.entity],
+              set: {
+                counter: sql`${counter_schema.counter} + 1`,
+              },
+            })
+            .returning({
+              prefix: counter_schema.prefix,
+              default_code: counter_schema.default_code,
+              counter: counter_schema.counter,
+            })
+            .then(
+              ([{ prefix, default_code, counter }]) =>
+                prefix + (default_code + counter),
+            )
+            .catch(() => null);
+          record = {
+            ...record,
+            timestamp: new Date(record.timestamp).toISOString(),
+            id: uuidv4(),
+            created_by: responsible_account.contact.id,
+            created_date: new Date().toISOString(),
+            organization_id: responsible_account.organization_id,
+          };
+          const { schema }: any = Utility.checkCreateSchema(
+            table,
+            undefined as any,
+            record,
+          );
+          Utility.createParse({ schema, data: record });
+          // await this.syncService.insert(
+          //   table,
+          //   Utility.createParse({ schema, data: body }),
+          // );
+          return record;
+        },
+      );
       console.log(records);
       const data = local_schema[table];
       const results = await this.db

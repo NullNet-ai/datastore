@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.39",
-    "@dna-platform/crdt-lww-postgres": "^1.0.26",
+    "@dna-platform/crdt-lww-postgres": "^1.0.32",
     "@elastic/elasticsearch": "^8.10.0",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.4.6",
@@ -70,6 +70,7 @@
     "@nestjs/cli": "^10.3.2",
     "@nestjs/schematics": "^10.1.1",
     "@nestjs/testing": "^10.3.9",
+    "@types/bluebird": "^3.5.42",
     "@types/bun": "^1.1.12",
     "@types/cookie-parser": "^1.4.7",
     "@types/express": "^5.0.0",

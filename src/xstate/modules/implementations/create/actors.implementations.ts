@@ -60,7 +60,9 @@ export class CreateActorsImplementations {
         undefined as any,
         body,
       );
-      body.timestamp = new Date(body.timestamp);
+      body.timestamp = body?.timestamp
+        ? body?.timestamp
+        : new Date().toISOString();
       body.id = uuidv4();
       body.created_date = new Date().toISOString();
       const parsed_data = Utility.createParse({ schema, data: body });
