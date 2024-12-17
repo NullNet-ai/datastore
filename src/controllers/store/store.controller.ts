@@ -68,9 +68,11 @@ export class StoreController {
   @Post('/:table/filter')
   @ValidateZod({
     body: z.object({
-      pluck: z
-        .string()
-        .min(1, 'pluck fields is required, for getting all fields use ' * ''),
+      pluck: z.array(
+        z
+          .string()
+          .min(1, 'pluck fields is required, for getting all fields use ' * ''),
+      ),
       advance_filters: z.array(advanceFilterValidation),
       order_by: z.string().optional(),
       limit: z.number().optional().default(50),
