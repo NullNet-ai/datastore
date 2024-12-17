@@ -4,13 +4,13 @@ services:
   # TimescaleDB Service
   timescaledb:
     image: timescale/timescaledb:latest-pg14
-    container_name: timescaledb-server
+    container_name: timescaledb-client_three
     ports:
-      - "5432:5432" # Expose PostgreSQL on port 5432
+      - "5435:5432" # Expose PostgreSQL on port 5432
     environment:
       POSTGRES_USER: admin         # Database user
       POSTGRES_PASSWORD: admin     # Database password
-      POSTGRES_DB: server         # Initial database name
+      POSTGRES_DB: client-three         # Initial database name
 #    volumes:
 #      - timescale-data:/var/lib/postgresql/data
     restart: always
@@ -18,18 +18,18 @@ services:
   # NestJS Application Service
   nestjs-app:
     image: kashanalikhalid/datastore-postgres:latest   # Replace with your Docker Hub image
-    container_name: nestjs_app
+    container_name: nestjs_app-client_three
     depends_on:
       - timescaledb                # Waits for TimescaleDB to be ready
     ports:
-      - "5001:5001"                # Expose NestJS app on port 5001
+      - "5003:5003"                # Expose NestJS app on port 5001
     environment:
-      - PORT=5001
+      - PORT=5003
       - SYNC_ENABLED=false
       - SYNC_ENDPOINT=http://localhost:5000
       - GROUP_ID=g2
       - SYNC_TIMER_MS=5000
-      - DATABASE_URL=postgres://admin:admin@timescaledb:5432/server
+      - DATABASE_URL=postgres://admin:admin@timescaledb:5432/client-three
       - DB_HOST=timescaledb        # TimescaleDB container hostname
       - DB_NAME=server
       - DB_USER=admin
