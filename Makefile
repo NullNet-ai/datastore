@@ -5,7 +5,7 @@ DOCKERFILE_PATH   = docker/Dockerfile
 # Compose Files
 DOCKER_COMPOSE_CLIENT1 = docker/client-one/docker-compose-postgres-client.yaml
 DOCKER_COMPOSE_CLIENT2 = docker/client-two/docker-compose-postgres-client.yaml
-DOCKER_COMPOSE_CLIENT3  = docker/server/docker-compose-postgres-client.yaml
+DOCKER_COMPOSE_CLIENT3  = docker/client-three/docker-compose-postgres-client.yaml
 
 # Build the Docker image
 build-image:

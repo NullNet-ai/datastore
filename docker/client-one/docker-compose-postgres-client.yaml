@@ -25,7 +25,7 @@ services:
       - "5001:5001"                # Expose NestJS app on port 5001
     environment:
       - PORT=5001
-      - SYNC_ENABLED=false
+      - SYNC_ENABLED=true
       - SYNC_ENDPOINT=http://localhost:5000
       - GROUP_ID=g2
       - SYNC_TIMER_MS=5001
