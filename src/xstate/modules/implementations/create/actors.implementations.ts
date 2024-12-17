@@ -61,7 +61,7 @@ export class CreateActorsImplementations {
         body,
       );
       body.timestamp = body?.timestamp
-        ? body?.timestamp
+        ? new Date(body?.timestamp)
         : new Date().toISOString();
       body.id = uuidv4();
       body.created_date = new Date().toISOString();

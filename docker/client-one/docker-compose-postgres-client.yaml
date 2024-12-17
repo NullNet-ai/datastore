@@ -17,7 +17,7 @@ services:
 
   # NestJS Application Service
   nestjs-app:
-    image: kashanalikhalid/datastore-postgres:latest   # Replace with your Docker Hub image
+    image: datastore-postgres:latest   # Replace with your Docker Hub image
     container_name: nestjs_app-client_one
     depends_on:
       - timescaledb                # Waits for TimescaleDB to be ready

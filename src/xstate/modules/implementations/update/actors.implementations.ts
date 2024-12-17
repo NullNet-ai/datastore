@@ -72,6 +72,9 @@ export class UpdateActorsImplementations {
         undefined as any,
         body,
       );
+      if (body?.timestamp) {
+        body.timestamp = new Date(body.timestamp);
+      }
       const updated_data = Utility.updateParse({ schema, data: body });
       body.updated_date = new Date().toISOString();
       body.updated_by = responsible_account.contact.id;
