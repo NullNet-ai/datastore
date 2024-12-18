@@ -72,13 +72,16 @@ export class BatchInsertActorsImplementations {
                 prefix + (default_code + counter),
             )
             .catch(() => null);
+          const date = new Date();
           record = {
             ...record,
-            timestamp: new Date(record.timestamp).toISOString(),
             id: uuidv4(),
             created_by: responsible_account.contact.id,
-            created_date: new Date().toISOString(),
-            organization_id: responsible_account.organization_id,
+            timestamp: record?.timestamp
+              ? new Date(record?.timestamp)
+              : new Date().toISOString(),
+            created_date: date.toLocaleDateString(),
+            created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           };
           const { schema }: any = Utility.checkCreateSchema(
             table,

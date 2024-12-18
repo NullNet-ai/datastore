@@ -8,12 +8,14 @@ import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
 import { and, eq, sql } from 'drizzle-orm';
+import { GetActorsImplementations } from '../get';
 @Injectable()
 export class UpdateActorsImplementations {
   private db;
   constructor(
     private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
+    private readonly getActorsImplementation: GetActorsImplementations,
     private readonly drizzleService: DrizzleService,
   ) {
     this.db = this.drizzleService.getClient();
@@ -22,6 +24,7 @@ export class UpdateActorsImplementations {
    * Implementation of actors for the update machine.
    */
   public readonly actors: IActors = {
+    get: this.getActorsImplementation.actors.get,
     verify: this.verifyActorImplementations.actors.verify,
     update: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
@@ -75,9 +78,11 @@ export class UpdateActorsImplementations {
       if (body?.timestamp) {
         body.timestamp = new Date(body.timestamp);
       }
-      const updated_data = Utility.updateParse({ schema, data: body });
-      body.updated_date = new Date().toISOString();
+      const date = new Date();
+      body.updated_date = date.toLocaleDateString();
+      body.updated_time = Utility.convertTime12to24(date.toLocaleTimeString());
       body.updated_by = responsible_account.contact.id;
+      const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
       delete body.id;
       const result = await this.db
@@ -88,6 +93,7 @@ export class UpdateActorsImplementations {
         .then(([{ table_schema }]) => table_schema);
 
       delete updated_data.id;
+      updated_data.version = result?.version;
       await this.syncService.update(table, updated_data, id);
       return Promise.resolve({
         payload: {

@@ -68,6 +68,19 @@ export const config = (
               input: ({ context }) => ({ context }),
               onDone: {
                 actions: ['assignResponsibleAccount'],
+                target: 'get',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
+          get: {
+            invoke: {
+              id: 'get',
+              src: 'get',
+              input: ({ context }) => ({ context }),
+              onDone: {
                 target: 'update',
               },
               onError: {

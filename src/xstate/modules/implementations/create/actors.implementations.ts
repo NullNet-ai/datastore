@@ -54,17 +54,18 @@ export class CreateActorsImplementations {
       if (table === 'organizations' && body?.organization_id) {
         await this.minioService.makeBucket(organization.name);
       }
-
+      body.timestamp = body?.timestamp
+        ? new Date(body?.timestamp)
+        : new Date().toISOString();
+      const date = new Date();
+      body.id = uuidv4();
+      body.created_date = date.toLocaleDateString();
+      body.created_time = Utility.convertTime12to24(date.toLocaleTimeString());
       const { schema }: any = Utility.checkCreateSchema(
         table,
         undefined as any,
         body,
       );
-      body.timestamp = body?.timestamp
-        ? new Date(body?.timestamp)
-        : new Date().toISOString();
-      body.id = uuidv4();
-      body.created_date = new Date().toISOString();
       const parsed_data = Utility.createParse({ schema, data: body });
 
       // auto generate code

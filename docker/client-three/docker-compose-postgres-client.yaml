@@ -25,8 +25,8 @@ services:
       - "5003:5003"                # Expose NestJS app on port 5001
     environment:
       - PORT=5003
-      - SYNC_ENABLED=false
-      - SYNC_ENDPOINT=http://localhost:5000
+      - SYNC_ENABLED=true
+      - SYNC_ENDPOINT=http://host.docker.internal:5000
       - GROUP_ID=g2
       - SYNC_TIMER_MS=5000
       - DATABASE_URL=postgres://admin:admin@timescaledb:5432/client-three

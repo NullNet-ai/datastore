@@ -84,7 +84,7 @@ export const config = (
                 target: 'delete',
               },
               onError: {
-                target: 'delete',
+                target: 'error',
               },
             },
           },
