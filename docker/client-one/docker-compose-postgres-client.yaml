@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_USER: admin         # Database user
       POSTGRES_PASSWORD: admin     # Database password
-      POSTGRES_DB: client-one         # Initial database name
+      POSTGRES_DB: nullnet         # Initial database name
 #    volumes:
 #      - timescale-data:/var/lib/postgresql/data
     restart: always
@@ -29,9 +29,9 @@ services:
       - SYNC_ENDPOINT=http://host.docker.internal:5000
       - GROUP_ID=01JBHKXHYSKPP247HZZWHA3JBT
       - SYNC_TIMER_MS=5001
-      - DATABASE_URL=postgres://admin:admin@timescaledb:5432/client-one
+      - DATABASE_URL=postgres://admin:admin@timescaledb:5432/nullnet
       - DB_HOST=timescaledb        # TimescaleDB container hostname
-      - DB_NAME=client-one
+      - DB_NAME=nullnet
       - DB_USER=admin
       - DB_PASSWORD=admin
       - DB_PORT=5432

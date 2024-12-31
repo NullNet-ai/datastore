@@ -54,6 +54,10 @@ export class CreateActorsImplementations {
       if (table === 'organizations' && body?.organization_id) {
         await this.minioService.makeBucket(organization.name);
       }
+      const table_schema = local_schema[table];
+      if (table_schema.hypertable_timestamp) {
+        body.hypertable_timestamp = new Date(body.timestamp).toISOString();
+      }
       body.timestamp = body?.timestamp
         ? new Date(body?.timestamp)
         : new Date().toISOString();
@@ -61,6 +65,7 @@ export class CreateActorsImplementations {
       body.id = uuidv4();
       body.created_date = date.toLocaleDateString();
       body.created_time = Utility.convertTime12to24(date.toLocaleTimeString());
+
       const { schema }: any = Utility.checkCreateSchema(
         table,
         undefined as any,
@@ -91,12 +96,14 @@ export class CreateActorsImplementations {
           )
           .catch(() => null);
       }
-      const table_schema = local_schema[table];
+
       const results = await this.db
         .insert(table_schema)
         .values(body)
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
+
+      console.log(parsed_data);
       await this.syncService.insert(table, parsed_data);
 
       return Promise.resolve({

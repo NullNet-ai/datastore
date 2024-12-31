@@ -16,6 +16,8 @@ export class AggregationFilterActorsImplementations {
   ) {
     this.db = this.drizzleService.getClient();
   }
+
+  //todo: check if table is a hypertable, if  not return an error that table is not a hypertable
   public readonly actors: IActors = {
     verify: this.verifyActorImplementations.actors.verify,
     aggregationFilter: fromPromise(async ({ input }): Promise<IResponse> => {

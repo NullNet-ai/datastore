@@ -48,6 +48,19 @@ export class BatchInsertActorsImplementations {
           },
         });
       }
+      let temp_schema;
+      try {
+        temp_schema = Utility.checkTable(`temp_${table}`);
+      } catch (e) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `Table not found: temp_${table}, for batch insert create a temp table first e.g for table ${table} create temp_${table}`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
 
       const records = await map(
         body.records,
@@ -96,15 +109,31 @@ export class BatchInsertActorsImplementations {
           return record;
         },
       );
-      console.log(records);
-      const data = local_schema[table];
-      const results = await this.db
-        .insert(data)
-        .values(records)
-        .returning({ data })
-        .then((inserted) => {
-          return inserted;
-        });
+      const table_schema = local_schema[table];
+      const results = await this.db.transaction(async (trx) => {
+        // Insert into the main table
+        const results_main_table = await trx
+          .insert(table_schema)
+          .values(records)
+          .returning({ table_schema })
+          .then((inserted) => {
+            return inserted;
+          });
+
+        // Insert into the temp table
+        await trx
+          .insert(temp_schema)
+          .values(records)
+          .returning({ temp_schema });
+
+        return results_main_table;
+      });
+
+      //todo: insert data into temp table as well, and write a seprarate compaction service which cleans up data everyday
+      //todo: create temp tables for table which are required for batch queries
+      //todo: create a separate column for hypertable timestamp which indentifies if the table is a hypertable
+      //todo: update the create message method to check for hypertable and then do the conflict update
+      //todo: in crdt server change the column type of expiry insync_transactions to bigint
 
       return Promise.resolve({
         payload: {

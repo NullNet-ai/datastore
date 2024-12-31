@@ -9,12 +9,11 @@ import { system_fields } from '@dna-platform/crdt-lww-postgres/build/schema/syst
 import { uuid, timestamp } from 'drizzle-orm/pg-core';
 
 const config = (table) => ({
-  pk: primaryKey({ columns: [table.id, table.timestamp] }),
-  // uniq_id: unique().on(table.id, table.timestamp),
+  pk: primaryKey({ columns: [table.id] }),
 });
 
 export const table = pgTable(
-  'packets',
+  'temp_packets',
   {
     ...system_fields,
     id: uuid('id'),
