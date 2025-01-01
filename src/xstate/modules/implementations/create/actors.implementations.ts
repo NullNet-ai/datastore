@@ -61,10 +61,7 @@ export class CreateActorsImplementations {
       body.timestamp = body?.timestamp
         ? new Date(body?.timestamp)
         : new Date().toISOString();
-      const date = new Date();
       body.id = uuidv4();
-      body.created_date = date.toLocaleDateString();
-      body.created_time = Utility.convertTime12to24(date.toLocaleTimeString());
 
       const { schema }: any = Utility.checkCreateSchema(
         table,
@@ -72,7 +69,6 @@ export class CreateActorsImplementations {
         body,
       );
       const parsed_data = Utility.createParse({ schema, data: body });
-
       // auto generate code
       if (table !== 'counters') {
         const counter_schema = local_schema['counters'];
@@ -96,14 +92,13 @@ export class CreateActorsImplementations {
           )
           .catch(() => null);
       }
-
       const results = await this.db
         .insert(table_schema)
-        .values(body)
+        .values(parsed_data)
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
 
-      console.log(parsed_data);
+      console.log('parsed data', parsed_data);
       await this.syncService.insert(table, parsed_data);
 
       return Promise.resolve({

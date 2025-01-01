@@ -44,6 +44,7 @@ async function initialOrganization(
 
 async function cleanupTemporaryFiles() {
   if (['local'].includes(NODE_ENV)) return;
+  if (['local'].includes(NODE_ENV)) return;
   let file_cleanup_interval: any = null;
   const time_in_ms = 60000;
   if (process.env.STORAGE_UPLOAD_PATH) {

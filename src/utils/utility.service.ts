@@ -266,7 +266,6 @@ export class Utility {
             created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
             updated_date: date.toLocaleDateString(),
             updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
-            timestamp: date.toISOString(),
           }
         : {
             updated_date: date.toLocaleDateString(),

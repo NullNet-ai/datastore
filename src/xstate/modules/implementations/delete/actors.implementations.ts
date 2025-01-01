@@ -50,6 +50,9 @@ export class DeleteActorsImplementations {
       const { table, id } = params;
       const date = new Date();
       const table_schema = local_schema[table];
+      if (body?.organization_id) {
+        body.organization_id = organization_id;
+      }
       const result = await this.db
         .update(table_schema)
         .set({
@@ -74,25 +77,15 @@ export class DeleteActorsImplementations {
           };
         });
 
-      if (body?.organization_id) {
-        body.organization_id = organization_id;
-      }
       // TODO: update deleted_by to responsible_account.contact.id
-      const { schema } = Utility.checkUpdateSchema(
-        table,
-        undefined as any,
-        result,
-      );
-      const updated_data = Utility.updateParse({ schema, data: result });
-      delete updated_data.id;
-      console.log('updated_data', updated_data);
-      await this.syncService.update(table, updated_data, id);
+      delete result.id;
+      await this.syncService.update(table, result, id);
       return Promise.resolve({
         payload: {
           success: true,
           message: `Successfully deleted in ${table}`,
           count: 1,
-          data: [{ id: result?.id }],
+          data: [{ id }],
         },
       });
     }),

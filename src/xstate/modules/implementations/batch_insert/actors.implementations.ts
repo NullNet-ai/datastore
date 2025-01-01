@@ -61,7 +61,7 @@ export class BatchInsertActorsImplementations {
           },
         });
       }
-
+      const table_schema = local_schema[table];
       const records = await map(
         body.records,
         async (record: Record<string, any>) => {
@@ -85,7 +85,19 @@ export class BatchInsertActorsImplementations {
                 prefix + (default_code + counter),
             )
             .catch(() => null);
-          const date = new Date();
+          if (table_schema.hypertable_timestamp) {
+            record.hypertable_timestamp = new Date(
+              record.timestamp,
+            ).toISOString();
+          }
+          console.log(record.hypertable_timestamp);
+          const { schema }: any = Utility.checkCreateSchema(
+            table,
+            undefined as any,
+            record,
+          );
+          record = Utility.createParse({ schema, data: record });
+
           record = {
             ...record,
             id: uuidv4(),
@@ -93,15 +105,8 @@ export class BatchInsertActorsImplementations {
             timestamp: record?.timestamp
               ? new Date(record?.timestamp)
               : new Date().toISOString(),
-            created_date: date.toLocaleDateString(),
-            created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           };
-          const { schema }: any = Utility.checkCreateSchema(
-            table,
-            undefined as any,
-            record,
-          );
-          Utility.createParse({ schema, data: record });
+
           // await this.syncService.insert(
           //   table,
           //   Utility.createParse({ schema, data: body }),
@@ -109,7 +114,6 @@ export class BatchInsertActorsImplementations {
           return record;
         },
       );
-      const table_schema = local_schema[table];
       const results = await this.db.transaction(async (trx) => {
         // Insert into the main table
         const results_main_table = await trx

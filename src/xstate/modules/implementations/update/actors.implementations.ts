@@ -76,18 +76,22 @@ export class UpdateActorsImplementations {
         body,
       );
       if (body?.timestamp) {
-        body.timestamp = new Date(body.timestamp);
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `Timestamp is not allowed in update`,
+            count: 0,
+            data: [],
+          },
+        });
       }
-      const date = new Date();
-      body.updated_date = date.toLocaleDateString();
-      body.updated_time = Utility.convertTime12to24(date.toLocaleTimeString());
       body.updated_by = responsible_account.contact.id;
       const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
       delete body.id;
       const result = await this.db
         .update(table_schema)
-        .set({ ...body, version: sql`${table_schema.version} + 1` })
+        .set({ ...updated_data, version: sql`${table_schema.version} + 1` })
         .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
