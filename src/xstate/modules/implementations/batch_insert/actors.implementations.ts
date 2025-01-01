@@ -90,23 +90,17 @@ export class BatchInsertActorsImplementations {
               record.timestamp,
             ).toISOString();
           }
-          console.log(record.hypertable_timestamp);
           const { schema }: any = Utility.checkCreateSchema(
             table,
             undefined as any,
             record,
           );
+          record.id = uuidv4();
+          record.created_by = responsible_account.contact.id;
+          record.timestamp = record?.timestamp
+            ? new Date(record?.timestamp)
+            : new Date().toISOString();
           record = Utility.createParse({ schema, data: record });
-
-          record = {
-            ...record,
-            id: uuidv4(),
-            created_by: responsible_account.contact.id,
-            timestamp: record?.timestamp
-              ? new Date(record?.timestamp)
-              : new Date().toISOString(),
-          };
-
           // await this.syncService.insert(
           //   table,
           //   Utility.createParse({ schema, data: body }),
