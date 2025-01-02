@@ -9,24 +9,36 @@ services:
     environment:
       POSTGRES_USER: admin # Replace with your desired username
       POSTGRES_PASSWORD: admin # Replace with your desired password
-      POSTGRES_DB: nullnet # Replace with your desired database name
-#    volumes:
-#      - timescale-data:/var/lib/postgresql/data
+      POSTGRES_DB: sync # Replace with your desired database name
+    # volumes:
+    #  - timescale-data:/var/lib/postgresql/data
     restart: always
 
-#  rtimescaledb:
-#    image: timescale/timescaledb:latest-pg14
-#    container_name: rtimescaledb
-#    ports:
-#      - '54324:5432' # Expose PostgreSQL on port 5432
-#    environment:
-#      POSTGRES_USER: admin # Replace with your desired username
-#      POSTGRES_PASSWORD: admin # Replace with your desired password
-#      POSTGRES_DB: nullnet # Replace with your desired database name
-#    volumes:
-#      - rtimescale-data:/var/lib/rpostgresql/data
-#    restart: always
-#
-#volumes:
+  # rtimescaledb:
+  #   image: timescale/timescaledb:latest-pg14
+  #   container_name: rtimescaledb
+  #   ports:
+  #     - '54324:5432' # Expose PostgreSQL on port 5432
+  #   environment:
+  #     POSTGRES_USER: admin # Replace with your desired username
+  #     POSTGRES_PASSWORD: admin # Replace with your desired password
+  #     POSTGRES_DB: nullnet_dev1 # Replace with your desired database name
+  #   #  volumes:
+  #   #    - rtimescale-data:/var/lib/rpostgresql/data
+  #   restart: always
+
+  # ttimescaledb:
+  #   image: timescale/timescaledb:latest-pg14
+  #   container_name: ttimescaledb
+  #   ports:
+  #     - '54325:5432' # Expose PostgreSQL on port 5432
+  #   environment:
+  #     POSTGRES_USER: admin # Replace with your desired username
+  #     POSTGRES_PASSWORD: admin # Replace with your desired password
+  #     POSTGRES_DB: nullnet_dev2 # Replace with your desired database name
+  #   #  volumes:
+  #   #    - ttimescaledb-data:/var/lib/rpostgresql/data
+  #   restart: always
+# volumes:
 #  timescale-data:
 #  rtimescale-data:

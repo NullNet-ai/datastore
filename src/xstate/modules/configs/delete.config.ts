@@ -1,9 +1,4 @@
-import {
-  InternalMachineImplementations,
-  StateMachineTypes,
-  assign,
-  setup,
-} from 'xstate';
+import { InternalMachineImplementations, assign, setup } from 'xstate';
 import {
   IActors,
   IGuards,
@@ -20,7 +15,7 @@ import {
 // TODO: Define the context and events types
 // TODO: Define common action definitions
 export const config = (
-  implementations: InternalMachineImplementations<StateMachineTypes>,
+  implementations: InternalMachineImplementations<any, any>,
   context: IDeleteContext = {
     controller_args: [],
     start_time: 0,

@@ -92,13 +92,14 @@ export class CreateActorsImplementations {
           )
           .catch(() => null);
       }
+      console.log('@parsed_data', parsed_data);
       const results = await this.db
         .insert(table_schema)
         .values(parsed_data)
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
 
-      console.log('parsed data', parsed_data);
+      // console.log('parsed data', parsed_data);
       await this.syncService.insert(table, parsed_data);
 
       return Promise.resolve({
