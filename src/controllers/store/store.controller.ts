@@ -39,6 +39,8 @@ export class StoreController {
   ) {}
   @Get('/:table/:id')
   async get(@Res() _res: Response, @Req() _req: Request) {
+    console.log('@response', _res);
+    console.log('@request', _req);
     return this.storeQuery.get(_res, _req);
   }
 

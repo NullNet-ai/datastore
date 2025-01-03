@@ -33,6 +33,7 @@ import { CountImplementationModule } from '../../xstate/modules/implementations/
 import { CreateHypertablesImplementationModule } from '../../xstate/modules/implementations/create_hypertables/create_hypertables.implementation.module';
 import { AggregationFilterImplementationModule } from '../../xstate/modules/implementations/aggregation_filter/aggregation_filter.implementation.module';
 import { BatchInsertImplementationModule } from '../../xstate/modules/implementations/batch_insert/batch_insert.implementation.module';
+import { GrpcController } from './store.grpc.controller';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -65,6 +66,7 @@ const additional_controllers = [
   TokenController,
   FileController,
   HypertableController,
+  GrpcController,
   // TransactionController,
 ];
 

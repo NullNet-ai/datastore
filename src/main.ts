@@ -1,4 +1,3 @@
-// @ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
@@ -7,12 +6,15 @@ import * as fs from 'fs';
 import * as cookieParser from 'cookie-parser';
 import { OrganizationsService } from '@dna-platform/crdt-lww-postgres';
 import { MinioService } from './providers/files/minio.service';
+import { Transport } from '@nestjs/microservices';
+import { join } from 'path';
 
 const {
   PORT = '3060',
   DB_FILE_DIR = '',
   DEBUG = 'false',
   NODE_ENV = 'local',
+  GRPC_PORT = '6000',
   DEFAULT_ORGANIZATION_NAME = 'global-organization',
   // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
@@ -69,6 +71,7 @@ async function cleanupTemporaryFiles() {
   }
 }
 
+// @ts-ignore
 async function bootstrap() {
   const app = await NestFactory.create(MainModule, {
     logger,
@@ -94,4 +97,33 @@ async function bootstrap() {
   cleanupTemporaryFiles();
 }
 
-bootstrap();
+async function bootstrapGrpc() {
+  const app = await NestFactory.createMicroservice(MainModule, {
+    transport: Transport.GRPC,
+    options: {
+      url: `localhost:${GRPC_PORT}`, // Expose gRPC on this port
+      package: 'example', // Proto package name
+      protoPath: [
+        join(__dirname, './proto/example.proto'),
+        join(__dirname, './proto/getById.proto'),
+      ], // Path to proto file
+    },
+  });
+  app.useLogger(logger);
+
+  app.listen().then(() => {
+    logger.log(`gRPC microservice is running on port ${GRPC_PORT}`);
+  });
+
+  // initialize the organization
+
+  // cleanup the temporary files every 1 minute in remote environment
+}
+async function bootstrapAll() {
+  // Start HTTP app
+  // await bootstrap();
+
+  // Start gRPC app
+  await bootstrapGrpc();
+}
+bootstrapAll();

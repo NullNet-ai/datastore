@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package example;
+
+// Service definition
+service MyService {
+    rpc GetById (GetByIdRequest) returns (GetByIdResponse);
+}
+
+// Request message
+message GetByIdRequest {
+    Params params = 1;  // Parameters object
+    Query query = 2;    // Query object
+}
+
+message Params {
+    string id = 1;  // Required field for the ID
+    string table= 2;  // Required field for the table name
+}
+
+message Query {
+    string pluck = 1;  // Optional field, comma-separated string
+}
+
+// Response message
+message GetByIdResponse {
+    bool success = 1;                // Indicates if the operation was successful
+    string message = 2;              // Message string
+    int32 count = 3;                 // Count of data items
+    string encoding = 4;             // Encoding type
+    repeated string data = 5;          // Array of objects
+}
+
