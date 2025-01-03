@@ -103,11 +103,14 @@ async function bootstrapGrpc() {
     transport: Transport.GRPC,
     options: {
       url: `localhost:${GRPC_PORT}`, // Expose gRPC on this port
-      package: 'example', // Proto package name
+      package: 'dna.store', // Proto package name
       protoPath: [
         join(__dirname, './proto/example.proto'),
-        join(__dirname, './proto/getById.proto'),
+        join(__dirname, './proto/store.proto'),
       ], // Path to proto file
+      loader: {
+        keepCase: true, // Prevents snake_case to camelCase conversion
+      },
     },
   });
   app.useLogger(logger);

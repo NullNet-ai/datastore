@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package dna.store;
+
+// Service definition
+service StoreService {
+    rpc GetById (GetByIdRequest) returns (Response);
+    rpc Aggregate (AggregateRequest) returns (Response);
+    rpc GetByFilter(GetByFilterRequest) returns (Response);
+}
+
+// Request message
+message GetByIdRequest {
+    Params params = 1;  // Parameters object
+    Query query = 2;    // Query object
+}
+
+message GetByFilterRequest{
+    Filters body = 1;
+    Params params = 2;
+}
+
+message Filters {
+    repeated string pluck = 1;               // List of fields to pluck
+    repeated AdvanceFilter advance_filters = 2; // List of advance filters
+    string order_by = 3;                     // Field to order by
+    int32 limit = 4;                         // Limit on the number of results
+    int32 offset = 5;                        // Offset for pagination
+    string order_direction = 6;              // Order direction (asc/desc)
+}
+
+// Advanced filter definition
+message AdvanceFilter {
+    string type = 1;                         // Filter type (criteria/operator)
+    string field = 2;                        // Field to apply filter on (for criteria)
+    string operator = 3;                     // Operator (e.g., equal, and)
+    string values = 4;               // array of values (stringified)
+}
+
+// Dynamic value representation
+message Value {
+    oneof value {
+        string string_value = 1;               // String value
+        int32 int_value = 2;                   // Integer value
+    }
+}
+
+message AggregateRequest{
+    string body = 1;  // Required field for the body
+    Params params = 2;  // Parameters object
+
+}
+
+message Params {
+    string id = 1;  // Required field for the ID
+    string table= 2;  // Required field for the table name
+}
+
+message Query {
+    string pluck = 1;  // Optional field, comma-separated string
+}
+
+// Response message
+message Response {
+    bool success = 1;                // Indicates if the operation was successful
+    string message = 2;              // Message string
+    string error = 3;                // Error message
+    string statusCode = 4;           // HTTP status code
+    int32 count = 5;                 // Count of data items
+    string encoding = 6;             // Encoding type
+    repeated string data = 7;          // Array of objects
+}
+

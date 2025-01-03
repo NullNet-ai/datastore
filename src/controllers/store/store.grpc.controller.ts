@@ -1,14 +1,16 @@
 import { Controller, Inject } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { StoreQueryDriver } from '../../providers/store/store.service';
 import { Request, Response } from 'express';
 import { CustomResponse } from './response';
+import { Utility } from '../../utils/utility.service';
+import { status } from '@grpc/grpc-js';
 
 @Controller()
 export class GrpcController {
   constructor(
     @Inject('QueryDriverInterface')
-    private storeQuery: StoreQueryDriver, // private storeMutation: StoreMutationDriver,
+    private storeQuery: StoreQueryDriver,
   ) {}
   @GrpcMethod('ExampleService', 'SayHello')
   sayHello(data: { name: string }, ...args): { message: string } {
@@ -16,25 +18,56 @@ export class GrpcController {
     return { message: `Hello, ${data.name}` };
   }
 
-  @GrpcMethod('MyService', 'GetById')
+  @GrpcMethod('StoreService', 'GetById')
   async getById(data, metadata: any): Promise<{ message: string }> {
     const _res = new CustomResponse();
-    const { params, query } = data;
-    const _req = {
-      headers: {
-        authorization: metadata.get('authorization')[0],
-      },
-      params,
-      query,
-    };
-
+    const _req = Utility.createRequestObject(data, metadata);
     await this.storeQuery.get(_res as any as Response, _req as Request);
-    await _res.waitForResponse(); // Wait for send() to complete
+    await _res.waitForResponse();
+    let response = _res.getBody();
+    response = Utility.processResponseObject(response);
+    return response;
+  }
 
-    const responseBody = _res.getBody(); // Safely call getBody()
-    responseBody.encoding = 'application/json';
-    responseBody.data = responseBody?.data.map((obj) => JSON.stringify(obj));
-    console.log(responseBody);
-    return { ...responseBody };
+  @GrpcMethod('StoreService', 'Aggregate')
+  async aggregate(data, metadata: any): Promise<any> {
+    try {
+      const _res = new CustomResponse();
+      const _req = Utility.createRequestObject(data, metadata);
+      await this.storeQuery.aggregationFilter(
+        _res as any as Response,
+        _req as Request,
+      );
+      await _res.waitForResponse();
+      let response = _res.getBody();
+      response = Utility.processResponseObject(response);
+      return response;
+    } catch (error) {
+      // Handle unexpected server-side errors
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('StoreService', 'GetByFilter')
+  async getByFilter(data, metadata: any): Promise<any> {
+    try {
+      const _res = new CustomResponse();
+      const _req = Utility.createRequestObjectFilters(data, metadata);
+      console.log(_req);
+      await this.storeQuery.find(_res as any as Response, _req as Request);
+      await _res.waitForResponse();
+      let response = _res.getBody();
+      response = Utility.processResponseObject(response);
+      return response;
+    } catch (error) {
+      // Handle unexpected server-side errors
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message,
+      });
+    }
   }
 }

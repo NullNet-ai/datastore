@@ -459,6 +459,82 @@ export class Utility {
       }
     }
   }
+  static createRequestObject(
+    data: any,
+    metadata: any,
+  ): { headers: any; params: any; query: any; body: any } {
+    // Extract and parse body
+    let parsed_body: any;
+    try {
+      parsed_body = data.body ? JSON.parse(data.body) : null;
+    } catch (error) {
+      throw new Error('Invalid JSON body');
+    }
+    // Construct the request object
+    const _req = {
+      headers: {
+        authorization: metadata.get('authorization')[0],
+      },
+      params: data.params || {}, // Ensure params is an object
+      query: data.query || {}, // Ensure query is an object
+      body: parsed_body, // Parsed body or null if not present
+    };
+
+    return _req;
+  }
+
+  static createRequestObjectFilters(
+    data: any,
+    metadata: any,
+  ): { headers: any; params: any; query: any; body: any } {
+    let parsed_body: any;
+    try {
+      if (data.body && data.body.advance_filters) {
+        parsed_body = {
+          ...data.body,
+          advance_filters: data.body.advance_filters.map((filter: any) => {
+            if (filter.values) {
+              return {
+                ...filter,
+                values: filter.values.length ? JSON.parse(filter.values) : [],
+              };
+            } else {
+              return filter;
+            }
+          }),
+        };
+      } else {
+        parsed_body = null; // If no advance_filters, set parsed_body to null
+      }
+    } catch (error) {
+      throw new Error('Invalid JSON body');
+    }
+
+    // Construct the request object
+    const _req = {
+      headers: {
+        authorization: metadata.get('authorization')[0],
+      },
+      params: data.params || {}, // Ensure params is an object
+      query: data.query || {}, // Ensure query is an object
+      body: parsed_body, // Parsed body or null if not present
+    };
+
+    return _req;
+  }
+
+  static processResponseObject(response: any) {
+    response.encoding = 'application/json';
+    response.data = Utility.stringifyObjects(response.data);
+    return response;
+  }
+  static stringifyObjects(data: []): string[] {
+    if (!data || data?.length === 0) {
+      return data; // Return the array as is if empty or not an array
+    }
+
+    return data.map((item) => JSON.stringify(item));
+  }
 
   public static constructFilters(advance_filters, table_schema): any[] {
     let dz_filter_queue: any[] = [];
