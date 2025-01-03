@@ -97,7 +97,6 @@ export class CreateActorsImplementations {
         .values(parsed_data)
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
-      console.log(parsed_data);
       await this.syncService.insert(table, parsed_data);
 
       return Promise.resolve({

@@ -1,9 +1,4 @@
-import {
-  InternalMachineImplementations,
-  StateMachineTypes,
-  assign,
-  setup,
-} from 'xstate';
+import { InternalMachineImplementations, assign, setup } from 'xstate';
 import {
   IActors,
   IGuards,
@@ -12,7 +7,7 @@ import {
 } from '../schemas/batch_insert/batch_insert.schema';
 
 export const config = (
-  implementations: InternalMachineImplementations<StateMachineTypes>,
+  implementations: InternalMachineImplementations<any, any>,
   context: IBatchInsertContext = {
     controller_args: [],
     start_time: 0,
