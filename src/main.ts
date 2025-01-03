@@ -53,10 +53,10 @@ async function cleanupTemporaryFiles() {
     file_cleanup_interval = setInterval(() => {
       try {
         logger.log('deleting files in upload and tmp path');
-        fs.rmdirSync(process.env.STORAGE_UPLOAD_PATH || '', {
+        fs.rmSync(process.env.STORAGE_UPLOAD_PATH || '', {
           recursive: true,
         });
-        fs.rmdirSync('./tmp', { recursive: true });
+        fs.rmSync('./tmp', { recursive: true });
         logger.log('recreating upload and tmp path');
         fs.mkdirSync(process.env.STORAGE_UPLOAD_PATH || '', {
           recursive: true,
@@ -71,7 +71,8 @@ async function cleanupTemporaryFiles() {
 
 async function bootstrap() {
   const app = await NestFactory.create(MainModule, {
-    logger,
+    // !TODO: causes an issue with winston transport for lowdb reading a file from debug.json
+    // logger,
   });
   app.use(cookieParser());
   app.useLogger(logger);
