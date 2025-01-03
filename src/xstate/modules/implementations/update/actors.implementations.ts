@@ -95,9 +95,9 @@ export class UpdateActorsImplementations {
         .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
-
       delete updated_data.id;
       updated_data.version = result?.version;
+      updated_data.hypertable_timestamp = result.hypertable_timestamp;
       await this.syncService.update(table, updated_data, id);
       return Promise.resolve({
         payload: {
