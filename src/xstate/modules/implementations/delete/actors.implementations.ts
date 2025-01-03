@@ -74,6 +74,7 @@ export class DeleteActorsImplementations {
             updated_time: table_schema.updated_time,
             status: table_schema.status,
             id: table_schema.id,
+            hypertable_timestamp: table_schema.hypertable_timestamp ?? null,
           };
         });
 

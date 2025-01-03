@@ -97,7 +97,9 @@ export class UpdateActorsImplementations {
         .then(([{ table_schema }]) => table_schema);
       delete updated_data.id;
       updated_data.version = result?.version;
-      updated_data.hypertable_timestamp = result.hypertable_timestamp;
+      if (table_schema.hypertable_timestamp) {
+        updated_data.hypertable_timestamp = result.hypertable_timestamp;
+      }
       await this.syncService.update(table, updated_data, id);
       return Promise.resolve({
         payload: {
