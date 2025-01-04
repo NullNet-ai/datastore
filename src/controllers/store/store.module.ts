@@ -34,6 +34,7 @@ import { CreateHypertablesImplementationModule } from '../../xstate/modules/impl
 import { AggregationFilterImplementationModule } from '../../xstate/modules/implementations/aggregation_filter/aggregation_filter.implementation.module';
 import { BatchInsertImplementationModule } from '../../xstate/modules/implementations/batch_insert/batch_insert.implementation.module';
 import { GrpcController } from './store.grpc.controller';
+import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -60,7 +61,7 @@ const machines_providers = machine_providers([
   // Count
   machines.CountMachine,
 ]);
-const additional_providers: Provider[] = [LoggerService];
+const additional_providers: Provider[] = [LoggerService, AuthService];
 const base_classes = [StoreController];
 const additional_controllers = [
   TokenController,

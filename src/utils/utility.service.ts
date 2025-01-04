@@ -26,6 +26,7 @@ import {
   notInArray,
   or,
 } from 'drizzle-orm';
+
 export class Utility {
   public static createParse({
     schema,
@@ -463,64 +464,65 @@ export class Utility {
     data: any,
     metadata: any,
   ): { headers: any; params: any; query: any; body: any } {
-    // Extract and parse body
-    let parsed_body: any;
-    try {
-      parsed_body = data.body ? JSON.parse(data.body) : null;
-    } catch (error) {
-      throw new Error('Invalid JSON body');
-    }
-    // Construct the request object
     const _req = {
       headers: {
         authorization: metadata.get('authorization')[0],
       },
       params: data.params || {}, // Ensure params is an object
       query: data.query || {}, // Ensure query is an object
-      body: parsed_body, // Parsed body or null if not present
+      body: data.body, // Parsed body or null if not present
     };
 
     return _req;
   }
 
-  static createRequestObjectFilters(
-    data: any,
-    metadata: any,
-  ): { headers: any; params: any; query: any; body: any } {
+  static parseRequestBody(body: string) {
     let parsed_body: any;
     try {
-      if (data.body && data.body.advance_filters) {
+      parsed_body = body ? JSON.parse(body) : null;
+    } catch (error) {
+      throw new Error('Invalid JSON body');
+    }
+    return parsed_body;
+  }
+  static parseBatchRequestBody(body: { records: string }) {
+    let parsed_body: { records: Record<any, any>[] } = { records: [] };
+    try {
+      parsed_body.records = body?.records ? JSON.parse(body.records) : [];
+    } catch (error) {
+      throw new Error('Invalid JSON body');
+    }
+    return parsed_body;
+  }
+
+  static parseFiltersRequestBody(body: any) {
+    let parsed_body: any;
+    try {
+      if (body && body.advance_filters) {
         parsed_body = {
-          ...data.body,
-          advance_filters: data.body.advance_filters.map((filter: any) => {
-            if (filter.values) {
-              return {
-                ...filter,
-                values: filter.values.length ? JSON.parse(filter.values) : [],
-              };
-            } else {
-              return filter;
-            }
-          }),
+          ...body,
+          advance_filters: this.parseAdvanceFilters(body.advance_filters),
         };
       } else {
-        parsed_body = null; // If no advance_filters, set parsed_body to null
+        parsed_body = body; // If no advance_filters, set parsed_body to null
       }
     } catch (error) {
       throw new Error('Invalid JSON body');
     }
+    return parsed_body;
+  }
 
-    // Construct the request object
-    const _req = {
-      headers: {
-        authorization: metadata.get('authorization')[0],
-      },
-      params: data.params || {}, // Ensure params is an object
-      query: data.query || {}, // Ensure query is an object
-      body: parsed_body, // Parsed body or null if not present
-    };
-
-    return _req;
+  private static parseAdvanceFilters(advance_filters: any[]) {
+    return advance_filters.map((filter: any) => {
+      if (filter.values) {
+        return {
+          ...filter,
+          values: filter.values.length ? JSON.parse(filter.values) : [],
+        };
+      } else {
+        return filter;
+      }
+    });
   }
 
   static processResponseObject(response: any) {
