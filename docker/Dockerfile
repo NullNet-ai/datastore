@@ -25,6 +25,7 @@ RUN chmod +x /usr/src/app/entrypoint.sh
 
 # Step 9: Expose the port dynamically (default to 5001 if not defined)
 EXPOSE ${PORT:-5001}
+EXPOSE 6000
 
 # Step 10: Use the entrypoint script to run migrations and start the app
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]

@@ -102,7 +102,7 @@ async function bootstrapGrpc() {
   const app = await NestFactory.createMicroservice(MainModule, {
     transport: Transport.GRPC,
     options: {
-      url: `localhost:${GRPC_PORT}`, // Expose gRPC on this port
+      url: `0.0.0.0:${GRPC_PORT}`, // Expose gRPC on this port
       package: 'dna.store', // Proto package name
       protoPath: [
         join(__dirname, './proto/example.proto'),
@@ -118,14 +118,10 @@ async function bootstrapGrpc() {
   app.listen().then(() => {
     logger.log(`gRPC microservice is running on port ${GRPC_PORT}`);
   });
-
-  // initialize the organization
-
-  // cleanup the temporary files every 1 minute in remote environment
 }
 async function bootstrapAll() {
   // Start HTTP app
-  // await bootstrap();
+  await bootstrap();
 
   // Start gRPC app
   await bootstrapGrpc();

@@ -20,9 +20,7 @@ export class UpdateActorsImplementations {
   ) {
     this.db = this.drizzleService.getClient();
   }
-  /**
-   * Implementation of actors for the update machine.
-   */
+
   public readonly actors: IActors = {
     get: this.getActorsImplementation.actors.get,
     verify: this.verifyActorImplementations.actors.verify,

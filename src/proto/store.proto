@@ -146,6 +146,6 @@ message Response {
     string statusCode = 4;           // HTTP status code
     int32 count = 5;                 // Count of data items
     string encoding = 6;             // Encoding type
-    repeated string data = 7;          // Array of objects
+     string data = 7;                // stringified JSON data
 }
 

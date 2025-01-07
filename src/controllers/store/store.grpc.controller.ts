@@ -70,6 +70,7 @@ export class GrpcController {
       await _res.waitForResponse();
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
+      console.log(response);
       return response;
     } catch (error) {
       // Handle unexpected server-side errors

@@ -530,12 +530,12 @@ export class Utility {
     response.data = Utility.stringifyObjects(response.data);
     return response;
   }
-  static stringifyObjects(data: []): string[] {
+  static stringifyObjects(data: []): string {
     if (!data || data?.length === 0) {
-      return data; // Return the array as is if empty or not an array
+      return '[]'; // Return the array as is if empty or not an array
     }
-
-    return data.map((item) => JSON.stringify(item));
+    return JSON.stringify(data);
+    // return data.map((item) => JSON.stringify(item));
   }
 
   public static constructFilters(advance_filters, table_schema): any[] {
