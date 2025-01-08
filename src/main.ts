@@ -103,7 +103,7 @@ async function bootstrapGrpc() {
     transport: Transport.GRPC,
     options: {
       url: `0.0.0.0:${GRPC_PORT}`, // Expose gRPC on this port
-      package: 'dna.store', // Proto package name
+      package: 'dna_store', // Proto package name
       protoPath: [
         join(__dirname, './proto/example.proto'),
         join(__dirname, './proto/store.proto'),
