@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dna.store;
+package dna_store;
 
 // Service definition
 service StoreService {
