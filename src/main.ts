@@ -135,10 +135,13 @@ async function bootstrapGrpc() {
   });
 }
 async function bootstrapAll() {
-  // Start HTTP app
-  // await bootstrap();
+  // start HTTP app
+  await bootstrap();
+
+  // start batch sync microservice
   await bootstrapBatchSyncService();
-  // Start gRPC app
-  // await bootstrapGrpc();
+
+  // start gRPC app
+  await bootstrapGrpc();
 }
 bootstrapAll();
