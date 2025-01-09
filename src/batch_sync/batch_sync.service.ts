@@ -114,10 +114,13 @@ export class BatchSyncService implements OnModuleInit {
       // Step 2: Fetch the record count for each table
       const table_weights = await Promise.all(
         table_names.map(async ({ table_name }: any) => {
-          const { rows } = await this.db.execute(
-            sql`SELECT COUNT(*) AS total FROM ${sql.identifier(table_name)}`,
-          );
-
+          const table_schema = local_schema[table_name];
+          const rows = await this.db
+            .select({
+              total: sql`COUNT(*)`.as('total'), // Aggregate count
+            })
+            .from(table_schema)
+            .where(eq(table_schema.tombstone, 0));
           const record_count = parseInt(rows[0].total, 10);
           return { table_name, record_count };
         }),

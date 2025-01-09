@@ -142,6 +142,6 @@ async function bootstrapAll() {
   await bootstrapBatchSyncService();
 
   // start gRPC app
-  await bootstrapGrpc();
+  // await bootstrapGrpc();
 }
 bootstrapAll();
