@@ -352,9 +352,9 @@ export class Utility {
     );
 
     if (joins?.length) {
-      const get_all_special_conditions_for_join = _advance_filters.filter(
-        (filter) => filter?.entity,
-      );
+      // const get_all_special_conditions_for_join = _advance_filters.filter(
+      //   (filter) => filter?.entity,
+      // );
       joins.forEach(({ type, field_relation }) => {
         const { from, to } = field_relation;
         let _from = from;
@@ -364,15 +364,16 @@ export class Utility {
           case 'left':
             _db = _db.leftJoin(
               schema[_to.entity],
-              ...Utility.constructFilters(
-                get_all_special_conditions_for_join,
-                schema[_to.entity],
-              ),
+              // ...Utility.constructFilters(
+              //   get_all_special_conditions_for_join,
+              //   schema[_to.entity],
+              // ),
               eq(
                 schema[_from.entity][_from.field],
                 schema[_to.entity][_to.field],
               ),
             );
+
             break;
           case 'self':
             if (!_from.alias) {
@@ -538,6 +539,10 @@ export class Utility {
     // return data.map((item) => JSON.stringify(item));
   }
 
+  public static getIds(data: [{ id }]): string[] {
+    return data.map((item) => item.id);
+  }
+
   public static constructFilters(advance_filters, table_schema): any[] {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
@@ -560,7 +565,6 @@ export class Utility {
         }),
       ];
     }
-
     advance_filters.forEach((filter, index: number) => {
       const { operator, type = 'criteria', field = '' } = filter;
       if (

@@ -1,3 +1,4 @@
+//@ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
@@ -6,9 +7,9 @@ import * as fs from 'fs';
 import * as cookieParser from 'cookie-parser';
 import { OrganizationsService } from '@dna-platform/crdt-lww-postgres';
 import { MinioService } from './providers/files/minio.service';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-
+import { BatchSyncModule } from './batch_sync/batch_sync.module';
 const {
   PORT = '3060',
   DB_FILE_DIR = '',
@@ -98,6 +99,20 @@ async function bootstrap() {
   cleanupTemporaryFiles();
 }
 
+async function bootstrapBatchSyncService() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    BatchSyncModule,
+    {
+      transport: Transport.TCP, // Use TCP as the transport layer
+      options: {
+        host: '0.0.0.0', // Localhost (can be omitted for defaults)
+      },
+    },
+  );
+
+  await app.listen(); // Start the microservice
+}
+
 async function bootstrapGrpc() {
   const app = await NestFactory.createMicroservice(MainModule, {
     transport: Transport.GRPC,
@@ -121,9 +136,9 @@ async function bootstrapGrpc() {
 }
 async function bootstrapAll() {
   // Start HTTP app
-  await bootstrap();
-
+  // await bootstrap();
+  await bootstrapBatchSyncService();
   // Start gRPC app
-  await bootstrapGrpc();
+  // await bootstrapGrpc();
 }
 bootstrapAll();
