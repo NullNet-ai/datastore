@@ -15,11 +15,11 @@ export class AggregationFilterActorsImplementations {
     private readonly drizzleService: DrizzleService,
   ) {
     this.db = this.drizzleService.getClient();
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
 
   //todo: check if table is a hypertable, if  not return an error that table is not a hypertable
   public readonly actors: IActors = {
-    verify: this.verifyActorImplementations.actors.verify,
     aggregationFilter: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)

@@ -1,18 +1,13 @@
-
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { LoggerService } from '@dna-platform/common';
 import {
   HelperService,
-  IImplementationFunctions,
+  //  IImplementationFunctions,
   IImplementationProviders,
   IMachineProperties,
   MachineInit,
 } from '@dna-platform/common';
-import {
-  IActions,
-  IActors,
-  IGuards,
-} from '../../schemas/count/count.schema';
+import { IActions, IActors, IGuards } from '../../schemas/count/count.schema';
 import {
   CountActionsImplementations,
   CountActorsImplementations,
@@ -26,7 +21,7 @@ export class CountMachine
 {
   public readonly name = this.constructor.name;
   public readonly actions: IActions;
-  public readonly delays: IImplementationFunctions<any>;
+  //public readonly delays: IImplementationFunctions<any>;
   public readonly guards: IGuards;
   public readonly actors: IActors;
   constructor(

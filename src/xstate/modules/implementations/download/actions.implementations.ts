@@ -14,14 +14,16 @@ export class DownloadActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof DownloadMachine.prototype.actions & IActions =
     {
       downloadEntry: () => {
         this.logger.log('downloadEntry is called');
       },
-      assignResponsibleAccount:
-        this.verifyActionsImplementations.actions.assignResponsibleAccount,
+
       sendToImageToClient: ({ context, event }) => {
         const [_res] = context.controller_args;
         const [file] = event?.output?.payload?.data as any;

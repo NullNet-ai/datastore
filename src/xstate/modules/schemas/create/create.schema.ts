@@ -26,6 +26,7 @@ export type ICreateEvent =
     };
 
 export interface IActors extends IRootActors {
+  [key: string]: any;
   create: PromiseActorLogic<Record<string, any>, IActorInput>;
 }
 
@@ -34,7 +35,23 @@ export interface IActions extends IRootActions {
 }
 
 export interface IGuards extends IRootGuards {
+  [key: string]: any;
   hasControllerArgs: (
     input: GuardArgs<ICreateContext, ICreateEvent>,
   ) => boolean;
+}
+
+export enum EInitializer {
+  SYSTEM_CODE_CONFIG = 'system_code_config',
+}
+
+export interface IinitializerParams {
+  entity: string;
+  system_code_config: {
+    default_code?: number;
+    prefix: string;
+    counter?: number;
+    digits_number?: number;
+  };
+  [key: string]: any;
 }

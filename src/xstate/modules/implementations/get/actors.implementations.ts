@@ -15,12 +15,12 @@ export class GetActorsImplementations {
     private readonly verifyActorImplementations: VerifyActorsImplementations,
   ) {
     this.db = this.drizzleService.getClient();
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   /**
    * Implementation of actors for the get machine.
    */
   public readonly actors: IActors = {
-    verify: this.verifyActorImplementations.actors.verify,
     /**
      * Sample step actor implementation.
      * @param input - The input object containing the context.

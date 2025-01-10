@@ -16,7 +16,10 @@ export class UploadActorsImplementations {
     private readonly createActorsImplementations: CreateActorsImplementations,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly logger: LoggerService,
-  ) {}
+  ) {
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
+    this.actors.create = this.createActorsImplementations.actors.create;
+  }
 
   /**
    * Implementation of actors for the upload machine.
@@ -27,8 +30,6 @@ export class UploadActorsImplementations {
      * @param input - The input object containing the context.
      * @returns A promise that resolves to an IResponse object.
      */
-    verify: this.verifyActorImplementations.actors.verify,
-    create: this.createActorsImplementations.actors.create,
     upload: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
 
@@ -55,7 +56,7 @@ export class UploadActorsImplementations {
       if (!['local'].includes(NODE_ENV)) {
         const filepath = path.join(process.cwd(), _file.path);
         uploaded_from_remote = await this.minioService.client
-          .fPutObject(
+          ?.fPutObject(
             STORAGE_BUCKET_NAME,
             _file.originalname,
             filepath,

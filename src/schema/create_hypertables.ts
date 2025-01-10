@@ -35,7 +35,7 @@ function getUncommentedTables() {
 
     // Extract and return table names from matches
     return matches.map((match) => match[1]);
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       `Error reading or parsing file at ${INDEX_FILE_PATH}:`,
       error,
@@ -69,7 +69,7 @@ function cleanHypertableFiles() {
       fs.unlinkSync(filePath);
       console.log(`Deleted old hypertables file: ${filePath}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error cleaning hypertable files:', error);
   }
 }
@@ -122,7 +122,7 @@ function writeHypertableQueriesToDrizzleFile(tableNames: string[]) {
       `\n-- Hypertable Creation Queries\n${queries}\n`,
     );
     console.log(`Hypertable queries written to ${latestFilePath}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error writing to the SQL file:', error);
   }
 }
@@ -155,7 +155,7 @@ function processHypertableQueries() {
     });
     // Write queries to the latest SQL file
     writeHypertableQueriesToDrizzleFile(tableNames);
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       'Error running drizzle:generate-hypertables or processing files:',
       error,

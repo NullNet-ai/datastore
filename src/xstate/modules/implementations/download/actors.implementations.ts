@@ -11,7 +11,7 @@ import { MinioService } from '../../../../providers/files/minio.service';
 const { NODE_ENV = 'local', STORAGE_BUCKET_NAME = 'test' } = process.env;
 @Injectable()
 export class DownloadActorsImplementations {
-  private client: Minio.Client;
+  private client: Minio.Client | null = null;
   private size = 0;
   private file;
   private chunks: any[] = [];
@@ -22,13 +22,14 @@ export class DownloadActorsImplementations {
     private readonly logger: LoggerService,
   ) {
     this.onData = this.onData.bind(this);
+    this.actors.getFileById =
+      this.getFileByIdActorImplementations.actors.getFileById;
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   /**
    * Implementation of actors for the create machine.
    */
   public readonly actors: IActors = {
-    getFileById: this.getFileByIdActorImplementations.actors.getFileById,
-    verify: this.verifyActorImplementations.actors.verify,
     download: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context, event } = input;
       if (!context?.controller_args)
@@ -69,7 +70,7 @@ export class DownloadActorsImplementations {
         }
 
         if (!merged_chunked) {
-          dataStream = await this.client.getObject(
+          dataStream = await this.client?.getObject(
             STORAGE_BUCKET_NAME,
             _file.originalname,
           );

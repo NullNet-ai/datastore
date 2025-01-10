@@ -1,9 +1,8 @@
-
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { LoggerService } from '@dna-platform/common';
 import {
   HelperService,
-  IImplementationFunctions,
+  //  IImplementationFunctions,
   IImplementationProviders,
   IMachineProperties,
   MachineInit,
@@ -26,7 +25,7 @@ export class CreateHypertablesMachine
 {
   public readonly name = this.constructor.name;
   public readonly actions: IActions;
-  public readonly delays: IImplementationFunctions<any>;
+  //public readonly delays: IImplementationFunctions<any>;
   public readonly guards: IGuards;
   public readonly actors: IActors;
   constructor(

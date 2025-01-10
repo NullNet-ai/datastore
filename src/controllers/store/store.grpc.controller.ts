@@ -51,7 +51,7 @@ export class GrpcController {
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
@@ -72,7 +72,7 @@ export class GrpcController {
       response = Utility.processResponseObject(response);
       console.log(response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
@@ -92,7 +92,7 @@ export class GrpcController {
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
@@ -112,7 +112,7 @@ export class GrpcController {
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
@@ -131,7 +131,7 @@ export class GrpcController {
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
@@ -154,7 +154,7 @@ export class GrpcController {
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
@@ -169,7 +169,7 @@ export class GrpcController {
       const { email, password } = data.body.data;
       const res = await this.authService.auth(email, password);
       return { token: res };
-    } catch (error) {
+    } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,

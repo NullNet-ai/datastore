@@ -11,12 +11,13 @@ export class CreateActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof CreateMachine.prototype.actions & IActions = {
     createEntry: () => {
       this.logger.log('createEntry is called');
     },
-    assignResponsibleAccount:
-      this.verifyActionsImplementations.actions.assignResponsibleAccount,
   };
 }

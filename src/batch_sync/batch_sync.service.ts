@@ -73,7 +73,7 @@ export class BatchSyncService implements OnModuleInit {
               .set({ tombstone: 1, status: 'Synced' })
               .where(eq(table_schema.id, row.id));
           });
-        } catch (e) {
+        } catch (e: any) {
           this.logger.error(
             `Error in batch syncing table ${table_name}: ${e.message}`,
           );
@@ -94,7 +94,7 @@ export class BatchSyncService implements OnModuleInit {
       const table_list = rows.map(({ table_name }) => table_name);
       console.log('Table list:', table_list);
       return table_list;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating table list:', error.message);
       throw error;
     }
@@ -133,7 +133,7 @@ export class BatchSyncService implements OnModuleInit {
 
       // Step 4: Generate the sorted table names array
       return sorted_tables.map(({ table_name }) => table_name);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating weighted table list:', error.message);
       throw error;
     }

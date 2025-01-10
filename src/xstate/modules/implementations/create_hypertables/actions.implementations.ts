@@ -11,13 +11,14 @@ export class CreateHypertablesActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof CreateHypertablesMachine.prototype.actions &
     IActions = {
     createHypertablesEntry: () => {
       this.logger.log('createHypertablesEntry is called');
     },
-    assignResponsibleAccount:
-      this.verifyActionsImplementations.actions.assignResponsibleAccount,
   };
 }

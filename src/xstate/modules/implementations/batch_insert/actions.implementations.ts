@@ -11,13 +11,14 @@ export class BatchInsertActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof BatchInsertMachine.prototype.actions &
     IActions = {
     batchInsertEntry: () => {
       this.logger.log('batchInsertEntry is called');
     },
-    assignResponsibleAccount:
-      this.verifyActionsImplementations.actions.assignResponsibleAccount,
   };
 }

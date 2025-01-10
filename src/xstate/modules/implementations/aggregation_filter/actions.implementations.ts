@@ -11,13 +11,14 @@ export class AggregationFilterActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof AggregationFilterMachine.prototype.actions &
     IActions = {
     aggregationFilterEntry: () => {
       this.logger.log('aggregationFilterEntry is called');
     },
-    assignResponsibleAccount:
-      this.verifyActionsImplementations.actions.assignResponsibleAccount,
   };
 }

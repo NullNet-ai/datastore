@@ -11,12 +11,13 @@ export class DeleteActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof DeleteMachine.prototype.actions & IActions = {
     deleteEntry: () => {
       this.logger.log('deleteEntry is called');
     },
-    assignResponsibleAccount:
-      this.verifyActionsImplementations.actions.assignResponsibleAccount,
   };
 }

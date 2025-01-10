@@ -19,9 +19,9 @@ export class BatchInsertActorsImplementations {
     private readonly drizzleService: DrizzleService, // private readonly syncService: SyncService,
   ) {
     this.db = this.drizzleService.getClient();
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   public readonly actors: IActors = {
-    verify: this.verifyActorImplementations.actors.verify,
     batchInsert: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)

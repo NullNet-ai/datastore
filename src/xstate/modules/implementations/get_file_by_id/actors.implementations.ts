@@ -15,12 +15,12 @@ export class GetFileByIdActorsImplementations {
     private readonly verifyActorImplementations: VerifyActorsImplementations,
   ) {
     this.db = this.drizzleService.getClient();
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   /**
    * Implementation of actors for the get_file_by_id machine.
    */
   public readonly actors: IActors = {
-    verify: this.verifyActorImplementations.actors.verify,
     getFileById: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)

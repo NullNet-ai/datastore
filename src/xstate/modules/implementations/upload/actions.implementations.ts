@@ -12,13 +12,15 @@ export class UploadActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
-  ) {}
+  ) {
+    this.actions.assignResponsibleAccount =
+      this.verifyActionsImplementations.actions.assignResponsibleAccount;
+  }
   public readonly actions: typeof UploadMachine.prototype.actions & IActions = {
     uploadEntry: () => {
       this.logger.log('uploadEntry is called');
     },
-    assignResponsibleAccount:
-      this.verifyActionsImplementations.actions.assignResponsibleAccount,
+
     assignFileDetailsToControllerArgsRequest: assign({
       controller_args: ({ context, event }) => {
         const [_res, _req, _file] = context.controller_args;

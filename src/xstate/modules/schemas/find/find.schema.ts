@@ -26,6 +26,7 @@ export type IFindEvent =
     };
 
 export interface IActors extends IRootActors {
+  [key: string]: any;
   find: PromiseActorLogic<Record<string, any>, IActorInput>;
 }
 
@@ -34,6 +35,7 @@ export interface IActions extends IRootActions {
 }
 
 export interface IGuards extends IRootGuards {
+  [key: string]: any;
   hasControllerArgs: (input: GuardArgs<IFindContext, IFindEvent>) => boolean;
 }
 
@@ -54,6 +56,7 @@ export enum EOperator {
   IS_NOT_BETWEEN = 'is_not_between',
   AND = 'and',
   OR = 'or',
+  LIKE = 'like',
 }
 
 export enum EOrderDirection {

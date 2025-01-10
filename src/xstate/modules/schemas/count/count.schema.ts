@@ -1,4 +1,3 @@
-
 import { PromiseActorLogic } from 'xstate';
 import {
   IPayload,
@@ -35,7 +34,6 @@ export interface IActions extends IRootActions {
 }
 
 export interface IGuards extends IRootGuards {
-  hasControllerArgs: (
-    input: GuardArgs<ICountContext, ICountEvent>,
-  ) => boolean;
+  [key: string]: any;
+  hasControllerArgs: (input: GuardArgs<ICountContext, ICountEvent>) => boolean;
 }

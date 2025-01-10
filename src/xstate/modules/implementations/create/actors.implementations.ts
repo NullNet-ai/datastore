@@ -21,12 +21,12 @@ export class CreateActorsImplementations {
     private readonly drizzleService: DrizzleService,
   ) {
     this.db = this.drizzleService.getClient();
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   /**
    * Implementation of actors for the create machine.
    */
   public readonly actors: IActors = {
-    verify: this.verifyActorImplementations.actors.verify,
     create: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
       if (!context?.controller_args)

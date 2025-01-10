@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import {
   HelperService,
-  IImplementationFunctions,
+  //  IImplementationFunctions,
   IImplementationProviders,
   IMachineProperties,
   LoggerService,
@@ -21,7 +21,7 @@ export class GetMachine
 {
   public readonly name = this.constructor.name;
   public readonly actions: IActions;
-  public readonly delays: IImplementationFunctions<any>;
+  //public readonly delays: IImplementationFunctions<any>;
   public readonly guards: IGuards;
   public readonly actors: IActors;
   constructor(

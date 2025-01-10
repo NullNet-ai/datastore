@@ -1,5 +1,4 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { ZodObject } from 'zod';
 import * as schema from '../schema';
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { ulid } from 'ulid';
@@ -19,13 +18,17 @@ import {
   inArray,
   isNotNull,
   isNull,
+  like,
   lt,
   lte,
   ne,
   notBetween,
   notInArray,
   or,
+  sql,
 } from 'drizzle-orm';
+import { ZodObject } from 'zod';
+const pluralize = require('pluralize');
 
 export class Utility {
   public static createParse({
@@ -39,7 +42,7 @@ export class Utility {
     const _data = this.format(data);
     try {
       return schema.parse(_data);
-    } catch (error) {
+    } catch (error: any) {
       throw new ZodValidationException(error);
     }
   }
@@ -54,7 +57,7 @@ export class Utility {
     const _data = this.format(data, false);
     try {
       return schema.parse(_data);
-    } catch (error) {
+    } catch (error: any) {
       throw new ZodValidationException(error);
     }
   }
@@ -77,6 +80,324 @@ export class Utility {
     }
 
     return `${hours}:${minutes}`;
+  }
+  public static format(data: any, is_insert = true) {
+    const date = new Date();
+    const _data = {
+      id: data?.id ? data.id : ulid(),
+      ...(is_insert
+        ? {
+            tombstone: 0,
+            status: 'Active',
+            created_date: date.toLocaleDateString(),
+            created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
+            updated_date: date.toLocaleDateString(),
+            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
+            timestamp: date.toISOString(),
+          }
+        : {
+            updated_date: date.toLocaleDateString(),
+            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
+          }),
+      ...data,
+    };
+
+    return _data;
+  }
+  public static checkCreateSchema(
+    table: string,
+    meta: Record<string, any>,
+    data: Record<string, any>,
+  ) {
+    const { table_schema: schema_table } = Utility.checkTable(table);
+    if (!data) {
+      throw new BadRequestException('Data is required in Body');
+    }
+
+    return { schema: createInsertSchema(schema_table as any), data, meta };
+  }
+
+  public static checkTable(table: string) {
+    const table_schema = schema[table];
+    if (
+      !table ||
+      !table_schema ||
+      table === 'config_sync' ||
+      table.includes('crdt')
+    ) {
+      throw new NotFoundException('Table does not exist');
+    }
+
+    return table_schema;
+  }
+
+  public static parsePluckedFields(
+    table: string,
+    pluck: string[],
+  ): Record<string, any> | null {
+    const table_schema = schema[table];
+
+    if (!pluck?.length || !pluck) {
+      return null;
+    }
+    const _plucked_fields = pluck.reduce((acc, field) => {
+      if (table_schema[field]) {
+        return {
+          ...acc,
+          [field]: table_schema[field],
+        };
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(_plucked_fields).length === 0) {
+      return null;
+    }
+    return _plucked_fields;
+  }
+  public static sqliteFilterAnalyzer(
+    db,
+    table_schema,
+    _advance_filters: IAdvanceFilters[],
+    organization_id,
+    joins?: IJoins[],
+    _client_db: any = null,
+  ) {
+    let _db = db;
+    const aliased_entities: string[] = [];
+    if (joins?.length) {
+      joins.forEach(({ type, field_relation }) => {
+        const { from, to } = field_relation;
+        let _from = from;
+        let _to = to;
+        switch (type) {
+          case 'left':
+            if (_to.alias) aliased_entities.push(_to.alias);
+            const aliased_schema = aliasedTable(
+              schema[_to.entity],
+              _to.alias || _to.entity,
+            );
+            _db = _db.leftJoin(
+              aliased_schema,
+              eq(schema[_from.entity][_from.field], aliased_schema[_to.field]),
+              // ...Utility.constructFilters(
+              //   get_all_special_conditions_for_join,
+              //   schema[_to.entity],
+              // ),
+            );
+            break;
+          case 'self':
+            if (!_from.alias) {
+              throw new BadRequestException(
+                '[from]: Alias are required for self join',
+              );
+            }
+            aliased_entities.push(_from.alias);
+            const parent = aliasedTable(schema[_from.entity], _from.alias);
+            _db = _db.leftJoin(
+              parent,
+              eq(parent[_from.field], schema[_to.entity][_to.field]),
+            );
+            break;
+          default:
+            throw new BadRequestException('Invalid join type');
+        }
+      });
+    }
+
+    return _db.where(
+      and(
+        eq(table_schema['tombstone'], 0),
+        isNotNull(table_schema['organization_id']),
+        eq(table_schema['organization_id'], organization_id),
+        // ...Utility.constructFilters(
+        //   _advance_filters,
+        //   table_schema,
+        //   aliased_entities,
+        // ),
+      ),
+    );
+  }
+
+  public static evaluateFilter({
+    operator,
+    table_schema,
+    field,
+    values,
+    dz_filter_queue,
+    entity,
+    aliased_entities,
+  }) {
+    const is_aliased = aliased_entities.includes(entity);
+    if (!table_schema?.[field] && !is_aliased) return null;
+    const schema_field = is_aliased
+      ? sql.raw(`"${entity}"."${field}"`)
+      : table_schema[field];
+    switch (operator) {
+      case EOperator.EQUAL:
+        return eq(schema_field, values[0]);
+      case EOperator.NOT_EQUAL:
+        return ne(schema_field, values[0]);
+      case EOperator.GREATER_THAN:
+        return gt(schema_field, values[0]);
+      case EOperator.GREATER_THAN_OR_EQUAL:
+        return gte(schema_field, values[0]);
+      case EOperator.LESS_THAN:
+        return lt(schema_field, values[0]);
+      case EOperator.LESS_THAN_OR_EQUAL:
+        return lte(schema_field, values[0]);
+      case EOperator.IS_NULL:
+        return isNull(schema_field);
+      case EOperator.IS_NOT_NULL:
+        return isNotNull(schema_field);
+      case EOperator.CONTAINS:
+        return inArray(schema_field, [values]);
+      case EOperator.NOT_CONTAINS:
+        return notInArray(schema_field, [values]);
+      case EOperator.IS_BETWEEN:
+        return between(schema_field, values[0], values[1]);
+      case EOperator.IS_NOT_BETWEEN:
+        return notBetween(schema_field, values[0], values[1]);
+      case EOperator.IS_EMPTY:
+        return eq(schema_field, '');
+      case EOperator.IS_NOT_EMPTY:
+        return ne(schema_field, '');
+      case EOperator.AND:
+        return and(...dz_filter_queue);
+      case EOperator.OR:
+        return or(...dz_filter_queue);
+      case EOperator.LIKE:
+        return like(schema_field, `%${values[0]}%`);
+      default:
+        return null;
+    }
+  }
+
+  public static constructFilters(
+    advance_filters,
+    table_schema,
+    aliased_entities: string[] = [],
+  ): any[] {
+    let dz_filter_queue: any[] = [];
+    let where_clause_queue: any[] = [];
+    let _filter_queue: any[] = [];
+    if (
+      advance_filters.find(({ entity }) => entity) &&
+      advance_filters.filter(
+        ({ type = 'criteria', entity }) => type === 'criteria' && !entity,
+      ).length
+    ) {
+      throw new BadRequestException(
+        'Invalid filter. "entity" must be defined for all filters',
+      );
+    }
+    if (advance_filters.length === 1) {
+      const [{ operator, field, values, type }] = advance_filters;
+      let { entity } = advance_filters[0];
+      if (type === 'operator') {
+        throw new BadRequestException(
+          `Invalid filter at index 0. Must be a criteria`,
+        );
+      }
+
+      entity =
+        entity && !aliased_entities.includes(entity)
+          ? pluralize.plural(entity)
+          : entity;
+      const _table_schema = entity ? schema?.[entity] : table_schema;
+      return [
+        Utility.evaluateFilter({
+          operator,
+          table_schema: _table_schema,
+          field,
+          values,
+          dz_filter_queue: [],
+          entity,
+          aliased_entities,
+        }),
+      ];
+    }
+
+    advance_filters.forEach((filter, index: number) => {
+      const { operator, type = 'criteria', field = '' } = filter;
+      let { entity } = filter;
+      entity =
+        entity && !aliased_entities.includes(entity)
+          ? pluralize.plural(entity)
+          : entity;
+      const _table_schema = entity ? schema?.[entity] : table_schema;
+
+      if (
+        (index % 2 === 0 && type != 'criteria') ||
+        (index % 2 === 1 && type != 'operator')
+      ) {
+        let _type = index % 2 === 0 ? 'a criteria' : 'an operator';
+        throw new BadRequestException(
+          `Invalid filter at index ${index}. Must be ${_type}`,
+        );
+      }
+
+      _filter_queue.push(filter);
+      dz_filter_queue.push(
+        Utility.evaluateFilter({
+          operator,
+          table_schema: _table_schema,
+          field,
+          values: filter.values,
+          dz_filter_queue,
+          entity,
+          aliased_entities,
+        }),
+      );
+
+      if (dz_filter_queue.length > 2) {
+        const [_1, _op, _2]: any = _filter_queue;
+        const [_c1, _, _c2]: any = dz_filter_queue;
+        const allowed_to_merged = _1.operator ? [_c1, _c2] : [_c2];
+        where_clause_queue.push(
+          Utility.evaluateFilter({
+            operator: _op.operator,
+            table_schema: _table_schema,
+            field,
+            values: filter.values,
+            dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
+            entity,
+            aliased_entities,
+          }),
+        );
+        if (where_clause_queue.length > 1) where_clause_queue.shift();
+        _filter_queue = [
+          // dummy
+          {
+            type: 'criteria',
+            field: '',
+            operator: '',
+          },
+        ];
+        dz_filter_queue = [
+          // dummy
+          {
+            type: 'criteria',
+            field: '',
+            operator: '',
+          },
+        ];
+      }
+    });
+    return where_clause_queue;
+  }
+
+  public static checkUpdateSchema(
+    table: string,
+    meta: Record<string, any>,
+    data: Record<string, any>,
+  ) {
+    const schema_table = Utility.checkTable(table);
+    if (!data) {
+      throw new BadRequestException('Data is required in Body');
+    }
+
+    return { schema: createUpdateSchema(schema_table), data, meta };
   }
   public static advanceFilter(advance_filters, organization_id) {
     const supported_operators = {
@@ -193,7 +514,6 @@ export class Utility {
 
     return `WHERE ${where_clauses.join(' AND ')}`;
   }
-
   public static queryGenerator(params, organization_id: string) {
     const {
       entity, // Name of the table
@@ -255,211 +575,28 @@ export class Utility {
 
     return query.trim();
   }
-  public static format(data: any, is_insert = true) {
-    const date = new Date();
-    const _data = {
-      id: data?.id ? data.id : ulid(),
-      ...(is_insert
-        ? {
-            tombstone: 0,
-            status: 'Active',
-            created_date: date.toLocaleDateString(),
-            created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
-            updated_date: date.toLocaleDateString(),
-            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
-          }
-        : {
-            updated_date: date.toLocaleDateString(),
-            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
-          }),
-      ...data,
-    };
-
-    return _data;
-  }
-  public static checkCreateSchema(
-    table: string,
-    meta: Record<string, any>,
-    data: Record<string, any>,
-  ) {
-    const schema_table = Utility.checkTable(table);
-    if (!data) {
-      throw new BadRequestException('Data is required in Body');
-    }
-
-    return { schema: createInsertSchema(schema_table), data, meta };
-  }
-
-  public static checkUpdateSchema(
-    table: string,
-    meta: Record<string, any>,
-    data: Record<string, any>,
-  ) {
-    const schema_table = Utility.checkTable(table);
-    if (!data) {
-      throw new BadRequestException('Data is required in Body');
-    }
-
-    return { schema: createUpdateSchema(schema_table), data, meta };
-  }
-  public static checkTable(table: string) {
-    const table_schema = schema[table];
-    if (
-      !table ||
-      !table_schema ||
-      table === 'config_sync' ||
-      table.includes('crdt')
-    ) {
-      throw new NotFoundException('Table does not exist');
-    }
-
-    return table_schema;
-  }
-  public static parsePluckedFields(
-    table: string,
-    pluck: string[],
-  ): Record<string, any> | null {
-    const table_schema = schema[table];
-
-    if (!pluck?.length || !pluck) {
-      return null;
-    }
-    const _plucked_fields = pluck.reduce((acc, field) => {
-      if (table_schema[field]) {
-        return {
-          ...acc,
-          [field]: table_schema[field],
-        };
-      }
-      return acc;
-    }, {});
-
-    if (Object.keys(_plucked_fields).length === 0) {
-      return null;
-    }
-    return _plucked_fields;
-  }
-  public static sqliteFilterAnalyzer(
-    db,
-    table_schema,
-    _advance_filters: IAdvanceFilters[],
-    organization_id,
-    joins?: IJoins[],
-  ) {
-    let _db = db;
-    const get_all_special_conditions_for_where = _advance_filters.filter(
-      (filter) => filter.entity === undefined,
-    );
-
-    if (joins?.length) {
-      // const get_all_special_conditions_for_join = _advance_filters.filter(
-      //   (filter) => filter?.entity,
-      // );
-      joins.forEach(({ type, field_relation }) => {
-        const { from, to } = field_relation;
-        let _from = from;
-        let _to = to;
-
-        switch (type) {
-          case 'left':
-            _db = _db.leftJoin(
-              schema[_to.entity],
-              // ...Utility.constructFilters(
-              //   get_all_special_conditions_for_join,
-              //   schema[_to.entity],
-              // ),
-              eq(
-                schema[_from.entity][_from.field],
-                schema[_to.entity][_to.field],
-              ),
-            );
-
-            break;
-          case 'self':
-            if (!_from.alias) {
-              throw new BadRequestException(
-                '[from]: Alias are required for self join',
-              );
-            }
-            const parent = aliasedTable(schema[_from.entity], _from.alias);
-            _db = _db.leftJoin(
-              parent,
-              eq(parent[_from.field], schema[_to.entity][_to.field]),
-            );
-            break;
-          default:
-            throw new BadRequestException('Invalid join type');
-        }
-      });
-    }
-
-    return _db.where(
-      and(
-        eq(table_schema['tombstone'], 0),
-        isNotNull(table_schema['organization_id']),
-        eq(table_schema['organization_id'], organization_id),
-        ...Utility.constructFilters(
-          get_all_special_conditions_for_where,
-          table_schema,
-        ),
-      ),
-    );
-  }
-
-  public static evaluateFilter({
-    operator,
-    table_schema,
-    field,
-    values,
-    dz_filter_queue,
-  }) {
-    switch (operator) {
-      case EOperator.EQUAL:
-        return eq(table_schema[field], values[0]);
-      case EOperator.NOT_EQUAL:
-        return ne(table_schema[field], values[0]);
-      case EOperator.GREATER_THAN:
-        return gt(table_schema[field], values[0]);
-      case EOperator.GREATER_THAN_OR_EQUAL:
-        return gte(table_schema[field], values[0]);
-      case EOperator.LESS_THAN:
-        return lt(table_schema[field], values[0]);
-      case EOperator.LESS_THAN_OR_EQUAL:
-        return lte(table_schema[field], values[0]);
-      case EOperator.IS_NULL:
-        return isNull(table_schema[field]);
-      case EOperator.IS_NOT_NULL:
-        return isNotNull(table_schema[field]);
-      case EOperator.CONTAINS:
-        return inArray(table_schema[field], values);
-      case EOperator.NOT_CONTAINS:
-        return notInArray(table_schema[field], values);
-      case EOperator.IS_BETWEEN:
-        return between(table_schema[field], values[0], values[1]);
-      case EOperator.IS_NOT_BETWEEN:
-        return notBetween(table_schema[field], values[0], values[1]);
-      case EOperator.IS_EMPTY:
-        return eq(table_schema[field], '');
-      case EOperator.IS_NOT_EMPTY:
-        return ne(table_schema[field], '');
-      case EOperator.AND:
-        return and(...dz_filter_queue);
-      case EOperator.OR:
-        return or(...dz_filter_queue);
-      default:
-        return null;
-    }
-  }
   static validateZodSchema(
     zodObject: { zod: ZodObject<any> | any; params: any }[],
   ) {
     for (const { zod, params } of zodObject) {
       try {
         zod.parse(params);
-      } catch (error) {
+      } catch (error: any) {
         throw new Error(`${JSON.stringify(error)}`);
       }
     }
+  }
+  static processResponseObject(response: any) {
+    response.encoding = 'application/json';
+    response.data = Utility.stringifyObjects(response.data);
+    return response;
+  }
+  static stringifyObjects(data: []): string {
+    if (!data || data?.length === 0) {
+      return '[]'; // Return the array as is if empty or not an array
+    }
+    return JSON.stringify(data);
+    // return data.map((item) => JSON.stringify(item));
   }
   static createRequestObject(
     data: any,
@@ -476,26 +613,15 @@ export class Utility {
 
     return _req;
   }
-
   static parseRequestBody(body: string) {
     let parsed_body: any;
     try {
       parsed_body = body ? JSON.parse(body) : null;
-    } catch (error) {
+    } catch (error: any) {
       throw new Error('Invalid JSON body');
     }
     return parsed_body;
   }
-  static parseBatchRequestBody(body: { records: string }) {
-    let parsed_body: { records: Record<any, any>[] } = { records: [] };
-    try {
-      parsed_body.records = body?.records ? JSON.parse(body.records) : [];
-    } catch (error) {
-      throw new Error('Invalid JSON body');
-    }
-    return parsed_body;
-  }
-
   static parseFiltersRequestBody(body: any) {
     let parsed_body: any;
     try {
@@ -507,12 +633,11 @@ export class Utility {
       } else {
         parsed_body = body; // If no advance_filters, set parsed_body to null
       }
-    } catch (error) {
+    } catch (error: any) {
       throw new Error('Invalid JSON body');
     }
     return parsed_body;
   }
-
   private static parseAdvanceFilters(advance_filters: any[]) {
     return advance_filters.map((filter: any) => {
       if (filter.values) {
@@ -525,101 +650,13 @@ export class Utility {
       }
     });
   }
-
-  static processResponseObject(response: any) {
-    response.encoding = 'application/json';
-    response.data = Utility.stringifyObjects(response.data);
-    return response;
-  }
-  static stringifyObjects(data: []): string {
-    if (!data || data?.length === 0) {
-      return '[]'; // Return the array as is if empty or not an array
+  static parseBatchRequestBody(body: { records: string }) {
+    let parsed_body: { records: Record<any, any>[] } = { records: [] };
+    try {
+      parsed_body.records = body?.records ? JSON.parse(body.records) : [];
+    } catch (error: any) {
+      throw new Error('Invalid JSON body');
     }
-    return JSON.stringify(data);
-    // return data.map((item) => JSON.stringify(item));
-  }
-
-  public static getIds(data: [{ id }]): string[] {
-    return data.map((item) => item.id);
-  }
-
-  public static constructFilters(advance_filters, table_schema): any[] {
-    let dz_filter_queue: any[] = [];
-    let where_clause_queue: any[] = [];
-    let _filter_queue: any[] = [];
-    if (advance_filters.length === 1) {
-      const [{ operator, field, values, type, entity }] = advance_filters;
-      if (type === 'operator') {
-        throw new BadRequestException(
-          `Invalid filter at index 0. Must be a criteria`,
-        );
-      }
-      const _table_schema = entity ? schema[entity] : table_schema;
-      return [
-        Utility.evaluateFilter({
-          operator,
-          table_schema: _table_schema,
-          field,
-          values,
-          dz_filter_queue: [],
-        }),
-      ];
-    }
-    advance_filters.forEach((filter, index: number) => {
-      const { operator, type = 'criteria', field = '' } = filter;
-      if (
-        (index % 2 === 0 && type != 'criteria') ||
-        (index % 2 === 1 && type != 'operator')
-      ) {
-        let _type = index % 2 === 0 ? 'a criteria' : 'an operator';
-        throw new BadRequestException(
-          `Invalid filter at index ${index}. Must be ${_type}`,
-        );
-      }
-
-      _filter_queue.push(filter);
-      dz_filter_queue.push(
-        Utility.evaluateFilter({
-          operator,
-          table_schema,
-          field,
-          values: filter.values,
-          dz_filter_queue,
-        }),
-      );
-
-      if (dz_filter_queue.length > 2) {
-        const [_1, _op, _2]: any = _filter_queue;
-        const [_c1, _, _c2]: any = dz_filter_queue;
-        const allowed_to_merged = _1.operator ? [_c1, _c2] : [_c2];
-        where_clause_queue.push(
-          Utility.evaluateFilter({
-            operator: _op.operator,
-            table_schema,
-            field,
-            values: filter.values,
-            dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
-          }),
-        );
-        if (where_clause_queue.length > 1) where_clause_queue.shift();
-        _filter_queue = [
-          // dummy
-          {
-            type: 'criteria',
-            field: '',
-            operator: '',
-          },
-        ];
-        dz_filter_queue = [
-          // dummy
-          {
-            type: 'criteria',
-            field: '',
-            operator: '',
-          },
-        ];
-      }
-    });
-    return where_clause_queue;
+    return parsed_body;
   }
 }

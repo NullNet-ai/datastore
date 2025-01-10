@@ -34,6 +34,7 @@ export interface IActions extends IRootActions {
 }
 
 export interface IGuards extends IRootGuards {
+  [key: string]: any;
   hasControllerArgs: (
     input: GuardArgs<IUpdateContext, IUpdateEvent>,
   ) => boolean;

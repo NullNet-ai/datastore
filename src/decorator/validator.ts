@@ -30,7 +30,7 @@ export function ValidateZod(zodObject: any) {
             params: Object.keys(zodObject).reduce(transformer, {}),
           },
         ]);
-      } catch (error) {
+      } catch (error: any) {
         return response.status(400).json({
           status: 400,
           message: JSON.parse(error.message),

@@ -19,14 +19,13 @@ export class DeleteActorsImplementations {
     private readonly drizzleService: DrizzleService,
   ) {
     this.db = this.drizzleService.getClient();
+    this.actors.get = this.getActorsImplementation.actors.get;
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   /**
    * Implementation of actors for the delete machine.
    */
   public readonly actors: IActors = {
-    get: this.getActorsImplementation.actors.get,
-    verify: this.verifyActorImplementations.actors.verify,
-
     delete: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context, event } = input;
       const { error } = event;

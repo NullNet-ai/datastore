@@ -9,12 +9,12 @@ import { VerifyActorsImplementations } from '../verify';
 export class CreateHypertablesActorsImplementations {
   constructor(
     private readonly verifyActorImplementations: VerifyActorsImplementations,
-  ) {}
+  ) {
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
+  }
   public readonly actors: IActors = {
-    verify: this.verifyActorImplementations.actors.verify,
     createHypertables: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
-      console.log(context);
       if (!context?.controller_args)
         return Promise.reject({
           payload: {
@@ -26,7 +26,7 @@ export class CreateHypertablesActorsImplementations {
         });
       try {
         processHypertableQueries();
-      } catch (error) {
+      } catch (error: any) {
         return Promise.reject({
           payload: {
             success: false,

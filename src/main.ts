@@ -1,10 +1,9 @@
-//@ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
 import { LoggerService } from '@dna-platform/common';
 import * as fs from 'fs';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { OrganizationsService } from '@dna-platform/crdt-lww-postgres';
 import { MinioService } from './providers/files/minio.service';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -65,7 +64,7 @@ async function cleanupTemporaryFiles() {
           recursive: true,
         });
         fs.mkdirSync('./tmp', { recursive: true });
-      } catch (error) {
+      } catch (error: any) {
         logger.error(error);
       }
     }, time_in_ms);
@@ -112,7 +111,7 @@ async function bootstrapBatchSyncService() {
 
   await app.listen(); // Start the microservice
 }
-
+// @ts-expect-error
 async function bootstrapGrpc() {
   const app = await NestFactory.createMicroservice(MainModule, {
     transport: Transport.GRPC,
@@ -134,6 +133,7 @@ async function bootstrapGrpc() {
     logger.log(`gRPC microservice is running on port ${GRPC_PORT}`);
   });
 }
+
 async function bootstrapAll() {
   // start HTTP app
   await bootstrap();

@@ -20,7 +20,7 @@ const {
 } = process.env;
 @Injectable()
 export class MinioService {
-  public client: Minio.Client;
+  public client: Minio.Client | null = null;
   constructor(private readonly logger: LoggerService) {}
 
   async onModuleInit() {
@@ -62,14 +62,14 @@ export class MinioService {
 
     // Check if the bucket exists
     // If it doesn't, create it
-    const exists = await this.client.bucketExists(bucketName);
+    const exists = await this.client?.bucketExists(bucketName);
     if (exists) {
       this.logger.warn(
         `Bucket ${bucketName} already exists in ${STORAGE_REGION}.`,
       );
     } else {
       // TODO - move this to organization creation
-      await this.client.makeBucket(bucketName, STORAGE_REGION, {
+      await this.client?.makeBucket(bucketName, STORAGE_REGION, {
         // ObjectLocking: true,
       });
 
