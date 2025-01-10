@@ -247,7 +247,8 @@ export class FindActorsImplementations {
         _db = _db.limit(limit);
       }
       // group by main table
-      _db = _db.groupBy(table_schema.id);
+      if (joins?.length)
+        _db = _db.groupBy(table_schema.id, table_schema.timestamp);
 
       this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
 
