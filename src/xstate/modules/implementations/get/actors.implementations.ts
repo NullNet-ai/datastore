@@ -45,7 +45,7 @@ export class GetActorsImplementations {
       const { params, query } = _req;
       const { table = 'files', id } = params;
       const { pluck = 'id' } = query;
-      const table_schema = Utility.checkTable(table);
+      const table_schema: Record<string, any> = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(
         table,
         pluck.split(','),

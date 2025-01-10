@@ -118,17 +118,20 @@ export class Utility {
   }
 
   public static checkTable(table: string) {
-    const table_schema = schema[table];
+    const table_schema = schema?.[table];
     if (
-      !table ||
       !table_schema ||
+      !table ||
       table === 'config_sync' ||
       table.includes('crdt')
     ) {
       throw new NotFoundException('Table does not exist');
     }
 
-    return table_schema;
+    return {
+      table_schema,
+      schema,
+    };
   }
 
   public static parsePluckedFields(
@@ -210,11 +213,11 @@ export class Utility {
         eq(table_schema['tombstone'], 0),
         isNotNull(table_schema['organization_id']),
         eq(table_schema['organization_id'], organization_id),
-        // ...Utility.constructFilters(
-        //   _advance_filters,
-        //   table_schema,
-        //   aliased_entities,
-        // ),
+        ...Utility.constructFilters(
+          _advance_filters,
+          table_schema,
+          aliased_entities,
+        ),
       ),
     );
   }
@@ -392,7 +395,7 @@ export class Utility {
     meta: Record<string, any>,
     data: Record<string, any>,
   ) {
-    const schema_table = Utility.checkTable(table);
+    const { table_schema: schema_table } = Utility.checkTable(table);
     if (!data) {
       throw new BadRequestException('Data is required in Body');
     }

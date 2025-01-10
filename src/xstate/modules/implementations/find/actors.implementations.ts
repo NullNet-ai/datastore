@@ -71,20 +71,13 @@ export class FindActorsImplementations {
       let _pluck =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
-      const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
-      const selections =
-        _plucked_fields === null ? { id: table_schema['id'] } : _plucked_fields;
 
+      const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
+      const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db;
 
       let join_keys = Object.keys(pluck_object);
       let aliased_joined_entities: Record<string, any>[] = [];
-      console.log(
-        '@@testing-------------------',
-        table_schema,
-        table,
-        schema[table],
-      );
 
       if (joins?.length) {
         const aliased_joint_entities = joins.reduce(
@@ -186,7 +179,6 @@ export class FindActorsImplementations {
             };
         _db = _db.select(join_selections).from(table_schema);
       } else {
-        return _db.select().from(table_schema);
         _db = _db.select(selections).from(table_schema);
       }
 
