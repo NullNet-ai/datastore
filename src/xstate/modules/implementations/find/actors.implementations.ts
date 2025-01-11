@@ -8,7 +8,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
-import * as local_schema from '../../../../schema';
+// import * as local_schema from '../../../../schema';
 
 import {
   asc,
@@ -242,11 +242,7 @@ export class FindActorsImplementations {
       // group by main table if joins are present and check if table is hypertable or not
       if (joins?.length) {
         if (table_schema.hypertable_timestamp) {
-          _db = _db.groupBy(
-            table_schema.id,
-            table_schema.timestamp,
-            local_schema['contacts'].id,
-          );
+          _db = _db.groupBy(table_schema.id, table_schema.timestamp);
         } else {
           _db = _db.groupBy(table_schema.id);
         }
