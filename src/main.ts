@@ -1,3 +1,4 @@
+//@ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { MainModule } from './main.module';
@@ -139,7 +140,7 @@ async function bootstrapAll() {
   await bootstrap();
 
   // start batch sync microservice
-  await bootstrapBatchSyncService();
+  // await bootstrapBatchSyncService();
 
   // start gRPC app
   // await bootstrapGrpc();

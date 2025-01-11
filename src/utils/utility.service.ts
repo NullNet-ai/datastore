@@ -158,7 +158,32 @@ export class Utility {
     }
     return _plucked_fields;
   }
-  public static sqliteFilterAnalyzer(
+  public static getPopulatedQueryFrom(sql_query) {
+    const { sql, params } = sql_query;
+
+    // Extract the part starting from "FROM"
+    const from_index = sql.toLowerCase().indexOf('from');
+    if (from_index === -1) {
+      throw new Error('The query does not contain a FROM clause.');
+    }
+
+    let query_from_part = sql.slice(from_index);
+
+    // Replace placeholders ($1, $2, etc.) with corresponding params
+    params.forEach((param, index) => {
+      // PostgreSQL-style placeholder ($1, $2, ...)
+      const placeholder = new RegExp(`\\$${index + 1}`, 'g');
+
+      // Convert param to a safe SQL string (wrap strings with single quotes)
+      const value =
+        typeof param === 'string' ? `'${param.replace(/'/g, "''")}'` : param;
+
+      query_from_part = query_from_part.replace(placeholder, value);
+    });
+
+    return query_from_part;
+  }
+  public static FilterAnalyzer(
     db,
     table_schema,
     _advance_filters: IAdvanceFilters[],
@@ -517,12 +542,12 @@ export class Utility {
 
     return `WHERE ${where_clauses.join(' AND ')}`;
   }
-  public static queryGenerator(params, organization_id: string) {
+  public static queryGenerator(params, from_clause: string) {
     const {
       entity, // Name of the table
       aggregations, // Array of aggregation objects
       bucket_size, // Time bucket size (e.g., 1 hour, 1 day)
-      advance_filters,
+      // advance_filters,
       order: { order_direction, order_by }, // Column to order by
     } = params;
 
@@ -546,17 +571,12 @@ export class Utility {
     );
 
     const selectClause = `
-        SELECT time_bucket('${bucket_size}', timestamp) AS bucket,
+        SELECT time_bucket('${bucket_size}', ${entity}.timestamp) AS bucket,
                ${selectClauses.join(',\n               ')}
     `;
 
-    // Generate the FROM clause
-    const fromClause = `FROM ${entity}`;
-
+    const fromClause = from_clause;
     // Generate the WHERE clause
-    let whereClause = this.advanceFilter(advance_filters, organization_id);
-    console.log(whereClause);
-    // Generate the GROUP BY clause
     const groupByClause = `GROUP BY bucket`;
 
     // Generate the ORDER BY clause
@@ -571,11 +591,9 @@ export class Utility {
     const query = `
         ${selectClause}
         ${fromClause}
-        ${whereClause}
         ${groupByClause}
         ${orderByClause};
     `;
-
     return query.trim();
   }
   static validateZodSchema(
