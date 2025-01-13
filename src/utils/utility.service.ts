@@ -149,12 +149,14 @@ export class Utility {
     const joinSelections = joins?.length
       ? joins.reduce((acc, join) => {
           const toEntity = join.field_relation.to.entity;
-          const toAlias = join.field_relation.to.alias || toEntity; // Use alias if provided
+          const toAlias =
+            join.type === 'self'
+              ? join.field_relation.from.alias
+              : join.field_relation.to.alias || toEntity; // Use alias if provided
 
           // Only process if the entity has pluck_object fields
           if (pluck_object_keys.includes(toEntity)) {
             const fields = pluck_object[toEntity];
-
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
               .map((field) => `'${field}', "${toAlias}"."${field}"`)
@@ -162,11 +164,11 @@ export class Utility {
 
             const jsonAggSelection = sql`JSON_AGG(
             JSON_BUILD_OBJECT(${sql.raw(jsonAggFields)})
-          )`.as(join.field_relation.to.alias || toEntity);
+          )`.as(toAlias);
 
             return {
               ...acc,
-              [toEntity]: jsonAggSelection,
+              [toAlias]: jsonAggSelection,
             };
           }
           return acc;
