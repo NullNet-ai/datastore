@@ -109,7 +109,8 @@ export class FindActorsImplementations {
           {},
         );
         const pluck_group_object_keys = Object.keys(pluck_group_object);
-        const join_selections = join_keys?.length
+        // @ts-ignore
+        const _join_selections = join_keys?.length
           ? join_keys.reduce(
               (acc, entity) => {
                 return {
@@ -171,7 +172,11 @@ export class FindActorsImplementations {
           : {
               [table]: pick(Utility.checkTable(table).table_schema, _pluck),
             };
-        _db = _db.select(join_selections).from(table_schema);
+        _db = _db
+          .select(
+            Utility.createSelections({ table, _pluck, pluck_object, joins }),
+          )
+          .from(table_schema);
       } else {
         _db = _db.select(selections).from(table_schema);
       }
@@ -231,7 +236,7 @@ export class FindActorsImplementations {
             : desc(sort_field_schema),
         );
       }
-
+      console.log(_db.toSQL());
       if (offset) {
         _db = _db.offset(offset);
       }
@@ -250,7 +255,7 @@ export class FindActorsImplementations {
       console.log(_db.toSQL());
       this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
       let result = await _db;
-
+      console.log(result);
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,

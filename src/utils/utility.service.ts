@@ -28,6 +28,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { ZodObject } from 'zod';
+
 const pluralize = require('pluralize');
 
 export class Utility {
@@ -133,7 +134,53 @@ export class Utility {
       schema,
     };
   }
+  public static createSelections = ({ table, _pluck, pluck_object, joins }) => {
+    const pluck_object_keys = Object.keys(pluck_object || {});
 
+    // Handle main entity selections
+    const mainSelections = _pluck.reduce((acc, field) => {
+      return {
+        ...acc,
+        [field]: sql.raw(`"${table}"."${field}"`),
+      };
+    }, {});
+
+    // Handle join entity selections
+    const joinSelections = joins?.length
+      ? joins.reduce((acc, join) => {
+          const toEntity = join.field_relation.to.entity;
+          const toAlias = join.field_relation.to.alias || toEntity; // Use alias if provided
+
+          // Only process if the entity has pluck_object fields
+          if (pluck_object_keys.includes(toEntity)) {
+            const fields = pluck_object[toEntity];
+
+            // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
+            const jsonAggFields = fields
+              .map((field) => `'${field}', "${toAlias}"."${field}"`)
+              .join(', ');
+
+            const jsonAggSelection = sql`JSON_AGG(
+            JSON_BUILD_OBJECT(${sql.raw(jsonAggFields)})
+          )`.as(join.field_relation.to.alias || toEntity);
+
+            return {
+              ...acc,
+              [toEntity]: jsonAggSelection,
+            };
+          }
+          return acc;
+        }, {})
+      : {};
+
+    // Combine main entity and join selections
+    const selections = {
+      ...mainSelections,
+      ...joinSelections,
+    };
+
+    return selections;
+  };
   public static parsePluckedFields(
     table: string,
     pluck: string[],
