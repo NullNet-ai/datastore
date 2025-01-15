@@ -50,6 +50,7 @@ export class CreateActorsImplementations {
       }
 
       body.created_by = responsible_account.contact.id;
+      // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
 
       if (table === 'organizations' && body?.organization_id) {
         await this.minioService.makeBucket(organization.name);

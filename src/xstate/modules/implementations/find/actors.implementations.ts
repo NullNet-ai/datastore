@@ -173,17 +173,16 @@ export class FindActorsImplementations {
               [table]: pick(Utility.checkTable(table).table_schema, _pluck),
             };
         _db = _db
-          .select(
-            Utility.createSelections({ table, _pluck, pluck_object, joins }),
-          )
+          .select(Utility.createSelections({ table, pluck_object, joins }))
           .from(table_schema);
       } else {
         _db = _db.select(selections).from(table_schema);
       }
-      _db = Utility.FilterAnalyzer(
+      _db = Utility.testFilterAnalyzer(
         _db,
         table_schema,
         advance_filters,
+        pluck_object,
         organization_id,
         joins,
         this.db,
@@ -236,7 +235,6 @@ export class FindActorsImplementations {
             : desc(sort_field_schema),
         );
       }
-      console.log(_db.toSQL());
       if (offset) {
         _db = _db.offset(offset);
       }

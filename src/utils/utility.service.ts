@@ -134,11 +134,11 @@ export class Utility {
       schema,
     };
   }
-  public static createSelections = ({ table, _pluck, pluck_object, joins }) => {
+  public static createSelections = ({ table, pluck_object, joins }) => {
     const pluck_object_keys = Object.keys(pluck_object || {});
 
-    // Handle main entity selections
-    const mainSelections = _pluck.reduce((acc, field) => {
+    const fields = pluck_object?.[table] || [];
+    const mainSelections = fields.reduce((acc, field) => {
       return {
         ...acc,
         [field]: sql.raw(`"${table}"."${field}"`),
@@ -162,9 +162,18 @@ export class Utility {
               .map((field) => `'${field}', "${toAlias}"."${field}"`)
               .join(', ');
 
-            const jsonAggSelection = sql`JSON_AGG(
-            JSON_BUILD_OBJECT(${sql.raw(jsonAggFields)})
-          )`.as(toAlias);
+            const jsonAggSelection = sql
+              .raw(
+                `
+                  COALESCE(
+                    JSON_AGG(
+                      JSON_BUILD_OBJECT(${jsonAggFields})
+                    ) FILTER (WHERE "${toAlias}"."id" IS NOT NULL),
+                    '[]'
+                  )
+                `,
+              )
+              .as(toAlias);
 
             return {
               ...acc,
@@ -232,6 +241,88 @@ export class Utility {
 
     return query_from_part;
   }
+
+  public static testFilterAnalyzer = (
+    db,
+    table_schema,
+    _advance_filters,
+    pluck_object,
+    organization_id,
+    joins: any = [],
+    _client_db = null,
+  ) => {
+    let _db = db;
+    const aliased_entities: any = [];
+
+    if (joins.length) {
+      joins.forEach(({ type, field_relation }) => {
+        const { from, to } = field_relation;
+        const toEntity = to.entity;
+        const toAlias = to.alias || toEntity; // Use alias if provided
+        switch (type) {
+          case 'left':
+            if (to.alias) aliased_entities.push(to.alias);
+
+            // Retrieve fields from pluck_object for the specified `to` entity
+            const fields = pluck_object[toEntity] || [];
+
+            // Dynamically construct the SQL for the LATERAL join
+            const lateralJoin = sql.raw(`
+            LATERAL (
+              SELECT ${fields
+                .map((field) => `"${toEntity}"."${field}"`)
+                .join(', ')}
+              FROM "${toEntity}"
+              ${Utility.advanceFilter(
+                to.filters,
+                organization_id,
+              )} AND "${toEntity}"."${to.field}" = "${from.entity}"."${
+              from.field
+            }"
+              ${
+                to.order_by ? `ORDER BY "${toEntity}"."${to.order_by}" ASC` : ''
+              }
+              ${to.limit ? `LIMIT ${to.limit}` : ''}
+            ) AS "${toAlias}"
+          `);
+
+            _db = _db.leftJoin(lateralJoin, sql`TRUE`);
+            break;
+
+          case 'self':
+            if (!from.alias) {
+              throw new BadRequestException(
+                '[from]: Alias are required for self join',
+              );
+            }
+            aliased_entities.push(from.alias);
+            const parent = aliasedTable(schema[from.entity], from.alias);
+            _db = _db.leftJoin(
+              parent,
+              eq(parent[from.field], schema[to.entity][to.field]),
+            );
+            break;
+
+          default:
+            throw new BadRequestException('Invalid join type');
+        }
+      });
+    }
+
+    return _db.where(
+      and(
+        eq(table_schema['tombstone'], 0),
+        isNotNull(table_schema['organization_id']),
+        eq(table_schema['organization_id'], organization_id),
+        ...Utility.constructFilters(
+          _advance_filters,
+          table_schema,
+          aliased_entities,
+        ),
+      ),
+    );
+  };
+
   public static FilterAnalyzer(
     db,
     table_schema,
