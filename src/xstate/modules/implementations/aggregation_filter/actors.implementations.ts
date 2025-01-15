@@ -40,7 +40,7 @@ export class AggregationFilterActorsImplementations {
       const table = _req.body?.entity;
       Utility.checkTable(table);
       let _db = this.db.select().from(table_schema);
-      _db = Utility.FilterAnalyzer(
+      _db = Utility.AggregationFilterAnalyzer(
         _db,
         table_schema,
         advance_filters,
@@ -51,7 +51,7 @@ export class AggregationFilterActorsImplementations {
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
 
       let { rows } = await this.db.execute(
-        sql.raw(Utility.queryGenerator(_req.body, from_clause)),
+        sql.raw(Utility.AggregationQueryGenerator(_req.body, from_clause)),
       );
       if (rows.length === 0) {
         throw new NotFoundException({

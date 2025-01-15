@@ -157,6 +157,7 @@ export class Utility {
           // Only process if the entity has pluck_object fields
           if (pluck_object_keys.includes(toEntity)) {
             const fields = pluck_object[toEntity];
+            console.log(fields);
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
               .map((field) => `'${field}', "${toAlias}"."${field}"`)
@@ -242,10 +243,10 @@ export class Utility {
     return query_from_part;
   }
 
-  public static testFilterAnalyzer = (
+  public static FilterAnalyzer = (
     db,
     table_schema,
-    _advance_filters,
+    advance_filters,
     pluck_object,
     organization_id,
     joins: any = [],
@@ -257,36 +258,37 @@ export class Utility {
     if (joins.length) {
       joins.forEach(({ type, field_relation }) => {
         const { from, to } = field_relation;
-        const toEntity = to.entity;
-        const toAlias = to.alias || toEntity; // Use alias if provided
+        const to_entity = to.entity;
+        const to_alias = to.alias || to_entity; // Use alias if provided
         switch (type) {
           case 'left':
             if (to.alias) aliased_entities.push(to.alias);
-
             // Retrieve fields from pluck_object for the specified `to` entity
-            const fields = pluck_object[toEntity] || [];
+            const fields = pluck_object[to_alias] || [];
 
             // Dynamically construct the SQL for the LATERAL join
-            const lateralJoin = sql.raw(`
+            const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
-                .map((field) => `"${toEntity}"."${field}"`)
+                .map((field) => `"${to_entity}"."${field}"`)
                 .join(', ')}
-              FROM "${toEntity}"
+              FROM "${to_entity}"
               ${Utility.advanceFilter(
                 to.filters,
                 organization_id,
-              )} AND "${toEntity}"."${to.field}" = "${from.entity}"."${
+              )} AND "${to_entity}"."${to.field}" = "${from.entity}"."${
               from.field
             }"
               ${
-                to.order_by ? `ORDER BY "${toEntity}"."${to.order_by}" ASC` : ''
+                to.order_by
+                  ? `ORDER BY "${to_entity}"."${to.order_by}" ASC`
+                  : ''
               }
               ${to.limit ? `LIMIT ${to.limit}` : ''}
-            ) AS "${toAlias}"
+            ) AS "${to_alias}"
           `);
 
-            _db = _db.leftJoin(lateralJoin, sql`TRUE`);
+            _db = _db.leftJoin(lateral_join, sql`TRUE`);
             break;
 
           case 'self':
@@ -315,7 +317,7 @@ export class Utility {
         isNotNull(table_schema['organization_id']),
         eq(table_schema['organization_id'], organization_id),
         ...Utility.constructFilters(
-          _advance_filters,
+          advance_filters,
           table_schema,
           aliased_entities,
         ),
@@ -323,7 +325,7 @@ export class Utility {
     );
   };
 
-  public static FilterAnalyzer(
+  public static AggregationFilterAnalyzer(
     db,
     table_schema,
     _advance_filters: IAdvanceFilters[],
@@ -348,10 +350,6 @@ export class Utility {
             _db = _db.leftJoin(
               aliased_schema,
               eq(schema[_from.entity][_from.field], aliased_schema[_to.field]),
-              // ...Utility.constructFilters(
-              //   get_all_special_conditions_for_join,
-              //   schema[_to.entity],
-              // ),
             );
             break;
           case 'self':
@@ -682,12 +680,11 @@ export class Utility {
 
     return `WHERE ${where_clauses.join(' AND ')}`;
   }
-  public static queryGenerator(params, from_clause: string) {
-    const {
+  public static AggregationQueryGenerator(params, from_clause: string) {
+    let {
       entity, // Name of the table
       aggregations, // Array of aggregation objects
       bucket_size, // Time bucket size (e.g., 1 hour, 1 day)
-      // advance_filters,
       order: { order_direction, order_by }, // Column to order by
     } = params;
 
@@ -699,7 +696,7 @@ export class Utility {
     }
 
     // Generate the SELECT clause
-    const selectClauses = aggregations.map(
+    const select_clauses = aggregations.map(
       ({ aggregation, aggregate_on, bucket_name }) => {
         if (!aggregation || !aggregate_on || !bucket_name) {
           throw new Error(
@@ -710,29 +707,26 @@ export class Utility {
       },
     );
 
-    const selectClause = `
+    const select_clause = `
         SELECT time_bucket('${bucket_size}', ${entity}.timestamp) AS bucket,
-               ${selectClauses.join(',\n               ')}
+               ${select_clauses.join(',\n               ')}
     `;
 
-    const fromClause = from_clause;
     // Generate the WHERE clause
-    const groupByClause = `GROUP BY bucket`;
+    const group_by_clause = `GROUP BY bucket`;
 
     // Generate the ORDER BY clause
-    const orderDirection = order_direction
-      ? order_direction.toUpperCase()
-      : 'asc';
-    const orderByClause = order_by
-      ? `ORDER BY ${order_by} ${orderDirection}`
+    order_direction = order_direction ? order_direction.toUpperCase() : 'asc';
+    const order_by_clause = order_by
+      ? `ORDER BY ${order_by} ${order_direction}`
       : '';
 
     // Combine all clauses into the final query
     const query = `
-        ${selectClause}
-        ${fromClause}
-        ${groupByClause}
-        ${orderByClause};
+        ${select_clause}
+        ${from_clause}
+        ${group_by_clause}
+        ${order_by_clause};
     `;
     return query.trim();
   }

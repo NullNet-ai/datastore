@@ -8,7 +8,6 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
-// import * as local_schema from '../../../../schema';
 
 import {
   asc,
@@ -65,7 +64,6 @@ export class FindActorsImplementations {
       let _pluck =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
-
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db;
@@ -178,7 +176,7 @@ export class FindActorsImplementations {
       } else {
         _db = _db.select(selections).from(table_schema);
       }
-      _db = Utility.testFilterAnalyzer(
+      _db = Utility.FilterAnalyzer(
         _db,
         table_schema,
         advance_filters,
