@@ -266,15 +266,12 @@ export class Utility {
             const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
-                .map((field) => `"${to_entity}"."${field}"`)
+                .map((field) => `"joined_${to_alias}"."${field}"`)
                 .join(', ')}
-              FROM "${to_entity}" joined_${to_alias}
-              ${Utility.advanceFilter(
-                to.filters,
-                organization_id,
-              )} AND "${to_entity}"."${to.field}" = "joined_${to_alias}"."${
-              from.field
-            }"
+              FROM "${to_entity}" AS joined_${to_alias}
+              ${Utility.advanceFilter(to.filters, organization_id)} AND "${
+              from.entity
+            }"."${from.field}" = "joined_${to_alias}"."${to.field}"
               ${
                 to.order_by
                   ? `ORDER BY "${to_entity}"."${to.order_by}" ASC`
