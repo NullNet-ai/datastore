@@ -387,11 +387,14 @@ export class Utility {
     entity,
     aliased_entities,
   }) {
+    console.log('@@@@operator', field, entity, operator);
+
     const is_aliased = aliased_entities.includes(entity);
     if (!table_schema?.[field] && !is_aliased) return null;
     const schema_field = is_aliased
       ? sql.raw(`"${entity}"."${field}"`)
       : table_schema[field];
+
     switch (operator) {
       case EOperator.EQUAL:
         return eq(schema_field, values[0]);

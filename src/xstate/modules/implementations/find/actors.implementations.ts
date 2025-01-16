@@ -43,7 +43,6 @@ export class FindActorsImplementations {
             data: [],
           },
         });
-
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
@@ -61,6 +60,14 @@ export class FindActorsImplementations {
         pluck_object = {},
         // pluck_group_object = {},
       } = body;
+      Object.keys(pluck_object).forEach((key) => {
+        if (!pluck_object[key].includes('id')) {
+          throw new BadRequestException({
+            success: false,
+            message: `pluck_object must have "id" for every entity`,
+          });
+        }
+      });
       let _pluck =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
