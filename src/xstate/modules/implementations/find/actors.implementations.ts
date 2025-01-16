@@ -59,7 +59,7 @@ export class FindActorsImplementations {
         joins = [],
         multiple_sort = [],
         pluck_object = {},
-        pluck_group_object = {},
+        // pluck_group_object = {},
       } = body;
       let _pluck =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
@@ -73,9 +73,9 @@ export class FindActorsImplementations {
 
       if (joins?.length) {
         const aliased_joint_entities = joins.reduce(
-          (acc, { type, field_relation }) => {
-            const { from, to } = field_relation;
-            const aliased = type === 'self' ? from : to;
+          (acc, { field_relation }) => {
+            const { to } = field_relation;
+            const aliased = to;
             if (aliased.alias) {
               const aliased_entity = aliasedTable(
                 schema[aliased.entity],
@@ -106,60 +106,64 @@ export class FindActorsImplementations {
           },
           {},
         );
-        const pluck_group_object_keys = Object.keys(pluck_group_object);
+        // const pluck_group_object_keys = Object.keys(pluck_group_object);
         // @ts-ignore
         const _join_selections = join_keys?.length
           ? join_keys.reduce(
               (acc, entity) => {
+                const aliased = aliased_joined_entities.find(
+                  (aje) => aje.alias === entity,
+                );
+                const _entity = aliased?.entity || entity;
                 return {
                   ...acc,
-                  ...(!Object.keys(aliased_except_main_entity).includes(entity)
+                  ...(!Object.keys(aliased_except_main_entity).includes(_entity)
                     ? {
-                        [entity]: pick(
-                          Utility.checkTable(entity).table_schema,
-                          pluck_object[entity],
+                        [_entity]: pick(
+                          Utility.checkTable(_entity).table_schema,
+                          pluck_object[aliased?.alias || entity],
                         ),
                       }
                     : {}),
-                  ...(pluck_group_object_keys?.length &&
-                  pluck_group_object?.[entity]
-                    ? pluck_group_object?.[entity].reduce((acc, field) => {
-                        let entity_name = entity;
-                        let schema_field = schema?.[entity][field];
-                        if (
-                          Object.keys(aliased_except_main_entity).includes(
-                            entity,
-                          )
-                        ) {
-                          const aliased = aliased_except_main_entity[entity];
-                          entity_name = aliased.alias;
-                          schema_field = sql.raw(`"${entity_name}"."${field}"`);
-                        }
-                        return {
-                          ...acc,
-                          [`${entity_name}`]: {
-                            ...pluck_object?.[entity].reduce((acc, key) => {
-                              return {
-                                ...acc,
-                                [key]: sql.raw(`"${entity_name}"."${key}"`),
-                              };
-                            }, {}),
-                            ...acc?.[entity_name],
-                            ...(schema?.[entity]?.[field]
-                              ? {
-                                  [pluralize(field)]:
-                                    sql`json_group_array(${schema_field})`.mapWith(
-                                      {
-                                        mapFromDriverValue: (value: any) =>
-                                          JSON.parse(value),
-                                      },
-                                    ),
-                                }
-                              : null),
-                          },
-                        };
-                      }, {})
-                    : {}),
+                  // ...(pluck_group_object_keys?.length &&
+                  // pluck_group_object?.[entity]
+                  //   ? pluck_group_object?.[entity].reduce((acc, field) => {
+                  //       let entity_name = entity;
+                  //       let schema_field = schema?.[entity][field];
+                  //       if (
+                  //         Object.keys(aliased_except_main_entity).includes(
+                  //           entity,
+                  //         )
+                  //       ) {
+                  //         const aliased = aliased_except_main_entity[entity];
+                  //         entity_name = aliased.alias;
+                  //         schema_field = sql.raw(`"${entity_name}"."${field}"`);
+                  //       }
+                  //       return {
+                  //         ...acc,
+                  //         [`${entity_name}`]: {
+                  //           ...pluck_object?.[entity].reduce((acc, key) => {
+                  //             return {
+                  //               ...acc,
+                  //               [key]: sql.raw(`"${entity_name}"."${key}"`),
+                  //             };
+                  //           }, {}),
+                  //           ...acc?.[entity_name],
+                  //           ...(schema?.[entity]?.[field]
+                  //             ? {
+                  //                 [pluralize(field)]:
+                  //                   sql`json_group_array(${schema_field})`.mapWith(
+                  //                     {
+                  //                       mapFromDriverValue: (value: any) =>
+                  //                         JSON.parse(value),
+                  //                     },
+                  //                   ),
+                  //               }
+                  //             : null),
+                  //         },
+                  //       };
+                  //     }, {})
+                  //   : {}),
                   // ['contact_phone_numbers.phone_number_raw']: sql<string>`GROUP_CONCAT(${schema['contact_phone_numbers'].phone_number_raw})`,
                 };
               },
@@ -248,10 +252,10 @@ export class FindActorsImplementations {
           _db = _db.groupBy(table_schema.id);
         }
       }
-      console.log(_db.toSQL());
+      // console.log(_db.toSQL());
       this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
       let result = await _db;
-      console.log(result);
+      // console.log(result);
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,

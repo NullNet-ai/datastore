@@ -149,15 +149,11 @@ export class Utility {
     const joinSelections = joins?.length
       ? joins.reduce((acc, join) => {
           const toEntity = join.field_relation.to.entity;
-          const toAlias =
-            join.type === 'self'
-              ? join.field_relation.from.alias
-              : join.field_relation.to.alias || toEntity; // Use alias if provided
+          const toAlias = join.field_relation.to.alias || toEntity; // Use alias if provided
 
           // Only process if the entity has pluck_object fields
-          if (pluck_object_keys.includes(toEntity)) {
-            const fields = pluck_object[toEntity];
-            console.log(fields);
+          if (pluck_object_keys.includes(toAlias)) {
+            const fields = pluck_object[toAlias];
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
               .map((field) => `'${field}', "${toAlias}"."${field}"`)
@@ -272,11 +268,11 @@ export class Utility {
               SELECT ${fields
                 .map((field) => `"${to_entity}"."${field}"`)
                 .join(', ')}
-              FROM "${to_entity}"
+              FROM "${to_entity}" joined_${to_alias}
               ${Utility.advanceFilter(
                 to.filters,
                 organization_id,
-              )} AND "${to_entity}"."${to.field}" = "${from.entity}"."${
+              )} AND "${to_entity}"."${to.field}" = "joined_${to_alias}"."${
               from.field
             }"
               ${
