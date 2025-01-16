@@ -259,10 +259,9 @@ export class FindActorsImplementations {
           _db = _db.groupBy(table_schema.id);
         }
       }
-      // console.log(_db.toSQL());
+      console.log(`Query: ${JSON.stringify(_db.toSQL())}`);
       this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
       let result = await _db;
-      // console.log(result);
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,

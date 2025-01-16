@@ -246,7 +246,7 @@ export class Utility {
     pluck_object,
     organization_id,
     joins: any = [],
-    _client_db = null,
+    _client_db: any,
   ) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -256,25 +256,47 @@ export class Utility {
         const { from, to } = field_relation;
         const to_entity = to.entity;
         const to_alias = to.alias || to_entity; // Use alias if provided
+
         switch (type) {
           case 'left':
             if (to.alias) aliased_entities.push(to.alias);
             // Retrieve fields from pluck_object for the specified `to` entity
             const fields = pluck_object[to_alias] || [];
+            const to_table_schema = schema[to_entity];
+            const aliased_to_entity = aliasedTable(
+              to_table_schema,
+              `joined_${to_alias}`,
+            );
 
+            const sub_query_from_clause = Utility.getPopulatedQueryFrom(
+              _client_db
+                .select()
+                .from(aliased_to_entity)
+                .where(
+                  and(
+                    eq(aliased_to_entity['tombstone'], 0),
+                    isNotNull(aliased_to_entity['organization_id']),
+                    eq(aliased_to_entity['organization_id'], organization_id),
+                    ...Utility.constructFilters(to.filters, aliased_to_entity, [
+                      `joined_${to_alias}`,
+                    ]),
+                  ),
+                )
+                .toSQL(),
+            );
             // Dynamically construct the SQL for the LATERAL join
+            console.log('sub_query_from_clause', sub_query_from_clause);
             const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
                 .map((field) => `"joined_${to_alias}"."${field}"`)
                 .join(', ')}
-              FROM "${to_entity}" AS joined_${to_alias}
-              ${Utility.advanceFilter(to.filters, organization_id)} AND "${
-              from.entity
-            }"."${from.field}" = "joined_${to_alias}"."${to.field}"
+              ${sub_query_from_clause} AND "${from.entity}"."${
+              from.field
+            }" = "joined_${to_alias}"."${to.field}"
               ${
                 to.order_by
-                  ? `ORDER BY "${to_entity}"."${to.order_by}" ASC`
+                  ? `ORDER BY "joined_${to_alias}"."${to.order_by}" ASC`
                   : ''
               }
               ${to.limit ? `LIMIT ${to.limit}` : ''}
@@ -387,8 +409,6 @@ export class Utility {
     entity,
     aliased_entities,
   }) {
-    console.log('@@@@operator', field, entity, operator);
-
     const is_aliased = aliased_entities.includes(entity);
     if (!table_schema?.[field] && !is_aliased) return null;
     const schema_field = is_aliased
@@ -436,7 +456,7 @@ export class Utility {
   }
 
   public static constructFilters(
-    advance_filters,
+    advance_filters = [],
     table_schema,
     aliased_entities: string[] = [],
   ): any[] {
