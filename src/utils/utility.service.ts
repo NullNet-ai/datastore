@@ -256,6 +256,7 @@ export class Utility {
         const { from, to } = field_relation;
         const to_entity = to.entity;
         const to_alias = to.alias || to_entity; // Use alias if provided
+        to.filters ??= [];
 
         switch (type) {
           case 'left':
@@ -456,7 +457,7 @@ export class Utility {
   }
 
   public static constructFilters(
-    advance_filters = [],
+    advance_filters,
     table_schema,
     aliased_entities: string[] = [],
   ): any[] {
