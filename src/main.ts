@@ -29,7 +29,7 @@ async function initialOrganization(
   storage: MinioService,
 ) {
   // default for super admin
-  // await organization.initialize();
+  await organization.initialize();
   // await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
   // create own default organization here
   // await organization.initialize({
