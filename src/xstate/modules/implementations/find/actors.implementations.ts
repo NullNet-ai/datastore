@@ -9,17 +9,9 @@ import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
 
-import {
-  asc,
-  desc,
-  sql,
-  aliasedTable,
-  SQLWrapper,
-  AnyColumn,
-} from 'drizzle-orm';
+import { asc, desc, sql, SQLWrapper, AnyColumn } from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
 const pluralize = require('pluralize');
-const pick = require('lodash.pick');
 @Injectable()
 export class FindActorsImplementations {
   private db;
@@ -79,108 +71,6 @@ export class FindActorsImplementations {
       let aliased_joined_entities: Record<string, any>[] = [];
 
       if (joins?.length) {
-        const aliased_joint_entities = joins.reduce(
-          (acc, { field_relation }) => {
-            const { to } = field_relation;
-            const aliased = to;
-            if (aliased.alias) {
-              const aliased_entity = aliasedTable(
-                schema[aliased.entity],
-                aliased.alias,
-              );
-              aliased_joined_entities.push(aliased as Record<string, any>);
-              return {
-                ...acc,
-                [aliased.alias]: pick(
-                  aliased_entity,
-                  pluck_object[aliased.entity],
-                ),
-              };
-            }
-            return acc;
-          },
-          {},
-        );
-        const aliased_except_main_entity = aliased_joined_entities.reduce(
-          (acc, curr) => {
-            if (curr.entity !== table) {
-              return {
-                ...acc,
-                [curr.entity]: curr,
-              };
-            }
-            return acc;
-          },
-          {},
-        );
-        // const pluck_group_object_keys = Object.keys(pluck_group_object);
-        // @ts-ignore
-        const _join_selections = join_keys?.length
-          ? join_keys.reduce(
-              (acc, entity) => {
-                const aliased = aliased_joined_entities.find(
-                  (aje) => aje.alias === entity,
-                );
-                const _entity = aliased?.entity || entity;
-                return {
-                  ...acc,
-                  ...(!Object.keys(aliased_except_main_entity).includes(_entity)
-                    ? {
-                        [_entity]: pick(
-                          Utility.checkTable(_entity).table_schema,
-                          pluck_object[aliased?.alias || entity],
-                        ),
-                      }
-                    : {}),
-                  // ...(pluck_group_object_keys?.length &&
-                  // pluck_group_object?.[entity]
-                  //   ? pluck_group_object?.[entity].reduce((acc, field) => {
-                  //       let entity_name = entity;
-                  //       let schema_field = schema?.[entity][field];
-                  //       if (
-                  //         Object.keys(aliased_except_main_entity).includes(
-                  //           entity,
-                  //         )
-                  //       ) {
-                  //         const aliased = aliased_except_main_entity[entity];
-                  //         entity_name = aliased.alias;
-                  //         schema_field = sql.raw(`"${entity_name}"."${field}"`);
-                  //       }
-                  //       return {
-                  //         ...acc,
-                  //         [`${entity_name}`]: {
-                  //           ...pluck_object?.[entity].reduce((acc, key) => {
-                  //             return {
-                  //               ...acc,
-                  //               [key]: sql.raw(`"${entity_name}"."${key}"`),
-                  //             };
-                  //           }, {}),
-                  //           ...acc?.[entity_name],
-                  //           ...(schema?.[entity]?.[field]
-                  //             ? {
-                  //                 [pluralize(field)]:
-                  //                   sql`json_group_array(${schema_field})`.mapWith(
-                  //                     {
-                  //                       mapFromDriverValue: (value: any) =>
-                  //                         JSON.parse(value),
-                  //                     },
-                  //                   ),
-                  //               }
-                  //             : null),
-                  //         },
-                  //       };
-                  //     }, {})
-                  //   : {}),
-                  // ['contact_phone_numbers.phone_number_raw']: sql<string>`GROUP_CONCAT(${schema['contact_phone_numbers'].phone_number_raw})`,
-                };
-              },
-              {
-                ...aliased_joint_entities,
-              },
-            )
-          : {
-              [table]: pick(Utility.checkTable(table).table_schema, _pluck),
-            };
         _db = _db
           .select(Utility.createSelections({ table, pluck_object, joins }))
           .from(table_schema);

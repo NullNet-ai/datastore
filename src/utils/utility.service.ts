@@ -285,8 +285,6 @@ export class Utility {
                 )
                 .toSQL(),
             );
-            // Dynamically construct the SQL for the LATERAL join
-            console.log('sub_query_from_clause', sub_query_from_clause);
             const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
@@ -306,21 +304,6 @@ export class Utility {
 
             _db = _db.leftJoin(lateral_join, sql`TRUE`);
             break;
-
-          case 'self':
-            if (!from.alias) {
-              throw new BadRequestException(
-                '[from]: Alias are required for self join',
-              );
-            }
-            aliased_entities.push(from.alias);
-            const parent = aliasedTable(schema[from.entity], from.alias);
-            _db = _db.leftJoin(
-              parent,
-              eq(parent[from.field], schema[to.entity][to.field]),
-            );
-            break;
-
           default:
             throw new BadRequestException('Invalid join type');
         }
