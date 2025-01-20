@@ -18,12 +18,6 @@ export class GrpcController {
     private storeMutation: StoreMutationDriver,
     private authService: AuthService,
   ) {}
-  @GrpcMethod('ExampleService', 'SayHello')
-  sayHello(data: { name: string }, ...args): { message: string } {
-    console.log(args);
-    return { message: `Hello, ${data.name}` };
-  }
-
   @GrpcMethod('StoreService', 'GetById')
   async getById(data, metadata: any): Promise<{ message: string }> {
     const _res = new CustomResponse();
@@ -33,7 +27,6 @@ export class GrpcController {
     await _res.waitForResponse();
     let response = _res.getBody();
     response = Utility.processResponseObject(response);
-    console.log(response);
     return response;
   }
 
@@ -70,7 +63,6 @@ export class GrpcController {
       await _res.waitForResponse();
       let response = _res.getBody();
       response = Utility.processResponseObject(response);
-      console.log(response);
       return response;
     } catch (error: any) {
       // Handle unexpected server-side errors

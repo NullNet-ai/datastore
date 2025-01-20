@@ -91,9 +91,7 @@ export class BatchSyncService implements OnModuleInit {
         WHERE table_schema = 'public' AND table_name LIKE '%temp%'
       `,
       );
-      const table_list = rows.map(({ table_name }) => table_name);
-      console.log('Table list:', table_list);
-      return table_list;
+      return rows.map(({ table_name }) => table_name);
     } catch (error: any) {
       console.error('Error generating table list:', error.message);
       throw error;
