@@ -4,6 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create_hypertables/create_hypertables.schema';
 import { processHypertableQueries } from '../../../../schema/create_hypertables';
 import { VerifyActorsImplementations } from '../verify';
+import child_process from 'child_process';
 
 @Injectable()
 export class CreateHypertablesActorsImplementations {
@@ -26,6 +27,22 @@ export class CreateHypertablesActorsImplementations {
         });
       try {
         processHypertableQueries();
+        try {
+          child_process.execSync('npm run drizzle:migrate', {
+            stdio: 'inherit',
+          });
+        } catch (error: any) {
+          console.error('Error running drizzle:migrate', error);
+          return Promise.reject({
+            payload: {
+              success: false,
+              message: error.message,
+              count: 0,
+              data: [],
+            },
+          });
+        }
+        //run command in terminam to generate hypertables
       } catch (error: any) {
         return Promise.reject({
           payload: {
