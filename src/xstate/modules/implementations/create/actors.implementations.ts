@@ -70,7 +70,7 @@ export class CreateActorsImplementations {
         body,
       );
       //get first three characters of the table name as prefix
-      const prefix = table.substring(0, 3).toUpperCase();
+      const prefix = table.substring(0, 2).toUpperCase();
       // auto generate code
       if (table !== 'counters') {
         const counter_schema = local_schema['counters'];
