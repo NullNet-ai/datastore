@@ -69,12 +69,14 @@ export class CreateActorsImplementations {
         undefined as any,
         body,
       );
+      //get first three characters of the table name as prefix
+      const prefix = table.substring(0, 3).toUpperCase();
       // auto generate code
       if (table !== 'counters') {
         const counter_schema = local_schema['counters'];
         body.code = await this.db
           .insert(counter_schema)
-          .values({ entity: table, counter: 1 })
+          .values({ entity: table, counter: 1, prefix, default_code: 1000 })
           .onConflictDoUpdate({
             target: [counter_schema.entity],
             set: {
