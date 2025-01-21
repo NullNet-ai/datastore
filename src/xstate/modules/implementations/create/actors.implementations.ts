@@ -69,7 +69,6 @@ export class CreateActorsImplementations {
         undefined as any,
         body,
       );
-      const parsed_data = Utility.createParse({ schema, data: body });
       // auto generate code
       if (table !== 'counters') {
         const counter_schema = local_schema['counters'];
@@ -93,6 +92,7 @@ export class CreateActorsImplementations {
           )
           .catch(() => null);
       }
+      const parsed_data = Utility.createParse({ schema, data: body });
       const results = await this.db
         .insert(table_schema)
         .values(parsed_data)

@@ -119,7 +119,7 @@ export class Utility {
   }
 
   public static checkTable(table: string) {
-    const table_schema = schema?.[table];
+    const table_schema = schema[table];
     if (
       !table_schema ||
       !table ||
