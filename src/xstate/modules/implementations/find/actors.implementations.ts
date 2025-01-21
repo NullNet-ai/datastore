@@ -52,7 +52,6 @@ export class FindActorsImplementations {
         pluck_object = {},
         // pluck_group_object = {},
       } = body;
-      console.log(body);
       Object.keys(pluck_object).forEach((key) => {
         if (!pluck_object[key].includes('id')) {
           throw new BadRequestException({
