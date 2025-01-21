@@ -136,7 +136,12 @@ export class Utility {
   }
   public static createSelections = ({ table, pluck_object, joins }) => {
     const pluck_object_keys = Object.keys(pluck_object || {});
-
+    pluck_object_keys.forEach((key) => {
+      //check if the value of key is string then parse it to array
+      if (typeof pluck_object[key] === 'string') {
+        pluck_object[key] = JSON.parse(pluck_object[key]);
+      }
+    });
     const fields = pluck_object?.[table] || [];
     const mainSelections = fields.reduce((acc, field) => {
       return {
@@ -215,7 +220,6 @@ export class Utility {
   }
   public static getPopulatedQueryFrom(sql_query) {
     const { sql, params } = sql_query;
-    console.log(sql, params);
 
     // Extract the part starting from "FROM"
     const from_index = sql.toLowerCase().indexOf('from');
@@ -333,7 +337,6 @@ export class Utility {
     joins?: IJoins[],
     _client_db: any = null,
   ) {
-    console.log(_advance_filters);
     let _db = db;
     const aliased_entities: string[] = [];
     if (joins?.length) {
@@ -464,7 +467,10 @@ export class Utility {
           filter.values = filter?.values?.map((val) => new Date(val));
         }
       });
-      const [{ operator, field, values, type }] = advance_filters;
+      let [{ operator, field, values, type }] = advance_filters;
+      if (typeof values === 'string') {
+        values = JSON.parse(values);
+      }
       let { entity } = advance_filters[0];
       if (type === 'operator') {
         throw new BadRequestException(

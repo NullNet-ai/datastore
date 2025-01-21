@@ -34,19 +34,13 @@ message GetByFilterBody {
     int32 limit = 4;                         // Limit on the number of results
     int32 offset = 5;                        // Offset for pagination
     string order_direction = 6;              // Order direction (asc/desc)
-    repeated Joins joins = 7;                         // Joins Array
+    repeated Join joins = 7;                         // Joins Array
     repeated MultipleSort multiple_sort = 8; // List of sort objects
-    PluckObject pluck_object = 9; // Pluck object
+    map<string, string> pluck_object = 9; // Pluck object
 
 }
 
-message PluckObject {
-    map<string, FieldList> pluck_object = 1; // Keys can be dynamic
-}
 
-message FieldList {
-    repeated string fields = 1; // List of fields for each key
-}
 
 message AdvanceFilter {
     string type = 1;                         // Filter type (criteria/operator)
@@ -64,10 +58,6 @@ message Value {
 }
 
 message MultipleSort{
-    repeated Sort sort = 1; // List of sort objects
-}
-
-message Sort{
     string by_field = 1; // Field to sort by
     string by_direction = 2; // Order direction
 }
@@ -87,7 +77,7 @@ message EntityFieldTo {
     string entity = 1; // Name of the entity (e.g., contacts, packets)
     string field = 2;  // Name of the field (e.g., id, created_by)
     string alias = 3;  // Alias for the field
-    string limit = 4;  // Limit on the number of results
+    int32 limit = 4;  // Limit on the number of results
     string order_by = 5;  // Field to order by
     repeated AdvanceFilter filters = 6; // List of filters
 }
@@ -95,10 +85,6 @@ message EntityFieldTo {
 message EntityFieldFrom {
     string entity = 1; // Name of the entity (e.g., contacts, packets)
     string field = 2;  // Name of the field (e.g., id, created_by)
-}
-
-message Joins {
-    repeated Join joins = 1; // List of join objects
 }
 
 //AGGREGATE
@@ -114,7 +100,7 @@ message AggregateBody {
     string entity = 3; // Entity name
     string bucket_size = 4; // Bucket size
     Order order = 5; // Order object
-    repeated Joins joins = 6; // Joins Array
+    repeated Join joins = 6; // Joins Array
 }
 
 message Aggregation{

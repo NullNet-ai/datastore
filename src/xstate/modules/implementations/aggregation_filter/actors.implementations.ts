@@ -40,7 +40,6 @@ export class AggregationFilterActorsImplementations {
       const table = _req.body?.entity;
       Utility.checkTable(table);
       let _db = this.db.select({ id: table_schema.id }).from(table_schema);
-      console.log(_db.toSQL());
       _db = Utility.AggregationFilterAnalyzer(
         _db,
         table_schema,
