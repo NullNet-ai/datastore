@@ -215,6 +215,7 @@ export class Utility {
   }
   public static getPopulatedQueryFrom(sql_query) {
     const { sql, params } = sql_query;
+    console.log(sql, params);
 
     // Extract the part starting from "FROM"
     const from_index = sql.toLowerCase().indexOf('from');
@@ -332,6 +333,7 @@ export class Utility {
     joins?: IJoins[],
     _client_db: any = null,
   ) {
+    console.log(_advance_filters);
     let _db = db;
     const aliased_entities: string[] = [];
     if (joins?.length) {
@@ -369,7 +371,6 @@ export class Utility {
         }
       });
     }
-
     return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
@@ -458,6 +459,11 @@ export class Utility {
       );
     }
     if (advance_filters.length === 1) {
+      advance_filters.forEach((filter) => {
+        if (filter.field.toLowerCase().includes('timestamp')) {
+          filter.values = filter?.values?.map((val) => new Date(val));
+        }
+      });
       const [{ operator, field, values, type }] = advance_filters;
       let { entity } = advance_filters[0];
       if (type === 'operator') {

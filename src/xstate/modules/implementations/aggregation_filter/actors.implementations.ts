@@ -39,7 +39,8 @@ export class AggregationFilterActorsImplementations {
       const table_schema = local_schema[entity];
       const table = _req.body?.entity;
       Utility.checkTable(table);
-      let _db = this.db.select().from(table_schema);
+      let _db = this.db.select({ id: table_schema.id }).from(table_schema);
+      console.log(_db.toSQL());
       _db = Utility.AggregationFilterAnalyzer(
         _db,
         table_schema,
@@ -49,7 +50,6 @@ export class AggregationFilterActorsImplementations {
         this.db,
       );
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
-
       let { rows } = await this.db.execute(
         sql.raw(Utility.AggregationQueryGenerator(_req.body, from_clause)),
       );

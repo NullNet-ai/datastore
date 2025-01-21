@@ -105,7 +105,7 @@ export const is_range_value_operators = (operator: EOperator) =>
 export interface IAdvanceFilters<f = string> {
   field: f;
   operator: EOperator;
-  values?: string[] | number[] | boolean[];
+  values?: string[] | number[] | boolean[] | Date[];
   logical_operator?: 'AND' | 'OR';
   type: 'criteria' | 'operator';
   entity?: string;

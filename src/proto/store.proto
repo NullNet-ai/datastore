@@ -34,13 +34,26 @@ message GetByFilterBody {
     int32 limit = 4;                         // Limit on the number of results
     int32 offset = 5;                        // Offset for pagination
     string order_direction = 6;              // Order direction (asc/desc)
+    repeated Joins joins = 7;                         // Joins Array
+    repeated MultipleSort multiple_sort = 8; // List of sort objects
+    PluckObject pluck_object = 9; // Pluck object
+
+}
+
+message PluckObject {
+    map<string, FieldList> pluck_object = 1; // Keys can be dynamic
+}
+
+message FieldList {
+    repeated string fields = 1; // List of fields for each key
 }
 
 message AdvanceFilter {
     string type = 1;                         // Filter type (criteria/operator)
     string field = 2;                        // Field to apply filter on (for criteria)
     string operator = 3;                     // Operator (e.g., equal, and)
-    string values = 4;               // array of values (stringified)
+    string entity = 4;                       // Entity name
+    string values = 5;               // array of values (stringified)
 }
 
 message Value {
@@ -50,6 +63,43 @@ message Value {
     }
 }
 
+message MultipleSort{
+    repeated Sort sort = 1; // List of sort objects
+}
+
+message Sort{
+    string by_field = 1; // Field to sort by
+    string by_direction = 2; // Order direction
+}
+
+//Joins
+message Join {
+    string type = 1; // Type of join (e.g., left, inner, right)
+    FieldRelation field_relation = 2; // Relationship between the two entities
+}
+
+message FieldRelation {
+    EntityFieldTo to = 1;   // Target entity and field
+    EntityFieldFrom from = 2; // Source entity and field
+}
+
+message EntityFieldTo {
+    string entity = 1; // Name of the entity (e.g., contacts, packets)
+    string field = 2;  // Name of the field (e.g., id, created_by)
+    string alias = 3;  // Alias for the field
+    string limit = 4;  // Limit on the number of results
+    string order_by = 5;  // Field to order by
+    repeated AdvanceFilter filters = 6; // List of filters
+}
+
+message EntityFieldFrom {
+    string entity = 1; // Name of the entity (e.g., contacts, packets)
+    string field = 2;  // Name of the field (e.g., id, created_by)
+}
+
+message Joins {
+    repeated Join joins = 1; // List of join objects
+}
 
 //AGGREGATE
 message AggregateRequest{
@@ -64,6 +114,7 @@ message AggregateBody {
     string entity = 3; // Entity name
     string bucket_size = 4; // Bucket size
     Order order = 5; // Order object
+    repeated Joins joins = 6; // Joins Array
 }
 
 message Aggregation{
@@ -121,8 +172,8 @@ message LoginBody{
 }
 
 message LoginData{
-    string email = 1;  // Required field for the email
-    string password = 2;  // Required field for the password
+    string account_id = 1;  // Required field for the email
+    string account_secret = 2;  // Required field for the password
 }
 
 
