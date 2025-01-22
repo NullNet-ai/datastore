@@ -91,7 +91,7 @@ export class CreateActorsImplementations {
             entity: table,
             counter: 1,
             prefix,
-            default_code: 1000,
+            default_code: 100000,
           })
           .onConflictDoUpdate({
             target: [counter_schema.entity],
