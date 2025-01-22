@@ -48,6 +48,18 @@ export class CreateActorsImplementations {
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
+      if (!body.entity_prefix) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `entity_prefix is required [Temporary Fix]`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
+      const prefix = body.entity_prefix;
+      delete body.entity_prefix;
 
       body.created_by = responsible_account.contact.id;
       // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
@@ -70,13 +82,17 @@ export class CreateActorsImplementations {
         body,
       );
       //get first three characters of the table name as prefix
-      const prefix = table.substring(0, 2).toUpperCase();
       // auto generate code
       if (table !== 'counters') {
         const counter_schema = local_schema['counters'];
         body.code = await this.db
           .insert(counter_schema)
-          .values({ entity: table, counter: 1, prefix, default_code: 1000 })
+          .values({
+            entity: table,
+            counter: 1,
+            prefix,
+            default_code: 1000,
+          })
           .onConflictDoUpdate({
             target: [counter_schema.entity],
             set: {
