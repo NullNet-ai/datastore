@@ -2,6 +2,7 @@ import { Module, Provider } from '@nestjs/common';
 import {
   FileController,
   HypertableController,
+  CustomCreateController,
   StoreController,
   TokenController,
 } from './store.controller';
@@ -15,6 +16,7 @@ import * as machines from '../../xstate/modules/machines';
 import {
   StoreQueryDriver,
   StoreMutationDriver,
+  CustomCreateService,
 } from '../../providers/store/store.service';
 import { GetImplementationModule } from '../../xstate/modules/implementations/get/get.implementation.module';
 import { FindImplementationModule } from '../../xstate/modules/implementations/find/find.implementation.module';
@@ -61,13 +63,18 @@ const machines_providers = machine_providers([
   // Count
   machines.CountMachine,
 ]);
-const additional_providers: Provider[] = [LoggerService, AuthService];
+const additional_providers: Provider[] = [
+  LoggerService,
+  AuthService,
+  CustomCreateService,
+];
 const base_classes = [StoreController];
 const additional_controllers = [
   TokenController,
   FileController,
   HypertableController,
   GrpcController,
+  CustomCreateController,
   // TransactionController,
 ];
 

@@ -19,6 +19,7 @@ import { Request, Response, Express } from 'express';
 import {
   StoreMutationDriver,
   StoreQueryDriver,
+  CustomCreateService,
 } from '../../providers/store/store.service';
 import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -181,6 +182,14 @@ export class FileController {
       ..._req.query,
     };
     return this.storeMutation.download(_res, _req);
+  }
+}
+@Controller('/api/custom_create')
+export class CustomCreateController {
+  constructor(private customCreateService: CustomCreateService) {}
+  @Post('/contact_emails')
+  async createContactEmails(@Res() _res: Response, @Req() _req: Request) {
+    return this.customCreateService.createContactEmail(_req.body);
   }
 }
 
