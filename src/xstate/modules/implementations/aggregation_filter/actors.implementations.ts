@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/aggregation_filter/aggregation_filter.schema';
 import { VerifyActorsImplementations } from '../verify';
@@ -14,6 +14,7 @@ export class AggregationFilterActorsImplementations {
   constructor(
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly drizzleService: DrizzleService,
+    private readonly logger: LoggerService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
@@ -51,6 +52,11 @@ export class AggregationFilterActorsImplementations {
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
       let { rows } = await this.db.execute(
         sql.raw(Utility.AggregationQueryGenerator(_req.body, from_clause)),
+      );
+      this.logger.debug(
+        `Query: ${JSON.stringify(
+          Utility.AggregationQueryGenerator(_req.body, from_clause),
+        )}`,
       );
       if (rows.length === 0) {
         throw new NotFoundException({

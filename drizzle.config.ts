@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 
 /*
@@ -6,6 +6,7 @@ import { defineConfig } from 'drizzle-kit';
   Only used for generating schema.
   Migrations happen at run time via Bun SQLite Migrator. See src/modules/drizzle/drizzle.service.ts
 */
+dotenv.config();
 export default defineConfig({
   dialect: 'postgresql',
   schema: './dist/schema/index.js',

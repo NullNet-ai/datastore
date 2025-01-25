@@ -93,7 +93,6 @@ export class UpdateActorsImplementations {
         .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
-      console.log(result);
       delete updated_data.id;
       updated_data.version = result?.version;
       if (table_schema.hypertable_timestamp) {
