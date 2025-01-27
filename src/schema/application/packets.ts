@@ -17,23 +17,35 @@ export const table = pgTable(
   'packets',
   {
     ...system_fields,
-    id: uuid('id'),
-    firewall_uuid: uuid('firewall_uuid'), // Firewall UUID String
-    network_interface: text('network_interface'), // Network Interface name
-    timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // Epoch timestamp when the packet was captured, // Epoch timestamp (int32)
-    mac_source: text('mac_source'), // Source MAC address
-    mac_destination: text('mac_destination'), // Destination MAC address
-    eth_type: text('eth_type'), // Ethernet type (String)
-    ip_version: integer('ip_version'), // IP version (Number)
-    header_length: integer('header_length'), // Header Length (bytes)
-    total_length: integer('total_length'), // Total Length (bytes)
-    protocol: text('protocol'), // Protocol (String, e.g., TCP/UDP)
-    ip_source: text('ip_source'), // Source IP address
-    ip_destination: text('ip_destination'), // Destination IP address
-    source_port: integer('source_port'), // Source Port (Number)
-    destination_port: integer('destination_port'), // Destination Port (Number)
-    tombstone: integer('tombstone').default(0), // Tombstone flag
+    id: uuid('id'), // Primary key
+    timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // Packet Capture Time
     hypertable_timestamp: text('hypertable_timestamp'), // Hypertable timestamp
+    interface_name: text('interface_name').notNull(), // Network Interface Name
+
+    source_mac: text('source_mac'), // Source MAC Address
+    destination_mac: text('destination_mac'), // Destination MAC Address
+    ether_type: text('ether_type'), // Ethernet Type
+
+    ip_header_length: integer('ip_header_length').notNull(), // IP Header Length
+    payload_length: integer('payload_length').notNull(), // Payload Length
+
+    protocol: text('protocol').notNull(), // Protocol (TCP, UDP, ICMP, etc.)
+    source_ip: text('source_ip').notNull(), // Source IP Address
+    destination_ip: text('destination_ip').notNull(), // Destination IP Address
+
+    source_port: integer('source_port'), // Source Port (Optional)
+    destination_port: integer('destination_port'), // Destination Port (Optional)
+
+    tcp_header_length: integer('tcp_header_length'), // TCP Header Length
+    tcp_sequence_number: integer('tcp_sequence_number'), // TCP Sequence Number
+    tcp_acknowledgment_number: integer('tcp_acknowledgment_number'), // TCP Acknowledgment Number
+    tcp_data_offset: integer('tcp_data_offset'), // TCP Data Offset
+    tcp_flags: integer('tcp_flags'), // TCP Flags
+    tcp_window_size: integer('tcp_window_size'), // TCP Window Size
+    tcp_urgent_pointer: integer('tcp_urgent_pointer'), // TCP Urgent Pointer
+
+    icmp_type: integer('icmp_type'), // ICMP Type
+    icmp_code: integer('icmp_code'), // ICMP Code
   },
   config,
 );
