@@ -30,7 +30,7 @@ async function initialOrganization(
 ) {
   // default for super admin
   await organization.initialize();
-  // await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
+  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
   // create own default organization here
   // await organization.initialize({
   //   id: 'company-id',
@@ -142,6 +142,6 @@ async function bootstrapAll() {
   // await bootstrapBatchSyncService();
 
   // start gRPC app
-  // await bootstrapGrpc();
+  await bootstrapGrpc();
 }
 bootstrapAll();
