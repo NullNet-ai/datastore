@@ -5,11 +5,15 @@ import {
   primaryKey,
   // unique,
 } from 'drizzle-orm/pg-core';
-import { system_fields } from '@dna-platform/crdt-lww-postgres/build/schema/system';
+import {
+  system_fields,
+  getConfigDefaults,
+} from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { uuid, timestamp } from 'drizzle-orm/pg-core';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id, table.timestamp] }),
+  ...getConfigDefaults.defaultIndexes('packets', table),
   // uniq_id: unique().on(table.id, table.timestamp),
 });
 
