@@ -158,9 +158,9 @@ export class GrpcController {
   @GrpcMethod('StoreService', 'Login')
   async login(data, _metadata: any): Promise<any> {
     try {
-      const { email, password } = data.body.data;
-      const res = await this.authService.auth(email, password);
-      return { token: res };
+      const { account_id, account_secret } = data.body.data;
+      const res = await this.authService.auth(account_id, account_secret);
+      return { token: res.token };
     } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({
