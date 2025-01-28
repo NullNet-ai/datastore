@@ -65,7 +65,6 @@ export class BatchSyncService implements OnModuleInit {
         const table = table_name.replace('temp_', '');
         try {
           map(rows, async (row: any) => {
-            delete row?.code;
             this.format(row);
             await this.syncService.insert(table, row);
             await this.db
@@ -82,6 +81,10 @@ export class BatchSyncService implements OnModuleInit {
     }
   }
 
+  /*We can have another method where we maintain a list of how
+  many records were inserted into which table, so insertion and
+  syncing always happens in the same sequence, just to avoid reference issues.
+  */
   async TableList(): Promise<string[]> {
     try {
       const { rows } = await this.db.execute(

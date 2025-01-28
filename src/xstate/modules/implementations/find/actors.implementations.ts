@@ -60,14 +60,14 @@ export class FindActorsImplementations {
           });
         }
       });
-      let _pluck =
+      let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       let _db = this.db;
 
-      let join_keys = Object.keys(pluck_object);
+      let join_keys: string[] = Object.keys(pluck_object);
       let aliased_joined_entities: Record<string, any>[] = [];
 
       if (joins?.length) {
