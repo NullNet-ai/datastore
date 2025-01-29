@@ -2,5 +2,8 @@
 name = "hlc"
 version = "0.1.0"
 edition = "2021"
+authors = [
+  "Bon Lazaga <bon@dnamicro.com>"
+]
 
 [dependencies]

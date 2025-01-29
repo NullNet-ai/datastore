@@ -1,4 +1,3 @@
-use hex;
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -34,6 +33,12 @@ pub struct TreeResponse {
     pub leaves: Vec<ProtoNode>,
 }
 
+impl Default for MerkleTree {
+    fn default() -> Self {
+        MerkleTree::new()
+    }
+}
+
 // Update the to_proto method to use ProtoNode
 impl MerkleTree {
     pub fn new() -> Self {
@@ -42,6 +47,7 @@ impl MerkleTree {
             leaves: Vec::new(),
         }
     }
+
     pub fn add_leaf(&mut self, data: &str) {
         let mut hasher = Sha256::new();
         hasher.update(data.as_bytes());
