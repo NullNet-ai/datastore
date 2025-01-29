@@ -83,7 +83,7 @@ export class UpdateActorsImplementations {
           },
         });
       }
-      body.updated_by = responsible_account.contact.id;
+      body.updated_by = responsible_account.organization_account_id;
       const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
       delete body.id;

@@ -96,7 +96,7 @@ export class BatchInsertActorsImplementations {
             record,
           );
           record.id = uuidv4();
-          record.created_by = responsible_account.contact.id;
+          record.created_by = responsible_account.organization_account_id;
           record.timestamp = record?.timestamp
             ? new Date(record?.timestamp)
             : new Date().toISOString();

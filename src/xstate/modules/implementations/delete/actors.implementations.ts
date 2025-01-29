@@ -57,7 +57,7 @@ export class DeleteActorsImplementations {
         .set({
           tombstone: 1,
           version: sql`${table_schema.version} + 1`,
-          deleted_by: responsible_account.contact.id,
+          deleted_by: responsible_account.organization_account_id,
           updated_date: date.toLocaleDateString(),
           updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           status: 'Deleted',

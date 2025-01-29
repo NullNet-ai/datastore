@@ -126,7 +126,7 @@ export class Utility {
       table === 'config_sync' ||
       table.includes('crdt')
     ) {
-      throw new NotFoundException('Table does not exist');
+      throw new NotFoundException(`Table ${table} does not exist`);
     }
 
     return {

@@ -61,7 +61,7 @@ export class CreateActorsImplementations {
       const prefix = body.entity_prefix;
       delete body.entity_prefix;
 
-      body.created_by = responsible_account.contact.id;
+      body.created_by = responsible_account.organization_account_id;
       // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
 
       if (table === 'organizations' && body?.organization_id) {

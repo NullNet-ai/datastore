@@ -90,7 +90,7 @@ export class DownloadActorsImplementations {
         {
           ...body,
           ...this.file,
-          downloaded_by: responsible_account.contact.id,
+          downloaded_by: responsible_account.organization_account_id,
           merged_chunked,
         },
       ];

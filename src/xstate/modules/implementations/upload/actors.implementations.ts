@@ -81,7 +81,7 @@ export class UploadActorsImplementations {
             {
               ..._file,
               id: download_id,
-              uploaded_by: responsible_account.contact.id,
+              uploaded_by: responsible_account.organization_account_id,
               etag: uploaded_from_remote?.etag,
               versionId: uploaded_from_remote?.versionId,
               download_path: `/api/file/${download_id}/download`,
