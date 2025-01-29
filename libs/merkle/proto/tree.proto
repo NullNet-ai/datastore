@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package merkle;
+
+// Service definition for Merkle tree operations
+service MerkleTreeService {
+    // Create a new Merkle tree
+    rpc CreateTree(Empty) returns (TreeResponse);
+    
+    // Add a leaf to an existing tree
+    rpc AddLeaf(LeafRequest) returns (TreeResponse);
+    
+    // Find differences between two trees
+    rpc FindDifferences(TreeCompareRequest) returns (DifferenceResponse);
+}
+
+// Empty message for requests that don't need parameters
+message Empty {}
+
+// Node representation in the tree
+message Node {
+    string hash = 1;
+    string value = 2;
+}
+
+// Request message for adding a leaf
+message LeafRequest {
+    string tree_id = 1;
+    string value = 2;
+}
+
+// Response containing tree state
+message TreeResponse {
+    string tree_id = 1;
+    Node root = 2;
+    repeated Node leaves = 3;
+}
+
+// Request for comparing two trees
+message TreeCompareRequest {
+    string tree_id_1 = 1;
+    string tree_id_2 = 2;
+}
+
+// Response containing differences between trees
+message DifferenceResponse {
+    message Difference {
+        uint32 index = 1;
+        Node node1 = 2;
+        Node node2 = 3;
+    }
+    repeated Difference differences = 1;
+}

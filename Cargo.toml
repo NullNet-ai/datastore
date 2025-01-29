@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "libs/hlc",
+    "libs/merkle",
+    "bin/main"
+]
+resolver = '2'
+

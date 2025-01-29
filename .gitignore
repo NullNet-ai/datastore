@@ -1,0 +1,38 @@
+# Rust build artifacts
+/target/
+**/target/
+
+# Generated protocol buffer files
+*.pb
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Debug files
+*.pdb
+
+# Generated binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Environment files
+.env
+.env.local
+
+# Generated documentation
+/doc/
+/docs/
