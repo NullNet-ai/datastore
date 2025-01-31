@@ -34,9 +34,22 @@ export class BatchInsertActorsImplementations {
           },
         });
       const { controller_args, responsible_account } = context;
-      // const { organization_id = '', organization } = responsible_account;
+      const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
+      console.log(body);
+      const prefix = body.entity_prefix;
+      console.log(prefix);
+      if (!prefix) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: 'entity_prefix is required [Temporary Fix]',
+            count: 0,
+            data: [],
+          },
+        });
+      }
       const { table } = params;
       if (!body.records || !Array.isArray(body.records)) {
         return Promise.reject({
@@ -67,9 +80,11 @@ export class BatchInsertActorsImplementations {
         body.records,
         async (record: Record<string, any>) => {
           const counter_schema = local_schema['counters'];
+          record.organization_id = organization_id;
+
           record.code = await this.db
             .insert(counter_schema)
-            .values({ entity: table, counter: 1 })
+            .values({ entity: table, counter: 1, prefix, default_code: 100000 })
             .onConflictDoUpdate({
               target: [counter_schema.entity],
               set: {
