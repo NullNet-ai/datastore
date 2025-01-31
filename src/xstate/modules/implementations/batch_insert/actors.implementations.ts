@@ -61,6 +61,7 @@ export class BatchInsertActorsImplementations {
           },
         });
       }
+      temp_schema = local_schema[`temp_${table}`];
       const table_schema = local_schema[table];
       const records = await map(
         body.records,
@@ -108,6 +109,7 @@ export class BatchInsertActorsImplementations {
           return record;
         },
       );
+      const check_records = [...records];
       const results = await this.db.transaction(async (trx) => {
         // Insert into the main table
         const results_main_table = await trx
@@ -118,11 +120,13 @@ export class BatchInsertActorsImplementations {
             return inserted;
           });
 
-        // Insert into the temp table
         await trx
           .insert(temp_schema)
-          .values(records)
-          .returning({ temp_schema });
+          .values(check_records)
+          .returning({ table_schema })
+          .then((inserted) => {
+            return inserted;
+          });
 
         return results_main_table;
       });
