@@ -120,13 +120,7 @@ export class BatchInsertActorsImplementations {
             return inserted;
           });
 
-        await trx
-          .insert(temp_schema)
-          .values(check_records)
-          .returning({ table_schema })
-          .then((inserted) => {
-            return inserted;
-          });
+        await trx.insert(temp_schema).values(check_records);
 
         return results_main_table;
       });
