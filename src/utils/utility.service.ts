@@ -18,7 +18,7 @@ import {
   inArray,
   isNotNull,
   isNull,
-  like,
+  ilike,
   lt,
   lte,
   ne,
@@ -437,7 +437,7 @@ export class Utility {
       case EOperator.OR:
         return or(...dz_filter_queue);
       case EOperator.LIKE:
-        return like(schema_field, `%${values[0]}%`);
+        return ilike(schema_field, `%${values[0]}%`);
       default:
         return null;
     }
@@ -817,12 +817,21 @@ export class Utility {
       }
     });
   }
-  static parseBatchRequestBody(body: { records: string }) {
-    let parsed_body: { records: Record<any, any>[] } = { records: [] };
+  static parseBatchRequestBody(body: {
+    records: string;
+    entity_prefix: string;
+  }) {
+    let parsed_body: { records: Record<any, any>[]; entity_prefix: string } = {
+      records: [],
+      entity_prefix: '',
+    };
     try {
       parsed_body.records = body?.records ? JSON.parse(body.records) : [];
+      parsed_body.entity_prefix = body.entity_prefix;
     } catch (error: any) {
-      throw new Error('Invalid JSON body');
+      throw new Error(
+        'Invalid JSON body, make sure records and entity_prefix are provided',
+      );
     }
     return parsed_body;
   }
