@@ -84,15 +84,23 @@ export class Utility {
   }
   public static format(data: any, is_insert = true) {
     const date = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    };
+    const formattedDate = date
+      .toLocaleDateString('en-CA', options)
+      .replace(/-/g, '/');
     const _data = {
       id: data?.id ? data.id : ulid(),
       ...(is_insert
         ? {
             tombstone: 0,
             status: 'Active',
-            created_date: date.toLocaleDateString(),
+            created_date: formattedDate,
             created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
-            updated_date: date.toLocaleDateString(),
+            updated_date: formattedDate,
             updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
             timestamp: date.toISOString(),
           }
