@@ -50,6 +50,7 @@ export class FindActorsImplementations {
         joins = [],
         multiple_sort = [],
         pluck_object = {},
+        date_format = 'YYYY-MM-DD',
         // pluck_group_object = {},
       } = body;
       Object.keys(pluck_object).forEach((key) => {
@@ -72,7 +73,14 @@ export class FindActorsImplementations {
 
       if (joins?.length) {
         _db = _db
-          .select(Utility.createSelections({ table, pluck_object, joins }))
+          .select(
+            Utility.createSelections({
+              table,
+              pluck_object,
+              joins,
+              date_format,
+            }),
+          )
           .from(table_schema);
       } else {
         _db = _db.select(selections).from(table_schema);

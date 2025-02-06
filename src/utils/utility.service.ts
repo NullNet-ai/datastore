@@ -142,7 +142,23 @@ export class Utility {
       schema,
     };
   }
-  public static createSelections = ({ table, pluck_object, joins }) => {
+  static formatIfDate = (
+    field: string,
+    dateFormat: string = 'MM/DD/YYYY',
+    toAlias,
+  ) => {
+    if (field.toLowerCase().endsWith('date')) {
+      return `'${field}', to_char("${toAlias}"."${field}"::date, '${dateFormat}')`;
+    }
+    return `'${field}', "${toAlias}"."${field}"`;
+  };
+  public static createSelections = ({
+    table,
+    pluck_object,
+    joins,
+    date_format,
+  }) => {
+    console.log(date_format);
     const pluck_object_keys = Object.keys(pluck_object || {});
     pluck_object_keys.forEach((key) => {
       //check if the value of key is string then parse it to array
@@ -152,6 +168,14 @@ export class Utility {
     });
     const fields = pluck_object?.[table] || [];
     const mainSelections = fields.reduce((acc, field) => {
+      if (field.toLowerCase().endsWith('date')) {
+        return {
+          ...acc,
+          [field]: sql.raw(
+            `to_char("${table}"."${field}"::timestamp, '${date_format}') AS "${field}"`,
+          ),
+        };
+      }
       return {
         ...acc,
         [field]: sql.raw(`"${table}"."${field}"`),
@@ -169,7 +193,7 @@ export class Utility {
             const fields = pluck_object[toAlias];
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
-              .map((field) => `'${field}', "${toAlias}"."${field}"`)
+              .map((field) => Utility.formatIfDate(field, date_format, toAlias))
               .join(', ');
 
             const jsonAggSelection = sql
