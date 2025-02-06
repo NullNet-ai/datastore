@@ -158,7 +158,6 @@ export class Utility {
     joins,
     date_format,
   }) => {
-    console.log(date_format);
     const pluck_object_keys = Object.keys(pluck_object || {});
     pluck_object_keys.forEach((key) => {
       //check if the value of key is string then parse it to array
@@ -493,12 +492,12 @@ export class Utility {
         'Invalid filter. "entity" must be defined for all filters',
       );
     }
+    advance_filters.forEach((filter) => {
+      if (filter.field && filter.field.toLowerCase().includes('timestamp')) {
+        filter.values = filter?.values?.map((val) => new Date(val));
+      }
+    });
     if (advance_filters.length === 1) {
-      advance_filters.forEach((filter) => {
-        if (filter.field.toLowerCase().includes('timestamp')) {
-          filter.values = filter?.values?.map((val) => new Date(val));
-        }
-      });
       let [{ operator, field, values, type }] = advance_filters;
       if (typeof values === 'string') {
         values = JSON.parse(values);

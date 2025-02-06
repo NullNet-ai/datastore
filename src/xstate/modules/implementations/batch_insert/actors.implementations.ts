@@ -37,9 +37,7 @@ export class BatchInsertActorsImplementations {
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
-      console.log(body);
       const prefix = body.entity_prefix;
-      console.log(prefix);
       if (!prefix) {
         return Promise.reject({
           payload: {
