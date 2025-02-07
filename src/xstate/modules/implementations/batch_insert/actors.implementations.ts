@@ -122,7 +122,6 @@ export class BatchInsertActorsImplementations {
           return record;
         },
       );
-      const check_records = [...records];
       const results = await this.db.transaction(async (trx) => {
         // Prepare both insert operations
         const mainTableInsert = trx
@@ -130,7 +129,7 @@ export class BatchInsertActorsImplementations {
           .values(records)
           .returning({ table_schema });
 
-        const tempTableInsert = trx.insert(temp_schema).values(check_records);
+        const tempTableInsert = trx.insert(temp_schema).values(records);
 
         // Execute both inserts in parallel
         const [results_main_table, _] = await Promise.all([
