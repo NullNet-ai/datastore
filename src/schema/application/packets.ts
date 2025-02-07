@@ -3,6 +3,7 @@ import {
   text,
   integer,
   primaryKey,
+  bigint,
   // unique,
 } from 'drizzle-orm/pg-core';
 import {
@@ -41,8 +42,10 @@ export const table = pgTable(
     destination_port: integer('destination_port'), // Destination Port (Optional)
 
     tcp_header_length: integer('tcp_header_length'), // TCP Header Length
-    tcp_sequence_number: integer('tcp_sequence_number'), // TCP Sequence Number
-    tcp_acknowledgment_number: integer('tcp_acknowledgment_number'), // TCP Acknowledgment Number
+    tcp_sequence_number: bigint('tcp_sequence_number', { mode: 'number' }), // TCP Sequence Number
+    tcp_acknowledgment_number: bigint('tcp_acknowledgment_number', {
+      mode: 'number',
+    }), // TCP Acknowledgment Number
     tcp_data_offset: integer('tcp_data_offset'), // TCP Data Offset
     tcp_flags: integer('tcp_flags'), // TCP Flags
     tcp_window_size: integer('tcp_window_size'), // TCP Window Size
