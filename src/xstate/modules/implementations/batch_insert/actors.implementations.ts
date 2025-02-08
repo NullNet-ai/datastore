@@ -7,8 +7,8 @@ import { map } from 'bluebird';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
 import { v4 as uuidv4 } from 'uuid';
-import { sql } from 'drizzle-orm';
 import { Utility } from '../../../../utils/utility.service';
+import { AxonPushService } from '../../../../providers/axon/axon_push/axon_push.service';
 
 @Injectable()
 export class BatchInsertActorsImplementations {
@@ -17,6 +17,7 @@ export class BatchInsertActorsImplementations {
   constructor(
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly drizzleService: DrizzleService, // private readonly syncService: SyncService,
+    private readonly pushService: AxonPushService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
@@ -73,32 +74,13 @@ export class BatchInsertActorsImplementations {
         });
       }
       temp_schema = local_schema[`temp_${table}`];
+      const record_ids: string[] = [];
       const table_schema = local_schema[table];
       const records = await map(
         body.records,
         async (record: Record<string, any>) => {
-          const counter_schema = local_schema['counters'];
           record.organization_id = organization_id;
 
-          record.code = await this.db
-            .insert(counter_schema)
-            .values({ entity: table, counter: 1, prefix, default_code: 100000 })
-            .onConflictDoUpdate({
-              target: [counter_schema.entity],
-              set: {
-                counter: sql`${counter_schema.counter} + 1`,
-              },
-            })
-            .returning({
-              prefix: counter_schema.prefix,
-              default_code: counter_schema.default_code,
-              counter: counter_schema.counter,
-            })
-            .then(
-              ([{ prefix, default_code, counter }]) =>
-                prefix + (default_code + counter),
-            )
-            .catch(() => null);
           if (table_schema.hypertable_timestamp) {
             record.hypertable_timestamp = new Date(
               record.timestamp,
@@ -110,6 +92,7 @@ export class BatchInsertActorsImplementations {
             record,
           );
           record.id = uuidv4();
+          record_ids.push(record.id);
           record.created_by = responsible_account.organization_account_id;
           record.timestamp = record?.timestamp
             ? new Date(record?.timestamp)
@@ -138,6 +121,12 @@ export class BatchInsertActorsImplementations {
         ]);
 
         return results_main_table;
+      });
+
+      this.pushService.sender({
+        table,
+        prefix,
+        record_ids,
       });
 
       //todo: insert data into temp table as well, and write a seprarate compaction service which cleans up data everyday

@@ -37,6 +37,7 @@ import { AggregationFilterImplementationModule } from '../../xstate/modules/impl
 import { BatchInsertImplementationModule } from '../../xstate/modules/implementations/batch_insert/batch_insert.implementation.module';
 import { GrpcController } from './store.grpc.controller';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
+import { AxonModule } from '../../providers/axon/axon.module';
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
 const machines_providers = machine_providers([
@@ -107,6 +108,9 @@ const shared_machine_imports = [
 
   //Backup
   // DatabaseBackupModule,
+
+  //Axon
+  AxonModule,
 ];
 export const shared_imports = [
   XstateModule.register({
