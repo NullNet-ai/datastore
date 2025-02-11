@@ -37,6 +37,7 @@ import { AggregationFilterImplementationModule } from '../../xstate/modules/impl
 import { BatchInsertImplementationModule } from '../../xstate/modules/implementations/batch_insert/batch_insert.implementation.module';
 import { GrpcController } from './store.grpc.controller';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
+import { StoreService } from './store.service';
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
 const machines_providers = machine_providers([
@@ -68,6 +69,7 @@ const additional_providers: Provider[] = [
   LoggerService,
   AuthService,
   CustomCreateService,
+  StoreService,
 ];
 const base_classes = [StoreController];
 const additional_controllers = [

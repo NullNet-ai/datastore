@@ -9,6 +9,7 @@ import { CustomResponse } from './response';
 import { Utility } from '../../utils/utility.service';
 import { status } from '@grpc/grpc-js';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
+import { StoreService } from './store.service';
 
 @Controller()
 export class GrpcController {
@@ -16,6 +17,7 @@ export class GrpcController {
     @Inject('QueryDriverInterface')
     private storeQuery: StoreQueryDriver,
     private storeMutation: StoreMutationDriver,
+    private storeService: StoreService,
     private authService: AuthService,
   ) {}
   @GrpcMethod('StoreService', 'GetById')
@@ -135,16 +137,10 @@ export class GrpcController {
   @GrpcMethod('StoreService', 'BatchCreate')
   async batchInsert(data, metadata: any): Promise<any> {
     try {
-      const _res = new CustomResponse();
       data.body = Utility.parseBatchRequestBody(data.body);
       const _req = Utility.createRequestObject(data, metadata);
-      await this.storeMutation.batchInsert(
-        _res as any as Response,
-        _req as Request,
-      );
-      await _res.waitForResponse();
-      let response = _res.getBody();
-      response = Utility.processResponseObject(response);
+      let response = await this.storeService.batchInsert(_req as Request);
+      response = Utility.processResponseObject(response?.payload);
       return response;
     } catch (error: any) {
       // Handle unexpected server-side errors

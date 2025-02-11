@@ -9,6 +9,7 @@ import * as local_schema from '../../../../schema';
 import { v4 as uuidv4 } from 'uuid';
 import { Utility } from '../../../../utils/utility.service';
 import { AxonPushService } from '../../../../providers/axon/axon_push/axon_push.service';
+// import { insertRecords } from './test';
 
 @Injectable()
 export class BatchInsertActorsImplementations {
@@ -16,16 +17,17 @@ export class BatchInsertActorsImplementations {
 
   constructor(
     private readonly verifyActorImplementations: VerifyActorsImplementations,
-    private readonly drizzleService: DrizzleService, // private readonly syncService: SyncService,
+    private readonly drizzleService: DrizzleService,
     private readonly pushService: AxonPushService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
+
   public readonly actors: IActors = {
     batchInsert: fromPromise(async ({ input }): Promise<IResponse> => {
       const { context } = input;
-      if (!context?.controller_args)
+      if (!context?.controller_args) {
         return Promise.reject({
           payload: {
             success: false,
@@ -34,6 +36,8 @@ export class BatchInsertActorsImplementations {
             data: [],
           },
         });
+      }
+
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
@@ -49,6 +53,7 @@ export class BatchInsertActorsImplementations {
           },
         });
       }
+
       const { table } = params;
       if (!body.records || !Array.isArray(body.records)) {
         return Promise.reject({
@@ -60,6 +65,8 @@ export class BatchInsertActorsImplementations {
           },
         });
       }
+
+      // @ts-ignore
       let temp_schema;
       try {
         temp_schema = Utility.checkTable(`temp_${table}`);
@@ -73,6 +80,7 @@ export class BatchInsertActorsImplementations {
           },
         });
       }
+
       temp_schema = local_schema[`temp_${table}`];
       const record_ids: string[] = [];
       const table_schema = local_schema[table];
@@ -86,6 +94,7 @@ export class BatchInsertActorsImplementations {
               record.timestamp,
             ).toISOString();
           }
+
           const { schema }: any = Utility.checkCreateSchema(
             table,
             undefined as any,
@@ -98,20 +107,18 @@ export class BatchInsertActorsImplementations {
             ? new Date(record?.timestamp)
             : new Date().toISOString();
           record = Utility.createParse({ schema, data: record });
-          // await this.syncService.insert(
-          //   table,
-          //   Utility.createParse({ schema, data: body }),
-          // );
           return record;
         },
       );
+
+      // const data = await insertRecords('packets', 'temp_packets', records);
+
       const results = await this.db.transaction(async (trx) => {
         // Prepare both insert operations
         const main_table_insert = trx
           .insert(table_schema)
           .values(records)
           .returning({ table_schema });
-
         const temp_table_insert = trx.insert(temp_schema).values(records);
 
         // Execute both inserts in parallel
@@ -123,24 +130,14 @@ export class BatchInsertActorsImplementations {
         return results_main_table;
       });
 
-      this.pushService.sender({
-        table,
-        prefix,
-        record_ids,
-      });
-
-      //todo: insert data into temp table as well, and write a seprarate compaction service which cleans up data everyday
-      //todo: create temp tables for table which are required for batch queries
-      //todo: create a separate column for hypertable timestamp which indentifies if the table is a hypertable
-      //todo: update the create message method to check for hypertable and then do the conflict update
-      //todo: in crdt server change the column type of expiry insync_transactions to bigint
+      this.pushService.sender({ table, prefix, record_ids });
 
       return Promise.resolve({
         payload: {
           success: true,
           message: 'Records inserted successfully',
-          count: results.length,
-          data: results,
+          count: 0,
+          data: [results],
         },
       });
     }),

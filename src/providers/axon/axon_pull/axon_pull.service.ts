@@ -64,15 +64,10 @@ export class AxonPullService {
           );
         const table_schema = local_schema[table];
         const temp_table_schema = local_schema[`temp_${table}`];
-        const data = await this.db
+        await this.db
           .update(table_schema)
           .set({ code })
-          .where(eq(table_schema.id, id))
-          .returning({
-            id: table_schema.id,
-            code: table_schema.code,
-          });
-        console.log(data);
+          .where(eq(table_schema.id, id));
         await this.db
           .update(temp_table_schema)
           .set({ code })
