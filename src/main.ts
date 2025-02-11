@@ -1,7 +1,7 @@
 //@ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { MainModule } from './main.module';
+import { HttpModule, MainModule } from './main.module';
 import { LoggerService } from '@dna-platform/common';
 import * as fs from 'fs';
 import cookieParser from 'cookie-parser';
@@ -10,6 +10,7 @@ import { MinioService } from './providers/files/minio.service';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { BatchSyncModule } from './batch_sync/batch_sync.module';
+import { GrpcModule } from './grpc_module.module';
 const {
   PORT = '3060',
   DB_FILE_DIR = '',
@@ -73,7 +74,7 @@ async function cleanupTemporaryFiles() {
 
 // @ts-ignore
 async function bootstrap() {
-  const app = await NestFactory.create(MainModule, {
+  const app = await NestFactory.create(HttpModule, {
     // !TODO: causes an issue with winston transport for lowdb reading a file from debug.json
     // logger,
   });
@@ -113,7 +114,7 @@ async function bootstrapBatchSyncService() {
 }
 // @ts-expect-error
 async function bootstrapGrpc() {
-  const app = await NestFactory.createMicroservice(MainModule, {
+  const app = await NestFactory.createMicroservice(GrpcModule, {
     transport: Transport.GRPC,
     options: {
       url: `0.0.0.0:${GRPC_PORT}`, // Expose gRPC on this port
@@ -139,6 +140,6 @@ async function bootstrapAll() {
   // await bootstrapBatchSyncService();
 
   // start gRPC app
-  // await bootstrapGrpc();
+  await bootstrapGrpc();
 }
 bootstrapAll();

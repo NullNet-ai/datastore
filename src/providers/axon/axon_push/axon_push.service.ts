@@ -6,10 +6,13 @@ const axon = require('axon');
 @Injectable()
 export class AxonPushService {
   private sock = axon.socket('push');
-  constructor(private readonly logger: LoggerService) {}
+  private readonly port: number;
+  constructor(port: number, private readonly logger: LoggerService) {
+    this.port = port;
+  }
 
   onModuleInit() {
-    this.sock.connect(6733, 'localhost');
+    this.sock.connect(this.port, 'localhost');
     this.logger.log(
       '@AXON-PUSH: ',
       'Push-client socket connected to port 6733',

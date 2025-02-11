@@ -13,19 +13,25 @@ export class AxonPullService {
   private sock = axon.socket('pull');
   private dead_letter_queue_sock = axon.socket('push');
   private db;
+  private readonly pullPort: number;
+  private readonly deadLetterQueuePort: number;
 
   constructor(
     private readonly logger: LoggerService,
     private readonly drizzleService: DrizzleService, // private readonly syncService: SyncService,
+    pullPort: number,
+    deadLetterQueuePort: number,
   ) {
+    this.pullPort = pullPort;
+    this.deadLetterQueuePort = deadLetterQueuePort;
     this.db = this.drizzleService.getClient();
   }
 
   onModuleInit() {
     this.sock.on('message', this.onMessage.bind(this));
 
-    this.sock.bind(6733, 'localhost');
-    this.dead_letter_queue_sock.connect(6734, 'localhost');
+    this.sock.bind(this.pullPort, 'localhost');
+    this.dead_letter_queue_sock.connect(this.deadLetterQueuePort, 'localhost');
 
     this.logger.log('@AXON-PULL: ', 'Pull-sever socket listening on port 6733');
   }
@@ -34,7 +40,7 @@ export class AxonPullService {
     const { record_ids, table, prefix } = messages;
     each(record_ids, async (id: string) => {
       try {
-        this.logger.debug('@AXON-PULL:message ', id, table);
+        this.logger.debug(`@AXON-PULL:message ${id}, ${table} `);
         const counter_schema = local_schema['counters'];
         const code = await this.db
           .insert(counter_schema)
@@ -56,10 +62,15 @@ export class AxonPullService {
           );
         const table_schema = local_schema[table];
         const temp_table_schema = local_schema[`temp_${table}`];
-        await this.db
+        const data = await this.db
           .update(table_schema)
           .set({ code })
-          .where(eq(table_schema.id, id));
+          .where(eq(table_schema.id, id))
+          .returning({
+            id: table_schema.id,
+            code: table_schema.code,
+          });
+        console.log(data);
         await this.db
           .update(temp_table_schema)
           .set({ code })

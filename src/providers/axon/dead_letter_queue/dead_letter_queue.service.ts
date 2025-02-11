@@ -10,20 +10,22 @@ const axon = require('axon');
 @Injectable()
 export class DeadLetterQueueService {
   private sock = axon.socket('pull');
-
+  private readonly port: number;
   private db;
 
   constructor(
     private readonly logger: LoggerService,
     private readonly drizzleService: DrizzleService, // private readonly syncService: SyncService,
+    port: number,
   ) {
+    this.port = port;
     this.db = this.drizzleService.getClient();
   }
 
   onModuleInit() {
     this.sock.on('message', this.onMessage.bind(this));
 
-    this.sock.bind(6734, 'localhost');
+    this.sock.bind(this.port, 'localhost');
     this.logger.log(
       '@AXON-DEAD_LETTER_QUEUE: ',
       'socket listening on port 6734',
