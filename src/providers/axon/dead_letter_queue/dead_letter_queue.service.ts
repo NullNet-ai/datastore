@@ -27,8 +27,8 @@ export class DeadLetterQueueService {
 
     this.sock.bind(this.port, 'localhost');
     this.logger.log(
-      '@AXON-DEAD_LETTER_QUEUE: ',
-      'socket listening on port 6734',
+      `@AXON-DEAD_LETTER_QUEUE: 
+      socket listening on port ${this.port}`,
     );
   }
 

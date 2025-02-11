@@ -3,18 +3,13 @@ import { AxonPushService } from './axon_push/axon_push.service';
 import { AxonPullService } from './axon_pull/axon_pull.service';
 import { DeadLetterQueueService } from './dead_letter_queue/dead_letter_queue.service';
 import { LoggerService } from '@dna-platform/common';
-import { DrizzleService } from '@dna-platform/crdt-lww-postgres'; // Import LoggerService
-
-export interface AxonModuleOptions {
-  pushPort: number;
-  pullPort: number;
-  deadLetterQueuePort: number;
-}
+import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
+import { IAxonModuleOptions } from './types'; // Import LoggerService
 
 @Global()
 @Module({})
 export class AxonModule {
-  static forRoot(options: AxonModuleOptions): DynamicModule {
+  static forRoot(options: IAxonModuleOptions): DynamicModule {
     const axonPushServiceProvider: Provider = {
       provide: AxonPushService,
       useFactory: (logger: LoggerService) => {

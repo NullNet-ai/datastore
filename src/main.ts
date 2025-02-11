@@ -1,7 +1,7 @@
 //@ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { HttpModule, MainModule } from './main.module';
+import { HttpModule, MainModule } from './http.module';
 import { LoggerService } from '@dna-platform/common';
 import * as fs from 'fs';
 import cookieParser from 'cookie-parser';
@@ -10,7 +10,7 @@ import { MinioService } from './providers/files/minio.service';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { BatchSyncModule } from './batch_sync/batch_sync.module';
-import { GrpcModule } from './grpc_module.module';
+import { GrpcModule } from './grpc.module';
 const {
   PORT = '3060',
   DB_FILE_DIR = '',

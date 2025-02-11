@@ -33,7 +33,9 @@ export class AxonPullService {
     this.sock.bind(this.pullPort, 'localhost');
     this.dead_letter_queue_sock.connect(this.deadLetterQueuePort, 'localhost');
 
-    this.logger.log('@AXON-PULL: ', 'Pull-sever socket listening on port 6733');
+    this.logger.log(
+      `@AXON-PULL: ', 'Pull-sever socket listening on port ${this.pullPort}`,
+    );
   }
 
   async onMessage(messages: IMessage) {

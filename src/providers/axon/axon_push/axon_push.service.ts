@@ -15,7 +15,7 @@ export class AxonPushService {
     this.sock.connect(this.port, 'localhost');
     this.logger.log(
       '@AXON-PUSH: ',
-      'Push-client socket connected to port 6733',
+      `Push-client socket connected to port ${this.port}`,
     );
   }
 

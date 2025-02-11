@@ -9,3 +9,9 @@ export interface IDeadLetterQueueMessage {
   table: string;
   prefix: string;
 }
+
+export interface IAxonModuleOptions {
+  pushPort: number;
+  pullPort: number;
+  deadLetterQueuePort: number;
+}
