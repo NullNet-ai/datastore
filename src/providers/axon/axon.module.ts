@@ -15,7 +15,7 @@ export class AxonModule {
       useFactory: (logger: LoggerService) => {
         return new AxonPushService(options.pushPort, logger);
       },
-      inject: [LoggerService], // Inject LoggerService
+      inject: [LoggerService],
     };
 
     const deadLetterQueueServiceProvider: Provider = {
@@ -27,15 +27,12 @@ export class AxonModule {
           options.deadLetterQueuePort,
         );
       },
-      inject: [LoggerService, DrizzleService], // DrizzleService to use the DrizzleService
+      inject: [LoggerService, DrizzleService],
     };
 
     const axonPullServiceProvider: Provider = {
       provide: AxonPullService,
-      useFactory: (
-        logger: LoggerService,
-        drizzleService: DrizzleService, // Replace 'any' with the actual type of drizzleService
-      ) => {
+      useFactory: (logger: LoggerService, drizzleService: DrizzleService) => {
         return new AxonPullService(
           logger,
           drizzleService,
@@ -43,7 +40,7 @@ export class AxonModule {
           options.deadLetterQueuePort,
         );
       },
-      inject: [LoggerService, DrizzleService], // DrizzleService to use the DrizzleService
+      inject: [LoggerService, DrizzleService],
     };
 
     return {
@@ -52,12 +49,11 @@ export class AxonModule {
         axonPushServiceProvider,
         axonPullServiceProvider,
         deadLetterQueueServiceProvider,
-        LoggerService, // Provide LoggerService if it's not already provided globally
+        LoggerService,
 
-        // Use the DrizzleService
         {
           provide: 'DrizzleService',
-          useValue: { DrizzleService }, // Put the name and inject it so the axon pull has access
+          useValue: { DrizzleService },
         },
       ],
       exports: [AxonPushService, AxonPullService],

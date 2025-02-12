@@ -118,6 +118,8 @@ async function bootstrapGrpc() {
     transport: Transport.GRPC,
     options: {
       url: `0.0.0.0:${GRPC_PORT}`, // Expose gRPC on this port
+      maxReceiveMessageLength: 1024 * 1024 * 50,
+      maxSendMessageLength: 1024 * 1024 * 50,
       package: 'datastore', // Proto package name
       protoPath: [join(__dirname, './proto/store.proto')], // Path to proto file
       loader: {

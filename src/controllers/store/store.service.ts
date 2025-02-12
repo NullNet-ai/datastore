@@ -1,29 +1,31 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
+// import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { map } from 'bluebird';
 import * as local_schema from '../../schema';
 import { v4 as uuidv4 } from 'uuid';
-import { AxonPushService } from '../../providers/axon/axon_push/axon_push.service';
+// import { AxonPushService } from '../../providers/axon/axon_push/axon_push.service';
 import { Utility } from '../../utils/utility.service';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
 import { LoggerService } from '@dna-platform/common';
+import { copyData } from './raw_query';
 
 // import { insertRecords } from './test';
 
 @Injectable()
 export class StoreService {
-  private db;
+  // private db;
 
   constructor(
-    private readonly drizzleService: DrizzleService,
-    private readonly pushService: AxonPushService,
+    // private readonly drizzleService: DrizzleService,
+    // private readonly pushService: AxonPushService,
     private readonly authService: AuthService,
     private readonly logger: LoggerService,
   ) {
-    this.db = this.drizzleService.getClient();
+    // this.db = this.drizzleService.getClient();
   }
 
   async batchInsert(request) {
+    const batch_insert_start = new Date().getTime();
     const { query, headers } = request;
     const { authorization } = headers;
     const { t = '' } = query;
@@ -91,49 +93,41 @@ export class StoreService {
           ).toISOString();
         }
 
-        const { schema }: any = Utility.checkCreateSchema(
-          table,
-          undefined as any,
-          record,
-        );
         record.id = uuidv4();
         record_ids.push(record.id);
         record.created_by = responsible_account.organization_account_id;
         record.timestamp = record?.timestamp
           ? new Date(record?.timestamp)
           : new Date().toISOString();
-        record = Utility.createParse({ schema, data: record });
         return record;
       },
     );
+    console.log(
+      'Time taken before copy query:',
+      new Date().getTime() - batch_insert_start,
+    );
+    const time = new Date().getTime();
+    const data = await copyData(table, records);
+    console.log('Time taken:', new Date().getTime() - time);
+    console.log(data);
 
-    // const data = await insertRecords('packets', 'temp_packets', records);
+    // await this.db.transaction(async (trx) => {
+    //   // Prepare both insert operations
+    //   const main_table_insert = trx.insert(table_schema).values(records);
+    //   const temp_table_insert = trx.insert(temp_schema).values(records);
+    //
+    //   // Execute both inserts in parallel
+    //   await Promise.all([main_table_insert, temp_table_insert]);
+    // });
 
-    const results = await this.db.transaction(async (trx) => {
-      // Prepare both insert operations
-      const main_table_insert = trx
-        .insert(table_schema)
-        .values(records)
-        .returning({ table_schema });
-      const temp_table_insert = trx.insert(temp_schema).values(records);
-
-      // Execute both inserts in parallel
-      const [results_main_table, _] = await Promise.all([
-        main_table_insert,
-        temp_table_insert,
-      ]);
-
-      return results_main_table;
-    });
-
-    this.pushService.sender({ table, prefix, record_ids });
+    // this.pushService.sender({ table, prefix, record_ids });
 
     return Promise.resolve({
       payload: {
         success: true,
         message: 'Records inserted successfully',
         count: 0,
-        data: [results],
+        data: [{ data: 'data inserted' }],
       },
     });
   }
