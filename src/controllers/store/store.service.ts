@@ -8,20 +8,24 @@ import { Utility } from '../../utils/utility.service';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
 import { LoggerService } from '@dna-platform/common';
 import { copyData } from './raw_query';
+import { ConfigService } from '@nestjs/config';
 
 // import { insertRecords } from './test';
 
 @Injectable()
 export class StoreService {
   // private db;
+  private batch_concurrency: number;
 
   constructor(
     // private readonly drizzleService: DrizzleService,
     // private readonly pushService: AxonPushService,
     private readonly authService: AuthService,
     private readonly logger: LoggerService,
+    private readonly configService: ConfigService,
   ) {
     // this.db = this.drizzleService.getClient();
+    this.batch_concurrency = this.configService.get('BATCH_CONCURRENCY', 5);
   }
 
   async batchInsert(request) {
@@ -78,10 +82,19 @@ export class StoreService {
         },
       });
     }
-
-    temp_schema = local_schema[`temp_${table}`];
     const record_ids: string[] = [];
     const table_schema = local_schema[table];
+    const date = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    };
+    const formattedDate = date
+      .toLocaleDateString('en-CA', options)
+      .replace(/-/g, '/');
+    const created_time = Utility.convertTime12to24(date.toLocaleTimeString());
+
     const records = await map(
       body.records,
       async (record: Record<string, any>) => {
@@ -94,7 +107,13 @@ export class StoreService {
         }
 
         record.id = uuidv4();
-        record_ids.push(record.id);
+        (record.tombstone = 0),
+          (record.status = 'Active'),
+          (record.created_date = formattedDate),
+          (record.created_time = created_time),
+          (record.updated_date = formattedDate),
+          (record.updated_time = created_time),
+          record_ids.push(record.id);
         record.created_by = responsible_account.organization_account_id;
         record.timestamp = record?.timestamp
           ? new Date(record?.timestamp)
@@ -102,14 +121,29 @@ export class StoreService {
         return record;
       },
     );
+    const table_columns = Object.keys(table_schema);
+    table_columns.pop();
     console.log(
       'Time taken before copy query:',
       new Date().getTime() - batch_insert_start,
     );
-    const time = new Date().getTime();
-    const data = await copyData(table, records);
-    console.log('Time taken:', new Date().getTime() - time);
-    console.log(data);
+    const batch_size = Math.ceil(body.records.length / this.batch_concurrency);
+    let batches: Record<any, any>[] = Array.from(
+      { length: this.batch_concurrency },
+      (_value, i) => {
+        const start = i * batch_size;
+        const end = start + batch_size;
+        return records.slice(start, end);
+      },
+    ).filter((batch) => batch.length > 0);
+    const start_time = Date.now(); // Use Date.now() for better performance
+    const promises = batches.map((batch: any) =>
+      copyData(table, batch, table_columns),
+    ); // use map to generate promises
+    const results = await Promise.all(promises);
+
+    console.log('Time taken:', new Date().getTime() - start_time);
+    console.log(results);
 
     // await this.db.transaction(async (trx) => {
     //   // Prepare both insert operations

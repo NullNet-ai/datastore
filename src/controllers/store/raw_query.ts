@@ -23,18 +23,42 @@ function jsonToCsvTransform(columnOrder) {
         this.push(columnOrder.join(',') + '\n');
         isFirstChunk = false;
       }
-
       // Map the values in the record to the column order
       const csvRow = columnOrder
         .map((key) => {
           const value = record[key];
-          if (value === null) return 'null'; // PostgreSQL null representation
-          if (value === undefined) return ''; // Handle undefined as an empty field
-          if (key === 'timestamp') return new Date(value).toISOString();
-          if (typeof value === 'string') {
-            return `"${value.replace(/"/g, '""')}"`; // Escape double quotes in strings
+
+          // PostgreSQL null representation
+          if (value === null) return 'null';
+
+          // Undefined values are treated as empty fields
+          if (value === undefined) return null;
+
+          // Convert timestamps to ISO strings if the key contains "timestamp"
+          if (
+            key.toLowerCase().includes('timestamp') &&
+            value instanceof Date
+          ) {
+            return `"${value.toISOString()}"`;
           }
-          return value.toString(); // Convert other types to strings
+          if (
+            key.toLowerCase().includes('timestamp') &&
+            typeof value === 'string'
+          ) {
+            try {
+              return `"${new Date(value).toISOString()}"`;
+            } catch {
+              return value; // Keep as-is if it's not a valid date
+            }
+          }
+
+          // Handle strings with escaping for CSV format
+          if (typeof value === 'string') {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+
+          // For all other types (number, boolean, etc.), keep as-is
+          return value;
         })
         .join(',');
       this.push(csvRow + '\n');
@@ -44,7 +68,11 @@ function jsonToCsvTransform(columnOrder) {
 }
 
 // Function to copy data from a JSON array to a PostgreSQL table
-export async function copyData(tableName, jsonData) {
+export async function copyData(
+  tableName: string,
+  jsonData: any[],
+  table_columns: string[],
+) {
   if (!jsonData || jsonData.length === 0) {
     throw new Error('No data to copy.');
   }
@@ -53,16 +81,53 @@ export async function copyData(tableName, jsonData) {
   try {
     await client.query('BEGIN');
 
+    // Wrap the copyData calls in Promises
+    const copyMainPromise = copyDataToTable(
+      client,
+      tableName,
+      jsonData,
+      table_columns,
+    );
+    const copyTempPromise = copyDataToTable(
+      client,
+      `temp_${tableName}`,
+      jsonData,
+      table_columns,
+    );
+
+    // Execute both COPY operations concurrently
+    await Promise.all([copyMainPromise, copyTempPromise]);
+
+    await client.query('COMMIT');
+    console.log('Data successfully copied to both tables!');
+  } catch (error) {
+    console.error('Error during COPY operation:', error);
+    await client.query('ROLLBACK');
+  } finally {
+    client.release();
+  }
+}
+
+async function copyDataToTable(
+  client: any,
+  tableName: string,
+  jsonData: any[],
+  table_columns: string[],
+) {
+  if (!jsonData || jsonData.length === 0) {
+    throw new Error('No data to copy.');
+  }
+
+  try {
     // Dynamically determine column order from the first record
-    const columnOrder = Object.keys(jsonData[0]);
 
     // Create a COPY query with explicit column names
-    const copyQuery = `COPY ${tableName} (${columnOrder.join(
+    const copyQuery = `COPY ${tableName} (${table_columns.join(
       ',',
     )}) FROM STDIN CSV HEADER`;
 
     const stream = client.query(copyFrom(copyQuery));
-    const transformer = jsonToCsvTransform(columnOrder);
+    const transformer = jsonToCsvTransform(table_columns);
 
     // Simulate a JSON stream
     const jsonStream = new Transform({
@@ -84,12 +149,9 @@ export async function copyData(tableName, jsonData) {
       stream.on('error', reject);
     });
 
-    await client.query('COMMIT');
-    console.log('Data successfully copied to PostgreSQL!');
+    console.log(`Data successfully copied to table ${tableName}!`);
   } catch (error) {
-    console.error('Error during COPY operation:', error);
-    await client.query('ROLLBACK');
-  } finally {
-    client.release();
+    console.error(`Error during COPY operation to table ${tableName}:`, error);
+    throw error; // Re-throw the error to be caught by the caller
   }
 }

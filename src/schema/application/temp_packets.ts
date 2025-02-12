@@ -7,6 +7,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { system_fields } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { uuid, timestamp } from 'drizzle-orm/pg-core';
+import { bigint } from 'drizzle-orm/pg-core/index';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
@@ -20,6 +21,9 @@ export const table = pgTable(
     timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // Packet Capture Time
     hypertable_timestamp: text('hypertable_timestamp'), // Hypertable timestamp
     interface_name: text('interface_name').notNull(), // Network Interface Name
+
+    total_length: integer('total_length'), // Total packet length in bytes
+    device_id: text(), // Device ID
 
     source_mac: text('source_mac'), // Source MAC Address
     destination_mac: text('destination_mac'), // Destination MAC Address
@@ -36,8 +40,10 @@ export const table = pgTable(
     destination_port: integer('destination_port'), // Destination Port (Optional)
 
     tcp_header_length: integer('tcp_header_length'), // TCP Header Length
-    tcp_sequence_number: integer('tcp_sequence_number'), // TCP Sequence Number
-    tcp_acknowledgment_number: integer('tcp_acknowledgment_number'), // TCP Acknowledgment Number
+    tcp_sequence_number: bigint('tcp_sequence_number', { mode: 'number' }), // TCP Sequence Number
+    tcp_acknowledgment_number: bigint('tcp_acknowledgment_number', {
+      mode: 'number',
+    }), // TCP Acknowledgment Number
     tcp_data_offset: integer('tcp_data_offset'), // TCP Data Offset
     tcp_flags: integer('tcp_flags'), // TCP Flags
     tcp_window_size: integer('tcp_window_size'), // TCP Window Size
