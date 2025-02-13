@@ -45,8 +45,9 @@ export class DeleteActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body } = _req;
+      const { params, body, query } = _req;
       const { table, id } = params;
+      const { is_permanent = 'false' } = query;
       const date = new Date();
       const table_schema = local_schema[table];
       if (body?.organization_id) {
@@ -79,7 +80,11 @@ export class DeleteActorsImplementations {
 
       // TODO: update deleted_by to responsible_account.contact.id
       delete result.id;
-      await this.syncService.update(table, result, id);
+      if (is_permanent === 'true') {
+        await this.syncService.delete(table, id, is_permanent === 'true');
+      } else {
+        await this.syncService.update(table, result, id);
+      }
       return Promise.resolve({
         payload: {
           success: true,
