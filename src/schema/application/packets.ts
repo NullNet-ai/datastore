@@ -27,6 +27,8 @@ export const table = pgTable(
     hypertable_timestamp: text('hypertable_timestamp'), // Hypertable timestamp
     interface_name: text('interface_name').notNull(), // Network Interface Name
 
+    total_length: integer('total_length'), // Total packet length in bytes
+
     source_mac: text('source_mac'), // Source MAC Address
     destination_mac: text('destination_mac'), // Destination MAC Address
     ether_type: text('ether_type'), // Ethernet Type

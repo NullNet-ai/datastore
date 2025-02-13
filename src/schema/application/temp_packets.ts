@@ -3,6 +3,7 @@ import {
   text,
   integer,
   primaryKey,
+  bigint,
   // unique,
 } from 'drizzle-orm/pg-core';
 import { system_fields } from '@dna-platform/crdt-lww-postgres/build/schema/system';
@@ -21,6 +22,8 @@ export const table = pgTable(
     hypertable_timestamp: text('hypertable_timestamp'), // Hypertable timestamp
     interface_name: text('interface_name').notNull(), // Network Interface Name
 
+    total_length: integer('total_length'), // Total packet length in bytes
+
     source_mac: text('source_mac'), // Source MAC Address
     destination_mac: text('destination_mac'), // Destination MAC Address
     ether_type: text('ether_type'), // Ethernet Type
@@ -36,8 +39,10 @@ export const table = pgTable(
     destination_port: integer('destination_port'), // Destination Port (Optional)
 
     tcp_header_length: integer('tcp_header_length'), // TCP Header Length
-    tcp_sequence_number: integer('tcp_sequence_number'), // TCP Sequence Number
-    tcp_acknowledgment_number: integer('tcp_acknowledgment_number'), // TCP Acknowledgment Number
+    tcp_sequence_number: bigint('tcp_sequence_number', { mode: 'number' }), // TCP Sequence Number
+    tcp_acknowledgment_number: bigint('tcp_acknowledgment_number', {
+      mode: 'number',
+    }), // TCP Acknowledgment Number
     tcp_data_offset: integer('tcp_data_offset'), // TCP Data Offset
     tcp_flags: integer('tcp_flags'), // TCP Flags
     tcp_window_size: integer('tcp_window_size'), // TCP Window Size

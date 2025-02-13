@@ -728,6 +728,7 @@ export class Utility {
       entity, // Name of the table
       aggregations, // Array of aggregation objects
       bucket_size, // Time bucket size (e.g., 1 hour, 1 day)
+      limit, // Limit the number of results
       order: { order_direction, order_by }, // Column to order by
     } = params;
 
@@ -755,6 +756,9 @@ export class Utility {
                ${select_clauses.join(',\n               ')}
     `;
 
+    //generate the limit clause
+    const limit_clause = limit ? `LIMIT ${limit}` : '';
+
     // Generate the WHERE clause
     const group_by_clause = `GROUP BY bucket`;
 
@@ -769,7 +773,9 @@ export class Utility {
         ${select_clause}
         ${from_clause}
         ${group_by_clause}
-        ${order_by_clause};
+        ${order_by_clause}
+        ${limit_clause};
+        
     `;
     return query.trim();
   }

@@ -50,9 +50,11 @@ export class AggregationFilterActorsImplementations {
         this.db,
       );
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
-      const query = Utility.AggregationQueryGenerator(_req.body, from_clause);
-      let { rows } = await this.db.execute(sql.raw(query));
+      let query = Utility.AggregationQueryGenerator(_req.body, from_clause);
+      // add limit to the query in sql
       this.logger.debug(`Query: ${JSON.stringify(query)}`);
+
+      let { rows } = await this.db.execute(sql.raw(query));
       if (rows.length === 0) {
         throw new NotFoundException({
           success: false,
