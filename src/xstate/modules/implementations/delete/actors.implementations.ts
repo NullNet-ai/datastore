@@ -62,6 +62,7 @@ export class DeleteActorsImplementations {
           updated_date: date.toLocaleDateString(),
           updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           status: 'Deleted',
+          previous_status: table_schema.status,
         })
         .where(and(eq(table_schema.id, id)))
         .returning({ table_schema })
@@ -73,6 +74,7 @@ export class DeleteActorsImplementations {
             updated_date: table_schema.updated_date,
             updated_time: table_schema.updated_time,
             status: table_schema.status,
+            previous_status: table_schema.previous_status,
             id: table_schema.id,
             hypertable_timestamp: table_schema.hypertable_timestamp ?? null,
           };

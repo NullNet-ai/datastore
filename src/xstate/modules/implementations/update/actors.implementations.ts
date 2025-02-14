@@ -87,12 +87,31 @@ export class UpdateActorsImplementations {
       const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
       delete body.id;
-      const result = await this.db
-        .update(table_schema)
-        .set({ ...updated_data, version: sql`${table_schema.version} + 1` })
-        .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
-        .returning({ table_schema })
-        .then(([{ table_schema }]) => table_schema);
+      let result;
+      if (body.status) {
+        result = await this.db
+          .update(table_schema)
+          .set({
+            ...updated_data,
+            version: sql`${table_schema.version} + 1`,
+            previous_status: table_schema.status,
+          })
+          .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
+          .returning({ table_schema })
+          .then(([{ table_schema }]) => table_schema);
+        updated_data.previous_status = result?.previous_status;
+      } else {
+        result = await this.db
+          .update(table_schema)
+          .set({
+            ...updated_data,
+            version: sql`${table_schema.version} + 1`,
+          })
+          .where(eq(table_schema.id, id))
+          .returning({ table_schema })
+          .then(([{ table_schema }]) => table_schema);
+      }
+
       delete updated_data.id;
       updated_data.version = result?.version;
       if (table_schema.hypertable_timestamp) {
