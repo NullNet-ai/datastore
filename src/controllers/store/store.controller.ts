@@ -38,14 +38,14 @@ export class StoreController {
     private storeQuery: StoreQueryDriver,
     private storeMutation: StoreMutationDriver,
   ) {}
+  @Post('/:table/count')
+  async count(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeQuery.getCount(_res, _req);
+  }
+
   @Get('/:table/:id')
   async get(@Res() _res: Response, @Req() _req: Request) {
     return this.storeQuery.get(_res, _req);
-  }
-
-  @Get('/:table')
-  async count(@Res() _res: Response, @Req() _req: Request) {
-    return this.storeQuery.getCount(_res, _req);
   }
 
   @Post('/aggregate')
