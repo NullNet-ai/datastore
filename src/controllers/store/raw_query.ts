@@ -67,6 +67,34 @@ function jsonToCsvTransform(columnOrder) {
   });
 }
 
+async function parseJsonToCsv(
+  jsonData: any[],
+  table_columns: string[],
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: string[] = [];
+    const transformer = jsonToCsvTransform(table_columns);
+
+    transformer.on('data', (chunk) => chunks.push(chunk.toString()));
+    transformer.on('end', () => resolve(chunks.join('')));
+    transformer.on('error', reject);
+
+    // Simulate a JSON stream
+    const jsonStream = new Transform({
+      objectMode: true,
+      transform(chunk, _encoding, done) {
+        this.push(chunk);
+        done();
+      },
+    });
+
+    jsonData.forEach((obj) => jsonStream.push(obj));
+    jsonStream.end();
+
+    jsonStream.pipe(transformer);
+  });
+}
+
 // Function to copy data from a JSON array to a PostgreSQL table
 export async function copyData(
   tableName: string,
@@ -81,25 +109,25 @@ export async function copyData(
   try {
     await client.query('BEGIN');
 
-    // Wrap the copyData calls in Promises
-    const copyMainPromise = copyDataToTable(
-      client,
-      tableName,
-      jsonData,
-      table_columns,
-    );
-    const copyTempPromise = copyDataToTable(
-      client,
-      `temp_${tableName}`,
-      jsonData,
-      table_columns,
-    );
+    // Parse the data once
+    const timeStart = Date.now();
+    const csvData = await parseJsonToCsv(jsonData, table_columns);
+    console.log('Time taken to parse JSON to CSV:', Date.now() - timeStart);
+    // await copyParsedDataToTable(client, tableName, csvData, table_columns),
 
-    // Execute both COPY operations concurrently
-    await Promise.all([copyMainPromise, copyTempPromise]);
+    const promises = Date.now();
+    await Promise.all([
+      copyParsedDataToTable(client, tableName, csvData, table_columns),
+      copyParsedDataToTable(
+        client,
+        `temp_${tableName}`,
+        csvData,
+        table_columns,
+      ),
+    ]);
+    console.log('Time taken to copy data:', Date.now() - promises);
 
     await client.query('COMMIT');
-    console.log('Data successfully copied to both tables!');
   } catch (error) {
     console.error('Error during COPY operation:', error);
     await client.query('ROLLBACK');
@@ -107,51 +135,29 @@ export async function copyData(
     client.release();
   }
 }
-
-async function copyDataToTable(
+async function copyParsedDataToTable(
   client: any,
   tableName: string,
-  jsonData: any[],
+  csvData: string,
   table_columns: string[],
 ) {
-  if (!jsonData || jsonData.length === 0) {
-    throw new Error('No data to copy.');
-  }
-
   try {
-    // Dynamically determine column order from the first record
-
-    // Create a COPY query with explicit column names
     const copyQuery = `COPY ${tableName} (${table_columns.join(
       ',',
     )}) FROM STDIN CSV HEADER`;
-
     const stream = client.query(copyFrom(copyQuery));
-    const transformer = jsonToCsvTransform(table_columns);
 
-    // Simulate a JSON stream
-    const jsonStream = new Transform({
-      objectMode: true,
-      transform(chunk, _encoding, done) {
-        this.push(chunk);
-        done();
-      },
-    });
-
-    jsonData.forEach((obj) => jsonStream.push(obj));
-    jsonStream.end();
-
-    // Pipe the JSON data through the transformer to the PostgreSQL COPY stream
-    jsonStream.pipe(transformer).pipe(stream);
+    stream.write(csvData);
+    stream.end();
 
     await new Promise((resolve, reject) => {
       stream.on('finish', resolve);
       stream.on('error', reject);
     });
 
-    console.log(`Data successfully copied to table ${tableName}!`);
+    // console.log(`Data successfully copied to table ${tableName}!`);
   } catch (error) {
     console.error(`Error during COPY operation to table ${tableName}:`, error);
-    throw error; // Re-throw the error to be caught by the caller
+    throw error;
   }
 }

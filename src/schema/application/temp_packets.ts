@@ -3,11 +3,11 @@ import {
   text,
   integer,
   primaryKey,
+  bigint,
   // unique,
 } from 'drizzle-orm/pg-core';
 import { system_fields } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { uuid, timestamp } from 'drizzle-orm/pg-core';
-import { bigint } from 'drizzle-orm/pg-core/index';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),

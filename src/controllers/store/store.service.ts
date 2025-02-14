@@ -140,10 +140,9 @@ export class StoreService {
     const promises = batches.map((batch: any) =>
       copyData(table, batch, table_columns),
     ); // use map to generate promises
-    const results = await Promise.all(promises);
+    await Promise.all(promises);
 
     console.log('Time taken:', new Date().getTime() - start_time);
-    console.log(results);
 
     // await this.db.transaction(async (trx) => {
     //   // Prepare both insert operations
