@@ -54,8 +54,22 @@ export const config = (
       },
       processingRequest: {
         entry: 'countEntry',
-        initial: 'count',
+        initial: 'verify',
         states: {
+          verify: {
+            invoke: {
+              id: 'verify',
+              src: 'verify',
+              input: ({ context }) => ({ context }),
+              onDone: {
+                actions: ['assignResponsibleAccount'],
+                target: 'count',
+              },
+              onError: {
+                target: 'error',
+              },
+            },
+          },
           count: {
             invoke: {
               id: 'count',
