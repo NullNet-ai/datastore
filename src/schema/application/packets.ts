@@ -3,18 +3,19 @@ import {
   text,
   integer,
   primaryKey,
-  uuid,
-  timestamp,
   bigint,
+  // unique,
 } from 'drizzle-orm/pg-core';
 import {
   system_fields,
   getConfigDefaults,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
+import { uuid, timestamp } from 'drizzle-orm/pg-core';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id, table.timestamp] }),
   ...getConfigDefaults.defaultIndexes('packets', table),
+  // uniq_id: unique().on(table.id, table.timestamp),
 });
 
 export const table = pgTable(
@@ -27,7 +28,6 @@ export const table = pgTable(
     interface_name: text('interface_name').notNull(), // Network Interface Name
 
     total_length: integer('total_length'), // Total packet length in bytes
-    device_id: text(), // Device ID
 
     source_mac: text('source_mac'), // Source MAC Address
     destination_mac: text('destination_mac'), // Destination MAC Address

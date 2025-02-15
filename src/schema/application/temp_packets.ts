@@ -23,7 +23,6 @@ export const table = pgTable(
     interface_name: text('interface_name').notNull(), // Network Interface Name
 
     total_length: integer('total_length'), // Total packet length in bytes
-    device_id: text(), // Device ID
 
     source_mac: text('source_mac'), // Source MAC Address
     destination_mac: text('destination_mac'), // Destination MAC Address
