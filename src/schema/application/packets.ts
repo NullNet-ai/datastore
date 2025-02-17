@@ -55,6 +55,7 @@ export const table = pgTable(
 
     icmp_type: integer('icmp_type'), // ICMP Type
     icmp_code: integer('icmp_code'), // ICMP Code
+    order: text('order'),
   },
   config,
 );

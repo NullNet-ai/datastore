@@ -80,7 +80,6 @@ export class DeleteActorsImplementations {
           };
         });
 
-      // TODO: update deleted_by to responsible_account.contact.id
       delete result.id;
       if (is_permanent === 'true') {
         await this.syncService.delete(table, id, is_permanent === 'true');

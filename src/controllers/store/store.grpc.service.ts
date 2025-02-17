@@ -1,25 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-// import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { map } from 'bluebird';
 import * as local_schema from '../../schema';
 import { v4 as uuidv4 } from 'uuid';
-// import { AxonPushService } from '../../providers/axon/axon_push/axon_push.service';
+import { AxonPushService } from '../../providers/axon/axon_push/axon_push.service';
 import { Utility } from '../../utils/utility.service';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
 import { LoggerService } from '@dna-platform/common';
-import { copyData } from './raw_query';
+import { copyData } from '../../db/raw_batch_query';
 import { ConfigService } from '@nestjs/config';
 
 // import { insertRecords } from './test';
 
 @Injectable()
-export class StoreService {
+export class StoreGrpcService {
   // private db;
   private batch_concurrency: number;
 
   constructor(
-    // private readonly drizzleService: DrizzleService,
-    // private readonly pushService: AxonPushService,
+    private readonly pushService: AxonPushService,
     private readonly authService: AuthService,
     private readonly logger: LoggerService,
     private readonly configService: ConfigService,
@@ -29,7 +27,6 @@ export class StoreService {
   }
 
   async batchInsert(request) {
-    const batch_insert_start = new Date().getTime();
     const { query, headers } = request;
     const { authorization } = headers;
     const { t = '' } = query;
@@ -44,7 +41,7 @@ export class StoreService {
 
     const { organization_id = '' } = responsible_account;
     const { params, body } = request;
-    const prefix = body.entity_prefix;
+    let { records, entity_prefix: prefix } = body;
     if (!prefix) {
       return Promise.reject({
         payload: {
@@ -57,7 +54,7 @@ export class StoreService {
     }
 
     const { table } = params;
-    if (!body.records || !Array.isArray(body.records)) {
+    if (!records || !Array.isArray(body.records)) {
       return Promise.reject({
         payload: {
           success: false,
@@ -69,9 +66,8 @@ export class StoreService {
     }
 
     // @ts-ignore
-    let temp_schema;
     try {
-      temp_schema = Utility.checkTable(`temp_${table}`);
+      Utility.checkTable(`temp_${table}`);
     } catch (e) {
       return Promise.reject({
         payload: {
@@ -95,65 +91,47 @@ export class StoreService {
       .replace(/-/g, '/');
     const created_time = Utility.convertTime12to24(date.toLocaleTimeString());
 
-    const records = await map(
-      body.records,
-      async (record: Record<string, any>) => {
-        record.organization_id = organization_id;
+    records = await map(records, async (record: Record<string, any>) => {
+      record.organization_id = organization_id;
 
-        if (table_schema.hypertable_timestamp) {
-          record.hypertable_timestamp = new Date(
-            record.timestamp,
-          ).toISOString();
-        }
-
-        record.id = uuidv4();
-        (record.tombstone = 0),
-          (record.status = 'Active'),
-          (record.created_date = formattedDate),
-          (record.created_time = created_time),
-          (record.updated_date = formattedDate),
-          (record.updated_time = created_time),
-          record_ids.push(record.id);
-        record.created_by = responsible_account.organization_account_id;
-        record.timestamp = record?.timestamp
-          ? new Date(record?.timestamp)
-          : new Date().toISOString();
-        return record;
-      },
-    );
+      if (table_schema.hypertable_timestamp) {
+        record.hypertable_timestamp = new Date(record.timestamp).toISOString();
+      }
+      record.id = uuidv4();
+      (record.tombstone = 0),
+        (record.status = 'Active'),
+        (record.created_date = formattedDate),
+        (record.created_time = created_time),
+        (record.updated_date = formattedDate),
+        (record.updated_time = created_time),
+        record_ids.push(record.id);
+      record.created_by = responsible_account.organization_account_id;
+      record.timestamp = record?.timestamp
+        ? new Date(record?.timestamp)
+        : new Date().toISOString();
+      return record;
+    });
     const table_columns = Object.keys(table_schema);
     table_columns.pop();
-    console.log(
-      'Time taken before copy query:',
-      new Date().getTime() - batch_insert_start,
-    );
-    const batch_size = Math.ceil(body.records.length / this.batch_concurrency);
-    let batches: Record<any, any>[] = Array.from(
-      { length: this.batch_concurrency },
-      (_value, i) => {
+    let batches: Record<any, any>[];
+    if (records.length < this.batch_concurrency) {
+      batches = records;
+    } else {
+      const batch_size = Math.ceil(
+        body.records.length / this.batch_concurrency,
+      );
+      batches = Array.from({ length: this.batch_concurrency }, (_value, i) => {
         const start = i * batch_size;
         const end = start + batch_size;
         return records.slice(start, end);
-      },
-    ).filter((batch) => batch.length > 0);
-    const start_time = Date.now(); // Use Date.now() for better performance
+      }).filter((batch) => batch.length > 0);
+    }
     const promises = batches.map((batch: any) =>
       copyData(table, batch, table_columns),
     ); // use map to generate promises
     await Promise.all(promises);
 
-    console.log('Time taken:', new Date().getTime() - start_time);
-
-    // await this.db.transaction(async (trx) => {
-    //   // Prepare both insert operations
-    //   const main_table_insert = trx.insert(table_schema).values(records);
-    //   const temp_table_insert = trx.insert(temp_schema).values(records);
-    //
-    //   // Execute both inserts in parallel
-    //   await Promise.all([main_table_insert, temp_table_insert]);
-    // });
-
-    // this.pushService.sender({ table, prefix, record_ids });
+    this.pushService.sender({ table, prefix, record_ids });
 
     return Promise.resolve({
       payload: {

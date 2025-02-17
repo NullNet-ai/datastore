@@ -9,7 +9,7 @@ import { CustomResponse } from './response';
 import { Utility } from '../../utils/utility.service';
 import { status } from '@grpc/grpc-js';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
-import { StoreService } from './store.service';
+import { StoreGrpcService } from './store.grpc.service';
 
 @Controller()
 export class GrpcController {
@@ -17,7 +17,7 @@ export class GrpcController {
     @Inject('QueryDriverInterface')
     private storeQuery: StoreQueryDriver,
     private storeMutation: StoreMutationDriver,
-    private storeService: StoreService,
+    private storeService: StoreGrpcService,
     private authService: AuthService,
   ) {}
   @GrpcMethod('StoreService', 'GetById')
@@ -146,7 +146,7 @@ export class GrpcController {
       // Handle unexpected server-side errors
       throw new RpcException({
         code: status.INTERNAL,
-        message: error.message,
+        message: error?.message || error?.payload?.message,
       });
     }
   }

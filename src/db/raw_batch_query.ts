@@ -1,13 +1,17 @@
+import * as process from 'node:process';
+
 const { Pool } = require('pg');
 const { Transform } = require('stream');
 const copyFrom = require('pg-copy-streams').from;
 
+const { DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT } = process.env;
+
 const pool = new Pool({
-  user: 'admin',
-  host: 'localhost',
-  database: 'nullnet',
-  password: 'admin',
-  port: 5432,
+  user: DB_USER,
+  host: DB_HOST,
+  database: DB_NAME,
+  password: DB_PASSWORD,
+  port: DB_PORT,
 });
 
 // Helper function to create a Transform stream for converting JSON to CSV
@@ -110,12 +114,7 @@ export async function copyData(
     await client.query('BEGIN');
 
     // Parse the data once
-    const timeStart = Date.now();
     const csvData = await parseJsonToCsv(jsonData, table_columns);
-    console.log('Time taken to parse JSON to CSV:', Date.now() - timeStart);
-    // await copyParsedDataToTable(client, tableName, csvData, table_columns),
-
-    const promises = Date.now();
     await Promise.all([
       copyParsedDataToTable(client, tableName, csvData, table_columns),
       copyParsedDataToTable(
@@ -125,7 +124,6 @@ export async function copyData(
         table_columns,
       ),
     ]);
-    console.log('Time taken to copy data:', Date.now() - promises);
 
     await client.query('COMMIT');
   } catch (error) {
@@ -142,9 +140,12 @@ async function copyParsedDataToTable(
   table_columns: string[],
 ) {
   try {
-    const copyQuery = `COPY ${tableName} (${table_columns.join(
-      ',',
-    )}) FROM STDIN CSV HEADER`;
+    // const copyQuery = `COPY ${tableName} (${table_columns.join(
+    //   ',',
+    // )}) FROM STDIN CSV HEADER`;
+    const copyQuery = `COPY ${tableName} (${table_columns
+      .map((col) => `"${col}"`)
+      .join(',')}) FROM STDIN CSV HEADER`;
     const stream = client.query(copyFrom(copyQuery));
 
     stream.write(csvData);
@@ -154,8 +155,6 @@ async function copyParsedDataToTable(
       stream.on('finish', resolve);
       stream.on('error', reject);
     });
-
-    // console.log(`Data successfully copied to table ${tableName}!`);
   } catch (error) {
     console.error(`Error during COPY operation to table ${tableName}:`, error);
     throw error;
