@@ -117,18 +117,19 @@ export async function copyData(
     const csvData = await parseJsonToCsv(jsonData, table_columns);
     await Promise.all([
       copyParsedDataToTable(client, tableName, csvData, table_columns),
-      copyParsedDataToTable(
-        client,
-        `temp_${tableName}`,
-        csvData,
-        table_columns,
-      ),
+      // copyParsedDataToTable(
+      //   client,
+      //   `temp_${tableName}`,
+      //   csvData,
+      //   table_columns,
+      // ),
     ]);
 
     await client.query('COMMIT');
   } catch (error) {
     console.error('Error during COPY operation:', error);
     await client.query('ROLLBACK');
+    throw error;
   } finally {
     client.release();
   }

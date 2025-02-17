@@ -115,7 +115,7 @@ export class StoreGrpcService {
     table_columns.pop();
     let batches: Record<any, any>[];
     if (records.length < this.batch_concurrency) {
-      batches = records;
+      batches = [records];
     } else {
       const batch_size = Math.ceil(
         body.records.length / this.batch_concurrency,

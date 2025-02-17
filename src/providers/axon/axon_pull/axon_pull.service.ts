@@ -41,7 +41,6 @@ export class AxonPullService {
 
   async onMessage(messages: IMessage) {
     const { record_ids, table, prefix } = messages;
-    console.log(`Data received ${this.batch}`);
     this.batch++;
     each(record_ids, async (id: string) => {
       try {
@@ -75,7 +74,6 @@ export class AxonPullService {
           .update(temp_table_schema)
           .set({ code })
           .where(eq(temp_table_schema.id, id));
-        console.log(`Data process completed ${this.batch}`);
       } catch (error: any) {
         this.logger.error(
           `@AXON-PULL: Error in ${table} with ${id}  sending message to dead letter queue`,

@@ -136,7 +136,7 @@ async function bootstrapGrpc() {
 
 async function bootstrapAll() {
   // start HTTP app
-  await bootstrap();
+  // await bootstrap();
 
   // start batch sync microservice
   // await bootstrapBatchSyncService();
