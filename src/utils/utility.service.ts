@@ -730,6 +730,7 @@ export class Utility {
       bucket_size, // Time bucket size (e.g., 1 hour, 1 day)
       limit, // Limit the number of results
       order: { order_direction, order_by }, // Column to order by
+      timezone = 'UTC', // Timezone to use for time bucketing
     } = params;
 
     // Validate required parameters
@@ -752,7 +753,7 @@ export class Utility {
     );
 
     const select_clause = `
-        SELECT time_bucket('${bucket_size}', ${entity}.timestamp) AS bucket,
+        SELECT time_bucket('${bucket_size}', ${entity}.timestamp AT TIME ZONE 'UTC' AT TIME ZONE '${timezone}') AS bucket,
                ${select_clauses.join(',\n               ')}
     `;
 
