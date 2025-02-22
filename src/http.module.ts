@@ -6,9 +6,11 @@ import { AxonModule } from './providers/axon/axon.module';
   imports: [
     AppModule,
     AxonModule.forRoot({
-      pushPort: 6733,
-      pullPort: 6733,
-      deadLetterQueuePort: 6734,
+      codePushPort: 6735,
+      codePullPort: 6735,
+      deadLetterQueuePort: 6736,
+      updatePushPort: 6737,
+      updatePullPort: 6737,
     }),
   ],
 })

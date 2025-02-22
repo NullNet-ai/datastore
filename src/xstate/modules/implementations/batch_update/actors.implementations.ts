@@ -1,0 +1,124 @@
+import { Injectable } from '@nestjs/common';
+import { IResponse } from '@dna-platform/common';
+import { fromPromise } from 'xstate';
+import { IActors } from '../../schemas/batch_update/batch_update.schema';
+import { VerifyActorsImplementations } from '../verify';
+import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
+import { AxonPushService } from '../../../../providers/axon/axon_push/axon_push.service';
+import { Utility } from '../../../../utils/utility.service';
+import * as local_schema from '../../../../schema';
+import { sql } from 'drizzle-orm';
+import { IUpdateMessage } from '../../../../providers/axon/types';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
+export class BatchUpdateActorsImplementations {
+  private readonly db;
+  private readonly batch_updates_sync_enabled: string;
+
+  constructor(
+    private readonly verifyActorImplementations: VerifyActorsImplementations,
+    private readonly drizzleService: DrizzleService,
+    private readonly pushService: AxonPushService,
+    private readonly configService: ConfigService,
+  ) {
+    this.db = this.drizzleService.getClient();
+    this.actors.verify = this.verifyActorImplementations.actors.verify;
+    this.batch_updates_sync_enabled = this.configService.get(
+      'BATCH_UPDATES_SYNC_ENABLED',
+      'true',
+    );
+  }
+
+  public readonly actors: IActors = {
+    batchUpdate: fromPromise(async ({ input }): Promise<IResponse> => {
+      const { context } = input;
+      if (!context?.controller_args)
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: 'sampleStep fail Message',
+            count: 0,
+            data: [],
+          },
+        });
+
+      const { controller_args, responsible_account } = context;
+      const { organization_id = '' } = responsible_account;
+
+      const [_res, _req] = controller_args;
+      const { params, body } = _req;
+      const { table } = params;
+      let { advance_filters, updates } = body;
+      const table_schema = local_schema[table];
+
+      Utility.checkTable(table);
+      updates = {
+        ...updates,
+        id: '56ab2a2c-b498-43e0-884f-a61beb93e56e',
+        timestamp: new Date(),
+        updated_by: responsible_account.organization_account_id,
+      };
+      if (updates.tombstone && updates.tombstone === 1) {
+        updates.deleted_by = responsible_account.organization_account_id;
+      }
+      const { schema } = Utility.checkUpdateSchema(
+        table,
+        undefined as any,
+        updates,
+      );
+      const parsed_updates = Utility.updateParse({ schema, data: updates });
+      parsed_updates.version = sql`${table_schema.version} + 1`;
+      delete parsed_updates.id;
+      delete parsed_updates.timestamp;
+      let _db = this.db.update(table_schema).set(parsed_updates);
+      const return_data = {};
+      Object.keys(parsed_updates).forEach((key) => {
+        return_data[key] = table_schema[key];
+      });
+      _db = Utility.FilterAnalyzer(
+        _db,
+        table_schema,
+        advance_filters,
+        [],
+        organization_id,
+        [],
+        this.db,
+      );
+      const result = await _db
+        .returning({
+          id: table_schema.id,
+          version: table_schema.version,
+          updated_date: table_schema.updated_date,
+          updated_time: table_schema.updated_time,
+          updated_by: table_schema.updated_by,
+          ...(table_schema.hypertable_timestamp && {
+            hypertable_timestamp: table_schema.hypertable_timestamp,
+          }),
+          ...return_data,
+        })
+        .then((data) => data);
+      const axon_update_message: IUpdateMessage = {
+        table,
+        records: result,
+      };
+      const count = result.length;
+
+      const message =
+        updates.tombstone && updates.tombstone === 1
+          ? `${count} records deleted successfully`
+          : `${count} records updated successfully`;
+      if (this.batch_updates_sync_enabled === 'true') {
+        this.pushService.pushToUpdateQueue(axon_update_message);
+      }
+      return Promise.resolve({
+        payload: {
+          success: true,
+          message,
+          count,
+          data: [],
+        },
+      });
+    }),
+  };
+}

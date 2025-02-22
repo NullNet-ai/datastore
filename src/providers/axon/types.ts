@@ -1,9 +1,13 @@
-export interface IMessage {
+export interface ICounterMessage {
   record_ids: string[];
   table: string;
   prefix: string;
 }
 
+export interface IUpdateMessage {
+  records: Record<string, any>[];
+  table: string;
+}
 export interface IDeadLetterQueueMessage {
   id: string;
   table: string;
@@ -11,7 +15,9 @@ export interface IDeadLetterQueueMessage {
 }
 
 export interface IAxonModuleOptions {
-  pushPort: number;
-  pullPort: number;
+  codePushPort: number;
+  updatePushPort: number;
+  updatePullPort: number;
+  codePullPort: number;
   deadLetterQueuePort: number;
 }

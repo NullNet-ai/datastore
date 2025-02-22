@@ -8,6 +8,7 @@ import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/
 import { LoggerService } from '@dna-platform/common';
 import { copyData } from '../../db/raw_batch_query';
 import { ConfigService } from '@nestjs/config';
+import { ICounterMessage } from '../../providers/axon/types';
 
 // import { insertRecords } from './test';
 
@@ -98,6 +99,7 @@ export class StoreGrpcService {
         record.hypertable_timestamp = new Date(record.timestamp).toISOString();
       }
       record.id = uuidv4();
+      record.version = 1;
       (record.tombstone = 0),
         (record.status = 'Active'),
         (record.created_date = formattedDate),
@@ -130,8 +132,8 @@ export class StoreGrpcService {
       copyData(table, batch, table_columns),
     ); // use map to generate promises
     await Promise.all(promises);
-
-    this.pushService.sender({ table, prefix, record_ids });
+    const message: ICounterMessage = { record_ids, table, prefix };
+    this.pushService.sender(message);
 
     return Promise.resolve({
       payload: {

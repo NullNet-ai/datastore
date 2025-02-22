@@ -38,6 +38,7 @@ import { BatchInsertImplementationModule } from '../../xstate/modules/implementa
 import { GrpcController } from './store.grpc.controller';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
 import { StoreGrpcService } from './store.grpc.service';
+import { BatchUpdateImplementationModule } from '../../xstate/modules/implementations/batch_update/batch_update.implementation.module';
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
 const machines_providers = machine_providers([
@@ -49,6 +50,7 @@ const machines_providers = machine_providers([
   machines.DeleteMachine,
   machines.AggregationFilterMachine,
   machines.BatchInsertMachine,
+  machines.BatchUpdateMachine,
 
   // Hypertable
   machines.CreateHypertablesMachine,
@@ -90,6 +92,7 @@ const shared_machine_imports = [
   DeleteImplementationModule,
   AggregationFilterImplementationModule,
   BatchInsertImplementationModule,
+  BatchUpdateImplementationModule,
 
   //Hypertable
   CreateHypertablesImplementationModule,

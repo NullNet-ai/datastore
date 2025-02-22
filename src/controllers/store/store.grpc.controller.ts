@@ -10,6 +10,10 @@ import { Utility } from '../../utils/utility.service';
 import { status } from '@grpc/grpc-js';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
 import { StoreGrpcService } from './store.grpc.service';
+import {
+  IBatchUpdateBody,
+  IBatchUpdateMessage,
+} from '../../types/grpc_controller.types';
 
 @Controller()
 export class GrpcController {
@@ -142,6 +146,57 @@ export class GrpcController {
       let response = await this.storeService.batchInsert(_req as Request);
       response = Utility.processResponseObject(response?.payload);
       return response;
+    } catch (error: any) {
+      // Handle unexpected server-side errors
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error?.message || error?.payload?.message,
+      });
+    }
+  }
+
+  @GrpcMethod('StoreService', 'BatchUpdate')
+  async batchUpdate(
+    data: IBatchUpdateMessage<string>,
+    metadata: any,
+  ): Promise<any> {
+    try {
+      data.body.updates = JSON.parse(data.body.updates);
+      const _res = new CustomResponse();
+      const _req = Utility.createRequestObject(data, metadata);
+      await this.storeMutation.batchUpdate(
+        _res as any as Response,
+        _req as Request,
+      );
+      await _res.waitForResponse();
+      return _res.getBody();
+    } catch (error: any) {
+      // Handle unexpected server-side errors
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error?.message || error?.payload?.message,
+      });
+    }
+  }
+
+  @GrpcMethod('StoreService', 'BatchDelete')
+  async batchDelete(
+    data: IBatchUpdateMessage<string | Record<string, any>>,
+    metadata: any,
+  ): Promise<any> {
+    try {
+      data.body.updates = {
+        tombstone: 1,
+        status: 'Deleted',
+      } as IBatchUpdateBody<Record<string, any>>['updates'];
+      const _res = new CustomResponse();
+      const _req = Utility.createRequestObject(data, metadata);
+      await this.storeMutation.batchUpdate(
+        _res as any as Response,
+        _req as Request,
+      );
+      await _res.waitForResponse();
+      return _res.getBody();
     } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({

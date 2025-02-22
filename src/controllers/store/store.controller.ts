@@ -66,6 +66,11 @@ export class StoreController {
     return this.storeMutation.batchInsert(_res, _req);
   }
 
+  @Patch('/batch/:table')
+  async batchUpdate(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeMutation.batchUpdate(_res, _req);
+  }
+
   @Post('/:table/filter')
   @ValidateZod({
     body: z.object({

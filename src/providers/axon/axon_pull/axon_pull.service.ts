@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { LoggerService } from '@dna-platform/common';
-import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
+import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { eq, sql } from 'drizzle-orm';
 import * as local_schema from '../../../schema';
 import { each } from 'bluebird';
-import { IMessage } from '../types';
+import { ICounterMessage, IUpdateMessage } from '../types';
 
 const axon = require('axon');
 
 @Injectable()
 export class AxonPullService {
-  private sock = axon.socket('pull');
+  private codeSock = axon.socket('pull');
+  private updateSock = axon.socket('pull');
   private dead_letter_queue_sock = axon.socket('push');
   private db;
   private readonly pullPort: number;
@@ -19,19 +20,24 @@ export class AxonPullService {
 
   constructor(
     private readonly logger: LoggerService,
-    private readonly drizzleService: DrizzleService, // private readonly syncService: SyncService,
+    private readonly drizzleService: DrizzleService,
+    private readonly syncService: SyncService,
     pullPort: number,
     deadLetterQueuePort: number,
+    private readonly updatePullPort: number,
   ) {
     this.pullPort = pullPort;
     this.deadLetterQueuePort = deadLetterQueuePort;
+    this.updatePullPort = updatePullPort;
     this.db = this.drizzleService.getClient();
   }
 
   onModuleInit() {
-    this.sock.on('message', this.onMessage.bind(this));
+    this.codeSock.on('message', this.onCodeGenerateMessage.bind(this));
+    this.updateSock.on('message', this.onUpdateMessage.bind(this));
 
-    this.sock.bind(this.pullPort, 'localhost');
+    this.codeSock.bind(this.pullPort, 'localhost');
+    this.updateSock.bind(this.updatePullPort, 'localhost');
     this.dead_letter_queue_sock.connect(this.deadLetterQueuePort, 'localhost');
 
     this.logger.log(
@@ -39,12 +45,14 @@ export class AxonPullService {
     );
   }
 
-  async onMessage(messages: IMessage) {
+  async onCodeGenerateMessage(messages: ICounterMessage) {
     const { record_ids, table, prefix } = messages;
     this.batch++;
     each(record_ids, async (id: string) => {
       try {
-        this.logger.debug(`@AXON-PULL:message ${id}, ${table} `);
+        this.logger.debug(
+          `@AXON-PULL:message Assigning code: ${id}, ${table} `,
+        );
         const counter_schema = local_schema['counters'];
         const code = await this.db
           .insert(counter_schema)
@@ -82,5 +90,19 @@ export class AxonPullService {
         this.dead_letter_queue_sock.send({ id, table, prefix });
       }
     });
+  }
+
+  async onUpdateMessage(messages: IUpdateMessage) {
+    const { table, records } = messages;
+    if (records.length) {
+      each(records, async (record) => {
+        this.logger.debug(
+          `@AXON-PULL:message Syncing record ${record.id} into ${table}`,
+        );
+        const id = record.id;
+        delete record.id;
+        await this.syncService.update(table, record, id);
+      });
+    }
   }
 }

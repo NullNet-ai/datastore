@@ -9,6 +9,7 @@ import * as local_schema from '../../../../schema';
 import { v4 as uuidv4 } from 'uuid';
 import { Utility } from '../../../../utils/utility.service';
 import { AxonPushService } from '../../../../providers/axon/axon_push/axon_push.service';
+import { ICounterMessage } from '../../../../providers/axon/types';
 // import { insertRecords } from './test';
 
 @Injectable()
@@ -66,7 +67,6 @@ export class BatchInsertActorsImplementations {
         });
       }
 
-      // @ts-ignore
       let temp_schema;
       try {
         temp_schema = Utility.checkTable(`temp_${table}`);
@@ -129,8 +129,8 @@ export class BatchInsertActorsImplementations {
 
         return results_main_table;
       });
-
-      this.pushService.sender({ table, prefix, record_ids });
+      const message: ICounterMessage = { record_ids, table, prefix };
+      this.pushService.sender(message);
 
       return Promise.resolve({
         payload: {

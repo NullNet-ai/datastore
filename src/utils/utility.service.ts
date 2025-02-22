@@ -28,6 +28,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { ZodObject } from 'zod';
+import { IAggregationQueryParams } from '../xstate/modules/schemas/aggregation_filter/aggregation_filter.schema';
 
 const pluralize = require('pluralize');
 
@@ -249,7 +250,10 @@ export class Utility {
     }
     return _plucked_fields;
   }
-  public static getPopulatedQueryFrom(sql_query) {
+  public static getPopulatedQueryFrom(sql_query: {
+    sql: string;
+    params: any[];
+  }) {
     const { sql, params } = sql_query;
 
     // Extract the part starting from "FROM"
@@ -364,7 +368,7 @@ export class Utility {
     db,
     table_schema,
     _advance_filters: IAdvanceFilters[],
-    organization_id,
+    organization_id: string,
     joins?: IJoins[],
     _client_db: any = null,
   ) {
@@ -436,7 +440,7 @@ export class Utility {
 
     switch (operator) {
       case EOperator.EQUAL:
-        return eq(schema_field, values[0]);
+        return or(...values.map((value) => eq(schema_field, value)));
       case EOperator.NOT_EQUAL:
         return ne(schema_field, values[0]);
       case EOperator.GREATER_THAN:
@@ -494,6 +498,8 @@ export class Utility {
     }
     advance_filters.forEach((filter) => {
       if (filter.field && filter.field.toLowerCase().includes('timestamp')) {
+        if (typeof filter.values === 'string')
+          filter.values = JSON.parse(filter.values);
         filter.values = filter?.values?.map((val) => new Date(val));
       }
     });
@@ -528,7 +534,10 @@ export class Utility {
     }
 
     advance_filters.forEach((filter, index: number) => {
-      const { operator, type = 'criteria', field = '' } = filter;
+      const { operator, type = 'criteria', field = '', values } = filter;
+      if (typeof values === 'string') {
+        filter.values = JSON.parse(values);
+      }
       let { entity } = filter;
       entity =
         entity && !aliased_entities.includes(entity)
@@ -723,7 +732,10 @@ export class Utility {
 
     return `WHERE ${where_clauses.join(' AND ')}`;
   }
-  public static AggregationQueryGenerator(params, from_clause: string) {
+  public static AggregationQueryGenerator(
+    params: IAggregationQueryParams,
+    from_clause: string,
+  ) {
     let {
       entity, // Name of the table
       aggregations, // Array of aggregation objects
