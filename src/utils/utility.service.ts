@@ -66,22 +66,21 @@ export class Utility {
 
   public static convertTime12to24(time12h: string) {
     const [time = '', modifier] = time12h.split(' ');
+    let hours = time.split(':')[0] || '0';
+    const minutes = time.split(':')[1] || '0';
 
-    let [hours = '', minutes] = time.split(':');
-
-    if (hours === '12') {
-      hours = '00';
+    if (hours === '12' && modifier === 'AM') {
+      hours = '0';
     }
 
-    if (modifier === 'PM') {
+    if (modifier === 'PM' && hours !== '12') {
       hours = `${parseInt(hours, 10) + 12}`;
     }
 
-    if (parseInt(hours) < 10) {
-      hours = `0${hours}`;
-    }
+    const formatted_hours = hours.toString().padStart(2, '0');
+    const formatted_minutes = minutes.toString().padStart(2, '0');
 
-    return `${hours}:${minutes}`;
+    return `${formatted_hours}:${formatted_minutes}`;
   }
   public static format(data: any, is_insert = true) {
     const date = new Date();
