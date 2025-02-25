@@ -200,8 +200,8 @@ export class Utility {
               .raw(
                 `
                   COALESCE(
-                    JSON_AGG(
-                      JSON_BUILD_OBJECT(${jsonAggFields})
+                    JSONB_AGG( DISTINCT
+                      JSONB_BUILD_OBJECT(${jsonAggFields})
                     ) FILTER (WHERE "${toAlias}"."id" IS NOT NULL),
                     '[]'
                   )
@@ -325,6 +325,7 @@ export class Utility {
                 )
                 .toSQL(),
             );
+            const join_order_by = to.order_direction || 'ASC';
             const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
@@ -335,7 +336,7 @@ export class Utility {
             }" = "joined_${to_alias}"."${to.field}"
               ${
                 to.order_by
-                  ? `ORDER BY "joined_${to_alias}"."${to.order_by}" ASC`
+                  ? `ORDER BY "joined_${to_alias}"."${to.order_by}" ${join_order_by.toUpperCase()}`
                   : ''
               }
               ${to.limit ? `LIMIT ${to.limit}` : ''}
