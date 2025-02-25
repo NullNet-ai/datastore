@@ -766,7 +766,7 @@ export class Utility {
     );
 
     const select_clause = `
-        SELECT time_bucket('${bucket_size}', ${entity}.timestamp AT TIME ZONE 'UTC' AT TIME ZONE '${timezone}') AS bucket,
+        SELECT time_bucket('${bucket_size}', ${entity}.timestamp AT TIME ZONE '${timezone}') AS bucket,
                ${select_clauses.join(',\n               ')}
     `;
 
