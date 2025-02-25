@@ -15,7 +15,6 @@ import { uuid, timestamp } from 'drizzle-orm/pg-core';
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id, table.timestamp] }),
   ...getConfigDefaults.defaultIndexes('packets', table),
-  // uniq_id: unique().on(table.id, table.timestamp),
 });
 
 export const table = pgTable(
