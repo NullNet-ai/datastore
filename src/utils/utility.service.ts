@@ -105,7 +105,7 @@ export class Utility {
             timestamp: date.toISOString(),
           }
         : {
-            updated_date: date.toLocaleDateString(),
+            updated_date: formattedDate,
             updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           }),
       ...data,
