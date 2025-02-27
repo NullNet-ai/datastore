@@ -107,7 +107,6 @@ export class GrpcController {
         ...Utility.parseRequestBody(data.body.record),
         entity_prefix: data.body.entity_prefix,
       };
-      console.log(data.body);
       const _req = Utility.createRequestObject(data, metadata);
       await this.storeMutation.create(_res as any as Response, _req as Request);
       await _res.waitForResponse();
