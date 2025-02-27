@@ -50,8 +50,8 @@ export class FindActorsImplementations {
         joins = [],
         multiple_sort = [],
         pluck_object = {},
+        concatenate_fields = [],
         date_format = 'YYYY-MM-DD',
-        // pluck_group_object = {},
       } = body;
       Object.keys(pluck_object).forEach((key) => {
         if (!pluck_object[key].includes('id')) {
@@ -64,12 +64,22 @@ export class FindActorsImplementations {
       let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
-      const _plucked_fields = Utility.parsePluckedFields(table, _pluck);
+
+      let _plucked_fields = Utility.parsePluckedFields(table, _pluck);
+      _plucked_fields = Utility.parseMainConcatenations(
+        concatenate_fields,
+        table,
+        _plucked_fields === null ? {} : _plucked_fields,
+      );
+
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
+
       let _db = this.db;
 
       let join_keys: string[] = Object.keys(pluck_object);
       let aliased_joined_entities: Record<string, any>[] = [];
+      const parsed_concatenated_fields =
+        Utility.parseConcatenateFields(concatenate_fields);
 
       if (joins?.length) {
         _db = _db
@@ -79,6 +89,7 @@ export class FindActorsImplementations {
               pluck_object,
               joins,
               date_format,
+              parsed_concatenated_fields,
             }),
           )
           .from(table_schema);
@@ -93,6 +104,7 @@ export class FindActorsImplementations {
         organization_id,
         joins,
         this.db,
+        parsed_concatenated_fields,
       );
 
       const getSortSchemaAndField = (

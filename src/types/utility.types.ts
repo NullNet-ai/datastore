@@ -16,3 +16,15 @@ export interface IAggregationQueryParams {
   order: IAggregationOrder;
   limit?: number;
 }
+
+export interface IConcatenateField {
+  fields: string[];
+  field_name: string;
+  separator: string;
+  entity: string;
+}
+
+export interface IParsedConcatenatedFields {
+  expressions: Record<string, string[]>;
+  fields: Record<string, string[]>;
+}
