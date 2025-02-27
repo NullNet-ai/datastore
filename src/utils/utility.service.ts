@@ -167,8 +167,8 @@ export class Utility {
 
         // Build the concatenated SQL expression
         const concatenatedField = `(${fields
-          .map((field) => `"joined_${entity}"."${field}"`)
-          .join(` || ' ${separator} ' || `)}) AS "${field_name}"`;
+          .map((field) => `COALESCE("joined_${entity}"."${field}", '')`)
+          .join(` || '${separator}' || `)}) AS "${field_name}"`;
 
         // Store the expression
         acc.expressions[entity].push(concatenatedField);
@@ -289,7 +289,9 @@ export class Utility {
   ) {
     for (const field of concatenate_fields) {
       if (field.entity === table_name) {
-        const field_names = field.fields.map((f) => `"${table_name}"."${f}"`);
+        const field_names = field.fields.map(
+          (f) => `COALESCE("${table_name}"."${f}", '')`,
+        );
         const concatenated = field_names.join(` || '${field.separator}' || `);
 
         plucked_fields[field.field_name] = sql.raw(`(${concatenated})`);
@@ -298,6 +300,18 @@ export class Utility {
 
     return Object.keys(plucked_fields).length > 0 ? plucked_fields : null;
   }
+  public static removeJoinedKeyword = (
+    expressions: IParsedConcatenatedFields['expressions'],
+  ) => {
+    const transformedExpressions = {};
+    for (const [tableName, tableExpressions] of Object.entries(expressions)) {
+      transformedExpressions[tableName] = tableExpressions.map((expr) => {
+        return expr.replace(/joined_/g, '');
+      });
+    }
+    return transformedExpressions;
+  };
+
   public static parsePluckedFields(
     table: string,
     pluck: string[],
@@ -361,6 +375,7 @@ export class Utility {
     let _db = db;
     const aliased_entities: any = [];
     let expressions = concatenate_fields?.expressions || {};
+    const concat_fields = concatenate_fields?.fields || {};
 
     if (joins.length) {
       joins.forEach(({ type, field_relation }) => {
@@ -400,7 +415,20 @@ export class Utility {
                 )
                 .toSQL(),
             );
-            const join_order_by = to.order_direction || 'ASC';
+            const join_order_direction = to.order_direction || 'ASC';
+            let order_by = to.order_by || 'created_date';
+
+            //check if order_by exists in the concatenated_fields
+            if (concat_fields[to_alias]?.includes(order_by)) {
+              {
+                const concatenation = expressions?.to_alias?.find((exp) =>
+                  exp.includes(order_by),
+                );
+                order_by = concatenation
+                  ? concatenation.split(' AS ')[0]
+                  : 'created_date';
+              }
+            }
             const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
@@ -416,9 +444,7 @@ export class Utility {
             }" = "joined_${to_alias}"."${to.field}"
               ${
                 to.order_by
-                  ? `ORDER BY "joined_${to_alias}"."${
-                      to.order_by
-                    }" ${join_order_by.toUpperCase()}`
+                  ? `ORDER BY "joined_${to_alias}"."${order_by}" ${join_order_direction.toUpperCase()}`
                   : ''
               }
               ${to.limit ? `LIMIT ${to.limit}` : ''}
@@ -432,14 +458,10 @@ export class Utility {
         }
       });
     }
+    const transformed_expressions = Utility.removeJoinedKeyword(expressions);
 
     //remove joined keyword from every entity in expressions
-    const transformedExpressions = {};
-    for (const [tableName, tableExpressions] of Object.entries(expressions)) {
-      transformedExpressions[tableName] = tableExpressions.map((expr) => {
-        return expr.replace(/joined_/g, '');
-      });
-    }
+
     return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
@@ -449,7 +471,7 @@ export class Utility {
           advance_filters,
           table_schema,
           aliased_entities,
-          transformedExpressions,
+          transformed_expressions,
         ),
       ),
     );

@@ -11,6 +11,7 @@ import { Utility } from '../../../../utils/utility.service';
 
 import { asc, desc, sql, SQLWrapper, AnyColumn } from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
+import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
@@ -111,7 +112,9 @@ export class FindActorsImplementations {
       const getSortSchemaAndField = (
         order_by: string,
         aliased_entities: Record<string, any>,
+        transformed_concatenations: IParsedConcatenatedFields['expressions'],
       ) => {
+        order_by = `${table}.${order_by}`;
         const by_entity_field = order_by.split('.');
         let sort_schema = table_schema[by_entity_field[0] || 'id'];
         if (by_entity_field.length > 1) {
@@ -125,19 +128,34 @@ export class FindActorsImplementations {
               success: false,
               message: `Other than main entity, you can only sort by joined entities. ${entity} is not a joined entity nor an aliased joined entity.`,
             });
-          sort_schema = is_aliased
-            ? sql.raw(`"${entity}"."${by_field}"`)
-            : schema[entity][by_field];
+          if (
+            !schema[entity][by_field] &&
+            !is_aliased &&
+            transformed_concatenations[entity]
+          ) {
+            const concatenation = transformed_concatenations[entity]?.find(
+              (exp) => exp.includes(by_field),
+            );
+            sort_schema = concatenation
+              ? sql.raw(concatenation.split(' AS ')[0] as string)
+              : undefined;
+          } else {
+            sort_schema = is_aliased
+              ? sql.raw(`"${entity}"."${by_field}"`)
+              : schema[entity][by_field];
+          }
         }
         return sort_schema as SQLWrapper | AnyColumn;
       };
-
+      const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
+        Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       if (multiple_sort.length) {
         _db = _db.orderBy(
           ...multiple_sort.map(({ by_direction, by_field }) => {
             const sort_field_schema = getSortSchemaAndField(
               by_field,
               aliased_joined_entities,
+              transformed_concatenations,
             );
             return ['asc', 'ascending'].includes(by_direction)
               ? asc(sort_field_schema)
@@ -148,6 +166,7 @@ export class FindActorsImplementations {
         const sort_field_schema = getSortSchemaAndField(
           order_by,
           aliased_joined_entities,
+          transformed_concatenations,
         );
         _db = _db.orderBy(
           ['asc', 'ascending'].includes(order_direction)
