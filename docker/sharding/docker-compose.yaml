@@ -1,0 +1,83 @@
+version: '3.8'
+services:
+  # Coordinator Node
+  citus_coordinator:
+    image: citusdata/citus
+    container_name: citus_coordinator
+    networks:
+      - citus_network
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5500:5432"  # Expose on port 5500 for pgAdmin access
+
+  # Worker 1
+  citus_worker1:
+    image: citusdata/citus
+    container_name: citus_worker1
+    networks:
+      - citus_network
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5501:5432"  # Expose on port 5501
+
+  # Worker 2
+  citus_worker2:
+    image: citusdata/citus
+    container_name: citus_worker2
+    networks:
+      - citus_network
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5502:5432"  # Expose on port 5502
+
+  # Worker 3
+  citus_worker3:
+    image: citusdata/citus
+    container_name: citus_worker3
+    networks:
+      - citus_network
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5503:5432"  # Expose on port 5503
+
+  # Non-Shard Node 1
+  citus_non_shard1:
+    image: citusdata/citus
+    container_name: citus_non_shard1
+    networks:
+      - citus_network
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5504:5432"  # Expose on port 5504
+
+  # Non-Shard Node 2
+  citus_non_shard2:
+    image: citusdata/citus
+    container_name: citus_non_shard2
+    networks:
+      - citus_network
+    environment:
+      POSTGRES_DB: citus
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5505:5432"  # Expose on port 5505
+
+networks:
+  citus_network:
+    driver: bridge
