@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -13,6 +13,7 @@ export const table = pgTable(
   'wallguard_logs',
   {
     ...system_fields,
+    id: uuid('id'), // Primary key
     timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // NOT NULL timestamp
     level: text('level'),
     message: text('message'),
