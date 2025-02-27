@@ -288,6 +288,20 @@ export class Utility {
     plucked_fields: Record<string, any> = {},
   ) {
     for (const field of concatenate_fields) {
+      const all_fields = field.fields;
+      const schema_fields = schema[table_name];
+      //check if all fields are in the schema and are of type text only
+      const all_fields_in_schema = all_fields.every(
+        (f) =>
+          schema_fields[f].dataType === 'string' &&
+          !f.toLowerCase().endsWith('date') &&
+          f.toLowerCase().includes('id'),
+      );
+      if (!all_fields_in_schema) {
+        throw new BadRequestException(
+          `Concatenated fields must be of type string. Verify the fields in ${table_name}`,
+        );
+      }
       if (field.entity === table_name) {
         const field_names = field.fields.map(
           (f) => `COALESCE("${table_name}"."${f}", '')`,
