@@ -52,6 +52,7 @@ export class FindActorsImplementations {
         pluck_object = {},
         concatenate_fields = [],
         date_format = 'YYYY-MM-DD',
+        // pluck_group_object = {},
       } = body;
       Object.keys(pluck_object).forEach((key) => {
         if (!pluck_object[key].includes('id')) {
