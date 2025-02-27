@@ -103,7 +103,11 @@ export class GrpcController {
   async create(data, metadata: any): Promise<any> {
     try {
       const _res = new CustomResponse();
-      data.body = Utility.parseRequestBody(data.body);
+      data.body = {
+        ...Utility.parseRequestBody(data.body.record),
+        entity_prefix: data.body.entity_prefix,
+      };
+      console.log(data.body);
       const _req = Utility.createRequestObject(data, metadata);
       await this.storeMutation.create(_res as any as Response, _req as Request);
       await _res.waitForResponse();
