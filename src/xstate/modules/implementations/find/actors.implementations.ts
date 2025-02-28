@@ -78,7 +78,7 @@ export class FindActorsImplementations {
 
       let _db = this.db;
 
-      let join_keys: string[] = Object.keys(pluck_object);
+      // let join_keys: string[] = Object.keys(pluck_object);
       let aliased_joined_entities: Record<string, any>[] = [];
       const parsed_concatenated_fields =
         Utility.parseConcatenateFields(concatenate_fields);
@@ -92,6 +92,7 @@ export class FindActorsImplementations {
               joins,
               date_format,
               parsed_concatenated_fields,
+              multiple_sort,
             }),
           )
           .from(table_schema);
@@ -114,8 +115,8 @@ export class FindActorsImplementations {
         aliased_entities: Record<string, any>,
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
       ) => {
-        order_by = `${table}.${order_by}`;
         const by_entity_field = order_by.split('.');
+        const sort_entity: any = by_entity_field[0];
         let sort_schema = table_schema[by_entity_field[0] || 'id'];
         if (by_entity_field.length > 1) {
           const [_entity = '', by_field = 'id'] = by_entity_field;
@@ -123,22 +124,17 @@ export class FindActorsImplementations {
             ({ alias }) => alias === _entity,
           );
           const entity = !is_aliased ? pluralize(_entity) : _entity;
-          if (!join_keys.includes(entity) && !is_aliased)
-            throw new BadRequestException({
-              success: false,
-              message: `Other than main entity, you can only sort by joined entities. ${entity} is not a joined entity nor an aliased joined entity.`,
-            });
+          // if (!join_keys.includes(entity) && !is_aliased)
+          //   throw new BadRequestException({
+          //     success: false,
+          //     message: `Other than main entity, you can only sort by joined entities. ${entity} is not a joined entity nor an aliased joined entity.`,
+          //   });
           if (
-            !schema[entity][by_field] &&
+            !schema[entity]?.[by_field] &&
             !is_aliased &&
-            transformed_concatenations[entity]
+            transformed_concatenations[sort_entity]
           ) {
-            const concatenation = transformed_concatenations[entity]?.find(
-              (exp) => exp.includes(by_field),
-            );
-            sort_schema = concatenation
-              ? sql.raw(concatenation.split(' AS ')[0] as string)
-              : undefined;
+            sort_schema = by_field;
           } else {
             sort_schema = is_aliased
               ? sql.raw(`"${entity}"."${by_field}"`)

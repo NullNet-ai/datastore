@@ -4,6 +4,7 @@ import {
   integer,
   primaryKey,
   bigint,
+  index,
   // unique,
 } from 'drizzle-orm/pg-core';
 import {
@@ -15,6 +16,9 @@ import { uuid, timestamp } from 'drizzle-orm/pg-core';
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id, table.timestamp] }),
   ...getConfigDefaults.defaultIndexes('packets', table),
+  packets_total_length_idx: index('packets_total_length_idx').on(
+    table.total_length,
+  ),
 });
 
 export const table = pgTable(
