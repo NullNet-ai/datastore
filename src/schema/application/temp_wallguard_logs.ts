@@ -6,11 +6,11 @@ import {
 import { primaryKey } from 'drizzle-orm/pg-core';
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id, table.timestamp] }),
-  ...getConfigDefaults.defaultIndexes('wallguard_logs', table),
+  ...getConfigDefaults.defaultIndexes('temp_wallguard_logs', table),
   // uniq_id: unique().on(table.id, table.timestamp),
 });
 export const table = pgTable(
-  'wallguard_logs',
+  'temp_wallguard_logs',
   {
     ...system_fields,
     id: uuid('id'), // Primary key
