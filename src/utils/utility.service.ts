@@ -186,13 +186,45 @@ export class Utility {
       },
     );
   };
+
+  public static createChildSort = ({
+    multiple_sort,
+    table,
+    parsed_concatenated_fields,
+  }) => {
+    const { expressions } = parsed_concatenated_fields;
+    return multiple_sort
+      .map(({ by_field, by_direction }) => {
+        const by_entity_field = by_field.split('.');
+        let sort_table: any = by_entity_field[0];
+        let sort_field: any = by_entity_field[1];
+        if (sort_table != table) {
+          //check if field name is in the concatenated expressions
+          const concat_sort_field = expressions[sort_table]?.find((exp) => {
+            return exp.includes(sort_field);
+          });
+          let sort_query: any = `"${sort_table}"."${sort_field}"`;
+          if (concat_sort_field) {
+            sort_query = concat_sort_field
+              .replaceAll('joined_', '')
+              .split(' AS ')[0];
+          }
+
+          if (by_direction.toLowerCase() === 'asc') {
+            return `ORDER BY MIN(${sort_query}) ASC`;
+          } else {
+            return `ORDER BY MAX("${sort_table}"."${by_entity_field[1]}") DESC`;
+          }
+        }
+      })
+      .filter(Boolean);
+  };
   public static createSelections = ({
     table,
     pluck_object,
     joins,
     date_format,
     parsed_concatenated_fields,
-    multiple_sort,
   }: {
     table: string;
     pluck_object: Record<string, any>;
@@ -278,39 +310,9 @@ export class Utility {
       : {};
     // Combine main entity and join selections
 
-    const sortSelections = multiple_sort
-      .map(({ by_field, by_direction }) => {
-        const by_entity_field = by_field.split('.');
-        let sort_table: any = by_entity_field[0];
-        let sort_field: any = by_entity_field[1];
-        if (sort_table != table) {
-          //check if field name is in the concatenated expressions
-          const concat_sort_field = expressions[sort_table]?.find((exp) => {
-            return exp.includes(sort_field);
-          });
-          let sort_query: any = `"${sort_table}"."${sort_field}"`;
-          if (concat_sort_field) {
-            sort_query = concat_sort_field
-              .replaceAll('joined_', '')
-              .split(' AS ')[0];
-          }
-
-          if (by_direction.toLowerCase() === 'asc') {
-            console.log(`MIN(${sort_query}) AS "${by_entity_field[1]}"`);
-            return sql.raw(`MIN(${sort_query}) AS "${by_entity_field[1]}"`);
-          } else {
-            return sql.raw(
-              `MAX("${sort_table}"."${by_entity_field[1]}") AS "${by_entity_field[1]}"`,
-            );
-          }
-        }
-      })
-      .filter(Boolean);
-
     const selections = {
       ...mainSelections,
       ...joinSelections,
-      ...sortSelections,
     };
 
     return selections;

@@ -114,6 +114,7 @@ export class FindActorsImplementations {
         order_by: string,
         aliased_entities: Record<string, any>,
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
+        by_direction: string = 'asc',
       ) => {
         const by_entity_field = order_by.split('.');
         const sort_entity: any = by_entity_field[0];
@@ -132,9 +133,47 @@ export class FindActorsImplementations {
           if (
             !schema[entity]?.[by_field] &&
             !is_aliased &&
-            transformed_concatenations[sort_entity]
+            transformed_concatenations[sort_entity] &&
+            sort_entity === table
           ) {
-            sort_schema = by_field;
+            const concatenation = transformed_concatenations[entity]?.find(
+              (exp) => exp.includes(by_field),
+            );
+            sort_schema = concatenation
+              ? sql.raw(concatenation.split(' AS ')[0] as string)
+              : undefined;
+          } else if (
+            !schema[entity]?.[by_field] &&
+            !is_aliased &&
+            transformed_concatenations[sort_entity] &&
+            transformed_concatenations[sort_entity].find((exp) =>
+              exp.includes(by_field),
+            )
+          ) {
+            const concat_sort_field: any = transformed_concatenations[
+              sort_entity
+            ]?.find((exp) => {
+              return exp.includes(by_field);
+            });
+            const sort_query = concat_sort_field
+              .replaceAll('joined_', '')
+              .split(' AS ')[0];
+
+            if (by_direction.toLowerCase() === 'asc') {
+              return sql.raw(`MIN(${sort_query})`);
+            } else {
+              return sql.raw(`MAX(${sort_query})`);
+            }
+          } else if (
+            (!schema[entity]?.[by_field] && !is_aliased) ||
+            entity !== table
+          ) {
+            let sort_query: any = `"${sort_entity}"."${by_field}"`;
+            if (by_direction.toLowerCase() === 'asc') {
+              return sql.raw(`MIN(${sort_query})`);
+            } else {
+              return sql.raw(`MAX(${sort_query})`);
+            }
           } else {
             sort_schema = is_aliased
               ? sql.raw(`"${entity}"."${by_field}"`)
@@ -147,16 +186,19 @@ export class FindActorsImplementations {
         Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       if (multiple_sort.length) {
         _db = _db.orderBy(
-          ...multiple_sort.map(({ by_direction, by_field }) => {
-            const sort_field_schema = getSortSchemaAndField(
-              by_field,
-              aliased_joined_entities,
-              transformed_concatenations,
-            );
-            return ['asc', 'ascending'].includes(by_direction)
-              ? asc(sort_field_schema)
-              : desc(sort_field_schema);
-          }),
+          ...multiple_sort
+            .map(({ by_direction, by_field }) => {
+              const sort_field_schema = getSortSchemaAndField(
+                by_field,
+                aliased_joined_entities,
+                transformed_concatenations,
+                by_direction,
+              );
+              return ['asc', 'ascending'].includes(by_direction)
+                ? asc(sort_field_schema)
+                : desc(sort_field_schema);
+            })
+            .filter(Boolean),
         );
       } else if (order_direction && order_by) {
         const sort_field_schema = getSortSchemaAndField(
