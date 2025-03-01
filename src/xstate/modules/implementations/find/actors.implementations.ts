@@ -66,7 +66,6 @@ export class FindActorsImplementations {
         }
       });
 
-      console.log(aliased_joined_entities);
       Object.keys(pluck_object).forEach((key) => {
         if (!pluck_object[key].includes('id')) {
           throw new BadRequestException({
@@ -82,7 +81,6 @@ export class FindActorsImplementations {
         const non_aliased_entity: string =
           aliased_joined_entities.find(({ alias }) => alias === entity)
             ?.entity || entity;
-        console.log(non_aliased_entity);
         const field_exists =
           local_schema[non_aliased_entity]?.[field] ||
           concat_fields[entity]?.find((exp) => exp.includes(field));

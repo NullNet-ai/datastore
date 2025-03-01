@@ -323,6 +323,9 @@ export class Utility {
     plucked_fields: Record<string, any> = {},
   ) {
     for (const field of concatenate_fields) {
+      if (field.entity !== table_name) {
+        continue;
+      }
       const all_fields = field.fields;
       const schema_fields = schema[table_name];
       //check if all fields are in the schema and are of type text only
