@@ -76,6 +76,13 @@ export class FindActorsImplementations {
       });
 
       multiple_sort.forEach(({ by_field }) => {
+        //check if by_field is separated by a dot if not then throw an error
+        if (!by_field.includes('.')) {
+          throw new BadRequestException({
+            success: false,
+            message: `Multiple sort field ${by_field} must be separated by a dot: entity.field`,
+          });
+        }
         const [entity, field] = by_field.split('.');
         const concat_fields = parsed_concatenated_fields.fields;
         const non_aliased_entity: string =
@@ -103,13 +110,14 @@ export class FindActorsImplementations {
         );
 
         // put fields from order into pluck_object
-
-        pluck_object[entity] = [
-          ...new Set([
-            ...pluck_object[entity],
-            ...(concat ? concat.fields : [field]),
-          ]),
-        ];
+        if (joins.length) {
+          pluck_object[entity] = [
+            ...new Set([
+              ...pluck_object[entity],
+              ...(concat ? concat.fields : [field]),
+            ]),
+          ];
+        }
       });
       let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
