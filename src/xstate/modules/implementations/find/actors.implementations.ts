@@ -168,7 +168,7 @@ export class FindActorsImplementations {
         aliased_entities: Record<string, any>,
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
         by_direction: string = 'asc',
-        is_case_insensitive: string = 'false',
+        is_case_sensitive_sorting: string = 'false',
       ) => {
         const by_entity_field = order_by.split('.');
         const sort_entity: any = by_entity_field[0];
@@ -210,7 +210,7 @@ export class FindActorsImplementations {
               return exp.includes(by_field);
             });
             let sort_query = concat_sort_field.split(' AS ')[0];
-            if (is_case_insensitive === 'true') {
+            if (is_case_sensitive_sorting === 'false') {
               sort_query = `lower(${sort_query})`;
             }
 
@@ -221,7 +221,7 @@ export class FindActorsImplementations {
             }
           } else if (entity !== table) {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
-            if (is_case_insensitive === 'true') {
+            if (is_case_sensitive_sorting === 'false') {
               sort_query = `lower(${sort_query})`;
             }
             if (by_direction.toLowerCase() === 'asc') {
@@ -243,13 +243,17 @@ export class FindActorsImplementations {
         _db = _db.orderBy(
           ...multiple_sort
             .map(
-              ({ by_direction, by_field, is_case_insensitive = 'false' }) => {
+              ({
+                by_direction,
+                by_field,
+                is_case_sensitive_sorting = 'true',
+              }) => {
                 let sort_field_schema = getSortSchemaAndField(
                   by_field,
                   aliased_joined_entities,
                   transformed_concatenations,
                   by_direction,
-                  is_case_insensitive,
+                  is_case_sensitive_sorting,
                 );
                 const is_query_already_lowered = (() => {
                   try {
@@ -261,7 +265,7 @@ export class FindActorsImplementations {
                   }
                 })();
                 if (
-                  is_case_insensitive === 'true' &&
+                  is_case_sensitive_sorting === 'false' &&
                   !is_query_already_lowered
                 ) {
                   sort_field_schema = sql`lower(${sort_field_schema})`;
