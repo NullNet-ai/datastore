@@ -168,6 +168,7 @@ export class FindActorsImplementations {
         aliased_entities: Record<string, any>,
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
         by_direction: string = 'asc',
+        is_case_insensitive: string = 'false',
       ) => {
         const by_entity_field = order_by.split('.');
         const sort_entity: any = by_entity_field[0];
@@ -208,7 +209,10 @@ export class FindActorsImplementations {
             ]?.find((exp) => {
               return exp.includes(by_field);
             });
-            const sort_query = concat_sort_field.split(' AS ')[0];
+            let sort_query = concat_sort_field.split(' AS ')[0];
+            if (is_case_insensitive === 'true') {
+              sort_query = `lower(${sort_query})`;
+            }
 
             if (by_direction.toLowerCase() === 'asc') {
               return sql.raw(`MIN(${sort_query})`);
@@ -217,6 +221,9 @@ export class FindActorsImplementations {
             }
           } else if (entity !== table) {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
+            if (is_case_insensitive === 'true') {
+              sort_query = `lower(${sort_query})`;
+            }
             if (by_direction.toLowerCase() === 'asc') {
               return sql.raw(`MIN(${sort_query})`);
             } else {
@@ -235,17 +242,35 @@ export class FindActorsImplementations {
       if (multiple_sort.length) {
         _db = _db.orderBy(
           ...multiple_sort
-            .map(({ by_direction, by_field }) => {
-              const sort_field_schema = getSortSchemaAndField(
-                by_field,
-                aliased_joined_entities,
-                transformed_concatenations,
-                by_direction,
-              );
-              return ['asc', 'ascending'].includes(by_direction)
-                ? asc(sort_field_schema)
-                : desc(sort_field_schema);
-            })
+            .map(
+              ({ by_direction, by_field, is_case_insensitive = 'false' }) => {
+                let sort_field_schema = getSortSchemaAndField(
+                  by_field,
+                  aliased_joined_entities,
+                  transformed_concatenations,
+                  by_direction,
+                  is_case_insensitive,
+                );
+                const is_query_already_lowered = (() => {
+                  try {
+                    return JSON.stringify(sort_field_schema, null, 2).includes(
+                      'lower',
+                    );
+                  } catch {
+                    return false; // If JSON.stringify fails (circular structure), return false
+                  }
+                })();
+                if (
+                  is_case_insensitive === 'true' &&
+                  !is_query_already_lowered
+                ) {
+                  sort_field_schema = sql`lower(${sort_field_schema})`;
+                }
+                return ['asc', 'ascending'].includes(by_direction)
+                  ? asc(sort_field_schema)
+                  : desc(sort_field_schema);
+              },
+            )
             .filter(Boolean),
         );
       } else if (order_direction && order_by) {
