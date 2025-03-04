@@ -135,12 +135,25 @@ export class StoreGrpcService {
     const message: ICounterMessage = { record_ids, table, prefix };
     this.pushService.sender(message);
 
+    const ret_fields = !!request.query.pluck ? request.query.pluck.split(",") : [];
+
+    let ret_data = [];
+    if (ret_fields.length > 0) {
+      ret_data = records.map(value => {
+        const object = {};
+        for (const field of ret_fields) {
+          object[field] = value[field];
+        }
+        return object;
+      });
+    }
+
     return Promise.resolve({
       payload: {
         success: true,
         message: 'Records inserted successfully',
-        count: 0,
-        data: [{ data: 'data inserted' }],
+        count: records.length,
+        data: ret_data,
       },
     });
   }
