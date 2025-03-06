@@ -1,0 +1,17 @@
+[package]
+name = "store"
+version = "0.1.0"
+edition = "2024"
+
+authors = [
+    "Kashan Ali Khalid <kashankhalid@dnamicro.com>"
+]
+
+[dependencies]
+tokio-postgres = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+diesel = "2.2.8"
+diesel-async = { version = "0.5.2", features = ["postgres"] }
+dotenv = "0.15"
+actix-web = "4.9.0"
+serde = { version = "1.0.218", features = ["derive"] }
