@@ -11,7 +11,10 @@ authors = [
 tokio-postgres = "0.7"
 tokio = { version = "1.0", features = ["full"] }
 diesel = "2.2.8"
-diesel-async = { version = "0.5.2", features = ["postgres"] }
+diesel-async = { version = "0.5.2", features = ["postgres", "bb8"] }
+deadpool-diesel = { version = "0.6.1", features = ["postgres"] }
 dotenv = "0.15"
 actix-web = "4.9.0"
 serde = { version = "1.0.218", features = ["derive"] }
+serde_json = "1.0.140"
+log = "0.4.26"
