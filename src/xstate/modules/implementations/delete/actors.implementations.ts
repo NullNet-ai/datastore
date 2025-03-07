@@ -8,6 +8,7 @@ import { GetActorsImplementations } from '../get';
 import * as local_schema from '../../../../schema';
 import { VerifyActorsImplementations } from '../verify';
 import { Utility } from '../../../../utils/utility.service';
+import { LoggerService } from '@dna-platform/common';
 
 @Injectable()
 export class DeleteActorsImplementations {
@@ -17,6 +18,7 @@ export class DeleteActorsImplementations {
     private readonly getActorsImplementation: GetActorsImplementations,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly drizzleService: DrizzleService,
+    private readonly logger: LoggerService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.get = this.getActorsImplementation.actors.get;
@@ -53,6 +55,7 @@ export class DeleteActorsImplementations {
       if (body?.organization_id) {
         body.organization_id = organization_id;
       }
+      this.logger.debug(`Soft deleting ${table} record with id: ${id}`);
       const result = await this.db
         .update(table_schema)
         .set({

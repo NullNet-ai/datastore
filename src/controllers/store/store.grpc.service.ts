@@ -128,6 +128,7 @@ export class StoreGrpcService {
         return records.slice(start, end);
       }).filter((batch) => batch.length > 0);
     }
+    this.logger.debug(`Batches query of ${table}: ${records.length} records`);
     const promises = batches.map((batch: any) =>
       copyData(table, batch, table_columns),
     ); // use map to generate promises
@@ -135,11 +136,13 @@ export class StoreGrpcService {
     const message: ICounterMessage = { record_ids, table, prefix };
     this.pushService.sender(message);
 
-    const ret_fields = !!request.query.pluck ? request.query.pluck.split(",") : [];
+    const ret_fields = !!request.query.pluck
+      ? request.query.pluck.split(',')
+      : [];
 
     let ret_data = [];
     if (ret_fields.length > 0) {
-      ret_data = records.map(value => {
+      ret_data = records.map((value) => {
         const object = {};
         for (const field of ret_fields) {
           object[field] = value[field];

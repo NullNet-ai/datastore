@@ -10,6 +10,7 @@ import * as local_schema from '../../../../schema';
 import { sql } from 'drizzle-orm';
 import { IUpdateMessage } from '../../../../providers/axon/types';
 import { ConfigService } from '@nestjs/config';
+import { LoggerService } from '@dna-platform/common';
 
 @Injectable()
 export class BatchUpdateActorsImplementations {
@@ -21,6 +22,7 @@ export class BatchUpdateActorsImplementations {
     private readonly drizzleService: DrizzleService,
     private readonly pushService: AxonPushService,
     private readonly configService: ConfigService,
+    private readonly logger: LoggerService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
@@ -66,6 +68,9 @@ export class BatchUpdateActorsImplementations {
         table,
         undefined as any,
         updates,
+      );
+      this.logger.debug(
+        `Batch update filters: ${JSON.stringify(advance_filters)}`,
       );
       const parsed_updates = Utility.updateParse({ schema, data: updates });
       parsed_updates.version = sql`${table_schema.version} + 1`;

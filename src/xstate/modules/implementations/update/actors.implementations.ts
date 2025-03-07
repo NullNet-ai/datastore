@@ -9,6 +9,7 @@ import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
+import { LoggerService } from '@dna-platform/common';
 @Injectable()
 export class UpdateActorsImplementations {
   private db;
@@ -17,6 +18,7 @@ export class UpdateActorsImplementations {
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly getActorsImplementation: GetActorsImplementations,
     private readonly drizzleService: DrizzleService,
+    private readonly logger: LoggerService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.get = this.getActorsImplementation.actors.get;
@@ -88,6 +90,8 @@ export class UpdateActorsImplementations {
       const table_schema = local_schema[table];
       delete body.id;
       let result;
+      this.logger.debug(`Update request for ${table}: ${id}`);
+
       if (body.status) {
         result = await this.db
           .update(table_schema)

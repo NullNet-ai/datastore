@@ -10,6 +10,7 @@ import { MinioService } from '../../../../providers/files/minio.service';
 import { sql } from 'drizzle-orm';
 import * as local_schema from '../../../../schema';
 import { v4 as uuidv4 } from 'uuid';
+import { LoggerService } from '@dna-platform/common';
 
 @Injectable()
 export class CreateActorsImplementations {
@@ -19,6 +20,7 @@ export class CreateActorsImplementations {
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly minioService: MinioService,
     private readonly drizzleService: DrizzleService,
+    private readonly logger: LoggerService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
@@ -111,6 +113,7 @@ export class CreateActorsImplementations {
           .catch(() => null);
       }
       const parsed_data = Utility.createParse({ schema, data: body });
+      this.logger.debug(`Create request for ${table}: ${body.id}`);
       const results = await this.db
         .insert(table_schema)
         .values(parsed_data)
