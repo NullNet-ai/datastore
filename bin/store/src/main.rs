@@ -6,6 +6,8 @@ mod db;
 mod models;
 mod schema;
 
+use actix_web::error::BlockingError;
+use diesel::result::Error as DieselError;
 use models::{Item, NewItem};
 use schema::items;
 use serde::Serialize;
@@ -13,21 +15,48 @@ use serde::Serialize;
 #[derive(Serialize)]
 struct ApiError {
     message: String,
+    status: String,
 }
+impl From<BlockingError> for ApiError
+{
+    fn from(error: BlockingError) -> Self {
+        ApiError {
+            status: "error".to_string(),
+            message: format!("Internal server error: {:?}", error),
+        }
+    }
+}
+impl From<DieselError> for ApiError {
+    fn from(error: DieselError) -> Self {
+        ApiError {
+            status: "error".to_string(),
+            message: format!("Database error: {}", error),
+        }
+    }
+}
+async fn create_item(
+    pool: web::Data<db::DbPool>,
+    new_item: web::Json<NewItem>,
+) -> impl Responder {
+    let pool = pool.clone();
 
-async fn create_item(pool: web::Data<db::DbPool>, new_item: web::Json<NewItem>) -> impl Responder {
-    let pool = pool.into_inner();
+    let result = web::block(move || {
+        let mut conn = pool.get().map_err(|e| ApiError {
+            status: "error".to_string(),
+            message: format!("Failed to get DB connection: {}", e),
+        })?;
 
-    match web::block(move || {
-        let mut conn = pool.get().expect("Failed to get connection from pool");
         diesel::insert_into(items::table)
             .values(&new_item.into_inner())
             .get_result::<Item>(&mut conn)
+            .map_err(ApiError::from) // Convert Diesel error to `ApiError`
     })
         .await
-    {
-        Ok(item) => HttpResponse::Ok().json({ "message" }),
-        Err(_) => HttpResponse::InternalServerError().json(json!({"status": "error", "message": "Failed to create item"})),
+        .map_err(ApiError::from); // Convert BlockingError to `ApiError`
+
+    match result {
+        Ok(item) => HttpResponse::Ok().json(item),
+        Err(err) => HttpResponse::InternalServerError().json(json!(err)),
     }
 }
 
