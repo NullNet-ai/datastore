@@ -6,6 +6,7 @@ mod models;
 mod table_enum;
 mod controllers;
 mod schema;
+mod structs;
 
 use controllers::store_controller::create_record;
 

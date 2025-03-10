@@ -1,5 +1,7 @@
 use crate::db;
-use crate::models::NewItem;
+use crate::models::item_model::InsertItem;
+use crate::models::packet_model::InsertPacket;
+use crate::structs::structs::{ApiResponse, CreateRequestBody};
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
 use actix_web::{web, HttpResponse, Responder};
@@ -35,33 +37,70 @@ impl From<DieselError> for ApiError {
 pub async fn create_record(
     pool: web::Data<db::DbPool>,
     table: web::Path<String>,
-    new_item: web::Json<NewItem>,
+    request: web::Json<CreateRequestBody>,
 ) -> impl Responder {
     let pool = pool.clone();
     let table_name = table.into_inner();
-
+    let item_string = request.record.clone();
+    let log_table = table_name.clone();
+    let inner_log_table = log_table.clone();
     let result = web::block(move || {
         let mut conn = pool.get().map_err(|e| ApiError {
             status: "error".to_string(),
             message: format!("Failed to get DB connection: {}", e),
         })?;
-
         let table = match table_name.as_str() {
-            "items" => Table::Items,
+            "items" => {
+                Table::Items
+            }
+            "packets" => {
+                Table::Packets
+            }
             // Add other table mappings here
             _ => return Err(ApiError {
                 status: "error".to_string(),
-                message: format!("Unknown table: {}", table_name),
+                message: format!("Unknown table: {}", &log_table),
             }),
         };
 
-        table.insert_query(&mut conn, new_item.into_inner()).map_err(ApiError::from)
+        // The insert_query function now returns a string directly
+        match table_name.as_str() {
+            "items" => {
+                let parsed_item: InsertItem = serde_json::from_str(&item_string).map_err(|e| ApiError {
+                    status: "error".to_string(),
+                    message: format!("Failed to parse item: {}", e),
+                })?;
+                table.insert_item(&mut conn, parsed_item).map_err(ApiError::from)
+            }
+            "packets" => {
+                let parsed_packet: InsertPacket = serde_json::from_str(&item_string).map_err(|e| ApiError {
+                    status: "error".to_string(),
+                    message: format!("Failed to parse packet: {}", e),
+                })?;
+                table.insert_packet(&mut conn, parsed_packet).map_err(ApiError::from)
+            }
+            _ => unreachable!(), // We've already checked this above
+        }
     })
         .await
         .map_err(ApiError::from);
 
     match result {
-        Ok(record) => HttpResponse::Ok().json(record),
+        Ok(Ok(record)) => {
+            // Parse the record string into a JSON value
+            let record_value: serde_json::Value = serde_json::from_str(&record).unwrap_or(serde_json::Value::Null);
+
+            // Create the response
+            let response = ApiResponse {
+                success: true,
+                message: format!("Record inserted into '{}'", &inner_log_table),
+                count: 1,
+                data: vec![record_value],
+            };
+
+            HttpResponse::Ok().json(response)
+        }
+        Ok(Err(err)) => HttpResponse::InternalServerError().json(json!(err)),
         Err(err) => HttpResponse::InternalServerError().json(json!(err)),
     }
 }
