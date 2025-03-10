@@ -1,5 +1,4 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use diesel::prelude::*;
 use serde_json::json;
 
 mod db;
@@ -9,9 +8,9 @@ mod table_enum;
 
 use actix_web::error::BlockingError;
 use diesel::result::Error as DieselError;
-use models::{Item, NewItem};
-use schema::items;
+use models::NewItem;
 use serde::Serialize;
+use table_enum::Table;
 
 #[derive(Serialize)]
 struct ApiError {
@@ -35,13 +34,13 @@ impl From<DieselError> for ApiError {
         }
     }
 }
-async fn create_item(
+async fn create_record(
     pool: web::Data<db::DbPool>,
-    table_name: web::Path<String>,
+    table: web::Path<String>,
     new_item: web::Json<NewItem>,
 ) -> impl Responder {
     let pool = pool.clone();
-    let table_name = table_name.into_inner();
+    let table_name = table.into_inner();
 
     let result = web::block(move || {
         let mut conn = pool.get().map_err(|e| ApiError {
@@ -49,16 +48,22 @@ async fn create_item(
             message: format!("Failed to get DB connection: {}", e),
         })?;
 
-        diesel::insert_into(items::table)
-            .values(&new_item.into_inner())
-            .get_result::<Item>(&mut conn)
-            .map_err(ApiError::from) // Convert Diesel error to `ApiError`
+        let table = match table_name.as_str() {
+            "items" => Table::Items,
+            // Add other table mappings here
+            _ => return Err(ApiError {
+                status: "error".to_string(),
+                message: format!("Unknown table: {}", table_name),
+            }),
+        };
+
+        table.insert_query(&mut conn, new_item.into_inner()).map_err(ApiError::from)
     })
         .await
-        .map_err(ApiError::from); // Convert BlockingError to `ApiError`
+        .map_err(ApiError::from);
 
     match result {
-        Ok(item) => HttpResponse::Ok().json(item),
+        Ok(record) => HttpResponse::Ok().json(record),
         Err(err) => HttpResponse::InternalServerError().json(json!(err)),
     }
 }
@@ -74,7 +79,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .route("/items", web::post().to(create_item))
+            .route("/create/{table}", web::post().to(create_record))
     })
         .bind("127.0.0.1:3000")?
         .run()

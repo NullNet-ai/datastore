@@ -5,13 +5,13 @@ use diesel::result::Error as DieselError;
 
 
 #[derive(Debug)]
-enum Table {
+pub enum Table {
     Items,
     // Add other tables here
 }
 
 impl Table {
-    fn insert_query<'a>(&self, conn: &mut PgConnection, new_item: NewItem) -> Result<Item, DieselError> {
+    pub fn insert_query<'a>(&self, conn: &mut PgConnection, new_item: NewItem) -> Result<Item, DieselError> {
         match self {
             Table::Items => {
                 diesel::insert_into(items::table)
