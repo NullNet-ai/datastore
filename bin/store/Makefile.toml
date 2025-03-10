@@ -1,0 +1,3 @@
+[tasks.watch]
+command = "watchexec"
+args = ["-e", "rs", "-r", "cargo run"]

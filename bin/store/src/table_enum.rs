@@ -1,5 +1,5 @@
 use crate::models::{Item, NewItem};
-use crate::schema::items;
+use crate::schema::schema::items;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 
