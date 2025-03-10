@@ -5,6 +5,7 @@ use serde_json::json;
 mod db;
 mod models;
 mod schema;
+mod table_enum;
 
 use actix_web::error::BlockingError;
 use diesel::result::Error as DieselError;
@@ -36,9 +37,11 @@ impl From<DieselError> for ApiError {
 }
 async fn create_item(
     pool: web::Data<db::DbPool>,
+    table_name: web::Path<String>,
     new_item: web::Json<NewItem>,
 ) -> impl Responder {
     let pool = pool.clone();
+    let table_name = table_name.into_inner();
 
     let result = web::block(move || {
         let mut conn = pool.get().map_err(|e| ApiError {
@@ -63,6 +66,10 @@ async fn create_item(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let pool = db::establish_connection();
+    println!("Database connected successfully.");
+
+    let server_url = "127.0.0.1:3000";
+    println!("Server is running on {}", server_url);
 
     HttpServer::new(move || {
         App::new()
