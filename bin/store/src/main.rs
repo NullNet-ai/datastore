@@ -25,9 +25,12 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .route("/create/{table}", web::post().to(create_record))
+            .service(
+                web::scope("/api/store")
+                    .route("/{table}", web::post().to(create_record))
+            )
     })
-        .bind("127.0.0.1:3000")?
+        .bind(server_url)?
         .run()
         .await
 }

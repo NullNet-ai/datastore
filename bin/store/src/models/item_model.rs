@@ -41,6 +41,7 @@ pub struct InsertItem {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
 
     pub name: String,
