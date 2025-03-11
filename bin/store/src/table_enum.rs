@@ -15,7 +15,11 @@ pub enum Table {
 
 impl Table {
     // Method specific for items table
-    pub fn insert_item(&self, conn: &mut PgConnection, new_item: InsertItem) -> Result<String, DieselError> {
+    pub fn insert_item(
+        &self,
+        conn: &mut PgConnection,
+        new_item: InsertItem,
+    ) -> Result<String, DieselError> {
         match self {
             Table::Items => {
                 let result = diesel::insert_into(items::table)
@@ -30,7 +34,11 @@ impl Table {
     }
 
     // Method specific for packets table
-    pub fn insert_packet(&self, conn: &mut PgConnection, new_packet: InsertPacket) -> Result<String, DieselError> {
+    pub fn insert_packet(
+        &self,
+        conn: &mut PgConnection,
+        new_packet: InsertPacket,
+    ) -> Result<String, DieselError> {
         match self {
             Table::Packets => {
                 let result = diesel::insert_into(packets::table)
