@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.39",
-    "@dna-platform/crdt-lww-postgres": "^1.0.72",
+    "@dna-platform/crdt-lww-postgres": "^1.0.73",
     "@elastic/elasticsearch": "^8.10.0",
     "@grpc/grpc-js": "^1.12.5",
     "@grpc/proto-loader": "^0.7.13",
