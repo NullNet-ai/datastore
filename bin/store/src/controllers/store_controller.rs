@@ -2,9 +2,10 @@ use crate::db;
 use crate::models::item_model::InsertItem;
 use crate::models::packet_model::InsertPacket;
 use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
+use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{web, HttpResponse, Responder};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -49,11 +50,18 @@ pub async fn create_record(
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
-    let result = web::block(move || {
-        let mut conn = pool.get().map_err(|e| ApiError {
+    let conn_result = pool.get();
+    if let Err(e) = conn_result {
+        return HttpResponse::InternalServerError().json(ApiError {
             status: "error".to_string(),
             message: format!("Failed to get DB connection: {}", e),
-        })?;
+        });
+    }
+    let mut conn = conn_result.unwrap();
+
+    // Clone the pool for later use
+    let pool_clone = pool.clone();
+    let result = web::block(move || {
         let table = match table_name.as_str() {
             "items" => Table::Items,
             "packets" => Table::Packets,
@@ -86,9 +94,9 @@ pub async fn create_record(
 
                 let parsed_packet: InsertPacket = serde_json::from_value(modified_record.clone())
                     .map_err(|e| ApiError {
-                    status: "error".to_string(),
-                    message: format!("Failed to parse packet: {}", e),
-                })?;
+                        status: "error".to_string(),
+                        message: format!("Failed to parse packet: {}", e),
+                    })?;
                 table
                     .insert_packet(&mut conn, parsed_packet)
                     .map_err(ApiError::from)
@@ -96,14 +104,24 @@ pub async fn create_record(
             _ => unreachable!(), // We've already checked this above
         }
     })
-    .await
-    .map_err(ApiError::from);
+        .await
+        .map_err(ApiError::from);
+
 
     match result {
         Ok(Ok(record)) => {
             // Parse the record string into a JSON value
             let mut record_value: serde_json::Value =
                 serde_json::from_str(&record).unwrap_or(serde_json::Value::Null);
+            let sync_conn_result = pool_clone.get();
+            if let Ok(mut sync_conn) = sync_conn_result {
+                if let Err(e) = insert(&mut sync_conn, &inner_log_table, record_value.clone()).await {
+                    return HttpResponse::InternalServerError().json(ApiError {
+                        status: "error".to_string(),
+                        message: format!("Sync error: {}", e),
+                    });
+                }
+            }
 
             // Apply pluck filter if specified
             if !pluck_fields.is_empty() && record_value.is_object() {

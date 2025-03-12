@@ -1,5 +1,6 @@
+use crate::models::crdt_message_model::{GetCrdtMessage, InsertCrdtMessage};
 use crate::models::{item_model, packet_model};
-use crate::schema::schema::{items, packets};
+use crate::schema::schema::{crdt_messages, items, packets};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use item_model::{GetItem, InsertItem};
@@ -10,6 +11,7 @@ use serde_json;
 pub enum Table {
     Items,
     Packets,
+    CrdtMessages,
     // Add other tables here
 }
 
@@ -49,6 +51,24 @@ impl Table {
                 Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
             }
             _ => Err(DieselError::QueryBuilderError("Not a packets table".into())),
+        }
+    }
+
+    pub fn insert_crdt_message(
+        &self,
+        conn: &mut PgConnection,
+        new_crdt_message: InsertCrdtMessage,
+    ) -> Result<String, DieselError> {
+        match self {
+            Table::CrdtMessages => {
+                let result = diesel::insert_into(crdt_messages::table)
+                    .values(&new_crdt_message)
+                    .get_result::<GetCrdtMessage>(conn)?;
+
+                // Convert the result to a JSON string
+                Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
+            }
+            _ => Err(DieselError::QueryBuilderError("Not a crdt_messages table".into())),
         }
     }
 }

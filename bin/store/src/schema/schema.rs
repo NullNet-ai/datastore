@@ -67,3 +67,18 @@ table! {
         order -> Nullable<Text>,
     }
 }
+
+table! {
+    crdt_messages (timestamp, group_id, row, column) {
+        database -> Nullable<Text>,
+        dataset -> Text,
+        group_id -> Text,
+        timestamp -> Text,
+        row -> Text,
+        column -> Text,
+        client_id -> Text,
+        value -> Text,
+        operation -> Nullable<Text>,
+        hypertable_timestamp -> Nullable<Text>,
+    }
+}
