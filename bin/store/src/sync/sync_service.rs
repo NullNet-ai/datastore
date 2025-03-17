@@ -1,7 +1,7 @@
 use crate::db;
 use crate::sync::message_service::create_messages;
-use diesel::result::Error as DieselError;
 use diesel::Connection;
+use diesel::result::Error as DieselError;
 use serde_json::Value;
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
@@ -12,7 +12,6 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
 
         Ok::<(), DieselError>(())
     })?;
-
 
     Ok(())
 }

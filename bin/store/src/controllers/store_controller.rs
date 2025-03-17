@@ -5,7 +5,7 @@ use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{http, web, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpResponse, Responder, ResponseError, http, web};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -35,7 +35,7 @@ impl From<DieselError> for ApiError {
             _ => http::StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError {
-            status:status_code.as_u16(),
+            status: status_code.as_u16(),
             message: format!("Database error: {}", error),
         }
     }
@@ -61,7 +61,7 @@ pub async fn create_record(
         .collect();
     let result = web::block(move || {
         let mut conn = pool.get().map_err(|e| ApiError {
-            status:http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
             message: format!("Failed to get DB connection: {}", e),
         })?;
         let table = match table_name.as_str() {
@@ -96,9 +96,9 @@ pub async fn create_record(
 
                 let parsed_packet: InsertPacket = serde_json::from_value(modified_record.clone())
                     .map_err(|e| ApiError {
-                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
-                        message: format!("Failed to parse packet: {}", e),
-                    })?;
+                    status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
+                    message: format!("Failed to parse packet: {}", e),
+                })?;
                 table
                     .insert_packet(&mut conn, parsed_packet)
                     .map_err(ApiError::from)
@@ -108,18 +108,17 @@ pub async fn create_record(
                     status: http::StatusCode::BAD_REQUEST.as_u16(),
                     message: format!("Unknown table: {}", &log_table),
                 });
-            }, // We've already checked this above
+            } // We've already checked this above
         }
     })
-        .await
-        .map_err(ApiError::from);
+    .await
+    .map_err(ApiError::from);
 
     match result {
         Ok(Ok(record)) => {
             // Parse the record string into a JSON value
             let mut record_value: serde_json::Value =
                 serde_json::from_str(&record).unwrap_or(serde_json::Value::Null);
-
 
             if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
                 return HttpResponse::InternalServerError().json(ApiError {

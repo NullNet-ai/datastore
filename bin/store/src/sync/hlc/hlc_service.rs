@@ -64,7 +64,7 @@ impl HlcService {
 
         // Create a new timestamp for comparison (to avoid borrowing issues)
         let other_timestamp = timestamp.clone();
-        
+
         // Call send on the timestamp
         let timestamp_string = timestamp.send(&other_timestamp);
 
