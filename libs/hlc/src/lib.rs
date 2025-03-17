@@ -1,9 +1,10 @@
 use std::time::SystemTime;
 
+#[derive(Debug, Clone)]
 pub struct Timestamp {
-    logical: u64,
-    physical: u64,
-    node_id: String,
+    pub logical: u64,
+    pub physical: u64,
+    pub node_id: String,
 }
 
 impl Timestamp {
@@ -27,12 +28,13 @@ impl Timestamp {
         }
     }
 
-    pub fn send(&mut self, other: &Timestamp) {
+    pub fn send(&mut self, other: &Timestamp) -> String {
         self.logical = std::cmp::max(self.logical, other.logical) + 1;
         self.physical = SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs();
+        self.to_string()
     }
 
     pub fn recv(&mut self, other: &Timestamp) {
