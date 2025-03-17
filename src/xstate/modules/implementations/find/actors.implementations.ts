@@ -53,8 +53,26 @@ export class FindActorsImplementations {
         pluck_object = {},
         concatenate_fields = [],
         date_format = 'YYYY-MM-DD',
+        group_advance_filters = [],
         // pluck_group_object = {},
       } = body;
+      if (group_advance_filters.length && advance_filters.length) {
+        throw new BadRequestException({
+          success: false,
+          message: `You can either use [advance_filters] or [group_advance_filters] but not both.`,
+          count: 0,
+          data: [],
+        });
+      }
+
+      if (group_advance_filters.length && advance_filters.length.length <= 1) {
+        throw new BadRequestException({
+          success: false,
+          message: `Group advance filters must be more than 1. Use the [advance_filters] instead.`,
+          count: 0,
+          data: [],
+        });
+      }
       const parsed_concatenated_fields =
         Utility.parseConcatenateFields(concatenate_fields);
 
@@ -161,6 +179,7 @@ export class FindActorsImplementations {
         joins,
         this.db,
         parsed_concatenated_fields,
+        group_advance_filters,
       );
 
       const getSortSchemaAndField = (

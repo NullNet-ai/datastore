@@ -6,6 +6,7 @@ import { ZodValidationException } from '@dna-platform/common';
 import {
   EOperator,
   IAdvanceFilters,
+  IGroupAdvanceFilters,
   IJoins,
 } from '../xstate/modules/schemas/find/find.schema';
 import {
@@ -429,6 +430,7 @@ export class Utility {
     joins: any = [],
     _client_db: any,
     concatenate_fields?: IParsedConcatenatedFields,
+    group_advance_filters: IGroupAdvanceFilters[] = [],
   ) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -530,6 +532,7 @@ export class Utility {
           table_schema,
           aliased_entities,
           transformed_expressions,
+          group_advance_filters,
         ),
       ),
     );
@@ -665,10 +668,50 @@ export class Utility {
     table_schema,
     aliased_entities: string[] = [],
     expressions: any,
+    group_advance_filters: IGroupAdvanceFilters[] = [],
   ): any[] {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
     let _filter_queue: any[] = [];
+
+    if (group_advance_filters?.length) {
+      const group_where_clause_queue: any[] = [];
+      const group_criteria_queue: any[] = [];
+      const group_operator_queue: any[] = [];
+      group_advance_filters.forEach(({ filters, type, operator }) => {
+        if (!filters?.length && type === 'criteria') {
+          throw new BadRequestException('Grouped filters must not empty');
+        }
+
+        if ((filters as any[])?.[filters?.length - 1]?.type === 'operator') {
+          throw new BadRequestException(
+            'Grouped filters must end with a criteria',
+          );
+        }
+
+        if (type === 'criteria') {
+          group_criteria_queue.push(
+            this.constructFilters(
+              filters,
+              table_schema,
+              aliased_entities,
+              expressions,
+            ),
+          );
+        } else if (type === 'operator') {
+          group_operator_queue.push(operator);
+        }
+      });
+      const [group_type] = group_operator_queue;
+      if (group_type === EOperator.AND) {
+        group_where_clause_queue.push(and(...group_criteria_queue));
+      } else if (group_type === EOperator.OR) {
+        group_where_clause_queue.push(or(...group_criteria_queue));
+      }
+
+      return group_where_clause_queue;
+    }
+
     if (
       advance_filters.find(({ entity }) => entity) &&
       advance_filters.filter(

@@ -66,6 +66,11 @@ export enum EOrderDirection {
   ASCENDING = 'ascending',
 }
 
+export interface IGroupAdvanceFilters<f = string> {
+  type: 'criteria' | 'operator';
+  operator: EOperator;
+  filters: IAdvanceFilters<f>[];
+}
 export enum EAllowedMutation {
   INSERT = 'INSERT',
   UPDATE = 'UPDATE',
