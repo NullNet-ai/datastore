@@ -82,3 +82,11 @@ table! {
         hypertable_timestamp -> Nullable<Text>,
     }
 }
+
+table! {
+    crdt_merkles (group_id) {
+        group_id -> Text,
+        timestamp -> Text,
+        merkle -> Text,
+    }
+}

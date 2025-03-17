@@ -68,7 +68,9 @@ impl Table {
                 // Convert the result to a JSON string
                 Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
             }
-            _ => Err(DieselError::QueryBuilderError("Not a crdt_messages table".into())),
+            _ => Err(DieselError::QueryBuilderError(
+                "Not a crdt_messages table".into(),
+            )),
         }
     }
 }

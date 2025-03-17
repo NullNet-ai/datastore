@@ -5,7 +5,7 @@ use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -13,20 +13,29 @@ use serde_json::json;
 #[derive(Serialize)]
 struct ApiError {
     message: String,
-    status: String,
+    status: u16,
 }
 impl From<BlockingError> for ApiError {
     fn from(error: BlockingError) -> Self {
         ApiError {
-            status: "error".to_string(),
+            status: error.status_code().as_u16(),
             message: format!("Internal server error: {:?}", error),
         }
     }
 }
 impl From<DieselError> for ApiError {
     fn from(error: DieselError) -> Self {
+        let status_code = match error {
+            DieselError::NotFound => http::StatusCode::NOT_FOUND,
+            DieselError::DatabaseError(_, _) => http::StatusCode::BAD_REQUEST,
+            DieselError::DeserializationError(_) => http::StatusCode::UNPROCESSABLE_ENTITY,
+            DieselError::SerializationError(_) => http::StatusCode::INTERNAL_SERVER_ERROR,
+            DieselError::RollbackTransaction => http::StatusCode::INTERNAL_SERVER_ERROR,
+            DieselError::AlreadyInTransaction => http::StatusCode::INTERNAL_SERVER_ERROR,
+            _ => http::StatusCode::INTERNAL_SERVER_ERROR,
+        };
         ApiError {
-            status: "error".to_string(),
+            status:status_code.as_u16(),
             message: format!("Database error: {}", error),
         }
     }
@@ -50,25 +59,18 @@ pub async fn create_record(
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
-    let conn_result = pool.get();
-    if let Err(e) = conn_result {
-        return HttpResponse::InternalServerError().json(ApiError {
-            status: "error".to_string(),
-            message: format!("Failed to get DB connection: {}", e),
-        });
-    }
-    let mut conn = conn_result.unwrap();
-
-    // Clone the pool for later use
-    let pool_clone = pool.clone();
     let result = web::block(move || {
+        let mut conn = pool.get().map_err(|e| ApiError {
+            status:http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            message: format!("Failed to get DB connection: {}", e),
+        })?;
         let table = match table_name.as_str() {
             "items" => Table::Items,
             "packets" => Table::Packets,
             // Add other table mappings here
             _ => {
                 return Err(ApiError {
-                    status: "error".to_string(),
+                    status: http::StatusCode::BAD_REQUEST.as_u16(),
                     message: format!("Unknown table: {}", &log_table),
                 });
             }
@@ -79,7 +81,7 @@ pub async fn create_record(
             "items" => {
                 let parsed_item: InsertItem = serde_json::from_value(processed_record.clone())
                     .map_err(|e| ApiError {
-                        status: "error".to_string(),
+                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
                         message: format!("Failed to parse item: {}", e),
                     })?;
                 table
@@ -94,33 +96,36 @@ pub async fn create_record(
 
                 let parsed_packet: InsertPacket = serde_json::from_value(modified_record.clone())
                     .map_err(|e| ApiError {
-                        status: "error".to_string(),
+                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
                         message: format!("Failed to parse packet: {}", e),
                     })?;
                 table
                     .insert_packet(&mut conn, parsed_packet)
                     .map_err(ApiError::from)
             }
-            _ => unreachable!(), // We've already checked this above
+            _ => {
+                return Err(ApiError {
+                    status: http::StatusCode::BAD_REQUEST.as_u16(),
+                    message: format!("Unknown table: {}", &log_table),
+                });
+            }, // We've already checked this above
         }
     })
         .await
         .map_err(ApiError::from);
-
 
     match result {
         Ok(Ok(record)) => {
             // Parse the record string into a JSON value
             let mut record_value: serde_json::Value =
                 serde_json::from_str(&record).unwrap_or(serde_json::Value::Null);
-            let sync_conn_result = pool_clone.get();
-            if let Ok(mut sync_conn) = sync_conn_result {
-                if let Err(e) = insert(&mut sync_conn, &inner_log_table, record_value.clone()).await {
-                    return HttpResponse::InternalServerError().json(ApiError {
-                        status: "error".to_string(),
-                        message: format!("Sync error: {}", e),
-                    });
-                }
+
+
+            if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
+                return HttpResponse::InternalServerError().json(ApiError {
+                    status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    message: format!("Sync error: {}", e),
+                });
             }
 
             // Apply pluck filter if specified

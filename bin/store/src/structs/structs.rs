@@ -1,3 +1,4 @@
+use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -70,4 +71,10 @@ pub struct QueryParams {
 
 fn default_pluck() -> String {
     "id".to_string()
+}
+
+// #[derive(Serialize, Deserialize)]
+pub struct Clock {
+    pub timestamp: MutableTimestamp,
+    pub merkle: Value,
 }

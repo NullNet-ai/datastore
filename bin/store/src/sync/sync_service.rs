@@ -1,16 +1,18 @@
-use crate::sync::message_service::generate_messages_from_value;
-use crate::table_enum::Table;
+use crate::db;
+use crate::sync::message_service::create_messages;
 use diesel::result::Error as DieselError;
-use diesel::PgConnection;
+use diesel::Connection;
 use serde_json::Value;
 
-pub async fn insert(conn: &mut PgConnection, table: &String, row: Value) -> Result<(), DieselError> {
+pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
-    let messages = generate_messages_from_value(&row, table, operation);
+    let mut conn = db::get_connection();
+    conn.transaction(|mut tx| {
+        let messages = create_messages(&mut tx, &row, table, operation)?;
 
-    for message in messages {
-        Table::CrdtMessages.insert_crdt_message(conn, message)?;
-    }
+        Ok::<(), DieselError>(())
+    })?;
+
 
     Ok(())
 }
