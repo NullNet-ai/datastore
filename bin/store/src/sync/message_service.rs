@@ -14,7 +14,8 @@ pub fn create_messages(
 
     let row = object
         .get("id") // Ensure it's a string
-        .expect("Expected an `id` field of type string")
+        .ok_or_else(|| DieselError::NotFound)
+        .map_err(|_| DieselError::QueryBuilderError("Record does not have an id, make sure record has an id".into()))?
         .to_string();
 
     let messages: Vec<InsertCrdtMessage> = object

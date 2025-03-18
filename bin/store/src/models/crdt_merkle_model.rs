@@ -24,5 +24,5 @@ pub struct InsertMerkle {
 pub struct ParsedMerkle {
     pub group_id: String,
     pub timestamp: String,
-    pub merkle: Value,
+    pub merkle: Value, // TODO: instead of String but parse it to protobuff and also store it as stringified protobuff
 }

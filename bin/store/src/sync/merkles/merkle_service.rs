@@ -19,7 +19,7 @@ impl MerkleService {
         if merkles.is_empty() {
             return Ok(None);
         }
-        let merkle = &merkles[0];
+        let merkle = merkles.get(0).ok_or(DieselError::NotFound)?;
         let parsed = ParsedMerkle {
             group_id: merkle.group_id.clone(),
             timestamp: merkle.timestamp.clone(),

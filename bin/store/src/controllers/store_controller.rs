@@ -5,7 +5,7 @@ use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{HttpResponse, Responder, ResponseError, http, web};
+use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -20,6 +20,15 @@ impl From<BlockingError> for ApiError {
         ApiError {
             status: error.status_code().as_u16(),
             message: format!("Internal server error: {:?}", error),
+        }
+    }
+}
+
+impl ApiError {
+    fn new(status: http::StatusCode, message: impl Into<String>) -> Self {
+        Self {
+            status: status.as_u16(),
+            message: message.into(),
         }
     }
 }
@@ -38,6 +47,15 @@ impl From<DieselError> for ApiError {
             status: status_code.as_u16(),
             message: format!("Database error: {}", error),
         }
+    }
+}
+
+impl From<serde_json::Error> for ApiError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::new(
+            http::StatusCode::UNPROCESSABLE_ENTITY,
+            format!("JSON processing error: {}", error),
+        )
     }
 }
 
@@ -96,9 +114,9 @@ pub async fn create_record(
 
                 let parsed_packet: InsertPacket = serde_json::from_value(modified_record.clone())
                     .map_err(|e| ApiError {
-                    status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
-                    message: format!("Failed to parse packet: {}", e),
-                })?;
+                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
+                        message: format!("Failed to parse packet: {}", e),
+                    })?;
                 table
                     .insert_packet(&mut conn, parsed_packet)
                     .map_err(ApiError::from)
@@ -111,8 +129,8 @@ pub async fn create_record(
             } // We've already checked this above
         }
     })
-    .await
-    .map_err(ApiError::from);
+        .await
+        .map_err(ApiError::from);
 
     match result {
         Ok(Ok(record)) => {

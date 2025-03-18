@@ -46,7 +46,7 @@ impl HlcService {
                 Ok(Self::make_clock(Timestamp::parse(timestamp), merkle))
             }
             Ok(None) => {
-                let timestamp = Timestamp::new(0, 0, Self::make_client_id());
+                let timestamp = Timestamp::new(0, 0, Self::make_client_id()?);
                 let clock: Clock = Self::make_clock(timestamp, serde_json::json!({}));
                 Self::set_clock(tx, clock);
                 Self::get_clock(tx)
@@ -78,10 +78,14 @@ impl HlcService {
         Ok(timestamp_string)
     }
 
-    fn make_client_id() -> String {
+    fn make_client_id() -> Result<String, &'static str> {
         let uuid = Uuid::new_v4();
         let uuid_str = uuid.to_string();
         let no_hyphens = uuid_str.replace("-", "");
-        no_hyphens[no_hyphens.len() - 16..].to_string()
+        if no_hyphens.len() >= 16 {
+            Ok(no_hyphens[no_hyphens.len() - 16..].to_string())
+        } else {
+            Err("Failed to generate client ID: UUID string too short")
+        }
     }
 }
