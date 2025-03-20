@@ -18,7 +18,7 @@ pub struct GetCrdtMessage {
     pub hypertable_timestamp: Option<String>,
 }
 
-#[derive(Debug, Insertable, Deserialize)]
+#[derive(Debug, Insertable, Deserialize, Hash, Eq, PartialEq, Clone)]
 #[diesel(table_name = crdt_messages)]
 pub struct InsertCrdtMessage {
     pub database: Option<String>,

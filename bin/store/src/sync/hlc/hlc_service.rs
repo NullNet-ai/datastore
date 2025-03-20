@@ -3,6 +3,7 @@ use crate::structs::structs::Clock;
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::sync::merkles::merkle_service::MerkleService;
 use hlc::Timestamp;
+use merkle::MerkleTree;
 use serde_json::Value;
 use std::env;
 use uuid::Uuid;
@@ -78,12 +79,38 @@ impl HlcService {
         Ok(timestamp_string)
     }
 
+    pub fn insert_timestamp(
+        tx: &mut DbPooledConnection,
+        timestamp_str: String,
+    ) -> Result<Clock, Box<dyn std::error::Error>> {
+        // Get the current clock
+        let mut clock = Self::get_clock(tx)?;
+                
+        // Create a new MerkleTree and add the timestamp
+        let mut merkle_tree = MerkleTree::new();
+        merkle_tree.add_leaf(&timestamp_str);
+        
+        // Convert the merkle tree to a Value and update the clock's merkle
+        let merkle_value = serde_json::to_value(&merkle_tree).unwrap_or(serde_json::json!({}));
+        clock.merkle = merkle_value;
+        
+        // Save the updated clock
+        Self::set_clock(tx, clock.clone());
+        
+        // Return the updated clock
+        Ok(clock)
+    }
+
     fn make_client_id() -> Result<String, &'static str> {
         let uuid = Uuid::new_v4();
         let uuid_str = uuid.to_string();
         let no_hyphens = uuid_str.replace("-", "");
         if no_hyphens.len() >= 16 {
-            Ok(no_hyphens[no_hyphens.len() - 16..].to_string())
+            let start_index = no_hyphens.len() - 16;
+            match no_hyphens.get(start_index..) {
+                Some(client_id) => Ok(client_id.to_string()),
+                None => Err("Failed to extract client ID substring")
+            }
         } else {
             Err("Failed to generate client ID: UUID string too short")
         }

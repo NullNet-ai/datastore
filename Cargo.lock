@@ -2243,6 +2243,7 @@ dependencies = [
  "dotenv",
  "futures",
  "hlc",
+ "merkle",
  "serde",
  "serde_json",
  "uuid",

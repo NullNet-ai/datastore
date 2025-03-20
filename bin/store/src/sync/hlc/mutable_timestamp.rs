@@ -1,4 +1,6 @@
 use hlc::Timestamp;
+
+#[derive(Clone)]
 pub struct MutableTimestamp {
     inner: Timestamp,
 }
