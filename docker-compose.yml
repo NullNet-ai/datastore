@@ -25,6 +25,8 @@ services:
     build:
       context: .
       dockerfile: dockerfile
+    #command: 'npm run drizzle:generate'
+    #command: 'npm run drizzle:migrate'
     ports:
       - 5001:5001
       - 6000:6000
