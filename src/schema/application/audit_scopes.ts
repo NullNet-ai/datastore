@@ -1,4 +1,4 @@
-import { pgTable, text, date, time, json } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -7,7 +7,7 @@ import {
 const config = getConfigDefaults.byIndex('crawls');
 
 export const table = pgTable(
-  'crawls',
+  'audit_scopes',
   {
     ...system_fields,
     id: text().unique(),
