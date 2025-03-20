@@ -26,9 +26,9 @@ export const table = pgTable(
   {
     ...system_fields,
     id: uuid('id'), // Primary key
-    timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // Packet Capture Time
+    timestamp: timestamp('timestamp', { withTimezone: true }), // Packet Capture Time
     hypertable_timestamp: text('hypertable_timestamp'), // Hypertable timestamp
-    interface_name: text('interface_name').notNull(), // Network Interface Name
+    interface_name: text('interface_name'), // Network Interface Name
 
     total_length: integer('total_length'), // Total packet length in bytes
 
@@ -36,12 +36,12 @@ export const table = pgTable(
     destination_mac: text('destination_mac'), // Destination MAC Address
     ether_type: text('ether_type'), // Ethernet Type
 
-    ip_header_length: integer('ip_header_length').notNull(), // IP Header Length
-    payload_length: integer('payload_length').notNull(), // Payload Length
+    ip_header_length: integer('ip_header_length'), // IP Header Length
+    payload_length: integer('payload_length'), // Payload Length
 
-    protocol: text('protocol').notNull(), // Protocol (TCP, UDP, ICMP, etc.)
-    source_ip: text('source_ip').notNull(), // Source IP Address
-    destination_ip: text('destination_ip').notNull(), // Destination IP Address
+    protocol: text('protocol'), // Protocol (TCP, UDP, ICMP, etc.)
+    source_ip: text('source_ip'), // Source IP Address
+    destination_ip: text('destination_ip'), // Destination IP Address
 
     source_port: integer('source_port'), // Source Port (Optional)
     destination_port: integer('destination_port'), // Destination Port (Optional)

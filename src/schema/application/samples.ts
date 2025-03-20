@@ -12,9 +12,9 @@ export const table = pgTable(
   {
     ...system_fields,
     sample_text: text(),
-    // time: timestamp('time', { withTimezone: true }).notNull(), // NOT NULL timestamp
-    // temperature: doublePrecision('temperature').notNull(), // NOT NULL double precision
-    // humidity: doublePrecision('humidity').notNull(), // NOT NULL double precision
+    // time: timestamp('time', { withTimezone: true }), // NOT NULL timestamp
+    // temperature: doublePrecision('temperature'), // NOT NULL double precision
+    // humidity: doublePrecision('humidity'), // NOT NULL double precision
   },
   config,
 );

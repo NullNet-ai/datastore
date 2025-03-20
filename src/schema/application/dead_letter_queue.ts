@@ -17,11 +17,11 @@ export const table = pgTable(
   'dead_letter_queue',
   {
     id: uuid('id'), // Primary key
-    record_id: uuid('record_id').notNull(),
+    record_id: uuid('record_id'),
     created_date: timestamp('created_date').default(sql`now()`),
-    table: text('table').notNull(),
-    prefix: text('prefix').notNull(),
-    error: text('error').notNull(),
+    table: text('table'),
+    prefix: text('prefix'),
+    error: text('error'),
   },
   config,
 );

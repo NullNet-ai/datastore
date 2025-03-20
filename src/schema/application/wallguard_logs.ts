@@ -14,10 +14,9 @@ export const table = pgTable(
   {
     ...system_fields,
     id: uuid('id'), // Primary key
-    timestamp: timestamp('timestamp', { withTimezone: true }).notNull(), // NOT NULL timestamp
+    timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
     level: text('level'),
     message: text('message'),
-
   },
   config,
 );
