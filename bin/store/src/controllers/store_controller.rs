@@ -1,11 +1,16 @@
 use crate::db;
+use crate::models::item_model::GetItem;
 use crate::models::item_model::InsertItem;
+use crate::models::packet_model::GetPacket;
 use crate::models::packet_model::InsertPacket;
+use crate::schema::schema::items::dsl::items;
+use crate::schema::schema::packets::dsl::packets;
 use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
 use actix_web::{HttpResponse, Responder, ResponseError, http, web};
+use diesel::associations::HasTable;
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -82,31 +87,24 @@ pub async fn create_record(
             status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
             message: format!("Failed to get DB connection: {}", e),
         })?;
-        let table = match table_name.as_str() {
-            "items" => Table::Items,
-            "packets" => Table::Packets,
-            // Add other table mappings here
-            _ => {
-                return Err(ApiError {
-                    status: http::StatusCode::BAD_REQUEST.as_u16(),
-                    message: format!("Unknown table: {}", &log_table),
-                });
-            }
-        };
+        let table = Table::from_str(table_name.as_str()).ok_or(ApiError {
+            status: http::StatusCode::BAD_REQUEST.as_u16(),
+            message: format!("Unknown table: {log_table}"),
+        })?;
 
         // The insert_query function now returns a string directly
-        match table_name.as_str() {
-            "items" => {
+        match table {
+            Table::Items => {
                 let parsed_item: InsertItem = serde_json::from_value(processed_record.clone())
                     .map_err(|e| ApiError {
                         status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
                         message: format!("Failed to parse item: {}", e),
                     })?;
                 table
-                    .insert_item(&mut conn, parsed_item)
+                    .insert_record::<_, _, GetItem>(&mut conn, items::table(), parsed_item)
                     .map_err(ApiError::from)
             }
-            "packets" => {
+            Table::Packets => {
                 let mut modified_record = processed_record.clone();
                 if let Some(timestamp) = modified_record.get("timestamp") {
                     modified_record["hypertable_timestamp"] = timestamp.clone();
@@ -118,7 +116,7 @@ pub async fn create_record(
                     message: format!("Failed to parse packet: {}", e),
                 })?;
                 table
-                    .insert_packet(&mut conn, parsed_packet)
+                    .insert_record::<_, _, GetPacket>(&mut conn, packets::table(), parsed_packet)
                     .map_err(ApiError::from)
             }
             _ => {
