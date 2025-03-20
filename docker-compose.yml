@@ -2,7 +2,8 @@ version: '3.9'
 
 networks:
   internal:
-
+  frontend: 
+    external: true
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg14
@@ -22,14 +23,20 @@ services:
     image: datastore:pg 
     networks:
       - internal
+      - frontend
     build:
       context: .
       dockerfile: dockerfile
-    #command: 'npm run drizzle:generate'
-    #command: 'npm run drizzle:migrate'
-    ports:
-      - 5001:5001
-      - 6000:6000
+      #command: 'npm run drizzle:generate'
+      # command: 'npm run drizzle:migrate'
+    #ports:
+    #  - 5001:5001
+    #  - 6000:6000
+    labels:
+      traefik.enable: true
+      traefik.http.routers.datastore.entrypoints: web
+      traefik.http.routers.datastore.rule: Host(`datastore.fedora-1.local`)
+      traefik.http.services.datastore.loadbalancer.server.port: 5001 
     environment:
       PORT: 5001
       GRPC_PORT: 6000
