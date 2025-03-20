@@ -4,7 +4,7 @@ import {
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 
-const config = getConfigDefaults.byIndex('crawls');
+const config = getConfigDefaults.byIndex('audit_scopes');
 
 export const table = pgTable(
   'audit_scopes',
