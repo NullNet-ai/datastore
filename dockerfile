@@ -17,5 +17,4 @@ RUN npm run drizzle:generate
 
 EXPOSE 5001
 EXPOSE 6000
-CMD [ "npm","run", "start:prod" ]
-
+CMD ["pm2-runtime", "--name=data-store", "dist/main.js"]
