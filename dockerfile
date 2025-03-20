@@ -12,8 +12,9 @@ COPY .npmrc /var/app/.npmrc
 RUN npm i --force
 COPY . /var/app
 RUN npm run build
-ENV DATABASE_URL=${DATABASE_URL}
-RUN npm run drizzle:generate
+RUN mkdir sql
+RUN mkdir upload
+
 
 EXPOSE 5001
 EXPOSE 6000
