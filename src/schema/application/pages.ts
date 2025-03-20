@@ -1,4 +1,4 @@
-import { pgTable, text, json } from 'drizzle-orm/pg-core';
+import { pgTable, text  } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -20,10 +20,11 @@ export const table = pgTable(
     audit_id: text('audit_id'),
     crawl_id: text('crawl_id'),
     id: text('id'),
-    page_title: text('page_title'),
+    page_title: text('page_title'), 
     page_url: text('page_url'),
-    page_links: text('page_links').array(),
-    page_headers: json('page_headers'),
+    page_links: text('page_links'),
+    page_errors: text('page_errors'),
+    page_headers: text('page_headers'),
     screenshot_url: text('screenshot_url'),
     category: text('category'),
     page_hash: text('page_hash'),

@@ -76,7 +76,7 @@ export class CreateActorsImplementations {
       body.timestamp = body?.timestamp
         ? new Date(body?.timestamp)
         : new Date().toISOString();
-      body.id = uuidv4();
+      body.id = body.id ===undefined ? uuidv4(): body.id;
 
       const { schema }: any = Utility.checkCreateSchema(
         table,

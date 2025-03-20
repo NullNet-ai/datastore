@@ -1,4 +1,4 @@
-import { pgTable, text, json } from 'drizzle-orm/pg-core';
+import { pgTable, text  } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -18,7 +18,7 @@ export const table = pgTable(
     crawl_start_time: text('crawl_start_time'),
     crawl_end_date: text('crawl_end_date'),
     crawl_end_time: text('crawl_end_time'),
-    crawl_result: json('crawl_result'),
+    crawl_result: text('crawl_result'),
     meta_server_hostname: text('meta_server_hostname'),
     meta_cpu: text('meta_cpu'),
     meta_memory: text('meta_memory'),
