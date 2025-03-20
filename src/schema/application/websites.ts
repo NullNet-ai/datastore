@@ -23,7 +23,7 @@ export const table = pgTable(
   'websites',
   {
     ...system_fields,
-    id: text('id'),
+    id: text('id').primaryKey().primaryKey(),
     wcag_standards: text('wcag_standards').array(),
     website_cron_repeat: text('website_cron_repeat'),
     protocol: text('protocol'),

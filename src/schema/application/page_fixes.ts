@@ -19,7 +19,7 @@ export const table = pgTable(
     audit_id: text('audit_id'),
     page_id: text('page_id'),
     accessibility_report_id: text('accessibility_report_id'),
-    id: text('id'),
+    id: text('id').primaryKey(),
     approval_id: text('approval_id'),
     patch_id: text('patch_id'),
     selector: text('selector'),

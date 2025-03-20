@@ -17,3 +17,6 @@ export { table as accessibility_reports } from '../application/accessibility_rep
 export { table as accessibility_scans } from '../application/accessibility_scans';
 export { table as pages } from '../application/pages';
 export { table as patches } from '../application/patches';
+// export { table as grid_filters } from '../application/grid_filters';
+// export { table as contacts } from '../application/contacts';
+// export { table as addresses } from '../application/addresses';

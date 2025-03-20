@@ -1,4 +1,4 @@
-import { pgTable, text  } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -12,7 +12,7 @@ export const table = pgTable(
     ...system_fields,
     website_id: text('website_id'),
     audit_id: text('audit_id'),
-    id: text('id'),
+    id: text('id').primaryKey(),
     crawl_status: text('crawl_status'),
     crawl_start_date: text('crawl_start_date'),
     crawl_start_time: text('crawl_start_time'),

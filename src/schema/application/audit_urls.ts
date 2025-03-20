@@ -16,7 +16,7 @@ export const table = pgTable(
   {
     ...system_fields,
     audit_id: text('audit_id'),
-    id: text('id'),
+    id: text('id').primaryKey(),
     category: text('category'),
     value: text('value'),
   },

@@ -43,10 +43,10 @@ export const table = pgTable(
   {
     ...system_fields,
     website_id: text('website_id'),
-    id: text('id'),
+    id: text('id').primaryKey().primaryKey(),
     audit_scopes: text('audit_scopes'),
-    audit_scheduled_date: date('audit_scheduled_date'),
-    audit_scheduled_time: time('audit_scheduled_time'),
+    audit_start_date: date('audit_start_date'),
+    audit_start_time: time('audit_start_time'),
     audit_end_date: date('audit_end_date'),
     audit_end_time: time('audit_end_time'),
     audit_schedule_type: text('audit_schedule_type'),
