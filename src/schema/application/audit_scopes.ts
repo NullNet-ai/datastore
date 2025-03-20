@@ -10,8 +10,6 @@ export const table = pgTable(
   'crawls',
   {
     ...system_fields,
-    website_id: text('website_id'),
-    audit_id: text('audit_id'),
     id: text().unique(),
     name: text('name'),
   },
