@@ -47,7 +47,7 @@ pub struct GetPacket {
     pub order: Option<String>,
 }
 
-#[derive(Insertable, Deserialize, Serialize)]
+#[derive(Insertable, Deserialize, Serialize, Clone, AsChangeset)]
 #[diesel(table_name = crate::schema::schema::packets)]
 pub struct InsertPacket {
     pub tombstone: i32,

@@ -5,7 +5,7 @@ use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{http, web, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpResponse, Responder, ResponseError, http, web};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -114,9 +114,9 @@ pub async fn create_record(
 
                 let parsed_packet: InsertPacket = serde_json::from_value(modified_record.clone())
                     .map_err(|e| ApiError {
-                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
-                        message: format!("Failed to parse packet: {}", e),
-                    })?;
+                    status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
+                    message: format!("Failed to parse packet: {}", e),
+                })?;
                 table
                     .insert_packet(&mut conn, parsed_packet)
                     .map_err(ApiError::from)
@@ -129,8 +129,8 @@ pub async fn create_record(
             } // We've already checked this above
         }
     })
-        .await
-        .map_err(ApiError::from);
+    .await
+    .map_err(ApiError::from);
 
     match result {
         Ok(Ok(record)) => {

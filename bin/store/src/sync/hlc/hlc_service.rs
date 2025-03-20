@@ -81,22 +81,22 @@ impl HlcService {
 
     pub fn insert_timestamp(
         tx: &mut DbPooledConnection,
-        timestamp_str: String,
+        timestamp_str: &String,
     ) -> Result<Clock, Box<dyn std::error::Error>> {
         // Get the current clock
         let mut clock = Self::get_clock(tx)?;
-                
+
         // Create a new MerkleTree and add the timestamp
         let mut merkle_tree = MerkleTree::new();
         merkle_tree.add_leaf(&timestamp_str);
-        
+
         // Convert the merkle tree to a Value and update the clock's merkle
         let merkle_value = serde_json::to_value(&merkle_tree).unwrap_or(serde_json::json!({}));
         clock.merkle = merkle_value;
-        
+
         // Save the updated clock
         Self::set_clock(tx, clock.clone());
-        
+
         // Return the updated clock
         Ok(clock)
     }
@@ -109,7 +109,7 @@ impl HlcService {
             let start_index = no_hyphens.len() - 16;
             match no_hyphens.get(start_index..) {
                 Some(client_id) => Ok(client_id.to_string()),
-                None => Err("Failed to extract client ID substring")
+                None => Err("Failed to extract client ID substring"),
             }
         } else {
             Err("Failed to generate client ID: UUID string too short")

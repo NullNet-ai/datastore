@@ -12,7 +12,7 @@ pub struct GetMerkle {
     pub merkle: String,
 }
 
-#[derive(Insertable, Deserialize, Debug)]
+#[derive(Insertable, Deserialize, Debug, Clone)]
 #[diesel(table_name = crdt_merkles)]
 pub struct InsertMerkle {
     pub group_id: String,

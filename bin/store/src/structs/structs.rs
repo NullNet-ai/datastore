@@ -1,9 +1,9 @@
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use chrono::Utc;
 use diesel::AsExpression;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 use diesel::sql_types::{Text, Uuid};
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 use uuid::Uuid as uuid_crate;
 
 #[derive(Serialize, Deserialize)]
@@ -81,7 +81,6 @@ pub struct Clock {
     pub merkle: Value,
 }
 
-
 #[derive(Debug, AsExpression)]
 #[diesel(sql_type = diesel::sql_types::Array<diesel::sql_types::Text>)]
 pub enum ColumnValue {
@@ -97,11 +96,11 @@ impl ColumnValue {
             ColumnValue::Array(arr) => {
                 // Format as PostgreSQL array literal
                 format!("{{{}}}", arr.join(","))
-            },
+            }
             ColumnValue::Timestamp(dt) => dt.to_rfc3339(),
         }
     }
-    
+
     // For use with Diesel's insert/update operations
     pub fn to_json_value(&self) -> serde_json::Value {
         match self {
@@ -111,33 +110,37 @@ impl ColumnValue {
                 serde_json::Value::Array(
                     arr.iter()
                         .map(|s| serde_json::Value::String(s.clone()))
-                        .collect()
+                        .collect(),
                 )
-            },
+            }
             ColumnValue::Timestamp(dt) => serde_json::Value::String(dt.to_rfc3339()),
         }
     }
 }
 
-
-
-
 #[derive(Debug, AsExpression)]
-#[diesel(sql_type = Text)] 
+#[diesel(sql_type = Text)]
 pub enum Id {
     Text(String),
     Uuid(uuid::Uuid),
 }
 
-
 impl Id {
-    pub fn as_expression(&self) -> Box<dyn diesel::expression::Expression<SqlType = diesel::sql_types::Text>> {
+    pub fn as_expression(
+        &self,
+    ) -> Box<dyn diesel::expression::Expression<SqlType = diesel::sql_types::Text>> {
         match self {
-            Id::Text(text) => Box::new(diesel::dsl::sql::<diesel::sql_types::Text>(&format!("'{}'", text))),
-            Id::Uuid(uuid) => Box::new(diesel::dsl::sql::<diesel::sql_types::Text>(&format!("'{}'", uuid.to_string()))),
+            Id::Text(text) => Box::new(diesel::dsl::sql::<diesel::sql_types::Text>(&format!(
+                "'{}'",
+                text
+            ))),
+            Id::Uuid(uuid) => Box::new(diesel::dsl::sql::<diesel::sql_types::Text>(&format!(
+                "'{}'",
+                uuid.to_string()
+            ))),
         }
     }
-    
+
     pub fn to_string(&self) -> String {
         match self {
             Id::Text(text) => text.clone(),

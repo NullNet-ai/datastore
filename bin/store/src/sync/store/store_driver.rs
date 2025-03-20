@@ -1,12 +1,17 @@
 use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::InsertCrdtMessage;
+use crate::models::packet_model::InsertPacket;
 use crate::schema::schema;
-use crate::structs::structs::{ColumnValue, Id};
-use diesel::Column;
 use crate::schema::schema::*;
-use diesel::Table;
+use crate::structs::structs::{ColumnValue, Id};
+use crate::table_enum::Table;
+use diesel::Column;
+use diesel::RunQueryDsl;
 
-pub async fn apply(tx: &mut DbPooledConnection, message: &InsertCrdtMessage) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn apply(
+    tx: &mut DbPooledConnection,
+    message: &InsertCrdtMessage,
+) -> Result<(), Box<dyn std::error::Error>> {
     let row = &message.row;
     let column = &message.column;
     let dataset = &message.dataset;
@@ -18,7 +23,7 @@ pub async fn apply(tx: &mut DbPooledConnection, message: &InsertCrdtMessage) -> 
     } else if column == "timestamp" {
         ColumnValue::Timestamp(
             chrono::DateTime::parse_from_rfc3339(&message.value)
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?,
         )
     } else {
         ColumnValue::String(message.value.clone())
@@ -28,7 +33,6 @@ pub async fn apply(tx: &mut DbPooledConnection, message: &InsertCrdtMessage) -> 
         // Parse timestamp
         let timestamp = chrono::DateTime::parse_from_rfc3339(ht_timestamp)
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-       
 
         // Insert or update with hypertable timestamp
         match insert_with_hypertable_timestamp(tx, dataset, row, column, &value, &timestamp) {
@@ -51,7 +55,6 @@ pub async fn apply(tx: &mut DbPooledConnection, message: &InsertCrdtMessage) -> 
 
     Ok(())
 }
-
 
 fn is_plural_column(column: &str) -> bool {
     column.ends_with('s')
@@ -90,26 +93,45 @@ fn insert_with_hypertable_timestamp(
     value: &ColumnValue,
     timestamp: &chrono::DateTime<chrono::FixedOffset>,
 ) -> Result<(), diesel::result::Error> {
-    // Get the table from the dataset
-    let table = get_table_by_dataset(dataset);
-
     // Create a dynamic values map
     let mut values = std::collections::HashMap::new();
     values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
-    values.insert("timestamp".to_string(), serde_json::Value::String(timestamp.to_string()));
+    values.insert(
+        "timestamp".to_string(),
+        serde_json::Value::String(timestamp.to_string()),
+    );
     values.insert(column.to_string(), value.to_json_value());
 
-    // Convert to JSON for insertion
-    let json_values = serde_json::to_value(values).unwrap();
+    let json_value = serde_json::to_value(values).unwrap();
+    let table = match dataset {
+        "items" => Table::Items,
+        "packets" => Table::Packets,
+        "crdt_messages" => Table::CrdtMessages,
+        // Add other tables as needed
+        _ => panic!("Unknown dataset: {}", dataset),
+    };
 
-    // Use diesel's json insert capabilities
-    diesel::insert_into(table)
-        .values(json_values)
-        .on_conflict((get_id_column(dataset), get_timestamp_column(dataset)))
-        .do_update()
-        .set(json_values)
-        .execute(tx)
-        .map(|_| ())
+    // Use diesel's json insert capabilities based on dataset
+    match dataset {
+        "packets" => {
+            let insert_packet = match serde_json::from_value::<InsertPacket>(json_value) {
+                Ok(packet) => packet,
+                Err(_) => {
+                    // Convert serde_json::Error to diesel::result::Error
+                    return Err(diesel::result::Error::RollbackTransaction);
+                }
+            };
+
+            diesel::insert_into(schema::packets::table)
+                .values(insert_packet.clone())
+                .on_conflict((schema::packets::id, schema::packets::timestamp))
+                .do_update()
+                .set(insert_packet)
+                .execute(tx)
+                .map(|_| ())
+        }
+        _ => panic!("Unknown dataset: {}", dataset),
+    }
 }
 
 fn insert_without_hypertable_timestamp(
@@ -119,29 +141,42 @@ fn insert_without_hypertable_timestamp(
     column: &str,
     value: &ColumnValue,
 ) -> Result<(), diesel::result::Error> {
-    // Get the table from the dataset
-    let table = get_table_by_dataset(dataset);
-
-    // Create a dynamic values map
     let mut values = std::collections::HashMap::new();
     values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
     values.insert(column.to_string(), value.to_json_value());
 
-    // Convert to JSON for insertion
-    let json_values = serde_json::to_value(values).unwrap();
+    let json_value = serde_json::to_value(values).unwrap();
+    let table = match dataset {
+        "items" => Table::Items,
+        "packets" => Table::Packets,
+        "crdt_messages" => Table::CrdtMessages,
+        // Add other tables as needed
+        _ => panic!("Unknown dataset: {}", dataset),
+    };
 
-    // Use diesel's json insert capabilities
-    diesel::insert_into(table)
-        .values(json_values)
-        .on_conflict(get_id_column(dataset))
-        .do_update()
-        .set(json_values)
-        .execute(tx)
-        .map(|_| ())
+    // Use diesel's json insert capabilities based on dataset
+    match dataset {
+        "packets" => {
+            let insert_packet = match serde_json::from_value::<InsertPacket>(json_value) {
+                Ok(packet) => packet,
+                Err(e) => {
+                    // Convert serde_json::Error to diesel::result::Error
+                    return Err(diesel::result::Error::RollbackTransaction);
+                }
+            };
+            diesel::insert_into(schema::packets::table)
+                .values(insert_packet.clone())
+                .on_conflict(schema::packets::id)
+                .do_update()
+                .set(insert_packet)
+                .execute(tx)
+                .map(|_| ())
+        }
+        _ => panic!("Unknown dataset: {}", dataset),
+    }
 }
 
 fn get_id_column(dataset: &str) -> Id {
-
     match dataset {
         "packets" => Id::Uuid(uuid::Uuid::new_v4()), // Example for UUID-based ID
         _ => panic!("Unknown dataset: {}", dataset),

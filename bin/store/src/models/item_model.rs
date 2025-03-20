@@ -25,7 +25,7 @@ pub struct GetItem {
     pub description: Option<String>,
 }
 
-#[derive(Insertable, Deserialize, Serialize)]
+#[derive(Insertable, Deserialize, Serialize, Clone)]
 #[diesel(table_name = crate::schema::schema::items)]
 pub struct InsertItem {
     pub tombstone: i32,

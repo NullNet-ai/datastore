@@ -18,7 +18,11 @@ pub fn create_messages(
     let row = object
         .get("id") // Ensure it's a string
         .ok_or_else(|| DieselError::NotFound)
-        .map_err(|_| DieselError::QueryBuilderError("Record does not have an id, make sure record has an id".into()))?
+        .map_err(|_| {
+            DieselError::QueryBuilderError(
+                "Record does not have an id, make sure record has an id".into(),
+            )
+        })?
         .to_string();
 
     let messages: Vec<InsertCrdtMessage> = object
@@ -40,10 +44,9 @@ pub fn create_messages(
     Ok::<Vec<InsertCrdtMessage>, DieselError>(messages)
 }
 
-
 pub fn insert_message(
     tx: &mut DbPooledConnection,
-    message: InsertCrdtMessage
+    message: InsertCrdtMessage,
 ) -> Result<usize, DieselError> {
     // Check if a record with the same primary key exists
     let existing = crdt_messages::table
@@ -53,34 +56,29 @@ pub fn insert_message(
         .filter(crdt_messages::column.eq(&message.column))
         .first::<GetCrdtMessage>(tx)
         .optional()?;
-    
+
     match existing {
         // If it exists, update it using the composite primary key
-        Some(_) => {
-            diesel::update(crdt_messages::table)
-                .filter(crdt_messages::timestamp.eq(&message.timestamp))
-                .filter(crdt_messages::group_id.eq(&message.group_id))
-                .filter(crdt_messages::row.eq(&message.row))
-                .filter(crdt_messages::column.eq(&message.column))
-                .set((
-                    crdt_messages::database.eq(message.database),
-                    crdt_messages::dataset.eq(message.dataset),
-                    crdt_messages::client_id.eq(message.client_id),
-                    crdt_messages::value.eq(message.value),
-                    crdt_messages::operation.eq(message.operation),
-                    crdt_messages::hypertable_timestamp.eq(message.hypertable_timestamp),
-                ))
-                .execute(tx)
-        },
+        Some(_) => diesel::update(crdt_messages::table)
+            .filter(crdt_messages::timestamp.eq(&message.timestamp))
+            .filter(crdt_messages::group_id.eq(&message.group_id))
+            .filter(crdt_messages::row.eq(&message.row))
+            .filter(crdt_messages::column.eq(&message.column))
+            .set((
+                crdt_messages::database.eq(message.database),
+                crdt_messages::dataset.eq(message.dataset),
+                crdt_messages::client_id.eq(message.client_id),
+                crdt_messages::value.eq(message.value),
+                crdt_messages::operation.eq(message.operation),
+                crdt_messages::hypertable_timestamp.eq(message.hypertable_timestamp),
+            ))
+            .execute(tx),
         // If it doesn't exist, insert it
-        None => {
-            diesel::insert_into(crdt_messages::table)
-                .values(message)
-                .execute(tx)
-        }
+        None => diesel::insert_into(crdt_messages::table)
+            .values(message)
+            .execute(tx),
     }
 }
-
 
 pub fn compare_messages(
     tx: &mut DbPooledConnection,
@@ -115,7 +113,8 @@ pub fn compare_messages(
 pub fn find_existing_messages<'a>(
     tx: &'a mut DbPooledConnection,
     messages: &'a Vec<InsertCrdtMessage>,
-) -> impl Iterator<Item=Result<(&'a InsertCrdtMessage, Option<GetCrdtMessage>), DieselError>> + 'a {
+) -> impl Iterator<Item = Result<(&'a InsertCrdtMessage, Option<GetCrdtMessage>), DieselError>> + 'a
+{
     messages.iter().map(move |message| {
         // Find the most recent existing message with the same dataset, column, and row
         let existing_message = crdt_messages::table
