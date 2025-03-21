@@ -32,6 +32,7 @@ export const table = pgTable(
     page_image_count: numeric('page_image_count'),
     page_document_count: numeric('page_document_count'),
     page_multimedia_count: numeric('page_multimedia_count'),
+    page_broken_link_count: numeric('page_broken_link_count'),
   },
   config,
 );
