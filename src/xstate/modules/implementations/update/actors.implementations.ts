@@ -3,7 +3,10 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from '../../../../utils/utility.service';
-import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
+import { 
+  DrizzleService, 
+//  SyncService 
+} from '@dna-platform/crdt-lww-postgres';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
@@ -14,7 +17,7 @@ import { LoggerService } from '@dna-platform/common';
 export class UpdateActorsImplementations {
   private db;
   constructor(
-    private readonly syncService: SyncService,
+    //private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly getActorsImplementation: GetActorsImplementations,
     private readonly drizzleService: DrizzleService,
@@ -121,7 +124,7 @@ export class UpdateActorsImplementations {
       if (table_schema.hypertable_timestamp) {
         updated_data.hypertable_timestamp = result.hypertable_timestamp;
       }
-      await this.syncService.update(table, updated_data, id);
+      //this.syncService.update(table, updated_data, id);
       return Promise.resolve({
         payload: {
           success: true,

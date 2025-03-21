@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
-import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
+import { 
+  DrizzleService, 
+//  SyncService 
+} from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
@@ -16,7 +19,7 @@ import { LoggerService } from '@dna-platform/common';
 export class CreateActorsImplementations {
   private db;
   constructor(
-    private readonly syncService: SyncService,
+    //private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly minioService: MinioService,
     private readonly drizzleService: DrizzleService,
@@ -46,7 +49,7 @@ export class CreateActorsImplementations {
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table } = params;
-      const { pluck = 'id', durability = 'hard' } = query;
+      const { pluck = 'id' } = query;
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
@@ -119,11 +122,11 @@ export class CreateActorsImplementations {
         .values(parsed_data)
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
-      if (durability === 'soft') {
-        this.syncService.insert(table, parsed_data);
-      } else {
-        await this.syncService.insert(table, parsed_data);
-      }
+     // if (durability === 'soft') {
+      //  this.syncService.insert(table, parsed_data);
+      //} else {
+        //await this.syncService.insert(table, parsed_data);
+      //}
 
       return Promise.resolve({
         payload: {
