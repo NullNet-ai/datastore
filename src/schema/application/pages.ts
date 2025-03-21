@@ -29,6 +29,9 @@ export const table = pgTable(
     page_hash: text('page_hash'),
     page_accessible_url: text('page_accessible_url'),
     page_accessibility_score: numeric('page_accessibility_score'),
+    page_image_count: numeric('page_image_count'),
+    page_document_count: numeric('page_document_count'),
+    page_multimedia_count: numeric('page_multimedia_count'),
   },
   config,
 );
