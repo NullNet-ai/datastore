@@ -2,25 +2,11 @@ use crate::schema::schema::crdt_messages;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Queryable, Serialize, Deserialize)]
+#[derive(Debug, Insertable, Hash, Eq, PartialEq, Default, Clone, Queryable, Serialize, Deserialize)]
 #[diesel(table_name = crdt_messages)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct GetCrdtMessage {
-    pub database: Option<String>,
-    pub dataset: String,
-    pub group_id: String,
-    pub timestamp: String,
-    pub row: String,
-    pub column: String,
-    pub client_id: String,
-    pub value: String,
-    pub operation: Option<String>,
-    pub hypertable_timestamp: Option<String>,
-}
-
-#[derive(Debug, Insertable, Deserialize, Hash, Eq, PartialEq, Clone)]
-#[diesel(table_name = crdt_messages)]
-pub struct InsertCrdtMessage {
+#[serde(default)]
+pub struct CrdtMessage {
     pub database: Option<String>,
     pub dataset: String,
     pub group_id: String,

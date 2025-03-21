@@ -1,5 +1,5 @@
 use crate::db::DbPooledConnection;
-use crate::models::crdt_message_model::{GetCrdtMessage, InsertCrdtMessage};
+use crate::models::crdt_message_model::CrdtMessage;
 use crate::schema::schema::crdt_messages;
 use crate::sync::hlc::hlc_service;
 use diesel::prelude::*;
@@ -12,7 +12,7 @@ pub fn create_messages(
     record: &Value,
     dataset: &String,
     operation: String,
-) -> Result<Vec<InsertCrdtMessage>, DieselError> {
+) -> Result<Vec<CrdtMessage>, DieselError> {
     let object = record.as_object().expect("Expected a JSON object");
 
     let row = object
@@ -30,10 +30,10 @@ pub fn create_messages(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let messages: Vec<InsertCrdtMessage> = object
+    let messages: Vec<CrdtMessage> = object
         .iter()
         .filter(|(key, value)| *key != "id" && !value.is_null()) // Skip the `id` field itself as it's used for `row`
-        .map(|(key, value)| InsertCrdtMessage {
+        .map(|(key, value)| CrdtMessage {
             database: None,
             dataset: dataset.to_string(),
             group_id: "".to_string(),
@@ -46,19 +46,19 @@ pub fn create_messages(
             hypertable_timestamp: hypertable_timestamp.clone(),
         })
         .collect();
-    Ok::<Vec<InsertCrdtMessage>, DieselError>(messages)
+    Ok::<Vec<CrdtMessage>, DieselError>(messages)
 }
 
 pub fn insert_message(
     tx: &mut DbPooledConnection,
-    message: InsertCrdtMessage,
+    message: CrdtMessage,
 ) -> Result<usize, DieselError> {
     let existing = crdt_messages::table
         .filter(crdt_messages::timestamp.eq(&message.timestamp))
         .filter(crdt_messages::group_id.eq(&message.group_id))
         .filter(crdt_messages::row.eq(&message.row))
         .filter(crdt_messages::column.eq(&message.column))
-        .first::<GetCrdtMessage>(tx)
+        .first::<CrdtMessage>(tx)
         .optional()?;
 
     match existing {
@@ -85,8 +85,8 @@ pub fn insert_message(
 
 pub fn compare_messages(
     tx: &mut DbPooledConnection,
-    messages: Vec<InsertCrdtMessage>,
-) -> Result<Vec<(InsertCrdtMessage, Option<GetCrdtMessage>)>, DieselError> {
+    messages: Vec<CrdtMessage>,
+) -> Result<Vec<(CrdtMessage, Option<CrdtMessage>)>, DieselError> {
     let mut result = Vec::new();
 
     // Use the iterator to process each message pair
@@ -94,7 +94,7 @@ pub fn compare_messages(
         let (msg, existing_msg) = result_item?;
 
         // Clone the message to own it, and pair it with its existing counterpart
-        let owned_msg = InsertCrdtMessage {
+        let owned_msg = CrdtMessage {
             database: msg.database.clone(),
             dataset: msg.dataset.clone(),
             group_id: msg.group_id.clone(),
@@ -115,8 +115,8 @@ pub fn compare_messages(
 }
 pub fn find_existing_messages<'a>(
     tx: &'a mut DbPooledConnection,
-    messages: &'a Vec<InsertCrdtMessage>,
-) -> impl Iterator<Item = Result<(&'a InsertCrdtMessage, Option<GetCrdtMessage>), DieselError>> + 'a
+    messages: &'a Vec<CrdtMessage>,
+) -> impl Iterator<Item=Result<(&'a CrdtMessage, Option<CrdtMessage>), DieselError>> + 'a
 {
     messages.iter().map(move |message| {
         // Find the most recent existing message with the same dataset, column, and row
@@ -126,7 +126,7 @@ pub fn find_existing_messages<'a>(
             .filter(crdt_messages::row.eq(&message.row))
             .order(crdt_messages::timestamp.desc())
             .limit(1)
-            .first::<GetCrdtMessage>(tx)
+            .first::<CrdtMessage>(tx)
             .optional()?;
 
         Ok((message, existing_message))

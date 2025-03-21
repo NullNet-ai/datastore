@@ -1,8 +1,7 @@
 use crate::db::DbPooledConnection;
-use crate::models::crdt_message_model::InsertCrdtMessage;
-use crate::models::packet_model::InsertPacket;
+use crate::models::crdt_message_model::CrdtMessage;
+use crate::models::packet_model::Packet;
 use crate::schema::schema;
-use crate::schema::schema::*;
 use crate::structs::structs::{ColumnValue, Id};
 use crate::table_enum::Table;
 use diesel::Column;
@@ -10,7 +9,7 @@ use diesel::RunQueryDsl;
 
 pub async fn apply(
     tx: &mut DbPooledConnection,
-    message: &InsertCrdtMessage,
+    message: &CrdtMessage,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let row = &message.row;
     let column = &message.column;
@@ -113,7 +112,7 @@ fn insert_with_hypertable_timestamp(
     // Use diesel's json insert capabilities based on dataset
     match dataset {
         "packets" => {
-            let insert_packet = match serde_json::from_value::<InsertPacket>(json_value) {
+            let insert_packet = match serde_json::from_value::<Packet>(json_value) {
                 Ok(packet) => packet,
                 Err(_) => {
                     // Convert serde_json::Error to diesel::result::Error
@@ -156,7 +155,7 @@ fn insert_without_hypertable_timestamp(
     // Use diesel's json insert capabilities based on dataset
     match dataset {
         "packets" => {
-            let insert_packet = match serde_json::from_value::<InsertPacket>(json_value) {
+            let insert_packet = match serde_json::from_value::<Packet>(json_value) {
                 Ok(packet) => packet,
                 Err(e) => {
                     // Convert serde_json::Error to diesel::result::Error

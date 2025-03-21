@@ -1,5 +1,5 @@
 use crate::db::DbPooledConnection;
-use crate::models::crdt_merkle_model::{GetMerkle, ParsedMerkle};
+use crate::models::crdt_merkle_model::{Merkle, ParsedMerkle};
 use crate::schema::schema::crdt_merkles;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -15,7 +15,7 @@ impl MerkleService {
     ) -> Result<Option<ParsedMerkle>, DieselError> {
         let merkles = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(group_id))
-            .load::<GetMerkle>(tx)?;
+            .load::<Merkle>(tx)?;
         if merkles.is_empty() {
             return Ok(None);
         }
@@ -43,7 +43,7 @@ impl MerkleService {
         let merkle = serde_json::to_string(&merkle).unwrap_or_else(|_| "{}".to_string());
         let exists = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(&group_id))
-            .first::<GetMerkle>(tx)
+            .first::<Merkle>(tx)
             .optional()?
             .is_some();
 

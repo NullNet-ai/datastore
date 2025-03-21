@@ -1,13 +1,13 @@
 use crate::db;
 use crate::db::DbPooledConnection;
-use crate::models::crdt_message_model::InsertCrdtMessage;
+use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::hlc_service::HlcService;
 use crate::sync::message_service;
 use crate::sync::message_service::{compare_messages, create_messages};
 use crate::sync::store::store_driver::apply;
-use diesel::Connection;
 use diesel::result::Error as DieselError;
+use diesel::Connection;
 use serde_json::Value;
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
@@ -15,7 +15,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let mut conn = db::get_connection();
 
     // Create messages outside the transaction
-    let messages: Vec<InsertCrdtMessage> =
+    let messages: Vec<CrdtMessage> =
         conn.transaction(|mut tx| create_messages(&mut tx, &row, table, operation))?;
 
     // Then send messages asynchronously
@@ -27,7 +27,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
 
 pub async fn send_messages(
     mut tx: &mut DbPooledConnection,
-    messages: Vec<InsertCrdtMessage>,
+    messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     apply_messages(&mut tx, messages).await?;
     Ok(())
@@ -35,7 +35,7 @@ pub async fn send_messages(
 
 async fn apply_messages(
     mut tx: &mut DbPooledConnection,
-    messages: Vec<InsertCrdtMessage>,
+    messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     //use messageService.compareMessages here
     let existing_messages = compare_messages(&mut tx, messages.clone())?;

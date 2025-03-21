@@ -78,7 +78,7 @@ table! {
         column -> Text,
         client_id -> Text,
         value -> Text,
-        operation -> Nullable<Text>,
+        operation -> Text,
         hypertable_timestamp -> Nullable<Text>,
     }
 }

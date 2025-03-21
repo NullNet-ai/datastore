@@ -5,9 +5,13 @@ use actix_web::{
     Error,
 };
 use futures::future::{ok, Ready};
+use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
+use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::env;
+use serde_json::Value;
 
 // Authentication middleware struct
 pub struct Authentication;
@@ -73,9 +77,21 @@ where
                 Ok(res)
             })
         } else {
-            // If authentication fails, return 401 Unauthorized
+            // If authentication fails, return a JSON error response
+            let error_response = serde_json::json!({
+                "success": false,
+                "message": "Token verification failed: Invalid or expired token"
+            });
+            
             Box::pin(async move {
-                Err(ErrorUnauthorized("Unauthorized"))
+                // Create a proper JSON response with correct content type
+                let json_error = actix_web::HttpResponse::Unauthorized()
+                    .content_type("application/json")
+                    .json(error_response);
+                Err(actix_web::error::InternalError::from_response(
+                    "Unauthorized",
+                    json_error,
+                ).into())
             })
         }
     }
@@ -83,10 +99,32 @@ where
 
 // Function to validate the token
 fn validate_token(token: &str) -> bool {
-    // Implement your token validation logic here
-    // For example, verify JWT token, check against database, etc.
-    // Return true if token is valid, false otherwise
+    // JWT secret - you should store this in an environment variable
+    let jwt_secret = match env::var("JWT_SECRET") {
+        Ok(secret) => secret,
+        Err(_) => {
+            println!("JWT_SECRET environment variable not set");
+            return false;
+        }
+    };
     
-    // This is a placeholder implementation
-    !token.is_empty()
+    // Verify the JWT token
+    let validation = Validation::new(Algorithm::HS256);
+    
+    match decode::<Value>(
+        token,
+        &DecodingKey::from_secret(jwt_secret.as_bytes()),
+        &validation,
+    ) {
+        Ok(_token_data) => {
+            // Token is valid
+            // You can access claims with token_data.claims if needed
+            true
+        }
+        Err(err) => {
+            // Token validation failed
+            println!("Token validation error: {:?}", err);
+            false
+        }
+    }
 }

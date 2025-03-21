@@ -1,4 +1,5 @@
 use actix_web::{web, App, HttpServer};
+use auth::auth_middleware::Authentication;
 use dotenv::dotenv;
 use std::env;
 mod controllers;
@@ -26,7 +27,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .service(web::scope("/api/store").route("/{table}", web::post().to(create_record)))
+            .service(web::scope("/api/store").wrap(Authentication).route("/{table}", web::post().to(create_record)))
     })
         .bind(server_url)?
         .run()
