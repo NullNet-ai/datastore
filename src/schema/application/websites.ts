@@ -30,7 +30,7 @@ export const table = pgTable(
     hostname: text('hostname'),
     accessible_url: text('accessible_url'),
     website_status: text('website_status'),
-    website_auto_fixes: boolean('website_auto_fixes').default(false),
+    website_auto_fixes: boolean('website_auto_fixes'),
   },
   config,
 );

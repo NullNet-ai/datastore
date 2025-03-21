@@ -1,8 +1,6 @@
 import {
   pgTable,
   text,
-  date,
-  time,
   boolean,
   numeric,
 } from 'drizzle-orm/pg-core';
@@ -51,7 +49,7 @@ export const table = pgTable(
     audit_end_time: text('audit_end_time'),
     audit_schedule_type: text('audit_schedule_type'),
     audit_status: text('audit_status'),
-    audit_auto_fixes: boolean('audit_auto_fixes').default(false),
+    audit_auto_fixes: boolean('audit_auto_fixes'),
     audit_wcag_standards: text('audit_wcag_standards').array(),
     audit_accessibility_score: numeric('audit_accessibility_score'),
     audit_type: text('audit_type'),
