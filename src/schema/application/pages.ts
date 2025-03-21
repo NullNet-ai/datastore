@@ -10,6 +10,12 @@ export enum E_PAGE_CATEGORY {
   ACCESSIBLE = 'ACCESSIBLE',
 }
 
+export enum E_CAPTURE {
+  Auto = 'Auto',
+  Manual = 'Manual',
+}
+
+
 const config = getConfigDefaults.byIndex('pages');
 
 export const table = pgTable(
@@ -28,11 +34,12 @@ export const table = pgTable(
     category: text('category'),
     page_hash: text('page_hash'),
     page_accessible_url: text('page_accessible_url'),
-    page_accessibility_score: numeric('page_accessibility_score'),
-    page_image_count: numeric('page_image_count'),
-    page_document_count: numeric('page_document_count'),
-    page_multimedia_count: numeric('page_multimedia_count'),
-    page_broken_link_count: numeric('page_broken_link_count'),
+    page_accessibility_score: numeric('page_accessibility_score').default(0),
+    page_image_count: numeric('page_image_count').default(0),
+    page_document_count: numeric('page_document_count').default(0),
+    page_multimedia_count: numeric('page_multimedia_count').default(0),
+    page_broken_link_count: numeric('page_broken_link_count').default(0),
+    capture : text('capture'),
   },
   config,
 );

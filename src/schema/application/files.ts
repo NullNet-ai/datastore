@@ -23,7 +23,9 @@ export const table = pgTable(
     downloaded_by: text(),
     etag: text(),
     versionId: text(),
-    download_path: text(),
+    downloadPath: text(),
+    presignedUrl: text(),
+    presignedUrlExpiry: text(),
   },
   config,
 );
