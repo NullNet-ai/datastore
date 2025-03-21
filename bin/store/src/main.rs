@@ -1,4 +1,4 @@
-use actix_web::{App, HttpServer, web};
+use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
 use std::env;
 mod controllers;
@@ -8,6 +8,7 @@ mod schema;
 mod structs;
 mod sync;
 mod table_enum;
+mod auth;
 
 use controllers::store_controller::create_record;
 
@@ -27,7 +28,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .service(web::scope("/api/store").route("/{table}", web::post().to(create_record)))
     })
-    .bind(server_url)?
-    .run()
-    .await
+        .bind(server_url)?
+        .run()
+        .await
 }

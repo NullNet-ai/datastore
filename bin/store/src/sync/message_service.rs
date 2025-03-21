@@ -16,7 +16,7 @@ pub fn create_messages(
     let object = record.as_object().expect("Expected a JSON object");
 
     let row = object
-        .get("id") // Ensure it's a string
+        .get("id")
         .ok_or_else(|| DieselError::NotFound)
         .map_err(|_| {
             DieselError::QueryBuilderError(
@@ -24,6 +24,11 @@ pub fn create_messages(
             )
         })?
         .to_string();
+
+    let hypertable_timestamp = object
+        .get("hypertable_timestamp")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let messages: Vec<InsertCrdtMessage> = object
         .iter()
@@ -38,7 +43,7 @@ pub fn create_messages(
             client_id: "client_id_placeholder".to_string(),
             value: value.to_string(),
             operation: operation.clone(),
-            hypertable_timestamp: None,
+            hypertable_timestamp: hypertable_timestamp.clone(),
         })
         .collect();
     Ok::<Vec<InsertCrdtMessage>, DieselError>(messages)
@@ -48,7 +53,6 @@ pub fn insert_message(
     tx: &mut DbPooledConnection,
     message: InsertCrdtMessage,
 ) -> Result<usize, DieselError> {
-    // Check if a record with the same primary key exists
     let existing = crdt_messages::table
         .filter(crdt_messages::timestamp.eq(&message.timestamp))
         .filter(crdt_messages::group_id.eq(&message.group_id))
@@ -58,7 +62,6 @@ pub fn insert_message(
         .optional()?;
 
     match existing {
-        // If it exists, update it using the composite primary key
         Some(_) => diesel::update(crdt_messages::table)
             .filter(crdt_messages::timestamp.eq(&message.timestamp))
             .filter(crdt_messages::group_id.eq(&message.group_id))

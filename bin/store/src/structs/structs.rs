@@ -22,9 +22,9 @@ pub struct CreateRequestBody {
 
 impl CreateRequestBody {
     // Process record with common fields and return a Value directly
-    pub fn process_record(&mut self) {
+    pub fn process_record(&mut self, operation: &str) {
         // // Add common fields to the record
-        self.add_common_fields();
+        self.add_common_fields(operation);
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
@@ -43,21 +43,37 @@ impl CreateRequestBody {
     }
 
     // Helper method to add common fields
-    fn add_common_fields(&mut self) {
+    fn add_common_fields(&mut self, operation: &str) {
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
         let time_str = now.format("%H:%M:%S").to_string();
 
         // Set common fields
-        self.record["tombstone"] = json!(0);
-        self.record["status"] = json!("active");
-        self.record["version"] = json!(1);
-        self.record["created_date"] = json!(date_str);
-        self.record["created_time"] = json!(time_str);
-        self.record["updated_date"] = json!(date_str);
-        self.record["updated_time"] = json!(time_str);
 
+        match operation {
+            "create" => {
+                self.record["status"] = json!("Active");
+                self.record["created_date"] = json!(date_str);
+                self.record["created_time"] = json!(time_str);
+                self.record["updated_date"] = json!(date_str);
+                self.record["updated_time"] = json!(time_str);
+                self.record["version"] = json!(1);
+                self.record["tombstone"] = json!(0);
+            },
+            "update" => {
+                self.record["updated_date"] = json!(date_str);
+                self.record["updated_time"] = json!(time_str);
+
+            },
+            "delete" => {
+                self.record["status"] = json!("Deleted");
+                self.record["tombstone"] = json!(1);
+            },
+            _ => {
+                // Handle other operations if needed
+            },
+        }
         // Generate UUID for id if not present (as text)
         if !self.record.get("id").is_some() {
             self.record["id"] = json!(uuid_crate::new_v4().to_string());

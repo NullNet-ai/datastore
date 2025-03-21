@@ -70,7 +70,7 @@ pub async fn create_record(
     let table_name = table.into_inner();
     let log_table = table_name.clone();
     let inner_log_table = log_table.clone();
-    request.process_record();
+    request.process_record("create");
     let processed_record = request.record.clone();
     let pluck_fields: Vec<String> = query
         .pluck

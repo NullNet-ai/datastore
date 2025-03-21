@@ -34,7 +34,6 @@ pub async fn apply(
         let timestamp = chrono::DateTime::parse_from_rfc3339(ht_timestamp)
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
-        // Insert or update with hypertable timestamp
         match insert_with_hypertable_timestamp(tx, dataset, row, column, &value, &timestamp) {
             Ok(_) => return Ok(()),
             Err(e) => {

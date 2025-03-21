@@ -20,7 +20,7 @@ impl Table {
     pub fn insert_item(
         &self,
         conn: &mut PgConnection,
-        new_item: InsertItem,
+        mut new_item: InsertItem,
     ) -> Result<String, DieselError> {
         match self {
             Table::Items => {
@@ -39,10 +39,13 @@ impl Table {
     pub fn insert_packet(
         &self,
         conn: &mut PgConnection,
-        new_packet: InsertPacket,
+        mut new_packet: InsertPacket,
     ) -> Result<String, DieselError> {
         match self {
             Table::Packets => {
+                let formatted_time = new_packet.timestamp.format("%Y-%m-%dT%H:%M:%S").to_string();
+                new_packet.hypertable_timestamp = formatted_time;
+
                 let result = diesel::insert_into(packets::table)
                     .values(&new_packet)
                     .get_result::<GetPacket>(conn)?;
@@ -57,7 +60,7 @@ impl Table {
     pub fn insert_crdt_message(
         &self,
         conn: &mut PgConnection,
-        new_crdt_message: InsertCrdtMessage,
+        mut new_crdt_message: InsertCrdtMessage,
     ) -> Result<String, DieselError> {
         match self {
             Table::CrdtMessages => {
