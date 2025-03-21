@@ -10,9 +10,9 @@ export const table = pgTable(
   'crawls',
   {
     ...system_fields,
+    id: text('id').primaryKey(),
     website_id: text('website_id'),
     audit_id: text('audit_id'),
-    id: text('id').primaryKey(),
     crawl_status: text('crawl_status'),
     crawl_start_date: text('crawl_start_date'),
     crawl_start_time: text('crawl_start_time'),

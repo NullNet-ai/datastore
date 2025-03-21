@@ -10,10 +10,10 @@ export const table = pgTable(
   'accessibility_scans',
   {
     ...system_fields,
+    id: text('id').primaryKey(),
     website_id: text('website_id'),
     audit_id: text('audit_id'),
     page_id: text('page_id'),
-    id: text('id').primaryKey(),
     accessibility_scan_status: text('accessibility_scan_status'),
     accessibility_scan_start_date: text('accessibility_scan_start_date'),
     accessibility_scan_start_time: text('accessibility_scan_start_time'),

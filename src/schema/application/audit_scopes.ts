@@ -10,7 +10,7 @@ export const table = pgTable(
   'audit_scopes',
   {
     ...system_fields,
-    id: text('id').primaryKey().primaryKey(),
+    id: text('id').primaryKey(),
     name: text('name'),
   },
   config,
