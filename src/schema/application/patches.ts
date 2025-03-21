@@ -10,6 +10,14 @@ export enum E_PATCH_CATEGORY {
   AUTOMATED = 'AUTOMATED',
 }
 
+export enum E_PATCH_STATUS {
+  SCHEDULED = 'SCHEDULED',
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  COMPLETED_WITH_ERRORS = 'COMPLETED_WITH_ERRORS',
+}
 const config = getConfigDefaults.byIndex('patches');
 
 export const table = pgTable(
