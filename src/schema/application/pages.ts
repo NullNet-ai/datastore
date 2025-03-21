@@ -1,4 +1,4 @@
-import { pgTable, text, json } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -22,8 +22,8 @@ export const table = pgTable(
     id: text('id').primaryKey(),
     page_title: text('page_title'),
     page_url: text('page_url'),
-    page_links: text('page_links').array(),
-    page_headers: json('page_headers'),
+    page_links: text('page_links'),
+    page_headers: text('page_headers'),
     screenshot_url: text('screenshot_url'),
     category: text('category'),
     page_hash: text('page_hash'),
