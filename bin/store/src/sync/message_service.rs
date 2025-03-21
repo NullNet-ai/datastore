@@ -3,7 +3,7 @@ use crate::models::crdt_message_model::CrdtMessage;
 use crate::schema::schema::crdt_messages;
 use crate::sync::hlc::hlc_service;
 use diesel::prelude::*;
-
+use diesel::upsert::excluded;
 use diesel::result::Error as DieselError;
 use serde_json::Value;
 
@@ -51,36 +51,30 @@ pub fn create_messages(
 
 pub fn insert_message(
     tx: &mut DbPooledConnection,
-    message: CrdtMessage,
+    mut message: CrdtMessage,  // Changed to mutable
 ) -> Result<usize, DieselError> {
-    let existing = crdt_messages::table
-        .filter(crdt_messages::timestamp.eq(&message.timestamp))
-        .filter(crdt_messages::group_id.eq(&message.group_id))
-        .filter(crdt_messages::row.eq(&message.row))
-        .filter(crdt_messages::column.eq(&message.column))
-        .first::<CrdtMessage>(tx)
-        .optional()?;
+    // Clean fields once upfront
+    message.row = message.row.trim_matches('"').to_string();
+    message.value = message.value.trim_matches('"').to_string();
 
-    match existing {
-        Some(_) => diesel::update(crdt_messages::table)
-            .filter(crdt_messages::timestamp.eq(&message.timestamp))
-            .filter(crdt_messages::group_id.eq(&message.group_id))
-            .filter(crdt_messages::row.eq(&message.row))
-            .filter(crdt_messages::column.eq(&message.column))
-            .set((
-                crdt_messages::database.eq(message.database),
-                crdt_messages::dataset.eq(message.dataset),
-                crdt_messages::client_id.eq(message.client_id),
-                crdt_messages::value.eq(message.value),
-                crdt_messages::operation.eq(message.operation),
-                crdt_messages::hypertable_timestamp.eq(message.hypertable_timestamp),
-            ))
-            .execute(tx),
-        // If it doesn't exist, insert it
-        None => diesel::insert_into(crdt_messages::table)
-            .values(message)
-            .execute(tx),
-    }
+    diesel::insert_into(crdt_messages::table)
+        .values(&message)
+        .on_conflict((
+            crdt_messages::timestamp,
+            crdt_messages::group_id,
+            crdt_messages::row,
+            crdt_messages::column,
+        ))
+        .do_update()
+        .set((
+            crdt_messages::database.eq(excluded(crdt_messages::database)),
+            crdt_messages::dataset.eq(excluded(crdt_messages::dataset)),
+            crdt_messages::client_id.eq(excluded(crdt_messages::client_id)),
+            crdt_messages::value.eq(excluded(crdt_messages::value)),
+            crdt_messages::operation.eq(excluded(crdt_messages::operation)),
+            crdt_messages::hypertable_timestamp.eq(excluded(crdt_messages::hypertable_timestamp)),
+        ))
+        .execute(tx)
 }
 
 pub fn compare_messages(

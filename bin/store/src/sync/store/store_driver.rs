@@ -1,10 +1,11 @@
+use std::collections::HashMap;
+
 use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::models::packet_model::Packet;
 use crate::schema::schema;
-use crate::structs::structs::{ColumnValue, Id};
-use crate::table_enum::Table;
-use diesel::Column;
+use crate::structs::structs::{ColumnValue};
+use serde_json::Value;
 use diesel::RunQueryDsl;
 
 pub async fn apply(
@@ -28,12 +29,19 @@ pub async fn apply(
         ColumnValue::String(message.value.clone())
     };
     // Handle hypertable timestamp
+    let mut values = std::collections::HashMap::new();
+    values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
+    values.insert(column.to_string(), value.to_json_value());
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp
         let timestamp = chrono::DateTime::parse_from_rfc3339(ht_timestamp)
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        values.insert(
+            "timestamp".to_string(),
+            serde_json::Value::String(timestamp.to_string()),
+        );
 
-        match insert_with_hypertable_timestamp(tx, dataset, row, column, &value, &timestamp) {
+        match insert_with_hypertable_timestamp(tx, dataset, &values,) {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
@@ -42,7 +50,7 @@ pub async fn apply(
         }
     } else {
         // Insert or update without hypertable timestamp
-        match insert_without_hypertable_timestamp(tx, dataset, row, column, &value) {
+        match insert_without_hypertable_timestamp(tx, dataset, &values) {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
@@ -86,30 +94,11 @@ fn process_pg_array(value: &str) -> Result<Vec<String>, Box<dyn std::error::Erro
 fn insert_with_hypertable_timestamp(
     tx: &mut DbPooledConnection,
     dataset: &str,
-    row: &str,
-    column: &str,
-    value: &ColumnValue,
-    timestamp: &chrono::DateTime<chrono::FixedOffset>,
+    values: &HashMap<String,Value>,
 ) -> Result<(), diesel::result::Error> {
-    // Create a dynamic values map
-    let mut values = std::collections::HashMap::new();
-    values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
-    values.insert(
-        "timestamp".to_string(),
-        serde_json::Value::String(timestamp.to_string()),
-    );
-    values.insert(column.to_string(), value.to_json_value());
 
     let json_value = serde_json::to_value(values).unwrap();
-    let table = match dataset {
-        "items" => Table::Items,
-        "packets" => Table::Packets,
-        "crdt_messages" => Table::CrdtMessages,
-        // Add other tables as needed
-        _ => panic!("Unknown dataset: {}", dataset),
-    };
 
-    // Use diesel's json insert capabilities based on dataset
     match dataset {
         "packets" => {
             let insert_packet = match serde_json::from_value::<Packet>(json_value) {
@@ -122,7 +111,7 @@ fn insert_with_hypertable_timestamp(
 
             diesel::insert_into(schema::packets::table)
                 .values(insert_packet.clone())
-                .on_conflict((schema::packets::id, schema::packets::timestamp))
+                .on_conflict((schema::packets::id))
                 .do_update()
                 .set(insert_packet)
                 .execute(tx)
@@ -135,24 +124,11 @@ fn insert_with_hypertable_timestamp(
 fn insert_without_hypertable_timestamp(
     tx: &mut DbPooledConnection,
     dataset: &str,
-    row: &str,
-    column: &str,
-    value: &ColumnValue,
+    values:  &HashMap<String,Value>,
 ) -> Result<(), diesel::result::Error> {
-    let mut values = std::collections::HashMap::new();
-    values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
-    values.insert(column.to_string(), value.to_json_value());
 
     let json_value = serde_json::to_value(values).unwrap();
-    let table = match dataset {
-        "items" => Table::Items,
-        "packets" => Table::Packets,
-        "crdt_messages" => Table::CrdtMessages,
-        // Add other tables as needed
-        _ => panic!("Unknown dataset: {}", dataset),
-    };
 
-    // Use diesel's json insert capabilities based on dataset
     match dataset {
         "packets" => {
             let insert_packet = match serde_json::from_value::<Packet>(json_value) {
@@ -170,21 +146,6 @@ fn insert_without_hypertable_timestamp(
                 .execute(tx)
                 .map(|_| ())
         }
-        _ => panic!("Unknown dataset: {}", dataset),
-    }
-}
-
-fn get_id_column(dataset: &str) -> Id {
-    match dataset {
-        "packets" => Id::Uuid(uuid::Uuid::new_v4()), // Example for UUID-based ID
-        _ => panic!("Unknown dataset: {}", dataset),
-    }
-}
-
-fn get_timestamp_column(dataset: &str) -> impl Column {
-    match dataset {
-        "packets" => schema::packets::timestamp,
-        // Add more tables as needed
         _ => panic!("Unknown dataset: {}", dataset),
     }
 }

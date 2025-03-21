@@ -1,9 +1,13 @@
 use diesel::prelude::*;
-use diesel::query_builder::{InsertStatement, QueryId};
+use diesel::query_builder::{InsertStatement};
 use diesel::query_dsl::LoadQuery;
 use diesel::result::Error as DieselError;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json;
+use std::collections::HashMap;
+use serde_json::Value;
+use crate::db::DbPooledConnection;
+
 
 #[derive(Debug)]
 pub enum Table {
@@ -43,4 +47,8 @@ impl Table {
         // Convert the result to a JSON string
         Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
     }
+
 }
+
+
+

@@ -6,7 +6,6 @@ use actix_web::{
 };
 use futures::future::{ok, Ready};
 use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
-use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -117,8 +116,6 @@ fn validate_token(token: &str) -> bool {
         &validation,
     ) {
         Ok(_token_data) => {
-            // Token is valid
-            // You can access claims with token_data.claims if needed
             true
         }
         Err(err) => {
