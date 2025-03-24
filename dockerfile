@@ -1,8 +1,7 @@
 FROM node:20
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-RUN apt update
+RUN apt-get update
 RUN apt-get install nano python3 make g++ postgresql-client -y
-RUN apt autoremove -y
 RUN npm install -g pm2
 RUN mkdir upload
 
