@@ -1,7 +1,7 @@
 FROM node:22
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-RUN apt-get update
-RUN apt-get install nano python3 make g++ postgresql-client -y
+RUN apt update
+RUN apt install nano python3 make g++ postgresql-client -y
 RUN npm install -g pm2
 RUN mkdir upload
 
