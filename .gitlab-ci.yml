@@ -3,8 +3,6 @@ stages:
 
 master_build:
   stage: build
-  tags:
-    - 'runner-60-1-13'
   variables:
     REGISTRY_ADDRESS: 'registry.dnadev.net'
     REGISTRY_USERNAME: 'dna'
