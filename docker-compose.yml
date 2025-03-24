@@ -20,7 +20,7 @@ services:
 #      - timescale-data:/var/lib/postgresql/data
     restart: always
   datastore:
-    image: datastore:pg 
+    image: registry.dnamicro.com/wa-datastore:pg 
     networks:
       - internal
       - frontend
@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: dockerfile
       #command: 'npm run drizzle:generate'
-      # command: 'npm run drizzle:migrate'
+      #  command: 'npm run drizzle:migrate'
     #ports:
     #  - 5001:5001
     #  - 6000:6000

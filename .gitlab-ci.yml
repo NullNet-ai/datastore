@@ -1,0 +1,22 @@
+stages:
+  - build
+
+master_build:
+  stage: build
+  tags:
+    - 'runner-60-1-13'
+  variables:
+    REGISTRY_ADDRESS: 'registry.dnadev.net'
+    REGISTRY_USERNAME: 'dna'
+    REGISTRY_PASSWORD: 'aBGioazrbkrFvG5XSdgB'
+    PROJECT_IMAGE_PREFIX: 'wa'
+  script:
+    - 'docker login $REGISTRY_ADDRESS -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD'
+    - "docker build -t $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID -f dockerfile \
+      --build-arg PROJECT=$CI_PROJECT_NAME ."
+    - 'docker tag $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID $REGISTRY_ADDRESS/$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
+    - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID'
+    - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
+  only:
+    - 'development'
+    - 'qa'
