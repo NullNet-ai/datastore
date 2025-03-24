@@ -11,6 +11,7 @@ pub struct CrdtMessage {
     pub dataset: String,
     pub group_id: String,
     pub timestamp: String,
+    #[serde(flatten, skip_serializing_if = "String::is_empty")]
     pub row: String,
     pub column: String,
     pub client_id: String,
@@ -28,3 +29,6 @@ pub struct UpdateCrdtMessage {
     pub operation: Option<String>,
     pub hypertable_timestamp: Option<String>,
 }
+
+
+//skip serializing when field is none
