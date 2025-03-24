@@ -18,5 +18,6 @@ master_build:
     - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID'
     - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
   only:
+    - 'development-wa'
     - 'development'
     - 'qa'
