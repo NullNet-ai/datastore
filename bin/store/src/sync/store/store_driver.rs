@@ -1,11 +1,6 @@
-use std::collections::HashMap;
 use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::CrdtMessage;
-use crate::models::packet_model::Packet;
-use crate::schema::schema;
 use crate::structs::structs::{ColumnValue};
-use serde_json::Value;
-use diesel::RunQueryDsl;
 use crate::table_enum::Table;
 
 
@@ -95,63 +90,4 @@ fn process_pg_array(value: &str) -> Result<Vec<String>, Box<dyn std::error::Erro
         .collect();
 
     Ok(processed)
-}
-
-fn insert_with_hypertable_timestamp(
-    tx: &mut DbPooledConnection,
-    dataset: &str,
-    values: &HashMap<String,Value>,
-) -> Result<(), diesel::result::Error> {
-
-    let json_value = serde_json::to_value(values).unwrap();
-
-    match dataset {
-        "packets" => {
-            let insert_packet = match serde_json::from_value::<Packet>(json_value) {
-                Ok(packet) => packet,
-                Err(_) => {
-                    // Convert serde_json::Error to diesel::result::Error
-                    return Err(diesel::result::Error::RollbackTransaction);
-                }
-            };
-
-            diesel::insert_into(schema::packets::table)
-                .values(insert_packet.clone())
-                .on_conflict((schema::packets::id, schema::packets::timestamp))
-                .do_update()
-                .set(insert_packet)
-                .execute(tx)
-                .map(|_| ())
-        }
-        _ => panic!("Unknown dataset: {}", dataset),
-    }
-}
-
-fn insert_without_hypertable_timestamp(
-    tx: &mut DbPooledConnection,
-    dataset: &str,
-    values:  &HashMap<String,Value>,
-) -> Result<(), diesel::result::Error> {
-
-    let json_value = serde_json::to_value(values).unwrap();
-
-    match dataset {
-        "packets" => {
-            let insert_packet = match serde_json::from_value::<Packet>(json_value) {
-                Ok(packet) => packet,
-                Err(e) => {
-                    // Convert serde_json::Error to diesel::result::Error
-                    return Err(diesel::result::Error::RollbackTransaction);
-                }
-            };
-            diesel::insert_into(schema::packets::table)
-                .values(insert_packet.clone())
-                .on_conflict(schema::packets::id)
-                .do_update()
-                .set(insert_packet)
-                .execute(tx)
-                .map(|_| ())
-        }
-        _ => panic!("Unknown dataset: {}", dataset),
-    }
 }
