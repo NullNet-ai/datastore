@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::models::packet_model::Packet;
@@ -7,6 +6,8 @@ use crate::schema::schema;
 use crate::structs::structs::{ColumnValue};
 use serde_json::Value;
 use diesel::RunQueryDsl;
+use crate::table_enum::Table;
+
 
 pub async fn apply(
     tx: &mut DbPooledConnection,
@@ -16,7 +17,6 @@ pub async fn apply(
     let column = &message.column;
     let dataset = &message.dataset;
     let hypertable_timestamp = &message.hypertable_timestamp;
-    let operation = &message.operation;
 
     let value = if is_plural_column(column) {
         ColumnValue::Array(process_pg_array(&message.value)?)
@@ -32,6 +32,12 @@ pub async fn apply(
     let mut values = std::collections::HashMap::new();
     values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
     values.insert(column.to_string(), value.to_json_value());
+    let table = Table::from_str(dataset.as_str())
+        .ok_or_else(|| Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("Unknown table: {}", dataset)
+        )))?;
+
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp
         let timestamp = chrono::DateTime::parse_from_rfc3339(ht_timestamp)
@@ -41,7 +47,8 @@ pub async fn apply(
             serde_json::Value::String(timestamp.to_string()),
         );
 
-        match insert_with_hypertable_timestamp(tx, dataset, &values,) {
+        
+        match table.upsert_record_with_id_timestamp(tx, &values,) {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
@@ -50,7 +57,7 @@ pub async fn apply(
         }
     } else {
         // Insert or update without hypertable timestamp
-        match insert_without_hypertable_timestamp(tx, dataset, &values) {
+        match table.upsert_record_with_id(tx, &values) {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
@@ -59,7 +66,6 @@ pub async fn apply(
         }
     }
 
-    Ok(())
 }
 
 fn is_plural_column(column: &str) -> bool {
@@ -111,7 +117,7 @@ fn insert_with_hypertable_timestamp(
 
             diesel::insert_into(schema::packets::table)
                 .values(insert_packet.clone())
-                .on_conflict((schema::packets::id))
+                .on_conflict((schema::packets::id, schema::packets::timestamp))
                 .do_update()
                 .set(insert_packet)
                 .execute(tx)

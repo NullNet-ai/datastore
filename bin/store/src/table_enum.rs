@@ -9,6 +9,8 @@ use serde_json;
 use serde_json::Value;
 use crate::models::packet_model::Packet;
 use crate::schema::schema::packets::dsl::packets;
+use std::collections::HashMap;
+
 
 #[derive(Debug)]
 pub enum Table {
@@ -29,7 +31,7 @@ impl Table {
         }
     }
 
-    pub fn insert_record<'a, T, M, U>(
+    pub fn insert_record_generic<'a, T, M, U>(
         &self,
         conn: &mut PgConnection,
         table: T,
@@ -49,19 +51,71 @@ impl Table {
         Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
     }
 
-    pub fn upsert_record(
+
+    pub fn insert_record(
         &self,
         conn: &mut PgConnection,
         record: Value,
-    ) -> Result<(), DieselError> {
+    ) -> Result<String, DieselError> {
         match self {
             Table::Packets => {
                 let value: Packet = serde_json::from_value(record).map_err(|e| {
                     DieselError::DeserializationError(Box::new(e))
                 })?;
+                let result= diesel::insert_into(packets::table())
+                .values(value)
+                .get_result::<Packet>(conn)?;
+            Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
+            }
+            _ => panic!(),
+        }
+    }
+
+    pub fn upsert_record_with_id(
+        &self,
+        conn: &mut PgConnection,
+        record: &HashMap<String,Value>,
+    ) -> Result<(), DieselError> {
+        let json_value = serde_json::to_value(record).unwrap();
+        match self {
+            Table::Packets => {
+                let value = match serde_json::from_value::<Packet>(json_value) {
+                    Ok(packet) => packet,
+                    Err(_) => {
+                        // Convert serde_json::Error to diesel::result::Error
+                        return Err(diesel::result::Error::RollbackTransaction);
+                    }
+                };
                 diesel::insert_into(packets::table())
                     .values(value.clone())
-                    .on_conflict(schema::packets::id)
+                    .on_conflict((schema::packets::id, schema::packets::timestamp))
+                    .do_update()
+                    .set(value)
+                    .execute(conn)
+                    .map(|_| ())
+            }
+            _ => panic!(),
+        }
+    }
+
+    pub fn upsert_record_with_id_timestamp(
+        &self,
+        conn: &mut PgConnection,
+        record: &HashMap<String,Value>,
+    ) -> Result<(), DieselError> {
+        let json_value = serde_json::to_value(record).unwrap();
+        match self {
+            Table::Packets => {
+                let value = match serde_json::from_value::<Packet>(json_value) {
+                    Ok(packet) => packet,
+                    Err(_) => {
+                        // Convert serde_json::Error to diesel::result::Error
+                        return Err(diesel::result::Error::RollbackTransaction);
+                    }
+                };
+                diesel::insert_into(packets::table())
+                    .values(value.clone())
+                    .on_conflict((schema::packets::id, schema::packets::timestamp))
                     .do_update()
                     .set(value)
                     .execute(conn)

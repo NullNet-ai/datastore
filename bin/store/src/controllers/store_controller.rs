@@ -1,14 +1,9 @@
 use crate::db;
-use crate::models::item_model::Item;
-use crate::models::packet_model::Packet;
-use crate::schema::schema::items::dsl::items;
-use crate::schema::schema::packets::dsl::packets;
 use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
-use diesel::associations::HasTable;
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -91,39 +86,8 @@ pub async fn create_record(
         })?;
 
         // The insert_query function now returns a string directly
-        match table {
-            Table::Items => {
-                let parsed_item: Item = serde_json::from_value(processed_record.clone())
-                    .map_err(|e| ApiError {
-                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
-                        message: format!("Failed to parse item: {}", e),
-                    })?;
-                table
-                    .insert_record::<_, _, Item>(&mut conn, items::table(), parsed_item)
-                    .map_err(ApiError::from)
-            }
-            Table::Packets => {
-                let mut modified_record = processed_record.clone();
-                if let Some(timestamp) = modified_record.get("timestamp") {
-                    modified_record["hypertable_timestamp"] = timestamp.clone();
-                }
-
-                let parsed_packet: Packet = serde_json::from_value(modified_record.clone())
-                    .map_err(|e| ApiError {
-                        status: http::StatusCode::UNPROCESSABLE_ENTITY.as_u16(),
-                        message: format!("Failed to parse packet: {}", e),
-                    })?;
-                table
-                    .insert_record::<_, _, Packet>(&mut conn, packets::table(), parsed_packet)
-                    .map_err(ApiError::from)
-            }
-            _ => {
-                return Err(ApiError {
-                    status: http::StatusCode::BAD_REQUEST.as_u16(),
-                    message: format!("Unknown table: {}", &log_table),
-                });
-            } // We've already checked this above
-        }
+        table.insert_record(&mut conn, processed_record.clone())
+            .map_err(|e| ApiError::from(e))
     })
         .await
         .map_err(ApiError::from);
