@@ -53,7 +53,7 @@ export class CreateActorsImplementations {
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
-      if (!body.entity_prefix) {
+      if (!body.entity_prefix && table != 'files') {
         return Promise.reject({
           payload: {
             success: false,
