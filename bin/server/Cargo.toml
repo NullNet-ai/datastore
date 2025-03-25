@@ -1,0 +1,19 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2024"
+
+authors = [
+    "Kashan Ali Khalid <kashankhalid@dnamicro.com>"
+]
+
+[dependencies]
+actix-web = "4.0"
+dotenv = "0.15"
+diesel = { version = "2.1.0", features = ["postgres", "r2d2", "uuid", "chrono"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+r2d2 = "0.8"
+cargo-make = "0.35.6"
+hlc = { path = "../../libs/hlc" }
+merkle = { path = "../../libs/merkle" }

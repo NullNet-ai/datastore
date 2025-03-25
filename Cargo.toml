@@ -3,7 +3,7 @@ members = [
     "libs/hlc",
     "libs/merkle",
     "bin/main"
-, "bin/store"]
+, "bin/store", "bin/server"]
 resolver = '2'
 
 
