@@ -42,6 +42,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id').primaryKey(),
     website_id: text('website_id'),
+    accessible_url: text('accessible_url'),
     audit_scopes: text('audit_scopes'),
     audit_start_date: text('audit_start_date'),
     audit_start_time: text('audit_start_time'),
