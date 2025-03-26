@@ -1,9 +1,4 @@
-import {
-  pgTable,
-  text,
-  boolean,
-  numeric,
-} from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean, numeric } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -42,6 +37,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id').primaryKey(),
     website_id: text('website_id'),
+    accessible_url: text('accessible_url'),
     audit_scopes: text('audit_scopes'),
     audit_start_date: text('audit_start_date'),
     audit_start_time: text('audit_start_time'),
@@ -53,6 +49,8 @@ export const table = pgTable(
     audit_wcag_standards: text('audit_wcag_standards').array(),
     audit_accessibility_score: numeric('audit_accessibility_score'),
     audit_type: text('audit_type'),
+    audit_protocol: text('audit_protocol'),
+    audit_hostname: text('audit_hostname'),
   },
   config,
 );
