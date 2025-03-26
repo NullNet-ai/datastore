@@ -31,6 +31,8 @@ export const table = pgTable(
     accessible_url: text('accessible_url'),
     website_status: text('website_status'),
     website_auto_fixes: boolean('website_auto_fixes'),
+    website_last_audit_date: text('website_last_audit_date'),
+    website_last_audit_time: text('website_next_audit_time'),
   },
   config,
 );

@@ -15,11 +15,11 @@ export const table = pgTable(
   'accessibility_reports',
   {
     ...system_fields,
-    id: text('id').primaryKey(),
     website_id: text('website_id'),
     audit_id: text('audit_id'),
     page_id: text('page_id'),
     accessibility_scan_id: text('accessibility_scan_id'),
+    id: text('id').primaryKey(),
     wcag_rule_id: text('wcag_rule_id'),
     wcag_value: text('wcag_value'),
     path: text('path'),
@@ -33,6 +33,7 @@ export const table = pgTable(
     wcag_help_link: text('wcag_help_link'),
     node_config: text('node_config'),
     wcag_snippet_path: text('wcag_snippet_path'),
+    level: text('level'),
   },
   config,
 );
