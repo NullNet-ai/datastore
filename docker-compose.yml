@@ -56,7 +56,7 @@ services:
       DATABASE: nullnet
       DB_FILE_DIR: 'sql'
       DB_FILE_SQLITE: 'sqlite.db'
-      NODE_ENV: 'local'
+      NODE_ENV: 'development'
       DEBUG: 'false'
       STORAGE_UPLOAD_PATH: './upload'
       STORAGE_ENDPOINT: '10.6.100.1'
@@ -76,7 +76,7 @@ services:
   #   image: timescale/timescaledb:latest-pg14
   #   container_name: rtimescaledb
   #   ports:
-  #     - '54324:5432' # Expose PostgreSQL on port 5432
+  #     - '54324:5432' # xpose PostgreSQL on port 5432
   #   environment:
   #     POSTGRES_USER: admin # Replace with your desired username
   #     POSTGRES_PASSWORD: admin # Replace with your desired password

@@ -32,7 +32,7 @@ async function initialOrganization(
   // default for super admin
   await organization.initialize();
   await organization.initializeDevice();
-  // await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
+  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
   // create own default organization here
   // await organization.initialize({
   //   id: 'company-id',
