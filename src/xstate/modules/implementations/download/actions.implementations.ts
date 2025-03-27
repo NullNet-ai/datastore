@@ -53,6 +53,7 @@ export class DownloadActionsImplementations {
             process.env.STORAGE_BUCKET_NAME,
           org_id,
         );
+
         const dataStream = await this.minio.client
           ?.getObject(bucket_org_name, `${file.id}.${file_type}`)
           .catch((err) => {

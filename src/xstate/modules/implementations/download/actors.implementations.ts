@@ -49,7 +49,6 @@ export class DownloadActorsImplementations {
         body.organization_id = organization_id;
       }
       const [_file] = event?.output?.payload?.data;
-
       if (!_file) throw new NotFoundException('File not found');
       const hasPresignedURL = !!_file.presignedURL;
       if (query.p === '1') {

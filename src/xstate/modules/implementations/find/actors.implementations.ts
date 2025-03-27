@@ -12,6 +12,7 @@ import * as local_schema from '../../../../schema';
 import { asc, desc, sql, SQLWrapper, AnyColumn } from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
+import { EDateFormats } from 'src/utils/utility.types';
 // const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
@@ -137,11 +138,18 @@ export class FindActorsImplementations {
           ];
         }
       });
+      const requested_date_format: string =
+        EDateFormats[date_format] || '%m/%d/%Y';
+
       let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
 
-      let _plucked_fields = Utility.parsePluckedFields(table, _pluck);
+      let _plucked_fields = Utility.parsePluckedFields(
+        table,
+        _pluck,
+        requested_date_format,
+      );
       _plucked_fields = Utility.parseMainConcatenations(
         concatenate_fields,
         table,

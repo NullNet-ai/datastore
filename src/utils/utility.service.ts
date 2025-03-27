@@ -374,14 +374,22 @@ export class Utility {
   public static parsePluckedFields(
     table: string,
     pluck: string[],
+    date_format: string,
+    is_joined?: boolean,
   ): Record<string, any> | null {
-    const table_schema = schema[table];
+    const table_schema = this.checkTable(table).table_schema;
 
+    if (!pluck?.length || !pluck) {
+      return null;
+    }
     const _plucked_fields = pluck.reduce((acc, field) => {
+      const _field = is_joined ? `"${table}"."${field}"` : field;
       if (table_schema[field]) {
         return {
           ...acc,
-          [field]: table_schema[field],
+          [field]: field.endsWith('_date')
+            ? sql.raw(`strftime('${date_format}', ${_field})`)
+            : table_schema[field],
         };
       }
       return acc;
@@ -392,6 +400,7 @@ export class Utility {
     }
     return _plucked_fields;
   }
+
   public static getPopulatedQueryFrom(sql_query: {
     sql: string;
     params: any[];

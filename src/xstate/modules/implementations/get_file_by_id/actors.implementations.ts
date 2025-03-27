@@ -3,6 +3,7 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get_file_by_id/get_file_by_id.schema';
 import { Utility } from '../../../../utils/utility.service';
+import { EDateFormats } from '../../../../utils/utility.types';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { VerifyActorsImplementations } from '../verify';
 import { isNotNull, and, eq } from 'drizzle-orm';
@@ -38,11 +39,12 @@ export class GetFileByIdActorsImplementations {
       const [_res, _req, _file] = controller_args;
       const { params, query } = _req;
       const { table = 'files', id } = params;
-      const { pluck = 'id' } = query;
-      const table_schema: Record<string, any> = Utility.checkTable(table);
+      const { pluck = 'id', date_format = 'mm/dd/YYYY' } = query;
+      const { table_schema } = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields(
         table,
         pluck.split(','),
+        EDateFormats[date_format] || '%m/%d/%Y',
       );
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       const result = await this.db
@@ -56,6 +58,17 @@ export class GetFileByIdActorsImplementations {
             eq(table_schema.id, id),
           ),
         );
+
+      if (!result.length) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `File [${id}] not found`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
 
       return Promise.resolve({
         payload: {

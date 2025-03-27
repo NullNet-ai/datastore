@@ -17,5 +17,8 @@ export class DownloadGuardsImplementations {
       );
       return hasNoControllerArgs;
     },
+    isPreviewEnabled: ({ context }) => {
+      return context.controller_args[1].query.p === '1';
+    },
   };
 }
