@@ -20,7 +20,6 @@ export class UploadActionsImplementations {
     uploadEntry: () => {
       this.logger.log('uploadEntry is called');
     },
-
     assignFileDetailsToControllerArgsRequest: assign({
       controller_args: ({ context, event }) => {
         const [_res, _req, _file] = context.controller_args;

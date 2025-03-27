@@ -1,36 +1,33 @@
 import { Injectable } from '@nestjs/common';
-import { DownloadMachine } from '../../machines/download/download.machine';
-import { IActions } from '../../schemas/download/download.schema';
-import { VerifyActionsImplementations } from '../verify';
+import { PreviewMachine } from '../../machines/preview/preview.machine';
+import { IActions } from '../../schemas/preview/preview.schema';
+import { LoggerService } from '@dna-platform/common';
+// import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { Response } from 'express';
-import { LoggerService } from '@dna-platform/common';
+import { VerifyActionsImplementations } from '../verify';
 import { assign } from 'xstate';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { MinioService } from '../../../../providers/files/minio.service';
 /**
- * Implementation of actions for the DownloadMachine.
+ * Implementation of actions for the PreviewMachine.
  */
 @Injectable()
-export class DownloadActionsImplementations {
+export class PreviewActionsImplementations {
   constructor(
     private logger: LoggerService,
     private readonly verifyActionsImplementations: VerifyActionsImplementations,
     private readonly axios: HttpService,
-    private readonly minio: MinioService,
   ) {
     this.actions.assignResponsibleAccount =
       this.verifyActionsImplementations.actions.assignResponsibleAccount;
   }
-  public readonly actions: typeof DownloadMachine.prototype.actions & IActions =
+  public readonly actions: typeof PreviewMachine.prototype.actions & IActions =
     {
-      downloadEntry: () => {
-        this.logger.log('downloadEntry is called');
+      previewEntry: () => {
+        this.logger.log('previewEntry is called');
       },
-      testing: () => {
-        this.logger.log('testing is called');
-      },
+
       assignFileDetailsToControllerArgsRequest: assign({
         controller_args: ({ context, event }) => {
           const [_res, _req, _file] = context.controller_args;
@@ -43,30 +40,10 @@ export class DownloadActionsImplementations {
           return [_res, _req, _file];
         },
       }),
-      sendFileToClient: async ({ context, event }) => {
-        const [_res] = context.controller_args;
-        const [file] = event?.output?.payload?.data as any;
-        const [_, file_type] = file.mimetype.split('/');
-        const org_id = context.responsible_account.organization.id;
-        const bucket_org_name = this.minio.getValidBucketName(
-          context.responsible_account.organization.name ||
-            process.env.STORAGE_BUCKET_NAME,
-          org_id,
-        );
-        const dataStream = await this.minio.client
-          ?.getObject(bucket_org_name, `${file.id}.${file_type}`)
-          .catch((err) => {
-            this.logger.error(`[ERROR][getObject]: ${err.message}`);
-            return;
-          });
-        dataStream?.pipe(_res);
-      },
       sendFileToClientPreview: async ({ context, event }) => {
         const [_res, _req] = context.controller_args;
-        const { body } = _req;
         const [file] = event?.output?.payload?.data as any;
-        const { mimetype } = file;
-        const { originalname, organization_id, id } = body;
+        const { mimetype, originalname, id, organization_id } = file;
         const extention = path.extname(originalname);
         const file_name = `${id}-${organization_id}${extention}`;
         try {

@@ -1,30 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { VerifyActorsImplementations } from '../verify';
 import { GetFileByIdActorsImplementations } from '../get_file_by_id';
 import { IActors } from '../../schemas/download/download.schema';
-import * as Minio from 'minio';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { MinioService } from '../../../../providers/files/minio.service';
-const { NODE_ENV = 'local', STORAGE_BUCKET_NAME = 'test' } = process.env;
+import { PreviewActorsImplementations } from '../preview';
+import { UpdateActorsImplementations } from '../update';
 @Injectable()
 export class DownloadActorsImplementations {
-  private client: Minio.Client | null = null;
   private size = 0;
   private file;
   private chunks: any[] = [];
   constructor(
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly getFileByIdActorImplementations: GetFileByIdActorsImplementations,
-    private readonly minioService: MinioService,
     private readonly logger: LoggerService,
+    private readonly previewActorImplementations: PreviewActorsImplementations,
+    private readonly updateActorImplementations: UpdateActorsImplementations,
   ) {
     this.onData = this.onData.bind(this);
     this.actors.getFileById =
       this.getFileByIdActorImplementations.actors.getFileById;
     this.actors.verify = this.verifyActorImplementations.actors.verify;
+    this.actors.prepreview = this.previewActorImplementations.actors.prepreview;
+    this.actors.update = this.updateActorImplementations.actors.update;
   }
   /**
    * Implementation of actors for the create machine.
@@ -41,68 +40,40 @@ export class DownloadActorsImplementations {
             data: [],
           },
         });
-      this.client = this.minioService.client;
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { body } = _req;
+      const { body, query } = _req;
+
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
       const [_file] = event?.output?.payload?.data;
-      this.file = _file;
-      this.logger.debug(`Downloading file ${_file.originalname}`);
 
-      let merged_chunked;
-      if (!['local'].includes(NODE_ENV)) {
-        const extention = path.extname(this.file.originalname);
-        const file_name = `temp-${this.file.id}-${organization_id}${extention}`;
-        const temp_file_path = path.join(process.cwd(), 'tmp', file_name);
-        // Check if the file or directory exists synchronously
-        let dataStream: any = null;
-        const fileExists = await fs.exists(temp_file_path);
-        if (fileExists) {
-          merged_chunked = {
-            is_temp: true,
-            temp_file_path,
-          };
-          if (dataStream) dataStream = null;
-        }
-
-        if (!merged_chunked) {
-          dataStream = await this.client?.getObject(
-            STORAGE_BUCKET_NAME,
-            _file.originalname,
-          );
-          merged_chunked = await new Promise((resolve, reject) => {
-            dataStream.on('data', this.onData);
-            dataStream.on('end', () => {
-              resolve(Buffer.concat(this.chunks).toString('base64'));
-            });
-            dataStream.on('error', reject);
-          });
-        }
-      } else {
-        // In local environment, we don't have Minio, so we just return the file as is
-        merged_chunked = this.file;
+      if (!_file) throw new NotFoundException('File not found');
+      const hasPresignedURL = !!_file.presignedURL;
+      if (query.p === '1') {
+        return Promise.resolve({
+          payload: {
+            hasPresignedURL,
+            success: true,
+            message: `Preview File found at `,
+            count: 1,
+            data: [this.file],
+          },
+        });
       }
-      const data = [
-        {
-          ...body,
-          ...this.file,
-          downloaded_by: responsible_account.organization_account_id,
-          merged_chunked,
-        },
-      ];
-      // TODO: update the file to bed downloaded by the responsible account
-      return Promise.resolve({
+      // download the file from file storage
+      this.file = _file;
+      return {
         payload: {
+          hasPresignedURL,
           success: true,
-          message: `Downloaded File found at `,
+          message: `File found at `,
           count: 1,
-          data,
+          data: [this.file],
         },
-      });
+      };
     }),
   };
 

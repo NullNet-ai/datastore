@@ -9,9 +9,11 @@ const {
   STORAGE_ACCESS_KEY,
   STORAGE_SECRET_KEY,
   NODE_ENV = 'local',
-  STORAGE_BUCKET_NAME = 'test',
+  // STORAGE_BUCKET_NAME = 'test',
   STORAGE_REGION = 'us-east-1',
   STORAGE_PORT = '9000',
+  DEFAULT_ORGANIZATION_NAME = 'global-organization',
+  DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
   // STORAGE_TIMEOUT = '10000',
   // STORAGE_TRANSPORT_KEEPALIVE,
   // SSL_CA = '',
@@ -56,31 +58,61 @@ export class MinioService {
     }
   }
 
-  public async makeBucket(bucketName: string = STORAGE_BUCKET_NAME) {
+  public getValidBucketName(bucketName: string, org_id?: string) {
+    const org_pattern = org_id
+      ? (
+          org_id.substring(0, 2) +
+          org_id.substring(
+            Math.floor(org_id.length / 2) - 1,
+            Math.floor(org_id.length / 2) + 1,
+          ) +
+          org_id.substring(org_id.length - 2)
+        )
+          .replace(/[0-9]/g, '')
+          .toLowerCase()
+      : '';
+
+    const _bname = bucketName
+      .trim()
+      .split(/\s+/)
+      .map((word) => word.charAt(0))
+      .join('')
+      .toLowerCase()
+      .replace(/[^a-z-]/g, '')
+      .substring(0, 20);
+
+    return _bname + org_pattern;
+  }
+
+  public async makeBucket(
+    bucketName: string = DEFAULT_ORGANIZATION_NAME,
+    org_id: string = DEFAULT_ORGANIZATION_ID,
+  ) {
     if (['local'].includes(NODE_ENV)) return;
-    this.isValidBucketName(bucketName);
+    const bucket_org_name = this.getValidBucketName(bucketName, org_id);
+    this.isValidBucketName(bucket_org_name);
 
     // Check if the bucket exists
     // If it doesn't, create it
-    const exists = await this.client?.bucketExists(bucketName);
+    const exists = await this.client?.bucketExists(bucket_org_name);
     if (exists) {
       this.logger.warn(
-        `Bucket ${bucketName} already exists in ${STORAGE_REGION}.`,
+        `Bucket ${bucket_org_name} already exists in ${STORAGE_REGION}.`,
       );
     } else {
       // TODO - move this to organization creation
-      await this.client?.makeBucket(bucketName, STORAGE_REGION, {
+      await this.client?.makeBucket(bucket_org_name, STORAGE_REGION, {
         // ObjectLocking: true,
       });
 
-      // Set the bucket policy of `my-bucketname`
+      // Set the bucket policy of `my-_bname`
       // await this.client.setBucketPolicy(
-      //   bucketName,
-      //   JSON.stringify(storage_policy(bucketName)),
+      //   _bname,
+      //   JSON.stringify(storage_policy(_bname)),
       // );
 
       this.logger.log(
-        `Bucket ${bucketName} created successfully in ${STORAGE_REGION}.`,
+        `Bucket ${bucket_org_name} created successfully in ${STORAGE_REGION}.`,
       );
     }
   }
@@ -96,9 +128,9 @@ export class MinioService {
 
     // bucket length should be less than and no more than 63
     // characters long.
-    if (bucket.length < 3 || bucket.length > 63) {
+    if (bucket.length < 1 || bucket.length > 63) {
       throw new BadRequestException(
-        `Bucket name should be between 3 and 63 characters long`,
+        `Bucket name [${bucket}] should be between 1 and 63 characters long`,
       );
     }
     // bucket with successive periods is invalid.
@@ -111,16 +143,5 @@ export class MinioService {
     if (bucket.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/)) {
       throw new BadRequestException(`Bucket name cannot be an IP address`);
     }
-    // bucket should begin with alphabet/number and end with alphabet/number,
-    // // with alphabet/number/.- in the middle.
-    if (bucket.match(/^[a-z0-9][a-z0-9.-]+[a-z0-9]$/)) {
-      this.logger.log(`Bucket name ${bucket} is valid`);
-    } else
-      throw new BadRequestException(
-        `Bucket name ${bucket} is invalid. Please check the bucket name. Please try ${bucket
-          .trim()
-          .toLowerCase()
-          .replace(' ', '-')}`,
-      );
   }
 }

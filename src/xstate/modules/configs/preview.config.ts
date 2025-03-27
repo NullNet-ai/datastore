@@ -1,12 +1,17 @@
-import { InternalMachineImplementations, assign, setup } from 'xstate';
+import {
+  InternalMachineImplementations,
+  // StateMachineTypes,
+  assign,
+  setup,
+} from 'xstate';
 import {
   IActors,
   IGuards,
-  IDownloadContext,
-  IDownloadEvent,
-} from '../schemas/download/download.schema';
+  IPreviewContext,
+  IPreviewEvent,
+} from '../schemas/preview/preview.schema';
 /**
- * Represents the configuration for the download machine.
+ * Represents the configuration for the preview machine.
  *
  * @param implementations - Optional implementations for the machine options.
  * @returns The configured machine.
@@ -16,7 +21,7 @@ import {
 // TODO: Define common action definitions
 export const config = (
   implementations: InternalMachineImplementations<any, any>,
-  context: IDownloadContext = {
+  context: IPreviewContext = {
     controller_args: [],
     start_time: 0,
     end_time: 0,
@@ -25,14 +30,14 @@ export const config = (
 ) =>
   setup({
     types: {
-      context: {} as IDownloadContext,
-      events: {} as IDownloadEvent,
+      context: {} as IPreviewContext,
+      events: {} as IPreviewEvent,
     },
     actions: implementations?.actions as { [key: string]: typeof assign },
     actors: implementations?.actors as IActors,
     guards: implementations?.guards as IGuards,
   }).createMachine({
-    id: 'download',
+    id: 'preview',
 
     initial: 'waiting',
     context: {
@@ -53,7 +58,7 @@ export const config = (
         },
       },
       processingRequest: {
-        entry: 'downloadEntry',
+        entry: 'previewEntry',
         initial: 'verify',
         states: {
           verify: {
@@ -74,25 +79,14 @@ export const config = (
             invoke: {
               id: 'getFileById',
               src: 'getFileById',
-              input: ({ context, event }) => ({ context, event }),
+              input: ({ context }) => ({ context }),
               onDone: {
-                target: 'chooseFileBehavior',
+                target: 'prepreview',
               },
               onError: {
                 target: 'error',
               },
             },
-          },
-          chooseFileBehavior: {
-            always: [
-              {
-                guard: 'isPreviewEnabled',
-                target: 'prepreview',
-              },
-              {
-                target: 'download',
-              },
-            ],
           },
           prepreview: {
             invoke: {
@@ -101,38 +95,28 @@ export const config = (
               input: ({ context, event }) => ({ context, event }),
               onDone: {
                 actions: ['assignFileDetailsToControllerArgsRequest'],
-                target: 'update',
+                target: 'postpreview',
               },
               onError: {
                 target: 'error',
               },
             },
+          },
+          postpreview: {
+            always: [
+              {
+                guard: 'isFileAlreadyHavesPresignedURL',
+                target: 'success',
+              },
+              {
+                target: 'update',
+              },
+            ],
           },
           update: {
             invoke: {
               id: 'update',
               src: 'update',
-              input: ({ context, event }) => ({ context, event }),
-              onDone: {
-                target: 'successPreview',
-              },
-              onError: {
-                target: 'error',
-              },
-            },
-          },
-          successPreview: {
-            entry: [
-              'assignEndTime',
-              'assignDuration',
-              'sendFileToClientPreview',
-            ],
-            type: 'final',
-          },
-          download: {
-            invoke: {
-              id: 'download',
-              src: 'download',
               input: ({ context, event }) => ({ context, event }),
               onDone: {
                 target: 'success',
@@ -143,7 +127,11 @@ export const config = (
             },
           },
           success: {
-            entry: ['assignEndTime', 'assignDuration', 'sendFileToClient'],
+            entry: [
+              'assignEndTime',
+              'assignDuration',
+              'sendFileToClientPreview',
+            ],
             type: 'final',
           },
           error: {
