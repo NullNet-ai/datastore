@@ -22,10 +22,10 @@ export const table = pgTable(
     uploaded_by: text(),
     downloaded_by: text(),
     etag: text(),
-    version_id: text(),
+    versionId: text(),
     download_path: text(),
-    presigned_url: text(),
-    presigned_url_expiry: text(),
+    presignedURL: text(),
+    presignedURLExpires: integer(),
   },
   config,
 );

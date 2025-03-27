@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
-import { 
-  DrizzleService, 
-//  SyncService 
+import {
+  DrizzleService,
+  //  SyncService
 } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
 import { pick } from 'lodash';
@@ -70,7 +70,10 @@ export class CreateActorsImplementations {
       // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
 
       if (table === 'organizations' && body?.organization_id) {
-        await this.minioService.makeBucket(organization.name);
+        await this.minioService.makeBucket(
+          organization.name,
+          body?.organization_id,
+        );
       }
       const table_schema = local_schema[table];
       if (table_schema.hypertable_timestamp) {
@@ -79,7 +82,7 @@ export class CreateActorsImplementations {
       body.timestamp = body?.timestamp
         ? new Date(body?.timestamp)
         : new Date().toISOString();
-      body.id = body.id ===undefined ? uuidv4(): body.id;
+      body.id = body.id === undefined ? uuidv4() : body.id;
 
       const { schema }: any = Utility.checkCreateSchema(
         table,
@@ -122,10 +125,10 @@ export class CreateActorsImplementations {
         .values(parsed_data)
         .returning({ table_schema })
         .then(([{ table_schema }]) => table_schema);
-     // if (durability === 'soft') {
+      // if (durability === 'soft') {
       //  this.syncService.insert(table, parsed_data);
       //} else {
-        //await this.syncService.insert(table, parsed_data);
+      //await this.syncService.insert(table, parsed_data);
       //}
 
       return Promise.resolve({

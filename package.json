@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.39",
-    "@dna-platform/crdt-lww-postgres": "^1.0.74",
+    "@dna-platform/crdt-lww-postgres": "^1.0.75",
     "@elastic/elasticsearch": "^8.10.0",
     "@grpc/grpc-js": "^1.12.5",
     "@grpc/proto-loader": "^0.7.13",

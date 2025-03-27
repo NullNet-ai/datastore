@@ -18,7 +18,7 @@ const {
   NODE_ENV = 'local',
   GRPC_PORT = '6000',
   DEFAULT_ORGANIZATION_NAME = 'global-organization',
-  // DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
+  DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 fs.mkdirSync('./tmp', { recursive: true });
@@ -32,7 +32,7 @@ async function initialOrganization(
   // default for super admin
   await organization.initialize();
   await organization.initializeDevice();
-  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME);
+  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
   // create own default organization here
   // await organization.initialize({
   //   id: 'company-id',

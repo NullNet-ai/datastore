@@ -180,10 +180,27 @@ export class FileController {
   }
 
   @Get('/:id/download')
-  async download(@Res() _res: Response, @Req() _req: Request) {
+  async download(
+    @Res()
+    _res: Response,
+    @Req() _req: Request,
+  ) {
+    const pluck = [
+      'id',
+      'organization_id',
+      'fieldname',
+      'originalname',
+      'encoding',
+      'mimetype',
+      'destination',
+      'filename',
+      'path',
+      'size',
+      'presignedURL',
+      'presignedURLExpires',
+    ];
     _req.query = {
-      pluck:
-        'id,organization_id,fieldname,originalname,encoding,mimetype,destination,filename,path,size',
+      pluck: pluck.join(','),
       ..._req.query,
     };
     return this.storeMutation.download(_res, _req);
