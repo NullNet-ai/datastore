@@ -385,12 +385,19 @@ export class Utility {
     const _plucked_fields = pluck.reduce((acc, field) => {
       const _field = is_joined ? `"${table}"."${field}"` : field;
       if (table_schema[field]) {
-        return {
-          ...acc,
-          [field]: field.endsWith('_date')
-            ? sql.raw(`strftime('${date_format}', ${_field})`)
-            : table_schema[field],
-        };
+        try {
+          return {
+            ...acc,
+            [field]: field.endsWith('_date')
+              ? sql.raw(`strftime('${date_format}', ${_field})`)
+              : table_schema[field],
+          };
+        } catch (e) {
+          return {
+            ...acc,
+            [field]: table_schema[field],
+          };
+        }
       }
       return acc;
     }, {});
