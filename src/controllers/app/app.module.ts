@@ -7,7 +7,10 @@ import {
 import { GlobalModule } from '../../providers/global/global.module';
 import { CoreModule, DriversModule } from '@dna-platform/crdt-lww-postgres';
 import { QueryDriverInterface } from '@dna-platform/crdt-lww-postgres/build/modules/drivers/query/enums';
-import { StoreQueryDriver } from '../../providers/store/store.service';
+import {
+  InitializerService,
+  StoreQueryDriver,
+} from '../../providers/store/store.service';
 import { LoggerService } from '@dna-platform/common';
 import { ConfigModule } from '@nestjs/config';
 @Module({
@@ -34,5 +37,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController],
+  providers: [InitializerService],
 })
 export class AppModule {}

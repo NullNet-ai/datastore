@@ -24,7 +24,8 @@ fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 fs.mkdirSync('./tmp', { recursive: true });
 fs.mkdirSync('./upload', { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
-
+import { InitializerService } from './providers/store/store.service';
+import { EInitializer } from './xstate/modules/schemas/create/create.schema';
 async function initialOrganization(
   organization: OrganizationsService,
   storage: MinioService,
@@ -43,17 +44,6 @@ async function initialOrganization(
   //   password: 'sample-passwd',
   //   first_name: 'Company',
   //   last_name: 'Orgs',
-  // });
-
-  // TODO: Define Auto generated code Prefixes
-  // const initializer: InitializerService = app.get(InitializerService);
-  // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
-  //   entity: 'samples',
-  //   system_code_config: {
-  //     default_code: 1000,
-  //     prefix: 'SYS',
-  //     counter: 0,
-  //   },
   // });
 }
 
@@ -109,6 +99,17 @@ async function bootstrap() {
 
   // cleanup the temporary files every 1 minute in remote environment
   cleanupTemporaryFiles();
+
+  // TODO: Define Auto generated code Prefixes
+  // const initializer: InitializerService = app.get(InitializerService);
+  // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+  //   entity: 'contacts',
+  //   system_code_config: {
+  //     default_code: 1000,
+  //     prefix: 'CO',
+  //     counter: 0,
+  //   },
+  // });
 }
 
 async function bootstrapBatchSyncService() {
