@@ -441,6 +441,7 @@ export class Utility {
     _client_db: any,
     concatenate_fields?: IParsedConcatenatedFields,
     group_advance_filters: IGroupAdvanceFilters[] = [],
+    is_root = false,
   ) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -531,12 +532,15 @@ export class Utility {
     const transformed_expressions = Utility.removeJoinedKeyword(expressions);
 
     //remove joined keyword from every entity in expressions
-
     return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
-        isNotNull(table_schema['organization_id']),
-        eq(table_schema['organization_id'], organization_id),
+        ...(!is_root
+          ? [
+              isNotNull(table_schema['organization_id']),
+              eq(table_schema['organization_id'], organization_id),
+            ]
+          : []),
         ...Utility.constructFilters(
           advance_filters,
           table_schema,

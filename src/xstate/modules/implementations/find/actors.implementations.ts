@@ -37,8 +37,11 @@ export class FindActorsImplementations {
             data: [],
           },
         });
-      const { controller_args, responsible_account } = context;
+      const { controller_args, responsible_account, root_account } = context;
       const { organization_id = '' } = responsible_account;
+      //!temporary fix for root account
+      const { is_root } = root_account;
+
       const [_res, _req] = controller_args;
       const { params, body } = _req;
       const { table } = params;
@@ -188,6 +191,8 @@ export class FindActorsImplementations {
         this.db,
         parsed_concatenated_fields,
         group_advance_filters,
+        // !temporary fix
+        is_root,
       );
 
       const getSortSchemaAndField = (

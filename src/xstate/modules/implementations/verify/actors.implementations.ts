@@ -34,7 +34,10 @@ export class VerifyActorsImplementations {
       const [_res, _req] = context?.controller_args;
       const { query, headers } = _req;
       const { authorization } = headers;
-      const { t = '' } = query;
+      const { t = '', is_root = '' } = query;
+      console.log({
+        is_root,
+      });
       const result = await this.authService
         .verify(t || authorization?.replace('Bearer ', ''))
         .catch((err) => {
