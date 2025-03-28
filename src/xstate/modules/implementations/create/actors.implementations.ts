@@ -53,18 +53,18 @@ export class CreateActorsImplementations {
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
-      // if (!body.entity_prefix && table != 'files') {
-      //   return Promise.reject({
-      //     payload: {
-      //       success: false,
-      //       message: `entity_prefix is required [Temporary Fix]`,
-      //       count: 0,
-      //       data: [],
-      //     },
-      //   });
-      // }
-      // const prefix = body.entity_prefix;
-      // delete body.entity_prefix;
+      if (!body.entity_prefix && table != 'files') {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `entity_prefix is required [Temporary Fix]`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
+      const prefix = body.entity_prefix;
+      delete body.entity_prefix;
 
       body.created_by = responsible_account.organization_account_id;
       // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
@@ -98,7 +98,7 @@ export class CreateActorsImplementations {
           .values({
             entity: table,
             counter: 1,
-            // prefix,
+            prefix,
             default_code: 100000,
           })
           .onConflictDoUpdate({
