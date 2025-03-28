@@ -3,9 +3,9 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from '../../../../utils/utility.service';
-import { 
-  DrizzleService, 
-//  SyncService 
+import {
+  DrizzleService,
+  //  SyncService
 } from '@dna-platform/crdt-lww-postgres';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
@@ -48,6 +48,9 @@ export class UpdateActorsImplementations {
       let { pluck = 'id' } = query;
 
       if (table === 'counters') {
+        console.log({
+          wew: 'asdas',
+        });
         pluck = 'entity,default_code,prefix';
         const [result] = await this.db
           .update(local_schema[table])

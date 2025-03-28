@@ -59,6 +59,18 @@ export class GetActorsImplementations {
       pluck.split(','),
       EDateFormats[date_format] || '%m/%d/%Y',
     );
+
+    if (table === 'counters') {
+      return Promise.resolve({
+        payload: {
+          success: true,
+          message: `Successfully skip for ${table}`,
+          count: 1,
+          data: [],
+        },
+      });
+    }
+
     const selections = _plucked_fields === null ? undefined : _plucked_fields;
     const result = await this.db
       .select(selections)
