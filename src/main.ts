@@ -46,6 +46,7 @@ async function initialOrganization(
   // });
 
   // TODO: Define Auto generated code Prefixes
+  // const initializer: InitializerService = app.get(InitializerService);
   // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
   //   entity: 'samples',
   //   system_code_config: {

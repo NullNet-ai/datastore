@@ -19,7 +19,7 @@
     "tailwind.config.js": true,
     "src/views": true,
     "src/xstate": false,
-    "src/providers": true,
+    "src/providers": false,
     "drizzle.config.ts": false,
     "src/schema/crdt": false,
     "src/schema/index.ts": false

@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import * as schema from '../schema';
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { ulid } from 'ulid';
-import { ZodValidationException } from '@dna-platform/common';
+import { LoggerService, ZodValidationException } from '@dna-platform/common';
 import {
   EOperator,
   IAdvanceFilters,
@@ -34,10 +34,12 @@ import {
   IConcatenateField,
   IParsedConcatenatedFields,
 } from '../types/utility.types';
+import { execSync } from 'child_process';
 
 const pluralize = require('pluralize');
 
 export class Utility {
+  private static logger = new LoggerService('Utility');
   public static createParse({
     schema,
     data,
@@ -655,6 +657,9 @@ export class Utility {
       case EOperator.IS_NOT_NULL:
         return isNotNull(schema_field);
       case EOperator.CONTAINS:
+        console.log({
+          values,
+        });
         return inArray(schema_field, [values]);
       case EOperator.NOT_CONTAINS:
         return notInArray(schema_field, [values]);
@@ -1127,5 +1132,14 @@ export class Utility {
       );
     }
     return parsed_body;
+  }
+
+  public static execCommand(command: string) {
+    try {
+      execSync(command);
+      return true;
+    } catch (error: any) {
+      Utility.logger.error(error.stderr.toString() ?? error?.message ?? error);
+    }
   }
 }
