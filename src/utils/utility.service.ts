@@ -387,7 +387,7 @@ export class Utility {
       if (table_schema[field]) {
         return {
           ...acc,
-          // [field]: table_schema[field],
+          [field]: table_schema[field],
           // [field]: field.endsWith('_date')
           //   ? sql.raw(`strftime('${date_format}', ${_field})`)
           //   : table_schema[field],
