@@ -1,7 +1,6 @@
-//@ts-nocheck
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { HttpModule, MainModule } from './http.module';
+import { HttpModule } from './http.module';
 import { LoggerService } from '@dna-platform/common';
 import * as fs from 'fs';
 import cookieParser from 'cookie-parser';
@@ -24,8 +23,8 @@ fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 fs.mkdirSync('./tmp', { recursive: true });
 fs.mkdirSync('./upload', { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
-import { InitializerService } from './providers/store/store.service';
-import { EInitializer } from './xstate/modules/schemas/create/create.schema';
+// import { InitializerService } from './providers/store/store.service';
+// import { EInitializer } from './xstate/modules/schemas/create/create.schema';
 async function initialOrganization(
   organization: OrganizationsService,
   storage: MinioService,
@@ -111,7 +110,7 @@ async function bootstrap() {
   //   },
   // });
 }
-
+// @ts-ignore
 async function bootstrapBatchSyncService() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     BatchSyncModule,
@@ -125,7 +124,6 @@ async function bootstrapBatchSyncService() {
 
   await app.listen(); // Start the microservice
 }
-// @ts-expect-error
 async function bootstrapGrpc() {
   const app = await NestFactory.createMicroservice(GrpcModule, {
     transport: Transport.GRPC,
