@@ -374,8 +374,8 @@ export class Utility {
   public static parsePluckedFields(
     table: string,
     pluck: string[],
-    date_format: string,
-    is_joined?: boolean,
+    _date_format: string,
+    _is_joined?: boolean,
   ): Record<string, any> | null {
     const table_schema = this.checkTable(table).table_schema;
 
@@ -387,7 +387,7 @@ export class Utility {
       if (table_schema[field]) {
         return {
           ...acc,
-          [field]: table_schema[field],
+          // [field]: table_schema[field],
           // [field]: field.endsWith('_date')
           //   ? sql.raw(`strftime('${date_format}', ${_field})`)
           //   : table_schema[field],
