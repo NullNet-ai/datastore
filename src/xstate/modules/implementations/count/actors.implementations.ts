@@ -35,7 +35,13 @@ export class CountActorsImplementations {
       const { organization_id = '' } = responsible_account;
       const { table } = _req.params;
       const { table_schema } = Utility.checkTable(table);
-      const { advance_filters, joins, pluck_object } = _req.body;
+      const {
+        advance_filters = [],
+        joins,
+        pluck_object,
+        concatenate_fields = [],
+        group_advance_filters = [],
+      } = _req.body;
       let _db = this.db;
       _db = _db
         .select({ count: countDistinct(local_schema[table].id) })
@@ -49,6 +55,8 @@ export class CountActorsImplementations {
         organization_id,
         joins,
         this.db,
+        concatenate_fields,
+        group_advance_filters,
       );
       const [{ count }] = await _db;
 

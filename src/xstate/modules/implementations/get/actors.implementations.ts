@@ -35,7 +35,7 @@ export class GetActorsImplementations {
 
     get: fromPromise(this.get.bind(this)),
   };
-  public get({ input }): IResponse {
+  public async get({ input }): Promise<IResponse> {
     const { context } = input;
     if (!context?.controller_args)
       return Promise.reject({
@@ -60,7 +60,7 @@ export class GetActorsImplementations {
       EDateFormats[date_format] || '%m/%d/%Y',
     );
     const selections = _plucked_fields === null ? undefined : _plucked_fields;
-    const result = this.db
+    const result = await this.db
       .select(selections)
       .from(table_schema)
       .where(
@@ -70,8 +70,7 @@ export class GetActorsImplementations {
           eq(table_schema.organization_id, organization_id),
           eq(table_schema.id, id),
         ),
-      )
-      .all();
+      );
 
     if (!result || !result.length) {
       throw new NotFoundException({

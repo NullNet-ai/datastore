@@ -7,7 +7,7 @@ import {
   //  SyncService
 } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
-import { pick } from 'lodash';
+import { eq, pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import { MinioService } from '../../../../providers/files/minio.service';
 import { sql } from 'drizzle-orm';
@@ -53,18 +53,18 @@ export class CreateActorsImplementations {
       if (!body?.organization_id) {
         body.organization_id = organization_id;
       }
-      if (!body.entity_prefix && table != 'files') {
-        return Promise.reject({
-          payload: {
-            success: false,
-            message: `entity_prefix is required [Temporary Fix]`,
-            count: 0,
-            data: [],
-          },
-        });
-      }
-      const prefix = body.entity_prefix;
-      delete body.entity_prefix;
+      // if (!body.entity_prefix && table != 'files') {
+      //   return Promise.reject({
+      //     payload: {
+      //       success: false,
+      //       message: `entity_prefix is required [Temporary Fix]`,
+      //       count: 0,
+      //       data: [],
+      //     },
+      //   });
+      // }
+      // const prefix = body.entity_prefix;
+      // delete body.entity_prefix;
 
       body.created_by = responsible_account.organization_account_id;
       // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
@@ -92,32 +92,52 @@ export class CreateActorsImplementations {
       //get first three characters of the table name as prefix
       // auto generate code
       if (table !== 'counters') {
-        const counter_schema = local_schema['counters'];
-        body.code = await this.db
-          .insert(counter_schema)
-          .values({
-            entity: table,
-            counter: 1,
-            prefix,
-            default_code: 100000,
-          })
-          .onConflictDoUpdate({
-            target: [counter_schema.entity],
-            set: {
-              counter: sql`${counter_schema.counter} + 1`,
-            },
-          })
-          .returning({
-            prefix: counter_schema.prefix,
-            default_code: counter_schema.default_code,
-            counter: counter_schema.counter,
-          })
-          .then(
-            ([{ prefix, default_code, counter }]) =>
-              prefix + (default_code + counter),
-          )
-          .catch(() => null);
+        //! TODO: refactor this, incrementing counter should be parallel to inserting record
+        let exist = null;
+        if (body.id) {
+          exist = await this.db
+            .select({ id: local_schema[table].id })
+            .from(local_schema[table])
+            .where(eq(local_schema[table].id, body.id))[0];
+        }
+        if (!exist) {
+          const counter_schema = local_schema['counters'];
+          const code = await this.db
+            .insert(counter_schema)
+            .values({ entity: table, counter: 1 })
+            .onConflictDoUpdate({
+              target: [counter_schema.entity],
+              set: {
+                counter: sql`${counter_schema.counter} + 1`,
+              },
+            })
+            .returning({
+              prefix: counter_schema.prefix,
+              default_code: counter_schema.default_code,
+              counter: counter_schema.counter,
+              digits_number: counter_schema.digits_number,
+            });
+
+          function constructCode([
+            { prefix, default_code, counter, digits_number },
+          ]) {
+            const getDigit = (num: number) => {
+              return num.toString().length;
+            };
+
+            if (digits_number) {
+              digits_number = digits_number - getDigit(counter);
+              const zero_digits =
+                digits_number > 0 ? '0'.repeat(digits_number) : '';
+              return prefix + (zero_digits + counter);
+            }
+            return prefix + (default_code + counter);
+          }
+
+          body.code = constructCode(code);
+        }
       }
+
       const parsed_data = Utility.createParse({ schema, data: body });
       this.logger.debug(`Create request for ${table}: ${body.id}`);
       const results = await this.db

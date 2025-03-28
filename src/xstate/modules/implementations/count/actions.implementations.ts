@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CountMachine } from '../../machines';
+import { CountMachine } from '../../machines/count/count.machine';
 import { IActions } from '../../schemas/count/count.schema';
 import { LoggerService } from '@dna-platform/common';
 import { VerifyActionsImplementations } from '../verify';

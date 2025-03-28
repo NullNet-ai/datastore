@@ -722,8 +722,8 @@ export class Utility {
     }
 
     if (
-      advance_filters.find(({ entity }) => entity) &&
-      advance_filters.filter(
+      advance_filters?.find(({ entity }) => entity) &&
+      advance_filters?.filter(
         ({ type = 'criteria', entity }) => type === 'criteria' && !entity,
       ).length
     ) {
@@ -731,14 +731,14 @@ export class Utility {
         'Invalid filter. "entity" must be defined for all filters',
       );
     }
-    advance_filters.forEach((filter) => {
+    advance_filters?.forEach((filter) => {
       if (filter.field && filter.field.toLowerCase().includes('timestamp')) {
         if (typeof filter.values === 'string')
           filter.values = JSON.parse(filter.values);
         filter.values = filter?.values?.map((val) => new Date(val));
       }
     });
-    if (advance_filters.length === 1) {
+    if (advance_filters?.length === 1) {
       let [{ operator, field, values, type }] = advance_filters;
       if (typeof values === 'string') {
         values = JSON.parse(values);

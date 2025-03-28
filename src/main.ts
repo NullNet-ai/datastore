@@ -44,6 +44,16 @@ async function initialOrganization(
   //   first_name: 'Company',
   //   last_name: 'Orgs',
   // });
+
+  // TODO: Define Auto generated code Prefixes
+  // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+  //   entity: 'samples',
+  //   system_code_config: {
+  //     default_code: 1000,
+  //     prefix: 'SYS',
+  //     counter: 0,
+  //   },
+  // });
 }
 
 async function cleanupTemporaryFiles() {
