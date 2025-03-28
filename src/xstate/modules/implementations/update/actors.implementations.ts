@@ -48,9 +48,6 @@ export class UpdateActorsImplementations {
       let { pluck = 'id' } = query;
 
       if (table === 'counters') {
-        console.log({
-          wew: 'asdas',
-        });
         pluck = 'entity,default_code,prefix';
         const [result] = await this.db
           .update(local_schema[table])
