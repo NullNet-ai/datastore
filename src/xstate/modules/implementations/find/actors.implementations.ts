@@ -41,7 +41,9 @@ export class FindActorsImplementations {
       const { organization_id = '' } = responsible_account;
       //!temporary fix for root account
       const { is_root } = root_account;
-
+      console.log({
+        root_account,
+      });
       const [_res, _req] = controller_args;
       const { params, body } = _req;
       const { table } = params;
