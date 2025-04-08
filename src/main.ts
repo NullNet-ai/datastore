@@ -10,6 +10,8 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { BatchSyncModule } from './batch_sync/batch_sync.module';
 import { GrpcModule } from './grpc.module';
+import { InitializerService } from './providers/store/store.service';
+import { EInitializer } from './xstate/modules/schemas/create/create.schema';
 const {
   PORT = '3060',
   DB_FILE_DIR = '',
@@ -23,12 +25,12 @@ fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 fs.mkdirSync('./tmp', { recursive: true });
 fs.mkdirSync('./upload', { recursive: true });
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
-// import { InitializerService } from './providers/store/store.service';
-// import { EInitializer } from './xstate/modules/schemas/create/create.schema';
-async function initialOrganization(
-  organization: OrganizationsService,
-  storage: MinioService,
-) {
+
+async function initializers(app) {
+  const storage = app.get(MinioService);
+  const organization = app.get(OrganizationsService);
+  const initializer: InitializerService = app.get(InitializerService);
+
   // default for super admin
   await organization.initialize();
   await organization.initializeDevice();
@@ -44,6 +46,22 @@ async function initialOrganization(
   //   first_name: 'Company',
   //   last_name: 'Orgs',
   // });
+
+  // TODO: Define Auto generated code Prefixes
+  // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+  //   entity: 'contacts',
+  //   system_code_config: {
+  //     default_code: 1000,
+  //     prefix: 'CO',
+  //     counter: 0,
+  //     digits_number: 6,
+  //   },
+  // });
+
+  // ! This is a sample for the root account configuration
+  await initializer.create(EInitializer.ROOT_ACCOUNT_CONFIG, {
+    entity: 'organization_accounts',
+  });
 }
 
 async function cleanupTemporaryFiles() {
@@ -90,25 +108,10 @@ async function bootstrap() {
     );
   });
 
-  const storage = app.get(MinioService);
-  // initialize the organization
-  const organization = app.get(OrganizationsService);
-
-  await initialOrganization(organization, storage);
+  await initializers(app);
 
   // cleanup the temporary files every 1 minute in remote environment
   cleanupTemporaryFiles();
-
-  // TODO: Define Auto generated code Prefixes
-  // const initializer: InitializerService = app.get(InitializerService);
-  // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
-  //   entity: 'contacts',
-  //   system_code_config: {
-  //     default_code: 1000,
-  //     prefix: 'CO',
-  //     counter: 0,
-  //   },
-  // });
 }
 // @ts-ignore
 async function bootstrapBatchSyncService() {

@@ -48,11 +48,14 @@ export enum EInitializer {
 
 export interface IinitializerParams {
   entity: string;
-  system_code_config: {
+  system_code_config?: {
     default_code?: number;
     prefix: string;
     counter?: number;
     digits_number?: number;
+  };
+  root_account_config?: {
+    project_name?: string;
   };
   [key: string]: any;
 }
