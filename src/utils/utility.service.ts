@@ -443,7 +443,7 @@ export class Utility {
     _client_db: any,
     concatenate_fields?: IParsedConcatenatedFields,
     group_advance_filters: IGroupAdvanceFilters[] = [],
-    is_root = false,
+    request_type?: string,
   ) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -476,8 +476,15 @@ export class Utility {
                 .where(
                   and(
                     eq(aliased_to_entity['tombstone'], 0),
-                    isNotNull(aliased_to_entity['organization_id']),
-                    eq(aliased_to_entity['organization_id'], organization_id),
+                    ...(request_type !== 'root'
+                      ? [
+                          isNotNull(aliased_to_entity['organization_id']),
+                          eq(
+                            aliased_to_entity['organization_id'],
+                            organization_id,
+                          ),
+                        ]
+                      : []),
                     ...Utility.constructFilters(
                       to.filters,
                       aliased_to_entity,
@@ -537,7 +544,7 @@ export class Utility {
     return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
-        ...(!is_root
+        ...(request_type !== 'root'
           ? [
               isNotNull(table_schema['organization_id']),
               eq(table_schema['organization_id'], organization_id),
@@ -561,6 +568,7 @@ export class Utility {
     organization_id: string,
     joins?: IJoins[],
     _client_db: any = null,
+    type?: string,
   ) {
     let _db = db;
     const aliased_entities: string[] = [];
@@ -602,8 +610,12 @@ export class Utility {
     return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
-        isNotNull(table_schema['organization_id']),
-        eq(table_schema['organization_id'], organization_id),
+        ...(type !== 'root'
+          ? [
+              isNotNull(table_schema['organization_id']),
+              eq(table_schema['organization_id'], organization_id),
+            ]
+          : []),
         ...Utility.constructFilters(
           _advance_filters,
           table_schema,
@@ -657,9 +669,6 @@ export class Utility {
       case EOperator.IS_NOT_NULL:
         return isNotNull(schema_field);
       case EOperator.CONTAINS:
-        console.log({
-          values,
-        });
         return inArray(schema_field, [values]);
       case EOperator.NOT_CONTAINS:
         return notInArray(schema_field, [values]);

@@ -62,11 +62,7 @@ export const config = (
               src: 'verify',
               input: ({ context }) => ({ context }),
               onDone: {
-                actions: [
-                  'assignResponsibleAccount',
-                  // ! temporary fix for by passing root account
-                  'assignByPassRootAccount',
-                ],
+                actions: ['assignResponsibleAccount'],
                 target: 'get',
               },
               onError: {

@@ -13,12 +13,6 @@ export class VerifyActionsImplementations {
     verifyEntry: () => {
       this.logger.log('verifyEntry is called');
     },
-    assignByPassRootAccount: assign({
-      root_account: ({ event }) => {
-        const [{ account, is_root }] = event?.output?.payload?.data || [];
-        return { account, is_root };
-      },
-    }),
     assignResponsibleAccount: assign({
       responsible_account: ({ event }) => {
         const [{ account }] = event?.output?.payload?.data || [];

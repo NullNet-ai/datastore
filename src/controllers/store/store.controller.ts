@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   Controller,
   Delete,
@@ -35,8 +34,8 @@ import {
 export class StoreController {
   constructor(
     @Inject('QueryDriverInterface')
-    private storeQuery: StoreQueryDriver,
-    private storeMutation: StoreMutationDriver,
+    public storeQuery: StoreQueryDriver,
+    public storeMutation: StoreMutationDriver,
   ) {}
   @Post('/:table/count')
   async count(@Res() _res: Response, @Req() _req: Request) {
@@ -77,7 +76,7 @@ export class StoreController {
       pluck: z.array(
         z
           .string()
-          .min(1, 'pluck fields is required, for getting all fields use ' * ''),
+          .min(1, "pluck fields is required, for getting all fields use ' * '"),
       ),
       advance_filters: z.array(advanceFilterValidation),
       order_by: z.string().optional(),
@@ -215,6 +214,16 @@ export class CustomCreateController {
   }
 }
 
+@Controller('/api/store/:type')
+export class RootStoreController extends StoreController {
+  constructor(
+    @Inject('QueryDriverInterface')
+    public storeQuery: StoreQueryDriver,
+    public storeMutation: StoreMutationDriver,
+  ) {
+    super(storeQuery, storeMutation);
+  }
+}
 // @UseGuards(AuthGuard)
 // @Controller('/api/transactions')
 // export class TransactionController {

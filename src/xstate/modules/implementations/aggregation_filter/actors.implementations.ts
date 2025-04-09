@@ -39,6 +39,7 @@ export class AggregationFilterActorsImplementations {
       const { advance_filters, joins, entity } = _req.body;
       const table_schema = local_schema[entity];
       const table = _req.body?.entity;
+      const { type } = _req.params;
       Utility.checkTable(table);
       let _db = this.db.select({ id: table_schema.id }).from(table_schema);
       _db = Utility.AggregationFilterAnalyzer(
@@ -48,6 +49,7 @@ export class AggregationFilterActorsImplementations {
         organization_id,
         joins,
         this.db,
+        type
       );
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
       let query = Utility.AggregationQueryGenerator(_req.body, from_clause);

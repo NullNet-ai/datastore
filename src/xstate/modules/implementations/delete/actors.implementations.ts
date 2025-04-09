@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/delete/delete.schema';
-import { 
-  DrizzleService, 
-  //SyncService 
+import {
+  DrizzleService,
+  //SyncService
 } from '@dna-platform/crdt-lww-postgres';
 import { and, eq, sql } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
@@ -48,14 +48,14 @@ export class DeleteActorsImplementations {
           },
         });
       const { controller_args, responsible_account } = context;
-      const { organization_id = '' } = responsible_account;
+      const { organization_id = '', is_root_account } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body} = _req;
+      const { params, body } = _req;
       const { table, id } = params;
-   //   const { is_permanent = 'false' } = query;
+      //   const { is_permanent = 'false' } = query;
       const date = new Date();
       const table_schema = local_schema[table];
-      if (body?.organization_id) {
+      if (body?.organization_id && !is_root_account) {
         body.organization_id = organization_id;
       }
       this.logger.debug(`Soft deleting ${table} record with id: ${id}`);
@@ -64,7 +64,9 @@ export class DeleteActorsImplementations {
         .set({
           tombstone: 1,
           version: sql`${table_schema.version} + 1`,
-          deleted_by: responsible_account.organization_account_id,
+          deleted_by: is_root_account
+            ? responsible_account?.organization_account?.id
+            : responsible_account.organization_account_id,
           updated_date: date.toLocaleDateString(),
           updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           status: 'Deleted',
@@ -87,11 +89,11 @@ export class DeleteActorsImplementations {
         });
 
       delete result.id;
-     // if (is_permanent === 'true') {
-     //   await this.syncService.delete(table, id, is_permanent === 'true');
-     // } else {
-     //   await this.syncService.update(table, result, id);
-     // }
+      // if (is_permanent === 'true') {
+      //   await this.syncService.delete(table, id, is_permanent === 'true');
+      // } else {
+      //   await this.syncService.update(table, result, id);
+      // }
       return Promise.resolve({
         payload: {
           success: true,

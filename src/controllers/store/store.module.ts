@@ -5,6 +5,7 @@ import {
   CustomCreateController,
   StoreController,
   TokenController,
+  RootStoreController,
 } from './store.controller';
 import {
   LoggerService,
@@ -80,6 +81,7 @@ const additional_controllers = [
   HypertableController,
   GrpcController,
   CustomCreateController,
+  RootStoreController,
   // TransactionController,
 ];
 

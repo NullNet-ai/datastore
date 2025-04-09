@@ -14,10 +14,6 @@ export class FindActionsImplementations {
   ) {
     this.actions.assignResponsibleAccount =
       this.verifyActionsImplementations.actions.assignResponsibleAccount;
-
-    // !temporary fix for by passing root account
-    this.actions.assignByPassRootAccount =
-      this.verifyActionsImplementations.actions.assignByPassRootAccount;
   }
   public readonly actions: typeof FindMachine.prototype.actions & IActions = {
     findEntry: () => {
