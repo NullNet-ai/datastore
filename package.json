@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -46,6 +46,7 @@
     "@nestjs/microservices": "^10.4.15",
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/serve-static": "^4.0.2",
+    "argon2": "^0.41.1",
     "axios": "^1.8.4",
     "axon": "^2.0.3",
     "bluebird": "^3.7.2",

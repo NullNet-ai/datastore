@@ -18,6 +18,7 @@ import {
   StoreQueryDriver,
   StoreMutationDriver,
   CustomCreateService,
+  RootStoreService,
 } from '../../providers/store/store.service';
 import { GetImplementationModule } from '../../xstate/modules/implementations/get/get.implementation.module';
 import { FindImplementationModule } from '../../xstate/modules/implementations/find/find.implementation.module';
@@ -73,6 +74,7 @@ const additional_providers: Provider[] = [
   AuthService,
   CustomCreateService,
   StoreGrpcService,
+  RootStoreService,
 ];
 const base_classes = [StoreController];
 const additional_controllers = [
