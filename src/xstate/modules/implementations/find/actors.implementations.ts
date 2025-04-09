@@ -234,7 +234,7 @@ export class FindActorsImplementations {
             if (!group_field_schema)
               throw new BadRequestException({
                 success: false,
-                message: `Other than main entity, you can only group results by fields of joined or aliased entities. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
+                message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
               });
             if (multiple_sort.length)
               throw new BadRequestException({
@@ -327,11 +327,10 @@ export class FindActorsImplementations {
           Object.keys(join_selections ?? {}).includes(key),
         );
 
-        //! TODO: Grouping a joined entity
         if (is_grouping_joined_entity)
           throw new NotImplementedException({
             success: false,
-            message: `Grouping joint entity is not yet implemented. Please group it with ${table} main fields.`,
+            message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
           });
 
         let count_selection = {};
@@ -553,9 +552,17 @@ export class FindActorsImplementations {
       if (joins?.length) {
         if (group_by?.fields?.length) {
           let grouped: Array<any> = [];
-          grouped = Object.keys(group_by_fields).map((group_by) => {
-            return sql.raw(group_by_fields[group_by]);
-          });
+          grouped = Object.keys(group_by_fields)
+            .map((group_by) => {
+              return sql.raw(group_by_fields[group_by]);
+            })
+            // merged all main table fields with group_by fields
+            .concat(
+              pluck_object[table].map((field) => {
+                return sql.raw(`${table}.${field}`);
+              }),
+            );
+
           _db = _db.groupBy(grouped);
         } else if (table_schema.hypertable_timestamp) {
           _db = _db.groupBy(table_schema.id, table_schema.timestamp);
@@ -564,12 +571,13 @@ export class FindActorsImplementations {
         }
       } else if (group_by?.fields?.length) {
         let grouped: Array<any> = [];
-        grouped = Object.keys(group_by_fields).map((group_by) => {
-          return sql.raw(group_by_fields[group_by]);
-        });
+        grouped = Object.keys(group_by_fields).map((group_by) =>
+          sql.raw(group_by_fields[group_by]),
+        );
         _db = _db.groupBy(grouped);
       }
-      this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
+      this.logger.debug(`Query: ${_db.toSQL().sql}`);
+      this.logger.debug(`Params: ${_db.toSQL().params}`);
       let result = await _db;
       if (!result || !result.length) {
         throw new NotFoundException({
