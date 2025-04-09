@@ -655,7 +655,7 @@ export class Utility {
       case EOperator.EQUAL:
         return or(...values.map((value) => eq(schema_field, value)));
       case EOperator.NOT_EQUAL:
-        return ne(schema_field, values[0]);
+        return notInArray(schema_field, values);
       case EOperator.GREATER_THAN:
         return gt(schema_field, values[0]);
       case EOperator.GREATER_THAN_OR_EQUAL:
