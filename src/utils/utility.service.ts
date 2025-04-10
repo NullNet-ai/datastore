@@ -90,6 +90,10 @@ export class Utility {
     return `${formatted_hours}:${formatted_minutes}`;
   }
   public static format(data: any, is_insert = true) {
+    if (data?.image_url) {
+      const { valid, message } = this.validateUrl(data.image_url);
+      if (!valid) throw new BadRequestException(message);
+    }
     const date = new Date();
     const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
@@ -1149,6 +1153,15 @@ export class Utility {
       return true;
     } catch (error: any) {
       Utility.logger.error(error.stderr.toString() ?? error?.message ?? error);
+    }
+  }
+
+  private static validateUrl(input_url) {
+    try {
+      new URL(input_url);
+      return { valid: true, message: 'Valid URL' };
+    } catch (error: any) {
+      return { valid: false, message: error?.message || error };
     }
   }
 }

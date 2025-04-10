@@ -65,6 +65,7 @@ export class FindActorsImplementations {
         group_advance_filters = [],
         distinct_by = '',
         group_by = {},
+        is_case_sensitive_sorting = false,
         // pluck_group_object = {},
       } = body;
       if (group_advance_filters.length && advance_filters.length) {
@@ -414,7 +415,7 @@ export class FindActorsImplementations {
         aliased_entities: Record<string, any>,
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
         by_direction: string = 'asc',
-        is_case_sensitive_sorting: string = 'false',
+        is_case_sensitive_sorting: boolean = false,
       ) => {
         const by_entity_field = order_by.split('.');
         const sort_entity: any = by_entity_field[0];
@@ -456,7 +457,7 @@ export class FindActorsImplementations {
               return exp.includes(by_field);
             });
             let sort_query = concat_sort_field.split(' AS ')[0];
-            if (is_case_sensitive_sorting === 'false') {
+            if (!is_case_sensitive_sorting) {
               sort_query = `lower(${sort_query})`;
             }
 
@@ -467,7 +468,7 @@ export class FindActorsImplementations {
             }
           } else if (entity !== table) {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
-            if (is_case_sensitive_sorting === 'false') {
+            if (!is_case_sensitive_sorting) {
               sort_query = `lower(${sort_query})`;
             }
             if (by_direction.toLowerCase() === 'asc') {
@@ -498,7 +499,7 @@ export class FindActorsImplementations {
               ({
                 by_direction,
                 by_field,
-                is_case_sensitive_sorting = 'true',
+                is_case_sensitive_sorting = false,
               }) => {
                 let sort_field_schema = getSortSchemaAndField(
                   by_field,
@@ -516,10 +517,7 @@ export class FindActorsImplementations {
                     return false; // If JSON.stringify fails (circular structure), return false
                   }
                 })();
-                if (
-                  is_case_sensitive_sorting === 'false' &&
-                  !is_query_already_lowered
-                ) {
+                if (!is_case_sensitive_sorting && !is_query_already_lowered) {
                   sort_field_schema = sql`lower(${sort_field_schema})`;
                 }
                 return ['asc', 'ascending'].includes(by_direction)
@@ -530,11 +528,23 @@ export class FindActorsImplementations {
             .filter(Boolean),
         );
       } else if (order_direction && order_by) {
-        const sort_field_schema = getSortSchemaAndField(
+        let sort_field_schema = getSortSchemaAndField(
           order_by,
           aliased_joined_entities,
           transformed_concatenations,
+          order_direction,
+          is_case_sensitive_sorting,
         );
+        const is_query_already_lowered = (() => {
+          try {
+            return JSON.stringify(sort_field_schema, null, 2).includes('lower');
+          } catch {
+            return false; // If JSON.stringify fails (circular structure), return false
+          }
+        })();
+        if (!is_case_sensitive_sorting && !is_query_already_lowered) {
+          sort_field_schema = sql`lower(${sort_field_schema})`;
+        }
         _db = _db.orderBy(
           ['asc', 'ascending'].includes(order_direction)
             ? asc(sort_field_schema)
