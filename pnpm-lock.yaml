@@ -12,8 +12,8 @@ importers:
         specifier: ^1.0.54
         version: 1.0.54(@nestjs/microservices@10.4.15)(passport@0.7.0)
       '@dna-platform/crdt-lww-postgres':
-        specifier: 1.0.79-rc3
-        version: 1.0.79-rc3(@nestjs/microservices@10.4.15)(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(bun-types@1.2.7)(passport@0.7.0)
+        specifier: ^1.0.80
+        version: 1.0.80(@nestjs/microservices@10.4.15)(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(bun-types@1.2.7)(passport@0.7.0)
       '@elastic/elasticsearch':
         specifier: ^8.17.1
         version: 8.17.1
@@ -432,8 +432,8 @@ packages:
   '@dna-platform/common@1.0.54':
     resolution: {integrity: sha512-INc3G+SFbcv+NVRrm3pfSGVz32b4HZKRcuxuAzOQn/Y3uEWxPqRQs8HVMJ7dMqf7nPo/6IXFjbvEeFaEZy3uIg==}
 
-  '@dna-platform/crdt-lww-postgres@1.0.79-rc3':
-    resolution: {integrity: sha512-R1U3JjaZ1kbv81t8AzattS1LzizEOmVqEHllY5MPz4bX9YH2rm44rrL067sAlWeNHH+EOFmHOHUCGlmZejpEig==}
+  '@dna-platform/crdt-lww-postgres@1.0.80':
+    resolution: {integrity: sha512-kPnq8CUT81P98n7mbL0HIfPnGnLX/Q1S7C17UP+GgIoMpueXsMZSQRWxjPIrleN/mZGIHiwxJ1Pwvm0vpJca6g==}
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -4798,7 +4798,7 @@ snapshots:
       - passport
       - supports-color
 
-  '@dna-platform/crdt-lww-postgres@1.0.79-rc3(@nestjs/microservices@10.4.15)(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(bun-types@1.2.7)(passport@0.7.0)':
+  '@dna-platform/crdt-lww-postgres@1.0.80(@nestjs/microservices@10.4.15)(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(bun-types@1.2.7)(passport@0.7.0)':
     dependencies:
       '@dna-platform/common': 1.0.54(@nestjs/microservices@10.4.15)(passport@0.7.0)
       '@nestjs/axios': 3.1.3(@nestjs/common@10.4.15(reflect-metadata@0.1.14)(rxjs@7.8.2))(axios@1.8.4)(rxjs@7.8.2)
