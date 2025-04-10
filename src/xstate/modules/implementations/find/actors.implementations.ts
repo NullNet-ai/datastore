@@ -552,16 +552,9 @@ export class FindActorsImplementations {
       if (joins?.length) {
         if (group_by?.fields?.length) {
           let grouped: Array<any> = [];
-          grouped = Object.keys(group_by_fields)
-            .map((group_by) => {
-              return sql.raw(group_by_fields[group_by]);
-            })
-            // merged all main table fields with group_by fields
-            .concat(
-              pluck_object[table].map((field) => {
-                return sql.raw(`${table}.${field}`);
-              }),
-            );
+          grouped = Object.keys(group_by_fields).map((group_by) => {
+            return sql.raw(group_by_fields[group_by]);
+          });
 
           _db = _db.groupBy(grouped);
         } else if (table_schema.hypertable_timestamp) {
