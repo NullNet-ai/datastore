@@ -32,12 +32,11 @@ export class VerifyActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-      const { query, headers } = _req;
+      const { query, headers, params } = _req;
+      const { type } = params;
       const { authorization } = headers;
-      const { t = '', is_root = '' } = query;
-      console.log({
-        is_root,
-      });
+      const { t = '' } = query;
+
       const result = await this.authService
         .verify(t || authorization?.replace('Bearer ', ''))
         .catch((err) => {
@@ -46,6 +45,15 @@ export class VerifyActorsImplementations {
             `Token Verification Failed: ${err.message}`,
           );
         });
+
+      if (type !== 'root' && result?.account?.is_root_account)
+        throw new BadRequestException(
+          `Token Verification Failed: Using Root Account on a non-root request.`,
+        );
+      else if (type === 'root' && !result?.account?.is_root_account)
+        throw new BadRequestException(
+          `Token Verification Failed: Use Root Account for Root Controllers.`,
+        );
 
       return Promise.resolve({
         payload: {

@@ -40,7 +40,7 @@ export class BatchInsertActorsImplementations {
       }
 
       const { controller_args, responsible_account } = context;
-      const { organization_id = '' } = responsible_account;
+      const { organization_id = '', is_root_account } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
       const prefix = body.entity_prefix;
@@ -87,7 +87,7 @@ export class BatchInsertActorsImplementations {
       const records = await map(
         body.records,
         async (record: Record<string, any>) => {
-          record.organization_id = organization_id;
+          if (!is_root_account) record.organization_id = organization_id;
 
           if (table_schema.hypertable_timestamp) {
             record.hypertable_timestamp = new Date(
@@ -102,7 +102,9 @@ export class BatchInsertActorsImplementations {
           );
           record.id = uuidv4();
           record_ids.push(record.id);
-          record.created_by = responsible_account.organization_account_id;
+          record.created_by = is_root_account
+            ? responsible_account?.organization_account?.id
+            : responsible_account.organization_account_id;
           record.timestamp = record?.timestamp
             ? new Date(record?.timestamp)
             : new Date().toISOString();

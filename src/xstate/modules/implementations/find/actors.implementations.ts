@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  NotImplementedException,
 } from '@nestjs/common';
 import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
@@ -9,11 +10,18 @@ import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
 import * as local_schema from '../../../../schema';
-import { asc, desc, sql, SQLWrapper, AnyColumn } from 'drizzle-orm';
+import {
+  asc,
+  desc,
+  sql,
+  SQLWrapper,
+  AnyColumn,
+  aliasedTable,
+} from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 import { EDateFormats } from 'src/utils/utility.types';
-// const pluralize = require('pluralize');
+const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
   private db;
@@ -37,16 +45,11 @@ export class FindActorsImplementations {
             data: [],
           },
         });
-      const { controller_args, responsible_account, root_account } = context;
+      const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
-      //!temporary fix for root account
-      const { is_root } = root_account;
-      console.log({
-        root_account,
-      });
       const [_res, _req] = controller_args;
       const { params, body } = _req;
-      const { table } = params;
+      const { table, type } = params;
       const {
         order_direction = 'asc',
         order_by = 'id',
@@ -60,6 +63,8 @@ export class FindActorsImplementations {
         concatenate_fields = [],
         date_format = 'YYYY-MM-DD',
         group_advance_filters = [],
+        distinct_by = '',
+        group_by = {},
         // pluck_group_object = {},
       } = body;
       if (group_advance_filters.length && advance_filters.length) {
@@ -79,6 +84,18 @@ export class FindActorsImplementations {
           data: [],
         });
       }
+      if (
+        (Object.keys(group_by).length || group_by?.fields?.length) &&
+        distinct_by
+      ) {
+        throw new BadRequestException({
+          success: false,
+          message: `You can only use one of the [group_by] or [distinct_by].`,
+          count: 0,
+          data: [],
+        });
+      }
+
       const parsed_concatenated_fields =
         Utility.parseConcatenateFields(concatenate_fields);
 
@@ -165,24 +182,220 @@ export class FindActorsImplementations {
 
       let _db = this.db;
 
-      // let join_keys: string[] = Object.keys(pluck_object);
+      let join_keys: string[] = Object.keys(pluck_object);
 
-      if (joins?.length) {
+      let group_by_selections = {};
+      let group_by_agg_selections = {};
+      let group_by_fields: Record<string, any> = {};
+      let group_by_entities: Array<string> = [];
+      if (group_by?.fields?.length) {
+        const { fields = [], has_count = false } = group_by;
+        group_by_selections = fields.reduce(
+          (acc, field) => {
+            let group_by_entity = table;
+            const _field = field.split('.');
+            let group_by_field = _field[0];
+            if (_field.length > 1) {
+              const [entity, field] = _field;
+              group_by_entity = entity;
+              group_by_field = field;
+            }
+            const alias = aliased_joined_entities?.find(
+              ({ alias }) => alias === group_by_entity,
+            );
+            group_by_entity = alias
+              ? group_by_entity
+              : pluralize(group_by_entity || table);
+
+            if (
+              table !== group_by_entity &&
+              !join_keys.includes(group_by_entity) &&
+              !alias
+            )
+              throw new BadRequestException({
+                success: false,
+                message: `Other than main entity, you can only group results by fields of joined entities. ${group_by_entity} is not a joined entity nor an aliased joined entity.`,
+              });
+            const grouped_entity_schema = alias
+              ? aliasedTable(schema[alias?.entity], group_by_entity)
+              : schema[group_by_entity];
+            let group_field_schema = grouped_entity_schema[group_by_field];
+            const group_field = `${group_by_entity}.${group_by_field}`;
+            if (
+              parsed_concatenated_fields.fields[group_by_entity]?.includes(
+                group_by_field,
+              )
+            )
+              throw new BadRequestException({
+                success: false,
+                message: `You can't group by concatenated fields`,
+              });
+            else group_by_fields[group_field] = group_field;
+            if (!group_field_schema)
+              throw new BadRequestException({
+                success: false,
+                message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
+              });
+            if (multiple_sort.length)
+              throw new BadRequestException({
+                success: false,
+                message: `You can't group by fields if you have multiple sorting of fields`,
+              });
+            const order_by_schema = grouped_entity_schema[order_by];
+            if (!order_by_schema)
+              throw new BadRequestException({
+                success: false,
+                message: `Order by field ${order_by} does not exist in ${group_by_entity}`,
+              });
+            group_by_agg_selections = !group_by?.fields?.includes(order_by)
+              ? {
+                  [order_by_schema.name]: sql.raw(
+                    `${
+                      ['asc', 'ascending'].includes(order_direction)
+                        ? 'MIN'
+                        : 'MAX'
+                    }("${group_by_entity}"."${order_by_schema.name}")`,
+                  ),
+                }
+              : {};
+
+            group_by_entities.push(group_by_entity);
+            return {
+              ...acc,
+              [group_by_entity]: {
+                ...group_by_agg_selections,
+                ...acc[group_by_entity],
+                [group_by_field]: group_field_schema,
+              },
+            };
+          },
+          {
+            ...(has_count
+              ? {
+                  count: sql.raw('COUNT(*)'),
+                  total_group_count: sql.raw('COUNT(*) OVER ()'),
+                }
+              : {}),
+          },
+        );
+      }
+      if (distinct_by) {
+        const _distinct = distinct_by.split('.');
+        let distinct_entity = table;
+        let distinct_field = _distinct[0];
+        if (_distinct.length > 1) {
+          const [entity, field] = _distinct;
+          distinct_entity = entity;
+          distinct_field = field;
+        }
+        const alias = aliased_joined_entities?.find(
+          ({ alias }) => alias === distinct_entity,
+        );
+        distinct_entity = alias
+          ? distinct_entity
+          : pluralize(distinct_entity || table);
+
+        if (
+          table !== distinct_entity &&
+          !join_keys.includes(distinct_entity) &&
+          !alias
+        )
+          throw new BadRequestException({
+            success: false,
+            message: `Other than main entity, you can only distinct a field of joined entities. ${distinct_entity} is not a joined entity nor an aliased joined entity.`,
+          });
+
         _db = _db
-          .select(
-            Utility.createSelections({
-              table,
-              pluck_object,
-              joins,
-              date_format,
-              parsed_concatenated_fields,
-              multiple_sort,
-            }),
-          )
+          .select({
+            [`${distinct_entity}`]: {
+              [`${distinct_field}`]: sql.raw(
+                `DISTINCT ${distinct_entity}.${distinct_field}`,
+              ),
+            },
+          })
+          .from(table_schema);
+      } else if (!distinct_by && joins?.length) {
+        const join_selections = Utility.createSelections({
+          table,
+          pluck_object,
+          joins,
+          date_format,
+          parsed_concatenated_fields,
+          multiple_sort,
+        });
+        const is_grouping_joined_entity = group_by_entities.some((key) =>
+          Object.keys(join_selections ?? {}).includes(key),
+        );
+
+        if (is_grouping_joined_entity)
+          throw new NotImplementedException({
+            success: false,
+            message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
+          });
+
+        let count_selection = {};
+        if ((group_by_selections as Record<string, any>)?.count)
+          count_selection = {
+            count: (group_by_selections as Record<string, any>).count,
+            total_group_count: (group_by_selections as Record<string, any>)
+              .total_group_count,
+          };
+        const join_selections_with_group_by = {
+          ...Object.entries(group_by_selections).reduce(
+            (acc, [entity, fields]) => {
+              if (!Object.keys(fields as Record<string, any>).includes('id'))
+                delete (join_selections as Record<string, any> | undefined)?.id;
+              return {
+                ...acc,
+                ...count_selection,
+                [entity]: {
+                  ...(fields as Record<string, any>),
+                  ...join_selections,
+                },
+              };
+            },
+            {},
+          ),
+        };
+        _db = _db
+          .select({
+            ...(Object.keys(group_by_selections).length
+              ? join_selections_with_group_by
+              : join_selections),
+          })
           .from(table_schema);
       } else {
-        _db = _db.select(selections).from(table_schema);
+        let count_selection = {};
+        if ((group_by_selections as Record<string, any>)?.count)
+          count_selection = {
+            count: (group_by_selections as Record<string, any>).count,
+            total_group_count: (group_by_selections as Record<string, any>)
+              .total_group_count,
+          };
+        const has_plucked_not_grouped_fields = Object.keys(
+          selections ?? {},
+        ).some((key) => !group_by_selections?.[table]?.[key]);
+        if (
+          Object.keys(group_by_selections).length &&
+          has_plucked_not_grouped_fields
+        )
+          throw new BadRequestException({
+            success: false,
+            message: `You can only select fields that are in the group_by fields.`,
+          });
+        const selections_with_group_by = {
+          ...count_selection,
+          [table]: group_by_selections?.[table] ?? {},
+        };
+        _db = _db
+          .select({
+            ...(Object.keys(group_by_selections).length
+              ? selections_with_group_by
+              : selections),
+          })
+          .from(table_schema);
       }
+
       _db = Utility.FilterAnalyzer(
         _db,
         table_schema,
@@ -193,8 +406,7 @@ export class FindActorsImplementations {
         this.db,
         parsed_concatenated_fields,
         group_advance_filters,
-        // !temporary fix
-        is_root,
+        type,
       );
 
       const getSortSchemaAndField = (
@@ -273,7 +485,13 @@ export class FindActorsImplementations {
       };
       const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
         Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
-      if (multiple_sort.length) {
+      if (group_by_agg_selections[order_by]) {
+        _db = _db.orderBy(
+          ['asc', 'ascending'].includes(order_direction)
+            ? asc(group_by_agg_selections[order_by])
+            : desc(group_by_agg_selections[order_by]),
+        );
+      } else if (multiple_sort.length) {
         _db = _db.orderBy(
           ...multiple_sort
             .map(
@@ -332,13 +550,27 @@ export class FindActorsImplementations {
       }
       // group by main table if joins are present and check if table is hypertable or not
       if (joins?.length) {
-        if (table_schema.hypertable_timestamp) {
+        if (group_by?.fields?.length) {
+          let grouped: Array<any> = [];
+          grouped = Object.keys(group_by_fields).map((group_by) => {
+            return sql.raw(group_by_fields[group_by]);
+          });
+
+          _db = _db.groupBy(grouped);
+        } else if (table_schema.hypertable_timestamp) {
           _db = _db.groupBy(table_schema.id, table_schema.timestamp);
         } else {
           _db = _db.groupBy(table_schema.id);
         }
+      } else if (group_by?.fields?.length) {
+        let grouped: Array<any> = [];
+        grouped = Object.keys(group_by_fields).map((group_by) =>
+          sql.raw(group_by_fields[group_by]),
+        );
+        _db = _db.groupBy(grouped);
       }
-      this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
+      this.logger.debug(`Query: ${_db.toSQL().sql}`);
+      this.logger.debug(`Params: ${_db.toSQL().params}`);
       let result = await _db;
       if (!result || !result.length) {
         throw new NotFoundException({

@@ -33,7 +33,7 @@ export class CountActorsImplementations {
       const { controller_args, responsible_account } = context;
       const [_res, _req] = controller_args;
       const { organization_id = '' } = responsible_account;
-      const { table } = _req.params;
+      const { table, type } = _req.params;
       const { table_schema } = Utility.checkTable(table);
       const {
         advance_filters = [],
@@ -57,6 +57,7 @@ export class CountActorsImplementations {
         this.db,
         concatenate_fields,
         group_advance_filters,
+        type
       );
       const [{ count }] = await _db;
 

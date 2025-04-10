@@ -1,21 +1,15 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Response, Request, Express } from 'express';
-import * as fs from 'fs/promises';
 import { each, mapSeries } from 'bluebird';
-import { numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { LoggerService, Machine } from '@dna-platform/common';
 import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
-import { getConfigDefaults } from '@dna-platform/crdt-lww-postgres/build/schema/system';
-// import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
-// import {
-//   locale,
-//   date_options,
-//   timezone,
-// } from '@dna-platform/crdt-lww-postgres/build/modules/constants';
+import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
+import {
+  locale,
+  date_options,
+  timezone,
+  formatter,
+} from '@dna-platform/crdt-lww-postgres/build/modules/constants';
 import {
   EInitializer,
   IinitializerParams,
@@ -25,14 +19,15 @@ import {
   counters,
   messages,
   organization_accounts,
-  // contacts,
-  // organizations,
-  // external_contacts,
+  contacts,
+  organizations,
+  external_contacts,
 } from '../../schema';
 import * as app_schema from '../../schema/application';
 import * as schema from '../../schema';
-import { desc, sql } from 'drizzle-orm';
+import { desc, sql, eq, and } from 'drizzle-orm';
 import * as cache from 'memory-cache';
+import * as argon2 from 'argon2';
 const pluralize = require('pluralize');
 const {
   DEBUG = 'false',
@@ -104,7 +99,8 @@ export class InitializerService {
   private db;
   constructor(
     private drizzleService: DrizzleService,
-    private logger: LoggerService, // private authService: AuthService,
+    private logger: LoggerService,
+    private authService: AuthService,
   ) {
     this.db = this.drizzleService.getClient();
   }
@@ -143,78 +139,82 @@ export class InitializerService {
           `System code config created: ${system_config_result}`,
         );
         break;
-      // case EInitializer.ROOT_ACCOUNT_CONFIG:
-      //   if (!entity)
-      //     throw new BadRequestException(
-      //       'Indicate entity for Root Account Configuration',
-      //     );
-      //   const root_account_id = '01JM3GTWCHR3CM2NP85C0Q2KN1';
-      //   const account_id = 'root';
-      //   const account_secret =
-      //     process.env.ROOT_ACCOUNT_PASSWORD || 'pl3@s3ch@ng3m3!!';
-      //   const hashed_password = await this.authService.passwordHash(
-      //     account_secret,
-      //   );
-      //   const date = new Date();
+      case EInitializer.ROOT_ACCOUNT_CONFIG:
+        if (!entity)
+          throw new BadRequestException(
+            'Indicate entity for Root Account Configuration',
+          );
+        const root_account_id = '9c3ad11b-5b69-4bba-9858-3974d091b335';
+        const account_id = 'root';
+        const account_secret =
+          process.env.ROOT_ACCOUNT_PASSWORD || 'pl3@s3ch@ng3m3!!';
+        const hashed_password = await this.authService.passwordHash(
+          account_secret,
+        );
+        const date = new Date();
 
-      //   const [organization_accounts_counter = null] = await this.db
-      //     .select()
-      //     .from(counters)
-      //     .where(sql`${counters.entity} = 'organization_accounts'`);
-      //   const generateRootAccountCode = (entity_code: Record<string, any>) => {
-      //     const root_count = 0;
-      //     const { prefix, default_code } = entity_code;
-      //     let { digits_number } = entity_code as Record<string, any>;
-      //     const getDigit = (num: number) => {
-      //       return num.toString().length;
-      //     };
+        const [organization_accounts_counter = null] = await this.db
+          .select()
+          .from(counters)
+          .where(sql`${counters.entity} = 'organization_accounts'`);
+        const generateRootAccountCode = (entity_code: Record<string, any>) => {
+          const root_count = 0;
+          const { prefix, default_code } = entity_code;
+          let { digits_number } = entity_code as Record<string, any>;
+          const getDigit = (num: number) => {
+            return num.toString().length;
+          };
 
-      //     if (digits_number) {
-      //       digits_number = digits_number - getDigit(root_count);
-      //       const zero_digits =
-      //         digits_number > 0 ? '0'.repeat(digits_number) : '';
-      //       return prefix + (zero_digits + root_count);
-      //     }
-      //     return prefix + (default_code + root_count);
-      //   };
+          if (digits_number) {
+            digits_number = digits_number - getDigit(root_count);
+            const zero_digits =
+              digits_number > 0 ? '0'.repeat(digits_number) : '';
+            return prefix + (zero_digits + root_count);
+          }
+          return prefix + (default_code + root_count);
+        };
 
-      //   const root_organization_account = {
-      //     id: root_account_id,
-      //     ...(organization_accounts_counter
-      //       ? { code: generateRootAccountCode(organization_accounts_counter) }
-      //       : {}),
-      //     categories: ['Root'],
-      //     account_id,
-      //     email: account_id,
-      //     password: hashed_password,
-      //     account_secret: hashed_password,
-      //     tombstone: 0,
-      //     status: 'Active',
-      //     timestamp: date.toISOString(),
-      //     created_date: date.toLocaleDateString(locale, date_options),
-      //     created_time: Utility.convertTime12to24(
-      //       date.toLocaleTimeString(locale, { timeZone: timezone }),
-      //     ),
-      //     updated_date: date.toLocaleDateString(locale, date_options),
-      //     updated_time: Utility.convertTime12to24(
-      //       date.toLocaleTimeString(locale, { timeZone: timezone }),
-      //     ),
-      //     is_new_user: 0,
-      //   };
-      //   const result = await this.db
-      //     .insert(organization_accounts)
-      //     .values(root_organization_account)
-      //     .returning({
-      //       id: organization_accounts.id,
-      //       account_id: organization_accounts.account_id,
-      //       categories: organization_accounts.categories,
-      //       status: organization_accounts.status,
-      //     })
-      //     .then(([account]) => account)
-      //     .catch(() => null);
+        const root_organization_account = {
+          id: root_account_id,
+          ...(organization_accounts_counter
+            ? { code: generateRootAccountCode(organization_accounts_counter) }
+            : {}),
+          categories: ['Root'],
+          account_id,
+          email: account_id,
+          password: hashed_password,
+          account_secret: hashed_password,
+          tombstone: 0,
+          status: 'Active',
+          timestamp: date.toISOString(),
+          created_date: formatter(
+            date.toLocaleDateString(locale, date_options),
+          ),
+          created_time: Utility.convertTime12to24(
+            date.toLocaleTimeString(locale, { timeZone: timezone }),
+          ),
+          updated_date: formatter(
+            date.toLocaleDateString(locale, date_options),
+          ),
+          updated_time: Utility.convertTime12to24(
+            date.toLocaleTimeString(locale, { timeZone: timezone }),
+          ),
+          is_new_user: 0,
+        };
+        const result = await this.db
+          .insert(organization_accounts)
+          .values(root_organization_account)
+          .returning({
+            id: organization_accounts.id,
+            account_id: organization_accounts.account_id,
+            categories: organization_accounts.categories,
+            status: organization_accounts.status,
+          })
+          .then(([account]) => account)
+          .catch(() => null);
 
-      //   this.logger.debug(`Root Account created: ${JSON.stringify(result)}`);
-      //   break;
+        this.logger.debug(`Root Account created: ${JSON.stringify(result)}`);
+        break;
       default:
         throw new Error('Invalid initializer type');
     }
@@ -424,132 +424,275 @@ export class CustomCreateService {
   }
 }
 
+// @Injectable()
+// export class DatabaseService {
+// private db;
+// private schema;
+// private db_migrations_table = '__drizzle_migrations';
+// private env = process.env.NODE_ENV || 'local';
+// private drizzle_path = `drizzle`;
+// private drizzle_meta_path = `${this.drizzle_path}/${this.env}/meta`;
+// private drizzle_meta_journal = `${this.drizzle_meta_path}/_journal.json`;
+// constructor(
+// private logger: LoggerService,
+// private drizzleService: DrizzleService,
+// ) {
+// this.db = this.drizzleService.getClient();
+// this.schema = sqliteTable(
+//   this.db_migrations_table,
+//   {
+//     id: text().primaryKey(),
+//     hash: text().notNull(),
+//     created_at: numeric(),
+//   },
+//   getConfigDefaults.byIndex(this.db_migrations_table),
+// );
+// }
+
+// async checkMigration(): Promise<{
+//   success: boolean;
+//   message: string;
+//   data: any;
+// }> {
+//   try {
+//     let _db = this.db;
+//     await fs.readdir(this.drizzle_path).catch((err) => {
+//       throw new NotFoundException(err.message);
+//     });
+
+//     const journal_data = await fs
+//       .readFile(`${this.drizzle_meta_journal}`, 'utf8')
+//       .then((data) => {
+//         return JSON.parse(data);
+//       })
+//       .catch((err) => {
+//         throw new NotFoundException(err.message);
+//       });
+
+//     _db = _db.select().from(this.schema);
+//     this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
+//     const results = await _db;
+//     if (!results || !results.length) {
+//       this.logger.debug('No drizzle migration records found.');
+//       return {
+//         success: false,
+//         message: 'No drizzle migration records found.',
+//         data: [],
+//       };
+//     }
+
+//     return {
+//       success: true,
+//       message: 'Successfully checked drizzle migrations',
+//       data: [
+//         {
+//           db_drizzle_migrations: results,
+//           [`${this.env}_drizzle_meta_journal`]: journal_data,
+//         },
+//       ],
+//     };
+//   } catch (error: any) {
+//     this.logger.error(error);
+//     return {
+//       success: false,
+//       message: error?.message,
+//       data: [],
+//     };
+//   }
+// }
+
+// async fixMigration() {
+//   const { data = [] } = await this.checkMigration();
+//   const {
+//     db_drizzle_migrations = [],
+//     [`${this.env}_drizzle_meta_journal`]: journal_data = {},
+//   } = data[0];
+
+//   db_drizzle_migrations.forEach(async (migration, index) => {
+//     const index_prefix = `${index}`.padStart(4, '0');
+//     if (!journal_data.entries[index]) {
+//       journal_data.entries.push({
+//         idx: index,
+//         version: '6',
+//         when: migration.created_at,
+//         tag: `${index_prefix}_store`,
+//         breakpoints: true,
+//       });
+//     } else if (journal_data.entries[index].when !== migration.created_at) {
+//       journal_data.entries[index].when = migration.created_at;
+//     }
+//   });
+//   await fs
+//     .writeFile(
+//       this.drizzle_meta_journal,
+//       JSON.stringify(journal_data, null, 2),
+//     )
+//     .catch((err) => {
+//       this.logger.error(err);
+//     });
+// }
+
+// checkMissingParams(required_params: string[], params: Record<string, any>) {
+//   const missing_params: string[] = [];
+//   required_params.forEach((param) => {
+//     if (!params[param]) {
+//       missing_params.push(param);
+//     }
+//   });
+//   return missing_params;
+// }
+
+// }
+
 @Injectable()
-export class DatabaseService {
+export class RootStoreService {
   private db;
-  private schema;
-  private db_migrations_table = '__drizzle_migrations';
-  private env = process.env.NODE_ENV || 'local';
-  private drizzle_path = `drizzle`;
-  private drizzle_meta_path = `${this.drizzle_path}/${this.env}/meta`;
-  private drizzle_meta_journal = `${this.drizzle_meta_path}/_journal.json`;
-  constructor(
-    private logger: LoggerService,
-    private drizzleService: DrizzleService,
-  ) {
+  constructor(private drizzleService: DrizzleService) {
     this.db = this.drizzleService.getClient();
-    this.schema = sqliteTable(
-      this.db_migrations_table,
-      {
-        id: text().primaryKey(),
-        hash: text().notNull(),
-        created_at: numeric(),
-      },
-      getConfigDefaults.byIndex(this.db_migrations_table),
-    );
   }
 
-  async checkMigration(): Promise<{
-    success: boolean;
-    message: string;
-    data: any;
-  }> {
-    try {
-      let _db = this.db;
-      await fs.readdir(this.drizzle_path).catch((err) => {
-        throw new NotFoundException(err.message);
-      });
-
-      const journal_data = await fs
-        .readFile(`${this.drizzle_meta_journal}`, 'utf8')
-        .then((data) => {
-          return JSON.parse(data);
-        })
-        .catch((err) => {
-          throw new NotFoundException(err.message);
-        });
-
-      _db = _db.select().from(this.schema);
-      this.logger.debug(`Query: ${JSON.stringify(_db.toSQL())}`);
-      const results = await _db;
-      if (!results || !results.length) {
-        this.logger.debug('No drizzle migration records found.');
-        return {
-          success: false,
-          message: 'No drizzle migration records found.',
-          data: [],
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Successfully checked drizzle migrations',
-        data: [
-          {
-            db_drizzle_migrations: results,
-            [`${this.env}_drizzle_meta_journal`]: journal_data,
-          },
-        ],
-      };
-    } catch (error: any) {
-      this.logger.error(error);
-      return {
-        success: false,
-        message: error?.message,
-        data: [],
-      };
-    }
-  }
-
-  async fixMigration() {
-    const { data = [] } = await this.checkMigration();
+  async getAccount(params: {
+    account_id: string;
+    return_account_secret?: boolean;
+    organization_id?: string;
+    contact_id?: string;
+    organization_account_id?: string;
+    is_external_user?: boolean;
+  }) {
     const {
-      db_drizzle_migrations = [],
-      [`${this.env}_drizzle_meta_journal`]: journal_data = {},
-    } = data[0];
+      account_id,
+      return_account_secret = false,
+      organization_id = '',
+      contact_id = '',
+      organization_account_id = '',
+      is_external_user = false,
+    } = params;
 
-    db_drizzle_migrations.forEach(async (migration, index) => {
-      const index_prefix = `${index}`.padStart(4, '0');
-      if (!journal_data.entries[index]) {
-        journal_data.entries.push({
-          idx: index,
-          version: '6',
-          when: migration.created_at,
-          tag: `${index_prefix}_store`,
-          breakpoints: true,
-        });
-      } else if (journal_data.entries[index].when !== migration.created_at) {
-        journal_data.entries[index].when = migration.created_at;
-      }
-    });
-    await fs
-      .writeFile(
-        this.drizzle_meta_journal,
-        JSON.stringify(journal_data, null, 2),
+    const filters = [
+      eq((organization_accounts as Record<string, any>).tombstone, 0),
+      eq((organization_accounts as Record<string, any>).status, 'Active'),
+      eq((organization_accounts as Record<string, any>).account_id, account_id),
+    ];
+    if (organization_id)
+      filters.push(
+        eq(
+          (organization_accounts as Record<string, any>).organization_id,
+          organization_id,
+        ),
+      );
+    if (contact_id)
+      filters.push(
+        eq(
+          is_external_user
+            ? (organization_accounts as Record<string, any>).external_contact_id
+            : (organization_accounts as Record<string, any>).contact_id,
+          contact_id,
+        ),
+      );
+    if (organization_account_id)
+      filters.push(
+        eq(
+          (organization_accounts as Record<string, any>).id,
+          organization_account_id,
+        ),
+      );
+
+    return this.db
+      .select({
+        contact: contacts,
+        external_contact: external_contacts,
+        organization: organizations,
+        organization_account_id: (organization_accounts as Record<string, any>)
+          .id,
+        organization_id: (organization_accounts as Record<string, any>)
+          .organization_id,
+        account_status: (organization_accounts as Record<string, any>)
+          .account_status,
+        account_id: (organization_accounts as Record<string, any>).account_id,
+        ...(return_account_secret
+          ? {
+              account_secret: (organization_accounts as Record<string, any>)
+                .account_secret,
+            }
+          : {}),
+        categories: (organization_accounts as Record<string, any>).categories,
+      })
+      .from(organization_accounts)
+      .where(and(...filters))
+      .leftJoin(
+        external_contacts,
+        eq(
+          (external_contacts as Record<string, any>).id,
+          (organization_accounts as Record<string, any>).external_contact_id,
+        ),
       )
-      .catch((err) => {
-        this.logger.error(err);
+      .leftJoin(
+        contacts,
+        eq(
+          (contacts as Record<string, any>).id,
+          (organization_accounts as Record<string, any>).contact_id,
+        ),
+      )
+      .leftJoin(
+        organizations,
+        eq(
+          (organizations as Record<string, any>).id,
+          (organization_accounts as Record<string, any>).organization_id,
+        ),
+      )
+      .then(([{ categories, external_contact, contact, ...account }]) => {
+        const is_external_user = categories
+          ?.map((category) => category.toLowerCase())
+          ?.includes('external user');
+        return {
+          contact: is_external_user ? external_contact : contact,
+          ...account,
+          is_external_user,
+        };
       });
-  }
-
-  checkMissingParams(required_params: string[], params: Record<string, any>) {
-    const missing_params: string[] = [];
-    required_params.forEach((param) => {
-      if (!params[param]) {
-        missing_params.push(param);
-      }
-    });
-    return missing_params;
   }
 
   async updatePassword(params: Record<string, any>) {
     const { id, password } = params;
-    return this.db
-      .insert(organization_accounts)
-      .values({ id, password })
-      .onConflictDoUpdate({
-        target: organization_accounts.id,
-        set: { password, account_secret: password },
+    const generated_password = await argon2.hash(password);
+    const date = new Date();
+    const updated_date = formatter(
+      date.toLocaleDateString(locale, date_options),
+    );
+    const updated_time = Utility.convertTime12to24(
+      date.toLocaleTimeString(locale, { timeZone: timezone }),
+    );
+    const result = await this.db
+      .update(organization_accounts)
+      .set({
+        id,
+        password: generated_password,
+        account_secret: generated_password,
+        updated_date,
+        updated_time,
+      })
+      .where(eq((organization_accounts as Record<string, any>).id, id));
+
+    if (result.changes === 0)
+      throw new BadRequestException({
+        success: false,
+        message:
+          '[updatePassword]: No record for Organization Account updated.',
+        count: 0,
+        data: [],
       });
+
+    return {
+      success: true,
+      message: '[updatePassword]: Successfully updated password.',
+      count: result.changes,
+      data: [
+        {
+          id,
+          updated_date,
+          updated_time,
+        },
+      ],
+    };
   }
 }

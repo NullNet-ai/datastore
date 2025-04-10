@@ -51,7 +51,7 @@ export class GetActorsImplementations {
     const { organization_id = '' } = responsible_account;
     const [_res, _req] = controller_args;
     const { params, query } = _req;
-    const { table = 'files', id } = params;
+    const { table = 'files', id, type } = params;
     const { pluck = 'id', date_format = 'mm/dd/YYYY' } = query;
     const { table_schema } = Utility.checkTable(table);
     const _plucked_fields = Utility.parsePluckedFields(
@@ -78,8 +78,12 @@ export class GetActorsImplementations {
       .where(
         and(
           eq(table_schema.tombstone, 0),
-          isNotNull(table_schema.organization_id),
-          eq(table_schema.organization_id, organization_id),
+          ...(type !== 'root'
+            ? [
+                isNotNull(table_schema.organization_id),
+                eq(table_schema.organization_id, organization_id),
+              ]
+            : []),
           eq(table_schema.id, id),
         ),
       );

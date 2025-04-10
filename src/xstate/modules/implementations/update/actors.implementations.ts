@@ -41,7 +41,7 @@ export class UpdateActorsImplementations {
           },
         });
       const { controller_args, responsible_account } = context;
-      const { organization_id = '' } = responsible_account;
+      const { organization_id = '', is_root_account } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table, id } = params;
@@ -69,7 +69,7 @@ export class UpdateActorsImplementations {
         });
       }
 
-      if (!body?.organization_id) {
+      if (!body?.organization_id && !is_root_account) {
         body.organization_id = organization_id;
       }
       body.id = id;
@@ -88,7 +88,10 @@ export class UpdateActorsImplementations {
           },
         });
       }
-      body.updated_by = responsible_account.organization_account_id;
+
+      body.updated_by = is_root_account
+        ? responsible_account?.organization_account?.id
+        : responsible_account.organization_account_id;
       const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
       delete body.id;
