@@ -3,10 +3,11 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/count/count.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
-import { countDistinct } from 'drizzle-orm';
+import { countDistinct, sql } from 'drizzle-orm';
 import * as local_schema from '../../../../schema';
 import { Utility } from '../../../../utils/utility.service';
 import { VerifyActorsImplementations } from '../verify';
+const pluralize = require('pluralize');
 
 @Injectable()
 export class CountActorsImplementations {
@@ -41,11 +42,34 @@ export class CountActorsImplementations {
         pluck_object,
         concatenate_fields = [],
         group_advance_filters = [],
+        distinct_by = '',
       } = _req.body;
       let _db = this.db;
-      _db = _db
-        .select({ count: countDistinct(local_schema[table].id) })
-        .from(local_schema[table]);
+
+      if (distinct_by) {
+        let distinct_entity = table;
+        const _distinct = distinct_by.split('.');
+        let distinct_field = _distinct[0];
+        if (_distinct.length > 1) {
+          const [entity, field] = _distinct;
+          distinct_entity = entity;
+          distinct_field = field;
+        }
+
+        distinct_entity = local_schema[pluralize(distinct_entity)]
+          ? pluralize(distinct_entity)
+          : distinct_entity;
+        _db = _db
+          .select({
+            count: countDistinct(
+              sql.raw(`${distinct_entity}.${distinct_field}`),
+            ),
+          })
+          .from(local_schema[table]);
+      } else
+        _db = _db
+          .select({ count: countDistinct(local_schema[table].id) })
+          .from(local_schema[table]);
 
       _db = Utility.FilterAnalyzer(
         _db,
@@ -57,7 +81,7 @@ export class CountActorsImplementations {
         this.db,
         concatenate_fields,
         group_advance_filters,
-        type
+        type,
       );
       const [{ count }] = await _db;
 
