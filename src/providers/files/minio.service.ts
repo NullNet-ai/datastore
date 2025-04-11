@@ -40,7 +40,7 @@ export class MinioService {
       this.client = new Minio.Client({
         endPoint: STORAGE_ENDPOINT,
         port: +STORAGE_PORT,
-        useSSL: false,
+        useSSL: +STORAGE_PORT === 443,
         accessKey: STORAGE_ACCESS_KEY,
         secretKey: STORAGE_SECRET_KEY,
         // ...(NODE_ENV === 'production' && {
@@ -68,7 +68,7 @@ export class MinioService {
           ) +
           org_id.substring(org_id.length - 2)
         )
-          .replace(/[0-9]/g, '')
+          .replace(/[^a-zA-Z]/g, '')
           .toLowerCase()
       : '';
 

@@ -12,7 +12,7 @@ yarn-error.log*
 lerna-debug.log*
 upload
 bun.lockdb
-pnpm-lock.yaml
+pnpm-lock*
 # OS
 .DS_Store
 /drizzle
