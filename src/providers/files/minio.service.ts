@@ -81,7 +81,7 @@ export class MinioService {
       .replace(/[^a-z-]/g, '')
       .substring(0, 20);
 
-    return _bname + org_pattern;
+    return 'bckt' + _bname + org_pattern;
   }
 
   public async makeBucket(
@@ -128,9 +128,9 @@ export class MinioService {
 
     // bucket length should be less than and no more than 63
     // characters long.
-    if (bucket.length < 1 || bucket.length > 63) {
+    if (bucket.length < 5 || bucket.length > 63) {
       throw new BadRequestException(
-        `Bucket name [${bucket}] should be between 1 and 63 characters long`,
+        `Bucket name [${bucket}] should be between 5 and 63 characters long`,
       );
     }
     // bucket with successive periods is invalid.
