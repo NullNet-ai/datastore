@@ -1,6 +1,6 @@
+use crate::schema::schema::sync_queues;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::schema::schema::sync_queues;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = sync_queues)]

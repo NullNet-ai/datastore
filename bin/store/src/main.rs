@@ -11,6 +11,7 @@ mod sync;
 mod table_enum;
 mod auth;
 
+
 use controllers::store_controller::create_record;
 
 #[actix_web::main]

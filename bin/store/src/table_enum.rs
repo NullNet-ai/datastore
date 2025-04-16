@@ -59,9 +59,10 @@ impl Table {
     ) -> Result<String, DieselError> {
         match self {
             Table::Packets => {
-                let value: Packet = serde_json::from_value(record).map_err(|e| {
+                let mut value: Packet = serde_json::from_value(record).map_err(|e| {
                     DieselError::DeserializationError(Box::new(e))
                 })?;
+                value.hypertable_timestamp = value.timestamp.to_string();
                 let result= diesel::insert_into(packets::table())
                 .values(value)
                 .get_result::<Packet>(conn)?;
@@ -86,6 +87,7 @@ impl Table {
                         return Err(diesel::result::Error::RollbackTransaction);
                     }
                 };
+                
                 diesel::insert_into(packets::table())
                     .values(value.clone())
                     .on_conflict((schema::packets::id, schema::packets::timestamp))

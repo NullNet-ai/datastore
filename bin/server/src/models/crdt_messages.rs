@@ -1,6 +1,6 @@
+use crate::schema::schema::crdt_messages;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::schema::schema::crdt_messages;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = crdt_messages)]
@@ -16,4 +16,20 @@ pub struct CrdtMessage {
     pub value: String,
     pub operation: String,
     pub hypertable_timestamp: Option<String>,
+}
+
+
+use serde_json::Value as JsonValue;
+
+impl CrdtMessage {
+    /// Get the value as serde_json::Value
+    pub fn value_as_json(&self) -> serde_json::Result<JsonValue> {
+        serde_json::from_str(&self.value)
+    }
+
+    /// Set the value from serde_json::Value
+    pub fn set_value_from_json(&mut self, val: &JsonValue) -> serde_json::Result<()> {
+        self.value = serde_json::to_string(val)?;
+        Ok(())
+    }
 }

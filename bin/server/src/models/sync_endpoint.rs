@@ -1,6 +1,6 @@
+use crate::schema::schema::sync_endpoints;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::schema::schema::sync_endpoints;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = sync_endpoints)]

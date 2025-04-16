@@ -1,6 +1,6 @@
+use crate::schema::schema::crdt_messages_merkles;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::schema::schema::crdt_messages_merkles;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = crdt_messages_merkles)]

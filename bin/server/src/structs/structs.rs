@@ -1,18 +1,27 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::models::crdt_messages::CrdtMessage;
+
 #[derive(Deserialize)]
 #[serde(transparent)]
 pub struct CreateRequestBody {
     pub record: Value,
 }
 
-
-
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct QueryParams {
-    pub start: u32,
-    pub limit: u32,
+    pub start: usize,
+    pub limit: usize,
     pub client_id: String,
+}
+
+
+#[derive(Deserialize, Clone)]
+pub struct SyncRequestBody {
+    pub group_id: String,
+    pub client_id: String,
+    pub messages: Vec<CrdtMessage>,
+    pub merkle: Option<String>,
 }

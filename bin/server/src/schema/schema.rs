@@ -1,4 +1,4 @@
-use diesel::{table,joinable,allow_tables_to_appear_in_same_query};
+use diesel::{allow_tables_to_appear_in_same_query, joinable, table};
 
 table! {
     sync_endpoint_groups (group_id, sync_endpoint_id) {
@@ -75,7 +75,6 @@ table! {
         merkle -> Text,
     }
 }
-
 
 joinable!(sync_endpoint_groups -> sync_endpoints (sync_endpoint_id));
 allow_tables_to_appear_in_same_query!(

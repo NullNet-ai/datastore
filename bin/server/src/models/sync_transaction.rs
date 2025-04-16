@@ -1,6 +1,6 @@
+use crate::schema::schema::sync_transactions;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::schema::schema::sync_transactions;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = sync_transactions)]

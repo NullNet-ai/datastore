@@ -26,6 +26,7 @@ pub struct Packet {
     pub hypertable_timestamp: String,
     pub interface_name: String,
     pub total_length: Option<i32>,
+    pub device_id: Option<Uuid>,
     pub source_mac: Option<String>,
     pub destination_mac: Option<String>,
     pub ether_type: Option<String>,
@@ -45,5 +46,4 @@ pub struct Packet {
     pub tcp_urgent_pointer: Option<i32>,
     pub icmp_type: Option<i32>,
     pub icmp_code: Option<i32>,
-    pub order: Option<String>,
 }
