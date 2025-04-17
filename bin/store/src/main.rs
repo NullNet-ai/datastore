@@ -10,7 +10,7 @@ mod structs;
 mod sync;
 mod table_enum;
 mod auth;
-
+use crate::sync::transactions::transaction_service::TransactionService;
 
 use controllers::store_controller::create_record;
 
@@ -21,6 +21,7 @@ async fn main() -> std::io::Result<()> {
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let pool = db::establish_connection();
     println!("Database connected successfully.");
+    TransactionService::initialize();
 
     let server_url = format!("127.0.0.1:{}", port);
     println!("Server is running on {}", server_url);

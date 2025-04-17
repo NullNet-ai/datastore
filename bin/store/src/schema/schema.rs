@@ -90,3 +90,47 @@ table! {
         merkle -> Text,
     }
 }
+
+table! {
+    sync_endpoints (id) {
+        id -> Text,
+        name -> Text,
+        url -> Text,
+        group_id -> Text,
+        username -> Text,
+        password -> Text,
+        status -> Text,
+    }
+}
+
+
+// Add these table definitions to your schema.rs file
+
+table! {
+    queues (id) {
+        id -> Text,
+        name -> Text,
+        size -> Integer,
+        count -> Integer,
+    }
+}
+
+table! {
+    queue_items (id) {
+        id -> Text,
+        order -> Integer,
+        queue_id -> Text,
+        value -> Text,
+    }
+}
+
+// Add this table definition to your schema.rs file
+
+table! {
+    transactions (id) {
+        id -> Text,
+        timestamp -> Text,
+        status -> Text,
+        expiry -> BigInt,
+    }
+}

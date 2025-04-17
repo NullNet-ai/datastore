@@ -9,6 +9,19 @@ use crate::sync::store::store_driver::apply;
 use diesel::result::Error as DieselError;
 use diesel::Connection;
 use serde_json::Value;
+use futures::{Stream, StreamExt};
+use std::time::Duration;
+use tokio::time::sleep;
+use crate::sync::transactions::queue_service::QueueService;
+use crate::sync::transport::transport_driver;
+use crate::sync::transactions::transaction_service::TransactionService;
+
+#[derive(Clone)]
+pub struct Endpoint {
+    pub url: String,
+    pub username: String,
+    pub password: String,
+}
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
@@ -63,3 +76,109 @@ async fn apply_messages(
 
     Ok(())
 }
+
+pub async fn iterate_queue<'a>(
+    endpoints: Vec<Endpoint>,
+) -> impl Stream<Item = Vec<Value>> + 'a {
+    async_stream::stream! {
+        let sync_timer_ms = 1000;
+        let mut conn = db::get_connection();
+        
+        loop {
+            // Check queue size with current connection
+            let size = match QueueService::size(&mut conn, "test") {
+                Ok(s) => s,
+                Err(_) => {
+                    sleep(Duration::from_millis(sync_timer_ms)).await;
+                    continue;
+                }
+            };
+            
+            if size == 0 {
+                break;
+            }
+            
+            // Dequeue with proper error handling
+            let pack = match QueueService::dequeue(&mut conn, "test") {
+                Ok(Some(value)) => value,
+                Ok(None) => {
+                    sleep(Duration::from_millis(100)).await;
+                    continue;
+                }
+                Err(_) => {
+                    sleep(Duration::from_millis(sync_timer_ms)).await;
+                    continue;
+                }
+            };
+            
+            // Parse package once
+            let messages = pack.get("messages")
+                .and_then(|m| m.as_array())
+                .cloned()
+                .unwrap_or_default();
+            
+            let since = pack.get("since").cloned();
+            let transaction_id = pack.get("transaction_id")
+                .and_then(|t| t.as_str())
+                .map(ToString::to_string);
+
+            // Process all endpoints before acking
+            let mut all_success = true;
+            for endpoint in &endpoints {
+                match sync(
+                    messages.clone(),
+                    since.clone(),
+                    transaction_id.clone(),
+                    endpoint.clone()
+                ).await {
+                    Ok(_) => (),
+                    Err(_) => {
+                        all_success = false;
+                        break;
+                    }
+                }
+            }
+
+            if all_success {
+                let _ = QueueService::ack(&mut conn, "test");
+                yield messages;
+            } else {
+                sleep(Duration::from_millis(sync_timer_ms)).await;
+            }
+        }
+    }
+}
+
+
+// ... existing code ...
+
+async fn sync(
+    initial_messages: Vec<Value>,
+    since: Option<Value>,
+    existing_transaction_id: Option<String>,
+    endpoint: Endpoint,
+) -> Result<(), Box<dyn std::error::Error>> {
+    
+    
+    Ok(())
+}
+
+async fn receive_messages(
+    conn: &mut DbPooledConnection,
+    messages: Vec<Value>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Implement message receiving logic here
+    // This would apply the received messages to your local database
+    
+    for message in messages {
+        // Convert JSON message to CrdtMessage
+        let crdt_message: CrdtMessage = serde_json::from_value(message)?;
+        
+        // Apply the message
+        apply(conn, &crdt_message).await;
+    }
+    
+    Ok(())
+}
+
+// ... existing code ...
