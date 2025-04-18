@@ -169,6 +169,115 @@ impl HttpTransportDriver {
         ))
     }
 
+    // pub async fn post(&self, data: Value, opts: &PostOpts) -> Result<Value, Box<dyn Error>> {
+    //     let debug = std::env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
+        
+    //     if debug {
+    //         println!("Posting to {}", serde_json::to_string_pretty(opts).unwrap());
+    //     }
+        
+    //     let sync_endpoint = &opts.url;
+    //     let username = &opts.username;
+    //     let password = &opts.password;
+        
+    //     if username.is_empty() || password.is_empty() {
+    //         return Err(Box::new(BadRequestException::new("Missing username or password")));
+    //     }
+        
+    //     let client = ClientBuilder::new()
+    //         .build()?;
+        
+    //         let data_string = serde_json::to_string(&data)?;
+
+    //         let response = match client
+    //         .post(&format!("{}/app/sync", sync_endpoint))
+    //         .basic_auth(username, Some(password))
+    //         .header("Content-Type", "application/json")
+    //         .body(data_string)
+    //         .send()
+    //         .await {
+    //         Ok(resp) => resp,
+    //         Err(e) => {
+    //             return Err(Box::new(e));
+    //         }
+    //     };
+        
+    //     if response.status() != StatusCode::OK {
+    //         return Err(Box::new(std::io::Error::new(
+    //             std::io::ErrorKind::Other,
+    //             format!("API error: {}", response.status()),
+    //         )));
+    //     }
+    
+    //     let mut result = match response.text().await {
+    //         Ok(text) => {
+    //             match serde_json::from_str::<Value>(&text) {
+    //                 Ok(data) => {
+    //                     if let Some(data_obj) = data.get("data") {
+    //                         data_obj.clone()
+    //                     } else {
+    //                         json!({
+    //                             "messages": []
+    //                         })
+    //                     }
+    //                 },
+    //                 Err(e) => {
+    //                     return Err(Box::new(e));
+    //                 }
+    //             }
+    //         },
+    //         Err(e) => {
+    //             return Err(Box::new(e));
+    //         }
+    //     };
+        
+    //     // Check if incomplete and chunks are needed
+    //     if result.get("incomplete").and_then(|v| v.as_bool()).unwrap_or(false) {
+    //         if debug {
+    //             println!("Chunk transfer requested");
+    //         }
+            
+    //         let client_id = data.get("client_id")
+    //             .and_then(|c| c.as_str())
+    //             .unwrap_or("")
+    //             .to_string();
+            
+    //         let mut messages = result.get("messages")
+    //             .and_then(|m| m.as_array())
+    //             .cloned()
+    //             .unwrap_or_default();
+            
+    //             let chunks_stream = self.get_chunks(&client_id, opts).await;
+    //             let mut chunks_stream = chunks_stream.boxed_local();
+            
+    //         while let Some(chunk_result) = chunks_stream.next().await {
+    //             match chunk_result {
+    //                 Ok(chunk) => {
+    //                     // Transform chunk messages
+    //                     let transformed_messages: Vec<Value> = chunk.iter()
+    //                         .filter_map(|m| m.get("message").cloned())
+    //                         .collect();
+                        
+    //                     messages.extend(transformed_messages);
+    //                 },
+    //                 Err(e) => {
+    //                     return Err(e);
+    //                 }
+    //             }
+    //         }
+            
+    //         if debug {
+    //             println!("Chunk transfer done");
+    //         }
+            
+    //         // Update the messages in the result
+    //         result["messages"] = json!(messages);
+    //     }
+        
+    //     Ok(result)
+    // }
+
+
     pub async fn post(&self, data: Value, opts: &PostOpts) -> Result<Value, Box<dyn Error>> {
         let debug = std::env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
         
@@ -187,9 +296,9 @@ impl HttpTransportDriver {
         let client = ClientBuilder::new()
             .build()?;
         
-            let data_string = serde_json::to_string(&data)?;
-
-            let response = match client
+        let data_string = serde_json::to_string(&data)?;
+    
+        let response = match client
             .post(&format!("{}/app/sync", sync_endpoint))
             .basic_auth(username, Some(password))
             .header("Content-Type", "application/json")
@@ -247,23 +356,92 @@ impl HttpTransportDriver {
                 .cloned()
                 .unwrap_or_default();
             
-                let chunks_stream = self.get_chunks(&client_id, opts).await;
-                let mut chunks_stream = chunks_stream.boxed_local();
+            // Fetch chunks iteratively instead of using streams
+            let mut start = 0;
+            let mut items = 0;
             
-            while let Some(chunk_result) = chunks_stream.next().await {
-                match chunk_result {
-                    Ok(chunk) => {
-                        // Transform chunk messages
-                        let transformed_messages: Vec<Value> = chunk.iter()
-                            .filter_map(|m| m.get("message").cloned())
-                            .collect();
-                        
-                        messages.extend(transformed_messages);
+            loop {
+                // Fetch a chunk
+                let chunk_response = match client
+                    .get(&format!("{}/app/sync/chunk", sync_endpoint))
+                    .basic_auth(username, Some(password))
+                    .query(&[("client_id", &client_id), ("start", &start.to_string())])
+                    .send()
+                    .await {
+                    Ok(resp) => resp,
+                    Err(e) => {
+                        return Err(Box::new(e));
+                    }
+                };
+                
+                if chunk_response.status() != StatusCode::OK {
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("API error: {}", chunk_response.status()),
+                    )));
+                }
+                
+                let chunk_data = match chunk_response.text().await {
+                    Ok(text) => {
+                        match serde_json::from_str::<Value>(&text) {
+                            Ok(data) => data,
+                            Err(e) => {
+                                return Err(Box::new(e));
+                            }
+                        }
                     },
                     Err(e) => {
-                        return Err(e);
+                        return Err(Box::new(e));
                     }
+                };
+                
+                let chunk_messages = chunk_data
+                    .get("data")
+                    .and_then(|d| d.get("messages"))
+                    .and_then(|m| m.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                
+                let size = chunk_data
+                    .get("data")
+                    .and_then(|d| d.get("size"))
+                    .and_then(|s| s.as_u64())
+                    .unwrap_or(0);
+                
+                items += chunk_messages.len();
+                
+                if debug {
+                    println!("Got Chunk of client_id{} size:{}/{}", client_id, items, size);
                 }
+                
+                if chunk_messages.is_empty() {
+                    if debug {
+                        println!("Got all chunks of client_id{} - deleting", client_id);
+                    }
+                    
+                    // Delete the chunks
+                    let _ = client
+                        .delete(&format!("{}/app/sync/chunk", sync_endpoint))
+                        .basic_auth(username, Some(password))
+                        .query(&[("client_id", &client_id)])
+                        .send()
+                        .await;
+                    
+                    if debug {
+                        println!("Got all chunks of client_id{} - deleted", client_id);
+                    }
+                    
+                    break;
+                }
+                
+                // Transform chunk messages
+                let transformed_messages: Vec<Value> = chunk_messages.iter()
+                    .filter_map(|m| m.get("message").cloned())
+                    .collect();
+                
+                messages.extend(transformed_messages);
+                
+                start += chunk_messages.len();
             }
             
             if debug {
@@ -276,4 +454,6 @@ impl HttpTransportDriver {
         
         Ok(result)
     }
+
+    
 }

@@ -2,6 +2,7 @@ use crate::db::DbPooledConnection;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::sync::merkles::merkle_service::MerkleService;
+use diesel::deserialize;
 use hlc::Timestamp;
 use merkle::MerkleTree;
 use serde_json::Value;
@@ -33,6 +34,44 @@ impl HlcService {
             timestamp: MutableTimestamp::from(&timestamp),
             merkle,
         }
+    }
+
+    pub fn commit_tree(
+        tx: &mut DbPooledConnection,
+        tree: &MerkleTree,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // Get the current clock
+        let deserialized_tree=serde_json::to_value(tree.serialize()?)?;
+        let old_clock = Self::get_clock(tx)?;
+        
+        // Create new clock with old timestamp and new tree
+        let clock = Self::make_clock(
+            Timestamp::parse(old_clock.timestamp.to_string()),
+            deserialized_tree.clone()
+        );
+        
+        // Save the updated clock
+        Self::set_clock(tx, clock);
+        
+        Ok(())
+    }
+
+    pub fn recv(
+        tx: &mut DbPooledConnection,
+        timestamp_str: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut clock = Self::get_clock(tx)?;
+        
+        let timestamp = Timestamp::parse(timestamp_str);
+        
+        let mut current_timestamp = Timestamp::parse(clock.timestamp.to_string());
+        current_timestamp.recv(&timestamp);
+        
+        clock.timestamp = MutableTimestamp::from(&current_timestamp);
+        
+        Self::set_clock(tx, clock);
+        
+        Ok(())
     }
 
     pub fn get_clock(tx: &mut DbPooledConnection) -> Result<Clock, Box<dyn std::error::Error>> {

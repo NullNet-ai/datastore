@@ -4,14 +4,10 @@ use crate::models::sync_endpoint_model::SyncEndpoint;
 use crate::schema::schema::sync_endpoints;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PostOpts {
-    pub url: String,
-    pub username: Option<String>,
-    pub password: Option<String>,
-}
+use super::transport::transport_driver::PostOpts;
+
+  
 
 pub fn get_all_sync_endpoints(conn: &mut DbPooledConnection) -> Result<Vec<SyncEndpoint>, DieselError> {
     let endpoints = sync_endpoints::table
@@ -41,7 +37,7 @@ pub fn create_endpoint(conn: &mut DbPooledConnection, endpoint: SyncEndpoint) ->
     }))
 }
 
-pub fn get_active_sync_endpoints(conn: &mut DbPooledConnection) -> Result<Vec<PostOpts>, DieselError> {
+pub fn get_sync_endpoints(conn: &mut DbPooledConnection) -> Result<Vec<PostOpts>, DieselError> {
     let endpoints = sync_endpoints::table
         .filter(sync_endpoints::status.eq("Active"))
         .select((
@@ -55,8 +51,8 @@ pub fn get_active_sync_endpoints(conn: &mut DbPooledConnection) -> Result<Vec<Po
         .into_iter()
         .map(|(url, username, password)| PostOpts {
             url,
-            username: Some(username),
-            password: Some(password),
+            username: username,
+            password: password,
         })
         .collect();
     

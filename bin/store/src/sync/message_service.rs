@@ -126,3 +126,22 @@ pub fn find_existing_messages<'a>(
         Ok((message, existing_message))
     })
 }
+
+pub fn get_messages_since(
+    conn: &mut DbPooledConnection,
+    timestamp_str: &str
+) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+    use crate::schema::schema::crdt_messages;
+    
+    let results = crdt_messages::table
+        .filter(crdt_messages::timestamp.gt(timestamp_str))
+        .load::<CrdtMessage>(conn)?;
+    
+    // Convert CrdtMessage objects to Value objects
+    let message_values: Vec<Value> = results
+        .into_iter()
+        .map(|msg| serde_json::to_value(msg).unwrap_or(Value::Null))
+        .collect();
+    
+    Ok(message_values)
+}
