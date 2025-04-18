@@ -18,7 +18,7 @@ pub struct QueryParams {
 }
 
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug, Serialize)]
 pub struct SyncRequestBody {
     pub group_id: String,
     pub client_id: String,

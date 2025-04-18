@@ -205,6 +205,7 @@ pub async fn get_chunk(
 }
 
 pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
+    log::debug!("Received sync request: {}", serde_json::to_string(&request).unwrap_or_default());
     let request_data = request.into_inner();
     let req_group_id = request_data.group_id.clone();
     let req_client_id = request_data.client_id.clone();
@@ -224,8 +225,6 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
     let trie = match result_trie {
         Ok(trie) => trie,
         Err(_) => {
-            // This should never happen as we already checked for errors above
-            // But adding as a safeguard
             let response = serde_json::json!({
                 "status": "error",
                 "message": "Internal server error"
@@ -237,7 +236,8 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
      let mut incomplete=0;
     let mut new_messages:Vec<CrdtMessage>=vec![];
 
-    if(Some(req_client_merkle.clone())!=None){
+    if let Some(merkle) = req_client_merkle.clone(){
+        if !merkle.trim().is_empty() {
        let client_merkle=req_client_merkle.unwrap();
        
         let parsed_client_merkle=MerkleTree::deserialize(&client_merkle).unwrap();
@@ -286,7 +286,7 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
             
             // Continue with the min_timestamp
         }
-    }
+    }}
 
     if new_messages.len() >= outgoing_limit {
         // Store messages in the database instead of sending them

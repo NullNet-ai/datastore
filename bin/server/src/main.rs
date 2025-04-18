@@ -2,6 +2,7 @@ use actix_web::{App, HttpServer, web};
 use dotenv::dotenv;
 use std::env;
 use controllers::controllers::{get_chunk, delete_chunk, sync};
+use env_logger::Env;
 
 mod controllers;
 mod db;
@@ -13,6 +14,7 @@ mod sync;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+    env_logger::init_from_env(Env::default().default_filter_or("debug"));
     let port = env::var("PORT").unwrap_or_else(|_| "3002".to_string());
     let pool = db::establish_connection();
     println!("Database connected successfully.");
