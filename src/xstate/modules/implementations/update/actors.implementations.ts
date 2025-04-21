@@ -3,21 +3,19 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from '../../../../utils/utility.service';
-import {
-  DrizzleService,
-  //  SyncService
-} from '@dna-platform/crdt-lww-postgres';
+import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
 import { LoggerService } from '@dna-platform/common';
+const { SYNC_ENABLED = 'false' } = process.env;
 @Injectable()
 export class UpdateActorsImplementations {
   private db;
   constructor(
-    //private readonly syncService: SyncService,
+    private readonly syncService: SyncService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly getActorsImplementation: GetActorsImplementations,
     private readonly drizzleService: DrizzleService,
@@ -128,6 +126,9 @@ export class UpdateActorsImplementations {
         updated_data.hypertable_timestamp = result.hypertable_timestamp;
       }
       //this.syncService.update(table, updated_data, id);
+      if (SYNC_ENABLED === 'true') {
+        this.syncService.update(table, updated_data, id);
+      }
       return Promise.resolve({
         payload: {
           success: true,

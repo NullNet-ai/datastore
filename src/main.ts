@@ -48,15 +48,15 @@ async function initializers(app) {
   // });
 
   // TODO: Define Auto generated code Prefixes
-  // await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
-  //   entity: 'contacts',
-  //   system_code_config: {
-  //     default_code: 1000,
-  //     prefix: 'CO',
-  //     counter: 0,
-  //     digits_number: 6,
-  //   },
-  // });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'contacts',
+    system_code_config: {
+      default_code: 10,
+      prefix: 'CO',
+      counter: 1,
+      digits_number: 1,
+    },
+  });
 
   // ! This is a sample for the root account configuration
   await initializer.create(EInitializer.ROOT_ACCOUNT_CONFIG, {

@@ -2,22 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/delete/delete.schema';
-import {
-  DrizzleService,
-  //SyncService
-} from '@dna-platform/crdt-lww-postgres';
+import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { and, eq, sql } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
 import * as local_schema from '../../../../schema';
 import { VerifyActorsImplementations } from '../verify';
 import { Utility } from '../../../../utils/utility.service';
 import { LoggerService } from '@dna-platform/common';
-
+const { SYNC_ENABLED = 'false' } = process.env;
 @Injectable()
 export class DeleteActorsImplementations {
   private db;
   constructor(
-    //private readonly syncService: SyncService,
+    private readonly syncService: SyncService,
     private readonly getActorsImplementation: GetActorsImplementations,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
     private readonly drizzleService: DrizzleService,
@@ -50,9 +47,9 @@ export class DeleteActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '', is_root_account } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body } = _req;
+      const { params, body, query } = _req;
       const { table, id } = params;
-      //   const { is_permanent = 'false' } = query;
+      const { is_permanent = 'false' } = query;
       const date = new Date();
       const table_schema = local_schema[table];
       if (body?.organization_id && !is_root_account) {
@@ -89,11 +86,11 @@ export class DeleteActorsImplementations {
         });
 
       delete result.id;
-      // if (is_permanent === 'true') {
-      //   await this.syncService.delete(table, id, is_permanent === 'true');
-      // } else {
-      //   await this.syncService.update(table, result, id);
-      // }
+
+      if (SYNC_ENABLED === 'true') {
+        await this.syncService.delete(table, id, is_permanent === 'true');
+      }
+
       return Promise.resolve({
         payload: {
           success: true,
