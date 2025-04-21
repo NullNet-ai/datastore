@@ -10,13 +10,13 @@ use diesel::result::Error as DieselError;
 pub fn add_messages(tx: &mut DbPooledConnection,group_id_param : String, client_id_param :String, messages: Vec<CrdtMessage>)-> MerkleTree{
 let mut trie= get_merkle(tx,group_id_param.clone()).unwrap();
 for message in messages {
+
     // Access struct fields directly
     let msg_database = message.database.clone();
     let msg_timestamp = message.timestamp.clone();
     let msg_dataset = message.dataset.clone();
     let msg_row = message.row.clone();
     let msg_column = message.column.clone();
-    let msg_operation = message.operation.clone();
     let value_str = message.value.clone();
     let msg_hypertable_timestamp = message.hypertable_timestamp.clone();
     
@@ -31,36 +31,49 @@ for message in messages {
             crdt_messages::column.eq(&msg_column),
             crdt_messages::client_id.eq(&client_id_param),
             crdt_messages::value.eq(&value_str),
-            crdt_messages::operation.eq(&msg_operation),
             crdt_messages::hypertable_timestamp.eq(msg_hypertable_timestamp),
         ))
         .on_conflict_do_nothing()
         .execute(tx);
+
+    //log the result
+    log::info!("Insert result: {:?}", result);
         
     // If insert was successful, update merkle trie
     match result {
         Ok(changes) if changes > 0 => {
             trie.add_leaf(&msg_timestamp.to_string()); 
+            
+            // Update the merkle tree in the database immediately after each successful insert
+            match trie.serialize() {
+                Ok(updated_merkle) => {
+                    // Insert or update the merkle tree in the database
+                    let merkle_result = diesel::insert_into(crdt_messages_merkles)
+                        .values((
+                            group_id.eq(&group_id_param),
+                            merkle.eq(&updated_merkle),
+                        ))
+                        .on_conflict(group_id)
+                        .do_update()
+                        .set(merkle.eq(&updated_merkle))
+                        .execute(tx);
+                        
+                    if let Err(e) = merkle_result {
+                        // Log the error but don't panic - this allows the transaction to continue
+                        eprintln!("Failed to update merkle tree: {}", e);
+                        // Consider returning early if this is a critical error
+                        // return trie;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("Failed to serialize merkle tree: {}", e);
+                }
+            }
         },
-        _ => {} 
-    }
-
-    match trie.serialize() {
-        Ok(updated_merkle) => {
-            // Insert or update the merkle tree in the database
-            diesel::insert_into(crdt_messages_merkles)
-                .values((
-                    group_id.eq(&group_id_param),
-                    merkle.eq(&updated_merkle),
-                ))
-                .on_conflict(group_id)
-                .do_update()
-                .set(merkle.eq(&updated_merkle))
-                .execute(tx)
-                .expect("Failed to update merkle tree");
-        },
+        Ok(_) => {}, // No changes, message already exists
         Err(e) => {
-            eprintln!("Failed to serialize merkle tree: {}", e);
+            // Log the error but continue processing other messages
+            eprintln!("Error inserting message: {}", e);
         }
     }
 }

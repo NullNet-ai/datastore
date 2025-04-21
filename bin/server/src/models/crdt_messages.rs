@@ -14,7 +14,6 @@ pub struct CrdtMessage {
     pub column: String,
     pub client_id: String,
     pub value: String,
-    pub operation: String,
     pub hypertable_timestamp: Option<String>,
 }
 

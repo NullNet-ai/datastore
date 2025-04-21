@@ -235,9 +235,9 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
     // ! check for release the connection to the pool afterwards
      let mut incomplete=0;
     let mut new_messages:Vec<CrdtMessage>=vec![];
-
     if let Some(merkle) = req_client_merkle.clone(){
-        if !merkle.trim().is_empty() {
+
+        if !merkle.trim().is_empty() && merkle.trim() != "{}" {
        let client_merkle=req_client_merkle.unwrap();
        
         let parsed_client_merkle=MerkleTree::deserialize(&client_merkle).unwrap();
@@ -314,6 +314,9 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                     "{}".to_string()
                 }),
             };
+
+            //debug log whenever you are inserting a new message
+            log::debug!("Inserting message with timestamp {} into database", message.timestamp);
             
             // Insert into database, ignoring conflicts
             match diesel::insert_into(crdt_client_messages)
