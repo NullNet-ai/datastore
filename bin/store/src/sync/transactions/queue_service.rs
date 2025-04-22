@@ -125,7 +125,6 @@ impl QueueService {
     }
 
     pub fn ack(conn: &mut DbPooledConnection, queue_name: &str) -> Result<(), DieselError> {
-        // ! race condition
         conn.transaction(|conn| {
             diesel::update(queues::table)
                 .filter(queues::name.eq(queue_name))
