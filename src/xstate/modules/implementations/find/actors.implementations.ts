@@ -117,6 +117,7 @@ export class FindActorsImplementations {
           if (table_name) {
             pluck_object[table_name] = [
               ...new Set([
+                'id',
                 ...pluck_object[table_name],
                 field_relation[key]?.field,
               ]),
