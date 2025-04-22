@@ -18,6 +18,8 @@ import {
   AnyColumn,
   aliasedTable,
 } from 'drizzle-orm';
+import pick from 'lodash.pick';
+import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 import { EDateFormats } from 'src/utils/utility.types';
@@ -48,7 +50,7 @@ export class FindActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body } = _req;
+      const { params, body, query } = _req;
       const { table, type } = params;
       const {
         order_direction = 'asc',
@@ -66,8 +68,9 @@ export class FindActorsImplementations {
         distinct_by = '',
         group_by = {},
         is_case_sensitive_sorting = false,
-        // pluck_group_object = {},
+        pluck_group_object = {},
       } = body;
+
       if (group_advance_filters.length && advance_filters.length) {
         throw new BadRequestException({
           success: false,
@@ -101,7 +104,32 @@ export class FindActorsImplementations {
         Utility.parseConcatenateFields(concatenate_fields);
 
       let aliased_joined_entities: Record<string, any>[] = [];
+
       joins.forEach(({ field_relation }) => {
+        const fr_keys = Object.keys(field_relation);
+        fr_keys.forEach((key) => {
+          const table_name =
+            field_relation[key]?.alias || field_relation[key].entity;
+          Object.assign(pluck_object, {
+            ...pluck_object,
+            [table_name]: [...new Set(pluck_object[table_name] ?? [])],
+          });
+          console.log({
+            pluck_group_object,
+            table_name,
+          });
+          if (table_name) {
+            pluck_object[table_name] = [
+              ...new Set([
+                ...pluck_object[table_name],
+                field_relation[key]?.field,
+                // TODO: fix the related fields using pluck group object
+                'phone_number_raws',
+              ]),
+            ];
+          }
+        });
+
         const { entity, alias } = field_relation.to;
         if (alias) {
           aliased_joined_entities.push({ alias, entity });
@@ -159,6 +187,10 @@ export class FindActorsImplementations {
               ...(concat ? concat.fields : [field]),
             ]),
           ];
+
+          console.log({
+            pluck_object,
+          });
         }
       });
       const requested_date_format: string =
@@ -581,7 +613,10 @@ export class FindActorsImplementations {
       }
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
       this.logger.debug(`Params: ${_db.toSQL().params}`);
-      let result = await _db;
+      let result =
+        query.r === 'merge'
+          ? this.transformer(await _db, table, pluck_object, pluck_group_object)
+          : await _db;
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,
@@ -605,4 +640,36 @@ export class FindActorsImplementations {
       });
     }),
   };
+
+  private transformer(results, table, pluck_object, pluck_group_object) {
+    console.table(results);
+    console.log({
+      pluck_object,
+      pluck_group_object,
+    });
+    return results?.map((item) => {
+      const omitted_fields = omit(
+        this.reducer(item),
+        pluck_object[table].filter(
+          (key) => !Object.keys(pluck_object).includes(key),
+        ),
+      );
+      return {
+        [table]: pick(this.reducer(item, true), pluck_object[table]),
+        ...omitted_fields,
+      };
+    });
+  }
+  private reducer(data, is_main = false) {
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      const _val = Array.isArray(value) ? value[0] : value;
+      if (typeof value === 'object') {
+        return {
+          ...acc,
+          [key]: is_main ? Object.values(value?.[0] ?? [])?.[0] ?? {} : _val,
+        };
+      }
+      return { ...acc, [key]: value };
+    }, {});
+  }
 }
