@@ -1,4 +1,4 @@
-import { pgTable, text } from 'drizzle-orm/pg-core';
+import { pgTable, text, jsonb } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -14,6 +14,7 @@ export const table = pgTable(
     id: text('id').primaryKey(),
     name: text('name'),
     sample_text: text('sample_text'),
+    test_obj: jsonb().default([]),
     // time: timestamp('time', { withTimezone: true }), // NOT NULL timestamp
     // temperature: doublePrecision('temperature'), // NOT NULL double precision
     // humidity: doublePrecision('humidity'), // NOT NULL double precision
