@@ -674,7 +674,7 @@ export class FindActorsImplementations {
               ..._acc,
               [key]: {
                 ..._acc[key],
-                [_field]: data[_field].filter(Boolean),
+                [_field]: data[_field],
               },
             };
           },
