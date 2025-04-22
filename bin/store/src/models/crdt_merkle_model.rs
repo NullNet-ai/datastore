@@ -1,5 +1,6 @@
 use crate::schema::schema::crdt_merkles;
 use diesel::prelude::*;
+use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -16,5 +17,5 @@ pub struct Merkle {
 pub struct ParsedMerkle {
     pub group_id: String,
     pub timestamp: String,
-    pub merkle: Value, // TODO: instead of String but parse it to protobuff and also store it as stringified protobuff
+    pub merkle: MerkleTree, // TODO: instead of String but parse it to protobuff and also store it as stringified protobuff
 }

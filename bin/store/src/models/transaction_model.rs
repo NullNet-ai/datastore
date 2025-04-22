@@ -2,7 +2,9 @@ use crate::schema::schema::transactions;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Selectable, Serialize, Debug, Default, Deserialize, Clone, AsChangeset, Insertable)]
+#[derive(
+    Queryable, Selectable, Serialize, Debug, Default, Deserialize, Clone, AsChangeset, Insertable,
+)]
 #[diesel(table_name = transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]

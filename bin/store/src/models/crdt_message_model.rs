@@ -2,7 +2,9 @@ use crate::schema::schema::crdt_messages;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Insertable, Hash, Eq, PartialEq, Default, Clone, Queryable, Serialize, Deserialize)]
+#[derive(
+    Debug, Insertable, Hash, Eq, PartialEq, Default, Clone, Queryable, Serialize, Deserialize,
+)]
 #[diesel(table_name = crdt_messages)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
@@ -29,6 +31,5 @@ pub struct UpdateCrdtMessage {
     pub operation: Option<String>,
     pub hypertable_timestamp: Option<String>,
 }
-
 
 //skip serializing when field is none

@@ -1,16 +1,16 @@
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+    Error,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
     error::ErrorUnauthorized,
     http::header,
-    Error,
 };
-use futures::future::{ok, Ready};
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
+use futures::future::{Ready, ok};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
+use serde_json::Value;
+use std::env;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use std::env;
-use serde_json::Value;
 
 // Authentication middleware struct
 pub struct Authentication;
@@ -53,7 +53,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Extract the token from the Authorization header
         let auth_header = req.headers().get(header::AUTHORIZATION);
-        
+
         let auth_result = match auth_header {
             Some(header_value) => {
                 let auth_str = header_value.to_str().unwrap_or("");
@@ -81,16 +81,16 @@ where
                 "success": false,
                 "message": "Token verification failed: Invalid or expired token"
             });
-            
+
             Box::pin(async move {
                 // Create a proper JSON response with correct content type
                 let json_error = actix_web::HttpResponse::Unauthorized()
                     .content_type("application/json")
                     .json(error_response);
-                Err(actix_web::error::InternalError::from_response(
-                    "Unauthorized",
-                    json_error,
-                ).into())
+                Err(
+                    actix_web::error::InternalError::from_response("Unauthorized", json_error)
+                        .into(),
+                )
             })
         }
     }
@@ -106,18 +106,16 @@ fn validate_token(token: &str) -> bool {
             return false;
         }
     };
-    
+
     // Verify the JWT token
     let validation = Validation::new(Algorithm::HS256);
-    
+
     match decode::<Value>(
         token,
         &DecodingKey::from_secret(jwt_secret.as_bytes()),
         &validation,
     ) {
-        Ok(_token_data) => {
-            true
-        }
+        Ok(_token_data) => true,
         Err(err) => {
             // Token validation failed
             println!("Token validation error: {:?}", err);

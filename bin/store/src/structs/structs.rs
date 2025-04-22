@@ -2,6 +2,7 @@ use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use chrono::Utc;
 use diesel::AsExpression;
 use diesel::sql_types::{Text, Uuid};
+use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use uuid::Uuid as uuid_crate;
@@ -60,19 +61,18 @@ impl CreateRequestBody {
                 self.record["updated_time"] = json!(time_str);
                 self.record["version"] = json!(1);
                 self.record["tombstone"] = json!(0);
-            },
+            }
             "update" => {
                 self.record["updated_date"] = json!(date_str);
                 self.record["updated_time"] = json!(time_str);
-
-            },
+            }
             "delete" => {
                 self.record["status"] = json!("Deleted");
                 self.record["tombstone"] = json!(1);
-            },
+            }
             _ => {
                 // Handle other operations if needed
-            },
+            }
         }
         // Generate UUID for id if not present (as text)
         if !self.record.get("id").is_some() {
@@ -94,7 +94,7 @@ fn default_pluck() -> String {
 #[derive(Clone)]
 pub struct Clock {
     pub timestamp: MutableTimestamp,
-    pub merkle: Value,
+    pub merkle: MerkleTree,
 }
 
 #[derive(Debug, AsExpression)]
@@ -165,9 +165,12 @@ impl Id {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize )]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Endpoint {
     pub url: String,
     pub username: Option<String>,
     pub password: Option<String>,
+    pub id: Option<String>,
+    pub group_id: Option<String>,
+    pub status: Option<String>,
 }

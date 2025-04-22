@@ -2,7 +2,9 @@ use crate::schema::schema::sync_endpoints;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Selectable, Serialize, Debug, Default, Deserialize, Clone, AsChangeset, Insertable)]
+#[derive(
+    Queryable, Selectable, Serialize, Debug, Default, Deserialize, Clone, AsChangeset, Insertable,
+)]
 #[diesel(table_name = sync_endpoints)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]

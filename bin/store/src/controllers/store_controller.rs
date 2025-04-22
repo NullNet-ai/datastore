@@ -3,7 +3,7 @@ use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{http, web, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpResponse, Responder, ResponseError, http, web};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::json;
@@ -86,11 +86,12 @@ pub async fn create_record(
         })?;
 
         // The insert_query function now returns a string directly
-        table.insert_record(&mut conn, processed_record.clone())
+        table
+            .insert_record(&mut conn, processed_record.clone())
             .map_err(|e| ApiError::from(e))
     })
-        .await
-        .map_err(ApiError::from);
+    .await
+    .map_err(ApiError::from);
 
     match result {
         Ok(Ok(record)) => {

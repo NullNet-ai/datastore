@@ -29,7 +29,7 @@ impl HlcService {
             .expect("Failed to set merkles");
     }
 
-    fn make_clock(timestamp: Timestamp, merkle: Value) -> Clock {
+    fn make_clock(timestamp: Timestamp, merkle: MerkleTree) -> Clock {
         Clock {
             timestamp: MutableTimestamp::from(&timestamp),
             merkle,
@@ -41,18 +41,17 @@ impl HlcService {
         tree: &MerkleTree,
     ) -> Result<(), Box<dyn std::error::Error>> {
         // Get the current clock
-        let deserialized_tree=serde_json::to_value(tree.serialize()?)?;
         let old_clock = Self::get_clock(tx)?;
-        
+
         // Create new clock with old timestamp and new tree
         let clock = Self::make_clock(
             Timestamp::parse(old_clock.timestamp.to_string()),
-            deserialized_tree.clone()
+            tree.clone(),
         );
-        
+
         // Save the updated clock
         Self::set_clock(tx, clock);
-        
+
         Ok(())
     }
 
@@ -61,16 +60,16 @@ impl HlcService {
         timestamp_str: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut clock = Self::get_clock(tx)?;
-        
+
         let timestamp = Timestamp::parse(timestamp_str);
-        
+
         let mut current_timestamp = Timestamp::parse(clock.timestamp.to_string());
         current_timestamp.recv(&timestamp);
-        
+
         clock.timestamp = MutableTimestamp::from(&current_timestamp);
-        
+
         Self::set_clock(tx, clock);
-        
+
         Ok(())
     }
 
@@ -78,16 +77,19 @@ impl HlcService {
         let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
         let merkle_service = MerkleService {};
         let clock = merkle_service.get_merkles_by_group_id(group_id, tx);
+        //print clock
         match clock {
             Ok(Some(clock)) => {
                 //destructure timestamp and merkle from clock
                 let timestamp = clock.timestamp;
                 let merkle = clock.merkle;
+
+                //print merkle
                 Ok(Self::make_clock(Timestamp::parse(timestamp), merkle))
             }
             Ok(None) => {
                 let timestamp = Timestamp::new(0, 0, Self::make_client_id()?);
-                let clock: Clock = Self::make_clock(timestamp, serde_json::json!({}));
+                let clock: Clock = Self::make_clock(timestamp, MerkleTree::new());
                 Self::set_clock(tx, clock);
                 Self::get_clock(tx)
             }
@@ -130,8 +132,7 @@ impl HlcService {
         merkle_tree.add_leaf(&timestamp_str);
 
         // Convert the merkle tree to a Value and update the clock's merkle
-        let merkle_value = serde_json::to_value(&merkle_tree).unwrap_or(serde_json::json!({}));
-        clock.merkle = merkle_value;
+        clock.merkle = merkle_tree;
 
         // Save the updated clock
         Self::set_clock(tx, clock.clone());

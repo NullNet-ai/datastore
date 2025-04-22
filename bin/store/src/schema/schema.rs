@@ -39,7 +39,7 @@ table! {
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
         tags -> Array<Text>,
-        
+
         id -> Uuid,
         timestamp -> Timestamp,
         hypertable_timestamp -> Text,
@@ -102,7 +102,6 @@ table! {
         status -> Text,
     }
 }
-
 
 // Add these table definitions to your schema.rs file
 

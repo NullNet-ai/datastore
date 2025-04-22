@@ -1,7 +1,9 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-#[derive(Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable)]
+#[derive(
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable,
+)]
 #[diesel(table_name = crate::schema::schema::packets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]

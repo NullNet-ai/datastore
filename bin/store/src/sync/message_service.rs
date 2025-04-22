@@ -3,8 +3,8 @@ use crate::models::crdt_message_model::CrdtMessage;
 use crate::schema::schema::crdt_messages;
 use crate::sync::hlc::hlc_service;
 use diesel::prelude::*;
-use diesel::upsert::excluded;
 use diesel::result::Error as DieselError;
+use diesel::upsert::excluded;
 use serde_json::Value;
 
 pub fn create_messages(
@@ -51,7 +51,7 @@ pub fn create_messages(
 
 pub fn insert_message(
     tx: &mut DbPooledConnection,
-    mut message: CrdtMessage,  // Changed to mutable
+    mut message: CrdtMessage, // Changed to mutable
 ) -> Result<usize, DieselError> {
     // Clean fields once upfront
     message.row = message.row.trim_matches('"').to_string();
@@ -110,8 +110,7 @@ pub fn compare_messages(
 pub fn find_existing_messages<'a>(
     tx: &'a mut DbPooledConnection,
     messages: &'a Vec<CrdtMessage>,
-) -> impl Iterator<Item=Result<(&'a CrdtMessage, Option<CrdtMessage>), DieselError>> + 'a
-{
+) -> impl Iterator<Item = Result<(&'a CrdtMessage, Option<CrdtMessage>), DieselError>> + 'a {
     messages.iter().map(move |message| {
         // Find the most recent existing message with the same dataset, column, and row
         let existing_message = crdt_messages::table
@@ -129,19 +128,19 @@ pub fn find_existing_messages<'a>(
 
 pub fn get_messages_since(
     conn: &mut DbPooledConnection,
-    timestamp_str: &str
+    timestamp_str: &str,
 ) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
     use crate::schema::schema::crdt_messages;
-    
+
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))
         .load::<CrdtMessage>(conn)?;
-    
+
     // Convert CrdtMessage objects to Value objects
     let message_values: Vec<Value> = results
         .into_iter()
         .map(|msg| serde_json::to_value(msg).unwrap_or(Value::Null))
         .collect();
-    
+
     Ok(message_values)
 }

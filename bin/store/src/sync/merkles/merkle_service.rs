@@ -3,6 +3,7 @@ use crate::models::crdt_merkle_model::{Merkle, ParsedMerkle};
 use crate::schema::schema::crdt_merkles;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use merkle::MerkleTree;
 use serde_json::Value;
 
 pub struct MerkleService {}
@@ -24,9 +25,9 @@ impl MerkleService {
             group_id: merkle.group_id.clone(),
             timestamp: merkle.timestamp.clone(),
             merkle: if merkle.merkle.is_empty() {
-                serde_json::json!({})
+                MerkleTree::new()
             } else {
-                serde_json::from_str(&merkle.merkle).unwrap_or_else(|_| serde_json::json!({}))
+                MerkleTree::deserialize(&merkle.merkle).unwrap()
             },
         };
 
@@ -37,10 +38,17 @@ impl MerkleService {
         &self,
         group_id: String,
         timestamp: String,
-        merkle: Value,
+        merkle: MerkleTree,
         tx: &mut DbPooledConnection,
     ) -> Result<(), DieselError> {
-        let merkle = serde_json::to_string(&merkle).unwrap_or_else(|_| "{}".to_string());
+        let merkle = merkle.serialize().map_err(|e| {
+            log::error!(
+                "Failed to serialize merkle tree in set_merkles_by_group_id for group_id {}: {}",
+                group_id,
+                e
+            );
+            DieselError::RollbackTransaction
+        })?;
         let exists = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(&group_id))
             .first::<Merkle>(tx)

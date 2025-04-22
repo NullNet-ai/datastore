@@ -1,8 +1,7 @@
 use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::CrdtMessage;
-use crate::structs::structs::{ColumnValue};
+use crate::structs::structs::ColumnValue;
 use crate::table_enum::Table;
-
 
 pub async fn apply(
     tx: &mut DbPooledConnection,
@@ -27,11 +26,12 @@ pub async fn apply(
     let mut values = std::collections::HashMap::new();
     values.insert("id".to_string(), serde_json::Value::String(row.to_string()));
     values.insert(column.to_string(), value.to_json_value());
-    let table = Table::from_str(dataset.as_str())
-        .ok_or_else(|| Box::new(std::io::Error::new(
+    let table = Table::from_str(dataset.as_str()).ok_or_else(|| {
+        Box::new(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!("Unknown table: {}", dataset)
-        )))?;
+            format!("Unknown table: {}", dataset),
+        ))
+    })?;
 
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp
@@ -42,8 +42,7 @@ pub async fn apply(
             serde_json::Value::String(timestamp.to_string()),
         );
 
-        
-        match table.upsert_record_with_id_timestamp(tx, &values,) {
+        match table.upsert_record_with_id_timestamp(tx, &values) {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
@@ -60,7 +59,6 @@ pub async fn apply(
             }
         }
     }
-
 }
 
 fn is_plural_column(column: &str) -> bool {
