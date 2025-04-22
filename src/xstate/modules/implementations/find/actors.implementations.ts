@@ -112,7 +112,7 @@ export class FindActorsImplementations {
             field_relation[key]?.alias || field_relation[key].entity;
           Object.assign(pluck_object, {
             ...pluck_object,
-            [table_name]: [...new Set(pluck_object[table_name] ?? [])],
+            [table_name]: [...new Set(pluck_object[table_name] ?? ['id'])],
           });
           if (table_name) {
             pluck_object[table_name] = [
