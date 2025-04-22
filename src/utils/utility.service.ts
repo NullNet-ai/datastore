@@ -229,12 +229,14 @@ export class Utility {
   public static createSelections = ({
     table,
     pluck_object,
+    pluck_group_object,
     joins,
     date_format,
     parsed_concatenated_fields,
   }: {
     table: string;
     pluck_object: Record<string, any>;
+    pluck_group_object: Record<string, any>;
     joins: IJoins[];
     date_format: string;
     parsed_concatenated_fields: IParsedConcatenatedFields;
@@ -315,11 +317,23 @@ export class Utility {
           return acc;
         }, {})
       : {};
-    // Combine main entity and join selections
+
+    const groupSelections = Object.entries(pluck_group_object).reduce(
+      (acc, [table, fields]) =>
+        fields.reduce((field_acc, field) => {
+          const alias = pluralize(field);
+          return {
+            ...field_acc,
+            [alias]: sql.raw(`JSONB_AGG(${table}.${field})`).as(alias),
+          };
+        }, acc),
+      {},
+    );
 
     const selections = {
       ...mainSelections,
       ...joinSelections,
+      ...groupSelections,
     };
 
     return selections;

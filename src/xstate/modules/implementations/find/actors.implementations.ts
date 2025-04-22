@@ -18,6 +18,8 @@ import {
   AnyColumn,
   aliasedTable,
 } from 'drizzle-orm';
+import pick from 'lodash.pick';
+import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 import { EDateFormats } from 'src/utils/utility.types';
@@ -66,8 +68,9 @@ export class FindActorsImplementations {
         distinct_by = '',
         group_by = {},
         is_case_sensitive_sorting = false,
-        // pluck_group_object = {},
+        pluck_group_object = {},
       } = body;
+
       if (group_advance_filters.length && advance_filters.length) {
         throw new BadRequestException({
           success: false,
@@ -101,7 +104,34 @@ export class FindActorsImplementations {
         Utility.parseConcatenateFields(concatenate_fields);
 
       let aliased_joined_entities: Record<string, any>[] = [];
+
       joins.forEach(({ field_relation }) => {
+        const fr_keys = Object.keys(field_relation);
+        fr_keys.forEach((key) => {
+          const table_name =
+            field_relation[key]?.alias || field_relation[key].entity;
+          Object.assign(pluck_object, {
+            ...pluck_object,
+            [table_name]: [...new Set(pluck_object[table_name] ?? [])],
+          });
+          if (table_name) {
+            pluck_object[table_name] = [
+              ...new Set([
+                ...pluck_object[table_name],
+                field_relation[key]?.field,
+              ]),
+            ];
+          }
+          if (pluck_group_object?.[table_name]) {
+            pluck_object[table_name] = [
+              ...new Set([
+                ...pluck_object[table_name],
+                ...pluck_group_object[table_name],
+              ]),
+            ];
+          }
+        });
+
         const { entity, alias } = field_relation.to;
         if (alias) {
           aliased_joined_entities.push({ alias, entity });
@@ -184,7 +214,6 @@ export class FindActorsImplementations {
       let _db = this.db;
 
       let join_keys: string[] = Object.keys(pluck_object);
-
       let group_by_selections = {};
       let group_by_agg_selections = {};
       let group_by_fields: Record<string, any> = {};
@@ -319,6 +348,7 @@ export class FindActorsImplementations {
         const join_selections = Utility.createSelections({
           table,
           pluck_object,
+          pluck_group_object,
           joins,
           date_format,
           parsed_concatenated_fields,
@@ -581,7 +611,15 @@ export class FindActorsImplementations {
       }
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
       this.logger.debug(`Params: ${_db.toSQL().params}`);
-      let result = await _db;
+      const result = this.transformer(
+        await _db,
+        table,
+        pluck_object,
+        pluck_group_object,
+      );
+      // query.r === 'merge'
+      //   ? this.transformer(await _db, table, pluck_object, pluck_group_object)
+      //   : await _db;
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,
@@ -605,4 +643,52 @@ export class FindActorsImplementations {
       });
     }),
   };
+
+  private transformer(results, table, pluck_object, pluck_group_object) {
+    return results?.map((item) => {
+      const omitted_fields = omit(
+        this.reducer(item, pluck_group_object),
+        pluck_object?.[table]?.filter(
+          (key) => !Object.keys(pluck_object).includes(key),
+        ),
+      );
+      return {
+        [table]: pick(
+          this.reducer(item, pluck_group_object, true),
+          pluck_object[table],
+        ),
+        ...omitted_fields,
+      };
+    });
+  }
+  private reducer(data, pluck_group_object = {}, is_main = false) {
+    const cloned_data = { ...data };
+    delete cloned_data.phone_number_raws;
+    return Object.entries(cloned_data).reduce((acc, [key, value]) => {
+      if (!pluck_group_object[key] && !is_main) return acc;
+      else if (pluck_group_object[key] && !is_main) {
+        return pluck_group_object[key].reduce(
+          (_acc, field) => {
+            const _field = pluralize(field);
+            return {
+              ..._acc,
+              [key]: {
+                ..._acc[key],
+                [_field]: data[_field].filter(Boolean),
+              },
+            };
+          },
+          {
+            ...acc,
+            [key]: Array.isArray(value) ? value[0] : value,
+          },
+        );
+      }
+
+      return {
+        ...acc,
+        [key]: Array.isArray(value) ? value[0] : value,
+      };
+    }, {});
+  }
 }
