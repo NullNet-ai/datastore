@@ -167,6 +167,9 @@ export class Utility {
   public static parseConcatenateFields = (
     concatenate_fields: IConcatenateField[],
   ) => {
+    console.log({
+      concatenate_fields,
+    });
     return concatenate_fields.reduce(
       (acc, { fields, field_name, separator, entity }) => {
         acc.expressions[entity] = acc.expressions[entity] || [];
@@ -278,10 +281,20 @@ export class Utility {
     }
 
     // Handle join entity selections
+    console.log({
+      joins: JSON.stringify(joins, null, 2),
+    });
     const joinSelections = joins?.length
       ? joins.reduce((acc, join) => {
-          const toEntity = join.field_relation.to.entity;
-          const toAlias = join.field_relation.to.alias || toEntity; // Use alias if provided
+          const join_type = join.type;
+          const toEntity =
+            join_type === 'self'
+              ? join.field_relation.from.entity
+              : join.field_relation.to.entity;
+          const toAlias =
+            join_type === 'self'
+              ? join.field_relation.from.alias || toEntity
+              : join.field_relation.to.alias || toEntity; // Use alias if provided
 
           // Only process if the entity has pluck_object fields
           const entity_concatenated_fields = concatenated_fields[toAlias] || [];
@@ -290,7 +303,8 @@ export class Utility {
             const fields = [
               ...pluck_object[toAlias],
               ...entity_concatenated_fields,
-            ];
+            ].filter((field) => pluck_object[table].includes(field));
+
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
               .map((field) => Utility.formatIfDate(field, date_format, toAlias))
@@ -472,10 +486,11 @@ export class Utility {
       joins.forEach(({ type, field_relation }) => {
         const { from, to } = field_relation;
         const to_entity = to.entity;
+        const from_alias = from.alias || from.entity; // Use alias if provided
         const to_alias = to.alias || to_entity; // Use alias if provided
         to.filters ??= [];
         const concatenate_query = expressions[to_alias] || [];
-        function constructJoinQuery() {
+        function constructJoinQuery({ isSelfJoin = false } = {}) {
           if (to.alias) aliased_entities.push(to.alias);
           // Retrieve fields from pluck_object for the specified `to` entity
           const fields = pluck_object[to_alias] || [];
@@ -544,11 +559,10 @@ export class Utility {
                   : ''
               }
               ${to.limit ? `LIMIT ${to.limit}` : ''}
-            ) AS "${to_alias}"
+            ) AS "${isSelfJoin ? from_alias : to_alias}"
           `);
 
           _db = _db.leftJoin(lateral_join, sql`TRUE`);
-
           return _db;
         }
         switch (type) {
@@ -556,7 +570,7 @@ export class Utility {
             _db = constructJoinQuery();
             break;
           case 'self':
-            _db = constructJoinQuery();
+            _db = constructJoinQuery({ isSelfJoin: true });
             break;
           default:
             throw new BadRequestException('Invalid join type');

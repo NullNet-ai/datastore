@@ -147,9 +147,7 @@ export class FindActorsImplementations {
           });
         }
       });
-      console.log({
-        multiple_sort,
-      });
+
       multiple_sort.forEach(({ by_field }) => {
         //check if by_field is separated by a dot if not then throw an error
         if (!by_field.includes('.')) {
@@ -620,6 +618,7 @@ export class FindActorsImplementations {
         table,
         pluck_object,
         pluck_group_object,
+        joins,
       );
       // query.r === 'merge'
       //   ? this.transformer(await _db, table, pluck_object, pluck_group_object)
@@ -648,26 +647,52 @@ export class FindActorsImplementations {
     }),
   };
 
-  private transformer(results, table, pluck_object, pluck_group_object) {
+  private transformer(results, table, pluck_object, pluck_group_object, joins) {
     return results?.map((item) => {
+      // @ts-ignore
       const omitted_fields = omit(
         this.reducer(item, pluck_group_object),
         pluck_object?.[table]?.filter(
           (key) => !Object.keys(pluck_object).includes(key),
         ),
       );
-      return {
-        [table]: pick(
-          this.reducer(item, pluck_group_object, true),
-          pluck_object[table],
-        ),
-        ...omitted_fields,
-      };
+      // @ts-ignore
+      const picked_fields = pick(
+        this.reducer(item, pluck_group_object, true),
+        pluck_object[table],
+      );
+      return joins
+        .map((join) => {
+          const isSelfJoin = join.type === 'self';
+          const prop = isSelfJoin
+            ? join.field_relation.from?.alias ||
+              join.field_relation.from?.entity
+            : join.field_relation.to?.alias || join.field_relation.to?.entity;
+          return prop;
+        })
+        .reduce(
+          (acc, name) => {
+            return {
+              ...acc,
+              [name]: omit(
+                this.reducer(item[name], pluck_group_object),
+                pluck_object?.[table]?.filter(
+                  (key) => !Object.keys(pluck_object).includes(key),
+                ),
+              ),
+            };
+          },
+          { [table]: item },
+        );
     });
   }
   private reducer(data, pluck_group_object = {}, is_main = false) {
     const cloned_data = { ...data };
-    delete cloned_data.phone_number_raws;
+    // !test example only
+    // delete cloned_data.phone_number_raws;
+    console.log({
+      data: JSON.stringify(data, null, 2),
+    });
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
       // if (!pluck_group_object[key] && !is_main) return acc;
       if (pluck_group_object[key] && !is_main) {
