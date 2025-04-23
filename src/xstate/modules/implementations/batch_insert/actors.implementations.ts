@@ -104,7 +104,7 @@ export class BatchInsertActorsImplementations {
           record_ids.push(record.id);
           record.created_by = is_root_account
             ? responsible_account?.organization_account?.id
-            : responsible_account.organization_account_id;
+            : responsible_account.account_organization_id;
           record.timestamp = record?.timestamp
             ? new Date(record?.timestamp)
             : new Date().toISOString();

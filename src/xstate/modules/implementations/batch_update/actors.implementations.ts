@@ -61,12 +61,12 @@ export class BatchUpdateActorsImplementations {
         timestamp: new Date(),
         updated_by: is_root_account
           ? responsible_account?.organization_account?.id
-          : responsible_account.organization_account_id,
+          : responsible_account.account_organization_id,
       };
       if (updates.tombstone && updates.tombstone === 1) {
         updates.deleted_by = is_root_account
           ? responsible_account?.organization_account?.id
-          : responsible_account.organization_account_id;
+          : responsible_account.account_organization_id;
       }
       const { schema } = Utility.checkUpdateSchema(
         table,

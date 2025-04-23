@@ -63,7 +63,7 @@ export class DeleteActorsImplementations {
           version: sql`${table_schema.version} + 1`,
           deleted_by: is_root_account
             ? responsible_account?.organization_account?.id
-            : responsible_account.organization_account_id,
+            : responsible_account.account_organization_id,
           updated_date: date.toLocaleDateString(),
           updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           status: 'Deleted',

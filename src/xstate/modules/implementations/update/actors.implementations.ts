@@ -89,7 +89,7 @@ export class UpdateActorsImplementations {
 
       body.updated_by = is_root_account
         ? responsible_account?.organization_account?.id
-        : responsible_account.organization_account_id;
+        : responsible_account.account_organization_id;
       const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
       delete body.id;
