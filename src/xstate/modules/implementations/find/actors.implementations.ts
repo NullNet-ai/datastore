@@ -147,9 +147,7 @@ export class FindActorsImplementations {
           });
         }
       });
-      console.log({
-        multiple_sort,
-      });
+
       multiple_sort.forEach(({ by_field }) => {
         //check if by_field is separated by a dot if not then throw an error
         if (!by_field.includes('.')) {
