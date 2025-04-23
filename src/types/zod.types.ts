@@ -8,7 +8,7 @@ export const aggregationValidation = z.object({
 
 export const advanceFilterValidation = z.union([
   z.object({
-    type: z.literal('criteria'),
+    type: z.literal('criteria').default('criteria'),
     field: z.string().min(1, 'field is required'),
     operator: z.enum([
       'equal',
