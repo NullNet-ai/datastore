@@ -18,6 +18,7 @@ use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
 use tokio::time::sleep;
+use std::io::Write;
 
 use super::transport::transport_driver::PostOpts;
 
@@ -205,7 +206,23 @@ pub async fn process_queue(
     mut conn: &mut DbPooledConnection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_timer_ms = 20000;
+    let start_time = std::time::Instant::now();
+    let mut total_items_processed = 0;
+    let mut total_messages_processed = 0;
+    let benchmark_interval = 100000; // Every 100,000 queue items 
 
+
+    let mut last_benchmark_time = start_time;
+    let mut last_benchmark_count = 0;
+    
+    // Create a file to store benchmark data
+    let file_path = "sync_benchmark_results.csv";
+    let mut file = std::fs::File::create(file_path)?;
+    
+    // Write CSV header
+    writeln!(file, "items_processed,messages_processed,elapsed_seconds,items_per_sec,messages_per_sec")?;
+
+    println!("Starting queue processing benchmark...");
     loop {
         // ! default param passed as test
         let size = match QueueService::size("test") {
@@ -244,6 +261,7 @@ pub async fn process_queue(
             .and_then(|m| m.as_array())
             .cloned()
             .unwrap_or_default();
+        let message_count = messages.len();
 
         let since = pack
             .get("since")
@@ -278,9 +296,80 @@ pub async fn process_queue(
         if all_success {
             log::debug!("All endpoints succeeded");
             let _ = QueueService::ack(&mut conn, "test");
+            total_items_processed += 1;
+            total_messages_processed += message_count;
+            
+            // Check if we've reached a benchmark interval for queue items
+            if total_items_processed / benchmark_interval > last_benchmark_count / benchmark_interval {
+                let current_time = std::time::Instant::now();
+                let interval_time = current_time.duration_since(last_benchmark_time);
+                let total_time = current_time.duration_since(start_time);
+                
+                // Calculate items processed in this interval
+                let interval_items = total_items_processed - last_benchmark_count;
+                
+                // Calculate rates
+                let interval_items_rate = interval_items as f64 / interval_time.as_secs_f64();
+                let total_items_rate = total_items_processed as f64 / total_time.as_secs_f64();
+                let total_messages_rate = total_messages_processed as f64 / total_time.as_secs_f64();
+                
+                // Write to CSV
+                writeln!(
+                    file, 
+                    "{},{},{:.2},{:.2},{:.2}", 
+                    total_items_processed,
+                    total_messages_processed,
+                    total_time.as_secs_f64(),
+                    total_items_rate,
+                    total_messages_rate
+                )?;
+                
+                println!("===== BENCHMARK RESULTS =====");
+                println!("Queue items processed: {}/{}", total_items_processed, 1_000_000);
+                println!("Total messages processed: {}", total_messages_processed);
+                println!("Interval time ({} items): {:?}", interval_items, interval_time);
+                println!("Interval throughput: {:.2} items/sec", interval_items_rate);
+                println!("Total time so far: {:?}", total_time);
+                println!("Overall throughput: {:.2} items/sec, {:.2} msgs/sec", 
+                    total_items_rate, total_messages_rate);
+                println!("Estimated time remaining: {:?}", 
+                    std::time::Duration::from_secs_f64(
+                        (1_000_000 - total_items_processed) as f64 / total_items_rate
+                    ));
+                println!("=============================");
+                
+                // Update benchmark tracking variables
+                last_benchmark_time = current_time;
+                last_benchmark_count = total_items_processed;
+            }
+
         } else {
             sleep(Duration::from_millis(sync_timer_ms)).await;
         }
+        let total_time = start_time.elapsed();
+        let total_items_rate = total_items_processed as f64 / total_time.as_secs_f64();
+        let total_messages_rate = total_messages_processed as f64 / total_time.as_secs_f64();
+        
+        // Write final data point
+        writeln!(
+            file, 
+            "{},{},{:.2},{:.2},{:.2}", 
+            total_items_processed,
+            total_messages_processed,
+            total_time.as_secs_f64(),
+            total_items_rate,
+            total_messages_rate
+        )?;
+        
+        println!("===== FINAL BENCHMARK RESULTS =====");
+        println!("Total queue items processed: {}", total_items_processed);
+        println!("Total messages processed: {}", total_messages_processed);
+        println!("Total time: {:?}", total_time);
+        println!("Overall throughput: {:.2} items/sec, {:.2} msgs/sec", 
+            total_items_rate, total_messages_rate);
+        println!("Benchmark data saved to {}", file_path);
+        println!("==================================");
+    
     }
 
     Ok(())

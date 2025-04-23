@@ -126,13 +126,14 @@ impl HlcService {
     ) -> Result<Clock, Box<dyn std::error::Error>> {
         // Get the current clock
         let mut clock = Self::get_clock(tx)?;
+        let mut clock_merkle=clock.merkle.clone();
 
         // Create a new MerkleTree and add the timestamp
-        let mut merkle_tree = MerkleTree::new();
-        merkle_tree.add_leaf(&timestamp_str);
+        clock_merkle.add_leaf(&timestamp_str);
+        // Update the clock with the new MerkleTree
+        clock.merkle = clock_merkle;
 
         // Convert the merkle tree to a Value and update the clock's merkle
-        clock.merkle = merkle_tree;
 
         // Save the updated clock
         Self::set_clock(tx, clock.clone());

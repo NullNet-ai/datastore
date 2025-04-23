@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
 
     dotenv().ok();
-    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
     let pool = db::establish_connection();
     println!("Database connected successfully.");
     TransactionService::initialize();
