@@ -12,11 +12,13 @@ export const table = pgTable(
   filename,
   {
     ...system_fields,
-    contact_id: text().references(() => (contacts as Record<string, any>).id),
-    raw_phone_number: text(),
-    iso_code: text(),
-    country_code: text(),
-    is_primary: boolean().default(false),
+    contact_id: text('contact_id').references(
+      () => (contacts as Record<string, any>).id,
+    ),
+    raw_phone_number: text('raw_phone_number'),
+    iso_code: text('iso_code'),
+    country_code: text('country_code'),
+    is_primary: boolean('is_primary').default(false),
   },
   config,
 );

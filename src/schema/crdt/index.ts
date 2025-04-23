@@ -10,7 +10,7 @@ export {
   sync_endpoints,
   transactions,
   counters,
-  // organization_accounts,
+  organization_accounts,
   devices,
   // system application
   addresses,

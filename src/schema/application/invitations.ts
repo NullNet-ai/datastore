@@ -5,8 +5,7 @@ import {
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 const filename = path.basename(__filename).replace(fileRegex, '');
-import { organization_accounts } from '.';
-import { account_organizations } from '..';
+import { account_organizations, organization_accounts } from '..';
 
 const fields = {
   account_id: text().references(

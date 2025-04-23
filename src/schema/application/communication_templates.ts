@@ -7,11 +7,11 @@ import {
 const filename = path.basename(__filename).replace(fileRegex, '');
 
 const fields = {
-  name: text(),
-  communication_template_status: text(),
-  event: text(),
-  content: text(),
-  subject: text(),
+  name: text('name'),
+  communication_template_status: text('communication_template_status'),
+  event: text('event'),
+  content: text('content'),
+  subject: text('subject'),
 };
 
 export const table = pgTable(
