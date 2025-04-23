@@ -80,7 +80,17 @@ export class CreateActorsImplementations {
         );
       }
       const table_schema = local_schema[table];
-      if (table_schema.hypertable_timestamp) {
+      if (!table_schema) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `Table ${table} does not exist`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
+      if (table_schema?.hypertable_timestamp) {
         body.hypertable_timestamp = new Date(body.timestamp).toISOString();
       }
       body.timestamp = body?.timestamp

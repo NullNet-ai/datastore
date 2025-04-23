@@ -31,7 +31,6 @@ export class TransactionsActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-      // console.log('driz', this.drizzleService.transaction);
       const table = schema['organizations'];
       const transactions = ['update'];
       await this.drizzleService.transaction(

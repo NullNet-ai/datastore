@@ -51,10 +51,55 @@ async function initializers(app) {
   await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
     entity: 'contacts',
     system_code_config: {
-      default_code: 10,
+      default_code: 100000,
       prefix: 'CO',
-      counter: 1,
-      digits_number: 1,
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'user_roles',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'RO',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'organizations',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'OR',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'notifications',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'NO',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'communication_templates',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'CT',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'account_organizations',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'AC',
+      counter: 0,
+      digits_number: 6,
     },
   });
 
