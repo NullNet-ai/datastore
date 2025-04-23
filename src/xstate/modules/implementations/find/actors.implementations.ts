@@ -649,16 +649,17 @@ export class FindActorsImplementations {
 
   private transformer(results, table, pluck_object, pluck_group_object, joins) {
     return results?.map((item) => {
+      const cloned_item = { ...item };
       // @ts-ignore
       const omitted_fields = omit(
-        this.reducer(item, pluck_group_object),
+        this.reducer(cloned_item, pluck_group_object),
         pluck_object?.[table]?.filter(
           (key) => !Object.keys(pluck_object).includes(key),
         ),
       );
       // @ts-ignore
       const picked_fields = pick(
-        this.reducer(item, pluck_group_object, true),
+        this.reducer(cloned_item, pluck_group_object, true),
         pluck_object[table],
       );
       return joins
@@ -672,29 +673,26 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
+            const keys = Object.keys(item[name][0]);
+            const l = keys.length;
+            if (l === 1) {
+              acc[table][name] = keys.reduce(
+                (acc, key) => acc + item[name][0][key],
+                '',
+              );
+            }
             return {
               ...acc,
-              [name]: omit(
-                this.reducer(item[name], pluck_group_object),
-                pluck_object?.[table]?.filter(
-                  (key) => !Object.keys(pluck_object).includes(key),
-                ),
-              ),
+              [name]: item[name][0],
             };
           },
-          { [table]: item },
+          { [table]: cloned_item },
         );
     });
   }
   private reducer(data, pluck_group_object = {}, is_main = false) {
     const cloned_data = { ...data };
-    // !test example only
-    // delete cloned_data.phone_number_raws;
-    console.log({
-      data: JSON.stringify(data, null, 2),
-    });
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
-      // if (!pluck_group_object[key] && !is_main) return acc;
       if (pluck_group_object[key] && !is_main) {
         return pluck_group_object[key].reduce(
           (_acc, field) => {

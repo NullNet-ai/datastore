@@ -167,9 +167,6 @@ export class Utility {
   public static parseConcatenateFields = (
     concatenate_fields: IConcatenateField[],
   ) => {
-    console.log({
-      concatenate_fields,
-    });
     return concatenate_fields.reduce(
       (acc, { fields, field_name, separator, entity }) => {
         acc.expressions[entity] = acc.expressions[entity] || [];
@@ -281,9 +278,6 @@ export class Utility {
     }
 
     // Handle join entity selections
-    console.log({
-      joins: JSON.stringify(joins, null, 2),
-    });
     const joinSelections = joins?.length
       ? joins.reduce((acc, join) => {
           const join_type = join.type;
@@ -303,7 +297,7 @@ export class Utility {
             const fields = [
               ...pluck_object[toAlias],
               ...entity_concatenated_fields,
-            ].filter((field) => pluck_object[table].includes(field));
+            ].filter((field) => pluck_object[table]?.includes(field));
 
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
