@@ -613,16 +613,16 @@ export class FindActorsImplementations {
       }
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
       this.logger.debug(`Params: ${_db.toSQL().params}`);
-      const result = this.transformer(
-        await _db,
-        table,
-        pluck_object,
-        pluck_group_object,
-        joins,
-      );
-      // query.r === 'merge'
-      //   ? this.transformer(await _db, table, pluck_object, pluck_group_object)
-      //   : await _db;
+      const result = joins.length
+        ? this.transformer(
+            await _db,
+            table,
+            pluck_object,
+            pluck_group_object,
+            joins,
+          )
+        : await _db;
+
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,
