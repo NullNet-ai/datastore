@@ -70,7 +70,7 @@ export class CreateActorsImplementations {
 
       body.created_by = is_root_account
         ? responsible_account?.organization_account?.id
-        : responsible_account.organization_account_id;
+        : responsible_account.account_organization_id;
       // body.created_by = '01JCSAG79KQ1WM0F9B47Q700P2';
 
       if (table === 'organizations' && body?.organization_id) {

@@ -107,7 +107,7 @@ export class StoreGrpcService {
         (record.updated_date = formattedDate),
         (record.updated_time = created_time),
         record_ids.push(record.id);
-      record.created_by = responsible_account.organization_account_id;
+      record.created_by = responsible_account.account_organization_id;
       record.timestamp = record?.timestamp
         ? new Date(record?.timestamp)
         : new Date().toISOString();
