@@ -673,7 +673,8 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
-            const keys = Object.keys(item[name][0]);
+            const _item = item?.[name]?.[0] ?? null;
+            const keys = Object.keys(_item ?? {});
             const l = keys.length;
             if (l === 1) {
               acc[table][name] = keys.reduce(
@@ -683,7 +684,7 @@ export class FindActorsImplementations {
             }
             return {
               ...acc,
-              [name]: item[name][0],
+              [name]: _item,
             };
           },
           { [table]: cloned_item },
