@@ -783,7 +783,7 @@ export class Utility {
       }
     });
     if (advance_filters?.length === 1) {
-      let [{ operator, field, values, type }] = advance_filters;
+      let [{ operator, field, values, type = 'criteria' }] = advance_filters;
       if (typeof values === 'string') {
         values = JSON.parse(values);
       }
