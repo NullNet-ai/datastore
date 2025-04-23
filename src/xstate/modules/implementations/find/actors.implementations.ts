@@ -667,8 +667,8 @@ export class FindActorsImplementations {
     const cloned_data = { ...data };
     delete cloned_data.phone_number_raws;
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
-      if (!pluck_group_object[key] && !is_main) return acc;
-      else if (pluck_group_object[key] && !is_main) {
+      // if (!pluck_group_object[key] && !is_main) return acc;
+      if (pluck_group_object[key] && !is_main) {
         return pluck_group_object[key].reduce(
           (_acc, field) => {
             const _field = pluralize(field);
