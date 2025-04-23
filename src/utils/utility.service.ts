@@ -475,59 +475,57 @@ export class Utility {
         const to_alias = to.alias || to_entity; // Use alias if provided
         to.filters ??= [];
         const concatenate_query = expressions[to_alias] || [];
+        function constructJoinQuery() {
+          if (to.alias) aliased_entities.push(to.alias);
+          // Retrieve fields from pluck_object for the specified `to` entity
+          const fields = pluck_object[to_alias] || [];
+          const to_table_schema = schema[to_entity];
+          const aliased_to_entity = aliasedTable(
+            to_table_schema,
+            `joined_${to_alias}`,
+          );
 
-        switch (type) {
-          case 'left':
-            if (to.alias) aliased_entities.push(to.alias);
-            // Retrieve fields from pluck_object for the specified `to` entity
-            const fields = pluck_object[to_alias] || [];
-            const to_table_schema = schema[to_entity];
-            const aliased_to_entity = aliasedTable(
-              to_table_schema,
-              `joined_${to_alias}`,
-            );
-
-            const sub_query_from_clause = Utility.getPopulatedQueryFrom(
-              _client_db
-                .select()
-                .from(aliased_to_entity)
-                .where(
-                  and(
-                    eq(aliased_to_entity['tombstone'], 0),
-                    ...(request_type !== 'root'
-                      ? [
-                          isNotNull(aliased_to_entity['organization_id']),
-                          eq(
-                            aliased_to_entity['organization_id'],
-                            organization_id,
-                          ),
-                        ]
-                      : []),
-                    ...Utility.constructFilters(
-                      to.filters,
-                      aliased_to_entity,
-                      [`joined_${to_alias}`],
-                      expressions,
-                    ),
+          const sub_query_from_clause = Utility.getPopulatedQueryFrom(
+            _client_db
+              .select()
+              .from(aliased_to_entity)
+              .where(
+                and(
+                  eq(aliased_to_entity['tombstone'], 0),
+                  ...(request_type !== 'root'
+                    ? [
+                        isNotNull(aliased_to_entity['organization_id']),
+                        eq(
+                          aliased_to_entity['organization_id'],
+                          organization_id,
+                        ),
+                      ]
+                    : []),
+                  ...Utility.constructFilters(
+                    to.filters,
+                    aliased_to_entity,
+                    [`joined_${to_alias}`],
+                    expressions,
                   ),
-                )
-                .toSQL(),
-            );
-            const join_order_direction = to.order_direction || 'ASC';
-            let order_by = to.order_by || 'created_date';
+                ),
+              )
+              .toSQL(),
+          );
+          const join_order_direction = to.order_direction || 'ASC';
+          let order_by = to.order_by || 'created_date';
 
-            //check if order_by exists in the concatenated_fields
-            if (concat_fields[to_alias]?.includes(order_by)) {
-              {
-                const concatenation = expressions?.to_alias?.find((exp) =>
-                  exp.includes(order_by),
-                );
-                order_by = concatenation
-                  ? concatenation.split(' AS ')[0]
-                  : 'created_date';
-              }
+          //check if order_by exists in the concatenated_fields
+          if (concat_fields[to_alias]?.includes(order_by)) {
+            {
+              const concatenation = expressions?.to_alias?.find((exp) =>
+                exp.includes(order_by),
+              );
+              order_by = concatenation
+                ? concatenation.split(' AS ')[0]
+                : 'created_date';
             }
-            const lateral_join = sql.raw(`
+          }
+          const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
                 .map((field) => `"joined_${to_alias}"."${field}"`)
@@ -538,8 +536,8 @@ export class Utility {
                     : ''
                 }
               ${sub_query_from_clause} AND "${from.entity}"."${
-              from.field
-            }" = "joined_${to_alias}"."${to.field}"
+            from.field
+          }" = "joined_${to_alias}"."${to.field}"
               ${
                 to.order_by
                   ? `ORDER BY "joined_${to_alias}"."${order_by}" ${join_order_direction.toUpperCase()}`
@@ -549,7 +547,16 @@ export class Utility {
             ) AS "${to_alias}"
           `);
 
-            _db = _db.leftJoin(lateral_join, sql`TRUE`);
+          _db = _db.leftJoin(lateral_join, sql`TRUE`);
+
+          return _db;
+        }
+        switch (type) {
+          case 'left':
+            _db = constructJoinQuery();
+            break;
+          case 'self':
+            _db = constructJoinQuery();
             break;
           default:
             throw new BadRequestException('Invalid join type');

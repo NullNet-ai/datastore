@@ -147,14 +147,17 @@ export class FindActorsImplementations {
           });
         }
       });
-
+      console.log({
+        multiple_sort,
+      });
       multiple_sort.forEach(({ by_field }) => {
         //check if by_field is separated by a dot if not then throw an error
         if (!by_field.includes('.')) {
-          throw new BadRequestException({
-            success: false,
-            message: `Multiple sort field ${by_field} must be separated by a dot: entity.field`,
-          });
+          by_field = `${table}.${by_field}`;
+          // throw new BadRequestException({
+          //   success: false,
+          //   message: `Multiple sort field ${by_field} must be separated by a dot: entity.field`,
+          // });
         }
         const [entity, field] = by_field.split('.');
         const concat_fields = parsed_concatenated_fields.fields;
