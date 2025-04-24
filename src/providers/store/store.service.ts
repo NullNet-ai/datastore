@@ -22,10 +22,13 @@ import {
   contacts,
   organizations,
   external_contacts,
+  account_organizations,
+  accounts,
+  account_profiles,
 } from '../../schema';
 import * as app_schema from '../../schema/application';
 import * as schema from '../../schema';
-import { desc, sql, eq, and } from 'drizzle-orm';
+import { desc, sql, eq, and, isNotNull } from 'drizzle-orm';
 import * as cache from 'memory-cache';
 import * as argon2 from 'argon2';
 const pluralize = require('pluralize');
@@ -547,11 +550,229 @@ export class CustomCreateService {
 @Injectable()
 export class RootStoreService {
   private db;
-  constructor(private drizzleService: DrizzleService) {
+  constructor(
+    private logger: LoggerService,
+    private drizzleService: DrizzleService,
+  ) {
     this.db = this.drizzleService.getClient();
   }
 
-  async getAccount(params: {
+  async getAccount({
+    email,
+    organization_id,
+    account_organization_id,
+    account_id,
+  }: {
+    email: string;
+    account_id?: string;
+    organization_id?: string;
+    account_organization_id?: string;
+  }) {
+    const filters = [
+      eq((account_organizations as Record<string, any>).tombstone, 0),
+      eq((account_organizations as Record<string, any>).status, 'Active'),
+      eq((account_organizations as Record<string, any>).email, email),
+      isNotNull((account_organizations as Record<string, any>).account_id),
+    ];
+    if (organization_id)
+      filters.push(
+        eq(
+          (account_organizations as Record<string, any>).organization_id,
+          organization_id,
+        ),
+      );
+
+    if (account_organization_id)
+      filters.push(
+        eq(
+          (account_organizations as Record<string, any>).id,
+          account_organization_id,
+        ),
+      );
+
+    if (account_id)
+      filters.push(
+        eq(
+          (account_organizations as Record<string, any>).account_id,
+          account_id,
+        ),
+      );
+
+    const pluckFields = (table_schema: any, fields: string[]) => {
+      return {
+        ...fields.reduce((acc, field) => {
+          return {
+            ...acc,
+            [field]: (table_schema as Record<string, any>)[field],
+          };
+        }, {}),
+      };
+    };
+
+    let account = await this.db
+      .select({
+        profile: pluckFields(account_profiles, [
+          'id',
+          'first_name',
+          'last_name',
+          'email',
+          'account_id',
+          'categories',
+          'code',
+          'status',
+          'organization_id',
+        ]),
+        contact: pluckFields(contacts, [
+          'id',
+          'first_name',
+          'last_name',
+          'account_id',
+          'code',
+          'categories',
+          'status',
+          'organization_id',
+          'date_of_birth',
+        ]),
+        // device: devices,
+        organization: pluckFields(organizations, [
+          'id',
+          'name',
+          'code',
+          'categories',
+          'status',
+          'organization_id',
+          'parent_organization_id',
+        ]),
+        id: (accounts as Record<string, any>).id,
+        account_id: (accounts as Record<string, any>).account_id,
+        organization_id: (account_organizations as Record<string, any>)
+          .organization_id,
+        account_organization_id: (account_organizations as Record<string, any>)
+          .id,
+        account_status: (account_organizations as Record<string, any>)
+          .account_organization_status,
+        role_id: (account_organizations as Record<string, any>).role_id,
+      })
+      .from(account_organizations)
+      .where(and(...filters))
+      .leftJoin(
+        accounts,
+        eq(
+          (accounts as Record<string, any>).id,
+          (account_organizations as Record<string, any>).account_id,
+        ),
+      )
+      .leftJoin(
+        account_profiles,
+        eq(
+          (account_profiles as Record<string, any>).account_id,
+          (accounts as Record<string, any>).id,
+        ),
+      )
+      .leftJoin(
+        contacts,
+        eq(
+          (contacts as Record<string, any>).id,
+          (account_organizations as Record<string, any>).contact_id,
+        ),
+      )
+      // .leftJoin(
+      //   devices,
+      //   eq(
+      //     (devices as Record<string, any>).id,
+      //     (account_organizations as Record<string, any>).device_id,
+      //   ),
+      // )
+      .leftJoin(
+        organizations,
+        eq(
+          (organizations as Record<string, any>).id,
+          (account_organizations as Record<string, any>).organization_id,
+        ),
+      )
+      .then(([account]) => {
+        return account;
+      })
+      .catch((err) => {
+        if (DEBUG === 'true') this.logger.error(err);
+        return {};
+      });
+
+    if (!account) {
+      const filters = [
+        eq((accounts as Record<string, any>).tombstone, 0),
+        eq((accounts as Record<string, any>).status, 'Active'),
+        eq((accounts as Record<string, any>).account_id, account_id),
+      ];
+      if (organization_id)
+        filters.push(
+          eq(
+            (accounts as Record<string, any>).organization_id,
+            organization_id,
+          ),
+        );
+      account = await this.db
+        .select({
+          profile: pluckFields(account_profiles, [
+            'id',
+            'first_name',
+            'last_name',
+            'email',
+            'account_id',
+            'categories',
+            'code',
+            'status',
+            'organization_id',
+          ]),
+          organization: pluckFields(organizations, [
+            'id',
+            'name',
+            'code',
+            'categories',
+            'status',
+            'organization_id',
+            'parent_organization_id',
+          ]),
+          id: (accounts as Record<string, any>).id,
+          account_id: (accounts as Record<string, any>).account_id,
+          organization_id: (accounts as Record<string, any>).organization_id,
+          account_status: (accounts as Record<string, any>).account_status,
+        })
+        .from(accounts)
+        .where(and(...filters))
+        .leftJoin(
+          account_profiles,
+          eq(
+            (account_profiles as Record<string, any>).account_id,
+            (accounts as Record<string, any>).id,
+          ),
+        )
+        .leftJoin(
+          organizations,
+          eq(
+            (organizations as Record<string, any>).id,
+            (accounts as Record<string, any>).organization_id,
+          ),
+        )
+        .then(([account]) => {
+          return {
+            ...account,
+            contact: {},
+            device: {},
+            account_organization_id: null,
+            role_id: null,
+          };
+        })
+        .catch((err) => {
+          if (DEBUG === 'true') this.logger.error(err);
+          return {};
+        });
+    }
+
+    return account;
+  }
+
+  async getAccountOld(params: {
     account_id: string;
     return_account_secret?: boolean;
     organization_id?: string;
@@ -652,39 +873,36 @@ export class RootStoreService {
       });
   }
 
-  async updatePassword(params: Record<string, any>) {
+  async updatePassword(entity, params: Record<string, any>) {
     const { id, password } = params;
     const generated_password = await argon2.hash(password);
     const date = new Date();
-    const updated_date = formatter(
-      date.toLocaleDateString(locale, date_options),
-    );
+    const updated_date = date.toLocaleDateString(locale, date_options);
     const updated_time = Utility.convertTime12to24(
       date.toLocaleTimeString(locale, { timeZone: timezone }),
     );
     const result = await this.db
-      .update(organization_accounts)
+      .update(schema[entity])
       .set({
         id,
-        password: generated_password,
         account_secret: generated_password,
+        is_new_user: false,
         updated_date,
         updated_time,
       })
-      .where(eq((organization_accounts as Record<string, any>).id, id));
+      .where(eq((schema[entity] as Record<string, any>).id, id));
 
     if (result.changes === 0)
       throw new BadRequestException({
         success: false,
-        message:
-          '[updatePassword]: No record for Organization Account updated.',
+        message: `[updatePassword:${entity}]: No record for Account updated.`,
         count: 0,
         data: [],
       });
 
     return {
       success: true,
-      message: '[updatePassword]: Successfully updated password.',
+      message: `[updatePassword:${entity}]: Successfully updated password.`,
       count: result.changes,
       data: [
         {
