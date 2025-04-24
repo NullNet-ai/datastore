@@ -656,6 +656,7 @@ export class FindActorsImplementations {
     _pluck_group_object,
     joins,
   ) {
+    return results;
     return results?.map((item) => {
       const cloned_item = { ...item };
       return joins
