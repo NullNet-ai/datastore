@@ -19,7 +19,7 @@ import {
   aliasedTable,
 } from 'drizzle-orm';
 import pick from 'lodash.pick';
-// import omit from 'lodash.omit';
+import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 import { EDateFormats } from 'src/utils/utility.types';
@@ -70,7 +70,7 @@ export class FindActorsImplementations {
         is_case_sensitive_sorting = false,
         pluck_group_object = {},
       } = body;
-      
+
       if (group_advance_filters.length && advance_filters.length) {
         throw new BadRequestException({
           success: false,
@@ -102,11 +102,17 @@ export class FindActorsImplementations {
 
       const parsed_concatenated_fields =
         Utility.parseConcatenateFields(concatenate_fields);
-
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
-        pluck_object[key] = [...new Set([...pluck_object[key], 'id'])];
+        pluck_object[key] = [
+          ...new Set([
+            ...pluck_object[key],
+            ...(parsed_concatenated_fields?.additional_fields?.[key] ?? []),
+            'id',
+          ]),
+        ];
       });
+
       joins.forEach(({ field_relation }) => {
         const { entity, alias } = field_relation.to;
         if (alias) {
@@ -615,8 +621,9 @@ export class FindActorsImplementations {
     _pluck_group_object,
     joins,
   ) {
-    return results?.map((item) => {
-      const cloned_item = { ...item };
+    // return results;
+    return results?.map((main_item) => {
+      const cloned_item = { ...main_item };
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
@@ -628,23 +635,42 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
-            const _item = item?.[name]?.[0] ?? null;
+            const _item =
+              main_item?.[name]?.reduce((__acc, item) => {
+                if (!_pluck_group_object[name]?.length) {
+                  return item;
+                }
+                return Object.entries(item).reduce((_acc, [key]) => {
+                  if (_pluck_group_object[name]) {
+                    if (_pluck_group_object[name].includes(key)) {
+                      _acc[key] = _acc?.[key] ?? [];
+                      _acc[key].push(item[key]);
+                    }
+                    return _acc;
+                  }
+                  return {
+                    ..._acc,
+                    // by default always the 1st index
+                    [key]: main_item[name][0][key],
+                  };
+                }, __acc);
+              }, {}) ?? null;
             const keys = Object.keys(_item ?? {});
             const l = keys.length;
             if (l === 1) {
               acc[table][name] = keys.reduce(
-                (acc, key) => acc + item[name][0][key],
+                (acc, key) => acc + main_item[name][0][key],
                 '',
               );
             }
             return {
               ...acc,
-              [name]: _item,
+              [name]: keys.length ? _item : null,
             };
           },
           {
             [table]: pick(
-              this.reducer(cloned_item, _pluck_group_object, true),
+              this.reducer(cloned_item, pluck_object, table),
               pluck_object[table],
             ),
           },
@@ -652,30 +678,14 @@ export class FindActorsImplementations {
     });
   }
 
-  private reducer(data, pluck_group_object = {}, is_main = false) {
+  private reducer(data, _pluck_object = {}, table) {
     const cloned_data = { ...data };
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
       const isSingular = pluralize.isSingular(key);
       const _val = Array.isArray(value) ? value[0] : value;
-      if (pluck_group_object[key] && !is_main) {
-        return pluck_group_object[key].reduce(
-          (_acc, field) => {
-            const _field = pluralize(field);
-            return {
-              ..._acc,
-              [key]: {
-                ..._acc[key],
-                [_field]: data[_field],
-              },
-            };
-          },
-          {
-            ...acc,
-            [key]: Array.isArray(value) ? value[0] : value,
-          },
-        );
+      if (_pluck_object?.[table]?.includes(key) && _pluck_object?.[key]) {
+        return omit(acc, key);
       }
-
       return {
         ...acc,
         [key]: isSingular ? _val : value,
