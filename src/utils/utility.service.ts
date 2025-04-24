@@ -366,7 +366,7 @@ export class Utility {
         }
         return (
           schema_fields[f].dataType === 'string' &&
-          !f.toLowerCase().endsWith('date') &&
+          // !f.toLowerCase().endsWith('date') &&
           !f.toLowerCase().includes('id')
         );
       });
