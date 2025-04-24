@@ -696,6 +696,8 @@ export class FindActorsImplementations {
   private reducer(data, pluck_group_object = {}, is_main = false) {
     const cloned_data = { ...data };
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
+      const isSingular = pluralize.isSingular(key);
+      const _val = Array.isArray(value) ? value[0] : value;
       if (pluck_group_object[key] && !is_main) {
         return pluck_group_object[key].reduce(
           (_acc, field) => {
@@ -717,7 +719,7 @@ export class FindActorsImplementations {
 
       return {
         ...acc,
-        [key]: Array.isArray(value) ? value[0] : value,
+        [key]: isSingular ? _val : value,
       };
     }, {});
   }
