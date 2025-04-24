@@ -102,13 +102,6 @@ export class FindActorsImplementations {
 
       const parsed_concatenated_fields =
         Utility.parseConcatenateFields(concatenate_fields);
-      console.log({
-        parsed_concatenated_fields: JSON.stringify(
-          parsed_concatenated_fields,
-          null,
-          2,
-        ),
-      });
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
         pluck_object[key] = [
@@ -119,10 +112,7 @@ export class FindActorsImplementations {
           ]),
         ];
       });
-      console.log({
-        pluck_object,
-        pluck_group_object,
-      });
+
       joins.forEach(({ field_relation }) => {
         const { entity, alias } = field_relation.to;
         if (alias) {
@@ -650,10 +640,6 @@ export class FindActorsImplementations {
                 if (!_pluck_group_object[name]?.length) {
                   return item;
                 }
-                console.log({
-                  item,
-                  _pluck_group_object: _pluck_group_object[name],
-                });
                 return Object.entries(item).reduce((_acc, [key]) => {
                   if (_pluck_group_object[name]) {
                     if (_pluck_group_object[name].includes(key)) {
