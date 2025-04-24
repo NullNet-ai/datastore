@@ -24,6 +24,16 @@ $  bun start:debug
 
 ## DNA Platform Modules
 
+## v1.0.15
+
+- @dna-platform/common at version 1.0.54.
+- @dna-platform/crdt-lww-postgres at version 1.0.111.
+
+## v1.0.14
+
+- @dna-platform/common at version 1.0.54.
+- @dna-platform/crdt-lww-postgres at version 1.0.110.
+
 ## v1.0.13
 
 - @dna-platform/common at version 1.0.54.
