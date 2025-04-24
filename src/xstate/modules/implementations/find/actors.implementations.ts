@@ -665,9 +665,8 @@ export class FindActorsImplementations {
                       _acc[key] = _acc?.[key] ?? [];
                       _acc[key].push(item[key]);
                     } else if (pluck_object[name].includes(key)) {
-                      _acc[key] = item[key];
+                      _acc[key] = main_item[name][0][key];
                     }
-
                     return _acc;
                   }
 
