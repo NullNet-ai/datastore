@@ -70,7 +70,7 @@ export class FindActorsImplementations {
         is_case_sensitive_sorting = false,
         pluck_group_object = {},
       } = body;
-      
+
       if (group_advance_filters.length && advance_filters.length) {
         throw new BadRequestException({
           success: false,
@@ -102,10 +102,22 @@ export class FindActorsImplementations {
 
       const parsed_concatenated_fields =
         Utility.parseConcatenateFields(concatenate_fields);
-
+      console.log({
+        parsed_concatenated_fields: JSON.stringify(
+          parsed_concatenated_fields,
+          null,
+          2,
+        ),
+      });
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
-        pluck_object[key] = [...new Set([...pluck_object[key], 'id'])];
+        pluck_object[key] = [
+          ...new Set([
+            ...pluck_object[key],
+            ...(parsed_concatenated_fields?.additional_fields?.[key] ?? []),
+            'id',
+          ]),
+        ];
       });
       joins.forEach(({ field_relation }) => {
         const { entity, alias } = field_relation.to;
