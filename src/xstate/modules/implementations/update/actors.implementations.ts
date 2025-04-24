@@ -92,6 +92,16 @@ export class UpdateActorsImplementations {
         : responsible_account.account_organization_id;
       const updated_data = Utility.updateParse({ schema, data: body });
       const table_schema = local_schema[table];
+      if (!table_schema) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `Table ${table} does not exist`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
       delete body.id;
       let result;
       this.logger.debug(`Update request for ${table}: ${id}`);

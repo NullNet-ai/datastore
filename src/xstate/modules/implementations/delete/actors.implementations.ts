@@ -52,6 +52,16 @@ export class DeleteActorsImplementations {
       const { is_permanent = 'false' } = query;
       const date = new Date();
       const table_schema = local_schema[table];
+      if (!table_schema) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `Table ${table} does not exist`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
       if (body?.organization_id && !is_root_account) {
         body.organization_id = organization_id;
       }

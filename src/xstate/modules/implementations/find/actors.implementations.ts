@@ -613,15 +613,16 @@ export class FindActorsImplementations {
       }
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
       this.logger.debug(`Params: ${_db.toSQL().params}`);
-      const result = this.transformer(
-        await _db,
-        table,
-        pluck_object,
-        pluck_group_object,
-      );
-      // query.r === 'merge'
-      //   ? this.transformer(await _db, table, pluck_object, pluck_group_object)
-      //   : await _db;
+      const result = joins.length
+        ? this.transformer(
+            await _db,
+            table,
+            pluck_object,
+            pluck_group_object,
+            joins,
+          )
+        : await _db;
+
       if (!result || !result.length) {
         throw new NotFoundException({
           success: false,
@@ -646,28 +647,53 @@ export class FindActorsImplementations {
     }),
   };
 
-  private transformer(results, table, pluck_object, pluck_group_object) {
+  private transformer(results, table, pluck_object, pluck_group_object, joins) {
     return results?.map((item) => {
+      const cloned_item = { ...item };
+      // @ts-ignore
       const omitted_fields = omit(
-        this.reducer(item, pluck_group_object),
+        this.reducer(cloned_item, pluck_group_object),
         pluck_object?.[table]?.filter(
           (key) => !Object.keys(pluck_object).includes(key),
         ),
       );
-      return {
-        [table]: pick(
-          this.reducer(item, pluck_group_object, true),
-          pluck_object[table],
-        ),
-        ...omitted_fields,
-      };
+      // @ts-ignore
+      const picked_fields = pick(
+        this.reducer(cloned_item, pluck_group_object, true),
+        pluck_object[table],
+      );
+      return joins
+        .map((join) => {
+          const isSelfJoin = join.type === 'self';
+          const prop = isSelfJoin
+            ? join.field_relation.from?.alias ||
+              join.field_relation.from?.entity
+            : join.field_relation.to?.alias || join.field_relation.to?.entity;
+          return prop;
+        })
+        .reduce(
+          (acc, name) => {
+            const _item = item?.[name]?.[0] ?? null;
+            const keys = Object.keys(_item ?? {});
+            const l = keys.length;
+            if (l === 1) {
+              acc[table][name] = keys.reduce(
+                (acc, key) => acc + item[name][0][key],
+                '',
+              );
+            }
+            return {
+              ...acc,
+              [name]: _item,
+            };
+          },
+          { [table]: cloned_item },
+        );
     });
   }
   private reducer(data, pluck_group_object = {}, is_main = false) {
     const cloned_data = { ...data };
-    delete cloned_data.phone_number_raws;
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
-      // if (!pluck_group_object[key] && !is_main) return acc;
       if (pluck_group_object[key] && !is_main) {
         return pluck_group_object[key].reduce(
           (_acc, field) => {
