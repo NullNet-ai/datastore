@@ -623,7 +623,6 @@ export class FindActorsImplementations {
     joins,
     _concatenate_fields,
   ) {
-    // return results;
     return results?.map((main_item) => {
       const cloned_item = { ...main_item };
       return joins
@@ -665,7 +664,10 @@ export class FindActorsImplementations {
                     if (_pluck_group_object[name].includes(key)) {
                       _acc[key] = _acc?.[key] ?? [];
                       _acc[key].push(item[key]);
+                    } else if (pluck_object[name].includes(key)) {
+                      _acc[key] = item[key];
                     }
+
                     return _acc;
                   }
 
@@ -684,6 +686,7 @@ export class FindActorsImplementations {
                 '',
               );
             }
+
             return {
               ...acc,
               [name]: keys.length ? _item : null,
