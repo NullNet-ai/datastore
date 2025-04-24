@@ -19,7 +19,7 @@ import {
   aliasedTable,
 } from 'drizzle-orm';
 import pick from 'lodash.pick';
-import omit from 'lodash.omit';
+// import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 import { EDateFormats } from 'src/utils/utility.types';
@@ -108,13 +108,15 @@ export class FindActorsImplementations {
       joins.forEach(({ field_relation }) => {
         const fr_keys = Object.keys(field_relation);
         fr_keys.forEach((key) => {
-          const table_name =
-            field_relation[key]?.alias || field_relation[key].entity;
+          const table_name = field_relation[key].entity;
+          const alias_name = field_relation[key]?.alias || table_name;
+
           Object.assign(pluck_object, {
             ...pluck_object,
-            [table_name]: [...new Set(pluck_object[table_name] ?? ['id'])],
+            [alias_name]: [...new Set(pluck_object[table_name] ?? ['id'])],
           });
-          if (table_name) {
+
+          if (alias_name) {
             pluck_object[table_name] = [
               ...new Set([
                 'id',
@@ -123,6 +125,7 @@ export class FindActorsImplementations {
               ]),
             ];
           }
+
           if (pluck_group_object?.[table_name]) {
             pluck_object[table_name] = [
               ...new Set([
@@ -199,7 +202,6 @@ export class FindActorsImplementations {
       let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
       const { table_schema, schema } = Utility.checkTable(table);
-
       let _plucked_fields = Utility.parsePluckedFields(
         table,
         _pluck,
@@ -647,21 +649,15 @@ export class FindActorsImplementations {
     }),
   };
 
-  private transformer(results, table, pluck_object, pluck_group_object, joins) {
+  private transformer(
+    results,
+    table,
+    pluck_object,
+    _pluck_group_object,
+    joins,
+  ) {
     return results?.map((item) => {
       const cloned_item = { ...item };
-      // @ts-ignore
-      const omitted_fields = omit(
-        this.reducer(cloned_item, pluck_group_object),
-        pluck_object?.[table]?.filter(
-          (key) => !Object.keys(pluck_object).includes(key),
-        ),
-      );
-      // @ts-ignore
-      const picked_fields = pick(
-        this.reducer(cloned_item, pluck_group_object, true),
-        pluck_object[table],
-      );
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
@@ -687,10 +683,16 @@ export class FindActorsImplementations {
               [name]: _item,
             };
           },
-          { [table]: cloned_item },
+          {
+            [table]: pick(
+              this.reducer(cloned_item, _pluck_group_object, true),
+              pluck_object[table],
+            ),
+          },
         );
     });
   }
+
   private reducer(data, pluck_group_object = {}, is_main = false) {
     const cloned_data = { ...data };
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {

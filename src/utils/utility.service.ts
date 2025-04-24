@@ -292,12 +292,11 @@ export class Utility {
 
           // Only process if the entity has pluck_object fields
           const entity_concatenated_fields = concatenated_fields[toAlias] || [];
-
           if (pluck_object_keys.includes(toAlias)) {
             const fields = [
               ...pluck_object[toAlias],
               ...entity_concatenated_fields,
-            ].filter((field) => pluck_object[table]?.includes(field));
+            ];
 
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
