@@ -70,7 +70,7 @@ export class FindActorsImplementations {
         is_case_sensitive_sorting = false,
         pluck_group_object = {},
       } = body;
-
+      
       if (group_advance_filters.length && advance_filters.length) {
         throw new BadRequestException({
           success: false,
@@ -104,50 +104,13 @@ export class FindActorsImplementations {
         Utility.parseConcatenateFields(concatenate_fields);
 
       let aliased_joined_entities: Record<string, any>[] = [];
-
+      Object.keys(pluck_object).forEach((key) => {
+        pluck_object[key] = [...new Set([...pluck_object[key], 'id'])];
+      });
       joins.forEach(({ field_relation }) => {
-        const fr_keys = Object.keys(field_relation);
-        fr_keys.forEach((key) => {
-          const table_name = field_relation[key].entity;
-          const alias_name = field_relation[key]?.alias || table_name;
-
-          Object.assign(pluck_object, {
-            ...pluck_object,
-            [alias_name]: [...new Set(pluck_object[table_name] ?? ['id'])],
-          });
-
-          if (alias_name) {
-            pluck_object[table_name] = [
-              ...new Set([
-                'id',
-                ...pluck_object[table_name],
-                field_relation[key]?.field,
-              ]),
-            ];
-          }
-
-          if (pluck_group_object?.[table_name]) {
-            pluck_object[table_name] = [
-              ...new Set([
-                ...pluck_object[table_name],
-                ...pluck_group_object[table_name],
-              ]),
-            ];
-          }
-        });
-
         const { entity, alias } = field_relation.to;
         if (alias) {
           aliased_joined_entities.push({ alias, entity });
-        }
-      });
-
-      Object.keys(pluck_object).forEach((key) => {
-        if (!pluck_object[key].includes('id')) {
-          throw new BadRequestException({
-            success: false,
-            message: `pluck_object must have "id" for every entity`,
-          });
         }
       });
 
@@ -155,10 +118,6 @@ export class FindActorsImplementations {
         //check if by_field is separated by a dot if not then throw an error
         if (!by_field.includes('.')) {
           by_field = `${table}.${by_field}`;
-          // throw new BadRequestException({
-          //   success: false,
-          //   message: `Multiple sort field ${by_field} must be separated by a dot: entity.field`,
-          // });
         }
         const [entity, field] = by_field.split('.');
         const concat_fields = parsed_concatenated_fields.fields;
@@ -656,7 +615,6 @@ export class FindActorsImplementations {
     _pluck_group_object,
     joins,
   ) {
-    return results;
     return results?.map((item) => {
       const cloned_item = { ...item };
       return joins

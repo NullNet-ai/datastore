@@ -187,6 +187,7 @@ export class Utility {
 
           // Store the field name in the fields object
           if (!acc.additional_fields[entity].includes(field_name)) {
+            acc.fields[entity].push(field_name);
             acc.additional_fields[entity].push(field_name);
           }
         }
@@ -250,8 +251,9 @@ export class Utility {
     multiple_sort: [{ by_field: string; by_direction: string }];
   }): Record<string, string[]> => {
     const pluck_object_keys = Object.keys(pluck_object || {});
-    const { additional_fields: concatenated_fields, expressions } =
+    const { fields: concatenated_fields, expressions } =
       parsed_concatenated_fields;
+
     pluck_object_keys.forEach((key) => {
       //check if the value of key is string then parse it to array
       if (typeof pluck_object[key] === 'string') {
