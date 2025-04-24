@@ -22,9 +22,11 @@ export interface IConcatenateField {
   field_name: string;
   separator: string;
   entity: string;
+  aliased_entity: string;
 }
 
 export interface IParsedConcatenatedFields {
   expressions: Record<string, string[]>;
   fields: Record<string, string[]>;
+  additional_fields: Record<string, string[]>;
 }

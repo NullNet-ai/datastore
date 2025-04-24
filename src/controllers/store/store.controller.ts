@@ -245,6 +245,55 @@ export class RootStoreController extends StoreController {
     const { account, signed_in_account = {} } = await this.authService.verify(
       data.token,
     );
+    const { organization_id, account_id, account_organization_id } = account;
+
+    const logged_account = await this.rootStoreService.getAccount({
+      email: account_id,
+      organization_id,
+      account_organization_id,
+    });
+
+    if (!logged_account) {
+      return _res.status(400).send({
+        success: false,
+        message: '[Switch Account]: Logged in account not found',
+      });
+    }
+
+    const target_account = await this.rootStoreService.getAccount({
+      email: account_id,
+      organization_id: data.organization_id,
+      account_id: logged_account.id,
+    });
+
+    const new_token_value = {
+      account: target_account,
+      signed_in_account,
+      as_root: true,
+    };
+    const token = await this.login.sign(new_token_value);
+    if (!token)
+      throw new ForbiddenException('[Switch Account]: Token not generated');
+
+    return _res.status(200).send({
+      success: true,
+      message: 'Account switched successfully',
+      token,
+    });
+  }
+
+  @Post('/switch_account_old')
+  async switchAccountOld(
+    @Body('data')
+    data: {
+      token: string;
+      organization_id: string;
+    },
+    @Res() _res: Response,
+  ) {
+    const { account, signed_in_account = {} } = await this.authService.verify(
+      data.token,
+    );
     const {
       contact: account_contact,
       organization: account_organization,
@@ -254,7 +303,7 @@ export class RootStoreController extends StoreController {
     } = account;
 
     const return_account_secret = true;
-    const logged_account = await this.rootStoreService.getAccount({
+    const logged_account = await this.rootStoreService.getAccountOld({
       account_id,
       is_external_user,
       return_account_secret,
@@ -270,11 +319,12 @@ export class RootStoreController extends StoreController {
       });
     }
 
-    const target_organization_account = await this.rootStoreService.getAccount({
-      account_id: logged_account.account_id,
-      return_account_secret,
-      organization_id: data.organization_id,
-    });
+    const target_organization_account =
+      await this.rootStoreService.getAccountOld({
+        account_id: logged_account.account_id,
+        return_account_secret,
+        organization_id: data.organization_id,
+      });
 
     const { account_secret, ...account_data } = target_organization_account;
 
@@ -305,10 +355,13 @@ export class RootStoreController extends StoreController {
   async password(@Res() res: Response, @Req() req: Request) {
     try {
       const { password } = req.body;
-      const result = await this.rootStoreService.updatePassword({
-        id: req.params.account_id,
-        password,
-      });
+      const result = await this.rootStoreService.updatePassword(
+        req.params.entity,
+        {
+          id: req.params.account_id,
+          password,
+        },
+      );
       res.send(result);
     } catch (error: any) {
       res.send(error?.response || error);

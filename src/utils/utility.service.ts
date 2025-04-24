@@ -168,28 +168,36 @@ export class Utility {
     concatenate_fields: IConcatenateField[],
   ) => {
     return concatenate_fields.reduce(
-      (acc, { fields, field_name, separator, entity }) => {
+      (
+        acc,
+        { fields, field_name, separator, entity: _entity, aliased_entity },
+      ) => {
+        const entity = aliased_entity || _entity;
         acc.expressions[entity] = acc.expressions[entity] || [];
         acc.fields[entity] = acc.fields[entity] || [];
+        acc.additional_fields[entity] = acc.additional_fields[entity] || [];
+        if (!aliased_entity) {
+          // Build the concatenated SQL expression
+          const concatenatedField = `(${fields
+            .map((field) => `COALESCE("joined_${entity}"."${field}", '')`)
+            .join(` || '${separator}' || `)}) AS "${field_name}"`;
 
-        // Build the concatenated SQL expression
-        const concatenatedField = `(${fields
-          .map((field) => `COALESCE("joined_${entity}"."${field}", '')`)
-          .join(` || '${separator}' || `)}) AS "${field_name}"`;
+          // Store the expression
+          acc.expressions[entity].push(concatenatedField);
 
-        // Store the expression
-        acc.expressions[entity].push(concatenatedField);
-
-        // Store the field name in the fields object
-        if (!acc.fields[entity].includes(field_name)) {
-          acc.fields[entity].push(field_name);
+          // Store the field name in the fields object
+          if (!acc.additional_fields[entity].includes(field_name)) {
+            acc.fields[entity].push(field_name);
+            acc.additional_fields[entity].push(field_name);
+          }
         }
 
         return acc;
       },
-      { expressions: {}, fields: {} } as {
+      { expressions: {}, fields: {}, additional_fields: {} } as {
         expressions: Record<string, string[]>;
         fields: Record<string, string[]>;
+        additional_fields: Record<string, string[]>;
       },
     );
   };
@@ -245,6 +253,7 @@ export class Utility {
     const pluck_object_keys = Object.keys(pluck_object || {});
     const { fields: concatenated_fields, expressions } =
       parsed_concatenated_fields;
+
     pluck_object_keys.forEach((key) => {
       //check if the value of key is string then parse it to array
       if (typeof pluck_object[key] === 'string') {
