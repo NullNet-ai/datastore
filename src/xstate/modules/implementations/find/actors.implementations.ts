@@ -19,7 +19,7 @@ import {
   aliasedTable,
 } from 'drizzle-orm';
 import pick from 'lodash.pick';
-// import omit from 'lodash.omit';
+import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 import { EDateFormats } from 'src/utils/utility.types';
@@ -670,7 +670,7 @@ export class FindActorsImplementations {
           },
           {
             [table]: pick(
-              this.reducer(cloned_item, _pluck_group_object, true),
+              this.reducer(cloned_item, pluck_object, table),
               pluck_object[table],
             ),
           },
@@ -678,30 +678,14 @@ export class FindActorsImplementations {
     });
   }
 
-  private reducer(data, pluck_group_object = {}, is_main = false) {
+  private reducer(data, _pluck_object = {}, table) {
     const cloned_data = { ...data };
     return Object.entries(cloned_data).reduce((acc, [key, value]) => {
       const isSingular = pluralize.isSingular(key);
       const _val = Array.isArray(value) ? value[0] : value;
-      if (pluck_group_object[key] && !is_main) {
-        return pluck_group_object[key].reduce(
-          (_acc, field) => {
-            const _field = pluralize(field);
-            return {
-              ..._acc,
-              [key]: {
-                ..._acc[key],
-                [_field]: data[_field],
-              },
-            };
-          },
-          {
-            ...acc,
-            [key]: Array.isArray(value) ? value[0] : value,
-          },
-        );
+      if (_pluck_object?.[table]?.includes(key) && _pluck_object?.[key]) {
+        return omit(acc, key);
       }
-
       return {
         ...acc,
         [key]: isSingular ? _val : value,
