@@ -2,12 +2,11 @@ use crate::db::DbPooledConnection;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::sync::merkles::merkle_service::MerkleService;
-use diesel::deserialize;
 use hlc::Timestamp;
 use merkle::MerkleTree;
-use serde_json::Value;
 use std::env;
 use uuid::Uuid;
+use crate::sync::merkles::merkle_manager::MerkleManager; 
 
 pub struct HlcService {
     pub timestamp: Timestamp,
@@ -16,13 +15,12 @@ pub struct HlcService {
 
 impl HlcService {
     fn set_clock(tx: &mut DbPooledConnection, clock: Clock) {
+        let merkle_manager=MerkleManager::instance();
         let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
         let merkle_service = MerkleService {};
         // Convert timestamp to string
         let timestamp_str = clock.timestamp.to_string();
         //convert merkle to string
-        let merkle_str = serde_json::to_string(&clock.merkle).unwrap();
-        //sending {} as merkle for now
         // Call the merkle service to set merkles by group id
         merkle_service
             .set_merkles_by_group_id(group_id, timestamp_str, clock.merkle, tx)

@@ -76,4 +76,14 @@ impl MerkleService {
 
         Ok(())
     }
+
+    pub fn get_all_group_ids(&self, conn: &mut DbPooledConnection) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        // Use Diesel's query builder to get all distinct group_ids
+        let group_ids = crdt_merkles::table
+            .select(crdt_merkles::group_id)
+            .distinct()
+            .load::<String>(conn)?;
+        
+        Ok(group_ids)
+    }
 }
