@@ -119,6 +119,10 @@ export class FindActorsImplementations {
           ]),
         ];
       });
+      console.log({
+        pluck_object,
+        pluck_group_object,
+      });
       joins.forEach(({ field_relation }) => {
         const { entity, alias } = field_relation.to;
         if (alias) {
@@ -627,8 +631,9 @@ export class FindActorsImplementations {
     _pluck_group_object,
     joins,
   ) {
-    return results?.map((item) => {
-      const cloned_item = { ...item };
+    // return results;
+    return results?.map((main_item) => {
+      const cloned_item = { ...main_item };
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
@@ -640,18 +645,41 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
-            const _item = item?.[name]?.[0] ?? null;
+            const _item =
+              main_item?.[name]?.reduce((__acc, item) => {
+                if (!_pluck_group_object[name]?.length) {
+                  return item;
+                }
+                console.log({
+                  item,
+                  _pluck_group_object: _pluck_group_object[name],
+                });
+                return Object.entries(item).reduce((_acc, [key]) => {
+                  if (_pluck_group_object[name]) {
+                    if (_pluck_group_object[name].includes(key)) {
+                      _acc[key] = _acc?.[key] ?? [];
+                      _acc[key].push(item[key]);
+                    }
+                    return _acc;
+                  }
+                  return {
+                    ..._acc,
+                    // by default always the 1st index
+                    [key]: main_item[name][0][key],
+                  };
+                }, __acc);
+              }, {}) ?? null;
             const keys = Object.keys(_item ?? {});
             const l = keys.length;
             if (l === 1) {
               acc[table][name] = keys.reduce(
-                (acc, key) => acc + item[name][0][key],
+                (acc, key) => acc + main_item[name][0][key],
                 '',
               );
             }
             return {
               ...acc,
-              [name]: _item,
+              [name]: keys.length ? _item : null,
             };
           },
           {
