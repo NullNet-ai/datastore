@@ -266,7 +266,9 @@ export class FindActorsImplementations {
               },
               [group_by_entity]: {
                 ...acc[group_by_entity],
-                [group_by_field]: group_field_schema,
+                [group_by_field]: sql.raw(
+                  `${group_by_entity}.${group_by_field}`,
+                ),
               },
             };
           },
