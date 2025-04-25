@@ -253,7 +253,7 @@ export class FindActorsImplementations {
                       ['asc', 'ascending'].includes(order_direction)
                         ? 'MIN'
                         : 'MAX'
-                    }("${group_by_entity}"."${order_by_schema.name}")`,
+                    }("${table}"."${order_by_schema.name}")`,
                   ),
                 }
               : {};
@@ -261,8 +261,10 @@ export class FindActorsImplementations {
             group_by_entities.push(group_by_entity);
             return {
               ...acc,
-              [group_by_entity]: {
+              [table]: {
                 ...group_by_agg_selections,
+              },
+              [group_by_entity]: {
                 ...acc[group_by_entity],
                 [group_by_field]: group_field_schema,
               },
