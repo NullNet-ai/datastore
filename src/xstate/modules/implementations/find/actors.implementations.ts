@@ -253,7 +253,7 @@ export class FindActorsImplementations {
                       ['asc', 'ascending'].includes(order_direction)
                         ? 'MIN'
                         : 'MAX'
-                    }("${group_by_entity}"."${order_by_schema.name}")`,
+                    }("${table}"."${order_by_schema.name}")`,
                   ),
                 }
               : {};
@@ -261,10 +261,14 @@ export class FindActorsImplementations {
             group_by_entities.push(group_by_entity);
             return {
               ...acc,
-              [group_by_entity]: {
+              [table]: {
                 ...group_by_agg_selections,
+              },
+              [group_by_entity]: {
                 ...acc[group_by_entity],
-                [group_by_field]: group_field_schema,
+                [group_by_field]: sql.raw(
+                  `${group_by_entity}.${group_by_field}`,
+                ),
               },
             };
           },
@@ -587,6 +591,7 @@ export class FindActorsImplementations {
             pluck_object,
             pluck_group_object,
             joins,
+            concatenate_fields,
           )
         : await _db;
 
@@ -620,8 +625,8 @@ export class FindActorsImplementations {
     pluck_object,
     _pluck_group_object,
     joins,
+    _concatenate_fields,
   ) {
-    // return results;
     return results?.map((main_item) => {
       const cloned_item = { ...main_item };
       return joins
@@ -635,8 +640,26 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
+            const contactinated_related_fields = _concatenate_fields.find(
+              (f) => f.aliased_entity === name,
+            );
+
             const _item =
               main_item?.[name]?.reduce((__acc, item) => {
+                if (contactinated_related_fields) {
+                  item = {
+                    ...item,
+                    [contactinated_related_fields.field_name]:
+                      contactinated_related_fields.fields
+                        .map(
+                          (field) =>
+                            acc[contactinated_related_fields.entity]?.[field] ??
+                            '',
+                        )
+                        .join(contactinated_related_fields?.separator ?? ''),
+                  };
+                }
+
                 if (!_pluck_group_object[name]?.length) {
                   return item;
                 }
@@ -645,9 +668,12 @@ export class FindActorsImplementations {
                     if (_pluck_group_object[name].includes(key)) {
                       _acc[key] = _acc?.[key] ?? [];
                       _acc[key].push(item[key]);
+                    } else if (pluck_object[name].includes(key)) {
+                      _acc[key] = main_item[name][0][key];
                     }
                     return _acc;
                   }
+
                   return {
                     ..._acc,
                     // by default always the 1st index
@@ -663,6 +689,7 @@ export class FindActorsImplementations {
                 '',
               );
             }
+
             return {
               ...acc,
               [name]: keys.length ? _item : null,
