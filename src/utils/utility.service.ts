@@ -485,7 +485,7 @@ export class Utility {
     const concat_fields = concatenate_fields?.fields || {};
 
     if (joins.length) {
-      joins.forEach(({ type, field_relation }) => {
+      joins.forEach(({ type, field_relation, nested = false }) => {
         const { from, to } = field_relation;
         const to_entity = to.entity;
         const from_alias = from.alias || from.entity; // Use alias if provided
@@ -502,32 +502,35 @@ export class Utility {
             `joined_${to_alias}`,
           );
 
-          const sub_query_from_clause = Utility.getPopulatedQueryFrom(
-            _client_db
-              .select()
-              .from(aliased_to_entity)
-              .where(
-                and(
-                  eq(aliased_to_entity['tombstone'], 0),
-                  ...(request_type !== 'root'
-                    ? [
-                        isNotNull(aliased_to_entity['organization_id']),
-                        eq(
-                          aliased_to_entity['organization_id'],
-                          organization_id,
-                        ),
-                      ]
-                    : []),
-                  ...Utility.constructFilters(
-                    to.filters,
-                    aliased_to_entity,
-                    [`joined_${to_alias}`],
-                    expressions,
-                  ),
+          let sub_query = _client_db.select().from(aliased_to_entity);
+          if (nested) {
+            sub_query = sub_query.leftJoin(
+              schema[from_alias],
+              eq(aliased_to_entity.id, schema[from_alias].created_by),
+            );
+          }
+          sub_query = sub_query
+            .where(
+              and(
+                eq(aliased_to_entity['tombstone'], 0),
+                ...(request_type !== 'root'
+                  ? [
+                      isNotNull(aliased_to_entity['organization_id']),
+                      eq(aliased_to_entity['organization_id'], organization_id),
+                    ]
+                  : []),
+                ...Utility.constructFilters(
+                  to.filters,
+                  aliased_to_entity,
+                  [`joined_${to_alias}`],
+                  expressions,
                 ),
-              )
-              .toSQL(),
-          );
+              ),
+            )
+            .toSQL();
+
+          const sub_query_from_clause =
+            Utility.getPopulatedQueryFrom(sub_query);
           const join_order_direction = to.order_direction || 'ASC';
           let order_by = to.order_by || 'created_date';
 
@@ -542,6 +545,11 @@ export class Utility {
                 : 'created_date';
             }
           }
+
+          const additional_where_and_clause = !nested
+            ? `AND "${from.entity}"."${from.field}" = "joined_${to_alias}"."${to.field}"`
+            : ``;
+
           const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
@@ -552,9 +560,7 @@ export class Utility {
                     ? `, ${concatenate_query.join(', ').replace(/,\s*$/, '')}`
                     : ''
                 }
-              ${sub_query_from_clause} AND "${from.entity}"."${
-            from.field
-          }" = "joined_${to_alias}"."${to.field}"
+              ${sub_query_from_clause} ${additional_where_and_clause}
               ${
                 to.order_by
                   ? `ORDER BY "joined_${to_alias}"."${order_by}" ${join_order_direction.toUpperCase()}`
