@@ -812,7 +812,7 @@ export class Utility {
 
       entity =
         entity && !aliased_entities.includes(entity) && !expressions[entity]
-          ? entity
+          ? pluralize.plural(entity)
           : entity;
       const _table_schema = entity ? schema?.[entity] : table_schema;
       return [
