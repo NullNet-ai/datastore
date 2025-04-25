@@ -253,7 +253,7 @@ export class FindActorsImplementations {
                       ['asc', 'ascending'].includes(order_direction)
                         ? 'MIN'
                         : 'MAX'
-                    }("${group_by_entity}"."${order_by_schema.name}")`,
+                    }("${table}"."${order_by_schema.name}")`,
                   ),
                 }
               : {};
@@ -261,10 +261,14 @@ export class FindActorsImplementations {
             group_by_entities.push(group_by_entity);
             return {
               ...acc,
-              [group_by_entity]: {
+              [table]: {
                 ...group_by_agg_selections,
+              },
+              [group_by_entity]: {
                 ...acc[group_by_entity],
-                [group_by_field]: group_field_schema,
+                [group_by_field]: sql.raw(
+                  `${group_by_entity}.${group_by_field}`,
+                ),
               },
             };
           },
@@ -623,7 +627,6 @@ export class FindActorsImplementations {
     joins,
     _concatenate_fields,
   ) {
-    // return results;
     return results?.map((main_item) => {
       const cloned_item = { ...main_item };
       return joins
@@ -665,6 +668,8 @@ export class FindActorsImplementations {
                     if (_pluck_group_object[name].includes(key)) {
                       _acc[key] = _acc?.[key] ?? [];
                       _acc[key].push(item[key]);
+                    } else if (pluck_object[name].includes(key)) {
+                      _acc[key] = main_item[name][0][key];
                     }
                     return _acc;
                   }
@@ -684,6 +689,7 @@ export class FindActorsImplementations {
                 '',
               );
             }
+
             return {
               ...acc,
               [name]: keys.length ? _item : null,
