@@ -892,7 +892,7 @@ export class RootStoreService {
       })
       .where(eq((schema[entity] as Record<string, any>).id, id));
 
-    if (result.changes === 0)
+    if (result.changes === 0 || result.rowCount === 0)
       throw new BadRequestException({
         success: false,
         message: `[updatePassword:${entity}]: No record for Account updated.`,
