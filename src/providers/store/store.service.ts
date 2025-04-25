@@ -148,6 +148,7 @@ export class InitializerService {
             'Indicate entity for Root Account Configuration',
           );
         const root_account_id = '9c3ad11b-5b69-4bba-9858-3974d091b335';
+        const personal_organization_id = 'e521d2d7-0850-4512-b1b3-03fc9fcdaeea';
         const account_id = 'root';
         const account_secret =
           process.env.ROOT_ACCOUNT_PASSWORD || 'pl3@s3ch@ng3m3!!';
@@ -156,10 +157,30 @@ export class InitializerService {
         );
         const date = new Date();
 
-        const [organization_accounts_counter = null] = await this.db
+        const [existing_root] = await this.db
+          .select()
+          .from(schema.account_organizations)
+          .where(eq(account_organizations.id, root_account_id));
+
+        const [existing_root_org] = await this.db
+          .select()
+          .from(schema.organizations)
+          .where(eq(organizations.id, personal_organization_id));
+
+        if (existing_root || existing_root_org) {
+          this.logger.warn(`Root Account already existing.`);
+          break;
+        }
+
+        const [organizations_counter = null] = await this.db
+          .select()
+          .from(schema.counters)
+          .where(sql`${counters.entity} = 'organizations'`);
+
+        const [counter = null] = await this.db
           .select()
           .from(counters)
-          .where(sql`${counters.entity} = 'organization_accounts'`);
+          .where(sql`${counters.entity} = 'account_organizations'`);
         const generateRootAccountCode = (entity_code: Record<string, any>) => {
           const root_count = 0;
           const { prefix, default_code } = entity_code;
@@ -176,42 +197,69 @@ export class InitializerService {
           }
           return prefix + (default_code + root_count);
         };
-
-        const root_organization_account = {
-          id: root_account_id,
-          ...(organization_accounts_counter
-            ? { code: generateRootAccountCode(organization_accounts_counter) }
-            : {}),
-          categories: ['Root'],
-          account_id,
-          email: account_id,
-          password: hashed_password,
-          account_secret: hashed_password,
+        const formatted_date = formatter(
+          date.toLocaleDateString(locale, date_options),
+        );
+        const formatted_time = Utility.convertTime12to24(
+          date.toLocaleTimeString(locale, { timeZone: timezone }),
+        );
+        const system_fields = {
           tombstone: 0,
           status: 'Active',
           timestamp: date.toISOString(),
-          created_date: formatter(
-            date.toLocaleDateString(locale, date_options),
-          ),
-          created_time: Utility.convertTime12to24(
-            date.toLocaleTimeString(locale, { timeZone: timezone }),
-          ),
-          updated_date: formatter(
-            date.toLocaleDateString(locale, date_options),
-          ),
-          updated_time: Utility.convertTime12to24(
-            date.toLocaleTimeString(locale, { timeZone: timezone }),
-          ),
-          is_new_user: 0,
+          created_date: formatted_date,
+          created_time: formatted_time,
+          updated_date: formatted_date,
+          updated_time: formatted_time,
         };
+        const personal_organization = {
+          id: personal_organization_id,
+          name: 'Root Personal Organization',
+          categories: ['Root', 'Personal'],
+          organization_id: personal_organization_id,
+          ...(organizations_counter
+            ? { code: generateRootAccountCode(organizations_counter) }
+            : {}),
+          ...system_fields,
+        };
+        const root_account = {
+          id: root_account_id,
+          categories: ['Root'],
+          account_id,
+          account_secret: hashed_password,
+          organization_id: personal_organization_id,
+          account_status: 'Active',
+          ...system_fields,
+        };
+        const root_account_profile = {
+          id: root_account_id,
+          email: account_id,
+          account_id: root_account_id,
+          organization_id: personal_organization_id,
+          ...system_fields,
+        };
+        const root_account_organization = {
+          id: root_account_id,
+          email: account_id,
+          categories: ['Root'],
+          account_id: root_account_id,
+          organization_id: personal_organization_id,
+          account_organization_status: 'Active',
+          ...(counter ? { code: generateRootAccountCode(counter) } : {}),
+          ...system_fields,
+        };
+        await this.db.insert(organizations).values(personal_organization);
+        await this.db.insert(accounts).values(root_account);
+        await this.db.insert(account_profiles).values(root_account_profile);
+
         const result = await this.db
-          .insert(organization_accounts)
-          .values(root_organization_account)
+          .insert(account_organizations)
+          .values(root_account_organization)
           .returning({
-            id: organization_accounts.id,
-            account_id: organization_accounts.account_id,
-            categories: organization_accounts.categories,
-            status: organization_accounts.status,
+            id: account_organizations.id,
+            account_id: account_organizations.email,
+            categories: account_organizations.categories,
+            status: account_organizations.status,
           })
           .then(([account]) => account)
           .catch(() => null);

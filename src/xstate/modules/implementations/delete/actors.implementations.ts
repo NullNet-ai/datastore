@@ -45,7 +45,11 @@ export class DeleteActorsImplementations {
           },
         });
       const { controller_args, responsible_account } = context;
-      const { organization_id = '', is_root_account } = responsible_account;
+      const {
+        organization_id = '',
+        is_root_account,
+        account_organization_id,
+      } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
       const { table, id } = params;
@@ -71,9 +75,7 @@ export class DeleteActorsImplementations {
         .set({
           tombstone: 1,
           version: sql`${table_schema.version} + 1`,
-          deleted_by: is_root_account
-            ? responsible_account?.organization_account?.id
-            : responsible_account.account_organization_id,
+          deleted_by: account_organization_id,
           updated_date: date.toLocaleDateString(),
           updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
           status: 'Deleted',

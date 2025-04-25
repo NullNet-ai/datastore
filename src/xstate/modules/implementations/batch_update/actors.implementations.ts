@@ -46,8 +46,8 @@ export class BatchUpdateActorsImplementations {
         });
 
       const { controller_args, responsible_account } = context;
-      const { organization_id = '', is_root_account } = responsible_account;
-
+      const { organization_id = '', account_organization_id } =
+        responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
       const { table, type } = params;
@@ -59,14 +59,10 @@ export class BatchUpdateActorsImplementations {
         ...updates,
         id: '56ab2a2c-b498-43e0-884f-a61beb93e56e',
         timestamp: new Date(),
-        updated_by: is_root_account
-          ? responsible_account?.organization_account?.id
-          : responsible_account.account_organization_id,
+        updated_by: account_organization_id,
       };
       if (updates.tombstone && updates.tombstone === 1) {
-        updates.deleted_by = is_root_account
-          ? responsible_account?.organization_account?.id
-          : responsible_account.account_organization_id;
+        updates.deleted_by = account_organization_id;
       }
       const { schema } = Utility.checkUpdateSchema(
         table,
