@@ -20,7 +20,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "clean:build": "rm -rf node_modules bun.lockb dist drizzle tmp upload logs package-lock.json && npm i",
+    "clean:build": "rm -rf node_modules bun.lockb dist drizzle tmp upload logs package-lock.json pnpm-lock.yaml && pnpm i && pnpm build",
     "generate": "node node_modules/@dna-platform/common/build/generator/index.js",
     "drizzle:generate": "drizzle-kit generate --name=template",
     "drizzle:generate-hypertables": "drizzle-kit generate --custom --name=hypertables",
@@ -31,7 +31,8 @@
     "generate:client1": "DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run drizzle:generate",
     "migrate:client1": "DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run drizzle:migrate",
     "generate:client2": "DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run drizzle:generate",
-    "migrate:client2": "DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run drizzle:migrate"
+    "migrate:client2": "DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run drizzle:migrate",
+    "initial:setup": "pnpm clean:build && pnpm drizzle:generate && pnpm drizzle:migrate"
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.54",
