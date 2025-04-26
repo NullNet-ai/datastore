@@ -830,7 +830,7 @@ export class Utility {
           field,
           values,
           type = 'criteria',
-          case_sensitive = true,
+          case_sensitive = false,
           parse_as,
         },
       ] = advance_filters;
@@ -872,7 +872,7 @@ export class Utility {
         type = 'criteria',
         field = '',
         values,
-        case_sensitive = true,
+        case_sensitive = false,
         parse_as,
       } = filter;
       if (typeof values === 'string') {
