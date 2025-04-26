@@ -20,11 +20,14 @@ import {
   inArray,
   isNotNull,
   isNull,
+  like,
   lt,
   lte,
   ne,
   notBetween,
+  notIlike,
   notInArray,
+  notLike,
   or,
   sql,
 } from 'drizzle-orm';
@@ -682,6 +685,8 @@ export class Utility {
     entity,
     aliased_entities,
     expressions,
+    case_sensitive,
+    parse_as,
   }) {
     const is_aliased = aliased_entities.includes(entity);
 
@@ -696,6 +701,12 @@ export class Utility {
       schema_field = is_aliased
         ? sql.raw(`"${entity}"."${field}"`)
         : table_schema[field];
+    }
+
+    if (parse_as === 'text') {
+      schema_field = entity
+        ? sql.raw(`"${entity}"."${field}"::TEXT`)
+        : sql.raw(`"${field}"::TEXT`);
     }
 
     switch (operator) {
@@ -732,7 +743,15 @@ export class Utility {
       case EOperator.OR:
         return or(...dz_filter_queue);
       case EOperator.LIKE:
+        if (case_sensitive) {
+          return like(schema_field, `%${values[0]}%`);
+        }
         return ilike(schema_field, `%${values[0]}%`);
+      case EOperator.NOT_LIKE:
+        if (case_sensitive) {
+          return notLike(schema_field, `%${values[0]}%`);
+        }
+        return notIlike(schema_field, `%${values[0]}%`);
       default:
         return null;
     }
@@ -805,7 +824,16 @@ export class Utility {
       }
     });
     if (advance_filters?.length === 1) {
-      let [{ operator, field, values, type = 'criteria' }] = advance_filters;
+      let [
+        {
+          operator,
+          field,
+          values,
+          type = 'criteria',
+          case_sensitive = true,
+          parse_as,
+        },
+      ] = advance_filters;
       if (typeof values === 'string') {
         values = JSON.parse(values);
       }
@@ -820,6 +848,7 @@ export class Utility {
         entity && !aliased_entities.includes(entity) && !expressions[entity]
           ? pluralize.plural(entity)
           : entity;
+
       const _table_schema = entity ? schema?.[entity] : table_schema;
       return [
         Utility.evaluateFilter({
@@ -831,12 +860,21 @@ export class Utility {
           entity,
           aliased_entities,
           expressions,
+          case_sensitive,
+          parse_as,
         }),
       ];
     }
 
     advance_filters.forEach((filter, index: number) => {
-      const { operator, type = 'criteria', field = '', values } = filter;
+      const {
+        operator,
+        type = 'criteria',
+        field = '',
+        values,
+        case_sensitive = true,
+        parse_as,
+      } = filter;
       if (typeof values === 'string') {
         filter.values = JSON.parse(values);
       }
@@ -845,6 +883,7 @@ export class Utility {
         entity && !aliased_entities.includes(entity)
           ? pluralize.plural(entity)
           : entity;
+
       const _table_schema = entity ? schema?.[entity] : table_schema;
 
       if (
@@ -868,6 +907,8 @@ export class Utility {
           entity,
           aliased_entities,
           expressions,
+          case_sensitive,
+          parse_as,
         }),
       );
 
@@ -885,6 +926,8 @@ export class Utility {
             entity,
             aliased_entities,
             expressions,
+            case_sensitive,
+            parse_as,
           }),
         );
         if (where_clause_queue.length > 1) where_clause_queue.shift();

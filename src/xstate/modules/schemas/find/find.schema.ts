@@ -57,6 +57,7 @@ export enum EOperator {
   AND = 'and',
   OR = 'or',
   LIKE = 'like',
+  NOT_LIKE = 'not_like',
 }
 
 export enum EOrderDirection {
@@ -114,6 +115,8 @@ export interface IAdvanceFilters<f = string> {
   logical_operator?: 'AND' | 'OR';
   type: 'criteria' | 'operator';
   entity?: string;
+  case_sensitive?: boolean;
+  parse_as?: 'text';
 }
 export interface IWhereClauses {
   and: Array<IAdvanceFilters>;
