@@ -105,7 +105,7 @@ async function initializers(app) {
 
   // ! This is a sample for the root account configuration
   await initializer.create(EInitializer.ROOT_ACCOUNT_CONFIG, {
-    entity: 'organization_accounts',
+    entity: 'account_organizations',
   });
 }
 
