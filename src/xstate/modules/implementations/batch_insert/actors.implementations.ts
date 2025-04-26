@@ -40,7 +40,11 @@ export class BatchInsertActorsImplementations {
       }
 
       const { controller_args, responsible_account } = context;
-      const { organization_id = '', is_root_account } = responsible_account;
+      const {
+        organization_id = '',
+        is_root_account,
+        account_organization_id,
+      } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
       const prefix = body.entity_prefix;
@@ -102,9 +106,7 @@ export class BatchInsertActorsImplementations {
           );
           record.id = uuidv4();
           record_ids.push(record.id);
-          record.created_by = is_root_account
-            ? responsible_account?.organization_account?.id
-            : responsible_account.account_organization_id;
+          record.created_by = account_organization_id;
           record.timestamp = record?.timestamp
             ? new Date(record?.timestamp)
             : new Date().toISOString();
