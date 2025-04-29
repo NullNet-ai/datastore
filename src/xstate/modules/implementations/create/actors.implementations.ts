@@ -11,7 +11,7 @@ import { sql } from 'drizzle-orm';
 import * as local_schema from '../../../../schema';
 import { v4 as uuidv4 } from 'uuid';
 import { LoggerService } from '@dna-platform/common';
-const { SYNC_ENABLED = 'false' } = process.env;
+const { SYNC_ENABLED = 'false', ENABLE_ENCRYPTION = 'false' } = process.env;
 
 @Injectable()
 export class CreateActorsImplementations {
@@ -150,19 +150,37 @@ export class CreateActorsImplementations {
           body.code = constructCode(code);
         }
       }
-
-      const parsed_data = Utility.createParse({ schema, data: body });
+      const { encrypted_fields = [], ..._body } = body;
+      let results = null;
+      let parsed_data = Utility.createParse({ schema, data: _body });
       this.logger.debug(`Create request for ${table}: ${body.id}`);
-      const results = await this.db
-        .insert(table_schema)
-        .values(parsed_data)
-        .returning({ table_schema })
-        .then(([{ table_schema }]) => table_schema);
+      if (ENABLE_ENCRYPTION === 'true') {
+        console.log('Encrypting data...', encrypted_fields);
+        // if (encrypted_fields?.length) {
+        //   const query = `INSERT INTO ${table} (${Object.keys(
+        //     parsed_data,
+        //   )}) VALUES (${Utility.encryptData(parsed_data, encrypted_fields)})`;
+        //   console.log({
+        //     query,
+        //   });
+        //   results = await this.db.execute(query);
+        //   console.log('Encrypting data completed');
+        //   console.log({
+        //     results,
+        //   });
+        // }
+      } else {
+        results = await this.db
+          .insert(table_schema)
+          .values(parsed_data)
+          .returning({ table_schema })
+          .then(([{ table_schema }]) => table_schema);
+      }
 
       if (SYNC_ENABLED === 'true') {
         this.syncService.insert(table, parsed_data);
       }
-
+      // @ts-ignore
       return Promise.resolve({
         payload: {
           success: true,

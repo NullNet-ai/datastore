@@ -1250,4 +1250,35 @@ export class Utility {
       return { valid: false, message: error?.message || error };
     }
   }
+
+  public static encryptData(data: Record<string, any>, encryption_keys = []) {
+    const values = `${Object.entries(data)
+      .reduce((encryptedData: any[], [key, value]) => {
+        if ((encryption_keys as string[]).includes(key)) {
+          encryptedData.push(
+            `pgp_sym_encrypt('${value}', '${process.env.PGP_SYM_KEY}') as "${key}"`,
+          );
+          return encryptedData;
+        }
+        const _value = typeof value === 'string' ? `'${value}'` : value;
+        encryptedData.push(_value !== undefined ? _value : null);
+        return encryptedData;
+      }, [])
+      .join(',')}`;
+    return values;
+  }
+
+  public static decryptData(data: Record<string, any>, encryption_keys = []) {
+    return encryption_keys.reduce((decryptedData, key) => {
+      if (data?.[key]) {
+        decryptedData = {
+          ...decryptedData,
+          [key]: sql.raw(
+            `pgp_sym_decrypt('${data[key]}::BYTEA', '${process.env.PGP_SYM_KEY}')`,
+          ),
+        };
+      }
+      return decryptedData;
+    }, {});
+  }
 }

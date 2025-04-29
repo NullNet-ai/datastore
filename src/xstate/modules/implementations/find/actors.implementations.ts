@@ -644,48 +644,45 @@ export class FindActorsImplementations {
               (f) => f.aliased_entity === name,
             );
 
-            const _item =
-              typeof main_item?.[name] === 'object'
-                ? main_item?.[name]?.reduce((__acc, item) => {
-                    if (contactinated_related_fields) {
-                      item = {
-                        ...item,
-                        [contactinated_related_fields.field_name]:
-                          contactinated_related_fields.fields
-                            .map(
-                              (field) =>
-                                acc[contactinated_related_fields.entity]?.[
-                                  field
-                                ] ?? '',
-                            )
-                            .join(
-                              contactinated_related_fields?.separator ?? '',
-                            ),
-                      };
-                    }
+            const _item = Array.isArray(main_item?.[name] ?? [])
+              ? main_item?.[name]?.reduce((__acc, item) => {
+                  if (contactinated_related_fields) {
+                    item = {
+                      ...item,
+                      [contactinated_related_fields.field_name]:
+                        contactinated_related_fields.fields
+                          .map(
+                            (field) =>
+                              acc[contactinated_related_fields.entity]?.[
+                                field
+                              ] ?? '',
+                          )
+                          .join(contactinated_related_fields?.separator ?? ''),
+                    };
+                  }
 
-                    if (!_pluck_group_object[name]?.length) {
-                      return item;
-                    }
-                    return Object.entries(item).reduce((_acc, [key]) => {
-                      if (_pluck_group_object[name]) {
-                        if (_pluck_group_object[name].includes(key)) {
-                          _acc[pluralize(key)] = _acc?.[key] ?? [];
-                          _acc[pluralize(key)].push(item[key]);
-                        } else if (pluck_object[name].includes(key)) {
-                          _acc[key] = main_item[name][0][key];
-                        }
-                        return _acc;
+                  if (!_pluck_group_object[name]?.length) {
+                    return item;
+                  }
+                  return Object.entries(item).reduce((_acc, [key]) => {
+                    if (_pluck_group_object[name]) {
+                      if (_pluck_group_object[name].includes(key)) {
+                        _acc[pluralize(key)] = _acc?.[key] ?? [];
+                        _acc[pluralize(key)].push(item[key]);
+                      } else if (pluck_object[name].includes(key)) {
+                        _acc[key] = main_item[name][0][key];
                       }
+                      return _acc;
+                    }
 
-                      return {
-                        ..._acc,
-                        // by default always the 1st index
-                        [key]: main_item[name][0][key],
-                      };
-                    }, __acc);
-                  }, {}) ?? null
-                : {};
+                    return {
+                      ..._acc,
+                      // by default always the 1st index
+                      [key]: main_item[name][0][key],
+                    };
+                  }, __acc);
+                }, {}) ?? null
+              : {};
             const keys = Object.keys(_item ?? {});
             const l = keys.length;
             if (l === 1) {
