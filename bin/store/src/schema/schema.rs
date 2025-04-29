@@ -25,10 +25,10 @@ table! {
 
 table! {
     packets (id) {
-        tombstone -> Integer,
+        tombstone -> Int4,
         status -> Text,
         previous_status -> Nullable<Text>,
-        version -> Integer,
+        version -> Int4,
         created_date -> Nullable<Text>,
         created_time -> Nullable<Text>,
         updated_date -> Nullable<Text>,
@@ -44,27 +44,27 @@ table! {
         timestamp -> Timestamp,
         hypertable_timestamp -> Text,
         interface_name -> Text,
-        total_length -> Nullable<Integer>,
+        total_length -> Nullable<Int4>,
         device_id -> Nullable<Uuid>,
         source_mac -> Nullable<Text>,
         destination_mac -> Nullable<Text>,
         ether_type -> Nullable<Text>,
-        ip_header_length -> Integer,
-        payload_length -> Integer,
+        ip_header_length -> Int4,
+        payload_length -> Int4,
         protocol -> Text,
         source_ip -> Text,
         destination_ip -> Text,
-        source_port -> Nullable<Integer>,
-        destination_port -> Nullable<Integer>,
-        tcp_header_length -> Nullable<Integer>,
+        source_port -> Nullable<Int4>,
+        destination_port -> Nullable<Int4>,
+        tcp_header_length -> Nullable<Int4>,
         tcp_sequence_number -> Nullable<BigInt>,
         tcp_acknowledgment_number -> Nullable<BigInt>,
-        tcp_data_offset -> Nullable<Integer>,
-        tcp_flags -> Nullable<Integer>,
-        tcp_window_size -> Nullable<Integer>,
-        tcp_urgent_pointer -> Nullable<Integer>,
-        icmp_type -> Nullable<Integer>,
-        icmp_code -> Nullable<Integer>,
+        tcp_data_offset -> Nullable<Int4>,
+        tcp_flags -> Nullable<Int4>,
+        tcp_window_size -> Nullable<Int4>,
+        tcp_urgent_pointer -> Nullable<Int4>,
+        icmp_type -> Nullable<Int4>,
+        icmp_code -> Nullable<Int4>,
     }
 }
 
@@ -109,15 +109,15 @@ table! {
     queues (id) {
         id -> Text,
         name -> Text,
-        size -> Integer,
-        count -> Integer,
+        size -> Int4,
+        count -> Int4,
     }
 }
 
 table! {
     queue_items (id) {
         id -> Text,
-        order -> Integer,
+        order -> Int4,
         queue_id -> Text,
         value -> Text,
     }
