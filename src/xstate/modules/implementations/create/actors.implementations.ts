@@ -8,8 +8,8 @@ import { eq, pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import { MinioService } from '../../../../providers/files/minio.service';
 import { sql } from 'drizzle-orm';
+import { ulid } from 'ulid';
 import * as local_schema from '../../../../schema';
-import { v4 as uuidv4 } from 'uuid';
 import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false', ENABLE_ENCRYPTION = 'false' } = process.env;
 
@@ -95,7 +95,7 @@ export class CreateActorsImplementations {
       body.timestamp = body?.timestamp
         ? new Date(body?.timestamp)
         : new Date().toISOString();
-      body.id = body.id === undefined ? uuidv4() : body.id;
+      body.id = body.id === undefined ? ulid() : body.id;
 
       const { schema }: any = Utility.checkCreateSchema(
         table,

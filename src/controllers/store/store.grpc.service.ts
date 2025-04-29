@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { map } from 'bluebird';
 import * as local_schema from '../../schema';
-import { v4 as uuidv4 } from 'uuid';
+import { ulid } from 'ulid';
 import { AxonPushService } from '../../providers/axon/axon_push/axon_push.service';
 import { Utility } from '../../utils/utility.service';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.service';
@@ -98,7 +98,7 @@ export class StoreGrpcService {
       if (table_schema.hypertable_timestamp) {
         record.hypertable_timestamp = new Date(record.timestamp).toISOString();
       }
-      record.id = uuidv4();
+      record.id = ulid();
       record.version = 1;
       (record.tombstone = 0),
         (record.status = 'Active'),

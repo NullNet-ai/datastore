@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  NotImplementedException,
+  // NotImplementedException,
 } from '@nestjs/common';
 import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
@@ -184,7 +184,7 @@ export class FindActorsImplementations {
 
       let join_keys: string[] = Object.keys(pluck_object);
       let group_by_selections = {};
-      let group_by_agg_selections = {};
+      // let group_by_agg_selections = {};
       let group_by_fields: Record<string, any> = {};
       let group_by_entities: Array<string> = [];
       if (group_by?.fields?.length) {
@@ -235,34 +235,34 @@ export class FindActorsImplementations {
                 success: false,
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
               });
-            if (multiple_sort.length)
-              throw new BadRequestException({
-                success: false,
-                message: `You can't group by fields if you have multiple sorting of fields`,
-              });
-            const order_by_schema = grouped_entity_schema[order_by];
-            if (!order_by_schema)
-              throw new BadRequestException({
-                success: false,
-                message: `Order by field ${order_by} does not exist in ${group_by_entity}`,
-              });
-            group_by_agg_selections = !group_by?.fields?.includes(order_by)
-              ? {
-                  [order_by_schema.name]: sql.raw(
-                    `${
-                      ['asc', 'ascending'].includes(order_direction)
-                        ? 'MIN'
-                        : 'MAX'
-                    }("${table}"."${order_by_schema.name}")`,
-                  ),
-                }
-              : {};
+            // if (multiple_sort.length)
+            //   throw new BadRequestException({
+            //     success: false,
+            //     message: `You can't group by fields if you have multiple sorting of fields`,
+            //   });
+            // const order_by_schema = grouped_entity_schema[order_by];
+            // if (!order_by_schema)
+            //   throw new BadRequestException({
+            //     success: false,
+            //     message: `Order by field ${order_by} does not exist in ${group_by_entity}`,
+            //   });
+            // group_by_agg_selections = !group_by?.fields?.includes(order_by)
+            //   ? {
+            //       [order_by_schema.name]: sql.raw(
+            //         `${
+            //           ['asc', 'ascending'].includes(order_direction)
+            //             ? 'MIN'
+            //             : 'MAX'
+            //         }("${table}"."${order_by_schema.name}")`,
+            //       ),
+            //     }
+            //   : {};
 
             group_by_entities.push(group_by_entity);
             return {
               ...acc,
               [table]: {
-                ...group_by_agg_selections,
+                // ...group_by_agg_selections,
               },
               [group_by_entity]: {
                 ...acc[group_by_entity],
@@ -327,15 +327,15 @@ export class FindActorsImplementations {
           parsed_concatenated_fields,
           multiple_sort,
         });
-        const is_grouping_joined_entity = group_by_entities.some((key) =>
-          Object.keys(join_selections ?? {}).includes(key),
-        );
+        // const is_grouping_joined_entity = group_by_entities.some((key) =>
+        //   Object.keys(join_selections ?? {}).includes(key),
+        // );
 
-        if (is_grouping_joined_entity)
-          throw new NotImplementedException({
-            success: false,
-            message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
-          });
+        // if (is_grouping_joined_entity)
+        //   throw new NotImplementedException({
+        //     success: false,
+        //     message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
+        //   });
 
         let count_selection = {};
         if ((group_by_selections as Record<string, any>)?.count)
@@ -419,37 +419,38 @@ export class FindActorsImplementations {
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
         by_direction: string = 'asc',
         is_case_sensitive_sorting: boolean = false,
+        group_by_selections: Record<string, any>,
       ) => {
         const by_entity_field = order_by.split('.');
-        const sort_entity: any = by_entity_field[0];
+        let sort_entity: any = table;
         let sort_schema = table_schema[by_entity_field[0] || 'id'];
         if (by_entity_field.length > 1) {
           const [_entity = '', by_field = 'id'] = by_entity_field;
           const is_aliased = Object.values(aliased_entities).find(
             ({ alias }) => alias === _entity,
           );
-          const entity = _entity;
+          sort_entity = !is_aliased ? pluralize(_entity) : _entity;
           // if (!join_keys.includes(entity) && !is_aliased)
           //   throw new BadRequestException({
           //     success: false,
           //     message: `Other than main entity, you can only sort by joined entities. ${entity} is not a joined entity nor an aliased joined entity.`,
           //   });
           if (
-            !schema[entity]?.[by_field] &&
+            !schema[sort_entity]?.[by_field] &&
             transformed_concatenations[sort_entity] &&
             sort_entity === table
             //if sort_entity is the main table and check if it has any field that is concatenated, and that field doesn't exist in the schema
           ) {
-            const concatenation = transformed_concatenations[entity]?.find(
+            const concatenation = transformed_concatenations[sort_entity]?.find(
               (exp) => exp.includes(by_field),
             );
             sort_schema = concatenation
               ? sql.raw(concatenation.split(' AS ')[0] as string)
               : undefined;
           } else if (
-            !schema[entity]?.[by_field] &&
+            !schema[sort_entity]?.[by_field] &&
             transformed_concatenations[sort_entity] &&
-            transformed_concatenations[sort_entity].find((exp) =>
+            transformed_concatenations[sort_entity]?.find((exp) =>
               exp.includes(by_field),
             )
             //if entity is not in the schema or its field is not in the schema and it is in the transformed concatenations and the field is in the transformed concatenations
@@ -469,7 +470,7 @@ export class FindActorsImplementations {
             } else {
               return sql.raw(`MAX(${sort_query})`);
             }
-          } else if (entity !== table) {
+          } else if (sort_entity !== table) {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
             if (!is_case_sensitive_sorting) {
               sort_query = `lower(${sort_query})`;
@@ -480,22 +481,42 @@ export class FindActorsImplementations {
               return sql.raw(`MAX(${sort_query})`);
             }
           } else {
+            let sort_query: any = `"${sort_entity}"."${by_field}"`;
+            if (Object.keys(group_by_selections).length) {
+              if (by_direction.toLowerCase() === 'asc') {
+                return sql.raw(`MIN(${sort_query})`);
+              } else {
+                return sql.raw(`MAX(${sort_query})`);
+              }
+            }
+
             sort_schema = is_aliased
-              ? sql.raw(`"${entity}"."${by_field}"`)
-              : schema[entity][by_field];
+              ? sql.raw(sort_query)
+              : schema[sort_entity][by_field];
+          }
+        }
+        if (Object.keys(group_by_selections).length) {
+          let sort_query: any = `"${sort_entity}"."${
+            by_entity_field[0] || 'id'
+          }"`;
+          if (by_direction.toLowerCase() === 'asc') {
+            return sql.raw(`MIN(${sort_query})`);
+          } else {
+            return sql.raw(`MAX(${sort_query})`);
           }
         }
         return sort_schema as SQLWrapper | AnyColumn;
       };
       const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
         Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
-      if (group_by_agg_selections[order_by]) {
-        _db = _db.orderBy(
-          ['asc', 'ascending'].includes(order_direction)
-            ? asc(group_by_agg_selections[order_by])
-            : desc(group_by_agg_selections[order_by]),
-        );
-      } else if (multiple_sort.length) {
+      // if (group_by_agg_selections[order_by]) {
+      //   _db = _db.orderBy(
+      //     ['asc', 'ascending'].includes(order_direction)
+      //       ? asc(group_by_agg_selections[order_by])
+      //       : desc(group_by_agg_selections[order_by]),
+      //   );
+      // } else
+      if (multiple_sort.length) {
         _db = _db.orderBy(
           ...multiple_sort
             .map(
@@ -510,6 +531,7 @@ export class FindActorsImplementations {
                   transformed_concatenations,
                   by_direction,
                   is_case_sensitive_sorting,
+                  group_by_selections,
                 );
                 const is_query_already_lowered = (() => {
                   try {
@@ -537,6 +559,7 @@ export class FindActorsImplementations {
           transformed_concatenations,
           order_direction,
           is_case_sensitive_sorting,
+          group_by_selections,
         );
         const is_query_already_lowered = (() => {
           try {
