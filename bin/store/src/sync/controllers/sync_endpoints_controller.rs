@@ -17,9 +17,9 @@ pub struct EndpointRequest {
 
 #[get("/api/sync_endpoints")]
 pub async fn get_sync_endpoints() -> impl Responder {
-    let mut conn = db::get_connection();
+    let mut conn = db::get_async_connection().await;
 
-    match sync_endpoints_service::get_sync_endpoints(&mut conn) {
+    match sync_endpoints_service::get_sync_endpoints(&mut conn).await {
         Ok(endpoints) => {
             let response = ResponsePackage { data: endpoints };
             HttpResponse::Ok().json(response)
@@ -30,12 +30,11 @@ pub async fn get_sync_endpoints() -> impl Responder {
         }
     }
 }
-
 #[post("/api/sync_endpoints")]
 pub async fn create_endpoint(endpoint_req: web::Json<EndpointRequest>) -> impl Responder {
-    let mut conn = db::get_connection();
+    let mut conn = db::get_async_connection().await;
 
-    match sync_endpoints_service::create_endpoint(&mut conn, &endpoint_req.endpoint) {
+    match sync_endpoints_service::create_endpoint(&mut conn, &endpoint_req.endpoint).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "message": "ok"
         })),

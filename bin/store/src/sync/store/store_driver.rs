@@ -1,10 +1,10 @@
-use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::ColumnValue;
 use crate::table_enum::Table;
+use diesel_async::AsyncPgConnection;
 
 pub async fn apply(
-    tx: &mut DbPooledConnection,
+    tx: &mut AsyncPgConnection,
     message: &CrdtMessage,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let row = &message.row;
@@ -42,7 +42,7 @@ pub async fn apply(
             serde_json::Value::String(timestamp.to_string()),
         );
 
-        match table.upsert_record_with_id_timestamp(tx, &values) {
+        match table.upsert_record_with_id_timestamp(tx, &values).await {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
@@ -51,7 +51,7 @@ pub async fn apply(
         }
     } else {
         // Insert or update without hypertable timestamp
-        match table.upsert_record_with_id(tx, &values) {
+        match table.upsert_record_with_id(tx, &values).await {
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);

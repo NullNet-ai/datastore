@@ -1,17 +1,17 @@
 use crate::db;
-use crate::db::DbPooledConnection;
 use crate::models::transaction_model::Transaction;
 use crate::schema::schema::transactions;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use std::error::Error;
 use std::fmt;
-use std::sync::Once;
+use tokio::sync::OnceCell;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
 pub struct TransactionService;
-static INIT: Once = Once::new();
+static INIT: OnceCell<()> = OnceCell::const_new();
 
 #[derive(Debug)]
 pub struct ExistingTransactionError;
@@ -25,44 +25,44 @@ impl fmt::Display for ExistingTransactionError {
 impl Error for ExistingTransactionError {}
 
 impl TransactionService {
-    pub fn initialize() {
-        INIT.call_once(|| {
-            if let Err(e) = Self::init() {
+    pub async fn initialize() {
+        INIT.get_or_init(|| async {
+            if let Err(e) = Self::init().await {
                 eprintln!("Failed to initialize transaction service: {}", e);
             }
-        });
+        }).await;
     }
 
-    pub fn init() -> Result<(), DieselError> {
-        let mut conn = db::get_connection();
+    pub async fn init() -> Result<(), DieselError> {
+        let mut conn = db::get_async_connection().await;
 
         // Find active transactions
         let active_transactions = transactions::table
             .filter(transactions::status.eq("active"))
             .order(transactions::timestamp.asc())
-            .load::<Transaction>(&mut conn)?;
+            .load::<Transaction>(&mut conn)
+            .await?;
 
         // Expire all active transactions
         for transaction in active_transactions {
-            Self::expire_transaction(&mut conn, &transaction.id)?;
+            Self::expire_transaction(&mut conn, &transaction.id).await?;
         }
 
         Ok(())
     }
 
-    pub fn expire_transaction(
-        conn: &mut DbPooledConnection,
+    pub async fn expire_transaction(
+        conn: &mut AsyncPgConnection,
         transaction_id: &str,
     ) -> Result<(), DieselError> {
-        diesel::delete(transactions::table)
-            .filter(transactions::id.eq(transaction_id))
-            .execute(conn)?;
-
+        diesel::delete(transactions::table.filter(transactions::id.eq(transaction_id)))
+            .execute(conn)
+            .await?;
         Ok(())
     }
 
-    pub fn start_transaction(
-        conn: &mut DbPooledConnection,
+    pub async fn start_transaction(
+        conn: &mut AsyncPgConnection,
         existing_id: Option<String>,
     ) -> Result<String, Box<dyn std::error::Error>> {
         // Get current timestamp in milliseconds
@@ -72,40 +72,27 @@ impl TransactionService {
             .as_millis() as i64;
 
         // Find active transactions
-        let active_transactions_result = transactions::table
-            .filter(transactions::status.eq("active"))
-            .order(transactions::timestamp.asc())
-            .limit(1)
-            .load::<Transaction>(conn);
+        let active_transactions = transactions::table
+        .filter(transactions::status.eq("active"))
+        .order(transactions::timestamp.asc())
+        .limit(1)
+        .load::<Transaction>(conn)
+        .await?;
 
-        // Check if query failed (similar to !transactions check in TypeScript)
-        if active_transactions_result.is_err() {
-            return Err(Box::new(ExistingTransactionError));
-        }
-
-        let active_transactions = active_transactions_result?;
-
-        if !active_transactions.is_empty() {
-            let transaction = &active_transactions[0];
-
-            // If existing_id matches and is active, extend it
-            if let Some(id) = &existing_id {
+        if let Some(transaction) = active_transactions.get(0) {
+            if let Some(ref id) = existing_id {
                 if id == &transaction.id {
-                    diesel::update(transactions::table)
-                        .filter(transactions::id.eq(id))
+                    diesel::update(transactions::table.filter(transactions::id.eq(id)))
                         .set(transactions::expiry.eq(transaction.expiry + 2000))
-                        .execute(conn)?;
-
+                        .execute(conn)
+                        .await?;
                     return Ok(transaction.id.clone());
                 }
             }
 
-            // Check if transaction has expired
-
             if now > transaction.expiry {
-                Self::expire_transaction(conn, &transaction.id)?;
+                Self::expire_transaction(conn, &transaction.id).await?;
             } else {
-                // Transaction exists and hasn't expired
                 return Err(Box::new(ExistingTransactionError));
             }
         }
@@ -123,20 +110,17 @@ impl TransactionService {
         };
 
         diesel::insert_into(transactions::table)
-            .values(&new_transaction)
-            .execute(conn)
-            .map_err(|e| {
-                println!("Error starting transaction: {}", e);
-                e
-            })?;
+        .values(&new_transaction)
+        .execute(conn)
+        .await?;
 
         Ok(new_id)
     }
 
-    pub fn stop_transaction(
-        conn: &mut DbPooledConnection,
+    pub async fn stop_transaction(
+        conn: &mut AsyncPgConnection,
         transaction_id: &str,
     ) -> Result<(), DieselError> {
-        Self::expire_transaction(conn, transaction_id)
+        Self::expire_transaction(conn, transaction_id).await
     }
 }

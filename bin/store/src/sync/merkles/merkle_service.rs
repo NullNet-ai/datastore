@@ -1,22 +1,23 @@
-use crate::db::DbPooledConnection;
 use crate::models::crdt_merkle_model::{Merkle, ParsedMerkle};
 use crate::schema::schema::crdt_merkles;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use diesel_async::AsyncPgConnection;
 use merkle::MerkleTree;
-use serde_json::Value;
+use diesel_async::RunQueryDsl;
+use diesel::OptionalExtension;
 
 pub struct MerkleService {}
 
 impl MerkleService {
-    pub fn get_merkles_by_group_id(
+    pub async fn get_merkles_by_group_id(
         &self,
         group_id: String,
-        tx: &mut DbPooledConnection,
+        tx: &mut AsyncPgConnection,
     ) -> Result<Option<ParsedMerkle>, DieselError> {
         let merkles = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(group_id))
-            .load::<Merkle>(tx)?;
+            .load::<Merkle>(tx).await?;
         if merkles.is_empty() {
             return Ok(None);
         }
@@ -34,12 +35,12 @@ impl MerkleService {
         Ok(Some(parsed))
     }
 
-    pub fn set_merkles_by_group_id(
+    pub async fn set_merkles_by_group_id(
         &self,
         group_id: String,
         timestamp: String,
         merkle: MerkleTree,
-        tx: &mut DbPooledConnection,
+        tx: &mut AsyncPgConnection,
     ) -> Result<(), DieselError> {
         let merkle = merkle.serialize().map_err(|e| {
             log::error!(
@@ -51,38 +52,48 @@ impl MerkleService {
         })?;
         let exists = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(&group_id))
-            .first::<Merkle>(tx)
+            .first::<Merkle>(tx).await
             .optional()?
             .is_some();
 
-        if exists {
-            // Update existing record
-            diesel::update(crdt_merkles::table.filter(crdt_merkles::group_id.eq(&group_id)))
-                .set((
-                    crdt_merkles::timestamp.eq(&timestamp),
-                    crdt_merkles::merkle.eq(&merkle),
-                ))
-                .execute(tx)?;
-        } else {
-            // Insert new record
-            diesel::insert_into(crdt_merkles::table)
-                .values((
-                    crdt_merkles::group_id.eq(group_id),
-                    crdt_merkles::timestamp.eq(timestamp),
-                    crdt_merkles::merkle.eq(merkle),
-                ))
-                .execute(tx)?;
-        }
+            if exists {
+                // Update existing record
+                diesel::update(crdt_merkles::table.filter(crdt_merkles::group_id.eq(&group_id)))
+                    .set((
+                        crdt_merkles::timestamp.eq(&timestamp),
+                        crdt_merkles::merkle.eq(&merkle),
+                    ))
+                    .execute(tx)
+                    .await
+                    .map_err(|e| {
+                        log::error!("Failed to update merkle tree: {}", e);
+                        e
+                    })?;
+            } else {
+                // Insert new record
+                diesel::insert_into(crdt_merkles::table)
+                    .values((
+                        crdt_merkles::group_id.eq(group_id),
+                        crdt_merkles::timestamp.eq(timestamp),
+                        crdt_merkles::merkle.eq(merkle),
+                    ))
+                    .execute(tx)
+                    .await
+                    .map_err(|e| {
+                        log::error!("Failed to insert merkle tree: {}", e);
+                        e
+                    })?;
+            }
 
         Ok(())
     }
 
-    pub fn get_all_group_ids(&self, conn: &mut DbPooledConnection) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    pub async fn get_all_group_ids(&self, conn: &mut AsyncPgConnection) -> Result<Vec<String>, Box<dyn std::error::Error>> {
         // Use Diesel's query builder to get all distinct group_ids
         let group_ids = crdt_merkles::table
             .select(crdt_merkles::group_id)
             .distinct()
-            .load::<String>(conn)?;
+            .load::<String>(conn).await?;
         
         Ok(group_ids)
     }

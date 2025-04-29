@@ -1,5 +1,4 @@
 use crate::db;
-use crate::db::DbPooledConnection;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::hlc_service::HlcService;
@@ -10,8 +9,9 @@ use crate::sync::sync_endpoints_service;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use crate::sync::transport::transport_driver::{self, HttpTransportDriver};
-use diesel::Connection;
 use diesel::result::Error as DieselError;
+use diesel_async::AsyncConnection;
+use diesel_async::AsyncPgConnection;
 use futures::Stream;
 use hlc;
 use merkle::MerkleTree;
@@ -24,20 +24,26 @@ use super::transport::transport_driver::PostOpts;
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
-    let mut conn = db::get_connection();
+    let mut conn = db::get_async_connection().await;
 
-    let messages: Vec<CrdtMessage> = conn.transaction(|mut tx| {
-        let result = create_messages(&mut tx, &row, table, operation);
-        match &result {
-            Ok(msgs) => {
-                if msgs.is_empty() {
+    let messages: Vec<CrdtMessage> = conn
+        .transaction::<_, DieselError, _>(|mut tx| {
+            Box::pin(async move {
+                let messages = create_messages(&mut tx, &row, table, operation)
+                    .await
+                    .map_err(|e| {
+                        log::error!("Failed to create messages: {}", e);
+                        DieselError::RollbackTransaction
+                    })?;
+                
+                if messages.is_empty() {
                     log::warn!("create_messages returned empty vector");
                 }
-            }
-            Err(e) => log::error!("Failed to create messages: {}", e),
-        }
-        result
-    })?;
+                
+                Ok(messages)
+            })
+        })
+        .await?;
 
     if messages.is_empty() {
         log::warn!("No messages created for insert operation");
@@ -54,7 +60,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
 }
 
 pub async fn send_messages(
-    mut tx: &mut DbPooledConnection,
+    mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     apply_messages(&mut tx, messages.clone()).await?;
@@ -87,7 +93,7 @@ pub async fn send_messages(
             "since": null
         }),
         "test",
-    )?;
+    ).await?;
 
     // Schedule next background sync with reduced timer
     // let sync_timer_ms = std::env::var("SYNC_TIMER_MS")
@@ -102,10 +108,10 @@ pub async fn send_messages(
 }
 
 async fn apply_messages(
-    mut tx: &mut DbPooledConnection,
+    mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let existing_messages = compare_messages(&mut tx, messages.clone())?;
+    let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
 
     for (msg, existing_msg) in existing_messages {
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp < msg.timestamp {
@@ -113,13 +119,14 @@ async fn apply_messages(
         }
 
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
-            let inserted_timestamp: Clock = HlcService::insert_timestamp(&mut tx, &msg.timestamp)?;
+            let inserted_timestamp: Clock = HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
             let mut updated_msg = msg.clone();
             updated_msg.group_id =
                 std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
             updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
 
-            message_service::insert_message(&mut tx, updated_msg)?;
+            // !
+            message_service::insert_message(&mut tx, updated_msg).await?;
         }
     }
 
@@ -129,11 +136,11 @@ async fn apply_messages(
 pub async fn iterate_queue<'a>(endpoints: Vec<PostOpts>) -> impl Stream<Item = Vec<Value>> + 'a {
     async_stream::stream! {
         let sync_timer_ms = 1000;
-        let mut conn = db::get_connection();
+        let mut conn = db::get_async_connection().await;
 
         loop {
             // ! default param passed as test
-            let size = match QueueService::size( "test") {
+            let size = match QueueService::size( "test").await {
                 Ok(s) => s,
                 Err(_) => {
                     sleep(Duration::from_millis(sync_timer_ms)).await;
@@ -147,7 +154,7 @@ pub async fn iterate_queue<'a>(endpoints: Vec<PostOpts>) -> impl Stream<Item = V
 
             // ! default param passed as test
 
-            let pack = match QueueService::dequeue(&mut conn, "test") {
+            let pack = match QueueService::dequeue(&mut conn, "test").await {
                 Ok(Some(value)) => value,
                 Ok(None) => {
                     sleep(Duration::from_millis(100)).await;
@@ -203,17 +210,11 @@ pub async fn iterate_queue<'a>(endpoints: Vec<PostOpts>) -> impl Stream<Item = V
 
 pub async fn process_queue(
     endpoints: Vec<PostOpts>,
-    mut conn: &mut DbPooledConnection,
+    mut conn: &mut AsyncPgConnection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_timer_ms = 20000;
     let start_time = std::time::Instant::now();
-    let mut total_items_processed = 0;
-    let mut total_messages_processed = 0;
-    let benchmark_interval = 100000; // Every 100,000 queue items 
 
-
-    let mut last_benchmark_time = start_time;
-    let mut last_benchmark_count = 0;
     
     // Create a file to store benchmark data
     let file_path = "sync_benchmark_results.csv";
@@ -225,20 +226,21 @@ pub async fn process_queue(
     println!("Starting queue processing benchmark...");
     loop {
         // ! default param passed as test
-        let size = match QueueService::size("test") {
+        let size = match QueueService::size("test").await {
             Ok(s) => s,
             Err(_) => {
                 continue;
             }
         };
         println!("queue size {}", size);
+        println!("size {}", size);
 
         if size == 0 {
             break;
         }
 
         // ! default param passed as test
-        let pack = match QueueService::dequeue(&mut conn, "test") {
+        let pack = match QueueService::dequeue(&mut conn, "test").await {
             Ok(Some(value)) => value,
             Ok(None) => {
                 log::debug!("Queue dequeue returned None, no items available");
@@ -251,10 +253,10 @@ pub async fn process_queue(
                 continue;
             }
         };
-        println!(
-            "pack {}",
-            serde_json::to_string_pretty(&pack).unwrap_or_default()
-        );
+        // println!(
+        //     "pack {}",
+        //     serde_json::to_string_pretty(&pack).unwrap_or_default()
+        // );
 
         let messages = pack
             .get("messages")
@@ -295,88 +297,24 @@ pub async fn process_queue(
 
         if all_success {
             log::debug!("All endpoints succeeded");
-            let _ = QueueService::ack(&mut conn, "test");
-            total_items_processed += 1;
-            total_messages_processed += message_count;
-            
-            // Check if we've reached a benchmark interval for queue items
-            if total_items_processed / benchmark_interval > last_benchmark_count / benchmark_interval {
-                let current_time = std::time::Instant::now();
-                let interval_time = current_time.duration_since(last_benchmark_time);
-                let total_time = current_time.duration_since(start_time);
-                
-                // Calculate items processed in this interval
-                let interval_items = total_items_processed - last_benchmark_count;
-                
-                // Calculate rates
-                let interval_items_rate = interval_items as f64 / interval_time.as_secs_f64();
-                let total_items_rate = total_items_processed as f64 / total_time.as_secs_f64();
-                let total_messages_rate = total_messages_processed as f64 / total_time.as_secs_f64();
-                
-                // Write to CSV
-                writeln!(
-                    file, 
-                    "{},{},{:.2},{:.2},{:.2}", 
-                    total_items_processed,
-                    total_messages_processed,
-                    total_time.as_secs_f64(),
-                    total_items_rate,
-                    total_messages_rate
-                )?;
-                
-                println!("===== BENCHMARK RESULTS =====");
-                println!("Queue items processed: {}/{}", total_items_processed, 1_000_000);
-                println!("Total messages processed: {}", total_messages_processed);
-                println!("Interval time ({} items): {:?}", interval_items, interval_time);
-                println!("Interval throughput: {:.2} items/sec", interval_items_rate);
-                println!("Total time so far: {:?}", total_time);
-                println!("Overall throughput: {:.2} items/sec, {:.2} msgs/sec", 
-                    total_items_rate, total_messages_rate);
-                println!("Estimated time remaining: {:?}", 
-                    std::time::Duration::from_secs_f64(
-                        (1_000_000 - total_items_processed) as f64 / total_items_rate
-                    ));
-                println!("=============================");
-                
-                // Update benchmark tracking variables
-                last_benchmark_time = current_time;
-                last_benchmark_count = total_items_processed;
+            if let Err(e) = QueueService::ack(&mut conn, "test").await {
+                log::error!("Failed to acknowledge queue message: {}", e);
             }
+            // Check if we've reached a benchmark interval for queue item
 
         } else {
             sleep(Duration::from_millis(sync_timer_ms)).await;
         }
-        let total_time = start_time.elapsed();
-        let total_items_rate = total_items_processed as f64 / total_time.as_secs_f64();
-        let total_messages_rate = total_messages_processed as f64 / total_time.as_secs_f64();
-        
-        // Write final data point
-        writeln!(
-            file, 
-            "{},{},{:.2},{:.2},{:.2}", 
-            total_items_processed,
-            total_messages_processed,
-            total_time.as_secs_f64(),
-            total_items_rate,
-            total_messages_rate
-        )?;
-        
-        println!("===== FINAL BENCHMARK RESULTS =====");
-        println!("Total queue items processed: {}", total_items_processed);
-        println!("Total messages processed: {}", total_messages_processed);
-        println!("Total time: {:?}", total_time);
-        println!("Overall throughput: {:.2} items/sec, {:.2} msgs/sec", 
-            total_items_rate, total_messages_rate);
-        println!("Benchmark data saved to {}", file_path);
-        println!("==================================");
     
     }
 
     Ok(())
 }
 
-pub async fn bg_sync(conn: &mut DbPooledConnection) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
     let sync_enabled = std::env::var("SYNC_ENABLED").unwrap_or_else(|_| "false".to_string());
+    let mut conn = db::get_async_connection().await;
+
 
     if sync_enabled == "false" {
         return Ok(());
@@ -385,7 +323,7 @@ pub async fn bg_sync(conn: &mut DbPooledConnection) -> Result<(), Box<dyn std::e
     log::debug!("Sync Service Initialized");
 
     // Get endpoints from sync_endpoints_service
-    let endpoints = match sync_endpoints_service::get_sync_endpoints(conn) {
+    let endpoints = match sync_endpoints_service::get_sync_endpoints(&mut conn).await {
         Ok(endpoints) => endpoints,
         Err(e) => {
             log::error!("Failed to get sync endpoints: {}", e);
@@ -399,11 +337,11 @@ pub async fn bg_sync(conn: &mut DbPooledConnection) -> Result<(), Box<dyn std::e
     );
 
     if !endpoints.is_empty() {
-        let queue_size = QueueService::size("test").unwrap_or(0);
+        let queue_size = QueueService::size("test").await.unwrap_or(0);
 
         if queue_size == 0 {
             for endpoint in &endpoints {
-                match sync(Vec::new(), None, None, endpoint.clone(), conn).await {
+                match sync(Vec::new(), None, None, endpoint.clone(), &mut conn).await {
                     Ok(_) => (),
                     Err(e) => {
                         if e.to_string().contains("Existing Transaction") {
@@ -415,7 +353,7 @@ pub async fn bg_sync(conn: &mut DbPooledConnection) -> Result<(), Box<dyn std::e
                 }
             }
         } else {
-            if let Err(e) = process_queue(endpoints, conn).await {
+            if let Err(e) = process_queue(endpoints, &mut conn).await {
                 log::error!("Error processing queue: {}", e);
             }
         }
@@ -431,11 +369,12 @@ pub async fn bg_sync(conn: &mut DbPooledConnection) -> Result<(), Box<dyn std::e
     Ok(())
 }
 fn schedule_next_sync(delay_ms: u64) {
-    let mut conn = db::get_connection();
     tokio::spawn(async move {
         sleep(Duration::from_millis(delay_ms)).await;
+        
+        // Create the connection inside the spawned task and handle the Result
 
-        if let Err(e) = bg_sync(&mut conn).await {
+        if let Err(e) = bg_sync().await {
             log::error!("Error in bg_sync: {}", e);
         }
     });
@@ -446,7 +385,7 @@ async fn sync(
     since: Option<&hlc::Timestamp>,
     existing_transaction_id: Option<String>,
     options: PostOpts,
-    conn: &mut DbPooledConnection,
+    conn: &mut AsyncPgConnection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_enabled = std::env::var("SYNC_ENABLED").unwrap_or_else(|_| "false".to_string());
     if sync_enabled != "true" {
@@ -458,11 +397,11 @@ async fn sync(
         std::env::var("GROUP_ID").unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JBT".to_string());
     println!("Using group_id: {}", group_id);
 
-    let transaction_id = TransactionService::start_transaction(conn, existing_transaction_id)?;
+    let transaction_id = TransactionService::start_transaction(conn, existing_transaction_id).await?;
     let transaction_id_clone = transaction_id.clone();
     println!("Started transaction: {}", transaction_id);
 
-    let clock = HlcService::get_clock(conn)?;
+    let clock = HlcService::get_clock(conn).await?;
     println!(
         "Sync Attempt at {} since:{} messages:{} transaction_id:{}",
         chrono::Utc::now().to_rfc3339(),
@@ -476,7 +415,7 @@ async fn sync(
     if let Some(since_val) = since.clone() {
         let timestamp = since_val.to_string();
 
-        messages = message_service::get_messages_since(conn, &timestamp)?;
+        messages = message_service::get_messages_since(conn, &timestamp).await?;
 
         log::debug!(
             "Since:{} - {} messages:{}",
@@ -514,7 +453,7 @@ async fn sync(
 
     if result.get("error").is_some() {
         log::error!("Error in syncing to server");
-        TransactionService::stop_transaction(conn, &transaction_id)?;
+        TransactionService::stop_transaction(conn, &transaction_id).await?;
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
             "Error in syncing to server",
@@ -544,7 +483,7 @@ async fn sync(
     if result_merkle.is_empty() {
         log::debug!("No Merkle tree found in the response");
     }
-    let clock = HlcService::get_clock(conn)?;
+    let clock = HlcService::get_clock(conn).await?;
     let merkle_str = serde_json::to_string(&clock.merkle)?;
     let clock_merkle = MerkleTree::deserialize(&merkle_str).unwrap();
     let parsed_merkle = if result_merkle.is_empty() {
@@ -583,7 +522,7 @@ async fn sync(
         if let Some(since_val) = since {
             if since_val.to_string() == *min_timestamp_str {
                 log::error!("Clock Drift Detected - Adjusting Clocks and Retrying Sync");
-                HlcService::commit_tree(conn, &parsed_merkle)?;
+                HlcService::commit_tree(conn, &parsed_merkle).await?;
             }
         }
         let parsed_timestamp = hlc::Timestamp::parse(min_timestamp_str.to_string());
@@ -598,38 +537,50 @@ async fn sync(
         .await?;
     }
     log::info!("Sync done - transaction_id:{}", transaction_id_clone);
-    TransactionService::stop_transaction(conn, &transaction_id_clone)?;
+    TransactionService::stop_transaction(conn, &transaction_id_clone).await?;
     Ok(())
 }
 
 async fn receive_messages(
-    conn: &mut DbPooledConnection,
+    conn: &mut AsyncPgConnection,  // Must use async connection type
     messages: Vec<Value>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let inner_messages =
-        conn.transaction::<Vec<CrdtMessage>, Box<dyn std::error::Error>, _>(|tx| {
+    // Transaction with explicit error handling
+    let inner_messages = conn.transaction::<_, DieselError, _>(|conn| {
+        Box::pin(async move {
             let mut processed_messages = Vec::new();
-
+    
             for message in messages {
+                // Error handling with context and better error messages
                 let timestamp = message
                     .get("message")
                     .and_then(|m| m.get("timestamp"))
                     .and_then(|t| t.as_str())
-                    .ok_or("Missing timestamp")?;
-
-                HlcService::recv(tx, timestamp.to_string())?;
-
-                let inner_message = message.get("message").ok_or("Missing message content")?;
-
-                // Convert Value to CrdtMessage
-                let crdt_message: CrdtMessage = serde_json::from_value(inner_message.clone())?;
+                    .ok_or_else(|| DieselError::RollbackTransaction)?;
+    
+                // Async operation within transaction
+                HlcService::recv(conn, timestamp.to_string())
+                .await
+                .map_err(|e| {
+                    log::error!("Failed to receive HLC: {}", e);
+                    DieselError::RollbackTransaction
+                })?;
+    
+                let inner_message = message
+                    .get("message")
+                    .ok_or_else(|| DieselError::RollbackTransaction)?;
+    
+                let crdt_message: CrdtMessage = serde_json::from_value(inner_message.clone())
+                    .map_err(|_| DieselError::RollbackTransaction)?;
+                
                 processed_messages.push(crdt_message);
             }
-
+    
             Ok(processed_messages)
-        })?;
+        })
+    })
+    .await?;  // Critical: Must await the transaction
 
     apply_messages(conn, inner_messages).await?;
-
     Ok(())
 }

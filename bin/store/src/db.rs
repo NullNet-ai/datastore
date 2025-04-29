@@ -2,45 +2,75 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{self, ConnectionManager, Pool, PooledConnection};
 use dotenv::dotenv;
 use std::env;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::OnceLock;
 
-// Update the type definitions to use the imported types directly
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
+use once_cell::sync::Lazy;
+use diesel_async::AsyncPgConnection;
+
+
+
+// -- Sync Types --
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
 pub type DbPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
-struct ConnectionCustomizer;
 
-static POOL: OnceLock<DbPool> = OnceLock::new();
+// -- Async Types --
+pub type AsyncDbPool = PoolAsync<AsyncPgConnection>;
+pub type AsyncDbPooledConnection = diesel_async::pooled_connection::deadpool::Object<AsyncPgConnection>;
 
-pub fn establish_connection() -> DbPool {
+static ASYNC_POOL: Lazy<AsyncDbPool> = Lazy::new(|| establish_async_pool());
+
+pub fn establish_async_pool() -> AsyncDbPool {
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
+     PoolAsync::builder(config)
+        .max_size(20)
+        .build().expect("Failed to create async pool")
+}
+
+// -- Sync Pool --
+static SYNC_POOL: OnceLock<DbPool> = OnceLock::new();
+
+
+pub fn establish_sync_pool() -> DbPool {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager = ConnectionManager::<PgConnection>::new(database_url);
     Pool::builder()
         .max_size(20)
-        .min_idle(Some(5)) // Keep minimum 5 connections ready
-        .connection_timeout(std::time::Duration::from_secs(30)) // Increase timeout to 30 seconds
-        .idle_timeout(Some(std::time::Duration::from_secs(300))) // Set idle timeout to 5 minutes
-        .max_lifetime(Some(std::time::Duration::from_secs(3600))) // Set max connection lifetime to 1 hour
+        .min_idle(Some(5))
+        .connection_timeout(std::time::Duration::from_secs(30))
+        .idle_timeout(Some(std::time::Duration::from_secs(300)))
+        .max_lifetime(Some(std::time::Duration::from_secs(3600)))
         .build(manager)
-        .map_err(|e| {
-            log::error!("Failed to create connection pool: {}", e);
-            e
-        })
-        .expect("Failed to create pool")
+        .expect("Failed to create sync pool")
 }
 
-// Get the global connection pool, initializing it if necessary
-pub fn get_pool() -> &'static DbPool {
-    POOL.get_or_init(establish_connection)
+pub fn get_sync_pool() -> &'static DbPool {
+    SYNC_POOL.get_or_init(establish_sync_pool)
+}
+pub fn get_async_pool() -> &'static AsyncDbPool {
+    &ASYNC_POOL
 }
 
-// Get a connection from the global pool - updated to use the correct error type
-pub fn get_connection() -> DbPooledConnection {
-    get_pool()
+pub fn get_sync_connection() -> DbPooledConnection {
+    get_sync_pool()
         .get()
-        .map_err(|e| {
-            log::error!("Failed to get database connection: {}", e);
-            e
+        .unwrap_or_else(|e| {
+            log::error!("Failed to get sync connection: {}", e);
+            panic!("Sync connection failure");
         })
-        .expect("Failed to get database connection")
+}
+
+
+pub async fn get_async_connection() -> AsyncDbPooledConnection {
+    get_async_pool()
+        .get()
+        .await
+        .unwrap_or_else(|e| {
+            log::error!("Failed to get async connection: {}", e);
+            panic!("Async connection failure");
+        })
 }

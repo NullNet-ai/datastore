@@ -3,13 +3,16 @@ use crate::models::sync_endpoint_model::SyncEndpoint;
 use crate::schema::schema::sync_endpoints;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use diesel_async::AsyncPgConnection;
+use diesel_async::RunQueryDsl;
+
 
 use super::transport::transport_driver::PostOpts;
 
-pub fn get_all_sync_endpoints(
-    conn: &mut DbPooledConnection,
+pub async fn get_all_sync_endpoints(
+    conn: &mut AsyncPgConnection,
 ) -> Result<Vec<SyncEndpoint>, DieselError> {
-    let endpoints = sync_endpoints::table.load::<SyncEndpoint>(conn)?;
+    let endpoints = sync_endpoints::table.load::<SyncEndpoint>(conn).await?;
 
     if endpoints.is_empty() {
         return Err(DieselError::NotFound);
@@ -18,8 +21,8 @@ pub fn get_all_sync_endpoints(
     Ok(endpoints)
 }
 
-pub fn create_endpoint(
-    conn: &mut DbPooledConnection,
+pub async fn create_endpoint(
+    conn: &mut AsyncPgConnection,
     endpoint: &SyncEndpoint,
 ) -> Result<serde_json::Value, DieselError> {
     // Log the endpoint data (similar to console.log in the TypeScript version)
@@ -30,7 +33,7 @@ pub fn create_endpoint(
         .on_conflict(sync_endpoints::id)
         .do_update()
         .set(endpoint)
-        .execute(conn)?;
+        .execute(conn).await?;
 
     // Return a JSON response with message: "ok"
     Ok(serde_json::json!({
@@ -38,7 +41,7 @@ pub fn create_endpoint(
     }))
 }
 
-pub fn get_sync_endpoints(conn: &mut DbPooledConnection) -> Result<Vec<PostOpts>, DieselError> {
+pub async fn get_sync_endpoints(conn: &mut AsyncPgConnection) -> Result<Vec<PostOpts>, DieselError> {
     let endpoints = sync_endpoints::table
         .filter(sync_endpoints::status.eq("Active"))
         .select((
@@ -46,7 +49,7 @@ pub fn get_sync_endpoints(conn: &mut DbPooledConnection) -> Result<Vec<PostOpts>
             sync_endpoints::username,
             sync_endpoints::password,
         ))
-        .load::<(String, String, String)>(conn)?;
+        .load::<(String, String, String)>(conn).await?;
 
     let result: Vec<PostOpts> = endpoints
         .into_iter()

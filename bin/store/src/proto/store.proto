@@ -1,0 +1,211 @@
+syntax = "proto3";
+
+package store;
+
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+message Items {
+  int32 tombstone = 1;
+  string status = 2;
+  optional string previous_status = 3;
+  int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  int32 id = 15;
+  string name = 16;
+  optional string description = 17;
+}
+
+message CreateItemsRequest {
+  Items items = 1;
+}
+
+message CreateItemsResponse {
+  bool success = 1;
+  string message = 2;
+  Items data = 3;
+}
+
+message Packets {
+  int32 tombstone = 1;
+  string status = 2;
+  optional string previous_status = 3;
+  int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  string id = 15;
+  Timestamp timestamp = 16;
+  string hypertable_timestamp = 17;
+  string interface_name = 18;
+  optional int32 total_length = 19;
+  optional string device_id = 20;
+  optional string source_mac = 21;
+  optional string destination_mac = 22;
+  optional string ether_type = 23;
+  int32 ip_header_length = 24;
+  int32 payload_length = 25;
+  string protocol = 26;
+  string source_ip = 27;
+  string destination_ip = 28;
+  optional int32 source_port = 29;
+  optional int32 destination_port = 30;
+  optional int32 tcp_header_length = 31;
+  optional int64 tcp_sequence_number = 32;
+  optional int64 tcp_acknowledgment_number = 33;
+  optional int32 tcp_data_offset = 34;
+  optional int32 tcp_flags = 35;
+  optional int32 tcp_window_size = 36;
+  optional int32 tcp_urgent_pointer = 37;
+  optional int32 icmp_type = 38;
+  optional int32 icmp_code = 39;
+}
+
+message CreatePacketsRequest {
+  Packets packets = 1;
+}
+
+message CreatePacketsResponse {
+  bool success = 1;
+  string message = 2;
+  Packets data = 3;
+}
+
+message CrdtMessages {
+  optional string database = 1;
+  string dataset = 2;
+  string group_id = 3;
+  string timestamp = 4;
+  string row = 5;
+  string column = 6;
+  string client_id = 7;
+  string value = 8;
+  string operation = 9;
+  optional string hypertable_timestamp = 10;
+}
+
+message CreateCrdtMessagesRequest {
+  CrdtMessages crdt_messages = 1;
+}
+
+message CreateCrdtMessagesResponse {
+  bool success = 1;
+  string message = 2;
+  CrdtMessages data = 3;
+}
+
+message CrdtMerkles {
+  string group_id = 1;
+  string timestamp = 2;
+  string merkle = 3;
+}
+
+message CreateCrdtMerklesRequest {
+  CrdtMerkles crdt_merkles = 1;
+}
+
+message CreateCrdtMerklesResponse {
+  bool success = 1;
+  string message = 2;
+  CrdtMerkles data = 3;
+}
+
+message SyncEndpoints {
+  string id = 1;
+  string name = 2;
+  string url = 3;
+  string group_id = 4;
+  string username = 5;
+  string password = 6;
+  string status = 7;
+}
+
+message CreateSyncEndpointsRequest {
+  SyncEndpoints sync_endpoints = 1;
+}
+
+message CreateSyncEndpointsResponse {
+  bool success = 1;
+  string message = 2;
+  SyncEndpoints data = 3;
+}
+
+message Queues {
+  string id = 1;
+  string name = 2;
+  int32 size = 3;
+  int32 count = 4;
+}
+
+message CreateQueuesRequest {
+  Queues queues = 1;
+}
+
+message CreateQueuesResponse {
+  bool success = 1;
+  string message = 2;
+  Queues data = 3;
+}
+
+message QueueItems {
+  string id = 1;
+  int32 order = 2;
+  string queue_id = 3;
+  string value = 4;
+}
+
+message CreateQueueItemsRequest {
+  QueueItems queue_items = 1;
+}
+
+message CreateQueueItemsResponse {
+  bool success = 1;
+  string message = 2;
+  QueueItems data = 3;
+}
+
+message Transactions {
+  string id = 1;
+  string timestamp = 2;
+  string status = 3;
+  int64 expiry = 4;
+}
+
+message CreateTransactionsRequest {
+  Transactions transactions = 1;
+}
+
+message CreateTransactionsResponse {
+  bool success = 1;
+  string message = 2;
+  Transactions data = 3;
+}
+
+service StoreService {
+  rpc CreateItems(CreateItemsRequest) returns (CreateItemsResponse);
+  rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
+  rpc CreateCrdtMessages(CreateCrdtMessagesRequest) returns (CreateCrdtMessagesResponse);
+  rpc CreateCrdtMerkles(CreateCrdtMerklesRequest) returns (CreateCrdtMerklesResponse);
+  rpc CreateSyncEndpoints(CreateSyncEndpointsRequest) returns (CreateSyncEndpointsResponse);
+  rpc CreateQueues(CreateQueuesRequest) returns (CreateQueuesResponse);
+  rpc CreateQueueItems(CreateQueueItemsRequest) returns (CreateQueueItemsResponse);
+  rpc CreateTransactions(CreateTransactionsRequest) returns (CreateTransactionsResponse);
+}

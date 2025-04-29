@@ -1,6 +1,6 @@
 pub mod controllers;
 pub mod hlc;
-mod merkles;
+pub mod merkles;
 pub mod message_service;
 mod store;
 pub mod sync_endpoints_service;

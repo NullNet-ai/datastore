@@ -41,31 +41,20 @@ impl MerkleManager {
     }
 
     pub fn instance() -> Arc<MerkleManager> {
-        // Initialize the trees synchronously if not already done
-        INIT.call_once(|| {
-            // This will block until initialization is complete
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async {
-                let manager = INSTANCE.clone();
-                manager.load_trees().await;
-            });
-        });
-        
+        // Just return the instance without loading trees
         INSTANCE.clone()
     }
-    
-    // Helper function to load initial trees
-    async fn load_trees(&self) {
-        let mut conn = db::get_connection();
+    pub async fn load_trees_from_db(&self) {
+        let mut conn = db::get_async_connection().await;
         let merkle_service = MerkleService {};
         
         // Get all group IDs from database
-        if let Ok(group_ids) = merkle_service.get_all_group_ids(&mut conn) {
+        if let Ok(group_ids) = merkle_service.get_all_group_ids(&mut conn).await {
             let mut trees_map = self.trees.write().await;
             
             for group_id in group_ids {
                 // Load each tree and store in HashMap
-                if let Ok(Some(parsed_merkle)) = merkle_service.get_merkles_by_group_id(group_id.clone(), &mut conn) {
+                if let Ok(Some(parsed_merkle)) = merkle_service.get_merkles_by_group_id(group_id.clone(), &mut conn).await {
                     trees_map.insert(group_id, MerkleEntry {
                         merkle: parsed_merkle.merkle,
                         timestamp: parsed_merkle.timestamp,
@@ -74,6 +63,8 @@ impl MerkleManager {
             }
         }
     }
+    // Helper function to load initial trees
+
     pub fn initialize(&mut self) {
         if !self.initialized {
             // Perform any one-time initialization here
@@ -89,9 +80,9 @@ impl MerkleManager {
     }
     
     // Get a tree by group ID
-    pub async fn get_tree(&self, group_id: &str) -> Option<MerkleTree> {
+    pub async fn get_tree(&self, group_id: &str) -> Option<(MerkleTree, String)> {
         let trees = self.trees.read().await;
-        trees.get(group_id).map(|entry| entry.merkle.clone())
+        trees.get(group_id).map(|entry| (entry.merkle.clone(), entry.timestamp.clone()))
     }
     
     // Get a timestamp by group ID
@@ -102,18 +93,20 @@ impl MerkleManager {
     
     // Save all trees to database
     pub async fn save_to_db(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let mut  conn= db::get_connection();
+        let mut  conn= db::get_async_connection().await;
                 let merkle_service = MerkleService {};
                 let trees = self.trees.read().await;
                 
                 for (group_id, entry) in trees.iter() {
+                    print!("Saving tree for group {} with timestamp {}", group_id, entry.timestamp);
+                    log::debug!("Saving tree for group {} with timestamp {}", group_id, entry.timestamp);
                     // Save the tree with its timestamp
                     merkle_service.set_merkles_by_group_id(
                         group_id.clone(), 
                         entry.timestamp.clone(), 
                         entry.merkle.clone(), 
                         &mut conn
-                    )?;
+                    ).await?;
                 }
                 
                 Ok(())
@@ -134,6 +127,7 @@ impl MerkleManager {
                 if let Err(e) = manager.save_to_db().await {
                     log::error!("Failed to save Merkle trees to database: {}", e);
                 } else {
+                    print!("Successfully saved Merkle trees to database");
                     log::debug!("Successfully saved Merkle trees to database");
                 }
             }

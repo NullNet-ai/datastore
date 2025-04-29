@@ -1,39 +1,47 @@
 use crate::db;
-use crate::db::DbPooledConnection;
 use crate::models::queue_item_model::QueueItem;
 use crate::models::queue_model::Queue;
-
+use diesel_async::AsyncConnection;
 use crate::schema::schema::{queue_items, queues};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-use serde_json::{Value, json};
+use serde_json::{Value};
 use uuid::Uuid;
+use diesel_async::AsyncPgConnection;
+use diesel_async::RunQueryDsl;
+use diesel::OptionalExtension; 
 
 pub struct QueueService;
 
 impl QueueService {
-    pub fn init() -> Result<(), DieselError> {
-        let mut conn = db::get_connection();
-
-        conn.transaction(|conn| {
-            diesel::insert_into(queues::table)
-                .values((
-                    queues::id.eq("1"),
-                    queues::name.eq("test"),
-                    queues::size.eq(0),
-                    queues::count.eq(0),
-                ))
-                .on_conflict_do_nothing()
-                .execute(conn)
-                .map(|_| ())
+    pub async fn init() -> Result<(), DieselError> {
+        let mut conn = db::get_async_connection().await;
+    
+        conn.transaction::<_, DieselError, _>(|conn| {
+            Box::pin(async move {
+                diesel::insert_into(queues::table)
+                    .values((
+                        queues::id.eq("1"),
+                        queues::name.eq("test"),
+                        queues::size.eq(0),
+                        queues::count.eq(0),
+                    ))
+                    .on_conflict_do_nothing()
+                    .execute(conn)
+                    .await?;
+                
+                Ok(())
+            })
         })
+        .await
     }
 
-    pub fn size(queue_name: &str) -> Result<i32, DieselError> {
-        let mut conn = db::get_connection();
+    pub async fn size(queue_name: &str) -> Result<i32, DieselError> {
+        let mut conn = db::get_async_connection().await;
         let queue = queues::table
             .filter(queues::name.eq(queue_name))
             .first::<Queue>(&mut conn)
+            .await
             .optional()?;
 
         match queue {
@@ -42,23 +50,26 @@ impl QueueService {
         }
     }
 
-    pub fn enqueue(
-        conn: &mut DbPooledConnection,
+    pub async fn enqueue(
+        conn: &mut AsyncPgConnection,
         item: Value,
         queue_name: &str,
     ) -> Result<i32, DieselError> {
-        conn.transaction(|conn| {
-            let queue = queues::table
-                .filter(queues::name.eq(queue_name))
-                .first::<Queue>(conn)
-                .optional()?;
 
-            let queue = match queue {
-                Some(q) => q,
-                None => return Err(DieselError::NotFound),
-            };
+        conn.transaction::<_, DieselError, _>(|conn| {
+            Box::pin(async move {
+                let queue = queues::table
+                    .filter(queues::name.eq(queue_name))
+                    .first::<Queue>(conn)
+                    .await
+                    .optional()?;
 
-            let new_order = queue.size + 1;
+                let queue = match queue {
+                    Some(q) => q,
+                    None => return Err(DieselError::NotFound),
+                };
+
+                let new_order = queue.size + 1;
 
             let queue_item = QueueItem {
                 id: Uuid::new_v4().to_string(),
@@ -69,77 +80,99 @@ impl QueueService {
 
             diesel::insert_into(queue_items::table)
                 .values(&queue_item)
-                .execute(conn)?;
+                .execute(conn)
+                .await
+                .map_err(|e| {
+                    log::error!("Failed to insert queue item: {}", e);
+                    e
+                })?;
 
             diesel::update(queues::table)
                 .filter(queues::id.eq(&queue.id))
                 .set(queues::size.eq(new_order))
-                .execute(conn)?;
-
-            Ok(new_order)
-        })
-    }
-
-    pub fn dequeue(
-        conn: &mut DbPooledConnection,
-        queue_name: &str,
-    ) -> Result<Option<Value>, DieselError> {
-        conn.transaction(|conn| {
-            let queue = queues::table
-                .filter(queues::name.eq(queue_name))
-                .first::<Queue>(conn)
-                .optional()?;
-
-            let queue = match queue {
-                Some(q) => q,
-                None => return Err(DieselError::NotFound),
-            };
-
-            if queue.count == queue.size {
-                return Ok(None);
-            }
-            //print queue
-
-            let queue_item = queue_items::table
-                .filter(
-                    queue_items::queue_id
-                        .eq(queue.id)
-                        .and(queue_items::order.eq(queue.count+1)),
-                )
-                .order(queue_items::order.asc())
-                .limit(1)
-                .first::<QueueItem>(conn)
-                .optional()?;
-
-            match queue_item {
-                Some(item) => match serde_json::from_str(&item.value) {
-                    Ok(value) => Ok(Some(value)),
-                    Err(e) => {
-                        log::error!("Failed to parse queue item value: {}", e);
-                        Ok(None)
-                    }
-                },
-                None => Ok(None),
-            }
-        })
-    }
-
-    pub fn ack(conn: &mut DbPooledConnection, queue_name: &str) -> Result<(), DieselError> {
-        conn.transaction(|conn| {
-            diesel::update(queues::table)
-                .filter(queues::name.eq(queue_name))
-                .filter(queues::count.lt(queues::size)) // Prevent over-counting
-                .set(queues::count.eq(queues::count + 1))
                 .execute(conn)
-                .and_then(|rows| {
-                    if rows == 0 {
-                        Err(DieselError::NotFound)
-                    } else {
-                        Ok(())
-                    }
+                .await
+                .map_err(|e| {
+                    log::error!("Failed to update queue size: {}", e);
+                    e
                 })?;
 
-            Ok(())
+            Ok(new_order)
+
+                // ... existing code ...
+            })
         })
+        .await
+
+    }
+
+    pub async fn dequeue(
+        conn: &mut AsyncPgConnection,
+        queue_name: &str,
+    ) -> Result<Option<Value>, DieselError> {
+
+
+        conn.transaction::<_, DieselError, _>(|conn| {
+            Box::pin(async move {
+                let queue = queues::table
+                    .filter(queues::name.eq(queue_name))
+                    .first::<Queue>(conn)
+                    .await
+                    .optional()?;
+
+                let queue = match queue {
+                    Some(q) => q,
+                    None => return Err(DieselError::NotFound),
+                };
+
+                if queue.count == queue.size {
+                    return Ok(None);
+                }
+
+                let queue_item = queue_items::table
+                    .filter(
+                        queue_items::queue_id
+                            .eq(queue.id)
+                            .and(queue_items::order.eq(queue.count+1)),
+                    )
+                    .order(queue_items::order.asc())
+                    .limit(1)
+                    .first::<QueueItem>(conn)
+                    .await
+                    .optional()?;
+
+                    match queue_item {
+                        Some(item) => match serde_json::from_str(&item.value) {
+                            Ok(value) => Ok(Some(value)),
+                            Err(e) => {
+                                log::error!("Failed to parse queue item value: {}", e);
+                                Ok(None)
+                            }
+                        },
+                        None => Ok(None),
+                    }
+
+            })
+        })
+        .await
+
+    }
+
+    pub async fn ack(conn: &mut AsyncPgConnection, queue_name: &str) -> Result<(), DieselError> {
+        conn.transaction::<_, DieselError, _>(|conn| {
+            Box::pin(async move {
+                let rows = diesel::update(queues::table)
+                    .filter(queues::name.eq(queue_name))
+                    .set(queues::count.eq(queues::count + 1))
+                    .execute(conn)
+                    .await?;
+                if rows == 0 {
+                    Err(DieselError::NotFound)
+                } else {
+                    Ok(())
+                }
+            })
+        })
+        .await
     }
 }

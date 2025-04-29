@@ -6,7 +6,6 @@ use actix_web::error::BlockingError;
 use actix_web::{HttpResponse, Responder, ResponseError, http, web};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
-use serde_json::json;
 
 #[derive(Serialize)]
 struct ApiError {
@@ -58,7 +57,7 @@ impl From<serde_json::Error> for ApiError {
 }
 
 pub async fn create_record(
-    pool: web::Data<db::DbPool>,
+    pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
     request: web::Json<CreateRequestBody>,
     query: web::Query<QueryParams>,
@@ -75,60 +74,65 @@ pub async fn create_record(
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
-    let result = web::block(move || {
-        let mut conn = pool.get().map_err(|e| ApiError {
-            status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-            message: format!("Failed to get DB connection: {}", e),
-        })?;
-        let table = Table::from_str(table_name.as_str()).ok_or(ApiError {
-            status: http::StatusCode::BAD_REQUEST.as_u16(),
-            message: format!("Unknown table: {log_table}"),
-        })?;
-
-        // The insert_query function now returns a string directly
-        table
-            .insert_record(&mut conn, processed_record.clone())
-            .map_err(|e| ApiError::from(e))
-    })
-    .await
-    .map_err(ApiError::from);
-
-    match result {
-        Ok(Ok(record)) => {
-            // Parse the record string into a JSON value
-            let mut record_value: serde_json::Value =
-                serde_json::from_str(&record).unwrap_or(serde_json::Value::Null);
-
-            if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
-                return HttpResponse::InternalServerError().json(ApiError {
-                    status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                    message: format!("Sync error: {}", e),
-                });
-            }
-
-            // Apply pluck filter if specified
-            if !pluck_fields.is_empty() && record_value.is_object() {
-                let obj = record_value.as_object_mut().unwrap();
-                let keys: Vec<String> = obj.keys().cloned().collect();
-
-                for key in keys {
-                    if !pluck_fields.contains(&key) {
-                        obj.remove(&key);
-                    }
-                }
-            }
-
-            // Create the response
-            let response = ApiResponse {
-                success: true,
-                message: format!("Record inserted into '{}'", &inner_log_table),
-                count: 1,
-                data: vec![record_value],
-            };
-
-            HttpResponse::Ok().json(response)
+    let mut conn = match pool.get().await {
+        Ok(conn) => conn,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to get database connection: {}", e)
+            }));
         }
-        Ok(Err(err)) => HttpResponse::InternalServerError().json(json!(err)),
-        Err(err) => HttpResponse::InternalServerError().json(json!(err)),
+    };
+    let table = match Table::from_str(table_name.as_str()) {
+        Some(t) => t,
+        None => {
+            return HttpResponse::BadRequest().json(ApiError {
+                status: http::StatusCode::BAD_REQUEST.as_u16(),
+                message: format!("Unknown table: {log_table}"),
+            });
+        }
+    };
+
+    // Execute the insert operation directly in async context
+    let result = match table.insert_record(&mut conn, processed_record.clone()).await {
+        Ok(record) => record,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiError::from(e));
+        }
+    };
+
+    let mut record_value: serde_json::Value = match serde_json::from_str(&result) {
+        Ok(val) => val,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiError {
+                status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                message: format!("Failed to parse record: {}", e),
+            });
+        }
+    };
+
+    if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
+        return HttpResponse::InternalServerError().json(ApiError {
+            status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            message: format!("Sync error: {}", e),
+        });
     }
+
+    if !pluck_fields.is_empty() && record_value.is_object() {
+        let obj = record_value.as_object_mut().unwrap();
+        let keys: Vec<String> = obj.keys().cloned().collect();
+
+        for key in keys {
+            if !pluck_fields.contains(&key) {
+                obj.remove(&key);
+            }
+        }
+    }
+
+    let response = ApiResponse {
+        success: true,
+        message: format!("Record inserted into '{}'", &inner_log_table),
+        count: 1,
+        data: vec![record_value],
+    };
+    HttpResponse::Ok().json(response)
 }

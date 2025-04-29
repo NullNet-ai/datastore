@@ -6,10 +6,12 @@ use diesel::prelude::*;
 use diesel::query_builder::InsertStatement;
 use diesel::query_dsl::LoadQuery;
 use diesel::result::Error as DieselError;
+use diesel_async::AsyncPgConnection;
 use serde::Serialize;
 use serde_json;
 use serde_json::Value;
 use std::collections::HashMap;
+use diesel_async::RunQueryDsl;
 
 #[derive(Debug)]
 pub enum Table {
@@ -30,29 +32,29 @@ impl Table {
         }
     }
 
-    pub fn insert_record_generic<'a, T, M, U>(
-        &self,
-        conn: &mut PgConnection,
-        table: T,
-        record: M,
-    ) -> Result<String, DieselError>
-    where
-        T: diesel::Table,
-        M: diesel::Insertable<T>,
-        U: Serialize,
-        InsertStatement<T, M::Values>: LoadQuery<'a, PgConnection, U>,
-    {
-        let result = diesel::insert_into(table)
-            .values(record)
-            .get_result::<U>(conn)?;
+    // pub fn insert_record_generic<'a, T, M, U>(
+    //     &self,
+    //     conn: &mut PgConnection,
+    //     table: T,
+    //     record: M,
+    // ) -> Result<String, DieselError>
+    // where
+    //     T: diesel::Table,
+    //     M: diesel::Insertable<T>,
+    //     U: Serialize,
+    //     InsertStatement<T, M::Values>: LoadQuery<'a, PgConnection, U>,
+    // {
+    //     let result = diesel::insert_into(table)
+    //         .values(record)
+    //         .get_result::<U>(conn)?;
 
-        // Convert the result to a JSON string
-        Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
-    }
+    //     // Convert the result to a JSON string
+    //     Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
+    // }
 
-    pub fn insert_record(
+    pub async fn insert_record(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut AsyncPgConnection,
         record: Value,
     ) -> Result<String, DieselError> {
         match self {
@@ -62,16 +64,16 @@ impl Table {
                 value.hypertable_timestamp = value.timestamp.to_string();
                 let result = diesel::insert_into(packets::table())
                     .values(value)
-                    .get_result::<Packet>(conn)?;
+                    .get_result::<Packet>(conn).await?;
                 Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
             }
             _ => panic!(),
         }
     }
 
-    pub fn upsert_record_with_id(
+    pub async fn upsert_record_with_id(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut AsyncPgConnection,
         record: &HashMap<String, Value>,
     ) -> Result<(), DieselError> {
         let json_value = serde_json::to_value(record).unwrap();
@@ -90,16 +92,16 @@ impl Table {
                     .on_conflict((schema::packets::id, schema::packets::timestamp))
                     .do_update()
                     .set(value)
-                    .execute(conn)
+                    .execute(conn).await
                     .map(|_| ())
             }
             _ => panic!(),
         }
     }
 
-    pub fn upsert_record_with_id_timestamp(
+    pub async fn upsert_record_with_id_timestamp(
         &self,
-        conn: &mut PgConnection,
+        conn: &mut AsyncPgConnection,
         record: &HashMap<String, Value>,
     ) -> Result<(), DieselError> {
         let json_value = serde_json::to_value(record).unwrap();
@@ -117,7 +119,7 @@ impl Table {
                     .on_conflict((schema::packets::id, schema::packets::timestamp))
                     .do_update()
                     .set(value)
-                    .execute(conn)
+                    .execute(conn).await
                     .map(|_| ())
             }
             _ => panic!(),
