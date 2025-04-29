@@ -592,6 +592,7 @@ export class FindActorsImplementations {
             pluck_group_object,
             joins,
             concatenate_fields,
+            group_by,
           )
         : await _db;
 
@@ -626,9 +627,16 @@ export class FindActorsImplementations {
     _pluck_group_object,
     joins,
     _concatenate_fields,
+    group_by,
   ) {
     return results?.map((main_item) => {
-      const cloned_item = { ...main_item };
+      let cloned_item = { ...main_item };
+      if (group_by.fields?.length) {
+        cloned_item = {
+          ...cloned_item[table],
+        };
+      }
+
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
@@ -644,8 +652,8 @@ export class FindActorsImplementations {
               (f) => f.aliased_entity === name,
             );
 
-            const _item = Array.isArray(main_item?.[name] ?? [])
-              ? main_item?.[name]?.reduce((__acc, item) => {
+            const _item = Array.isArray(cloned_item?.[name] ?? [])
+              ? cloned_item?.[name]?.reduce((__acc, item) => {
                   if (contactinated_related_fields) {
                     item = {
                       ...item,
@@ -670,7 +678,7 @@ export class FindActorsImplementations {
                         _acc[pluralize(key)] = _acc?.[key] ?? [];
                         _acc[pluralize(key)].push(item[key]);
                       } else if (pluck_object[name].includes(key)) {
-                        _acc[key] = main_item[name][0][key];
+                        _acc[key] = cloned_item[name][0][key];
                       }
                       return _acc;
                     }
@@ -678,7 +686,7 @@ export class FindActorsImplementations {
                     return {
                       ..._acc,
                       // by default always the 1st index
-                      [key]: main_item[name][0][key],
+                      [key]: cloned_item[name][0][key],
                     };
                   }, __acc);
                 }, {}) ?? null
@@ -687,7 +695,7 @@ export class FindActorsImplementations {
             const l = keys.length;
             if (l === 1) {
               acc[table][name] = keys.reduce(
-                (acc, key) => acc + main_item[name][0][key],
+                (acc, key) => acc + cloned_item[name][0][key],
                 '',
               );
             }
@@ -698,6 +706,7 @@ export class FindActorsImplementations {
             };
           },
           {
+            ...pick(main_item, ['count', 'total_group_count']),
             [table]: pick(
               this.reducer(cloned_item, pluck_object, table),
               pluck_object[table],
