@@ -13,8 +13,12 @@ pub struct HlcService {
     pub timestamp: Timestamp,
     pub group_id: String,
 }
+static GROUP_ID: once_cell::sync::Lazy<String> = once_cell::sync::Lazy::new(|| {
+    env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string())
+});
 
 impl HlcService {
+   
     // fn set_clock(tx: &mut DbPooledConnection, clock: Clock) {
     //     let merkle_manager=MerkleManager::instance();
     //     let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
@@ -28,14 +32,13 @@ impl HlcService {
     //         .expect("Failed to set merkles");
     // }x
 
-    async fn set_clock(tx: &mut AsyncPgConnection, clock: Clock) {
+    async fn set_clock( clock: Clock) {
         let merkle_manager = MerkleManager::instance();
-        let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
         let timestamp_str = clock.timestamp.to_string();
         
         // Use tokio runtime to execute async code in sync context
         
-        merkle_manager.set_tree(group_id, clock.merkle, timestamp_str).await;
+        merkle_manager.set_tree(GROUP_ID.clone(), clock.merkle, timestamp_str).await;
     }
   
 
@@ -60,7 +63,7 @@ impl HlcService {
         );
 
         // Save the updated clock and return the result
-        Ok(Self::set_clock(tx, clock).await)
+        Ok(Self::set_clock( clock).await)
     }
 
     pub async fn recv(
@@ -76,14 +79,13 @@ impl HlcService {
 
         clock.timestamp = MutableTimestamp::from(&current_timestamp);
 
-        Self::set_clock(tx, clock).await;
+        Self::set_clock(clock).await;
 
         Ok(())
     }
 
     pub async fn get_clock(tx: &mut AsyncPgConnection) -> Result<Clock, Box<dyn std::error::Error>> {
         let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
-        let merkle_service = MerkleService {};
         let merkle_manager = MerkleManager::instance();
 
         let tree_result = merkle_manager.get_tree(&group_id).await;
@@ -99,8 +101,8 @@ impl HlcService {
                 let clock: Clock = Self::make_clock(timestamp, MerkleTree::new());
                 
                 // Save to memory
-                Self::set_clock(tx, clock.clone()).await;
-                Box::pin(Self::get_clock(tx)).await
+                Self::set_clock(clock.clone()).await;
+                Ok(clock)
             }
         }
     }
@@ -124,7 +126,7 @@ impl HlcService {
         clock.timestamp = MutableTimestamp::from(&timestamp);
 
         // Save the updated clock
-        Self::set_clock(tx, clock).await;
+        Self::set_clock(clock).await;
 
         // Return the timestamp string
         Ok(timestamp_string)
@@ -134,20 +136,17 @@ impl HlcService {
         tx: &mut AsyncPgConnection,
         timestamp_str: &String,
     ) -> Result<Clock, Box<dyn std::error::Error>> {
-        // Get the current clock
         let mut clock = Self::get_clock(tx).await?;
-        let mut clock_merkle=clock.merkle.clone();
-
-        // Create a new MerkleTree and add the timestamp
-        clock_merkle.add_leaf(&timestamp_str);
-        // Update the clock with the new MerkleTree
-        clock.merkle = clock_merkle;
-
-        // Convert the merkle tree to a Value and update the clock's merkle
-
-        // Save the updated clock
-        Self::set_clock(tx, clock.clone()).await;
-
+        let start_time= std::time::Instant::now();
+    
+        // Modify the merkle tree directly without cloning
+        clock.merkle.add_leaf(&timestamp_str);
+        let time_till_insert = start_time.elapsed();
+        println!("time to add leaf {:?}", time_till_insert);
+    
+        // Save the updated clock - only one clone needed here
+        Self::set_clock(clock.clone()).await;
+    
         // Return the updated clock
         Ok(clock)
     }

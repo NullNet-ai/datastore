@@ -7,3 +7,4 @@ pub mod sync_endpoints_service;
 pub mod sync_service;
 pub mod transactions;
 mod transport;
+pub mod message_manager;

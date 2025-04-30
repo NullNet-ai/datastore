@@ -20,6 +20,8 @@ use controllers::grpc_controller::GrpcController;
 use controllers::store_controller::create_record;
 use env_logger::Env;
 use crate::sync::merkles::merkle_manager::MerkleManager; 
+use crate::sync::message_manager::{create_message_channel, SENDER};
+use std::sync::Arc;
 pub mod generated;
 
 
@@ -49,14 +51,18 @@ async fn main() -> std::io::Result<()> {
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
     let merkle_manager = MerkleManager::instance();
-    // if(generate_proto=="true"){
-        // println!("Generating proto files");
+    if(generate_proto=="true"){
+        println!("Generating proto files");
     generator::generate_protos("../schema/schema.rs","../proto").unwrap();
     run_build_script()?;
 
-    // }
-    // Load existing Merkle trees from the database
+    }
     merkle_manager.load_trees_from_db().await;
+
+     // Initialize the message sender
+     let sender = create_message_channel();
+     let arc_sender = Arc::new(sender);
+     SENDER.set(arc_sender).expect("Failed to initialize sender");
 
     
     // Start periodic save task (optional)

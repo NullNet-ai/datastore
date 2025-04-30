@@ -1,7 +1,7 @@
 use crate::db;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::Clock;
-use crate::sync::hlc::hlc_service::HlcService;
+use crate::sync::hlc::hlc_service::{self, HlcService};
 use crate::sync::message_service;
 use crate::sync::message_service::{compare_messages, create_messages};
 use crate::sync::store::store_driver::apply;
@@ -19,6 +19,7 @@ use serde_json::Value;
 use std::time::Duration;
 use tokio::time::sleep;
 use std::io::Write;
+use crate::sync::message_manager::get_sender;
 
 use super::transport::transport_driver::PostOpts;
 
@@ -111,24 +112,39 @@ async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let start_time= std::time::Instant::now();
+    
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
+    let sender = get_sender().cloned().unwrap_or_else(|| {
+        log::error!("Failed to send message: sender not available");
+        panic!("Message sender not available") // Or handle the error differently
+    });
 
     for (msg, existing_msg) in existing_messages {
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp < msg.timestamp {
             apply(&mut tx, &msg).await;
         }
+        // let time_till_insert = start_time.elapsed();
+        // println!("time till insert {:?}", time_till_insert);
 
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
+
+            // ! bottleneck here
             let inserted_timestamp: Clock = HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-            let mut updated_msg = msg.clone();
+            let mut updated_msg = msg;  // Remove .clone()
             updated_msg.group_id =
                 std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
             updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
 
-            // !
-            message_service::insert_message(&mut tx, updated_msg).await?;
+            let time_till_insert2 = start_time.elapsed();
+            // println!("time till insert2 {:?}", time_till_insert2);
+
+            sender.send(updated_msg).await?;
         }
     }
+    let elapsed_time = start_time.elapsed();
+    println!("apply_messages took {:?}", elapsed_time);
+
 
     Ok(())
 }
@@ -213,17 +229,12 @@ pub async fn process_queue(
     mut conn: &mut AsyncPgConnection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_timer_ms = 20000;
-    let start_time = std::time::Instant::now();
 
     
     // Create a file to store benchmark data
-    let file_path = "sync_benchmark_results.csv";
-    let mut file = std::fs::File::create(file_path)?;
     
     // Write CSV header
-    writeln!(file, "items_processed,messages_processed,elapsed_seconds,items_per_sec,messages_per_sec")?;
 
-    println!("Starting queue processing benchmark...");
     loop {
         // ! default param passed as test
         let size = match QueueService::size("test").await {
@@ -243,6 +254,7 @@ pub async fn process_queue(
         let pack = match QueueService::dequeue(&mut conn, "test").await {
             Ok(Some(value)) => value,
             Ok(None) => {
+                println!("Queue dequeue returned None, no items available");
                 log::debug!("Queue dequeue returned None, no items available");
                 sleep(Duration::from_millis(100)).await;
                 continue;
@@ -263,7 +275,6 @@ pub async fn process_queue(
             .and_then(|m| m.as_array())
             .cloned()
             .unwrap_or_default();
-        let message_count = messages.len();
 
         let since = pack
             .get("since")

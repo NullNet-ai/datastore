@@ -134,7 +134,6 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
 
     // Generate all messages first
     for table in tables {
-        // Main message
         proto.push_str(&format!("message {} {{\n", table.name.to_case(Case::Pascal)));
 
         // Fields
