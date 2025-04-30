@@ -141,6 +141,7 @@ impl HlcService {
     
         // Modify the merkle tree directly without cloning
         clock.merkle.add_leaf(&timestamp_str);
+        clock.merkle.prune_to_level_4();
         let time_till_insert = start_time.elapsed();
         println!("time to add leaf {:?}", time_till_insert);
     
