@@ -1256,7 +1256,7 @@ export class Utility {
       .reduce((encryptedData: any[], [key, value]) => {
         if ((encryption_keys as string[]).includes(key)) {
           encryptedData.push(
-            `pgp_sym_encrypt('${value}', '${process.env.PGP_SYM_KEY}') as "${key}"`,
+            `pgp_sym_encrypt('${value}', '${process.env.PGP_SYM_KEY}')`,
           );
           return encryptedData;
         }

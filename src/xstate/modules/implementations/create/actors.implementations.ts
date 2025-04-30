@@ -156,19 +156,19 @@ export class CreateActorsImplementations {
       this.logger.debug(`Create request for ${table}: ${body.id}`);
       if (ENABLE_ENCRYPTION === 'true') {
         console.log('Encrypting data...', encrypted_fields);
-        // if (encrypted_fields?.length) {
-        //   const query = `INSERT INTO ${table} (${Object.keys(
-        //     parsed_data,
-        //   )}) VALUES (${Utility.encryptData(parsed_data, encrypted_fields)})`;
-        //   console.log({
-        //     query,
-        //   });
-        //   results = await this.db.execute(query);
-        //   console.log('Encrypting data completed');
-        //   console.log({
-        //     results,
-        //   });
-        // }
+        if (encrypted_fields?.length) {
+          const query = `INSERT INTO ${table} (${Object.keys(
+            parsed_data,
+          )}) VALUES (${Utility.encryptData(parsed_data, encrypted_fields)})`;
+          console.log({
+            query,
+          });
+          results = await this.db.execute(query);
+          console.log('Encrypting data completed');
+          console.log({
+            results,
+          });
+        }
       } else {
         results = await this.db
           .insert(table_schema)

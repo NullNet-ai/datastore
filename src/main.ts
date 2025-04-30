@@ -30,7 +30,7 @@ async function initializers(app) {
   const storage = app.get(MinioService);
   const organization = app.get(OrganizationsService);
   const initializer: InitializerService = app.get(InitializerService);
-  // initializer.createEncryption();
+  initializer.createEncryption();
   // default for super admin
   await organization.initialize();
   await organization.initializeDevice();
