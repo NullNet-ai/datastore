@@ -147,8 +147,8 @@ export class InitializerService {
           throw new BadRequestException(
             'Indicate entity for Root Account Configuration',
           );
-        const root_account_id = '9c3ad11b-5b69-4bba-9858-3974d091b335';
-        const personal_organization_id = 'e521d2d7-0850-4512-b1b3-03fc9fcdaeea';
+        const root_account_id = '01JM3GTWCHR3CM2NP85C0Q2KN1';
+        const personal_organization_id = '01JSN4XA2C3A7RHN3MNZZJGBR3';
         const account_id = 'root';
         const account_secret =
           process.env.ROOT_ACCOUNT_PASSWORD || 'pl3@s3ch@ng3m3!!';

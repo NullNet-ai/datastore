@@ -162,7 +162,7 @@ async function bootstrap() {
     );
   });
 
-  await initializers(app);
+  await initializers(app).catch(console.error);
 
   // cleanup the temporary files every 1 minute in remote environment
   cleanupTemporaryFiles();
