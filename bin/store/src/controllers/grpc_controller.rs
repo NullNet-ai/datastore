@@ -1,8 +1,11 @@
 use crate::db;
-use actix_web::{web, HttpResponse, Responder};
+use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
+use actix_web::{HttpResponse, Responder, web};
 use serde::Serialize;
-use tonic::{transport::Server, Request, Response, Status};
-use std::net::SocketAddr;  // Add this import
+use std::net::SocketAddr;
+use tonic::{Request, Response, Status, transport::Server};
+use crate::generated::store::{CreateCrdtMerklesRequest, CreateCrdtMerklesResponse, CreateCrdtMessagesRequest, CreateCrdtMessagesResponse, CreateItemsRequest, CreateItemsResponse, CreatePacketsRequest, CreatePacketsResponse, CreateQueueItemsRequest, CreateQueueItemsResponse, CreateQueuesRequest, CreateQueuesResponse, CreateSyncEndpointsRequest, CreateSyncEndpointsResponse, CreateTransactionsRequest, CreateTransactionsResponse};
+// Add this import
 
 // Define your gRPC service struct
 pub struct GrpcController {}
@@ -19,14 +22,50 @@ impl GrpcController {
 
         println!("gRPC Server listening on {}", addr);
 
-        // Here you would register your gRPC services
-        // For example:
-        // Server::builder()
-        //     .add_service(YourServiceServer::new(grpc_controller))
-        //     .serve(addr)
-        //     .await?;
+        Server::builder()
+            .add_service(
+                StoreServiceServer::new(grpc_controller)
+                    .max_decoding_message_size(50 * 1024 * 1024),
+            )
+            .serve(addr)
+            .await?;
 
         Ok(())
+    }
+}
+
+impl StoreService for GrpcController {
+    async fn create_items(&self, request: Request<CreateItemsRequest>) -> Result<Response<CreateItemsResponse>, Status> {
+        // the code you add here is executed when the gRPC request is received
+        todo!()
+    }
+
+    async fn create_packets(&self, request: Request<CreatePacketsRequest>) -> Result<Response<CreatePacketsResponse>, Status> {
+        todo!()
+    }
+
+    async fn create_crdt_messages(&self, request: Request<CreateCrdtMessagesRequest>) -> Result<Response<CreateCrdtMessagesResponse>, Status> {
+        todo!()
+    }
+
+    async fn create_crdt_merkles(&self, request: Request<CreateCrdtMerklesRequest>) -> Result<Response<CreateCrdtMerklesResponse>, Status> {
+        todo!()
+    }
+
+    async fn create_sync_endpoints(&self, request: Request<CreateSyncEndpointsRequest>) -> Result<Response<CreateSyncEndpointsResponse>, Status> {
+        todo!()
+    }
+
+    async fn create_queues(&self, request: Request<CreateQueuesRequest>) -> Result<Response<CreateQueuesResponse>, Status> {
+        todo!()
+    }
+
+    async fn create_queue_items(&self, request: Request<CreateQueueItemsRequest>) -> Result<Response<CreateQueueItemsResponse>, Status> {
+        todo!()
+    }
+
+    async fn create_transactions(&self, request: Request<CreateTransactionsRequest>) -> Result<Response<CreateTransactionsResponse>, Status> {
+        todo!()
     }
 }
 
