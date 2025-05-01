@@ -155,8 +155,8 @@ export class FindActorsImplementations {
 
         // put fields from order into pluck_object
         if (
-          (joins.length && !Object.keys(group_by).length) ||
-          !group_by?.fields?.length
+          (!Object.keys(group_by).length || !group_by?.fields?.length) &&
+          joins.length
         ) {
           pluck_object[entity] = [
             ...new Set([
