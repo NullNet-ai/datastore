@@ -102,12 +102,12 @@ pub async fn create_record(
     };
 
     // Execute the insert operation directly in async context
-    let result = match table.insert_record(&mut conn, processed_record.clone(), orig_request).await {
-        Ok(record) => record,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiError::from(e));
-        }
-    };
+    // let result = match table.insert_record(&mut conn, processed_record.clone(), orig_request).await {
+    //     Ok(record) => record,
+    //     Err(e) => {
+    //         return HttpResponse::InternalServerError().json(ApiError::from(e));
+    //     }
+    // };
 
     let mut record_value: serde_json::Value = match serde_json::from_value(processed_record) {
         Ok(val) => val,
@@ -118,7 +118,6 @@ pub async fn create_record(
             });
         }
     };
-    println!("record_value: {:?}", record_value);
 
     if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
         return HttpResponse::InternalServerError().json(ApiError {

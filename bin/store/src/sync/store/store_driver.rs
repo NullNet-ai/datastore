@@ -4,6 +4,7 @@ use crate::table_enum::Table;
 use diesel_async::AsyncPgConnection;
 use serde_json::json;
 use serde_json::{Map, Value};
+use pluralizer::pluralize;
 
 pub async fn apply(
     tx: &mut AsyncPgConnection,
@@ -16,12 +17,7 @@ pub async fn apply(
 
     let value = if is_plural_column(column) {
         ColumnValue::Array(process_pg_array(&message.value)?)
-    } else if column == "timestamp" {
-        ColumnValue::Timestamp(
-            chrono::DateTime::parse_from_rfc3339(&message.value)
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?,
-        )
-    } else {
+    }else {
             // Try to parse as integer first
             if let Ok(int_value) = message.value.parse::<i32>() {
                 ColumnValue::Integer(int_value)
@@ -48,8 +44,8 @@ pub async fn apply(
         }
     }
 
+
     json_obj = clean_extra_quotes(json_obj);
-    
     let table = Table::from_str(dataset.as_str()).ok_or_else(|| {
         Box::new(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -59,10 +55,17 @@ pub async fn apply(
 
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp
-        let timestamp = chrono::DateTime::parse_from_rfc3339(ht_timestamp)
+        let timestamp_str = if ht_timestamp.contains('T') && !ht_timestamp.contains('Z') && !ht_timestamp.contains('+') && !ht_timestamp[10..].contains('-') {
+            format!("{}+00:00", ht_timestamp)
+        } else {
+            ht_timestamp.to_string()
+        };
+        let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str)
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
     json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
+
     let json_values = serde_json::Value::Object(json_obj);
+
 
         match table.upsert_record_with_id_timestamp(tx, json_values).await {
             Ok(_) => return Ok(()),
@@ -100,30 +103,38 @@ pub fn clean_extra_quotes(mut map: Map<String, Value>) -> Map<String, Value> {
 }
 
 fn is_plural_column(column: &str) -> bool {
-    column.ends_with('s')
+    pluralize(column, 2, false) == column
 }
 
 fn process_pg_array(value: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     if value.is_empty() {
-        return Ok(Vec::new()); // Return an empty array for empty string
+        return Ok(Vec::new());
     }
 
-    // Validate that we have an array-like structure
-    if !value.starts_with('{') || !value.ends_with('}') {
-        // If the value doesn't look like a PG array, throw an error
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            "Expected an array after processing",
-        )));
+    // Try to parse as JSON array first
+    if let Ok(json_array) = serde_json::from_str::<Vec<String>>(value) {
+        return Ok(json_array);
     }
 
-    // Parse PostgreSQL array string to a Rust vector
-    // Remove the curly braces and split by commas
-    let processed: Vec<String> = value
-        .trim_matches(|c| c == '{' || c == '}')
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .collect();
+    // If it's a PostgreSQL array format
+    if value.starts_with('{') && value.ends_with('}') {
+        let processed: Vec<String> = value
+            .trim_matches(|c| c == '{' || c == '}')
+            .split(',')
+            .map(|s| {
+                s.trim()
+                    .trim_matches('"')  // Remove any quotes
+                    .to_string()
+            })
+            .collect();
+        return Ok(processed);
+    }
 
-    Ok(processed)
+    // If it's a single value, try to parse as number first
+    if let Ok(_) = value.parse::<i32>() {
+        return Ok(vec![value.to_string()]);
+    }
+
+    // Otherwise treat as a single string value
+    Ok(vec![value.to_string()])
 }

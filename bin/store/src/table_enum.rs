@@ -116,7 +116,6 @@ impl Table {
     ) -> Result<(), DieselError> {
         match self {
             Table::Packets => {
-                println!("Upserting record: {:?}", record); // Add this line for debugg
                 let value: Packet = serde_json::from_value(record)
                 .map_err(|e| {
                     println!("Deserialization error: {:?}", e);

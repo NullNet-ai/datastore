@@ -92,7 +92,7 @@ impl StoreService for GrpcController {
             request_body.process_record("create");
             processed_record = request_body.record;
 
-            let mut record_value: serde_json::Value = match serde_json::from_value(processed_record) {
+            let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
                 Ok(val) => val,
                 Err(e) => {
                     return Err(Status::internal(format!("Failed to process record: {}", e)));

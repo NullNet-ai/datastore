@@ -40,22 +40,23 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
                 if messages.is_empty() {
                     log::warn!("create_messages returned empty vector");
                 }
+
+                if let Err(e) = send_messages(&mut tx, messages.clone()).await {
+                    log::error!("Failed to send messages: {}", e);
+                    return Err(DieselError::RollbackTransaction);
+                }
                 
                 Ok(messages)
             })
         })
         .await?;
 
+
     if messages.is_empty() {
         log::warn!("No messages created for insert operation");
         return Ok(());
     }
 
-    if let Err(e) = send_messages(&mut conn, messages).await {
-        log::error!("Failed to send messages: {}", e);
-        // You might want to return this error or handle it differently
-        // depending on your application's requirements
-    }
 
     Ok(())
 }
