@@ -15,7 +15,7 @@ pub struct ApiResponse {
     pub data: Vec<Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(transparent)]
 pub struct CreateRequestBody {
     pub record: Value,
@@ -74,8 +74,10 @@ impl CreateRequestBody {
                 // Handle other operations if needed
             }
         }
-        // Generate UUID for id if not present (as text)
-        if !self.record.get("id").is_some() {
+
+        if !self.record.get("id").is_some() || 
+           self.record["id"].is_null() || 
+           self.record["id"].as_str().map_or(true, |s| s.trim().is_empty()) {
             self.record["id"] = json!(uuid_crate::new_v4().to_string());
         }
     }
@@ -102,6 +104,7 @@ pub struct Clock {
 pub enum ColumnValue {
     String(String),
     Array(Vec<String>),
+    Integer(i32),
     Timestamp(chrono::DateTime<chrono::FixedOffset>),
 }
 
@@ -110,26 +113,19 @@ impl ColumnValue {
         match self {
             ColumnValue::String(s) => s.clone(),
             ColumnValue::Array(arr) => {
-                // Format as PostgreSQL array literal
                 format!("{{{}}}", arr.join(","))
             }
             ColumnValue::Timestamp(dt) => dt.to_rfc3339(),
+            ColumnValue::Integer(i) => i.to_string(),
         }
     }
 
-    // For use with Diesel's insert/update operations
     pub fn to_json_value(&self) -> serde_json::Value {
         match self {
-            ColumnValue::String(s) => serde_json::Value::String(s.clone()),
-            ColumnValue::Array(arr) => {
-                // Convert to a JSON array
-                serde_json::Value::Array(
-                    arr.iter()
-                        .map(|s| serde_json::Value::String(s.clone()))
-                        .collect(),
-                )
-            }
-            ColumnValue::Timestamp(dt) => serde_json::Value::String(dt.to_rfc3339()),
+            ColumnValue::String(s) => json!(s),
+            ColumnValue::Array(arr) => json!(arr),
+            ColumnValue::Timestamp(dt) => json!(dt.naive_utc()),
+            ColumnValue::Integer(i) => json!(i),
         }
     }
 }

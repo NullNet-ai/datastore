@@ -137,13 +137,10 @@ impl HlcService {
         timestamp_str: &String,
     ) -> Result<Clock, Box<dyn std::error::Error>> {
         let mut clock = Self::get_clock(tx).await?;
-        let start_time= std::time::Instant::now();
     
         // Modify the merkle tree directly without cloning
         clock.merkle.add_leaf(&timestamp_str);
         clock.merkle.prune_to_level_4();
-        let time_till_insert = start_time.elapsed();
-        println!("time to add leaf {:?}", time_till_insert);
     
         // Save the updated clock - only one clone needed here
         Self::set_clock(clock.clone()).await;

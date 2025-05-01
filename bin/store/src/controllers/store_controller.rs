@@ -62,13 +62,22 @@ pub async fn create_record(
     request: web::Json<CreateRequestBody>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
-    let mut request = request.into_inner();
     let pool = pool.clone();
+    let orig_request = request;
+    let mut request = orig_request.clone();
+    request.process_record("create");
     let table_name = table.into_inner();
     let log_table = table_name.clone();
     let inner_log_table = log_table.clone();
-    request.process_record("create");
-    let processed_record = request.record.clone();
+    let mut processed_record = request.record.clone();
+    if let Some(obj) = processed_record.as_object_mut() {
+        if table_name == "packets" {
+            if let Some(timestamp) = obj.get("timestamp") {
+                obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
+            }
+        }
+    }
+    
     let pluck_fields: Vec<String> = query
         .pluck
         .split(',')
@@ -93,22 +102,23 @@ pub async fn create_record(
     };
 
     // Execute the insert operation directly in async context
-    let result = match table.insert_record(&mut conn, processed_record.clone()).await {
+    let result = match table.insert_record(&mut conn, processed_record.clone(), orig_request).await {
         Ok(record) => record,
         Err(e) => {
             return HttpResponse::InternalServerError().json(ApiError::from(e));
         }
     };
 
-    let mut record_value: serde_json::Value = match serde_json::from_str(&result) {
+    let mut record_value: serde_json::Value = match serde_json::from_value(processed_record) {
         Ok(val) => val,
         Err(e) => {
             return HttpResponse::InternalServerError().json(ApiError {
                 status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                message: format!("Failed to parse record: {}", e),
+                message: format!("Failed to process record: {}", e),
             });
         }
     };
+    println!("record_value: {:?}", record_value);
 
     if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
         return HttpResponse::InternalServerError().json(ApiError {
@@ -117,22 +127,14 @@ pub async fn create_record(
         });
     }
 
-    if !pluck_fields.is_empty() && record_value.is_object() {
-        let obj = record_value.as_object_mut().unwrap();
-        let keys: Vec<String> = obj.keys().cloned().collect();
 
-        for key in keys {
-            if !pluck_fields.contains(&key) {
-                obj.remove(&key);
-            }
-        }
-    }
+    let plucked_record=table.pluck_fields(&record_value, pluck_fields);
 
     let response = ApiResponse {
         success: true,
         message: format!("Record inserted into '{}'", &inner_log_table),
         count: 1,
-        data: vec![record_value],
+        data: vec![plucked_record],
     };
     HttpResponse::Ok().json(response)
 }

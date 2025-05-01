@@ -112,7 +112,6 @@ async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let start_time= std::time::Instant::now();
     
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
     let sender = get_sender().cloned().unwrap_or_else(|| {
@@ -124,8 +123,7 @@ async fn apply_messages(
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp < msg.timestamp {
             apply(&mut tx, &msg).await;
         }
-        // let time_till_insert = start_time.elapsed();
-        // println!("time till insert {:?}", time_till_insert);
+
 
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
 
@@ -136,14 +134,11 @@ async fn apply_messages(
                 std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
             updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
 
-            let time_till_insert2 = start_time.elapsed();
             // println!("time till insert2 {:?}", time_till_insert2);
 
             sender.send(updated_msg).await?;
         }
     }
-    let elapsed_time = start_time.elapsed();
-    println!("apply_messages took {:?}", elapsed_time);
 
 
     Ok(())
@@ -243,8 +238,6 @@ pub async fn process_queue(
                 continue;
             }
         };
-        println!("queue size {}", size);
-        println!("size {}", size);
 
         if size == 0 {
             break;

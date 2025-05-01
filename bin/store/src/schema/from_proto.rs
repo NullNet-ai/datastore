@@ -50,10 +50,11 @@ impl From<store::Packets> for Packet {
             requested_by: i.requested_by,
             tags: i.tags,
             id: Uuid::parse_str(&i.id).unwrap_or_default(),
-            timestamp: match i.timestamp {
-                Some(ts) => NaiveDateTime::from_timestamp_opt(ts.seconds, ts.nanos as u32)
-                    .unwrap_or_default(),
-                None => NaiveDateTime::default(),
+            timestamp: if !i.hypertable_timestamp.is_empty() {
+                NaiveDateTime::parse_from_str(&i.timestamp, "%Y-%m-%d %H:%M:%S%.f")
+                    .unwrap_or_default()
+            } else {
+                NaiveDateTime::default()
             },
             hypertable_timestamp: i.hypertable_timestamp,
             interface_name: i.interface_name,

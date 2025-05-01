@@ -1,7 +1,7 @@
 use actix_web::{App, HttpServer, web};
 use auth::auth_middleware::Authentication;
 use dotenv::dotenv;
-use proto_generator::generator;
+use templates::{grpc_controller_generator, proto_generator};
 use std::env;
 mod auth;
 mod controllers;
@@ -11,7 +11,7 @@ mod schema;
 mod structs;
 mod sync;
 mod table_enum;
-mod proto_generator;
+mod templates;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
@@ -23,6 +23,7 @@ use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
 use std::sync::Arc;
 pub mod generated;
+use std::process;
 
 
 fn run_build_script() -> std::io::Result<()> {
@@ -53,10 +54,17 @@ async fn main() -> std::io::Result<()> {
     let merkle_manager = MerkleManager::instance();
     if(generate_proto=="true"){
         println!("Generating proto files");
-    generator::generate_protos("../schema/schema.rs","../proto").unwrap();
+    proto_generator::generate_protos("src/schema/schema.rs","src/proto");
     run_build_script()?;
-
+    // Run the generator
+    // if let Err(e) = grpc_controller_generator::run_generator() {
+    //     eprintln!("Error: {}", e);
+    //     process::exit(1);
     }
+    
+    // println!("gRPC controller generation completed successfully!");
+
+    // }
     merkle_manager.load_trees_from_db().await;
 
      // Initialize the message sender

@@ -2,15 +2,11 @@ use crate::models::packet_model::Packet;
 use crate::schema::schema;
 use crate::schema::schema::packets::dsl::packets;
 use diesel::associations::HasTable;
-use diesel::prelude::*;
-use diesel::query_builder::InsertStatement;
-use diesel::query_dsl::LoadQuery;
 use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
-use serde::Serialize;
-use serde_json;
-use serde_json::Value;
-use std::collections::HashMap;
+use actix_web::{ web};
+use crate::structs::structs::{ CreateRequestBody};
+use serde_json::{Value, Map};
 use diesel_async::RunQueryDsl;
 
 #[derive(Debug)]
@@ -51,12 +47,32 @@ impl Table {
     //     // Convert the result to a JSON string
     //     Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
     // }
+    pub fn pluck_fields(&self, record_value: &Value, pluck_fields: Vec<String>) -> Value {
+        if !pluck_fields.is_empty() && record_value.is_object() {
+            let obj = record_value.as_object().unwrap();
+            let mut filtered = Map::new();
+    
+            for field in pluck_fields {
+                if let Some(val) = obj.get(&field) {
+                    filtered.insert(field, val.clone());
+                }
+            }
+    
+            Value::Object(filtered)
+        } else {
+            record_value.clone() // fallback: return original value
+        }
+    }
 
     pub async fn insert_record(
         &self,
         conn: &mut AsyncPgConnection,
         record: Value,
+        request:web::Json<CreateRequestBody>,
     ) -> Result<String, DieselError> {
+    let mut request = request.into_inner();
+        request.process_record("create");
+
         match self {
             Table::Packets => {
                 let mut value: Packet = serde_json::from_value(record)
@@ -74,18 +90,12 @@ impl Table {
     pub async fn upsert_record_with_id(
         &self,
         conn: &mut AsyncPgConnection,
-        record: &HashMap<String, Value>,
+        record: Value,
     ) -> Result<(), DieselError> {
-        let json_value = serde_json::to_value(record).unwrap();
         match self {
             Table::Packets => {
-                let value = match serde_json::from_value::<Packet>(json_value) {
-                    Ok(packet) => packet,
-                    Err(_) => {
-                        // Convert serde_json::Error to diesel::result::Error
-                        return Err(diesel::result::Error::RollbackTransaction);
-                    }
-                };
+                let mut value: Packet = serde_json::from_value(record)
+                    .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 
                 diesel::insert_into(packets::table())
                     .values(value.clone())
@@ -102,18 +112,18 @@ impl Table {
     pub async fn upsert_record_with_id_timestamp(
         &self,
         conn: &mut AsyncPgConnection,
-        record: &HashMap<String, Value>,
+        record: Value,
     ) -> Result<(), DieselError> {
-        let json_value = serde_json::to_value(record).unwrap();
         match self {
             Table::Packets => {
-                let value = match serde_json::from_value::<Packet>(json_value) {
-                    Ok(packet) => packet,
-                    Err(_) => {
-                        // Convert serde_json::Error to diesel::result::Error
-                        return Err(diesel::result::Error::RollbackTransaction);
-                    }
-                };
+                println!("Upserting record: {:?}", record); // Add this line for debugg
+                let value: Packet = serde_json::from_value(record)
+                .map_err(|e| {
+                    println!("Deserialization error: {:?}", e);
+                    println!("Failed to deserialize record:");
+                    DieselError::DeserializationError(Box::new(e))
+                })?;
+
                 diesel::insert_into(packets::table())
                     .values(value.clone())
                     .on_conflict((schema::packets::id, schema::packets::timestamp))
