@@ -31,7 +31,7 @@ async function initializers(app) {
   const organization = app.get(OrganizationsService);
   const initializer: InitializerService = app.get(InitializerService);
   // initializer.createEncryption();
-  
+
   // create own default organization here
   // await organization.initialize({
   //   id: 'company-id',
@@ -57,13 +57,14 @@ async function initializers(app) {
 
   // ! This is a sample for the root account configuration
   await initializer.create(EInitializer.ROOT_ACCOUNT_CONFIG, {
-    entity: 'organization_accounts',
+    entity: 'account_organizations',
   });
-  
+
   // default for super admin
   await organization.initialize();
   await organization.initializeDevice();
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
+  await initializer.generateSchema();
 }
 
 async function cleanupTemporaryFiles() {
