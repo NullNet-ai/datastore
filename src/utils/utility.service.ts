@@ -244,6 +244,7 @@ export class Utility {
     joins,
     date_format,
     parsed_concatenated_fields,
+    encrypted_fields = [],
   }: {
     table: string;
     pluck_object: Record<string, any>;
@@ -252,6 +253,7 @@ export class Utility {
     date_format: string;
     parsed_concatenated_fields: IParsedConcatenatedFields;
     multiple_sort: [{ by_field: string; by_direction: string }];
+    encrypted_fields: string[];
   }): Record<string, string[]> => {
     const pluck_object_keys = Object.keys(pluck_object || {});
     const { fields: concatenated_fields, expressions } =
@@ -269,13 +271,19 @@ export class Utility {
         return {
           ...acc,
           [field]: sql.raw(
-            `to_char("${table}"."${field}"::timestamp, '${date_format}') AS "${field}"`,
+            `to_char(${Utility.decryptField(
+              `"${table}"."${field}"`,
+              encrypted_fields,
+            )}::timestamp, '${date_format}')
+             AS "${field}"`,
           ),
         };
       }
       return {
         ...acc,
-        [field]: sql.raw(`"${table}"."${field}"`),
+        [field]: sql.raw(
+          Utility.decryptField(`"${table}"."${field}"`, encrypted_fields),
+        ),
       };
     }, {});
 
@@ -284,7 +292,10 @@ export class Utility {
       main_concatenate_selections.forEach((selection: any) => {
         const [_expression, field_name] = selection.split(' AS ');
         mainSelections[field_name.replace(/["\/]/g, '')] = sql.raw(
-          selection.replaceAll('joined_', ''),
+          Utility.decryptField(
+            selection.replaceAll('joined_', ''),
+            encrypted_fields,
+          ),
         );
       });
     }
@@ -312,7 +323,13 @@ export class Utility {
 
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
-              .map((field) => Utility.formatIfDate(field, date_format, toAlias))
+              .map((field) =>
+                Utility.formatIfDate(
+                  Utility.decryptField(field, encrypted_fields),
+                  date_format,
+                  toAlias,
+                ),
+              )
               .join(', ');
 
             const jsonAggSelection = sql
@@ -343,7 +360,14 @@ export class Utility {
           const alias = pluralize(field);
           return {
             ...field_acc,
-            [alias]: sql.raw(`JSONB_AGG(${table}.${field})`).as(alias),
+            [alias]: sql
+              .raw(
+                `JSONB_AGG(${Utility.decryptField(
+                  `"${table}"."${field}"`,
+                  encrypted_fields,
+                )})`,
+              )
+              .as(alias),
           };
         }, acc),
       {},
@@ -481,6 +505,7 @@ export class Utility {
     concatenate_fields?: IParsedConcatenatedFields,
     group_advance_filters: IGroupAdvanceFilters[] = [],
     request_type?: string,
+    encrypted_fields = [],
   ) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -606,6 +631,7 @@ export class Utility {
           aliased_entities,
           transformed_expressions,
           group_advance_filters,
+          encrypted_fields,
         ),
       ),
     );
@@ -687,26 +713,42 @@ export class Utility {
     expressions,
     case_sensitive,
     parse_as,
+    encrypted_fields = [],
   }) {
     const is_aliased = aliased_entities.includes(entity);
-
+    let _field = `${field}`;
     // if (!table_schema?.[field] && !is_aliased) return null;
     let schema_field;
+    if (encrypted_fields?.length) {
+      _field = Utility.decryptField(_field, encrypted_fields);
+    }
 
     if (!table_schema?.[field] && !is_aliased && expressions[entity]) {
       schema_field = sql.raw(
-        expressions[entity].find((exp) => exp.includes(field)).split(' AS ')[0],
+        Utility.decryptField(
+          expressions[entity]
+            .find((exp) => exp.includes(field))
+            .split(' AS ')[0],
+          encrypted_fields,
+        ),
       );
     } else {
       schema_field = is_aliased
-        ? sql.raw(`"${entity}"."${field}"`)
-        : table_schema[field];
+        ? sql.raw(
+            Utility.decryptField(`"${entity}"."${field}"`, encrypted_fields),
+          )
+        : sql.raw(_field);
     }
 
     if (parse_as === 'text') {
       schema_field = entity
-        ? sql.raw(`"${entity}"."${field}"::TEXT`)
-        : sql.raw(`"${field}"::TEXT`);
+        ? sql.raw(
+            `${Utility.decryptField(
+              `"${entity}"."${field}"`,
+              encrypted_fields,
+            )}::TEXT`,
+          )
+        : sql.raw(`"${_field}"::TEXT`);
     }
 
     switch (operator) {
@@ -763,6 +805,7 @@ export class Utility {
     aliased_entities: string[] = [],
     expressions: any,
     group_advance_filters: IGroupAdvanceFilters[] = [],
+    encrypted_fields = [],
   ): any[] {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
@@ -862,6 +905,7 @@ export class Utility {
           expressions,
           case_sensitive,
           parse_as,
+          encrypted_fields,
         }),
       ];
     }
@@ -1251,7 +1295,71 @@ export class Utility {
     }
   }
 
-  public static encryptData(data: Record<string, any>, encryption_keys = []) {
+  public static async encryptCreate({
+    encrypted_fields,
+    table,
+    data,
+    db,
+    query,
+  }) {
+    if (encrypted_fields?.length) {
+      this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
+      const query = `INSERT INTO ${table} (${Object.keys(
+        data,
+      )}) VALUES (${Utility.encryptData(data, encrypted_fields)})`;
+      this.logger.debug(`Encrypting data: ${query}`);
+      return db
+        .execute(query)
+        .then(() => this.logger.debug('Encrypting data completed'));
+    }
+    const { table_schema } = query;
+    return db
+      .insert(query.table_schema)
+      .values(data)
+      .returning({ table_schema })
+      .then(([{ table_schema }]) => table_schema);
+  }
+
+  public static async encryptUpdate({
+    query,
+    encrypted_fields,
+    table,
+    data,
+    db,
+    where,
+    returning,
+  }) {
+    if (encrypted_fields?.length) {
+      this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
+      const query = `UPDATE ${table} SET ${Object.entries(data)
+        .reduce((acc: string[], [key, value]) => {
+          const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
+          if (encrypted_fields.includes(key)) {
+            acc.push(
+              `${key} = pgp_sym_encrypt(${_value}, ${encrypted_fields})`,
+            );
+          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
+          return acc;
+        }, [])
+        .join(',')} WHERE ${where.join('')}`;
+      this.logger.debug(`Encrypting data: ${query}`);
+      return db
+        .execute(query)
+        .then(() => this.logger.debug('Encrypting data completed'));
+    }
+    const { table_schema } = query;
+    return db
+      .update(table_schema)
+      .set({
+        ...data,
+        version: sql`${table_schema.version} + 1`,
+      })
+      .where(sql(where.join(' ')))
+      .returning(returning)
+      .then(([{ table_schema }]) => table_schema);
+  }
+
+  public static encryptData(data: Record<string, any>, encryption_keys) {
     const values = `${Object.entries(data)
       .reduce((encryptedData: any[], [key, value]) => {
         if ((encryption_keys as string[]).includes(key)) {
@@ -1267,18 +1375,29 @@ export class Utility {
       .join(',')}`;
     return values;
   }
+  public static decryptField(field: string, encrypted_fields: string[]) {
+    if (encrypted_fields.includes(field))
+      return `pgp_sym_decrypt(${field}::BYTEA, '${process.env.PGP_SYM_KEY}')`;
 
-  public static decryptData(data: Record<string, any>, encryption_keys = []) {
-    return encryption_keys.reduce((decryptedData, key) => {
-      if (data?.[key]) {
-        decryptedData = {
-          ...decryptedData,
+    return field;
+  }
+  public static decryptData(
+    data: Record<string, any>,
+    encrypted_fields: string[],
+  ) {
+    return Object.entries(data).reduce((_data, [key, value]) => {
+      if (encrypted_fields.includes(key)) {
+        return {
+          ..._data,
           [key]: sql.raw(
-            `pgp_sym_decrypt('${data[key]}::BYTEA', '${process.env.PGP_SYM_KEY}')`,
+            `pgp_sym_decrypt(${key}::BYTEA, '${process.env.PGP_SYM_KEY}')`,
           ),
         };
       }
-      return decryptedData;
+      return {
+        ..._data,
+        [key]: value,
+      };
     }, {});
   }
 }

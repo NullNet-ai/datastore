@@ -380,8 +380,10 @@ export class InitializerService {
   }
 
   async createEncryption() {
-    await this.db.execute(`CREATE EXTENSION pgcrypto ;`);
-    this.logger.debug(`Encryption extension created`);
+    await this.db
+      .execute(`CREATE EXTENSION pgcrypto ;`)
+      .then(() => this.logger.debug(`Encryption extension created`))
+      .catch(() => this.logger.debug(`Encryption extension already exists`));
   }
 }
 

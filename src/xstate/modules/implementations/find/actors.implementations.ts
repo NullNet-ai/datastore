@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  // NotImplementedException,
 } from '@nestjs/common';
 import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
@@ -69,6 +68,7 @@ export class FindActorsImplementations {
         group_by = {},
         is_case_sensitive_sorting = false,
         pluck_group_object = {},
+        encrypted_fields = [],
       } = body;
 
       if (group_advance_filters.length && advance_filters.length) {
@@ -122,10 +122,12 @@ export class FindActorsImplementations {
 
       multiple_sort.forEach(({ by_field }) => {
         //check if by_field is separated by a dot if not then throw an error
-        if (!by_field.includes('.')) {
-          by_field = `${table}.${by_field}`;
+        let entity = table;
+        let field = by_field.split('.')[0];
+        if (by_field.split('.').length > 1) {
+          entity = by_field.split('.')[0];
+          field = by_field.split('.')[1];
         }
-        const [entity, field] = by_field.split('.');
         const concat_fields = parsed_concatenated_fields.fields;
         const non_aliased_entity: string =
           aliased_joined_entities.find(({ alias }) => alias === entity)
@@ -152,7 +154,10 @@ export class FindActorsImplementations {
         );
 
         // put fields from order into pluck_object
-        if (joins.length) {
+        if (
+          (joins.length && !Object.keys(group_by).length) ||
+          !group_by?.fields?.length
+        ) {
           pluck_object[entity] = [
             ...new Set([
               ...pluck_object[entity],
@@ -235,17 +240,7 @@ export class FindActorsImplementations {
                 success: false,
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
               });
-            // if (multiple_sort.length)
-            //   throw new BadRequestException({
-            //     success: false,
-            //     message: `You can't group by fields if you have multiple sorting of fields`,
-            //   });
             // const order_by_schema = grouped_entity_schema[order_by];
-            // if (!order_by_schema)
-            //   throw new BadRequestException({
-            //     success: false,
-            //     message: `Order by field ${order_by} does not exist in ${group_by_entity}`,
-            //   });
             // group_by_agg_selections = !group_by?.fields?.includes(order_by)
             //   ? {
             //       [order_by_schema.name]: sql.raw(
@@ -265,7 +260,7 @@ export class FindActorsImplementations {
                 // ...group_by_agg_selections,
               },
               [group_by_entity]: {
-                ...acc[group_by_entity],
+                ...(acc?.[group_by_entity] ?? {}),
                 [group_by_field]: sql.raw(
                   `${group_by_entity}.${group_by_field}`,
                 ),
@@ -326,6 +321,7 @@ export class FindActorsImplementations {
           date_format,
           parsed_concatenated_fields,
           multiple_sort,
+          encrypted_fields,
         });
         // const is_grouping_joined_entity = group_by_entities.some((key) =>
         //   Object.keys(join_selections ?? {}).includes(key),
@@ -362,11 +358,16 @@ export class FindActorsImplementations {
           ),
         };
         _db = _db
-          .select({
-            ...(Object.keys(group_by_selections).length
-              ? join_selections_with_group_by
-              : join_selections),
-          })
+          .select(
+            Utility.decryptData(
+              {
+                ...(Object.keys(group_by_selections).length
+                  ? join_selections_with_group_by
+                  : join_selections),
+              },
+              encrypted_fields,
+            ),
+          )
           .from(table_schema);
       } else {
         let count_selection = {};
@@ -392,11 +393,16 @@ export class FindActorsImplementations {
           [table]: group_by_selections?.[table] ?? {},
         };
         _db = _db
-          .select({
-            ...(Object.keys(group_by_selections).length
-              ? selections_with_group_by
-              : selections),
-          })
+          .select(
+            Utility.decryptData(
+              {
+                ...(Object.keys(group_by_selections).length
+                  ? selections_with_group_by
+                  : selections),
+              },
+              encrypted_fields,
+            ),
+          )
           .from(table_schema);
       }
 
@@ -411,6 +417,7 @@ export class FindActorsImplementations {
         parsed_concatenated_fields,
         group_advance_filters,
         type,
+        encrypted_fields,
       );
 
       const getSortSchemaAndField = (
