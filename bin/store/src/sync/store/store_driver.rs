@@ -68,7 +68,7 @@ pub async fn apply(
             Ok(_) => return Ok(()),
             Err(e) => {
                 print!("Error applying message: {}", e);
-                return Ok(());
+                Err(Box::new(e))
             }
         }
     } else {
@@ -77,8 +77,10 @@ pub async fn apply(
         match table.upsert_record_with_id(tx, json_values).await {
             Ok(_) => return Ok(()),
             Err(e) => {
-                print!("Error applying message: {}", e);
-                return Ok(());
+                log::error!("Error applying message: {}", e);
+                Err(Box::new(e))
+                // return error
+                
             }
         }
     }
