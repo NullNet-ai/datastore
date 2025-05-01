@@ -1,7 +1,7 @@
 use crate::db;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::Clock;
-use crate::sync::hlc::hlc_service::{self, HlcService};
+use crate::sync::hlc::hlc_service::HlcService;
 use crate::sync::message_service;
 use crate::sync::message_service::{compare_messages, create_messages};
 use crate::sync::store::store_driver::apply;
@@ -18,7 +18,6 @@ use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
 use tokio::time::sleep;
-use std::io::Write;
 use crate::sync::message_manager::get_sender;
 
 use super::transport::transport_driver::PostOpts;

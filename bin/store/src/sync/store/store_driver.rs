@@ -1,6 +1,8 @@
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::ColumnValue;
 use crate::table_enum::Table;
+use actix_web::rt::time;
+use diesel::Column;
 use diesel_async::AsyncPgConnection;
 use serde_json::json;
 use serde_json::{Map, Value};
@@ -17,8 +19,24 @@ pub async fn apply(
 
     let value = if is_plural_column(column) {
         ColumnValue::Array(process_pg_array(&message.value)?)
-    }else {
-            // Try to parse as integer first
+
+    }else if column == "timestamp" {
+        // Parse timestamp
+        let timestamp=message.value.trim_matches('"').to_string();
+        let timestamp_str = if timestamp.contains('T') && !timestamp.contains('Z') && !timestamp.contains('+') && !timestamp[10..].contains('-') {
+            format!("{}+00:00", timestamp)
+        } else {
+            timestamp.to_string()
+        };
+        ColumnValue::Timestamp(
+            chrono::DateTime::parse_from_rfc3339(&timestamp_str)
+                .map_err(|e| {
+                    log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
+                    Box::new(e) as Box<dyn std::error::Error>
+                })?,
+        )
+    }
+     else {
             if let Ok(int_value) = message.value.parse::<i32>() {
                 ColumnValue::Integer(int_value)
             } else {
@@ -61,7 +79,10 @@ pub async fn apply(
             ht_timestamp.to_string()
         };
         let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str)
-        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        .map_err(|e| {
+            log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
+            Box::new(e) as Box<dyn std::error::Error>
+        })?;
     json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
 
     let json_values = serde_json::Value::Object(json_obj);
