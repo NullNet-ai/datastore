@@ -1,10 +1,10 @@
-use once_cell::sync::OnceCell;
-use tokio::sync::mpsc;
-use std::sync::Arc;
-use tokio::time::{sleep, Duration};
-use crate::models::crdt_message_model::CrdtMessage;
 use crate::db;
+use crate::models::crdt_message_model::CrdtMessage;
 use crate::sync::message_service;
+use once_cell::sync::OnceCell;
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::time::{sleep, Duration};
 
 pub struct MessageManager {
     receiver: mpsc::Receiver<CrdtMessage>,
@@ -34,9 +34,9 @@ impl MessageManager {
         if self.initialized {
             return;
         }
-        
+
         self.initialized = true;
-        
+
         while let Some(message) = self.receiver.recv().await {
             match self.process_message(message).await {
                 Ok(_) => {
@@ -46,15 +46,18 @@ impl MessageManager {
                     log::error!("Error processing message: {}", e);
                 }
             }
-            
+
             // Add a small delay to prevent CPU overuse
             sleep(Duration::from_millis(10)).await;
         }
     }
 
-    async fn process_message(&self, message: CrdtMessage) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_message(
+        &self,
+        message: CrdtMessage,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = db::get_async_connection().await;
-        
+
         // Store the message
         match message_service::insert_message(&mut conn, message).await {
             Ok(_) => {
@@ -72,12 +75,12 @@ impl MessageManager {
 // Create a channel for sending messages to the background service
 pub fn create_message_channel() -> mpsc::Sender<CrdtMessage> {
     let (sender, receiver) = mpsc::channel(10000); // Buffer size of 100
-    
+
     // Spawn the background service
     let mut manager = MessageManager::new(receiver);
     tokio::spawn(async move {
         manager.start().await;
     });
-    
+
     sender
 }

@@ -1,10 +1,10 @@
-use actix::{Actor, StreamHandler, ActorContext, AsyncContext, Addr, Message};
-use actix_web::{web, Error, HttpRequest, HttpResponse};
-use actix_web_actors::ws;
-use std::time::{Duration, Instant};
-use std::sync::{Arc, Mutex};
 use actix::Handler;
+use actix::{Actor, ActorContext, Addr, AsyncContext, Message, StreamHandler};
+use actix_web::{Error, HttpRequest, HttpResponse, web};
+use actix_web_actors::ws;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 // How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -22,7 +22,6 @@ pub struct WebSocketSession {
     client_id: Option<String>,
 }
 
-
 impl WebSocketSession {
     pub fn new() -> Self {
         Self {
@@ -30,7 +29,7 @@ impl WebSocketSession {
             client_id: None,
         }
     }
-    
+
     fn heartbeat(&self, ctx: &mut <Self as Actor>::Context) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             if Instant::now().duration_since(act.last_heartbeat) > CLIENT_TIMEOUT {
@@ -38,7 +37,7 @@ impl WebSocketSession {
                 ctx.stop();
                 return;
             }
-            
+
             ctx.ping(b"");
         });
     }
@@ -54,15 +53,15 @@ impl Handler<NotificationMessage> for WebSocketSession {
 
 impl Actor for WebSocketSession {
     type Context = ws::WebsocketContext<Self>;
-    
+
     fn started(&mut self, ctx: &mut Self::Context) {
         log::info!("WebSocket connection established");
         self.heartbeat(ctx);
     }
-    
+
     fn stopped(&mut self, _: &mut Self::Context) {
         log::info!("WebSocket connection terminated");
-        
+
         // Remove from clients list if authenticated
         if let Some(client_id) = &self.client_id {
             remove_client(client_id);
@@ -86,10 +85,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
                     if let Some(event) = json.get("event").and_then(|e| e.as_str()) {
                         match event {
                             "subscribe" => {
-                                if let Some(client_id) = json.get("client_id").and_then(|c| c.as_str()) {
+                                if let Some(client_id) =
+                                    json.get("client_id").and_then(|c| c.as_str())
+                                {
                                     self.client_id = Some(client_id.to_string());
                                     register_client(client_id.to_string(), ctx.address());
-                                    
+
                                     let response = serde_json::json!({
                                         "status": "ok",
                                         "event": "subscribe"
@@ -102,7 +103,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
                                 if let Some(client_id) = &self.client_id {
                                     remove_client(client_id);
                                     self.client_id = None;
-                                    
+
                                     let response = serde_json::json!({
                                         "status": "ok",
                                         "event": "unsubscribe"
@@ -185,6 +186,6 @@ pub fn send_notice(group_id: &str, client_id: &str) {
         "group_id": group_id,
         "client_id": client_id
     });
-    
+
     broadcast_notification(notice);
 }

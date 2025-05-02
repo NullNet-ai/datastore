@@ -9,7 +9,7 @@ pub struct Node {
     pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MerkleTree {
     pub root: Option<Node>,
     leaves: Vec<Node>,
@@ -56,7 +56,6 @@ impl MerkleTree {
             hash,
             value: data.to_string(),
         };
-
         // Insert the node in sorted order
         let insert_pos = self
             .leaves
@@ -67,9 +66,32 @@ impl MerkleTree {
         self.update_root();
     }
 
+    pub fn prune(&mut self, n: usize) {
+        // Do nothing if empty
+        if self.root.is_none() {
+            return;
+        }
+
+        // Calculate how many leaves to keep (2^n)
+        let leaves_to_keep = 1 << n; // 2^n
+
+        // If we have fewer leaves than the target, do nothing
+        if self.leaves.len() <= leaves_to_keep {
+            return;
+        }
+
+        // Keep only the most recent leaves (last n in sorted order)
+        let start_idx = self.leaves.len() - leaves_to_keep;
+        self.leaves = self.leaves.split_off(start_idx);
+
+        // No need to update the root as we're preserving it
+    }
+    pub fn prune_to_level_4(&mut self) {
+        self.prune(4);
+    }
+
     pub fn update_root(&mut self) {
         let mut current_level = self.leaves.clone();
-
         while current_level.len() > 1 {
             let mut next_level = Vec::new();
             let mut i = 0;

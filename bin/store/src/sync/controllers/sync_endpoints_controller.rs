@@ -2,7 +2,7 @@ use crate::db;
 use crate::models::sync_endpoint_model::SyncEndpoint;
 use crate::sync::sync_endpoints_service;
 use crate::sync::transport::transport_driver::PostOpts;
-use actix_web::{HttpResponse, Responder, get, post, put, web};
+use actix_web::{get, post, put, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]

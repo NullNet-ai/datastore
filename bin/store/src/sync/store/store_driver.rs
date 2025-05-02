@@ -4,9 +4,9 @@ use crate::table_enum::Table;
 use actix_web::rt::time;
 use diesel::Column;
 use diesel_async::AsyncPgConnection;
+use pluralizer::pluralize;
 use serde_json::json;
 use serde_json::{Map, Value};
-use pluralizer::pluralize;
 
 pub async fn apply(
     tx: &mut AsyncPgConnection,
@@ -19,30 +19,31 @@ pub async fn apply(
 
     let value = if is_plural_column(column) {
         ColumnValue::Array(process_pg_array(&message.value)?)
-
-    }else if column == "timestamp" {
+    } else if column == "timestamp" {
         // Parse timestamp
-        let timestamp=message.value.trim_matches('"').to_string();
-        let timestamp_str = if timestamp.contains('T') && !timestamp.contains('Z') && !timestamp.contains('+') && !timestamp[10..].contains('-') {
+        let timestamp = message.value.trim_matches('"').to_string();
+        let timestamp_str = if timestamp.contains('T')
+            && !timestamp.contains('Z')
+            && !timestamp.contains('+')
+            && !timestamp[10..].contains('-')
+        {
             format!("{}+00:00", timestamp)
         } else {
             timestamp.to_string()
         };
         ColumnValue::Timestamp(
-            chrono::DateTime::parse_from_rfc3339(&timestamp_str)
-                .map_err(|e| {
-                    log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
-                    Box::new(e) as Box<dyn std::error::Error>
-                })?,
+            chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
+                log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
+                Box::new(e) as Box<dyn std::error::Error>
+            })?,
         )
-    }
-     else {
-            if let Ok(int_value) = message.value.parse::<i32>() {
-                ColumnValue::Integer(int_value)
-            } else {
-                ColumnValue::String(message.value.clone())
-            }
- };
+    } else {
+        if let Ok(int_value) = message.value.parse::<i32>() {
+            ColumnValue::Integer(int_value)
+        } else {
+            ColumnValue::String(message.value.clone())
+        }
+    };
     // Handle hypertable timestamp
     let mut json_obj = serde_json::Map::new();
     let clean_id = row.trim_matches('"').to_string();
@@ -62,7 +63,6 @@ pub async fn apply(
         }
     }
 
-
     json_obj = clean_extra_quotes(json_obj);
     let table = Table::from_str(dataset.as_str()).ok_or_else(|| {
         Box::new(std::io::Error::new(
@@ -73,20 +73,22 @@ pub async fn apply(
 
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp
-        let timestamp_str = if ht_timestamp.contains('T') && !ht_timestamp.contains('Z') && !ht_timestamp.contains('+') && !ht_timestamp[10..].contains('-') {
+        let timestamp_str = if ht_timestamp.contains('T')
+            && !ht_timestamp.contains('Z')
+            && !ht_timestamp.contains('+')
+            && !ht_timestamp[10..].contains('-')
+        {
             format!("{}+00:00", ht_timestamp)
         } else {
             ht_timestamp.to_string()
         };
-        let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str)
-        .map_err(|e| {
+        let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
             log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
             Box::new(e) as Box<dyn std::error::Error>
         })?;
-    json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
+        json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
 
-    let json_values = serde_json::Value::Object(json_obj);
-
+        let json_values = serde_json::Value::Object(json_obj);
 
         match table.upsert_record_with_id_timestamp(tx, json_values).await {
             Ok(_) => return Ok(()),
@@ -104,7 +106,6 @@ pub async fn apply(
                 log::error!("Error applying message: {}", e);
                 Err(Box::new(e))
                 // return error
-                
             }
         }
     }
@@ -144,7 +145,7 @@ fn process_pg_array(value: &str) -> Result<Vec<String>, Box<dyn std::error::Erro
             .split(',')
             .map(|s| {
                 s.trim()
-                    .trim_matches('"')  // Remove any quotes
+                    .trim_matches('"') // Remove any quotes
                     .to_string()
             })
             .collect();

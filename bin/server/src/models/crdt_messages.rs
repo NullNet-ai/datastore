@@ -17,7 +17,6 @@ pub struct CrdtMessage {
     pub hypertable_timestamp: Option<String>,
 }
 
-
 use serde_json::Value as JsonValue;
 
 impl CrdtMessage {

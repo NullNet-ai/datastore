@@ -6,7 +6,6 @@ use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 
-
 use super::transport::transport_driver::PostOpts;
 
 pub async fn get_all_sync_endpoints(
@@ -33,7 +32,8 @@ pub async fn create_endpoint(
         .on_conflict(sync_endpoints::id)
         .do_update()
         .set(endpoint)
-        .execute(conn).await?;
+        .execute(conn)
+        .await?;
 
     // Return a JSON response with message: "ok"
     Ok(serde_json::json!({
@@ -41,7 +41,9 @@ pub async fn create_endpoint(
     }))
 }
 
-pub async fn get_sync_endpoints(conn: &mut AsyncPgConnection) -> Result<Vec<PostOpts>, DieselError> {
+pub async fn get_sync_endpoints(
+    conn: &mut AsyncPgConnection,
+) -> Result<Vec<PostOpts>, DieselError> {
     let endpoints = sync_endpoints::table
         .filter(sync_endpoints::status.eq("Active"))
         .select((
@@ -49,7 +51,8 @@ pub async fn get_sync_endpoints(conn: &mut AsyncPgConnection) -> Result<Vec<Post
             sync_endpoints::username,
             sync_endpoints::password,
         ))
-        .load::<(String, String, String)>(conn).await?;
+        .load::<(String, String, String)>(conn)
+        .await?;
 
     let result: Vec<PostOpts> = endpoints
         .into_iter()

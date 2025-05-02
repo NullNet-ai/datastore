@@ -2,6 +2,7 @@ use crate::db;
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::hlc_service::HlcService;
+use crate::sync::message_manager::get_sender;
 use crate::sync::message_service;
 use crate::sync::message_service::{compare_messages, create_messages};
 use crate::sync::store::store_driver::apply;
@@ -18,7 +19,6 @@ use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
 use tokio::time::sleep;
-use crate::sync::message_manager::get_sender;
 
 use super::transport::transport_driver::PostOpts;
 
@@ -35,7 +35,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
                         log::error!("Failed to create messages: {}", e);
                         DieselError::RollbackTransaction
                     })?;
-                
+
                 if messages.is_empty() {
                     log::warn!("create_messages returned empty vector");
                 }
@@ -44,18 +44,16 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
                     log::error!("Failed to send messages: {}", e);
                     return Err(DieselError::RollbackTransaction);
                 }
-                
+
                 Ok(messages)
             })
         })
         .await?;
 
-
     if messages.is_empty() {
         log::warn!("No messages created for insert operation");
         return Ok(());
     }
-
 
     Ok(())
 }
@@ -94,7 +92,8 @@ pub async fn send_messages(
             "since": null
         }),
         "test",
-    ).await?;
+    )
+    .await?;
 
     // Schedule next background sync with reduced timer
     // let sync_timer_ms = std::env::var("SYNC_TIMER_MS")
@@ -112,7 +111,6 @@ async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
     let sender = get_sender().cloned().unwrap_or_else(|| {
         log::error!("Failed to send message: sender not available");
@@ -124,12 +122,11 @@ async fn apply_messages(
             apply(&mut tx, &msg).await?;
         }
 
-
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
-
             // ! bottleneck here
-            let inserted_timestamp: Clock = HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-            let mut updated_msg = msg;  // Remove .clone()
+            let inserted_timestamp: Clock =
+                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+            let mut updated_msg = msg; // Remove .clone()
             updated_msg.group_id =
                 std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
             updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
@@ -139,7 +136,6 @@ async fn apply_messages(
             sender.send(updated_msg).await?;
         }
     }
-
 
     Ok(())
 }
@@ -225,9 +221,8 @@ pub async fn process_queue(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_timer_ms = 20000;
 
-    
     // Create a file to store benchmark data
-    
+
     // Write CSV header
 
     loop {
@@ -305,11 +300,9 @@ pub async fn process_queue(
                 log::error!("Failed to acknowledge queue message: {}", e);
             }
             // Check if we've reached a benchmark interval for queue item
-
         } else {
             sleep(Duration::from_millis(sync_timer_ms)).await;
         }
-    
     }
 
     Ok(())
@@ -318,7 +311,6 @@ pub async fn process_queue(
 pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
     let sync_enabled = std::env::var("SYNC_ENABLED").unwrap_or_else(|_| "false".to_string());
     let mut conn = db::get_async_connection().await;
-
 
     if sync_enabled == "false" {
         return Ok(());
@@ -375,7 +367,7 @@ pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
 fn schedule_next_sync(delay_ms: u64) {
     tokio::spawn(async move {
         sleep(Duration::from_millis(delay_ms)).await;
-        
+
         // Create the connection inside the spawned task and handle the Result
 
         if let Err(e) = bg_sync().await {
@@ -401,7 +393,8 @@ async fn sync(
         std::env::var("GROUP_ID").unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JBT".to_string());
     println!("Using group_id: {}", group_id);
 
-    let transaction_id = TransactionService::start_transaction(conn, existing_transaction_id).await?;
+    let transaction_id =
+        TransactionService::start_transaction(conn, existing_transaction_id).await?;
     let transaction_id_clone = transaction_id.clone();
     println!("Started transaction: {}", transaction_id);
 
@@ -546,44 +539,46 @@ async fn sync(
 }
 
 async fn receive_messages(
-    conn: &mut AsyncPgConnection,  // Must use async connection type
+    conn: &mut AsyncPgConnection, // Must use async connection type
     messages: Vec<Value>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Transaction with explicit error handling
-    let inner_messages = conn.transaction::<_, DieselError, _>(|conn| {
-        Box::pin(async move {
-            let mut processed_messages = Vec::new();
-    
-            for message in messages {
-                // Error handling with context and better error messages
-                let timestamp = message
-                    .get("message")
-                    .and_then(|m| m.get("timestamp"))
-                    .and_then(|t| t.as_str())
-                    .ok_or_else(|| DieselError::RollbackTransaction)?;
-    
-                // Async operation within transaction
-                HlcService::recv(conn, timestamp.to_string())
-                .await
-                .map_err(|e| {
-                    log::error!("Failed to receive HLC: {}", e);
-                    DieselError::RollbackTransaction
-                })?;
-    
-                let inner_message = message
-                    .get("message")
-                    .ok_or_else(|| DieselError::RollbackTransaction)?;
-    
-                let crdt_message: CrdtMessage = serde_json::from_value(inner_message.clone())
-                    .map_err(|_| DieselError::RollbackTransaction)?;
-                
-                processed_messages.push(crdt_message);
-            }
-    
-            Ok(processed_messages)
+    let inner_messages = conn
+        .transaction::<_, DieselError, _>(|conn| {
+            Box::pin(async move {
+                let mut processed_messages = Vec::new();
+
+                for message in messages {
+                    // Error handling with context and better error messages
+                    let timestamp = message
+                        .get("message")
+                        .and_then(|m| m.get("timestamp"))
+                        .and_then(|t| t.as_str())
+                        .ok_or_else(|| DieselError::RollbackTransaction)?;
+
+                    // Async operation within transaction
+                    HlcService::recv(conn, timestamp.to_string())
+                        .await
+                        .map_err(|e| {
+                            log::error!("Failed to receive HLC: {}", e);
+                            DieselError::RollbackTransaction
+                        })?;
+
+                    let inner_message = message
+                        .get("message")
+                        .ok_or_else(|| DieselError::RollbackTransaction)?;
+
+                    let crdt_message: CrdtMessage =
+                        serde_json::from_value(inner_message.clone())
+                            .map_err(|_| DieselError::RollbackTransaction)?;
+
+                    processed_messages.push(crdt_message);
+                }
+
+                Ok(processed_messages)
+            })
         })
-    })
-    .await?;  // Critical: Must await the transaction
+        .await?; // Critical: Must await the transaction
 
     apply_messages(conn, inner_messages).await?;
     Ok(())

@@ -3,7 +3,7 @@ use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
-use actix_web::{HttpResponse, Responder, ResponseError, http, web};
+use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 
@@ -77,7 +77,7 @@ pub async fn create_record(
             }
         }
     }
-    
+
     let pluck_fields: Vec<String> = query
         .pluck
         .split(',')
@@ -126,8 +126,7 @@ pub async fn create_record(
         });
     }
 
-
-    let plucked_record=table.pluck_fields(&record_value, pluck_fields);
+    let plucked_record = table.pluck_fields(&record_value, pluck_fields);
 
     let response = ApiResponse {
         success: true,

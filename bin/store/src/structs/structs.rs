@@ -1,10 +1,10 @@
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use chrono::Utc;
-use diesel::AsExpression;
 use diesel::sql_types::{Text, Uuid};
+use diesel::AsExpression;
 use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use uuid::Uuid as uuid_crate;
 
 #[derive(Serialize, Deserialize)]
@@ -75,9 +75,12 @@ impl CreateRequestBody {
             }
         }
 
-        if !self.record.get("id").is_some() || 
-           self.record["id"].is_null() || 
-           self.record["id"].as_str().map_or(true, |s| s.trim().is_empty()) {
+        if !self.record.get("id").is_some()
+            || self.record["id"].is_null()
+            || self.record["id"]
+                .as_str()
+                .map_or(true, |s| s.trim().is_empty())
+        {
             self.record["id"] = json!(uuid_crate::new_v4().to_string());
         }
     }

@@ -22,8 +22,8 @@ impl Timestamp {
     pub fn parse(str: String) -> Self {
         let parts: Vec<&str> = str.split(':').collect();
         Timestamp {
-            logical: parts[0].parse().unwrap(),
-            physical: parts[1].parse().unwrap(),
+            logical: parts[1].parse().unwrap(),
+            physical: parts[0].parse().unwrap(),
             node_id: parts[2].to_string(),
         }
     }

@@ -9,7 +9,7 @@ authors = [
 
 [dependencies]
 actix-web = "4.3"
-diesel = { version = "2.1.0", features = ["postgres", "r2d2", "64-column-tables", "uuid", "chrono"] }
+diesel = { version = "2.1.0", features = ["postgres", "r2d2", "64-column-tables", "uuid", "chrono", "network-address"] }
 diesel-async = { version = "0.3.1", features = ["postgres", "deadpool"] }
 deadpool = { version = "0.10", features = ["managed"] }
 once_cell = "1.19"
@@ -33,6 +33,7 @@ tonic = "0.12.3"
 prost = "0.13.5" 
 pluralizer = "0.5.0"
 regex = "1.11.1"
+ipnetwork = { version = "0.20", features = ["serde"] }
 
 [build-dependencies]
 tonic-build = "0.12.3"

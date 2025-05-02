@@ -4,12 +4,10 @@ use dotenv::dotenv;
 use std::env;
 use std::sync::OnceLock;
 
-use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
-use once_cell::sync::Lazy;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
-
-
+use once_cell::sync::Lazy;
 
 // -- Sync Types --
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
@@ -17,7 +15,8 @@ pub type DbPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 // -- Async Types --
 pub type AsyncDbPool = PoolAsync<AsyncPgConnection>;
-pub type AsyncDbPooledConnection = diesel_async::pooled_connection::deadpool::Object<AsyncPgConnection>;
+pub type AsyncDbPooledConnection =
+    diesel_async::pooled_connection::deadpool::Object<AsyncPgConnection>;
 
 static ASYNC_POOL: Lazy<AsyncDbPool> = Lazy::new(|| establish_async_pool());
 
@@ -25,14 +24,14 @@ pub fn establish_async_pool() -> AsyncDbPool {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
-     PoolAsync::builder(config)
+    PoolAsync::builder(config)
         .max_size(20)
-        .build().expect("Failed to create async pool")
+        .build()
+        .expect("Failed to create async pool")
 }
 
 // -- Sync Pool --
 static SYNC_POOL: OnceLock<DbPool> = OnceLock::new();
-
 
 pub fn establish_sync_pool() -> DbPool {
     dotenv().ok();
@@ -56,21 +55,15 @@ pub fn get_async_pool() -> &'static AsyncDbPool {
 }
 
 pub fn get_sync_connection() -> DbPooledConnection {
-    get_sync_pool()
-        .get()
-        .unwrap_or_else(|e| {
-            log::error!("Failed to get sync connection: {}", e);
-            panic!("Sync connection failure");
-        })
+    get_sync_pool().get().unwrap_or_else(|e| {
+        log::error!("Failed to get sync connection: {}", e);
+        panic!("Sync connection failure");
+    })
 }
 
-
 pub async fn get_async_connection() -> AsyncDbPooledConnection {
-    get_async_pool()
-        .get()
-        .await
-        .unwrap_or_else(|e| {
-            log::error!("Failed to get async connection: {}", e);
-            panic!("Async connection failure");
-        })
+    get_async_pool().get().await.unwrap_or_else(|e| {
+        log::error!("Failed to get async connection: {}", e);
+        panic!("Async connection failure");
+    })
 }

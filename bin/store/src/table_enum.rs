@@ -1,13 +1,13 @@
 use crate::models::packet_model::Packet;
 use crate::schema::schema;
 use crate::schema::schema::packets::dsl::packets;
+use crate::structs::structs::CreateRequestBody;
+use actix_web::web;
 use diesel::associations::HasTable;
 use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
-use actix_web::{ web};
-use crate::structs::structs::{ CreateRequestBody};
-use serde_json::{Value, Map};
 use diesel_async::RunQueryDsl;
+use serde_json::{Map, Value};
 
 #[derive(Debug)]
 pub enum Table {
@@ -51,13 +51,13 @@ impl Table {
         if !pluck_fields.is_empty() && record_value.is_object() {
             let obj = record_value.as_object().unwrap();
             let mut filtered = Map::new();
-    
+
             for field in pluck_fields {
                 if let Some(val) = obj.get(&field) {
                     filtered.insert(field, val.clone());
                 }
             }
-    
+
             Value::Object(filtered)
         } else {
             record_value.clone() // fallback: return original value
@@ -68,20 +68,21 @@ impl Table {
         &self,
         conn: &mut AsyncPgConnection,
         record: Value,
-        request:web::Json<CreateRequestBody>,
+        request: web::Json<CreateRequestBody>,
     ) -> Result<String, DieselError> {
-    let mut request = request.into_inner();
+        let mut request = request.into_inner();
         request.process_record("create");
 
         match self {
             Table::Packets => {
                 let mut value: Packet = serde_json::from_value(record)
                     .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
-                value.hypertable_timestamp = value.timestamp.to_string();
-                let result = diesel::insert_into(packets::table())
-                    .values(value)
-                    .get_result::<Packet>(conn).await?;
-                Ok(serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()))
+                value.hypertable_timestamp = Some(value.timestamp.to_string());
+                diesel::insert_into(packets::table())
+                .values(value.clone())
+                .execute(conn) // Use execute instead of get_result
+                .await?;
+            Ok(serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string()))
             }
             _ => panic!(),
         }
@@ -97,12 +98,14 @@ impl Table {
                 let mut value: Packet = serde_json::from_value(record)
                     .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 
+
                 diesel::insert_into(packets::table())
                     .values(value.clone())
                     .on_conflict((schema::packets::id, schema::packets::timestamp))
                     .do_update()
                     .set(value)
-                    .execute(conn).await
+                    .execute(conn)
+                    .await
                     .map(|_| ())
             }
             _ => panic!(),
@@ -116,19 +119,20 @@ impl Table {
     ) -> Result<(), DieselError> {
         match self {
             Table::Packets => {
-                let value: Packet = serde_json::from_value(record)
-                .map_err(|e| {
+                let value: Packet = serde_json::from_value(record).map_err(|e| {
                     println!("Deserialization error: {:?}", e);
                     println!("Failed to deserialize record:");
                     DieselError::DeserializationError(Box::new(e))
                 })?;
+
 
                 diesel::insert_into(packets::table())
                     .values(value.clone())
                     .on_conflict((schema::packets::id, schema::packets::timestamp))
                     .do_update()
                     .set(value)
-                    .execute(conn).await
+                    .execute(conn)
+                    .await
                     .map(|_| ())
             }
             _ => panic!(),

@@ -1,22 +1,22 @@
 use crate::db;
 use crate::models::queue_item_model::QueueItem;
 use crate::models::queue_model::Queue;
-use diesel_async::AsyncConnection;
 use crate::schema::schema::{queue_items, queues};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-use serde_json::{Value};
-use uuid::Uuid;
+use diesel::OptionalExtension;
+use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
-use diesel::OptionalExtension; 
+use serde_json::Value;
+use uuid::Uuid;
 
 pub struct QueueService;
 
 impl QueueService {
     pub async fn init() -> Result<(), DieselError> {
         let mut conn = db::get_async_connection().await;
-    
+
         conn.transaction::<_, DieselError, _>(|conn| {
             Box::pin(async move {
                 diesel::insert_into(queues::table)
@@ -29,7 +29,7 @@ impl QueueService {
                     .on_conflict_do_nothing()
                     .execute(conn)
                     .await?;
-                
+
                 Ok(())
             })
         })
@@ -55,7 +55,6 @@ impl QueueService {
         item: Value,
         queue_name: &str,
     ) -> Result<i32, DieselError> {
-
         conn.transaction::<_, DieselError, _>(|conn| {
             Box::pin(async move {
                 let queue = queues::table
@@ -71,47 +70,44 @@ impl QueueService {
 
                 let new_order = queue.size + 1;
 
-            let queue_item = QueueItem {
-                id: Uuid::new_v4().to_string(),
-                order: new_order,
-                queue_id: queue.id.clone(),
-                value: serde_json::to_string(&item).unwrap_or_else(|_| "{}".to_string()),
-            };
+                let queue_item = QueueItem {
+                    id: Uuid::new_v4().to_string(),
+                    order: new_order,
+                    queue_id: queue.id.clone(),
+                    value: serde_json::to_string(&item).unwrap_or_else(|_| "{}".to_string()),
+                };
 
-            diesel::insert_into(queue_items::table)
-                .values(&queue_item)
-                .execute(conn)
-                .await
-                .map_err(|e| {
-                    log::error!("Failed to insert queue item: {}", e);
-                    e
-                })?;
+                diesel::insert_into(queue_items::table)
+                    .values(&queue_item)
+                    .execute(conn)
+                    .await
+                    .map_err(|e| {
+                        log::error!("Failed to insert queue item: {}", e);
+                        e
+                    })?;
 
-            diesel::update(queues::table)
-                .filter(queues::id.eq(&queue.id))
-                .set(queues::size.eq(new_order))
-                .execute(conn)
-                .await
-                .map_err(|e| {
-                    log::error!("Failed to update queue size: {}", e);
-                    e
-                })?;
+                diesel::update(queues::table)
+                    .filter(queues::id.eq(&queue.id))
+                    .set(queues::size.eq(new_order))
+                    .execute(conn)
+                    .await
+                    .map_err(|e| {
+                        log::error!("Failed to update queue size: {}", e);
+                        e
+                    })?;
 
-            Ok(new_order)
+                Ok(new_order)
 
                 // ... existing code ...
             })
         })
         .await
-
     }
 
     pub async fn dequeue(
         conn: &mut AsyncPgConnection,
         queue_name: &str,
     ) -> Result<Option<Value>, DieselError> {
-
-
         conn.transaction::<_, DieselError, _>(|conn| {
             Box::pin(async move {
                 let queue = queues::table
@@ -133,7 +129,7 @@ impl QueueService {
                     .filter(
                         queue_items::queue_id
                             .eq(queue.id)
-                            .and(queue_items::order.eq(queue.count+1)),
+                            .and(queue_items::order.eq(queue.count + 1)),
                     )
                     .order(queue_items::order.asc())
                     .limit(1)
@@ -141,21 +137,19 @@ impl QueueService {
                     .await
                     .optional()?;
 
-                    match queue_item {
-                        Some(item) => match serde_json::from_str(&item.value) {
-                            Ok(value) => Ok(Some(value)),
-                            Err(e) => {
-                                log::error!("Failed to parse queue item value: {}", e);
-                                Ok(None)
-                            }
-                        },
-                        None => Ok(None),
-                    }
-
+                match queue_item {
+                    Some(item) => match serde_json::from_str(&item.value) {
+                        Ok(value) => Ok(Some(value)),
+                        Err(e) => {
+                            log::error!("Failed to parse queue item value: {}", e);
+                            Ok(None)
+                        }
+                    },
+                    None => Ok(None),
+                }
             })
         })
         .await
-
     }
 
     pub async fn ack(conn: &mut AsyncPgConnection, queue_name: &str) -> Result<(), DieselError> {

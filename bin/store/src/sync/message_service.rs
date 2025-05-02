@@ -6,8 +6,8 @@ use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::upsert::excluded;
 use diesel_async::AsyncPgConnection;
-use serde_json::Value;
 use diesel_async::RunQueryDsl;
+use serde_json::Value;
 
 pub async fn create_messages(
     mut tx: &mut AsyncPgConnection,
@@ -122,7 +122,7 @@ pub async fn find_existing_messages<'a>(
     messages: &'a Vec<CrdtMessage>,
 ) -> Vec<Result<(&'a CrdtMessage, Option<CrdtMessage>), DieselError>> {
     let mut results = Vec::new();
-    
+
     for message in messages.iter() {
         // Find the most recent existing message with the same dataset, column, and row
         let existing_message_result = crdt_messages::table
@@ -133,16 +133,16 @@ pub async fn find_existing_messages<'a>(
             .limit(1)
             .first::<CrdtMessage>(tx)
             .await;
-            
+
         let result = match existing_message_result {
             Ok(msg) => Ok((message, Some(msg))),
             Err(DieselError::NotFound) => Ok((message, None)),
             Err(e) => Err(e),
         };
-        
+
         results.push(result);
     }
-    
+
     results
 }
 
@@ -154,7 +154,8 @@ pub async fn get_messages_since(
 
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))
-        .load::<CrdtMessage>(conn).await?;
+        .load::<CrdtMessage>(conn)
+        .await?;
 
     // Convert CrdtMessage objects to Value objects
     let message_values: Vec<Value> = results

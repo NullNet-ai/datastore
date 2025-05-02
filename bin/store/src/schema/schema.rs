@@ -25,10 +25,10 @@ table! {
 
 table! {
     packets (id) {
-        tombstone -> Int4,
-        status -> Text,
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
-        version -> Int4,
+        version -> Nullable<Int4>,
         created_date -> Nullable<Text>,
         created_time -> Nullable<Text>,
         updated_date -> Nullable<Text>,
@@ -38,22 +38,20 @@ table! {
         updated_by -> Nullable<Text>,
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
-        tags -> Array<Text>,
+        tags -> Nullable<Array<Text>>,
 
         id -> Uuid,
         timestamp -> Timestamp,
-        hypertable_timestamp -> Text,
-        interface_name -> Text,
-        total_length -> Nullable<Int4>,
+        hypertable_timestamp -> Nullable<Text>,
+        interface_name -> Nullable<Text>,
         device_id -> Nullable<Uuid>,
         source_mac -> Nullable<Text>,
         destination_mac -> Nullable<Text>,
         ether_type -> Nullable<Text>,
-        ip_header_length -> Int4,
-        payload_length -> Int4,
-        protocol -> Text,
-        source_ip -> Text,
-        destination_ip -> Text,
+        protocol -> Nullable<Text>,
+        total_length -> Nullable<Int4>,
+        source_ip -> Nullable<Inet>,
+        destination_ip -> Nullable<Inet>,
         source_port -> Nullable<Int4>,
         destination_port -> Nullable<Int4>,
         tcp_header_length -> Nullable<Int4>,
@@ -65,6 +63,39 @@ table! {
         tcp_urgent_pointer -> Nullable<Int4>,
         icmp_type -> Nullable<Int4>,
         icmp_code -> Nullable<Int4>,
+    }
+}
+
+table! {
+    connections (id, timestamp) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+
+        id -> Text,
+        timestamp -> Timestamp,
+        interface_name -> Nullable<Text>,
+        hypertable_timestamp -> Nullable<Text>,
+        total_packet -> Nullable<Int4>,
+        total_bytes -> Nullable<Int4>,
+        device_id -> Nullable<Text>,
+        protocol -> Nullable<Text>,
+        source_ip -> Nullable<Inet>,
+        destination_ip -> Nullable<Inet>,
+        remote_ip -> Nullable<Inet>,
+        source_port -> Nullable<Int4>,
+        destination_port -> Nullable<Int4>,
     }
 }
 

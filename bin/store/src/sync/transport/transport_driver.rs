@@ -1,7 +1,7 @@
 use futures::stream::{self, Stream, StreamExt};
 use reqwest::{Client, ClientBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::error::Error;
 use std::fmt;
 use std::pin::Pin;

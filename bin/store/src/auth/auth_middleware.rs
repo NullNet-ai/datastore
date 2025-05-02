@@ -1,11 +1,11 @@
 use actix_web::{
-    Error,
-    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
+    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     error::ErrorUnauthorized,
     http::header,
+    Error,
 };
-use futures::future::{Ready, ok};
-use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
+use futures::future::{ok, Ready};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde_json::Value;
 use std::env;
 use std::future::Future;
@@ -59,7 +59,7 @@ where
                 let auth_str = header_value.to_str().unwrap_or("");
                 if auth_str.starts_with("Bearer ") {
                     let token = &auth_str[7..]; // Skip "Bearer " prefix
-                    // Validate the token here
+                                                // Validate the token here
                     validate_token(token)
                 } else {
                     false

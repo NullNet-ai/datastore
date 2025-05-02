@@ -72,14 +72,14 @@ pub struct Items {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Packets {
-    #[prost(int32, tag = "1")]
-    pub tombstone: i32,
-    #[prost(string, tag = "2")]
-    pub status: ::prost::alloc::string::String,
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "3")]
     pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, tag = "4")]
-    pub version: i32,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "5")]
     pub created_date: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "6")]
@@ -104,52 +104,107 @@ pub struct Packets {
     pub id: ::prost::alloc::string::String,
     #[prost(string, tag = "16")]
     pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "17")]
-    pub hypertable_timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub interface_name: ::prost::alloc::string::String,
-    #[prost(int32, optional, tag = "19")]
-    pub total_length: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "20")]
+    #[prost(string, optional, tag = "17")]
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
+    #[prost(string, optional, tag = "20")]
     pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "22")]
+    #[prost(string, optional, tag = "21")]
     pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
+    #[prost(string, optional, tag = "22")]
     pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, tag = "24")]
-    pub ip_header_length: i32,
-    #[prost(int32, tag = "25")]
-    pub payload_length: i32,
-    #[prost(string, tag = "26")]
-    pub protocol: ::prost::alloc::string::String,
-    #[prost(string, tag = "27")]
-    pub source_ip: ::prost::alloc::string::String,
-    #[prost(string, tag = "28")]
-    pub destination_ip: ::prost::alloc::string::String,
-    #[prost(int32, optional, tag = "29")]
+    #[prost(string, optional, tag = "23")]
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "24")]
+    pub total_length: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "25")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "27")]
     pub source_port: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "30")]
+    #[prost(int32, optional, tag = "28")]
     pub destination_port: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "31")]
+    #[prost(int32, optional, tag = "29")]
     pub tcp_header_length: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "32")]
+    #[prost(int64, optional, tag = "30")]
     pub tcp_sequence_number: ::core::option::Option<i64>,
-    #[prost(int64, optional, tag = "33")]
+    #[prost(int64, optional, tag = "31")]
     pub tcp_acknowledgment_number: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "34")]
+    #[prost(int32, optional, tag = "32")]
     pub tcp_data_offset: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "35")]
+    #[prost(int32, optional, tag = "33")]
     pub tcp_flags: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "36")]
+    #[prost(int32, optional, tag = "34")]
     pub tcp_window_size: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "37")]
+    #[prost(int32, optional, tag = "35")]
     pub tcp_urgent_pointer: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "38")]
+    #[prost(int32, optional, tag = "36")]
     pub icmp_type: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "39")]
+    #[prost(int32, optional, tag = "37")]
     pub icmp_code: ::core::option::Option<i32>,
+}
+/// Connections entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Connections {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, tag = "15")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, tag = "16")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub total_packet: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "20")]
+    pub total_bytes: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "21")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub remote_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "26")]
+    pub source_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "27")]
+    pub destination_port: ::core::option::Option<i32>,
 }
 /// CrdtMessages entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -398,6 +453,85 @@ pub struct DeletePacketsRequest {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeletePacketsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+}
+/// Create Connections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub connections: ::core::option::Option<Connections>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create Connections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Connections>,
+}
+/// Get Connections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetConnectionsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get Connections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<Connections>,
+}
+/// Update Connections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub connections: ::core::option::Option<Connections>,
+}
+/// Update Connections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<Connections>,
+}
+/// Delete Connections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteConnectionsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Delete Connections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteConnectionsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -952,6 +1086,38 @@ pub mod store_service_server {
             request: tonic::Request<super::DeletePacketsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::DeletePacketsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new Connections
+        async fn create_connections(
+            &self,
+            request: tonic::Request<super::CreateConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Get a Connections by ID
+        async fn get_connections(
+            &self,
+            request: tonic::Request<super::GetConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing Connections
+        async fn update_connections(
+            &self,
+            request: tonic::Request<super::UpdateConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a Connections by ID
+        async fn delete_connections(
+            &self,
+            request: tonic::Request<super::DeleteConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteConnectionsResponse>,
             tonic::Status,
         >;
         /// Create a new CrdtMessages
@@ -1569,6 +1735,189 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DeletePacketsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateConnectionsRequest>
+                    for CreateConnectionsSvc<T> {
+                        type Response = super::CreateConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_connections(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetConnectionsRequest>
+                    for GetConnectionsSvc<T> {
+                        type Response = super::GetConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_connections(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateConnectionsRequest>
+                    for UpdateConnectionsSvc<T> {
+                        type Response = super::UpdateConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_connections(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteConnectionsRequest>
+                    for DeleteConnectionsSvc<T> {
+                        type Response = super::DeleteConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_connections(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteConnectionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

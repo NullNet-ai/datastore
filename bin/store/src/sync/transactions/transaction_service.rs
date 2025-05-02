@@ -3,12 +3,12 @@ use crate::models::transaction_model::Transaction;
 use crate::schema::schema::transactions;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use std::error::Error;
 use std::fmt;
-use tokio::sync::OnceCell;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::sync::OnceCell;
 use uuid::Uuid;
-use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
 pub struct TransactionService;
 static INIT: OnceCell<()> = OnceCell::const_new();
@@ -30,7 +30,8 @@ impl TransactionService {
             if let Err(e) = Self::init().await {
                 eprintln!("Failed to initialize transaction service: {}", e);
             }
-        }).await;
+        })
+        .await;
     }
 
     pub async fn init() -> Result<(), DieselError> {
@@ -73,11 +74,11 @@ impl TransactionService {
 
         // Find active transactions
         let active_transactions = transactions::table
-        .filter(transactions::status.eq("active"))
-        .order(transactions::timestamp.asc())
-        .limit(1)
-        .load::<Transaction>(conn)
-        .await?;
+            .filter(transactions::status.eq("active"))
+            .order(transactions::timestamp.asc())
+            .limit(1)
+            .load::<Transaction>(conn)
+            .await?;
 
         if let Some(transaction) = active_transactions.get(0) {
             if let Some(ref id) = existing_id {
@@ -110,9 +111,9 @@ impl TransactionService {
         };
 
         diesel::insert_into(transactions::table)
-        .values(&new_transaction)
-        .execute(conn)
-        .await?;
+            .values(&new_transaction)
+            .execute(conn)
+            .await?;
 
         Ok(new_id)
     }
