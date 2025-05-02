@@ -737,7 +737,7 @@ export class Utility {
         ? sql.raw(
             Utility.decryptField(`"${entity}"."${field}"`, encrypted_fields),
           )
-        : sql.raw(_field);
+        : table_schema?.[field];
     }
 
     if (parse_as === 'text') {
@@ -1354,7 +1354,7 @@ export class Utility {
         ...data,
         version: sql`${table_schema.version} + 1`,
       })
-      .where(sql(where.join(' ')))
+      .where(sql.raw(where.join(' ')))
       .returning(returning)
       .then(([{ table_schema }]) => table_schema);
   }
