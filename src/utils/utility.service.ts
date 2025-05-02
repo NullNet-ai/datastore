@@ -1354,7 +1354,7 @@ export class Utility {
         ...data,
         version: sql`${table_schema.version} + 1`,
       })
-      .where(sql.raw(where.join(' ')))
+      .where(sql.raw(`${where.join(' ')}`))
       .returning(returning)
       .then(([{ table_schema }]) => table_schema);
   }

@@ -31,11 +31,6 @@ async function initializers(app) {
   const organization = app.get(OrganizationsService);
   const initializer: InitializerService = app.get(InitializerService);
   initializer.createEncryption();
-  // default for super admin
-  await organization.initialize();
-  await organization.initializeDevice();
-  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
-  // initializer.createEncryption();
 
   // create own default organization here
   // await organization.initialize({
