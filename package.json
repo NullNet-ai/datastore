@@ -25,11 +25,7 @@
     "drizzle:generate": "drizzle-kit generate --name=template",
     "drizzle:generate-hypertables": "drizzle-kit generate --custom --name=hypertables",
     "drizzle:migrate": "drizzle-kit migrate",
-<<<<<<< HEAD
-    "drizzle:init": "rm -rf drizzle && npm run drizzle:generate && npm run build && npm run drizzle:migrate",
-=======
     "drizzle:init": "rm -rf drizzle && npm run build && npm run drizzle:generate && npm run drizzle:migrate",
->>>>>>> 427ee37ec937af47989e834d15a85cea2cd79efc
     "test:client1": "PORT=5001 DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run start:prod",
     "test:client2": "PORT=5002 DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run start:prod",
     "generate:client1": "DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run drizzle:generate",
