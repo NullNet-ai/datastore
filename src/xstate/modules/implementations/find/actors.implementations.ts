@@ -68,6 +68,7 @@ export class FindActorsImplementations {
         group_by = {},
         is_case_sensitive_sorting = false,
         pluck_group_object = {},
+        encrypted_fields = [],
       } = body;
 
       if (group_advance_filters.length && advance_filters.length) {
@@ -154,8 +155,8 @@ export class FindActorsImplementations {
 
         // put fields from order into pluck_object
         if (
-          (joins.length && !Object.keys(group_by).length) ||
-          !group_by?.fields?.length
+          (!Object.keys(group_by).length || !group_by?.fields?.length) &&
+          joins.length
         ) {
           pluck_object[entity] = [
             ...new Set([
@@ -320,6 +321,7 @@ export class FindActorsImplementations {
           date_format,
           parsed_concatenated_fields,
           multiple_sort,
+          encrypted_fields,
         });
         // const is_grouping_joined_entity = group_by_entities.some((key) =>
         //   Object.keys(join_selections ?? {}).includes(key),
@@ -356,11 +358,16 @@ export class FindActorsImplementations {
           ),
         };
         _db = _db
-          .select({
-            ...(Object.keys(group_by_selections).length
-              ? join_selections_with_group_by
-              : join_selections),
-          })
+          .select(
+            Utility.decryptData(
+              {
+                ...(Object.keys(group_by_selections).length
+                  ? join_selections_with_group_by
+                  : join_selections),
+              },
+              encrypted_fields,
+            ),
+          )
           .from(table_schema);
       } else {
         let count_selection = {};
@@ -386,11 +393,16 @@ export class FindActorsImplementations {
           [table]: group_by_selections?.[table] ?? {},
         };
         _db = _db
-          .select({
-            ...(Object.keys(group_by_selections).length
-              ? selections_with_group_by
-              : selections),
-          })
+          .select(
+            Utility.decryptData(
+              {
+                ...(Object.keys(group_by_selections).length
+                  ? selections_with_group_by
+                  : selections),
+              },
+              encrypted_fields,
+            ),
+          )
           .from(table_schema);
       }
 
@@ -405,6 +417,7 @@ export class FindActorsImplementations {
         parsed_concatenated_fields,
         group_advance_filters,
         type,
+        encrypted_fields,
       );
 
       const getSortSchemaAndField = (

@@ -7,7 +7,7 @@ import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
-import { and, eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
 import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false' } = process.env;
@@ -109,27 +109,39 @@ export class UpdateActorsImplementations {
       this.logger.debug(`Update request for ${table}: ${id}`);
 
       if (body.status) {
-        result = await this.db
-          .update(table_schema)
-          .set({
+        result = await Utility.encryptUpdate({
+          query: {
+            table_schema,
+          },
+          encrypted_fields: body.encrypted_fields,
+          table,
+          db: this.db,
+          data: {
             ...updated_data,
-            version: sql`${table_schema.version} + 1`,
-            previous_status: table_schema.status,
-          })
-          .where(and(eq(table_schema.id, id), eq(table_schema.tombstone, 0)))
-          .returning({ table_schema })
-          .then(([{ table_schema }]) => table_schema);
+            previous_status: updated_data.status,
+          },
+          where: [`id = '${id}'`, 'AND', `tombstone = 0`],
+          returning: {
+            table_schema,
+          },
+        });
         updated_data.previous_status = result?.previous_status;
       } else {
-        result = await this.db
-          .update(table_schema)
-          .set({
+        result = await Utility.encryptUpdate({
+          query: {
+            table_schema,
+          },
+          encrypted_fields: body.encrypted_fields,
+          table,
+          db: this.db,
+          data: {
             ...updated_data,
-            version: sql`${table_schema.version} + 1`,
-          })
-          .where(eq(table_schema.id, id))
-          .returning({ table_schema })
-          .then(([{ table_schema }]) => table_schema);
+          },
+          where: [`id = '${id}'`],
+          returning: {
+            table_schema,
+          },
+        });
       }
 
       delete updated_data.id;
