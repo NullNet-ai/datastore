@@ -14,6 +14,10 @@ RUN npm run build
 RUN mkdir sql
 RUN mkdir upload
 
+# Set environment variable to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get install redis -y
+
 
 EXPOSE 5001
 EXPOSE 6000
