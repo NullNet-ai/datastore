@@ -7,7 +7,7 @@ master_build:
     REGISTRY_ADDRESS: 'registry.dnamicro.com'
     REGISTRY_USERNAME: 'dna'
     REGISTRY_PASSWORD: 'aBGioazrbkrFvG5XSdgB'
-    PROJECT_IMAGE_PREFIX: 'wa'
+    PROJECT_IMAGE_PREFIX: 'platform'
   script:
     - 'docker login $REGISTRY_ADDRESS -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD'
     - "docker build -t $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID -f dockerfile \
