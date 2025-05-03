@@ -1,5 +1,6 @@
 stages:
   - build
+  - update_portainer-qa
 
 master_build:
   stage: build
@@ -19,3 +20,26 @@ master_build:
     - 'development-wa'
     - 'development'
     - 'qa'
+
+update_stack:
+  stage: update_portainer-qa
+  variables:
+    ENDPOINT_ID: 2
+    STACK_ID: 98
+    PORTAINER_USERNAME: 'ci'
+    PORTAINER_PASSWORD: 'fZmcpMHDpp63yKiszHL3'
+    PORTAINER_HOST: https://portainer.dnaqa.net
+    PORTAINER_YML_FILE: platform-template.yml
+    FILE_PATH: /var/apps/portainer
+    BASE_REF_NAME: development
+  script:
+    - echo $REGISTRY_ADDRESS/$CI_PROJECT_NAME:$BASE_REF_NAME
+    # - PORTAINER_HOST=$PORTAINER_HOST portainer login -u $PORTAINER_USERNAME -p $PORTAINER_PASSWORD
+    # - touch $FILE_PATH/$PORTAINER_YML_FILE
+    # - rm -rf  $FILE_PATH/$PORTAINER_YML_FILE && PORTAINER_HOST=$PORTAINER_HOST portainer stackfile $STACK_ID $FILE_PATH/$PORTAINER_YML_FILE
+    # - sed -i "s/${CI_PROJECT_NAME}:.*/${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}/g" $FILE_PATH/$PORTAINER_YML_FILE
+    # - echo 'updating data-store'
+    # - PORTAINER_HOST=$PORTAINER_HOST portainer stack:update  $ENDPOINT_ID  $STACK_ID  $FILE_PATH/$PORTAINER_YML_FILE
+  only:
+    - 'qa'
+
