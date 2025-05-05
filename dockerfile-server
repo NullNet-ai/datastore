@@ -24,6 +24,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/crdt-workspace/target/release/server /usr/local/bin/server
+COPY --from=builder /usr/src/crdt-workspace /usr/src/crdt-workspace
 
 # Set the startup command
 CMD ["server"]
