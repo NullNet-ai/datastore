@@ -17,7 +17,7 @@ WORKDIR /usr/src/crdt-workspace/bin/server
 RUN cargo build --release
 
 # Final image
-FROM debian:bullseye
+FROM debian:bookworm
 
 RUN apt-get update && \
     apt-get install -y libpq5 && \
