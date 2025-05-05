@@ -19,7 +19,7 @@ async fn main() -> std::io::Result<()> {
     let pool = db::establish_connection();
     println!("Database connected successfully.");
 
-    let server_url = format!("127.0.0.1:{}", port);
+    let server_url = format!("0.0.0.0:{}", port);
     println!("Server is running on {}", server_url);
 
     HttpServer::new(move || {

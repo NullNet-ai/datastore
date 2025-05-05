@@ -82,7 +82,7 @@ async fn main() -> std::io::Result<()> {
     println!("Database connected successfully.");
     TransactionService::initialize().await;
 
-    let grpc_addr = format!("127.0.0.1:{}", grpc_port);
+    let grpc_addr = format!("0.0.0.0:{}", grpc_port);
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
             Ok(_) => println!("gRPC server started successfully"),
@@ -101,7 +101,7 @@ async fn main() -> std::io::Result<()> {
         println!("Queue initialized successfully");
     }
 
-    let server_url = format!("127.0.0.1:{}", port);
+    let server_url = format!("0.0.0.0:{}", port);
     println!("Server is running on {}", server_url);
     // ! not using async generator
     tokio::spawn(async {
