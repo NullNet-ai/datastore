@@ -8,7 +8,7 @@ use ipnetwork::IpNetwork;
 #[diesel(table_name = crate::schema::schema::connections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct Packet {
+pub struct ConnectionModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,

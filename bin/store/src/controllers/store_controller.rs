@@ -5,6 +5,7 @@ use crate::table_enum::Table;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
+use crate::schema::hypertables;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -71,7 +72,7 @@ pub async fn create_record(
     let inner_log_table = log_table.clone();
     let mut processed_record = request.record.clone();
     if let Some(obj) = processed_record.as_object_mut() {
-        if table_name == "packets" {
+        if hypertables::is_hypertable(&table_name) {
             if let Some(timestamp) = obj.get("timestamp") {
                 obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
             }

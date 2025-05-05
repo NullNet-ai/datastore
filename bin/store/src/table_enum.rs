@@ -1,6 +1,8 @@
 use crate::models::packet_model::Packet;
+use crate::models::connections_model::ConnectionModel;
 use crate::schema::schema;
 use crate::schema::schema::packets::dsl::packets;
+use crate::schema::schema::connections::dsl::connections;
 use crate::structs::structs::CreateRequestBody;
 use actix_web::web;
 use diesel::associations::HasTable;
@@ -14,6 +16,7 @@ pub enum Table {
     Items,
     Packets,
     CrdtMessages,
+    Connections,
     // Add other tables here
 }
 
@@ -23,6 +26,7 @@ impl Table {
             "items" => Some(Table::Items),
             "packets" => Some(Table::Packets),
             "crdt_messages" => Some(Table::CrdtMessages),
+            "connections" => Some(Table::Connections),
             // Add other tables here
             _ => None,
         }
@@ -107,8 +111,25 @@ impl Table {
                     .execute(conn)
                     .await
                     .map(|_| ())
+            },
+            Table::Connections => {
+                let value: ConnectionModel = serde_json::from_value(record)
+                    .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
+
+
+                diesel::insert_into(connections::table())
+                    .values(value.clone())
+                    .on_conflict((schema::connections::id, schema::connections::timestamp))
+                    .do_update()
+                    .set(value)
+                    .execute(conn)
+                    .await
+                    .map(|_| ())
             }
-            _ => panic!(),
+            _ => {
+                log::error!("Upserting record with id for table {:?} is not implemented", self);
+                Err(DieselError::RollbackTransaction)
+            }
         }
     }
 
@@ -134,8 +155,25 @@ impl Table {
                     .execute(conn)
                     .await
                     .map(|_| ())
+            },
+            Table::Connections => {
+                let value: ConnectionModel = serde_json::from_value(record)
+                    .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
+
+
+                diesel::insert_into(connections::table())
+                    .values(value.clone())
+                    .on_conflict((schema::connections::id, schema::connections::timestamp))
+                    .do_update()
+                    .set(value)
+                    .execute(conn)
+                    .await
+                    .map(|_| ())
             }
-            _ => panic!(),
+            _ => {
+                log::error!("Upserting record with id for table {:?} is not implemented", self);
+                Err(DieselError::RollbackTransaction)
+            },
         }
     }
 }
