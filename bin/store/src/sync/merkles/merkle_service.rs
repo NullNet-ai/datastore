@@ -29,7 +29,13 @@ impl MerkleService {
             merkle: if merkle.merkle.is_empty() {
                 MerkleTree::new()
             } else {
-                MerkleTree::deserialize(&merkle.merkle).unwrap()
+                MerkleTree::deserialize(&merkle.merkle).map_err(|e| {
+                    log::error!(
+                        "Failed to deserialize merkle tree: {}",
+                        e
+                    );
+                    DieselError::DeserializationError(Box::new(e))
+                })?
             },
         };
 
