@@ -1,0 +1,29 @@
+# Use a newer Rust image that supports Cargo.lock v4
+FROM rust:latest as builder
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set workspace
+WORKDIR /usr/src/crdt-workspace
+
+# Copy workspace
+COPY . .
+
+# Build server
+WORKDIR /usr/src/crdt-workspace/bin/server
+RUN cargo build --release
+
+# Final image
+FROM debian:bullseye-slim
+
+RUN apt-get update && \
+    apt-get install -y libpq5 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/src/crdt-workspace/target/release/server /usr/local/bin/server
+
+# Set the startup command
+CMD ["server"]
