@@ -1,20 +1,29 @@
-# Use a Rust base image
-FROM rust:1.70-slim-buster as builder
+# Use a newer Rust image that supports Cargo.lock v4
+FROM rust:latest as builder
 
-# Create a new empty shell project
-WORKDIR /usr/src/store
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy over your manifests and source code
+# Set workspace
+WORKDIR /usr/src/crdt-workspace
+
+# Copy workspace
 COPY . .
 
-# Build your application
+# Build server
+WORKDIR /usr/src/crdt-workspace/bin/store
 RUN cargo build --release
 
-# Start with a fresh image
-FROM debian:buster-slim
+# Final image
+FROM debian:bullseye-slim
 
-# Copy the build artifact from builder
-COPY --from=builder /usr/src/store/target/release/store /usr/local/bin/store
+RUN apt-get update && \
+    apt-get install -y libpq5 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/src/crdt-workspace/target/release/store /usr/local/bin/store
 
 # Set the startup command
 CMD ["store"]
