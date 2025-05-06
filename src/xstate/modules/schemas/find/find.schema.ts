@@ -109,7 +109,7 @@ export const is_range_value_operators = (operator: EOperator) =>
  * @template f - The type of the field.
  */
 export interface IAdvanceFilters<f = string> {
-  field: f;
+  field?: f;
   operator: EOperator;
   values?: string[] | number[] | boolean[] | Date[];
   logical_operator?: 'AND' | 'OR';
@@ -117,6 +117,7 @@ export interface IAdvanceFilters<f = string> {
   entity?: string;
   case_sensitive?: boolean;
   parse_as?: 'text';
+  fields?: Array<f>
 }
 export interface IWhereClauses {
   and: Array<IAdvanceFilters>;
