@@ -21,7 +21,6 @@ import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
-import { EDateFormats } from 'src/utils/utility.types';
 const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
@@ -49,7 +48,8 @@ export class FindActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body } = _req;
+      const { params, body, headers } = _req;
+      const { time_zone } = headers;
       const { table, type } = params;
       const {
         order_direction = 'asc',
@@ -166,8 +166,6 @@ export class FindActorsImplementations {
           ];
         }
       });
-      const requested_date_format: string =
-        EDateFormats[date_format] || '%m/%d/%Y';
 
       let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
@@ -175,7 +173,10 @@ export class FindActorsImplementations {
       let _plucked_fields = Utility.parsePluckedFields(
         table,
         _pluck,
-        requested_date_format,
+        date_format,
+        false,
+        encrypted_fields,
+        time_zone,
       );
       _plucked_fields = Utility.parseMainConcatenations(
         concatenate_fields,
@@ -322,6 +323,7 @@ export class FindActorsImplementations {
           parsed_concatenated_fields,
           multiple_sort,
           encrypted_fields,
+          time_zone,
         });
         // const is_grouping_joined_entity = group_by_entities.some((key) =>
         //   Object.keys(join_selections ?? {}).includes(key),
@@ -418,6 +420,9 @@ export class FindActorsImplementations {
         group_advance_filters,
         type,
         encrypted_fields,
+        time_zone,
+        table,
+        date_format,
       );
 
       const getSortSchemaAndField = (
