@@ -195,8 +195,9 @@ export class FindActorsImplementations {
       let group_by_entities: Array<string> = [];
       if (group_by?.fields?.length) {
         const { fields = [], has_count = false } = group_by;
+        const temp_pluck_object = {};
         group_by_selections = fields.reduce(
-          (acc, field) => {
+          (acc, field, index) => {
             let group_by_entity = table;
             const _field = field.split('.');
             let group_by_field = _field[0];
@@ -241,6 +242,17 @@ export class FindActorsImplementations {
                 success: false,
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
               });
+
+            if (!temp_pluck_object?.[group_by_entity]) {
+              temp_pluck_object[group_by_entity] = ['id'];
+            }
+
+            temp_pluck_object[group_by_entity].push(group_by_field);
+
+            if (fields.length - 1 === index) {
+              pluck_object[group_by_entity] =
+                temp_pluck_object[group_by_entity];
+            }
             // const order_by_schema = grouped_entity_schema[order_by];
             // group_by_agg_selections = !group_by?.fields?.includes(order_by)
             //   ? {
