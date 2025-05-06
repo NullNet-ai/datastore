@@ -4,7 +4,6 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get/get.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
-import { EDateFormats } from '../../../../utils/utility.types';
 import { eq, and, isNotNull } from 'drizzle-orm';
 import { VerifyActorsImplementations } from '../verify';
 
@@ -50,14 +49,22 @@ export class GetActorsImplementations {
     const { controller_args, responsible_account } = context;
     const { organization_id = '' } = responsible_account;
     const [_res, _req] = controller_args;
-    const { params, query } = _req;
+    const { params, query, headers } = _req;
+    const { time_zone } = headers;
     const { table = 'files', id, type } = params;
-    const { pluck = 'id', date_format = 'mm/dd/YYYY' } = query;
+    const {
+      pluck = 'id',
+      date_format = 'mm/dd/YYYY',
+      encrypted_fields = [],
+    } = query;
     const { table_schema } = Utility.checkTable(table);
     const _plucked_fields = Utility.parsePluckedFields(
       table,
       pluck.split(','),
-      EDateFormats[date_format] || '%m/%d/%Y',
+      date_format,
+      false,
+      encrypted_fields,
+      time_zone,
     );
 
     if (table === 'counters') {
