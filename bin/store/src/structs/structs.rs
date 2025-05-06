@@ -17,11 +17,11 @@ pub struct ApiResponse {
 
 #[derive(Deserialize, Serialize, Clone)]
 #[serde(transparent)]
-pub struct CreateRequestBody {
+pub struct RequestBody {
     pub record: Value,
 }
 
-impl CreateRequestBody {
+impl RequestBody {
     // Process record with common fields and return a Value directly
     pub fn process_record(&mut self, operation: &str) {
         // // Add common fields to the record
@@ -65,6 +65,8 @@ impl CreateRequestBody {
             "update" => {
                 self.record["updated_date"] = json!(date_str);
                 self.record["updated_time"] = json!(time_str);
+                self.record["version"] = json!(0); // ! don't change this, it gets discarded in the end, it's just a placeholder
+
             }
             "delete" => {
                 self.record["status"] = json!("Deleted");

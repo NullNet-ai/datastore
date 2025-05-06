@@ -27,7 +27,7 @@ pub struct Packet {
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
     pub tags: Option<Vec<String>>,
-    pub id: Uuid,
+    pub id: String,
     pub timestamp: chrono::NaiveDateTime,
     pub hypertable_timestamp: Option<String>,
     pub interface_name: Option<String>,

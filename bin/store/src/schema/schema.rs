@@ -40,7 +40,7 @@ table! {
         requested_by -> Nullable<Text>,
         tags -> Nullable<Array<Text>>,
 
-        id -> Uuid,
+        id -> Text,
         timestamp -> Timestamp,
         hypertable_timestamp -> Nullable<Text>,
         interface_name -> Nullable<Text>,

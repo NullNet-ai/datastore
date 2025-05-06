@@ -3,8 +3,9 @@ use crate::models::connections_model::ConnectionModel;
 use crate::schema::schema;
 use crate::schema::schema::packets::dsl::packets;
 use crate::schema::schema::connections::dsl::connections;
-use crate::structs::structs::CreateRequestBody;
+use crate::structs::structs::RequestBody;
 use actix_web::web;
+use diesel::prelude::*;
 use diesel::associations::HasTable;
 use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
@@ -68,11 +69,45 @@ impl Table {
         }
     }
 
+    pub async fn get_hypertable_timestamp(
+        &self,
+        conn: &mut AsyncPgConnection,
+        id: &str,
+    ) -> Result<Option<String>, DieselError> {
+        match self {
+            Table::Packets => {
+                
+                
+                let result = packets
+                    .filter(schema::packets::id.eq(id))
+                    .select(schema::packets::hypertable_timestamp)
+                    .first::<Option<String>>(conn)
+                    .await;
+                
+                result
+            },
+            Table::Connections => {
+                
+                let result = connections
+                    .filter(schema::connections::id.eq(id))
+                    .select(schema::connections::hypertable_timestamp)
+                    .first::<Option<String>>(conn)
+                    .await;
+                
+                result
+            },
+            _ => {
+                log::error!("Getting hypertable_timestamp for table {:?} is not implemented", self);
+                Err(DieselError::RollbackTransaction)
+            }
+        }
+    }
+
     pub async fn insert_record(
         &self,
         conn: &mut AsyncPgConnection,
         record: Value,
-        request: web::Json<CreateRequestBody>,
+        request: web::Json<RequestBody>,
     ) -> Result<String, DieselError> {
         let mut request = request.into_inner();
         request.process_record("create");
@@ -81,6 +116,7 @@ impl Table {
             Table::Packets => {
                 let mut value: Packet = serde_json::from_value(record)
                     .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
+                
                 value.hypertable_timestamp = Some(value.timestamp.to_string());
                 diesel::insert_into(packets::table())
                 .values(value.clone())
@@ -97,34 +133,68 @@ impl Table {
         conn: &mut AsyncPgConnection,
         record: Value,
     ) -> Result<(), DieselError> {
+        let has_version = record.get("version").is_some();
         match self {
             Table::Packets => {
-                let mut value: Packet = serde_json::from_value(record)
-                    .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
-
-
-                diesel::insert_into(packets::table())
+                let value: Packet = serde_json::from_value(record).map_err(|e| {
+                    log::error!("Deserialization error: {:?}", e);
+                    DieselError::DeserializationError(Box::new(e))
+                })?;
+                if(has_version){
+                    diesel::insert_into(packets::table())
                     .values(value.clone())
-                    .on_conflict((schema::packets::id, schema::packets::timestamp))
+                    .on_conflict((schema::packets::id))
+                    .do_update()
+                    .set(
+                        schema::packets::version.eq(schema::packets::version + 1),
+                    )
+                    .execute(conn)
+                    .await
+                    .map(|_| ())
+
+                }
+                else{
+                    diesel::insert_into(packets::table())
+                    .values(value.clone())
+                    .on_conflict((schema::packets::id))
                     .do_update()
                     .set(value)
                     .execute(conn)
                     .await
                     .map(|_| ())
+
+                }
+
+                
             },
             Table::Connections => {
-                let value: ConnectionModel = serde_json::from_value(record)
-                    .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 
+                let value: ConnectionModel = serde_json::from_value(record).map_err(|e| {
+                    log::error!("Deserialization error: {:?}", e);
+                    DieselError::DeserializationError(Box::new(e))
+                })?;
+
+                if has_version {
+                    diesel::insert_into(connections::table())
+                    .values(value.clone())
+                    .on_conflict((schema::connections::id))
+                    .do_update()
+                    .set(
+                        schema::connections::version.eq(schema::connections::version + 1)
+                    )
+                    .execute(conn)
+                    .await
+                    .map(|_| ())
+                }else{
 
                 diesel::insert_into(connections::table())
                     .values(value.clone())
-                    .on_conflict((schema::connections::id, schema::connections::timestamp))
+                    .on_conflict((schema::connections::id))
                     .do_update()
                     .set(value)
                     .execute(conn)
                     .await
-                    .map(|_| ())
+                    .map(|_| ())}
             }
             _ => {
                 log::error!("Upserting record with id for table {:?} is not implemented", self);
@@ -138,6 +208,7 @@ impl Table {
         conn: &mut AsyncPgConnection,
         record: Value,
     ) -> Result<(), DieselError> {
+        let has_version = record.get("version").is_some();
         match self {
             Table::Packets => {
                 let value: Packet = serde_json::from_value(record).map_err(|e| {
@@ -146,8 +217,17 @@ impl Table {
                     DieselError::DeserializationError(Box::new(e))
                 })?;
 
-
-                diesel::insert_into(packets::table())
+                if(has_version){
+                    diesel::insert_into(packets::table())
+                    .values(value.clone())
+                    .on_conflict((schema::packets::id, schema::packets::timestamp))
+                    .do_update()
+                    .set(schema::packets::version.eq(schema::packets::version + 1))
+                    .execute(conn)
+                    .await
+                    .map(|_| ())
+                }else{
+                    diesel::insert_into(packets::table())
                     .values(value.clone())
                     .on_conflict((schema::packets::id, schema::packets::timestamp))
                     .do_update()
@@ -155,13 +235,29 @@ impl Table {
                     .execute(conn)
                     .await
                     .map(|_| ())
+                }
+
+                
             },
             Table::Connections => {
-                let value: ConnectionModel = serde_json::from_value(record)
-                    .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
+                let value: ConnectionModel = serde_json::from_value(record).map_err(|e| {
+                    println!("Deserialization error: {:?}", e);
+                    println!("Failed to deserialize record:");
+                    DieselError::DeserializationError(Box::new(e))
+                })?;
 
-
-                diesel::insert_into(connections::table())
+                if(has_version){
+                    diesel::insert_into(connections::table())
+                    .values(value.clone())
+                    .on_conflict((schema::connections::id, schema::connections::timestamp))
+                    .do_update()
+                    .set(schema::connections::version.eq(schema::connections::version + 1))
+                    .execute(conn)
+                    .await
+                    .map(|_| ())
+                }
+                else{
+                    diesel::insert_into(connections::table())
                     .values(value.clone())
                     .on_conflict((schema::connections::id, schema::connections::timestamp))
                     .do_update()
@@ -169,6 +265,9 @@ impl Table {
                     .execute(conn)
                     .await
                     .map(|_| ())
+                }
+
+                
             }
             _ => {
                 log::error!("Upserting record with id for table {:?} is not implemented", self);

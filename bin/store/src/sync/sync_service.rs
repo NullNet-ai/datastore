@@ -58,6 +58,49 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     Ok(())
 }
 
+pub async fn update(table: &String, row: Value, id: &String) -> Result<(), DieselError> {
+    let operation = "Insert".to_string();
+
+    //insert id into the row
+
+    let mut conn = db::get_async_connection().await;
+    let mut modified_row = row.clone();
+    if let Some(obj) = modified_row.as_object_mut() {
+        obj.insert("id".to_string(), Value::String(id.clone()));
+    }
+
+    let messages: Vec<CrdtMessage> = conn
+        .transaction::<_, DieselError, _>(|mut tx| {
+            Box::pin(async move {
+                let messages = create_messages(&mut tx, &modified_row, table, operation)
+                    .await
+                    .map_err(|e| {
+                        log::error!("Failed to create messages: {}", e);
+                        DieselError::RollbackTransaction
+                    })?;
+
+                if messages.is_empty() {
+                    log::warn!("create_messages returned empty vector");
+                }
+
+                if let Err(e) = send_messages(&mut tx, messages.clone()).await {
+                    log::error!("Failed to send messages: {}", e);
+                    return Err(DieselError::RollbackTransaction);
+                }
+
+                Ok(messages)
+            })
+        })
+        .await?;
+
+    if messages.is_empty() {
+        log::warn!("No messages created for insert operation");
+        return Ok(());
+    }
+
+    Ok(())
+}
+
 pub async fn send_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessage>,

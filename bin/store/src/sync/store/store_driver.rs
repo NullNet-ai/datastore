@@ -1,8 +1,6 @@
 use crate::models::crdt_message_model::CrdtMessage;
 use crate::structs::structs::ColumnValue;
 use crate::table_enum::Table;
-use actix_web::rt::time;
-use diesel::Column;
 use diesel_async::AsyncPgConnection;
 use pluralizer::pluralize;
 use serde_json::json;
@@ -70,6 +68,8 @@ pub async fn apply(
             format!("Unknown table: {}", dataset),
         ))
     })?;
+
+
 
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp

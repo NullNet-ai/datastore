@@ -19,11 +19,10 @@ use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
-use controllers::store_controller::create_record;
+use controllers::store_controller::{create_record, update_record};
 use env_logger::Env;
 use std::sync::Arc;
 pub mod generated;
-use std::process;
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
@@ -46,6 +45,7 @@ fn run_build_script() -> std::io::Result<()> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
     let generate_proto = env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string());
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
@@ -82,7 +82,7 @@ async fn main() -> std::io::Result<()> {
     println!("Database connected successfully.");
     TransactionService::initialize().await;
 
-    let grpc_addr = format!("0.0.0.0:{}", grpc_port);
+    let grpc_addr = format!("127.0.0.1:{}", grpc_port);
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
             Ok(_) => println!("gRPC server started successfully"),
@@ -117,7 +117,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api/store")
                     .wrap(Authentication)
-                    .route("/{table}", web::post().to(create_record)),
+                    .route("/{table}", web::post().to(create_record))
+                    .route("/{table}/{id}", web::patch().to(update_record)),
             )
     })
     .bind(server_url)?

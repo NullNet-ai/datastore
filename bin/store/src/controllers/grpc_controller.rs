@@ -24,16 +24,11 @@ use crate::generated::store::{
     UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest,
     DeleteConnectionsResponse, CreateConnectionsRequest, CreateConnectionsResponse,
 };
-use crate::structs::structs::CreateRequestBody;
+use crate::structs::structs::RequestBody;
 use crate::sync::sync_service::insert;
-use crate::table_enum::Table;
 use actix_web::{web, HttpResponse, Responder};
-use chrono::Utc;
-use serde::Serialize;
-use serde_json::json;
 use std::net::SocketAddr;
 use tonic::{transport::Server, Request, Response, Status};
-use uuid::Uuid as uuid_crate;
 
 // Define your gRPC service struct
 pub struct GrpcController {}
@@ -124,7 +119,7 @@ impl StoreService for GrpcController {
             }
         };
 
-        let mut request_body = CreateRequestBody {
+        let mut request_body = RequestBody {
             record: processed_record.clone(),
         };
         request_body.process_record("create");
@@ -214,7 +209,7 @@ impl StoreService for GrpcController {
             }
         };
 
-        let mut request_body = CreateRequestBody {
+        let mut request_body = RequestBody {
             record: processed_record.clone(),
         };
         request_body.process_record("create");

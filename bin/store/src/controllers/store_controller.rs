@@ -1,12 +1,12 @@
-use crate::db;
-use crate::structs::structs::{ApiResponse, CreateRequestBody, QueryParams};
+use crate::{db};
+use crate::structs::structs::{ApiResponse, RequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
-use crate::schema::hypertables;
 use serde::Serialize;
+use crate::schema::verify::field_exists_in_table;
 
 #[derive(Serialize)]
 struct ApiError {
@@ -57,10 +57,136 @@ impl From<serde_json::Error> for ApiError {
     }
 }
 
+pub async fn update_record(
+    pool: web::Data<db::AsyncDbPool>,
+    path_params: web::Path<(String, String)>,
+    request: web::Json<RequestBody>,
+    query: web::Query<QueryParams>,
+) -> impl Responder {
+    let pool = pool.clone();
+    let orig_request = request;
+    let mut request = orig_request.clone();
+    request.process_record("update");
+    let (table_name, record_id) = path_params.into_inner();
+    let log_table = table_name.clone();
+    let inner_log_table = log_table.clone();
+    let mut processed_record = request.record.clone();
+
+    if field_exists_in_table(&table_name, "hypertable_timestamp"){
+
+        let mut conn = match pool.get().await {
+            Ok(conn) => conn,
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Failed to get database connection: {}", e)
+                }));
+            }
+        };
+
+        let table = match Table::from_str(table_name.as_str()) {
+            Some(t) => t,
+            None => {
+                return HttpResponse::BadRequest().json(ApiError {
+                    status: http::StatusCode::BAD_REQUEST.as_u16(),
+                    message: format!("Unknown table: {}", table_name),
+                });
+            }
+        };
+
+        let timestamp_result = match table.get_hypertable_timestamp(&mut conn, &record_id).await {
+            Ok(timestamp) => timestamp,
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(ApiError::from(e));
+            }
+        };
+
+        if let Some(obj) = processed_record.as_object_mut() {
+            if let Some(timestamp) = timestamp_result {
+                log::debug!("Found hypertable timestamp: {}", timestamp);
+                obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
+            } else {
+                // If no timestamp found, use the timestamp from the record if available
+                log::warn!("No hypertable_timestamp found: {}", record_id);
+                //return error from here
+                return HttpResponse::InternalServerError().json(ApiResponse {
+                    message: format!("No hypertable_timestamp found: {}", record_id),
+                    success:false,
+                    count: 0,
+                    data: vec![],
+
+                });
+               
+            }
+        }
+    }
+
+
+    let pluck_fields: Vec<String> = query
+        .pluck
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .collect();
+    
+    let mut conn = match pool.get().await {
+        Ok(conn) => conn,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to get database connection: {}", e)
+            }));
+        }
+    };
+    
+    let table = match Table::from_str(table_name.as_str()) {
+        Some(t) => t,
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                message: format!("Failed to process record: Unknown table: {}", table_name),
+                success:false,
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
+        Ok(val) => val,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                message: format!("Failed to process record: {}", e),
+                success:false,
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+
+    // Use the update function from sync_service
+    if let Err(e) = crate::sync::sync_service::update(&inner_log_table, record_value.clone(), &record_id).await {
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            message: format!("Sync error: {}", e),
+            success:false,
+            count: 0,
+            data: vec![],
+        });
+    }
+
+    let plucked_record = table.pluck_fields(&record_value, pluck_fields);
+
+    let response = ApiResponse {
+        success: true,
+        message: format!("Record updated in '{}'", &inner_log_table),
+        count: 1,
+        data: vec![plucked_record],
+    };
+    
+    HttpResponse::Ok().json(response)
+}
+
 pub async fn create_record(
     pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
-    request: web::Json<CreateRequestBody>,
+    request: web::Json<RequestBody>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
     let pool = pool.clone();
@@ -71,8 +197,9 @@ pub async fn create_record(
     let log_table = table_name.clone();
     let inner_log_table = log_table.clone();
     let mut processed_record = request.record.clone();
-    if let Some(obj) = processed_record.as_object_mut() {
-        if hypertables::is_hypertable(&table_name) {
+
+    if field_exists_in_table(&table_name, "hypertable_timestamp"){
+        if let Some(obj) = processed_record.as_object_mut() {
             if let Some(timestamp) = obj.get("timestamp") {
                 obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
             }
