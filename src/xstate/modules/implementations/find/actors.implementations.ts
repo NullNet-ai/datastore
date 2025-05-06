@@ -129,18 +129,18 @@ export class FindActorsImplementations {
           field = by_field.split('.')[1];
         }
         const concat_fields = parsed_concatenated_fields.fields;
-        const non_aliased_entity: string =
+        const sorted_entity: string =
           aliased_joined_entities.find(({ alias }) => alias === entity)
-            ?.entity || entity;
+            ?.entity || pluralize(entity);
         const field_exists =
-          local_schema[non_aliased_entity]?.[field] ||
-          concat_fields[entity]?.find((exp) => exp.includes(field));
+          local_schema[sorted_entity]?.[field] ||
+          concat_fields[sorted_entity]?.find((exp) => exp.includes(field));
         if (!field_exists) {
           let message;
-          if (non_aliased_entity === entity) {
+          if (sorted_entity === entity) {
             message = `Field ${field} does not exist in ${entity}`;
           } else {
-            message = `Field ${field} does not exist in ${entity} which is alias of ${non_aliased_entity}`;
+            message = `Field ${field} does not exist in ${entity} which is alias of ${sorted_entity}`;
           }
           throw new BadRequestException({
             success: false,
@@ -150,7 +150,7 @@ export class FindActorsImplementations {
         const concat = concatenate_fields.find(
           (concat_entity) =>
             concat_entity.field_name === field &&
-            concat_entity.entity === entity,
+            concat_entity.entity === sorted_entity,
         );
 
         // put fields from order into pluck_object
@@ -158,9 +158,9 @@ export class FindActorsImplementations {
           (!Object.keys(group_by).length || !group_by?.fields?.length) &&
           joins.length
         ) {
-          pluck_object[entity] = [
+          pluck_object[sorted_entity] = [
             ...new Set([
-              ...pluck_object[entity],
+              ...pluck_object?.[sorted_entity],
               ...(concat ? concat.fields : [field]),
             ]),
           ];
@@ -243,15 +243,20 @@ export class FindActorsImplementations {
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
               });
 
-            if (!temp_pluck_object?.[group_by_entity]) {
+            if (!temp_pluck_object?.[group_by_entity])
               temp_pluck_object[group_by_entity] = ['id'];
-            }
 
             temp_pluck_object[group_by_entity].push(group_by_field);
 
             if (fields.length - 1 === index) {
               pluck_object[group_by_entity] =
                 temp_pluck_object[group_by_entity];
+            }
+            if (parsed_concatenated_fields.fields[group_by_entity]?.length) {
+              parsed_concatenated_fields.expressions[group_by_entity] = [];
+              parsed_concatenated_fields.fields[group_by_entity] = [];
+              parsed_concatenated_fields.additional_fields[group_by_entity] =
+                [];
             }
             // const order_by_schema = grouped_entity_schema[order_by];
             // group_by_agg_selections = !group_by?.fields?.includes(order_by)
