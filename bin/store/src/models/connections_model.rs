@@ -30,7 +30,7 @@ pub struct ConnectionModel {
     pub interface_name: Option<String>,
     pub hypertable_timestamp: Option<String>,
     pub total_packet: Option<i32>,
-    pub total_bytes: Option<i32>,
+    pub total_byte: Option<i32>,
     pub device_id: Option<String>,
     pub protocol: Option<String>,
     pub source_ip: Option<IpNetwork>,

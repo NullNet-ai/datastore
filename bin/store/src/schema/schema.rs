@@ -88,7 +88,7 @@ table! {
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
         total_packet -> Nullable<Int4>,
-        total_bytes -> Nullable<Int4>,
+        total_byte -> Nullable<Int4>,
         device_id -> Nullable<Text>,
         protocol -> Nullable<Text>,
         source_ip -> Nullable<Inet>,

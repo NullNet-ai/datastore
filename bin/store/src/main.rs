@@ -53,8 +53,8 @@ async fn main() -> std::io::Result<()> {
     let merkle_manager = MerkleManager::instance();
     // if (generate_proto == "true") {
         // println!("Generating proto files");
-        // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
-        // run_build_script()?;
+        proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
+        run_build_script()?;
         // Run the generator
         // if let Err(e) = grpc_controller_generator::run_generator() {
         //     eprintln!("Error: {}", e);
