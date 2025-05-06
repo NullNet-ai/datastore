@@ -35,6 +35,7 @@ export class CountActorsImplementations {
       const [_res, _req] = controller_args;
       const { organization_id = '' } = responsible_account;
       const { table, type } = _req.params;
+      const { time_zone } = _req.headers;
       const { table_schema } = Utility.checkTable(table);
       const {
         advance_filters = [],
@@ -71,6 +72,7 @@ export class CountActorsImplementations {
           .select({ count: countDistinct(local_schema[table].id) })
           .from(local_schema[table]);
 
+      const encrypted_fields = [];
       _db = Utility.FilterAnalyzer(
         _db,
         table_schema,
@@ -82,6 +84,9 @@ export class CountActorsImplementations {
         concatenate_fields,
         group_advance_filters,
         type,
+        encrypted_fields,
+        time_zone,
+        table,
       );
       const [{ count }] = await _db;
 
