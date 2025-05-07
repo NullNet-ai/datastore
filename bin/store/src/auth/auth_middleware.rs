@@ -1,6 +1,5 @@
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    error::ErrorUnauthorized,
     http::header,
     Error,
 };
@@ -10,7 +9,7 @@ use serde_json::Value;
 use std::env;
 use std::future::Future;
 use std::pin::Pin;
-use std::task::{Context, Poll};
+use tonic::{Request, Status};
 
 // Authentication middleware struct
 pub struct Authentication;
@@ -52,21 +51,12 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Extract the token from the Authorization header
-        let auth_header = req.headers().get(header::AUTHORIZATION);
-
-        let auth_result = match auth_header {
-            Some(header_value) => {
-                let auth_str = header_value.to_str().unwrap_or("");
-                if auth_str.starts_with("Bearer ") {
-                    let token = &auth_str[7..]; // Skip "Bearer " prefix
-                                                // Validate the token here
-                    validate_token(token)
-                } else {
-                    false
-                }
-            }
-            None => false,
-        };
+        let auth_header = req.headers().get(header::AUTHORIZATION)
+            .and_then(|h| h.to_str().ok());
+        
+        let token = extract_token(auth_header);
+        
+        let auth_result = token.map(|t| validate_token(&t)).unwrap_or(false);
 
         if auth_result {
             // If authentication is successful, call the next service
@@ -120,6 +110,47 @@ fn validate_token(token: &str) -> bool {
             // Token validation failed
             println!("Token validation error: {:?}", err);
             false
+        }
+    }
+}
+
+// Extract token from various sources
+pub fn extract_token(auth_header: Option<&str>) -> Option<String> {
+    match auth_header {
+        Some(auth_str) if auth_str.starts_with("Bearer ") => {
+            Some(auth_str[7..].to_string()) // Skip "Bearer " prefix
+        }
+        _ => None,
+    }
+}
+
+
+use tonic::service::Interceptor;
+
+#[derive(Clone)]
+pub struct GrpcAuthInterceptor;
+
+impl Interceptor for GrpcAuthInterceptor {
+    fn call(&mut self, request: Request<()>) -> Result<Request<()>, Status> {
+        // Try to get token from metadata
+        let metadata = request.metadata();
+        
+        // First check for "authorization" metadata
+        let auth_header = metadata.get("authorization")
+            .and_then(|v| v.to_str().ok());
+            
+        let token = extract_token(auth_header);
+        
+        // If no token in authorization header, check for "token" metadata
+        let token = token.or_else(|| {
+            metadata.get("token")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string())
+        });
+        
+        match token {
+            Some(t) if validate_token(&t) => Ok(request),
+            _ => Err(Status::unauthenticated("Invalid or missing authentication token"))
         }
     }
 }

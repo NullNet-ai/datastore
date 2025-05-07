@@ -28,10 +28,10 @@ use crate::structs::structs::RequestBody;
 use crate::sync::sync_service::insert;
 use actix_web::{web, HttpResponse, Responder};
 use std::net::SocketAddr;
-use std::os::unix::process;
 use tonic::{transport::Server, Request, Response, Status};
 use crate::schema::verify::field_exists_in_table;
 use crate::table_enum::Table;
+use crate::auth::auth_middleware::GrpcAuthInterceptor;
 
 
 
@@ -52,8 +52,10 @@ impl GrpcController {
 
         Server::builder()
             .add_service(
-                StoreServiceServer::new(grpc_controller)
-                    .max_decoding_message_size(50 * 1024 * 1024),
+                StoreServiceServer::with_interceptor(
+                    grpc_controller,
+                    GrpcAuthInterceptor
+                )
             )
             .serve(addr)
             .await?;

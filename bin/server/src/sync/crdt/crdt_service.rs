@@ -55,6 +55,7 @@ pub fn add_messages(
         match result {
             Ok(changes) if changes > 0 => {
                 trie.add_leaf(&msg_timestamp.to_string());
+                trie.prune_to_level_4();
 
                 // Update the merkle tree in the database immediately after each successful insert
                 match trie.serialize() {

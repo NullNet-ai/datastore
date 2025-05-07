@@ -80,8 +80,6 @@ pub struct Items {
     pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "14")]
     pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(int32, tag = "15")]
-    pub id: i32,
     #[prost(string, tag = "16")]
     pub name: ::prost::alloc::string::String,
     #[prost(string, optional, tag = "17")]
