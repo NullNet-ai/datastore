@@ -59,7 +59,9 @@ export class UpdateActorsImplementations {
             entity: local_schema[table].entity,
             default_code: local_schema[table].default_code,
             prefix: local_schema[table].prefix,
-          });
+          })
+          .prepare('update_counters')
+          .execute();
 
         return Promise.resolve({
           payload: {

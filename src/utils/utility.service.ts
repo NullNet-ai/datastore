@@ -1497,10 +1497,10 @@ export class Utility {
         data,
         encrypted_fields,
       )}`;
-      const query = `INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};`;
+      const query = `PREPARE encrypted_insert_raw AS INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};`;
       this.logger.debug(`Encrypting data: ${query}`);
       return db
-        .execute(query)
+        .execute(sql.raw(query))
         .then(() => this.logger.debug('Encrypting data completed'));
     }
     const { table_schema } = query;
@@ -1512,6 +1512,8 @@ export class Utility {
         set: data,
       })
       .returning({ table_schema })
+      .prepare('encrypted_insert')
+      .execute()
       .then(([{ table_schema }]) => table_schema);
   }
 
@@ -1537,10 +1539,12 @@ export class Utility {
           return acc;
         }, [])
         .join(',')}`;
-      const query = `UPDATE ${table} SET ${set_val} WHERE ${where.join('')}`;
+      const query = `PREPARE encrypted_update_raw AS UPDATE ${table} SET ${set_val} WHERE ${where.join(
+        '',
+      )}`;
       this.logger.debug(`Encrypting data: ${query}`);
       return db
-        .execute(query)
+        .execute(sql.raw(query))
         .then(() => this.logger.debug('Encrypting data completed'));
     }
     const { table_schema } = query;
@@ -1552,6 +1556,8 @@ export class Utility {
       })
       .where(sql.raw(`${where.join(' ')}`))
       .returning(returning)
+      .prepare('encrypted_update')
+      .execute()
       .then(([{ table_schema }]) => table_schema);
   }
 

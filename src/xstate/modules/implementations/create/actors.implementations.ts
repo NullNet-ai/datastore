@@ -111,7 +111,9 @@ export class CreateActorsImplementations {
           exist = await this.db
             .select({ id: local_schema[table].id })
             .from(local_schema[table])
-            .where(eq(local_schema[table].id, body.id))[0];
+            .where(eq(local_schema[table].id, body.id))
+            .prepare('existing_record')
+            .execute()[0];
         }
         if (!exist) {
           const counter_schema = local_schema['counters'];
@@ -129,7 +131,9 @@ export class CreateActorsImplementations {
               default_code: counter_schema.default_code,
               counter: counter_schema.counter,
               digits_number: counter_schema.digits_number,
-            });
+            })
+            .prepare('insert_counter')
+            .execute();
 
           function constructCode([
             { prefix, default_code, counter, digits_number },

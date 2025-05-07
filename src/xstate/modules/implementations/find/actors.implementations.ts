@@ -258,18 +258,6 @@ export class FindActorsImplementations {
               parsed_concatenated_fields.additional_fields[group_by_entity] =
                 [];
             }
-            // const order_by_schema = grouped_entity_schema[order_by];
-            // group_by_agg_selections = !group_by?.fields?.includes(order_by)
-            //   ? {
-            //       [order_by_schema.name]: sql.raw(
-            //         `${
-            //           ['asc', 'ascending'].includes(order_direction)
-            //             ? 'MIN'
-            //             : 'MAX'
-            //         }("${table}"."${order_by_schema.name}")`,
-            //       ),
-            //     }
-            //   : {};
 
             group_by_entities.push(group_by_entity);
             return {
@@ -342,15 +330,6 @@ export class FindActorsImplementations {
           encrypted_fields,
           time_zone,
         });
-        // const is_grouping_joined_entity = group_by_entities.some((key) =>
-        //   Object.keys(join_selections ?? {}).includes(key),
-        // );
-
-        // if (is_grouping_joined_entity)
-        //   throw new NotImplementedException({
-        //     success: false,
-        //     message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
-        //   });
 
         let count_selection = {};
         if ((group_by_selections as Record<string, any>)?.count)
@@ -538,13 +517,7 @@ export class FindActorsImplementations {
       };
       const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
         Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
-      // if (group_by_agg_selections[order_by]) {
-      //   _db = _db.orderBy(
-      //     ['asc', 'ascending'].includes(order_direction)
-      //       ? asc(group_by_agg_selections[order_by])
-      //       : desc(group_by_agg_selections[order_by]),
-      //   );
-      // } else
+
       if (multiple_sort.length) {
         _db = _db.orderBy(
           ...multiple_sort
@@ -636,9 +609,10 @@ export class FindActorsImplementations {
       }
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
       this.logger.debug(`Params: ${_db.toSQL().params}`);
+      const db_results = await _db.prepare('find_results').execute();
       const result = joins.length
         ? this.transformer(
-            await _db,
+            db_results,
             table,
             pluck_object,
             pluck_group_object,
@@ -646,7 +620,7 @@ export class FindActorsImplementations {
             concatenate_fields,
             group_by,
           )
-        : await _db;
+        : db_results;
 
       if (!result || !result.length) {
         throw new NotFoundException({
