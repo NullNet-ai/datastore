@@ -10,3 +10,4 @@ export { table as notifications } from './notifications';
 export { table as invitations } from './invitations';
 export { table as grid_filters } from './grid_filters';
 export { table as communication_templates } from './communication_templates';
+export { table as locations } from './locations';
