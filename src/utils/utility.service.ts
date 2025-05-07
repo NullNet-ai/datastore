@@ -1482,9 +1482,22 @@ export class Utility {
   }) {
     if (encrypted_fields?.length) {
       this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
-      const query = `INSERT INTO ${table} (${Object.keys(
+      const set_val = `${Object.entries(data)
+        .reduce((acc: string[], [key, value]) => {
+          const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
+          if (encrypted_fields.includes(key)) {
+            acc.push(
+              `${key} = pgp_sym_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
+            );
+          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
+          return acc;
+        }, [])
+        .join(',')}`;
+      const _values = `${Object.keys(data)}) VALUES (${Utility.encryptData(
         data,
-      )}) VALUES (${Utility.encryptData(data, encrypted_fields)})`;
+        encrypted_fields,
+      )}`;
+      const query = `INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};`;
       this.logger.debug(`Encrypting data: ${query}`);
       return db
         .execute(query)
@@ -1494,6 +1507,10 @@ export class Utility {
     return db
       .insert(query.table_schema)
       .values(data)
+      .onConflictDoUpdate({
+        target: query.table_schema.id,
+        set: data,
+      })
       .returning({ table_schema })
       .then(([{ table_schema }]) => table_schema);
   }
@@ -1509,17 +1526,18 @@ export class Utility {
   }) {
     if (encrypted_fields?.length) {
       this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
-      const query = `UPDATE ${table} SET ${Object.entries(data)
+      const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
           const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
           if (encrypted_fields.includes(key)) {
             acc.push(
-              `${key} = pgp_sym_encrypt(${_value}, ${encrypted_fields})`,
+              `${key} = pgp_sym_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
             );
           } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
           return acc;
         }, [])
-        .join(',')} WHERE ${where.join('')}`;
+        .join(',')}`;
+      const query = `UPDATE ${table} SET ${set_val} WHERE ${where.join('')}`;
       this.logger.debug(`Encrypting data: ${query}`);
       return db
         .execute(query)
