@@ -111,29 +111,10 @@ pub enum ColumnValue {
     Array(Vec<String>),
     Integer(i32),
     Timestamp(chrono::DateTime<chrono::FixedOffset>),
+    None,
 }
 
-impl ColumnValue {
-    pub fn to_string_value(&self) -> String {
-        match self {
-            ColumnValue::String(s) => s.clone(),
-            ColumnValue::Array(arr) => {
-                format!("{{{}}}", arr.join(","))
-            }
-            ColumnValue::Timestamp(dt) => dt.to_rfc3339(),
-            ColumnValue::Integer(i) => i.to_string(),
-        }
-    }
 
-    pub fn to_json_value(&self) -> serde_json::Value {
-        match self {
-            ColumnValue::String(s) => json!(s),
-            ColumnValue::Array(arr) => json!(arr),
-            ColumnValue::Timestamp(dt) => json!(dt.naive_utc()),
-            ColumnValue::Integer(i) => json!(i),
-        }
-    }
-}
 
 #[derive(Debug, AsExpression)]
 #[diesel(sql_type = Text)]

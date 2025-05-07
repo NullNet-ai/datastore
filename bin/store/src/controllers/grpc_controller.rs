@@ -28,7 +28,12 @@ use crate::structs::structs::RequestBody;
 use crate::sync::sync_service::insert;
 use actix_web::{web, HttpResponse, Responder};
 use std::net::SocketAddr;
+use std::os::unix::process;
 use tonic::{transport::Server, Request, Response, Status};
+use crate::schema::verify::field_exists_in_table;
+use crate::table_enum::Table;
+
+
 
 // Define your gRPC service struct
 pub struct GrpcController {}
@@ -109,7 +114,6 @@ impl StoreService for GrpcController {
             Some(r) => r,
             None => return Err(Status::invalid_argument("Record is required")),
         };
-        record.hypertable_timestamp = Some(record.timestamp.to_string()); // Set hypertable_timestamp to timestamp field
 
         // Convert protobuf message to serde_json::Value
         let mut processed_record = match serde_json::to_value(&record) {
@@ -118,6 +122,14 @@ impl StoreService for GrpcController {
                 return Err(Status::internal(format!("Failed to process record: {}", e)));
             }
         };
+
+        if field_exists_in_table(&table_name, "hypertable_timestamp"){
+            if let Some(obj) = processed_record.as_object_mut() {
+                if let Some(timestamp) = obj.get("timestamp") {
+                    obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
+                }
+            }
+        }
 
         let mut request_body = RequestBody {
             record: processed_record.clone(),
@@ -168,7 +180,95 @@ impl StoreService for GrpcController {
         request: Request<UpdateConnectionsRequest>,
     ) -> Result<Response<UpdateConnectionsResponse>, Status> {
         // Implementation for UpdateItems method
-        todo!()
+        let request = request.into_inner();
+        let query = match request.query {
+            Some(q) => q,
+            None => return Err(Status::invalid_argument("Query is required")),
+        };
+
+        let params = match request.params {
+            Some(p) => p,
+            None => return Err(Status::invalid_argument("Params are required")),
+        };
+        let table_name = params.table;
+        let record_id = params.id;
+        let record = match request.connection {
+            Some(r) => r,
+            None => return Err(Status::invalid_argument("Record is required")),
+        };
+
+        let mut processed_record = match serde_json::to_value(&record) {
+            Ok(val) => val,
+            Err(e) => {
+                return Err(Status::internal(format!("Failed to process record: {}", e)));
+            }
+        };
+        let mut request_body = RequestBody {
+            record: processed_record.clone(),
+        };
+        request_body.process_record("update");
+        processed_record = request_body.record;
+        let table = match Table::from_str(table_name.as_str()) {
+            Some(t) => t,
+            None => {
+                return Err(Status::invalid_argument(format!(
+                    "Table '{}' does not exist",
+                    table_name
+                )))
+            }
+        };
+
+        if field_exists_in_table(&table_name, "hypertable_timestamp"){
+
+            let mut conn=db::get_async_connection().await;
+    
+            
+    
+            let timestamp_result = match table.get_hypertable_timestamp(&mut conn, &record_id).await {
+                Ok(timestamp) => timestamp,
+                Err(e) => {
+                    return Err(Status::internal(format!("Failed to get hypertable_timestamp: {}", e)));
+                }
+            };
+    
+            if let Some(obj) = processed_record.as_object_mut() {
+                if let Some(timestamp) = timestamp_result {
+                    log::debug!("Found hypertable timestamp: {}", timestamp);
+                    obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
+                } else {
+                    // If no timestamp found, use the timestamp from the record if available
+                    log::warn!("No hypertable_timestamp found: {}", record_id);
+                    //return error from here
+                    return Err(Status::internal(format!("Failed to insert hypertable timestamp in record")));
+                   
+                }
+            }
+        }
+
+        let pluck_fields: Vec<String> = query
+        .pluck
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .collect();
+
+
+        if let Err(e) = crate::sync::sync_service::update(&table_name, processed_record.clone(), &record_id).await {
+            return Err(Status::internal(format!("Failed to update record: {}", e)));
+        }
+
+    let plucked_record = table.pluck_fields(&processed_record, pluck_fields);
+    let connections: Connections = serde_json::from_value(plucked_record)
+            .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
+
+        let response = UpdateConnectionsResponse {
+            data: Some(connections),
+            message: format!("Record updated in '{}'", &table_name.clone()),
+            count: 1,
+            success: true,
+        };
+
+        Ok(Response::new(response))
+
     }
 
     async fn delete_connections(
@@ -195,19 +295,25 @@ impl StoreService for GrpcController {
             None => return Err(Status::invalid_argument("Params are required")),
         };
         let table_name = params.table;
-        let mut record = match request.packets {
+        let record = match request.packets {
             Some(r) => r,
             None => return Err(Status::invalid_argument("Record is required")),
         };
-        record.hypertable_timestamp = Some(record.timestamp.to_string()); // Set hypertable_timestamp to timestamp field
 
-        // Convert protobuf message to serde_json::Value
         let mut processed_record = match serde_json::to_value(&record) {
             Ok(val) => val,
             Err(e) => {
                 return Err(Status::internal(format!("Failed to process record: {}", e)));
             }
         };
+
+        if field_exists_in_table(&table_name, "hypertable_timestamp"){
+            if let Some(obj) = processed_record.as_object_mut() {
+                if let Some(timestamp) = obj.get("timestamp") {
+                    obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
+                }
+            }
+        }
 
         let mut request_body = RequestBody {
             record: processed_record.clone(),
@@ -221,6 +327,8 @@ impl StoreService for GrpcController {
                 return Err(Status::internal(format!("Failed to process record: {}", e)));
             }
         };
+
+      
 
         if let Err(e) = insert(&table_name.clone(), record_value.clone()).await {
             return Err(Status::internal(format!("Failed to insert record: {}", e)));
@@ -257,8 +365,96 @@ impl StoreService for GrpcController {
         &self,
         request: Request<UpdatePacketsRequest>,
     ) -> Result<Response<UpdatePacketsResponse>, Status> {
-        // Implementation for UpdatePackets method
-        todo!()
+        let request = request.into_inner();
+        let query = match request.query {
+            Some(q) => q,
+            None => return Err(Status::invalid_argument("Query is required")),
+        };
+
+        let params = match request.params {
+            Some(p) => p,
+            None => return Err(Status::invalid_argument("Params are required")),
+        };
+        let table_name = params.table;
+        let record_id = params.id;
+        let record = match request.packet {
+            Some(r) => r,
+            None => return Err(Status::invalid_argument("Record is required")),
+        };
+
+        let mut processed_record = match serde_json::to_value(&record) {
+            Ok(val) => val,
+            Err(e) => {
+                return Err(Status::internal(format!("Failed to process record: {}", e)));
+            }
+        };
+        let table = match Table::from_str(table_name.as_str()) {
+            Some(t) => t,
+            None => {
+                return Err(Status::invalid_argument(format!(
+                    "Table '{}' does not exist",
+                    table_name
+                )))
+            }
+        };
+
+        let mut request_body = RequestBody {
+            record: processed_record.clone(),
+        };
+        request_body.process_record("update");
+        processed_record = request_body.record;
+
+        if field_exists_in_table(&table_name, "hypertable_timestamp"){
+
+            let mut conn=db::get_async_connection().await;
+    
+            
+    
+            let timestamp_result = match table.get_hypertable_timestamp(&mut conn, &record_id).await {
+                Ok(timestamp) => timestamp,
+                Err(e) => {
+                    return Err(Status::internal(format!("Failed to get hypertable_timestamp: {}", e)));
+                }
+            };
+    
+            if let Some(obj) = processed_record.as_object_mut() {
+                if let Some(timestamp) = timestamp_result {
+                    log::debug!("Found hypertable timestamp: {}", timestamp);
+                    obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
+                } else {
+                    // If no timestamp found, use the timestamp from the record if available
+                    log::warn!("No hypertable_timestamp found: {}", record_id);
+                    //return error from here
+                    return Err(Status::internal(format!("Failed to insert hypertable timestamp in record")));
+                   
+                }
+            }
+        }
+
+        let pluck_fields: Vec<String> = query
+        .pluck
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .collect();
+
+
+
+        if let Err(e) = crate::sync::sync_service::update(&table_name, processed_record.clone(), &record_id).await {
+            return Err(Status::internal(format!("Failed to update record: {}", e)));
+        }
+
+
+    let packets: Packets = serde_json::from_value(processed_record)
+            .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
+
+        let response = UpdatePacketsResponse {
+            data: Some(packets),
+            message: format!("Record updated in '{}'", &table_name.clone()),
+            count: 1,
+            success: true,
+        };
+
+        Ok(Response::new(response))
     }
 
     async fn delete_packets(

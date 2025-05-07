@@ -216,6 +216,18 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  string durability = 2; // Durability level (e.g., \"soft\")\n");
     proto.push_str("}\n\n");
 
+    // Common structures for Update requests
+    proto.push_str("// Common parameter structure for Update requests\n");
+    proto.push_str("message UpdateParams {\n");
+    proto.push_str("  string id = 1; // Record ID\n");
+    proto.push_str("  string table = 2; // Table name\n");
+    proto.push_str("}\n\n");
+
+    proto.push_str("// Common query structure for Update requests\n");
+    proto.push_str("message UpdateQuery {\n");
+    proto.push_str("  string pluck = 1; // Field to pluck (e.g., \"id,code\")\n");
+    proto.push_str("}\n\n");
+
     // Generate all data messages first
     for table in tables {
         proto.push_str(&format!(
@@ -252,6 +264,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     for table in tables {
         let pascal_name = table.name.to_case(Case::Pascal);
         let snake_name = table.name.to_case(Case::Snake);
+        let singular_name = to_singular(&table.name);
 
         // Create operation
         proto.push_str(&format!("// Create {} request\n", pascal_name));
@@ -287,14 +300,17 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         // Update operation
         proto.push_str(&format!("// Update {} request\n", pascal_name));
         proto.push_str(&format!("message Update{}Request {{\n", pascal_name));
-        proto.push_str(&format!("  {} {} = 1;\n", pascal_name, snake_name));
+        proto.push_str(&format!("  {} {} = 1;\n", pascal_name, singular_name));
+        proto.push_str("  UpdateParams params = 2;\n");
+        proto.push_str("  UpdateQuery query = 3;\n");
         proto.push_str("}\n\n");
 
         proto.push_str(&format!("// Update {} response\n", pascal_name));
         proto.push_str(&format!("message Update{}Response {{\n", pascal_name));
         proto.push_str("  bool success = 1;\n");
-        proto.push_str("  string message = 2;\n");
-        proto.push_str(&format!("  {} data = 3;\n", pascal_name));
+        proto.push_str("  int32 count = 2;\n");
+        proto.push_str("  string message = 3;\n");
+        proto.push_str(&format!("  {} data = 4;\n", pascal_name));
         proto.push_str("}\n\n");
 
         // Delete operation
@@ -480,4 +496,21 @@ impl CaseConvert for str {
 pub enum Case {
     Snake,
     Pascal,
+}
+
+
+fn to_singular(name: &str) -> String {
+    let name = name.to_lowercase();
+    
+    // Handle common plural endings
+    if name.ends_with("ies") {
+        return format!("{}y", &name[0..name.len()-3]);
+    } else if name.ends_with("ses") {
+        return format!("{}s", &name[0..name.len()-2]);
+    } else if name.ends_with("s") && !name.ends_with("ss") {
+        return name[0..name.len()-1].to_string();
+    }
+    
+    // Return original if no plural pattern matched
+    name
 }

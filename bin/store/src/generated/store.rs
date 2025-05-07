@@ -29,6 +29,25 @@ pub struct CreateQuery {
     #[prost(string, tag = "2")]
     pub durability: ::prost::alloc::string::String,
 }
+/// Common parameter structure for Update requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateParams {
+    /// Record ID
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    /// Table name
+    #[prost(string, tag = "2")]
+    pub table: ::prost::alloc::string::String,
+}
+/// Common query structure for Update requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateQuery {
+    /// Field to pluck (e.g., "id,code")
+    #[prost(string, tag = "1")]
+    pub pluck: ::prost::alloc::string::String,
+}
 /// Items entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -350,7 +369,11 @@ pub struct GetItemsResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateItemsRequest {
     #[prost(message, optional, tag = "1")]
-    pub items: ::core::option::Option<Items>,
+    pub item: ::core::option::Option<Items>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update Items response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -358,9 +381,11 @@ pub struct UpdateItemsRequest {
 pub struct UpdateItemsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<Items>,
 }
 /// Delete Items request
@@ -429,7 +454,11 @@ pub struct GetPacketsResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdatePacketsRequest {
     #[prost(message, optional, tag = "1")]
-    pub packets: ::core::option::Option<Packets>,
+    pub packet: ::core::option::Option<Packets>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update Packets response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -437,9 +466,11 @@ pub struct UpdatePacketsRequest {
 pub struct UpdatePacketsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<Packets>,
 }
 /// Delete Packets request
@@ -508,7 +539,11 @@ pub struct GetConnectionsResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateConnectionsRequest {
     #[prost(message, optional, tag = "1")]
-    pub connections: ::core::option::Option<Connections>,
+    pub connection: ::core::option::Option<Connections>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update Connections response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -516,9 +551,11 @@ pub struct UpdateConnectionsRequest {
 pub struct UpdateConnectionsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<Connections>,
 }
 /// Delete Connections request
@@ -587,7 +624,11 @@ pub struct GetCrdtMessagesResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateCrdtMessagesRequest {
     #[prost(message, optional, tag = "1")]
-    pub crdt_messages: ::core::option::Option<CrdtMessages>,
+    pub crdt_message: ::core::option::Option<CrdtMessages>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update CrdtMessages response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -595,9 +636,11 @@ pub struct UpdateCrdtMessagesRequest {
 pub struct UpdateCrdtMessagesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<CrdtMessages>,
 }
 /// Delete CrdtMessages request
@@ -666,7 +709,11 @@ pub struct GetCrdtMerklesResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateCrdtMerklesRequest {
     #[prost(message, optional, tag = "1")]
-    pub crdt_merkles: ::core::option::Option<CrdtMerkles>,
+    pub crdt_merkle: ::core::option::Option<CrdtMerkles>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update CrdtMerkles response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -674,9 +721,11 @@ pub struct UpdateCrdtMerklesRequest {
 pub struct UpdateCrdtMerklesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<CrdtMerkles>,
 }
 /// Delete CrdtMerkles request
@@ -745,7 +794,11 @@ pub struct GetSyncEndpointsResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateSyncEndpointsRequest {
     #[prost(message, optional, tag = "1")]
-    pub sync_endpoints: ::core::option::Option<SyncEndpoints>,
+    pub sync_endpoint: ::core::option::Option<SyncEndpoints>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update SyncEndpoints response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -753,9 +806,11 @@ pub struct UpdateSyncEndpointsRequest {
 pub struct UpdateSyncEndpointsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<SyncEndpoints>,
 }
 /// Delete SyncEndpoints request
@@ -824,7 +879,11 @@ pub struct GetQueuesResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateQueuesRequest {
     #[prost(message, optional, tag = "1")]
-    pub queues: ::core::option::Option<Queues>,
+    pub queue: ::core::option::Option<Queues>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update Queues response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -832,9 +891,11 @@ pub struct UpdateQueuesRequest {
 pub struct UpdateQueuesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<Queues>,
 }
 /// Delete Queues request
@@ -903,7 +964,11 @@ pub struct GetQueueItemsResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateQueueItemsRequest {
     #[prost(message, optional, tag = "1")]
-    pub queue_items: ::core::option::Option<QueueItems>,
+    pub queue_item: ::core::option::Option<QueueItems>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update QueueItems response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -911,9 +976,11 @@ pub struct UpdateQueueItemsRequest {
 pub struct UpdateQueueItemsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<QueueItems>,
 }
 /// Delete QueueItems request
@@ -982,7 +1049,11 @@ pub struct GetTransactionsResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateTransactionsRequest {
     #[prost(message, optional, tag = "1")]
-    pub transactions: ::core::option::Option<Transactions>,
+    pub transaction: ::core::option::Option<Transactions>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
 }
 /// Update Transactions response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -990,9 +1061,11 @@ pub struct UpdateTransactionsRequest {
 pub struct UpdateTransactionsResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
-    #[prost(string, tag = "2")]
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "4")]
     pub data: ::core::option::Option<Transactions>,
 }
 /// Delete Transactions request

@@ -22,6 +22,17 @@ message CreateQuery {
   string durability = 2; // Durability level (e.g., "soft")
 }
 
+// Common parameter structure for Update requests
+message UpdateParams {
+  string id = 1; // Record ID
+  string table = 2; // Table name
+}
+
+// Common query structure for Update requests
+message UpdateQuery {
+  string pluck = 1; // Field to pluck (e.g., "id,code")
+}
+
 // Items entity definition
 message Items {
   int32 tombstone = 1;
@@ -38,7 +49,6 @@ message Items {
   optional string deleted_by = 12;
   optional string requested_by = 13;
   repeated string tags = 14;
-  int32 id = 15;
   string name = 16;
   optional string description = 17;
 }
@@ -201,14 +211,17 @@ message GetItemsResponse {
 
 // Update Items request
 message UpdateItemsRequest {
-  Items items = 1;
+  Items item = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update Items response
 message UpdateItemsResponse {
   bool success = 1;
-  string message = 2;
-  Items data = 3;
+  int32 count = 2;
+  string message = 3;
+  Items data = 4;
 }
 
 // Delete Items request
@@ -252,14 +265,17 @@ message GetPacketsResponse {
 
 // Update Packets request
 message UpdatePacketsRequest {
-  Packets packets = 1;
+  Packets packet = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update Packets response
 message UpdatePacketsResponse {
   bool success = 1;
-  string message = 2;
-  Packets data = 3;
+  int32 count = 2;
+  string message = 3;
+  Packets data = 4;
 }
 
 // Delete Packets request
@@ -303,14 +319,17 @@ message GetConnectionsResponse {
 
 // Update Connections request
 message UpdateConnectionsRequest {
-  Connections connections = 1;
+  Connections connection = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update Connections response
 message UpdateConnectionsResponse {
   bool success = 1;
-  string message = 2;
-  Connections data = 3;
+  int32 count = 2;
+  string message = 3;
+  Connections data = 4;
 }
 
 // Delete Connections request
@@ -354,14 +373,17 @@ message GetCrdtMessagesResponse {
 
 // Update CrdtMessages request
 message UpdateCrdtMessagesRequest {
-  CrdtMessages crdt_messages = 1;
+  CrdtMessages crdt_message = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update CrdtMessages response
 message UpdateCrdtMessagesResponse {
   bool success = 1;
-  string message = 2;
-  CrdtMessages data = 3;
+  int32 count = 2;
+  string message = 3;
+  CrdtMessages data = 4;
 }
 
 // Delete CrdtMessages request
@@ -405,14 +427,17 @@ message GetCrdtMerklesResponse {
 
 // Update CrdtMerkles request
 message UpdateCrdtMerklesRequest {
-  CrdtMerkles crdt_merkles = 1;
+  CrdtMerkles crdt_merkle = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update CrdtMerkles response
 message UpdateCrdtMerklesResponse {
   bool success = 1;
-  string message = 2;
-  CrdtMerkles data = 3;
+  int32 count = 2;
+  string message = 3;
+  CrdtMerkles data = 4;
 }
 
 // Delete CrdtMerkles request
@@ -456,14 +481,17 @@ message GetSyncEndpointsResponse {
 
 // Update SyncEndpoints request
 message UpdateSyncEndpointsRequest {
-  SyncEndpoints sync_endpoints = 1;
+  SyncEndpoints sync_endpoint = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update SyncEndpoints response
 message UpdateSyncEndpointsResponse {
   bool success = 1;
-  string message = 2;
-  SyncEndpoints data = 3;
+  int32 count = 2;
+  string message = 3;
+  SyncEndpoints data = 4;
 }
 
 // Delete SyncEndpoints request
@@ -507,14 +535,17 @@ message GetQueuesResponse {
 
 // Update Queues request
 message UpdateQueuesRequest {
-  Queues queues = 1;
+  Queues queue = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update Queues response
 message UpdateQueuesResponse {
   bool success = 1;
-  string message = 2;
-  Queues data = 3;
+  int32 count = 2;
+  string message = 3;
+  Queues data = 4;
 }
 
 // Delete Queues request
@@ -558,14 +589,17 @@ message GetQueueItemsResponse {
 
 // Update QueueItems request
 message UpdateQueueItemsRequest {
-  QueueItems queue_items = 1;
+  QueueItems queue_item = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update QueueItems response
 message UpdateQueueItemsResponse {
   bool success = 1;
-  string message = 2;
-  QueueItems data = 3;
+  int32 count = 2;
+  string message = 3;
+  QueueItems data = 4;
 }
 
 // Delete QueueItems request
@@ -609,14 +643,17 @@ message GetTransactionsResponse {
 
 // Update Transactions request
 message UpdateTransactionsRequest {
-  Transactions transactions = 1;
+  Transactions transaction = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
 }
 
 // Update Transactions response
 message UpdateTransactionsResponse {
   bool success = 1;
-  string message = 2;
-  Transactions data = 3;
+  int32 count = 2;
+  string message = 3;
+  Transactions data = 4;
 }
 
 // Delete Transactions request

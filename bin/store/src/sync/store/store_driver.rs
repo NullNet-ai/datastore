@@ -15,7 +15,9 @@ pub async fn apply(
     let dataset = &message.dataset;
     let hypertable_timestamp = &message.hypertable_timestamp;
 
-    let value = if is_plural_column(column) {
+    let value = if message.value.trim().is_empty() || message.value.trim() == "{}" || message.value.trim() == "[]" || message.value.trim() == "\"\"" {
+        ColumnValue::None
+    }else if is_plural_column(column) {
         ColumnValue::Array(process_pg_array(&message.value)?)
     } else if column == "timestamp" {
         // Parse timestamp
@@ -29,6 +31,8 @@ pub async fn apply(
         } else {
             timestamp.to_string()
         };
+        println!("Hypertable timestamp before error: {}", timestamp_str);
+
         ColumnValue::Timestamp(
             chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
                 log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
@@ -59,6 +63,10 @@ pub async fn apply(
         ColumnValue::Integer(i) => {
             json_obj.insert(column.to_string(), json!(i));
         }
+         ColumnValue::None => {
+            // Handle None case - insert null value or skip insertion
+            json_obj.insert(column.to_string(), json!(null));
+        }
     }
 
     json_obj = clean_extra_quotes(json_obj);
@@ -82,6 +90,7 @@ pub async fn apply(
         } else {
             ht_timestamp.to_string()
         };
+
         let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
             log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
             Box::new(e) as Box<dyn std::error::Error>

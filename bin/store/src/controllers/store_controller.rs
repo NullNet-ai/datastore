@@ -71,7 +71,15 @@ pub async fn update_record(
     let log_table = table_name.clone();
     let inner_log_table = log_table.clone();
     let mut processed_record = request.record.clone();
-
+    let table = match Table::from_str(table_name.as_str()) {
+        Some(t) => t,
+        None => {
+            return HttpResponse::BadRequest().json(ApiError {
+                status: http::StatusCode::BAD_REQUEST.as_u16(),
+                message: format!("Unknown table: {}", table_name),
+            });
+        }
+    };
     if field_exists_in_table(&table_name, "hypertable_timestamp"){
 
         let mut conn = match pool.get().await {
@@ -80,16 +88,6 @@ pub async fn update_record(
                 return HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to get database connection: {}", e)
                 }));
-            }
-        };
-
-        let table = match Table::from_str(table_name.as_str()) {
-            Some(t) => t,
-            None => {
-                return HttpResponse::BadRequest().json(ApiError {
-                    status: http::StatusCode::BAD_REQUEST.as_u16(),
-                    message: format!("Unknown table: {}", table_name),
-                });
             }
         };
 
@@ -127,26 +125,6 @@ pub async fn update_record(
         .map(|s| s.trim().to_string())
         .collect();
     
-    let mut conn = match pool.get().await {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to get database connection: {}", e)
-            }));
-        }
-    };
-    
-    let table = match Table::from_str(table_name.as_str()) {
-        Some(t) => t,
-        None => {
-            return HttpResponse::BadRequest().json(ApiResponse {
-                message: format!("Failed to process record: Unknown table: {}", table_name),
-                success:false,
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
 
     let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
         Ok(val) => val,
@@ -211,14 +189,6 @@ pub async fn create_record(
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
-    let mut conn = match pool.get().await {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Failed to get database connection: {}", e)
-            }));
-        }
-    };
     let table = match Table::from_str(table_name.as_str()) {
         Some(t) => t,
         None => {
@@ -237,7 +207,7 @@ pub async fn create_record(
     //     }
     // };
 
-    let mut record_value: serde_json::Value = match serde_json::from_value(processed_record) {
+    let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
         Ok(val) => val,
         Err(e) => {
             return HttpResponse::InternalServerError().json(ApiError {
