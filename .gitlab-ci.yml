@@ -18,7 +18,7 @@ update_stack:
   stage: update_portainer-qa
   variables:
     ENDPOINT_ID: 2
-    STACK_ID: 98
+    STACK_ID: 83
     PORTAINER_USERNAME: 'ci'
     PORTAINER_PASSWORD: 'fZmcpMHDpp63yKiszHL3'
     PORTAINER_HOST: https://portainer.dnaqa.net
