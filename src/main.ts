@@ -116,6 +116,7 @@ async function initializers(app) {
 
   // default for super admin
   await organization.initialize();
+  //! Commented as Initialization of Device is not needed
   // await organization.initializeDevice();
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
   await initializer.generateSchema();
