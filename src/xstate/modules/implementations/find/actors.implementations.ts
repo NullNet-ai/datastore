@@ -100,8 +100,11 @@ export class FindActorsImplementations {
         });
       }
 
-      const parsed_concatenated_fields =
-        Utility.parseConcatenateFields(concatenate_fields);
+      const parsed_concatenated_fields = Utility.parseConcatenateFields(
+        concatenate_fields,
+        date_format,
+        table,
+      );
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
         pluck_object[key] = [
@@ -182,6 +185,7 @@ export class FindActorsImplementations {
         concatenate_fields,
         table,
         _plucked_fields === null ? {} : _plucked_fields,
+        date_format,
       );
 
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
@@ -227,16 +231,17 @@ export class FindActorsImplementations {
               : schema[group_by_entity];
             let group_field_schema = grouped_entity_schema[group_by_field];
             const group_field = `${group_by_entity}.${group_by_field}`;
-            if (
-              parsed_concatenated_fields.fields[group_by_entity]?.includes(
-                group_by_field,
-              )
-            )
-              throw new BadRequestException({
-                success: false,
-                message: `You can't group by concatenated fields`,
-              });
-            else group_by_fields[group_field] = group_field;
+            // if (
+            //   parsed_concatenated_fields.fields[group_by_entity]?.includes(
+            //     group_by_field,
+            //   )
+            // )
+            //   throw new BadRequestException({
+            //     success: false,
+            //     message: `You can't group by concatenated fields`,
+            //   });
+            // else
+            group_by_fields[group_field] = group_field;
             if (!group_field_schema)
               throw new BadRequestException({
                 success: false,
@@ -251,6 +256,14 @@ export class FindActorsImplementations {
             if (fields.length - 1 === index) {
               pluck_object[group_by_entity] =
                 temp_pluck_object[group_by_entity];
+              pluck_group_object[group_by_entity] = ['id'];
+
+              if (group_by_entity !== table) {
+                pluck_object[table] = ['id'];
+                parsed_concatenated_fields.expressions[table] = [];
+                parsed_concatenated_fields.fields[table] = [];
+                parsed_concatenated_fields.additional_fields[table] = [];
+              }
             }
             if (parsed_concatenated_fields.fields[group_by_entity]?.length) {
               parsed_concatenated_fields.expressions[group_by_entity] = [];
@@ -681,14 +694,18 @@ export class FindActorsImplementations {
     _concatenate_fields,
     group_by,
   ) {
-    return results?.map((main_item) => {
+    const main_fields_concatenated =
+      _concatenate_fields.find(
+        (f) => (f.aliased_entity || pluralize(f.entity)) === table,
+      )?.fields ?? [];
+
+    return results.map((main_item) => {
       let cloned_item = { ...main_item };
       if (group_by.fields?.length) {
         cloned_item = {
           ...cloned_item[table],
         };
       }
-
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
@@ -700,69 +717,48 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
-            const contactinated_related_fields = _concatenate_fields.find(
-              (f) => f.aliased_entity === name,
+            const concatenated_related_fields = _concatenate_fields.find(
+              (f) => (f.aliased_entity || pluralize(f.entity)) === name,
             );
+            let [item] = cloned_item[name];
 
-            const _item = Array.isArray(cloned_item?.[name] ?? [])
-              ? cloned_item?.[name]?.reduce((__acc, item) => {
-                  if (contactinated_related_fields) {
-                    item = {
-                      ...item,
-                      [contactinated_related_fields.field_name]:
-                        contactinated_related_fields.fields
-                          .map(
-                            (field) =>
-                              acc[contactinated_related_fields.entity]?.[
-                                field
-                              ] ?? '',
-                          )
-                          .join(contactinated_related_fields?.separator ?? ''),
-                    };
-                  }
-
-                  if (!_pluck_group_object[name]?.length) {
-                    return item;
-                  }
-                  return Object.entries(item).reduce((_acc, [key]) => {
-                    if (_pluck_group_object[name]) {
-                      if (_pluck_group_object[name].includes(key)) {
-                        _acc[pluralize(key)] = _acc?.[key] ?? [];
-                        _acc[pluralize(key)].push(item[key]);
-                      } else if (pluck_object[name].includes(key)) {
-                        _acc[key] = cloned_item[name][0][key];
-                      }
-                      return _acc;
-                    }
-
-                    return {
-                      ..._acc,
-                      // by default always the 1st index
-                      [key]: cloned_item[name][0][key],
-                    };
-                  }, __acc);
-                }, {}) ?? null
-              : {};
-            const keys = Object.keys(_item ?? {});
-            const l = keys.length;
-            if (l === 1) {
-              acc[table][name] = keys.reduce(
-                (acc, key) => acc + cloned_item[name][0][key],
-                '',
-              );
+            if (concatenated_related_fields) {
+              item = {
+                ...item,
+                [concatenated_related_fields.field_name]:
+                  concatenated_related_fields.fields
+                    .map((field) => item?.[field] ?? '')
+                    .join(concatenated_related_fields?.separator ?? ''),
+              };
             }
+
+            item = {
+              ...item,
+              ...(_pluck_group_object[name]?.length && {
+                ..._pluck_group_object[name].reduce((acc, key) => {
+                  const grouped_field_key = `${name}_${pluralize(key)}`;
+                  return {
+                    ...acc,
+                    ...(cloned_item[grouped_field_key] && {
+                      [pluralize(key)]: cloned_item[grouped_field_key],
+                    }),
+                  };
+                }, {}),
+              }),
+            };
+            const keys = Object.keys(item ?? {});
 
             return {
               ...acc,
-              [name]: keys.length ? _item : null,
+              [name]: keys.length ? item : null,
             };
           },
           {
             ...pick(main_item, ['count', 'total_group_count']),
-            [table]: pick(
-              this.reducer(cloned_item, pluck_object, table),
-              pluck_object[table],
-            ),
+            [table]: pick(this.reducer(cloned_item, pluck_object, table), [
+              ...pluck_object[table],
+              ...main_fields_concatenated,
+            ]),
           },
         );
     });

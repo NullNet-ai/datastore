@@ -228,20 +228,26 @@ export class Utility {
 
   public static parseConcatenateFields = (
     concatenate_fields: IConcatenateField[],
+    date_format?: string,
+    table?: string,
   ) => {
     return concatenate_fields.reduce(
       (
         acc,
         { fields, field_name, separator, entity: _entity, aliased_entity },
       ) => {
-        const entity = aliased_entity || _entity;
+        const entity = aliased_entity || pluralize(_entity);
         acc.expressions[entity] = acc.expressions[entity] || [];
         acc.fields[entity] = acc.fields[entity] || [];
         acc.additional_fields[entity] = acc.additional_fields[entity] || [];
         if (!aliased_entity) {
           // Build the concatenated SQL expression
           const concatenatedField = `(${fields
-            .map((field) => `COALESCE("joined_${entity}"."${field}", '')`)
+            .map((field) => {
+              if (field.endsWith('_date'))
+                return `COALESCE(to_char("joined_${entity}"."${field}"::date, '${date_format}'), '')`;
+              return `COALESCE("joined_${entity}"."${field}", '')`;
+            })
             .join(` || '${separator}' || `)}) AS "${field_name}"`;
 
           // Store the expression
@@ -250,7 +256,8 @@ export class Utility {
           // Store the field name in the fields object
           if (!acc.additional_fields[entity].includes(field_name)) {
             acc.fields[entity].push(field_name);
-            acc.additional_fields[entity].push(field_name);
+            if (pluralize(_entity) === table)
+              acc.additional_fields[entity].push(field_name);
           }
         }
 
@@ -431,14 +438,14 @@ export class Utility {
           const alias = pluralize(field);
           return {
             ...field_acc,
-            [alias]: sql
+            [`${table}_${alias}`]: sql
               .raw(
                 `JSONB_AGG(${Utility.decryptField(
                   `"${table}"."${field}"`,
                   encrypted_fields,
                 )})`,
               )
-              .as(alias),
+              .as(`${table}_${alias}`),
           };
         }, acc),
       {},
@@ -456,6 +463,7 @@ export class Utility {
     concatenate_fields: IConcatenateField[],
     table_name: string,
     plucked_fields: Record<string, any> = {},
+    date_format?: string,
   ) {
     for (const field of concatenate_fields) {
       if (field.entity !== table_name) {
@@ -482,9 +490,11 @@ export class Utility {
         );
       }
       if (field.entity === table_name) {
-        const field_names = field.fields.map(
-          (f) => `COALESCE("${table_name}"."${f}", '')`,
-        );
+        const field_names = field.fields.map((f) => {
+          if (f.endsWith('_date'))
+            return `COALESCE(to_char("${table_name}"."${f}"::date, '${date_format}'), '')`;
+          return `COALESCE("${table_name}"."${f}", '')`;
+        });
         const concatenated = field_names.join(` || '${field.separator}' || `);
 
         plucked_fields[field.field_name] = sql.raw(`(${concatenated})`);
