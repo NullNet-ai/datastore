@@ -6,7 +6,7 @@ import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { map } from 'bluebird';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
-import { v4 as uuidv4 } from 'uuid';
+import { ulid } from 'ulid';
 import { Utility } from '../../../../utils/utility.service';
 import { AxonPushService } from '../../../../providers/axon/axon_push/axon_push.service';
 import { ICounterMessage } from '../../../../providers/axon/types';
@@ -104,7 +104,7 @@ export class BatchInsertActorsImplementations {
             undefined as any,
             record,
           );
-          record.id = uuidv4();
+          record.id = ulid();
           record_ids.push(record.id);
           record.created_by = account_organization_id;
           record.timestamp = record?.timestamp

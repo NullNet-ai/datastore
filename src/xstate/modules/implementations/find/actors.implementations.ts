@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  NotImplementedException,
 } from '@nestjs/common';
 import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
@@ -22,7 +21,6 @@ import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
-import { EDateFormats } from 'src/utils/utility.types';
 const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
@@ -50,7 +48,8 @@ export class FindActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { params, body } = _req;
+      const { params, body, headers } = _req;
+      const { time_zone } = headers;
       const { table, type } = params;
       const {
         order_direction = 'asc',
@@ -69,6 +68,7 @@ export class FindActorsImplementations {
         group_by = {},
         is_case_sensitive_sorting = false,
         pluck_group_object = {},
+        encrypted_fields = [],
       } = body;
 
       if (group_advance_filters.length && advance_filters.length) {
@@ -122,23 +122,25 @@ export class FindActorsImplementations {
 
       multiple_sort.forEach(({ by_field }) => {
         //check if by_field is separated by a dot if not then throw an error
-        if (!by_field.includes('.')) {
-          by_field = `${table}.${by_field}`;
+        let entity = table;
+        let field = by_field.split('.')[0];
+        if (by_field.split('.').length > 1) {
+          entity = by_field.split('.')[0];
+          field = by_field.split('.')[1];
         }
-        const [entity, field] = by_field.split('.');
         const concat_fields = parsed_concatenated_fields.fields;
-        const non_aliased_entity: string =
+        const sorted_entity: string =
           aliased_joined_entities.find(({ alias }) => alias === entity)
-            ?.entity || entity;
+            ?.entity || pluralize(entity);
         const field_exists =
-          local_schema[non_aliased_entity]?.[field] ||
-          concat_fields[entity]?.find((exp) => exp.includes(field));
+          local_schema[sorted_entity]?.[field] ||
+          concat_fields[sorted_entity]?.find((exp) => exp.includes(field));
         if (!field_exists) {
           let message;
-          if (non_aliased_entity === entity) {
+          if (sorted_entity === entity) {
             message = `Field ${field} does not exist in ${entity}`;
           } else {
-            message = `Field ${field} does not exist in ${entity} which is alias of ${non_aliased_entity}`;
+            message = `Field ${field} does not exist in ${entity} which is alias of ${sorted_entity}`;
           }
           throw new BadRequestException({
             success: false,
@@ -148,21 +150,22 @@ export class FindActorsImplementations {
         const concat = concatenate_fields.find(
           (concat_entity) =>
             concat_entity.field_name === field &&
-            concat_entity.entity === entity,
+            concat_entity.entity === sorted_entity,
         );
 
         // put fields from order into pluck_object
-        if (joins.length) {
-          pluck_object[entity] = [
+        if (
+          (!Object.keys(group_by).length || !group_by?.fields?.length) &&
+          joins.length
+        ) {
+          pluck_object[sorted_entity] = [
             ...new Set([
-              ...pluck_object[entity],
+              ...pluck_object?.[sorted_entity],
               ...(concat ? concat.fields : [field]),
             ]),
           ];
         }
       });
-      const requested_date_format: string =
-        EDateFormats[date_format] || '%m/%d/%Y';
 
       let _pluck: string[] =
         pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
@@ -170,7 +173,10 @@ export class FindActorsImplementations {
       let _plucked_fields = Utility.parsePluckedFields(
         table,
         _pluck,
-        requested_date_format,
+        date_format,
+        false,
+        encrypted_fields,
+        time_zone,
       );
       _plucked_fields = Utility.parseMainConcatenations(
         concatenate_fields,
@@ -184,13 +190,14 @@ export class FindActorsImplementations {
 
       let join_keys: string[] = Object.keys(pluck_object);
       let group_by_selections = {};
-      let group_by_agg_selections = {};
+      // let group_by_agg_selections = {};
       let group_by_fields: Record<string, any> = {};
       let group_by_entities: Array<string> = [];
       if (group_by?.fields?.length) {
         const { fields = [], has_count = false } = group_by;
+        const temp_pluck_object = {};
         group_by_selections = fields.reduce(
-          (acc, field) => {
+          (acc, field, index) => {
             let group_by_entity = table;
             const _field = field.split('.');
             let group_by_field = _field[0];
@@ -235,37 +242,43 @@ export class FindActorsImplementations {
                 success: false,
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
               });
-            if (multiple_sort.length)
-              throw new BadRequestException({
-                success: false,
-                message: `You can't group by fields if you have multiple sorting of fields`,
-              });
-            const order_by_schema = grouped_entity_schema[order_by];
-            if (!order_by_schema)
-              throw new BadRequestException({
-                success: false,
-                message: `Order by field ${order_by} does not exist in ${group_by_entity}`,
-              });
-            group_by_agg_selections = !group_by?.fields?.includes(order_by)
-              ? {
-                  [order_by_schema.name]: sql.raw(
-                    `${
-                      ['asc', 'ascending'].includes(order_direction)
-                        ? 'MIN'
-                        : 'MAX'
-                    }("${table}"."${order_by_schema.name}")`,
-                  ),
-                }
-              : {};
+
+            if (!temp_pluck_object?.[group_by_entity])
+              temp_pluck_object[group_by_entity] = ['id'];
+
+            temp_pluck_object[group_by_entity].push(group_by_field);
+
+            if (fields.length - 1 === index) {
+              pluck_object[group_by_entity] =
+                temp_pluck_object[group_by_entity];
+            }
+            if (parsed_concatenated_fields.fields[group_by_entity]?.length) {
+              parsed_concatenated_fields.expressions[group_by_entity] = [];
+              parsed_concatenated_fields.fields[group_by_entity] = [];
+              parsed_concatenated_fields.additional_fields[group_by_entity] =
+                [];
+            }
+            // const order_by_schema = grouped_entity_schema[order_by];
+            // group_by_agg_selections = !group_by?.fields?.includes(order_by)
+            //   ? {
+            //       [order_by_schema.name]: sql.raw(
+            //         `${
+            //           ['asc', 'ascending'].includes(order_direction)
+            //             ? 'MIN'
+            //             : 'MAX'
+            //         }("${table}"."${order_by_schema.name}")`,
+            //       ),
+            //     }
+            //   : {};
 
             group_by_entities.push(group_by_entity);
             return {
               ...acc,
               [table]: {
-                ...group_by_agg_selections,
+                // ...group_by_agg_selections,
               },
               [group_by_entity]: {
-                ...acc[group_by_entity],
+                ...(acc?.[group_by_entity] ?? {}),
                 [group_by_field]: sql.raw(
                   `${group_by_entity}.${group_by_field}`,
                 ),
@@ -326,16 +339,18 @@ export class FindActorsImplementations {
           date_format,
           parsed_concatenated_fields,
           multiple_sort,
+          encrypted_fields,
+          time_zone,
         });
-        const is_grouping_joined_entity = group_by_entities.some((key) =>
-          Object.keys(join_selections ?? {}).includes(key),
-        );
+        // const is_grouping_joined_entity = group_by_entities.some((key) =>
+        //   Object.keys(join_selections ?? {}).includes(key),
+        // );
 
-        if (is_grouping_joined_entity)
-          throw new NotImplementedException({
-            success: false,
-            message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
-          });
+        // if (is_grouping_joined_entity)
+        //   throw new NotImplementedException({
+        //     success: false,
+        //     message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
+        //   });
 
         let count_selection = {};
         if ((group_by_selections as Record<string, any>)?.count)
@@ -362,11 +377,16 @@ export class FindActorsImplementations {
           ),
         };
         _db = _db
-          .select({
-            ...(Object.keys(group_by_selections).length
-              ? join_selections_with_group_by
-              : join_selections),
-          })
+          .select(
+            Utility.decryptData(
+              {
+                ...(Object.keys(group_by_selections).length
+                  ? join_selections_with_group_by
+                  : join_selections),
+              },
+              encrypted_fields,
+            ),
+          )
           .from(table_schema);
       } else {
         let count_selection = {};
@@ -392,11 +412,16 @@ export class FindActorsImplementations {
           [table]: group_by_selections?.[table] ?? {},
         };
         _db = _db
-          .select({
-            ...(Object.keys(group_by_selections).length
-              ? selections_with_group_by
-              : selections),
-          })
+          .select(
+            Utility.decryptData(
+              {
+                ...(Object.keys(group_by_selections).length
+                  ? selections_with_group_by
+                  : selections),
+              },
+              encrypted_fields,
+            ),
+          )
           .from(table_schema);
       }
 
@@ -411,6 +436,10 @@ export class FindActorsImplementations {
         parsed_concatenated_fields,
         group_advance_filters,
         type,
+        encrypted_fields,
+        time_zone,
+        table,
+        date_format,
       );
 
       const getSortSchemaAndField = (
@@ -419,37 +448,38 @@ export class FindActorsImplementations {
         transformed_concatenations: IParsedConcatenatedFields['expressions'],
         by_direction: string = 'asc',
         is_case_sensitive_sorting: boolean = false,
+        group_by_selections: Record<string, any>,
       ) => {
         const by_entity_field = order_by.split('.');
-        const sort_entity: any = by_entity_field[0];
+        let sort_entity: any = table;
         let sort_schema = table_schema[by_entity_field[0] || 'id'];
         if (by_entity_field.length > 1) {
           const [_entity = '', by_field = 'id'] = by_entity_field;
           const is_aliased = Object.values(aliased_entities).find(
             ({ alias }) => alias === _entity,
           );
-          const entity = _entity;
+          sort_entity = !is_aliased ? pluralize(_entity) : _entity;
           // if (!join_keys.includes(entity) && !is_aliased)
           //   throw new BadRequestException({
           //     success: false,
           //     message: `Other than main entity, you can only sort by joined entities. ${entity} is not a joined entity nor an aliased joined entity.`,
           //   });
           if (
-            !schema[entity]?.[by_field] &&
+            !schema[sort_entity]?.[by_field] &&
             transformed_concatenations[sort_entity] &&
             sort_entity === table
             //if sort_entity is the main table and check if it has any field that is concatenated, and that field doesn't exist in the schema
           ) {
-            const concatenation = transformed_concatenations[entity]?.find(
+            const concatenation = transformed_concatenations[sort_entity]?.find(
               (exp) => exp.includes(by_field),
             );
             sort_schema = concatenation
               ? sql.raw(concatenation.split(' AS ')[0] as string)
               : undefined;
           } else if (
-            !schema[entity]?.[by_field] &&
+            !schema[sort_entity]?.[by_field] &&
             transformed_concatenations[sort_entity] &&
-            transformed_concatenations[sort_entity].find((exp) =>
+            transformed_concatenations[sort_entity]?.find((exp) =>
               exp.includes(by_field),
             )
             //if entity is not in the schema or its field is not in the schema and it is in the transformed concatenations and the field is in the transformed concatenations
@@ -469,7 +499,7 @@ export class FindActorsImplementations {
             } else {
               return sql.raw(`MAX(${sort_query})`);
             }
-          } else if (entity !== table) {
+          } else if (sort_entity !== table) {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
             if (!is_case_sensitive_sorting) {
               sort_query = `lower(${sort_query})`;
@@ -480,22 +510,42 @@ export class FindActorsImplementations {
               return sql.raw(`MAX(${sort_query})`);
             }
           } else {
+            let sort_query: any = `"${sort_entity}"."${by_field}"`;
+            if (Object.keys(group_by_selections).length) {
+              if (by_direction.toLowerCase() === 'asc') {
+                return sql.raw(`MIN(${sort_query})`);
+              } else {
+                return sql.raw(`MAX(${sort_query})`);
+              }
+            }
+
             sort_schema = is_aliased
-              ? sql.raw(`"${entity}"."${by_field}"`)
-              : schema[entity][by_field];
+              ? sql.raw(sort_query)
+              : schema[sort_entity][by_field];
+          }
+        }
+        if (Object.keys(group_by_selections).length) {
+          let sort_query: any = `"${sort_entity}"."${
+            by_entity_field[0] || 'id'
+          }"`;
+          if (by_direction.toLowerCase() === 'asc') {
+            return sql.raw(`MIN(${sort_query})`);
+          } else {
+            return sql.raw(`MAX(${sort_query})`);
           }
         }
         return sort_schema as SQLWrapper | AnyColumn;
       };
       const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
         Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
-      if (group_by_agg_selections[order_by]) {
-        _db = _db.orderBy(
-          ['asc', 'ascending'].includes(order_direction)
-            ? asc(group_by_agg_selections[order_by])
-            : desc(group_by_agg_selections[order_by]),
-        );
-      } else if (multiple_sort.length) {
+      // if (group_by_agg_selections[order_by]) {
+      //   _db = _db.orderBy(
+      //     ['asc', 'ascending'].includes(order_direction)
+      //       ? asc(group_by_agg_selections[order_by])
+      //       : desc(group_by_agg_selections[order_by]),
+      //   );
+      // } else
+      if (multiple_sort.length) {
         _db = _db.orderBy(
           ...multiple_sort
             .map(
@@ -510,6 +560,7 @@ export class FindActorsImplementations {
                   transformed_concatenations,
                   by_direction,
                   is_case_sensitive_sorting,
+                  group_by_selections,
                 );
                 const is_query_already_lowered = (() => {
                   try {
@@ -537,6 +588,7 @@ export class FindActorsImplementations {
           transformed_concatenations,
           order_direction,
           is_case_sensitive_sorting,
+          group_by_selections,
         );
         const is_query_already_lowered = (() => {
           try {
@@ -592,6 +644,7 @@ export class FindActorsImplementations {
             pluck_group_object,
             joins,
             concatenate_fields,
+            group_by,
           )
         : await _db;
 
@@ -626,9 +679,16 @@ export class FindActorsImplementations {
     _pluck_group_object,
     joins,
     _concatenate_fields,
+    group_by,
   ) {
     return results?.map((main_item) => {
-      const cloned_item = { ...main_item };
+      let cloned_item = { ...main_item };
+      if (group_by.fields?.length) {
+        cloned_item = {
+          ...cloned_item[table],
+        };
+      }
+
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
@@ -644,53 +704,50 @@ export class FindActorsImplementations {
               (f) => f.aliased_entity === name,
             );
 
-            const _item =
-              typeof main_item?.[name] === 'object'
-                ? main_item?.[name]?.reduce((__acc, item) => {
-                    if (contactinated_related_fields) {
-                      item = {
-                        ...item,
-                        [contactinated_related_fields.field_name]:
-                          contactinated_related_fields.fields
-                            .map(
-                              (field) =>
-                                acc[contactinated_related_fields.entity]?.[
-                                  field
-                                ] ?? '',
-                            )
-                            .join(
-                              contactinated_related_fields?.separator ?? '',
-                            ),
-                      };
-                    }
+            const _item = Array.isArray(cloned_item?.[name] ?? [])
+              ? cloned_item?.[name]?.reduce((__acc, item) => {
+                  if (contactinated_related_fields) {
+                    item = {
+                      ...item,
+                      [contactinated_related_fields.field_name]:
+                        contactinated_related_fields.fields
+                          .map(
+                            (field) =>
+                              acc[contactinated_related_fields.entity]?.[
+                                field
+                              ] ?? '',
+                          )
+                          .join(contactinated_related_fields?.separator ?? ''),
+                    };
+                  }
 
-                    if (!_pluck_group_object[name]?.length) {
-                      return item;
-                    }
-                    return Object.entries(item).reduce((_acc, [key]) => {
-                      if (_pluck_group_object[name]) {
-                        if (_pluck_group_object[name].includes(key)) {
-                          _acc[pluralize(key)] = _acc?.[key] ?? [];
-                          _acc[pluralize(key)].push(item[key]);
-                        } else if (pluck_object[name].includes(key)) {
-                          _acc[key] = main_item[name][0][key];
-                        }
-                        return _acc;
+                  if (!_pluck_group_object[name]?.length) {
+                    return item;
+                  }
+                  return Object.entries(item).reduce((_acc, [key]) => {
+                    if (_pluck_group_object[name]) {
+                      if (_pluck_group_object[name].includes(key)) {
+                        _acc[pluralize(key)] = _acc?.[key] ?? [];
+                        _acc[pluralize(key)].push(item[key]);
+                      } else if (pluck_object[name].includes(key)) {
+                        _acc[key] = cloned_item[name][0][key];
                       }
+                      return _acc;
+                    }
 
-                      return {
-                        ..._acc,
-                        // by default always the 1st index
-                        [key]: main_item[name][0][key],
-                      };
-                    }, __acc);
-                  }, {}) ?? null
-                : {};
+                    return {
+                      ..._acc,
+                      // by default always the 1st index
+                      [key]: cloned_item[name][0][key],
+                    };
+                  }, __acc);
+                }, {}) ?? null
+              : {};
             const keys = Object.keys(_item ?? {});
             const l = keys.length;
             if (l === 1) {
               acc[table][name] = keys.reduce(
-                (acc, key) => acc + main_item[name][0][key],
+                (acc, key) => acc + cloned_item[name][0][key],
                 '',
               );
             }
@@ -701,6 +758,7 @@ export class FindActorsImplementations {
             };
           },
           {
+            ...pick(main_item, ['count', 'total_group_count']),
             [table]: pick(
               this.reducer(cloned_item, pluck_object, table),
               pluck_object[table],

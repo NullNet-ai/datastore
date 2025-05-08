@@ -36,10 +36,16 @@ export class AggregationFilterActorsImplementations {
       const { controller_args, responsible_account } = context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
-      const { advance_filters, joins, entity } = _req.body;
+      const {
+        advance_filters,
+        joins,
+        entity,
+        date_format = 'YYYY-MM-DD',
+      } = _req.body;
       const table_schema = local_schema[entity];
       const table = _req.body?.entity;
       const { type } = _req.params;
+      const { time_zone } = _req.headers;
       Utility.checkTable(table);
       let _db = this.db.select({ id: table_schema.id }).from(table_schema);
       _db = Utility.AggregationFilterAnalyzer(
@@ -49,7 +55,10 @@ export class AggregationFilterActorsImplementations {
         organization_id,
         joins,
         this.db,
-        type
+        type,
+        time_zone,
+        table,
+        date_format,
       );
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
       let query = Utility.AggregationQueryGenerator(_req.body, from_clause);

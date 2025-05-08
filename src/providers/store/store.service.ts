@@ -147,8 +147,8 @@ export class InitializerService {
           throw new BadRequestException(
             'Indicate entity for Root Account Configuration',
           );
-        const root_account_id = '9c3ad11b-5b69-4bba-9858-3974d091b335';
-        const personal_organization_id = 'e521d2d7-0850-4512-b1b3-03fc9fcdaeea';
+        const root_account_id = '01JM3GTWCHR3CM2NP85C0Q2KN1';
+        const personal_organization_id = '01JSN4XA2C3A7RHN3MNZZJGBR3';
         const account_id = 'root';
         const account_secret =
           process.env.ROOT_ACCOUNT_PASSWORD || 'pl3@s3ch@ng3m3!!';
@@ -281,15 +281,26 @@ export class InitializerService {
     const tables = [...Object.keys(app_schema), ...include_crdt_tables];
     this.logger.log(`Generating application schema.`);
 
-    const extractForeignKeys = (create_table_sql: string) => {
-      const fk_regex = /FOREIGN KEY \(`(\w+)`\) REFERENCES `(\w+)`\(`(\w+)`\)/g;
-      const foreign_keys: Record<string, any>[] = [];
-      let match;
-      while ((match = fk_regex.exec(create_table_sql)) !== null) {
-        const [_, column, referenced_table] = match;
-        foreign_keys.push({ column, referenced_table });
-      }
-      return foreign_keys;
+    const extractForeignKeys = async (table_name: string) => {
+      const query = `SELECT
+          tc.table_name AS source_table,
+          kcu.column_name AS column,
+          ccu.table_name AS referenced_table
+      FROM
+          information_schema.table_constraints AS tc
+          JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+          JOIN information_schema.constraint_column_usage AS ccu
+            ON ccu.constraint_name = tc.constraint_name
+            AND ccu.table_schema = tc.table_schema
+      WHERE
+          tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_name = '${table_name}'
+          AND tc.table_schema = 'public'`;
+
+      const results = await this.db.execute(sql.raw(query));
+      return results?.rows || [];
     };
 
     const formatTableFields = async (
@@ -309,18 +320,13 @@ export class InitializerService {
         return [];
       }
       const fields = Object.keys(table_schema).filter(
-        (table) => !exclude_formatting_fields.includes(table),
+        (field) =>
+          field !== 'enableRLS' && !exclude_formatting_fields.includes(field),
       );
       const cache_key = `${table}_schema_foreign_keys`;
       let foreign_keys = JSON.parse(cache.get(cache_key) || 'null');
       if (!foreign_keys) {
-        const [table_sql] = await this.db.all(
-          sql.raw(
-            `SELECT sql FROM sqlite_master WHERE type='table' AND name='${table}'`,
-          ),
-        );
-        const stringified_schema = table_sql.sql;
-        foreign_keys = await extractForeignKeys(stringified_schema);
+        foreign_keys = await extractForeignKeys(table);
 
         cache.put(cache_key, JSON.stringify(foreign_keys), 5000);
       }
@@ -377,6 +383,13 @@ export class InitializerService {
         ),
       });
     });
+  }
+
+  async createEncryption() {
+    await this.db
+      .execute(`CREATE EXTENSION pgcrypto ;`)
+      .then(() => this.logger.debug(`Encryption extension created`))
+      .catch(() => this.logger.debug(`Encryption extension already exists`));
   }
 }
 

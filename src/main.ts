@@ -30,11 +30,8 @@ async function initializers(app) {
   const storage = app.get(MinioService);
   const organization = app.get(OrganizationsService);
   const initializer: InitializerService = app.get(InitializerService);
+  initializer.createEncryption();
 
-  // default for super admin
-  await organization.initialize();
-  await organization.initializeDevice();
-  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
   // create own default organization here
   // await organization.initialize({
   //   id: 'company-id',
@@ -102,11 +99,26 @@ async function initializers(app) {
       digits_number: 6,
     },
   });
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'devices',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'DV',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
 
   // ! This is a sample for the root account configuration
   await initializer.create(EInitializer.ROOT_ACCOUNT_CONFIG, {
     entity: 'account_organizations',
   });
+
+  // default for super admin
+  await organization.initialize();
+  // await organization.initializeDevice();
+  await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
+  await initializer.generateSchema();
 }
 
 async function cleanupTemporaryFiles() {
@@ -153,7 +165,7 @@ async function bootstrap() {
     );
   });
 
-  await initializers(app);
+  await initializers(app).catch(console.error);
 
   // cleanup the temporary files every 1 minute in remote environment
   cleanupTemporaryFiles();

@@ -38,8 +38,14 @@ import {
   IParsedConcatenatedFields,
 } from '../types/utility.types';
 import { execSync } from 'child_process';
+import {
+  locale,
+  date_options,
+  timezone,
+} from '@dna-platform/crdt-lww-postgres/build/modules/constants';
 
 const pluralize = require('pluralize');
+const { TZ = 'America/Los_Angeles' } = process.env;
 
 export class Utility {
   private static logger = new LoggerService('Utility');
@@ -75,15 +81,15 @@ export class Utility {
   }
 
   public static convertTime12to24(time12h: string) {
-    const [time = '', modifier] = time12h.split(' ');
+    const [time = '', modifier = ''] = time12h.split(' ');
     let hours = time.split(':')[0] || '0';
     const minutes = time.split(':')[1] || '0';
 
-    if (hours === '12' && modifier === 'AM') {
+    if (hours === '12' && ['AM', 'a.m.'].includes(modifier)) {
       hours = '0';
     }
 
-    if (modifier === 'PM' && hours !== '12') {
+    if (['PM', 'p.m.'].includes(modifier) && hours !== '12') {
       hours = `${parseInt(hours, 10) + 12}`;
     }
 
@@ -98,14 +104,15 @@ export class Utility {
       if (!valid) throw new BadRequestException(message);
     }
     const date = new Date();
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    };
     const formattedDate = date
-      .toLocaleDateString('en-CA', options)
+      .toLocaleDateString(locale, date_options)
       .replace(/-/g, '/');
+    const formattedTime = Utility.convertTime12to24(
+      date.toLocaleTimeString(locale, {
+        timeZone: timezone,
+      }),
+    );
+
     const _data = {
       id: data?.id ? data.id : ulid(),
       ...(is_insert
@@ -113,14 +120,14 @@ export class Utility {
             tombstone: 0,
             status: 'Active',
             created_date: formattedDate,
-            created_time: Utility.convertTime12to24(date.toLocaleTimeString()),
+            created_time: formattedTime,
             updated_date: formattedDate,
-            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
+            updated_time: formattedTime,
             timestamp: date.toISOString(),
           }
         : {
             updated_date: formattedDate,
-            updated_time: Utility.convertTime12to24(date.toLocaleTimeString()),
+            updated_time: formattedTime,
           }),
       ...data,
     };
@@ -156,13 +163,65 @@ export class Utility {
       schema,
     };
   }
+  static formatDate = ({
+    table,
+    field,
+    date_format,
+    time_zone,
+    encrypted_fields,
+    fields,
+  }: {
+    table: string;
+    field: string;
+    date_format: string;
+    time_zone?: string;
+    encrypted_fields: Array<string>;
+    fields: Array<string>;
+  }) => {
+    const field_prefix = field.replace(/(_date)|(_time)$/, '');
+    const date_field = `${field_prefix}_date`;
+    const time_field = `${field_prefix}_time`;
+
+    const date_time_field = `(${Utility.decryptField(
+      `"${table}"."${date_field}"`,
+      encrypted_fields,
+    )}::timestamp${
+      fields.includes(time_field)
+        ? ` + ${Utility.decryptField(
+            `"${table}"."${time_field}"`,
+            encrypted_fields,
+          )}::interval`
+        : ''
+    })`;
+    const timezone_query = ` AT TIME ZONE '${TZ}' AT TIME ZONE '${time_zone}'`;
+    if (field.toLowerCase().endsWith('_date')) {
+      return `to_char((${date_time_field}${
+        time_zone ? timezone_query : ''
+      })::date, '${date_format}')`;
+    } else if (field.toLowerCase().endsWith('_time')) {
+      return `(${date_time_field}${time_zone ? timezone_query : ''})::time`;
+    }
+  };
+
   static formatIfDate = (
     field: string,
     dateFormat: string = 'MM/DD/YYYY',
     toAlias,
+    fields,
+    time_zone,
   ) => {
-    if (field.toLowerCase().endsWith('date')) {
-      return `'${field}', to_char("${toAlias}"."${field}"::date, '${dateFormat}')`;
+    if (
+      field.toLowerCase().endsWith('date') ||
+      field.toLowerCase().endsWith('time')
+    ) {
+      return `'${field}', ${Utility.formatDate({
+        table: toAlias,
+        field,
+        date_format: dateFormat,
+        time_zone,
+        encrypted_fields: [],
+        fields,
+      })}`;
     }
     return `'${field}', "${toAlias}"."${field}"`;
   };
@@ -244,6 +303,8 @@ export class Utility {
     joins,
     date_format,
     parsed_concatenated_fields,
+    encrypted_fields = [],
+    time_zone,
   }: {
     table: string;
     pluck_object: Record<string, any>;
@@ -252,6 +313,8 @@ export class Utility {
     date_format: string;
     parsed_concatenated_fields: IParsedConcatenatedFields;
     multiple_sort: [{ by_field: string; by_direction: string }];
+    encrypted_fields: string[];
+    time_zone: string;
   }): Record<string, string[]> => {
     const pluck_object_keys = Object.keys(pluck_object || {});
     const { fields: concatenated_fields, expressions } =
@@ -265,17 +328,31 @@ export class Utility {
     });
     const fields = pluck_object?.[table] || [];
     let mainSelections = fields.reduce((acc, field) => {
-      if (field.toLowerCase().endsWith('date')) {
+      if (
+        field.toLowerCase().endsWith('_date') ||
+        field.toLowerCase().endsWith('_time')
+      ) {
+        const formatted_date = Utility.formatDate({
+          table,
+          field,
+          date_format,
+          time_zone,
+          encrypted_fields,
+          fields,
+        });
         return {
           ...acc,
           [field]: sql.raw(
-            `to_char("${table}"."${field}"::timestamp, '${date_format}') AS "${field}"`,
+            `${formatted_date}
+             AS "${field}"`,
           ),
         };
       }
       return {
         ...acc,
-        [field]: sql.raw(`"${table}"."${field}"`),
+        [field]: sql.raw(
+          Utility.decryptField(`"${table}"."${field}"`, encrypted_fields),
+        ),
       };
     }, {});
 
@@ -284,7 +361,10 @@ export class Utility {
       main_concatenate_selections.forEach((selection: any) => {
         const [_expression, field_name] = selection.split(' AS ');
         mainSelections[field_name.replace(/["\/]/g, '')] = sql.raw(
-          selection.replaceAll('joined_', ''),
+          Utility.decryptField(
+            selection.replaceAll('joined_', ''),
+            encrypted_fields,
+          ),
         );
       });
     }
@@ -312,7 +392,15 @@ export class Utility {
 
             // Dynamically create JSON_AGG with JSON_BUILD_OBJECT
             const jsonAggFields = fields
-              .map((field) => Utility.formatIfDate(field, date_format, toAlias))
+              .map((field) =>
+                Utility.formatIfDate(
+                  Utility.decryptField(field, encrypted_fields),
+                  date_format,
+                  toAlias,
+                  fields,
+                  time_zone,
+                ),
+              )
               .join(', ');
 
             const jsonAggSelection = sql
@@ -343,7 +431,14 @@ export class Utility {
           const alias = pluralize(field);
           return {
             ...field_acc,
-            [alias]: sql.raw(`JSONB_AGG(${table}.${field})`).as(alias),
+            [alias]: sql
+              .raw(
+                `JSONB_AGG(${Utility.decryptField(
+                  `"${table}"."${field}"`,
+                  encrypted_fields,
+                )})`,
+              )
+              .as(alias),
           };
         }, acc),
       {},
@@ -413,23 +508,37 @@ export class Utility {
   public static parsePluckedFields(
     table: string,
     pluck: string[],
-    _date_format: string,
+    date_format: string,
     _is_joined?: boolean,
+    encrypted_fields = [],
+    time_zone?: string,
   ): Record<string, any> | null {
     const table_schema = this.checkTable(table).table_schema;
-
     if (!pluck?.length || !pluck) {
       return null;
     }
     const _plucked_fields = pluck.reduce((acc, field) => {
       // const _field = is_joined ? `"${table}"."${field}"` : field;
       if (table_schema[field]) {
+        const is_date_time_field =
+          field.toLowerCase().endsWith('_date') ||
+          field.toLowerCase().endsWith('_time');
+        const formatted_date = Utility.formatDate({
+          table,
+          field,
+          date_format,
+          time_zone,
+          encrypted_fields,
+          fields: pluck,
+        });
         return {
           ...acc,
-          [field]: table_schema[field],
-          // [field]: field.endsWith('_date')
-          //   ? sql.raw(`strftime('${date_format}', ${_field})`)
-          //   : table_schema[field],
+          [field]: is_date_time_field
+            ? sql.raw(
+                `${formatted_date}
+               AS "${field}"`,
+              )
+            : table_schema[field],
         };
       }
       return acc;
@@ -481,6 +590,10 @@ export class Utility {
     concatenate_fields?: IParsedConcatenatedFields,
     group_advance_filters: IGroupAdvanceFilters[] = [],
     request_type?: string,
+    encrypted_fields = [],
+    time_zone?: string,
+    table?: string,
+    date_format?: string,
   ) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -523,10 +636,13 @@ export class Utility {
                     ]
                   : []),
                 ...Utility.constructFilters(
+                  table,
                   to.filters,
                   aliased_to_entity,
                   [`joined_${to_alias}`],
                   expressions,
+                  time_zone,
+                  date_format,
                 ),
               ),
             )
@@ -601,11 +717,15 @@ export class Utility {
             ]
           : []),
         ...Utility.constructFilters(
+          table,
           advance_filters,
           table_schema,
           aliased_entities,
           transformed_expressions,
+          time_zone,
+          date_format,
           group_advance_filters,
+          encrypted_fields,
         ),
       ),
     );
@@ -619,6 +739,9 @@ export class Utility {
     joins?: IJoins[],
     _client_db: any = null,
     type?: string,
+    time_zone?: string,
+    table?: string,
+    date_format?: string,
   ) {
     let _db = db;
     const aliased_entities: string[] = [];
@@ -667,10 +790,13 @@ export class Utility {
             ]
           : []),
         ...Utility.constructFilters(
+          table,
           _advance_filters,
           table_schema,
           aliased_entities,
           {},
+          time_zone,
+          date_format,
         ),
       ),
     );
@@ -687,26 +813,80 @@ export class Utility {
     expressions,
     case_sensitive,
     parse_as,
+    encrypted_fields = [],
+    fields = [],
+    time_zone,
+    date_format,
   }) {
     const is_aliased = aliased_entities.includes(entity);
-
+    let _field = `${field}`;
     // if (!table_schema?.[field] && !is_aliased) return null;
     let schema_field;
+    if (encrypted_fields?.length) {
+      _field = Utility.decryptField(_field, encrypted_fields);
+    }
 
     if (!table_schema?.[field] && !is_aliased && expressions[entity]) {
       schema_field = sql.raw(
-        expressions[entity].find((exp) => exp.includes(field)).split(' AS ')[0],
+        Utility.decryptField(
+          expressions[entity]
+            .find((exp) => exp.includes(field))
+            .split(' AS ')[0],
+          encrypted_fields,
+        ),
       );
     } else {
-      schema_field = is_aliased
-        ? sql.raw(`"${entity}"."${field}"`)
-        : table_schema[field];
+      if (field.endsWith('_date')) {
+        schema_field = sql.raw(
+          `to_char(${Utility.decryptField(
+            `"${entity}"."${field}"`,
+            encrypted_fields,
+          )}::date, '${date_format}')`,
+        );
+      } else
+        schema_field = is_aliased
+          ? sql.raw(
+              Utility.decryptField(`"${entity}"."${field}"`, encrypted_fields),
+            )
+          : table_schema?.[field];
     }
 
     if (parse_as === 'text') {
       schema_field = entity
-        ? sql.raw(`"${entity}"."${field}"::TEXT`)
-        : sql.raw(`"${field}"::TEXT`);
+        ? sql.raw(
+            `${Utility.decryptField(
+              `"${entity}"."${field}"`,
+              encrypted_fields,
+            )}::TEXT`,
+          )
+        : sql.raw(`"${_field}"::TEXT`);
+    }
+
+    if (fields.length) {
+      const date_field_index = (fields as Array<any>).findIndex((f) =>
+        f.endsWith('_date'),
+      );
+      const time_field_index = (fields as Array<any>).findIndex((f) =>
+        f.endsWith('_time'),
+      );
+      if (date_field_index === -1 || time_field_index === -1)
+        throw new BadRequestException(
+          'Date and Time fields are required for Timezone related filters',
+        );
+
+      schema_field = sql.raw(`(${Utility.decryptField(
+        `"${entity}"."${fields[date_field_index]}"`,
+        encrypted_fields,
+      )}::timestamp + ${Utility.decryptField(
+        `"${entity}"."${fields[time_field_index]}"`,
+        encrypted_fields,
+      )}::interval) AT TIME ZONE '${TZ}'
+      `);
+      values = [
+        sql.raw(
+          `'${values[date_field_index]} ${values[time_field_index]}'::timestamp AT TIME ZONE '${time_zone}'`,
+        ),
+      ];
     }
 
     switch (operator) {
@@ -758,11 +938,15 @@ export class Utility {
   }
 
   public static constructFilters(
+    table,
     advance_filters,
     table_schema,
     aliased_entities: string[] = [],
     expressions: any,
+    time_zone,
+    date_format,
     group_advance_filters: IGroupAdvanceFilters[] = [],
+    encrypted_fields = [],
   ): any[] {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
@@ -786,10 +970,13 @@ export class Utility {
         if (type === 'criteria') {
           group_criteria_queue.push(
             this.constructFilters(
+              table,
               filters,
               table_schema,
               aliased_entities,
               expressions,
+              time_zone,
+              date_format,
             ),
           );
         } else if (type === 'operator') {
@@ -822,6 +1009,29 @@ export class Utility {
           filter.values = JSON.parse(filter.values);
         filter.values = filter?.values?.map((val) => new Date(val));
       }
+
+      if (filter.fields?.length && filter.field) {
+        throw new BadRequestException(
+          `Invalid filter. "fields" must not be defined with "field"`,
+        );
+      }
+      if (
+        filter.fields?.length &&
+        filter.fields?.length !== filter.values?.length
+      ) {
+        throw new BadRequestException(
+          `Invalid filter. "fields" and "values" must have the same length and corresponds to each other`,
+        );
+      }
+      if (
+        filter.fields?.some(
+          (field) => !(field?.endsWith('_date') || field?.endsWith('_time')),
+        )
+      ) {
+        throw new BadRequestException(
+          `Invalid filter. "fields" must be of type date or time for time zone related filters`,
+        );
+      }
     });
     if (advance_filters?.length === 1) {
       let [
@@ -832,6 +1042,7 @@ export class Utility {
           type = 'criteria',
           case_sensitive = false,
           parse_as,
+          fields = [],
         },
       ] = advance_filters;
       if (typeof values === 'string') {
@@ -857,11 +1068,15 @@ export class Utility {
           field,
           values,
           dz_filter_queue: [],
-          entity,
+          entity: entity || table,
           aliased_entities,
           expressions,
           case_sensitive,
           parse_as,
+          encrypted_fields,
+          fields,
+          time_zone,
+          date_format,
         }),
       ];
     }
@@ -874,6 +1089,7 @@ export class Utility {
         values,
         case_sensitive = false,
         parse_as,
+        fields = [],
       } = filter;
       if (typeof values === 'string') {
         filter.values = JSON.parse(values);
@@ -904,11 +1120,14 @@ export class Utility {
           field,
           values: filter.values,
           dz_filter_queue,
-          entity,
+          entity: entity || table,
           aliased_entities,
           expressions,
           case_sensitive,
           parse_as,
+          fields,
+          time_zone,
+          date_format,
         }),
       );
 
@@ -923,11 +1142,14 @@ export class Utility {
             field,
             values: filter.values,
             dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
-            entity,
+            entity: entity || table,
             aliased_entities,
             expressions,
             case_sensitive,
             parse_as,
+            fields,
+            time_zone,
+            date_format,
           }),
         );
         if (where_clause_queue.length > 1) where_clause_queue.shift();
@@ -1249,5 +1471,129 @@ export class Utility {
     } catch (error: any) {
       return { valid: false, message: error?.message || error };
     }
+  }
+
+  public static async encryptCreate({
+    encrypted_fields,
+    table,
+    data,
+    db,
+    query,
+  }) {
+    if (encrypted_fields?.length) {
+      this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
+      const set_val = `${Object.entries(data)
+        .reduce((acc: string[], [key, value]) => {
+          const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
+          if (encrypted_fields.includes(key)) {
+            acc.push(
+              `${key} = pgp_sym_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
+            );
+          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
+          return acc;
+        }, [])
+        .join(',')}`;
+      const _values = `${Object.keys(data)}) VALUES (${Utility.encryptData(
+        data,
+        encrypted_fields,
+      )}`;
+      const query = `INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};`;
+      this.logger.debug(`Encrypting data: ${query}`);
+      return db
+        .execute(query)
+        .then(() => this.logger.debug('Encrypting data completed'));
+    }
+    const { table_schema } = query;
+    return db
+      .insert(query.table_schema)
+      .values(data)
+      .onConflictDoUpdate({
+        target: query.table_schema.id,
+        set: data,
+      })
+      .returning({ table_schema })
+      .then(([{ table_schema }]) => table_schema);
+  }
+
+  public static async encryptUpdate({
+    query,
+    encrypted_fields,
+    table,
+    data,
+    db,
+    where,
+    returning,
+  }) {
+    if (encrypted_fields?.length) {
+      this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
+      const set_val = `${Object.entries(data)
+        .reduce((acc: string[], [key, value]) => {
+          const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
+          if (encrypted_fields.includes(key)) {
+            acc.push(
+              `${key} = pgp_sym_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
+            );
+          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
+          return acc;
+        }, [])
+        .join(',')}`;
+      const query = `UPDATE ${table} SET ${set_val} WHERE ${where.join('')}`;
+      this.logger.debug(`Encrypting data: ${query}`);
+      return db
+        .execute(query)
+        .then(() => this.logger.debug('Encrypting data completed'));
+    }
+    const { table_schema } = query;
+    return db
+      .update(table_schema)
+      .set({
+        ...data,
+        version: sql`${table_schema.version} + 1`,
+      })
+      .where(sql.raw(`${where.join(' ')}`))
+      .returning(returning)
+      .then(([{ table_schema }]) => table_schema);
+  }
+
+  public static encryptData(data: Record<string, any>, encryption_keys) {
+    const values = `${Object.entries(data)
+      .reduce((encryptedData: any[], [key, value]) => {
+        if ((encryption_keys as string[]).includes(key)) {
+          encryptedData.push(
+            `pgp_sym_encrypt('${value}', '${process.env.PGP_SYM_KEY}')`,
+          );
+          return encryptedData;
+        }
+        const _value = typeof value === 'string' ? `'${value}'` : value;
+        encryptedData.push(_value !== undefined ? _value : null);
+        return encryptedData;
+      }, [])
+      .join(',')}`;
+    return values;
+  }
+  public static decryptField(field: string, encrypted_fields: string[]) {
+    if (encrypted_fields.includes(field))
+      return `pgp_sym_decrypt(${field}::BYTEA, '${process.env.PGP_SYM_KEY}')`;
+
+    return field;
+  }
+  public static decryptData(
+    data: Record<string, any>,
+    encrypted_fields: string[],
+  ) {
+    return Object.entries(data).reduce((_data, [key, value]) => {
+      if (encrypted_fields.includes(key)) {
+        return {
+          ..._data,
+          [key]: sql.raw(
+            `pgp_sym_decrypt(${key}::BYTEA, '${process.env.PGP_SYM_KEY}')`,
+          ),
+        };
+      }
+      return {
+        ..._data,
+        [key]: value,
+      };
+    }, {});
   }
 }

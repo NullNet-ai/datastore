@@ -3,7 +3,6 @@ import { IResponse } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/get_file_by_id/get_file_by_id.schema';
 import { Utility } from '../../../../utils/utility.service';
-import { EDateFormats } from '../../../../utils/utility.types';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { VerifyActorsImplementations } from '../verify';
 import { isNotNull, and, eq } from 'drizzle-orm';
@@ -44,7 +43,7 @@ export class GetFileByIdActorsImplementations {
       const _plucked_fields = Utility.parsePluckedFields(
         table,
         pluck.split(','),
-        EDateFormats[date_format] || '%m/%d/%Y',
+        date_format,
       );
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       const result = await this.db

@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.20",
+  "version": "1.0.30",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "drizzle:generate": "drizzle-kit generate --name=template",
     "drizzle:generate-hypertables": "drizzle-kit generate --custom --name=hypertables",
     "drizzle:migrate": "drizzle-kit migrate",
-    "drizzle:init": "rm -rf drizzle && npm run drizzle:generate && npm run drizzle:migrate",
+    "drizzle:init": "rm -rf drizzle && npm run build && npm run drizzle:generate && npm run drizzle:migrate",
     "test:client1": "PORT=5001 DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run start:prod",
     "test:client2": "PORT=5002 DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run start:prod",
     "generate:client1": "DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run drizzle:generate",
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.54",
-    "@dna-platform/crdt-lww-postgres": "^1.0.113",
+    "@dna-platform/crdt-lww-postgres": "^1.0.117",
     "@elastic/elasticsearch": "^8.17.1",
     "@grpc/grpc-js": "^1.13.2",
     "@grpc/proto-loader": "^0.7.13",

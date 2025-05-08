@@ -3,7 +3,7 @@ import { LoggerService } from '@dna-platform/common';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { eq, sql } from 'drizzle-orm';
 import * as local_schema from '../../../schema';
-import { v4 as uuidv4 } from 'uuid';
+import { ulid } from 'ulid';
 
 const axon = require('axon');
 
@@ -90,7 +90,7 @@ export class DeadLetterQueueService {
           await this.db
             .insert(dead_letter_schema)
             .values({
-              id: uuidv4(),
+              id: ulid(),
               record_id: id,
               table,
               prefix,

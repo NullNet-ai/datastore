@@ -8,8 +8,8 @@ import { eq, pick } from 'lodash';
 import { VerifyActorsImplementations } from '../verify';
 import { MinioService } from '../../../../providers/files/minio.service';
 import { sql } from 'drizzle-orm';
+import { ulid } from 'ulid';
 import * as local_schema from '../../../../schema';
-import { v4 as uuidv4 } from 'uuid';
 import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false' } = process.env;
 
@@ -95,7 +95,7 @@ export class CreateActorsImplementations {
       body.timestamp = body?.timestamp
         ? new Date(body?.timestamp)
         : new Date().toISOString();
-      body.id = body.id === undefined ? uuidv4() : body.id;
+      body.id = body.id === undefined ? ulid() : body.id;
 
       const { schema }: any = Utility.checkCreateSchema(
         table,
@@ -150,14 +150,19 @@ export class CreateActorsImplementations {
           body.code = constructCode(code);
         }
       }
-
-      const parsed_data = Utility.createParse({ schema, data: body });
+      const { encrypted_fields = [], ..._body } = body;
+      let parsed_data = Utility.createParse({ schema, data: _body });
       this.logger.debug(`Create request for ${table}: ${body.id}`);
-      const results = await this.db
-        .insert(table_schema)
-        .values(parsed_data)
-        .returning({ table_schema })
-        .then(([{ table_schema }]) => table_schema);
+
+      const results = await Utility.encryptCreate({
+        query: {
+          table_schema,
+        },
+        table,
+        data: parsed_data,
+        encrypted_fields,
+        db: this.db,
+      });
 
       if (SYNC_ENABLED === 'true') {
         this.syncService.insert(table, parsed_data);
