@@ -5,7 +5,6 @@ import {
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { table as contacts } from './contacts';
-import { sql } from 'drizzle-orm';
 const filename = path.basename(__filename).replace(fileRegex, '');
 
 const fields = {
@@ -15,22 +14,15 @@ const fields = {
   is_current: boolean().default(false),
   is_default: boolean().default(false),
   contact_id: text().references(() => (contacts as Record<string, any>).id),
+  account_organization_id : text(),
   entity: text(),
-  columns: text('columns')
-    .array()
-    .default(sql`ARRAY[]::text[]`),
-  groups: text('groups')
-    .array()
-    .default(sql`ARRAY[]::text[]`),
-  sorts: text('sorts')
-    .array()
-    .default(sql`ARRAY[]::text[]`),
-  default_sorts: text('default_sorts')
-    .array()
-    .default(sql`ARRAY[]::text[]`),
-  advance_filters: jsonb().default([]),
-  group_advance_filters: jsonb().default([]),
-  filter_groups: jsonb().default([]),
+  columns: jsonb("columns").default([]),
+  groups: jsonb("groups").default([]),
+  sorts: jsonb("sorts").default([]),
+  default_sorts:jsonb("default_sorts").default([]),
+  advance_filters: jsonb("advance_filters").default([]),
+  group_advance_filters: jsonb("group_advance_filters").default([]),
+  filter_groups: jsonb("filter_groups").default([]),
 };
 
 export const table = pgTable(
