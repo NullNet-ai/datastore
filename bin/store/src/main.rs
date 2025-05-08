@@ -12,6 +12,7 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
+mod utils;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -78,11 +79,12 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
     let grpc_port = env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string());
+    let grpc_url = env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
     let pool = db::establish_async_pool();
     println!("Database connected successfully.");
     TransactionService::initialize().await;
 
-    let grpc_addr = format!("127.0.0.1:{}", grpc_port);
+    let grpc_addr = format!("{}:{}",grpc_url, grpc_port);
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
             Ok(_) => println!("gRPC server started successfully"),
