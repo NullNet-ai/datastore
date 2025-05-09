@@ -841,7 +841,7 @@ export class Utility {
         Utility.decryptField(
           expressions[entity]
             .find((exp) => exp.includes(field))
-            .split(' AS ')[0],
+            ?.split(' AS ')[0],
           encrypted_fields,
         ),
       );
