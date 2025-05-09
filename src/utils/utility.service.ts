@@ -716,6 +716,7 @@ export class Utility {
               eq(table_schema['organization_id'], organization_id),
             ]
           : []),
+        // TODO: inject permissions by user_organization_role_id
         ...Utility.constructFilters(
           table,
           advance_filters,
@@ -1601,5 +1602,13 @@ export class Utility {
         [key]: value,
       };
     }, {});
+  }
+
+  public static constructPermissionSelectWhereClause({ table, main_fields }) {
+    return `AND (
+          data_permissions.tombstone = 0 AND entities.name = '${table}' AND fields.name IN (${main_fields
+      .map((field) => `'${field}'`)
+      .join(',')})
+        ) `;
   }
 }

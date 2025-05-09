@@ -31,8 +31,6 @@ import * as schema from '../../schema';
 import { desc, sql, eq, and, isNotNull } from 'drizzle-orm';
 import * as cache from 'memory-cache';
 import * as argon2 from 'argon2';
-import { ulid } from 'ulid';
-console.log(ulid());
 const pluralize = require('pluralize');
 const {
   DEBUG = 'false',
@@ -407,6 +405,7 @@ export class InitializerService {
     // TODO: create entity_fields
     // TODO: create permissions
     // TODO: create data_permissions
+    // TODO: use the src/schema/init.sql file to create the default data permissions
   }
 }
 

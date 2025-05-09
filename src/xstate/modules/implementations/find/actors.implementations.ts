@@ -25,6 +25,13 @@ const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
   private db;
+  private not_allowed_entities = [
+    'data_permissions',
+    'entities',
+    'fields',
+    'permissions',
+    'entity_fields',
+  ];
   constructor(
     private readonly drizzleService: DrizzleService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
@@ -45,12 +52,31 @@ export class FindActorsImplementations {
             data: [],
           },
         });
-      const { controller_args, responsible_account } = context;
+      const { controller_args, responsible_account, data_permissions_query } =
+        context;
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, headers } = _req;
       const { time_zone } = headers;
       const { table, type } = params;
+      if (this.not_allowed_entities.includes(table)) {
+        return Promise.reject({
+          payload: {
+            success: false,
+            message: `Table ${table} is not allowed.`,
+            count: 0,
+            data: [],
+          },
+        });
+      }
+      console.log({ data_permissions_query });
+      // use cache
+      const results = await this.db
+        .execute(data_permissions_query.trim())
+        .then((response) => response.rows)
+        .catch(() => []);
+      console.log({ results });
+
       const {
         order_direction = 'asc',
         order_by = 'id',

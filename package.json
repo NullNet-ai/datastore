@@ -32,11 +32,15 @@
     "migrate:client1": "DATABASE_URL=postgresql://admin:admin@localhost:54324/template_dev1 npm run drizzle:migrate",
     "generate:client2": "DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run drizzle:generate",
     "migrate:client2": "DATABASE_URL=postgresql://admin:admin@localhost:54325/template_dev2 npm run drizzle:migrate",
-    "initial:setup": "pnpm clean:build && pnpm drizzle:generate && pnpm drizzle:migrate"
+    "initial:setup": "pnpm clean:build && pnpm drizzle:generate && pnpm drizzle:migrate",
+    "sql:exec": "psql -U postgres -d postgres -p 5432 -h 10.4.10.144 -f",
+    "clean:setup": "pnpm sql:exec ./src/setup.sql && pnpm drizzle:init && SCRIPT_INIT=true pnpm start && pnpm sql:exec ./src/schema/init.sql",
+    "initialize:permissions": "pnpm sql:exec ./src/schema/init.sql",
+    "test:sql": "pnpm sql:exec ./test/contacts-permissions.test.sql"
   },
   "dependencies": {
     "@dna-platform/common": "^1.0.54",
-    "@dna-platform/crdt-lww-postgres": "1.0.117-rc6",
+    "@dna-platform/crdt-lww-postgres": "1.0.117-rc11",
     "@elastic/elasticsearch": "^8.17.1",
     "@grpc/grpc-js": "^1.13.2",
     "@grpc/proto-loader": "^0.7.13",

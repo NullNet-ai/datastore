@@ -1,0 +1,2 @@
+
+SELECT entities.name as entity,fields.name as field,permissions.* FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '01JTSR9TCGJC9A6502PCGBMQ8K'
