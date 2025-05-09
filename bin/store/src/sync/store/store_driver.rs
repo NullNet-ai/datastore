@@ -31,7 +31,6 @@ pub async fn apply(
         } else {
             timestamp.to_string()
         };
-        println!("Hypertable timestamp before error: {}", timestamp_str);
 
         ColumnValue::Timestamp(
             chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {

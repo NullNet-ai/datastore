@@ -1,6 +1,5 @@
 use crate::db;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
-use crate::generated::store::{Connections, Packets};
 use crate::generated::store::{
     CreateCrdtMerklesRequest, CreateCrdtMerklesResponse, CreateCrdtMessagesRequest,
     CreateCrdtMessagesResponse, CreateItemsRequest, CreateItemsResponse, CreatePacketsRequest,
@@ -22,7 +21,13 @@ use crate::generated::store::{
     UpdateSyncEndpointsRequest, UpdateSyncEndpointsResponse, UpdateTransactionsRequest,
     UpdateTransactionsResponse, GetConnectionsRequest, GetConnectionsResponse,
     UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest,
-    DeleteConnectionsResponse, CreateConnectionsRequest, CreateConnectionsResponse,
+    DeleteConnectionsResponse, CreateConnectionsRequest, CreateConnectionsResponse, 
+    BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchInsertCrdtMerklesRequest,
+    BatchInsertCrdtMerklesResponse, BatchInsertCrdtMessagesRequest, BatchInsertCrdtMessagesResponse, 
+    BatchInsertItemsRequest, BatchInsertItemsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse,
+    BatchInsertQueueItemsRequest, BatchInsertQueueItemsResponse, BatchInsertQueuesRequest, BatchInsertQueuesResponse, 
+    BatchInsertSyncEndpointsRequest, BatchInsertSyncEndpointsResponse, BatchInsertTransactionsRequest, BatchInsertTransactionsResponse,
+    Connections, Packets
 };
 use crate::structs::structs::RequestBody;
 use crate::sync::sync_service::insert;
@@ -32,6 +37,7 @@ use tonic::{transport::Server, Request, Response, Status};
 use crate::schema::verify::field_exists_in_table;
 use crate::table_enum::Table;
 use crate::auth::auth_middleware::GrpcAuthInterceptor;
+use crate::controllers::common_controller::{process_records, convert_json_to_csv, create_connection, execute_copy};
 
 
 
@@ -96,6 +102,15 @@ impl StoreService for GrpcController {
         // Implementation for DeleteItems method
         todo!()
     }
+
+    async fn batch_insert_items(
+        &self,
+        request: Request<BatchInsertItemsRequest>,
+    ) -> Result<Response<BatchInsertItemsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
 
     async fn create_connections(
         &self,
@@ -279,6 +294,84 @@ impl StoreService for GrpcController {
     ) -> Result<Response<DeleteConnectionsResponse>, Status> {
         // Implementation for DeleteItems method
         todo!()
+    }
+
+    async fn batch_insert_connections(
+        &self,
+        request: Request<BatchInsertConnectionsRequest>,
+    ) -> Result<Response<BatchInsertConnectionsResponse>, Status> {
+        // Implementation for DeleteItems method
+        let request = request.into_inner();
+        let params = match request.params {
+            Some(p) => p,
+            None => return Err(Status::invalid_argument("Params are required")),
+        };
+        let table_name = params.table;
+        let connections = match request.body {
+            Some(batch_body) => batch_body.connections,
+            None => return Err(Status::invalid_argument("No packets provided")),
+        };
+
+        if connections.is_empty() {
+            return Err(Status::invalid_argument("No records provided"));
+        }
+
+        let json_records: Vec<serde_json::Value> = connections
+        .into_iter()
+        .map(|connection| serde_json::to_value(&connection))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| Status::internal(format!("Failed to process records: {}", e)))?;
+
+     // Process records using common controller method
+     let (processed_records, columns) = match process_records(json_records, &table_name) {
+        Ok((records, cols)) => (records, cols),
+        Err(e) => return Err(Status::internal(format!("Error processing records: {}", e))),
+    };
+
+     // Convert JSON to CSV
+     let csv_data = match convert_json_to_csv(&processed_records, &columns) {
+        Ok(data) => data,
+        Err(e) => return Err(Status::internal(format!("Error converting records to CSV: {:?}", e))),
+    };
+
+     // Create database connection
+     let client = match create_connection().await {
+        Ok(client) => client,
+        Err(e) => return Err(Status::internal(format!("Error creating database connection: {:?}", e))),
+    };
+
+    // Convert Vec<String> to Vec<&str> for execute_copy
+    let columns_refs: Vec<&str> = columns.iter().map(|s| s.as_str()).collect();
+
+    // Execute COPY command
+    if let Err(e) = execute_copy(&client, &table_name, &columns_refs, csv_data).await {
+        return Err(Status::internal(format!("Error executing COPY command: {:?}", e)));
+    }
+
+     // Send sync messages for each record
+     for record in processed_records.iter() {
+        if let Err(e) = crate::batch_sync::BatchSyncService::send_message(table_name.clone(), record.clone()).await {
+            return Err(Status::internal(format!("Sync error: {}", e)));
+        }
+    }
+
+    // Convert processed records back to protobuf messages
+    let response_connections: Vec<Connections> = processed_records
+        .into_iter()
+        .map(|record| serde_json::from_value(record))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| Status::internal(format!("Failed to convert records: {}", e)))?;
+
+      // Convert Vec<String> to Vec<&str> for execute_copy
+    // Create response
+    let response = BatchInsertConnectionsResponse {
+        success: true,
+        message: format!("Inserted {} records into '{}'", response_connections.len(), table_name),
+        count: response_connections.len() as i32,
+        data: response_connections.clone(),
+    };
+    
+    Ok(Response::new(response))
     }
 
     async fn create_packets(
@@ -467,6 +560,14 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_insert_packets(
+        &self,
+        request: Request<BatchInsertPacketsRequest>,
+    ) -> Result<Response<BatchInsertPacketsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_crdt_messages(
         &self,
         request: Request<CreateCrdtMessagesRequest>,
@@ -496,6 +597,14 @@ impl StoreService for GrpcController {
         request: Request<DeleteCrdtMessagesRequest>,
     ) -> Result<Response<DeleteCrdtMessagesResponse>, Status> {
         // Implementation for DeleteCrdtMessages method
+        todo!()
+    }
+
+    async fn batch_insert_crdt_messages(
+        &self,
+        request: Request<BatchInsertCrdtMessagesRequest>,
+    ) -> Result<Response<BatchInsertCrdtMessagesResponse>, Status> {
+        // Implementation for DeleteItems method
         todo!()
     }
 
@@ -531,6 +640,14 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_insert_crdt_merkles(
+        &self,
+        request: Request<BatchInsertCrdtMerklesRequest>,
+    ) -> Result<Response<BatchInsertCrdtMerklesResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_sync_endpoints(
         &self,
         request: Request<CreateSyncEndpointsRequest>,
@@ -560,6 +677,14 @@ impl StoreService for GrpcController {
         request: Request<DeleteSyncEndpointsRequest>,
     ) -> Result<Response<DeleteSyncEndpointsResponse>, Status> {
         // Implementation for DeleteSyncEndpoints method
+        todo!()
+    }
+
+    async fn batch_insert_sync_endpoints(
+        &self,
+        request: Request<BatchInsertSyncEndpointsRequest>,
+    ) -> Result<Response<BatchInsertSyncEndpointsResponse>, Status> {
+        // Implementation for DeleteItems method
         todo!()
     }
 
@@ -595,6 +720,14 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_insert_queues(
+        &self,
+        request: Request<BatchInsertQueuesRequest>,
+    ) -> Result<Response<BatchInsertQueuesResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_queue_items(
         &self,
         request: Request<CreateQueueItemsRequest>,
@@ -627,6 +760,14 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_insert_queue_items(
+        &self,
+        request: Request<BatchInsertQueueItemsRequest>,
+    ) -> Result<Response<BatchInsertQueueItemsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_transactions(
         &self,
         request: Request<CreateTransactionsRequest>,
@@ -656,6 +797,14 @@ impl StoreService for GrpcController {
         request: Request<DeleteTransactionsRequest>,
     ) -> Result<Response<DeleteTransactionsResponse>, Status> {
         // Implementation for DeleteTransactions method
+        todo!()
+    }
+
+    async fn batch_insert_transactions(
+        &self,
+        request: Request<BatchInsertTransactionsRequest>,
+    ) -> Result<Response<BatchInsertTransactionsResponse>, Status> {
+        // Implementation for DeleteItems method
         todo!()
     }
 }

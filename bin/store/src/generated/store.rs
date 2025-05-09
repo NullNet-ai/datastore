@@ -48,6 +48,22 @@ pub struct UpdateQuery {
     #[prost(string, tag = "1")]
     pub pluck: ::prost::alloc::string::String,
 }
+/// Common parameter structure for BatchInsert requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertParams {
+    /// Table name
+    #[prost(string, tag = "1")]
+    pub table: ::prost::alloc::string::String,
+}
+/// Common query structure for BatchInsert requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertQuery {
+    /// Field to pluck (e.g., "id")
+    #[prost(string, tag = "1")]
+    pub pluck: ::prost::alloc::string::String,
+}
 /// Items entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -80,6 +96,8 @@ pub struct Items {
     pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "14")]
     pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(int32, tag = "15")]
+    pub id: i32,
     #[prost(string, tag = "16")]
     pub name: ::prost::alloc::string::String,
     #[prost(string, optional, tag = "17")]
@@ -402,6 +420,41 @@ pub struct DeleteItemsResponse {
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
+/// BatchInsert Items request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_items_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertItemsRequest`.
+pub mod batch_insert_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub items: ::prost::alloc::vec::Vec<super::Items>,
+    }
+}
+/// BatchInsert Items response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Items>,
+}
 /// Create Packets request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -486,6 +539,41 @@ pub struct DeletePacketsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+}
+/// BatchInsert Packets request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertPacketsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_packets_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertPacketsRequest`.
+pub mod batch_insert_packets_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub packets: ::prost::alloc::vec::Vec<super::Packets>,
+    }
+}
+/// BatchInsert Packets response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertPacketsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Packets>,
 }
 /// Create Connections request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -572,6 +660,41 @@ pub struct DeleteConnectionsResponse {
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
+/// BatchInsert Connections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_connections_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertConnectionsRequest`.
+pub mod batch_insert_connections_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub connections: ::prost::alloc::vec::Vec<super::Connections>,
+    }
+}
+/// BatchInsert Connections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Connections>,
+}
 /// Create CrdtMessages request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -656,6 +779,41 @@ pub struct DeleteCrdtMessagesResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+}
+/// BatchInsert CrdtMessages request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertCrdtMessagesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_crdt_messages_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertCrdtMessagesRequest`.
+pub mod batch_insert_crdt_messages_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub crdt_messages: ::prost::alloc::vec::Vec<super::CrdtMessages>,
+    }
+}
+/// BatchInsert CrdtMessages response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertCrdtMessagesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<CrdtMessages>,
 }
 /// Create CrdtMerkles request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -742,6 +900,41 @@ pub struct DeleteCrdtMerklesResponse {
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
+/// BatchInsert CrdtMerkles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertCrdtMerklesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_crdt_merkles_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertCrdtMerklesRequest`.
+pub mod batch_insert_crdt_merkles_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub crdt_merkles: ::prost::alloc::vec::Vec<super::CrdtMerkles>,
+    }
+}
+/// BatchInsert CrdtMerkles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertCrdtMerklesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<CrdtMerkles>,
+}
 /// Create SyncEndpoints request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -826,6 +1019,41 @@ pub struct DeleteSyncEndpointsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+}
+/// BatchInsert SyncEndpoints request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSyncEndpointsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_sync_endpoints_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertSyncEndpointsRequest`.
+pub mod batch_insert_sync_endpoints_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub sync_endpoints: ::prost::alloc::vec::Vec<super::SyncEndpoints>,
+    }
+}
+/// BatchInsert SyncEndpoints response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSyncEndpointsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SyncEndpoints>,
 }
 /// Create Queues request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -912,6 +1140,41 @@ pub struct DeleteQueuesResponse {
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
+/// BatchInsert Queues request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertQueuesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_queues_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertQueuesRequest`.
+pub mod batch_insert_queues_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub queues: ::prost::alloc::vec::Vec<super::Queues>,
+    }
+}
+/// BatchInsert Queues response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertQueuesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Queues>,
+}
 /// Create QueueItems request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -996,6 +1259,41 @@ pub struct DeleteQueueItemsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+}
+/// BatchInsert QueueItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertQueueItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_queue_items_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertQueueItemsRequest`.
+pub mod batch_insert_queue_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub queue_items: ::prost::alloc::vec::Vec<super::QueueItems>,
+    }
+}
+/// BatchInsert QueueItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertQueueItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<QueueItems>,
 }
 /// Create Transactions request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1082,6 +1380,41 @@ pub struct DeleteTransactionsResponse {
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
+/// BatchInsert Transactions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTransactionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_transactions_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertTransactionsRequest`.
+pub mod batch_insert_transactions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub transactions: ::prost::alloc::vec::Vec<super::Transactions>,
+    }
+}
+/// BatchInsert Transactions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTransactionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Transactions>,
+}
 /// Generated server implementations.
 pub mod store_service_server {
     #![allow(
@@ -1127,6 +1460,14 @@ pub mod store_service_server {
             tonic::Response<super::DeleteItemsResponse>,
             tonic::Status,
         >;
+        /// Batch insert multiple Itemss
+        async fn batch_insert_items(
+            &self,
+            request: tonic::Request<super::BatchInsertItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertItemsResponse>,
+            tonic::Status,
+        >;
         /// Create a new Packets
         async fn create_packets(
             &self,
@@ -1157,6 +1498,14 @@ pub mod store_service_server {
             request: tonic::Request<super::DeletePacketsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::DeletePacketsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple Packetss
+        async fn batch_insert_packets(
+            &self,
+            request: tonic::Request<super::BatchInsertPacketsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertPacketsResponse>,
             tonic::Status,
         >;
         /// Create a new Connections
@@ -1191,6 +1540,14 @@ pub mod store_service_server {
             tonic::Response<super::DeleteConnectionsResponse>,
             tonic::Status,
         >;
+        /// Batch insert multiple Connectionss
+        async fn batch_insert_connections(
+            &self,
+            request: tonic::Request<super::BatchInsertConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Create a new CrdtMessages
         async fn create_crdt_messages(
             &self,
@@ -1221,6 +1578,14 @@ pub mod store_service_server {
             request: tonic::Request<super::DeleteCrdtMessagesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::DeleteCrdtMessagesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple CrdtMessagess
+        async fn batch_insert_crdt_messages(
+            &self,
+            request: tonic::Request<super::BatchInsertCrdtMessagesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertCrdtMessagesResponse>,
             tonic::Status,
         >;
         /// Create a new CrdtMerkles
@@ -1255,6 +1620,14 @@ pub mod store_service_server {
             tonic::Response<super::DeleteCrdtMerklesResponse>,
             tonic::Status,
         >;
+        /// Batch insert multiple CrdtMerkless
+        async fn batch_insert_crdt_merkles(
+            &self,
+            request: tonic::Request<super::BatchInsertCrdtMerklesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertCrdtMerklesResponse>,
+            tonic::Status,
+        >;
         /// Create a new SyncEndpoints
         async fn create_sync_endpoints(
             &self,
@@ -1285,6 +1658,14 @@ pub mod store_service_server {
             request: tonic::Request<super::DeleteSyncEndpointsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::DeleteSyncEndpointsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple SyncEndpointss
+        async fn batch_insert_sync_endpoints(
+            &self,
+            request: tonic::Request<super::BatchInsertSyncEndpointsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertSyncEndpointsResponse>,
             tonic::Status,
         >;
         /// Create a new Queues
@@ -1319,6 +1700,14 @@ pub mod store_service_server {
             tonic::Response<super::DeleteQueuesResponse>,
             tonic::Status,
         >;
+        /// Batch insert multiple Queuess
+        async fn batch_insert_queues(
+            &self,
+            request: tonic::Request<super::BatchInsertQueuesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertQueuesResponse>,
+            tonic::Status,
+        >;
         /// Create a new QueueItems
         async fn create_queue_items(
             &self,
@@ -1351,6 +1740,14 @@ pub mod store_service_server {
             tonic::Response<super::DeleteQueueItemsResponse>,
             tonic::Status,
         >;
+        /// Batch insert multiple QueueItemss
+        async fn batch_insert_queue_items(
+            &self,
+            request: tonic::Request<super::BatchInsertQueueItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertQueueItemsResponse>,
+            tonic::Status,
+        >;
         /// Create a new Transactions
         async fn create_transactions(
             &self,
@@ -1381,6 +1778,14 @@ pub mod store_service_server {
             request: tonic::Request<super::DeleteTransactionsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::DeleteTransactionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple Transactionss
+        async fn batch_insert_transactions(
+            &self,
+            request: tonic::Request<super::BatchInsertTransactionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTransactionsResponse>,
             tonic::Status,
         >;
     }
@@ -1641,6 +2046,52 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchInsertItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertItemsRequest>
+                    for BatchInsertItemsSvc<T> {
+                        type Response = super::BatchInsertItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_items(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreatePackets" => {
                     #[allow(non_camel_case_types)]
                     struct CreatePacketsSvc<T: StoreService>(pub Arc<T>);
@@ -1806,6 +2257,52 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DeletePacketsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertPackets" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertPacketsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertPacketsRequest>
+                    for BatchInsertPacketsSvc<T> {
+                        type Response = super::BatchInsertPacketsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertPacketsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_packets(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertPacketsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1989,6 +2486,55 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DeleteConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertConnectionsRequest>
+                    for BatchInsertConnectionsSvc<T> {
+                        type Response = super::BatchInsertConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertConnectionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -2188,6 +2734,57 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchInsertCrdtMessages" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertCrdtMessagesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertCrdtMessagesRequest>
+                    for BatchInsertCrdtMessagesSvc<T> {
+                        type Response = super::BatchInsertCrdtMessagesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertCrdtMessagesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_crdt_messages(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertCrdtMessagesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateCrdtMerkles" => {
                     #[allow(non_camel_case_types)]
                     struct CreateCrdtMerklesSvc<T: StoreService>(pub Arc<T>);
@@ -2356,6 +2953,55 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DeleteCrdtMerklesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertCrdtMerkles" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertCrdtMerklesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertCrdtMerklesRequest>
+                    for BatchInsertCrdtMerklesSvc<T> {
+                        type Response = super::BatchInsertCrdtMerklesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertCrdtMerklesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_crdt_merkles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertCrdtMerklesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -2555,6 +3201,57 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchInsertSyncEndpoints" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertSyncEndpointsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertSyncEndpointsRequest>
+                    for BatchInsertSyncEndpointsSvc<T> {
+                        type Response = super::BatchInsertSyncEndpointsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertSyncEndpointsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_sync_endpoints(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertSyncEndpointsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateQueues" => {
                     #[allow(non_camel_case_types)]
                     struct CreateQueuesSvc<T: StoreService>(pub Arc<T>);
@@ -2720,6 +3417,52 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DeleteQueuesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertQueues" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertQueuesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertQueuesRequest>
+                    for BatchInsertQueuesSvc<T> {
+                        type Response = super::BatchInsertQueuesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertQueuesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_queues(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertQueuesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -2918,6 +3661,55 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchInsertQueueItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertQueueItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertQueueItemsRequest>
+                    for BatchInsertQueueItemsSvc<T> {
+                        type Response = super::BatchInsertQueueItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertQueueItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_queue_items(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertQueueItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateTransactions" => {
                     #[allow(non_camel_case_types)]
                     struct CreateTransactionsSvc<T: StoreService>(pub Arc<T>);
@@ -3086,6 +3878,57 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = DeleteTransactionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTransactions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTransactionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertTransactionsRequest>
+                    for BatchInsertTransactionsSvc<T> {
+                        type Response = super::BatchInsertTransactionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTransactionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_transactions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTransactionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

@@ -13,6 +13,7 @@ mod sync;
 mod table_enum;
 mod templates;
 mod utils;
+mod batch_sync;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -20,7 +21,8 @@ use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
-use controllers::store_controller::{create_record, update_record};
+use controllers::store_controller::{create_record, update_record, batch_insert_records};
+use crate::batch_sync::BatchSyncService;
 use env_logger::Env;
 use std::sync::Arc;
 pub mod generated;
@@ -92,6 +94,13 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
+    //init batch sync 
+    if let Err(e) = BatchSyncService::init().await {
+        log::error!("Failed to initialize queue: {}", e);
+    } else {
+        log::info!("Queue initialized successfully");
+    }
+
     if let Err(e) = QueueService::init().await {
         log::error!("Failed to initialize queue: {}", e);
     } else {
@@ -120,7 +129,8 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/store")
                     .wrap(Authentication)
                     .route("/{table}", web::post().to(create_record))
-                    .route("/{table}/{id}", web::patch().to(update_record)),
+                    .route("/{table}/{id}", web::patch().to(update_record))
+                    .route("/batch/{table}", web::post().to(batch_insert_records))
             )
     })
     .bind(server_url)?

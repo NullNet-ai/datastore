@@ -228,6 +228,17 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  string pluck = 1; // Field to pluck (e.g., \"id,code\")\n");
     proto.push_str("}\n\n");
 
+    // Add BatchInsert common structures
+    proto.push_str("// Common parameter structure for BatchInsert requests\n");
+    proto.push_str("message BatchInsertParams {\n");
+    proto.push_str("  string table = 1; // Table name\n");
+    proto.push_str("}\n\n");
+
+    proto.push_str("// Common query structure for BatchInsert requests\n");
+    proto.push_str("message BatchInsertQuery {\n");
+    proto.push_str("  string pluck = 1; // Field to pluck (e.g., \"id\")\n");
+    proto.push_str("}\n\n");
+
     // Generate all data messages first
     for table in tables {
         proto.push_str(&format!(
@@ -324,6 +335,29 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str("  bool success = 1;\n");
         proto.push_str("  string message = 2;\n");
         proto.push_str("}\n\n");
+
+
+        // BatchInsert operation
+        proto.push_str(&format!("// BatchInsert {} request\n", pascal_name));
+        proto.push_str(&format!("message BatchInsert{}Request {{\n", pascal_name));
+        proto.push_str("  BatchInsertParams params = 1;\n");
+        proto.push_str("  BatchInsertQuery query = 2;\n");
+        proto.push_str("  message BatchBody {\n");
+        proto.push_str("    string entity_prefix = 1;\n");
+        proto.push_str(&format!("    repeated {} {} = 2;\n", pascal_name, snake_name));
+        proto.push_str("  }\n");
+        proto.push_str("  BatchBody body = 3;\n");
+        proto.push_str("}\n\n");
+
+
+         // BatchInsert response
+         proto.push_str(&format!("// BatchInsert {} response\n", pascal_name));
+         proto.push_str(&format!("message BatchInsert{}Response {{\n", pascal_name));
+         proto.push_str("  bool success = 1;\n");
+         proto.push_str("  string message = 2;\n");
+         proto.push_str("  int32 count = 3;\n");
+         proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
+         proto.push_str("}\n\n");
     }
 
     // Generate batch operations for multiple records - only once
@@ -362,6 +396,13 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
             "  rpc Delete{}(Delete{}Request) returns (Delete{}Response);\n\n",
             pascal_name, pascal_name, pascal_name
         ));
+
+         // BatchInsert
+         proto.push_str(&format!("  // Batch insert multiple {}s\n", pascal_name));
+         proto.push_str(&format!(
+             "  rpc BatchInsert{}(BatchInsert{}Request) returns (BatchInsert{}Response);\n\n",
+             pascal_name, pascal_name, pascal_name
+         ));
     }
 
     proto.push_str("}\n");

@@ -33,6 +33,16 @@ message UpdateQuery {
   string pluck = 1; // Field to pluck (e.g., "id,code")
 }
 
+// Common parameter structure for BatchInsert requests
+message BatchInsertParams {
+  string table = 1; // Table name
+}
+
+// Common query structure for BatchInsert requests
+message BatchInsertQuery {
+  string pluck = 1; // Field to pluck (e.g., "id")
+}
+
 // Items entity definition
 message Items {
   int32 tombstone = 1;
@@ -49,6 +59,7 @@ message Items {
   optional string deleted_by = 12;
   optional string requested_by = 13;
   repeated string tags = 14;
+  int32 id = 15;
   string name = 16;
   optional string description = 17;
 }
@@ -235,6 +246,25 @@ message DeleteItemsResponse {
   string message = 2;
 }
 
+// BatchInsert Items request
+message BatchInsertItemsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Items items = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Items response
+message BatchInsertItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Items data = 4;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -287,6 +317,25 @@ message DeletePacketsRequest {
 message DeletePacketsResponse {
   bool success = 1;
   string message = 2;
+}
+
+// BatchInsert Packets request
+message BatchInsertPacketsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Packets packets = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Packets response
+message BatchInsertPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Packets data = 4;
 }
 
 // Create Connections request
@@ -343,6 +392,25 @@ message DeleteConnectionsResponse {
   string message = 2;
 }
 
+// BatchInsert Connections request
+message BatchInsertConnectionsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Connections connections = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Connections response
+message BatchInsertConnectionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Connections data = 4;
+}
+
 // Create CrdtMessages request
 message CreateCrdtMessagesRequest {
   CrdtMessages crdt_messages = 1;
@@ -395,6 +463,25 @@ message DeleteCrdtMessagesRequest {
 message DeleteCrdtMessagesResponse {
   bool success = 1;
   string message = 2;
+}
+
+// BatchInsert CrdtMessages request
+message BatchInsertCrdtMessagesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated CrdtMessages crdt_messages = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert CrdtMessages response
+message BatchInsertCrdtMessagesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated CrdtMessages data = 4;
 }
 
 // Create CrdtMerkles request
@@ -451,6 +538,25 @@ message DeleteCrdtMerklesResponse {
   string message = 2;
 }
 
+// BatchInsert CrdtMerkles request
+message BatchInsertCrdtMerklesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated CrdtMerkles crdt_merkles = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert CrdtMerkles response
+message BatchInsertCrdtMerklesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated CrdtMerkles data = 4;
+}
+
 // Create SyncEndpoints request
 message CreateSyncEndpointsRequest {
   SyncEndpoints sync_endpoints = 1;
@@ -503,6 +609,25 @@ message DeleteSyncEndpointsRequest {
 message DeleteSyncEndpointsResponse {
   bool success = 1;
   string message = 2;
+}
+
+// BatchInsert SyncEndpoints request
+message BatchInsertSyncEndpointsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated SyncEndpoints sync_endpoints = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert SyncEndpoints response
+message BatchInsertSyncEndpointsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SyncEndpoints data = 4;
 }
 
 // Create Queues request
@@ -559,6 +684,25 @@ message DeleteQueuesResponse {
   string message = 2;
 }
 
+// BatchInsert Queues request
+message BatchInsertQueuesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Queues queues = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Queues response
+message BatchInsertQueuesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Queues data = 4;
+}
+
 // Create QueueItems request
 message CreateQueueItemsRequest {
   QueueItems queue_items = 1;
@@ -611,6 +755,25 @@ message DeleteQueueItemsRequest {
 message DeleteQueueItemsResponse {
   bool success = 1;
   string message = 2;
+}
+
+// BatchInsert QueueItems request
+message BatchInsertQueueItemsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated QueueItems queue_items = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert QueueItems response
+message BatchInsertQueueItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated QueueItems data = 4;
 }
 
 // Create Transactions request
@@ -667,6 +830,25 @@ message DeleteTransactionsResponse {
   string message = 2;
 }
 
+// BatchInsert Transactions request
+message BatchInsertTransactionsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Transactions transactions = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Transactions response
+message BatchInsertTransactionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Transactions data = 4;
+}
+
 // Store service definition with CRUD operations
 service StoreService {
   // Create a new Items
@@ -681,6 +863,9 @@ service StoreService {
   // Delete a Items by ID
   rpc DeleteItems(DeleteItemsRequest) returns (DeleteItemsResponse);
 
+  // Batch insert multiple Itemss
+  rpc BatchInsertItems(BatchInsertItemsRequest) returns (BatchInsertItemsResponse);
+
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
 
@@ -692,6 +877,9 @@ service StoreService {
 
   // Delete a Packets by ID
   rpc DeletePackets(DeletePacketsRequest) returns (DeletePacketsResponse);
+
+  // Batch insert multiple Packetss
+  rpc BatchInsertPackets(BatchInsertPacketsRequest) returns (BatchInsertPacketsResponse);
 
   // Create a new Connections
   rpc CreateConnections(CreateConnectionsRequest) returns (CreateConnectionsResponse);
@@ -705,6 +893,9 @@ service StoreService {
   // Delete a Connections by ID
   rpc DeleteConnections(DeleteConnectionsRequest) returns (DeleteConnectionsResponse);
 
+  // Batch insert multiple Connectionss
+  rpc BatchInsertConnections(BatchInsertConnectionsRequest) returns (BatchInsertConnectionsResponse);
+
   // Create a new CrdtMessages
   rpc CreateCrdtMessages(CreateCrdtMessagesRequest) returns (CreateCrdtMessagesResponse);
 
@@ -716,6 +907,9 @@ service StoreService {
 
   // Delete a CrdtMessages by ID
   rpc DeleteCrdtMessages(DeleteCrdtMessagesRequest) returns (DeleteCrdtMessagesResponse);
+
+  // Batch insert multiple CrdtMessagess
+  rpc BatchInsertCrdtMessages(BatchInsertCrdtMessagesRequest) returns (BatchInsertCrdtMessagesResponse);
 
   // Create a new CrdtMerkles
   rpc CreateCrdtMerkles(CreateCrdtMerklesRequest) returns (CreateCrdtMerklesResponse);
@@ -729,6 +923,9 @@ service StoreService {
   // Delete a CrdtMerkles by ID
   rpc DeleteCrdtMerkles(DeleteCrdtMerklesRequest) returns (DeleteCrdtMerklesResponse);
 
+  // Batch insert multiple CrdtMerkless
+  rpc BatchInsertCrdtMerkles(BatchInsertCrdtMerklesRequest) returns (BatchInsertCrdtMerklesResponse);
+
   // Create a new SyncEndpoints
   rpc CreateSyncEndpoints(CreateSyncEndpointsRequest) returns (CreateSyncEndpointsResponse);
 
@@ -740,6 +937,9 @@ service StoreService {
 
   // Delete a SyncEndpoints by ID
   rpc DeleteSyncEndpoints(DeleteSyncEndpointsRequest) returns (DeleteSyncEndpointsResponse);
+
+  // Batch insert multiple SyncEndpointss
+  rpc BatchInsertSyncEndpoints(BatchInsertSyncEndpointsRequest) returns (BatchInsertSyncEndpointsResponse);
 
   // Create a new Queues
   rpc CreateQueues(CreateQueuesRequest) returns (CreateQueuesResponse);
@@ -753,6 +953,9 @@ service StoreService {
   // Delete a Queues by ID
   rpc DeleteQueues(DeleteQueuesRequest) returns (DeleteQueuesResponse);
 
+  // Batch insert multiple Queuess
+  rpc BatchInsertQueues(BatchInsertQueuesRequest) returns (BatchInsertQueuesResponse);
+
   // Create a new QueueItems
   rpc CreateQueueItems(CreateQueueItemsRequest) returns (CreateQueueItemsResponse);
 
@@ -765,6 +968,9 @@ service StoreService {
   // Delete a QueueItems by ID
   rpc DeleteQueueItems(DeleteQueueItemsRequest) returns (DeleteQueueItemsResponse);
 
+  // Batch insert multiple QueueItemss
+  rpc BatchInsertQueueItems(BatchInsertQueueItemsRequest) returns (BatchInsertQueueItemsResponse);
+
   // Create a new Transactions
   rpc CreateTransactions(CreateTransactionsRequest) returns (CreateTransactionsResponse);
 
@@ -776,5 +982,8 @@ service StoreService {
 
   // Delete a Transactions by ID
   rpc DeleteTransactions(DeleteTransactionsRequest) returns (DeleteTransactionsResponse);
+
+  // Batch insert multiple Transactionss
+  rpc BatchInsertTransactions(BatchInsertTransactionsRequest) returns (BatchInsertTransactionsResponse);
 
 }

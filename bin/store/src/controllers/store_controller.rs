@@ -1,4 +1,4 @@
-use crate::{db};
+use crate::db;
 use crate::structs::structs::{ApiResponse, RequestBody, QueryParams};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
@@ -6,7 +6,13 @@ use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
+use serde_json::Value;
+use futures::{SinkExt, pin_mut};
+use tokio_postgres::{NoTls, Client};
+use crate::batch_sync::BatchSyncService;
+use serde::Deserialize;
 use crate::schema::verify::field_exists_in_table;
+use crate::controllers::common_controller::{process_records, convert_json_to_csv, create_connection, execute_copy};
 
 #[derive(Serialize)]
 struct ApiError {
@@ -234,3 +240,118 @@ pub async fn create_record(
     };
     HttpResponse::Ok().json(response)
 }
+
+#[derive(Deserialize)]
+pub struct BatchInsertBody {
+    entity_prefix: Option<String>,
+    records: Vec<Value>,
+}
+
+pub async fn batch_insert_records(
+    table: web::Path<String>,
+    records: web::Json<BatchInsertBody>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    let table_clone = table_name.clone();
+    let batch_data = records.into_inner();
+    let json_records = batch_data.records;
+
+    if json_records.is_empty() {
+        return HttpResponse::BadRequest().json(ApiResponse{
+            success: false,
+            message: "No records provided".to_string(),
+            count: 0,
+            data: vec![],
+        })
+    }
+    let (processed_records, columns) = match process_records(json_records, &table_name) {
+        Ok((records, cols)) => (records, cols),
+        Err(e) => return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: format!("Error processing records: {}", e),
+            count: 0,
+            data: vec![],
+        })
+    };
+
+    let csv_data =match convert_json_to_csv(&processed_records, &columns){
+        Ok(data) => data,
+        Err(e) => return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: format!("Error converting records to CSV: {:?}", e),
+            count: 0,
+            data: vec![],
+        })
+    };
+
+    let client = match create_connection().await {
+        Ok(client) => client,
+        Err(e) => return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Error creating database connection: {:?}", e),
+            count: 0,
+            data: vec![],
+        })
+    };
+
+    let column_refs: Vec<&str> = columns.iter().map(|s| s.as_str()).collect();
+
+    let records=match  execute_copy(&client, &table_name, &column_refs, csv_data)
+        .await {
+        Ok(_) => {
+            processed_records.clone()
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Error executing COPY command: {:?}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+
+    // Convert JSON array to CSV in-memor
+  
+    for record in processed_records.iter() {
+        if let Err(e) = BatchSyncService::send_message(table_clone.clone(), record.clone()).await {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Sync error: {e}"),
+                count: 0,
+                data: vec![],
+            });
+        }
+    }
+
+    let response = ApiResponse {
+        success: true,
+        message: format!("Inserted {} records into '{}'", processed_records.len(), table_name),
+        count: processed_records.len() as i32,
+        data: processed_records, // Include the processed records in the response
+    };
+    
+    HttpResponse::Ok().json(response)
+}
+
+fn extract_columns(records: &[Value]) -> Result<Vec<&str>, String> {
+    records.first()
+        .and_then(|v| v.as_object())
+        .map(|obj| obj.keys().map(|k| k.as_str()).collect())
+        .ok_or_else(|| "Invalid record format".to_string())
+}
+
+fn serialize_value(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        Value::Null => String::new(),
+        Value::Number(n) => n.to_string(),
+        Value::Bool(b) => b.to_string(),
+        Value::Array(arr) => format!("{{{}}}", arr.iter()
+            .map(serialize_value)
+            .collect::<Vec<_>>()
+            .join(",")),
+        Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
+    }
+}
+
