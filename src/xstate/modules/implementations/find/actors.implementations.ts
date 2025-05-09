@@ -70,11 +70,12 @@ export class FindActorsImplementations {
         });
       }
       console.log({ data_permissions_query });
-      // use cache
+      // TODO: use cache for the permissions query to avoid multiple queries to the database
       const results = await this.db
         .execute(data_permissions_query.trim())
         .then((response) => response.rows)
         .catch(() => []);
+      // TODO: create error message for fields that are not in the permissions
       console.log({ results });
 
       const {

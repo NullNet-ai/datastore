@@ -1,6 +1,6 @@
 import { integer, pgTable, serial, text } from 'drizzle-orm/pg-core';
 import * as path from 'path';
-import * as schema from '@dna-platform/crdt-lww-postgres/build/schema';
+import * as schema from '../../schema';
 import {
   fileRegex,
   getConfigDefaults,
