@@ -755,8 +755,7 @@ export class FindActorsImplementations {
             const concatenated_related_fields = _concatenate_fields.find(
               (f) => (f.aliased_entity || pluralize(f.entity)) === name,
             );
-            let [item] = cloned_item[name];
-
+            let [item = {}] = cloned_item?.[name] ?? [];
             if (concatenated_related_fields) {
               item = {
                 ...item,
