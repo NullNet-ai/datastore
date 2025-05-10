@@ -603,13 +603,18 @@ export class Utility {
     if (joins.length) {
       joins.forEach(({ type, field_relation, nested = false }) => {
         const { from, to } = field_relation;
-        const to_entity = to.entity;
-        const from_alias = from.alias || from.entity; // Use alias if provided
-        const to_alias = to.alias || to_entity; // Use alias if provided
+        const to_entity = to?.entity;
+        const from_alias = from?.alias || from?.entity; // Use alias if provided
+        const to_alias = to?.alias || to_entity; // Use alias if provided
         to.filters ??= [];
+        if (!from?.entity || !to?.entity || !from.field || !to.field) {
+          throw new Error(
+            'Invalid join configuration. Ensure both `from` and `to` entities are defined.',
+          );
+        }
         const concatenate_query = expressions[to_alias] || [];
         function constructJoinQuery({ isSelfJoin = false } = {}) {
-          if (to.alias) aliased_entities.push(to.alias);
+          if (to?.alias) aliased_entities.push(to?.alias);
           // Retrieve fields from pluck_object for the specified `to` entity
           const fields = pluck_object[to_alias] || [];
           const to_table_schema = schema[to_entity];
@@ -1606,10 +1611,166 @@ export class Utility {
   }
 
   public static constructPermissionSelectWhereClause({ table, main_fields }) {
+    // ! for testing purpose
+    console.log({ table, main_fields });
     return `AND (
           data_permissions.tombstone = 0 AND entities.name = '${table}' AND fields.name IN (${main_fields
       .map((field) => `'${field}'`)
       .join(',')})
         ) `;
+  }
+
+  public static getReadPermittedFields({ table, permissions, body, errors }) {
+    function isReadPermitted(
+      { entity: _entity, field: _field, alias },
+      property_name,
+      path,
+      index,
+    ) {
+      const aliased_entity = alias ? alias : _entity;
+      switch (property_name) {
+        case 'joins':
+          body.pluck_object[aliased_entity] = [];
+          return Utility.getPermittedJoins({
+            table,
+            permissions,
+            _field,
+            _entity,
+            index,
+            errors,
+            property_name,
+            path,
+            alias,
+            aliased_entity,
+            body,
+          });
+        default:
+          return false;
+      }
+    }
+
+    if (body.joins?.length) {
+      body.joins = body.joins.reduce((acc, je, index) => {
+        let permitted_join: Record<string, any> = {};
+        if (
+          isReadPermitted(
+            je.field_relation.to,
+            'joins',
+            'field_relation > to',
+            index,
+          )
+        ) {
+          permitted_join = {
+            ...permitted_join,
+            type: je.type,
+            field_relation: {
+              ...permitted_join.field_relation,
+              to: je.field_relation.to,
+            },
+          };
+        }
+        if (
+          isReadPermitted(
+            je.field_relation.from,
+            'joins',
+            'field_relation > from',
+            index,
+          )
+        ) {
+          permitted_join = {
+            ...permitted_join,
+            type: je.type,
+            field_relation: {
+              ...permitted_join.field_relation,
+              from: je.field_relation.from,
+            },
+          };
+        }
+        console.log('permitted_join', permitted_join);
+        if (Object.keys(permitted_join).length) acc.push(permitted_join);
+        return acc;
+      }, []);
+    }
+    console.log(
+      'overrided',
+      JSON.stringify(
+        {
+          joins: body?.joins ?? [],
+          // pluck_object: body.pluck_object,
+        },
+        null,
+        2,
+      ),
+    );
+    console.log('errors', errors);
+    return {
+      body,
+      errors,
+    };
+  }
+
+  public static isPermitted(account_id, role) {
+    this.logger.warn(
+      `Checking permissions for account_id: ${account_id}, role: ${role}`,
+    );
+    if (role !== 'Super Admin') {
+      throw new BadRequestException({
+        success: false,
+        message: `Access denied: Although your role is ${role} (${account_id}), you do not have the necessary permissions to access this resource.`,
+        count: 0,
+        data: [],
+      });
+    }
+  }
+
+  public static getTimeMs(timeStr = '1d') {
+    const value = parseInt(timeStr);
+    const unit = timeStr.slice(-1);
+    const multiplier = {
+      d: 24 * 60 * 60 * 1000,
+      h: 60 * 60 * 1000,
+      m: 60 * 1000,
+      s: 1000,
+    }[unit];
+
+    const ms = value * (multiplier || 0);
+    return ms;
+  }
+
+  // permitted properties
+  public static getPermittedJoins({
+    table,
+    permissions,
+    _field,
+    _entity,
+    index,
+    errors,
+    property_name,
+    path,
+    alias,
+    aliased_entity,
+    body,
+  }) {
+    return permissions.data.reduce((acc, { entity, field, read }) => {
+      console.log({ entity, _entity, field, _field, read });
+      if (!read || entity !== _entity || field !== _field) {
+        const msg = `[${index}][field]:${_field} is not permitted to access. ${property_name} > ${path} is automatically removed in the query.`;
+        errors.push({
+          message: msg,
+          stack: `[${table}]: Found in [${property_name}][${index}] > ${path} > ${_entity}${
+            alias ? `(${alias})` : ''
+          } > ${_field}`,
+          status_code: 401,
+        });
+        console.log({ property_name, path });
+
+        return false;
+      }
+
+      if (!body.pluck_object?.[aliased_entity].includes(field))
+        body.pluck_object[aliased_entity].push(field);
+
+      return acc && entity === _entity && field === _field && read === true;
+    }, true);
   }
 }

@@ -46,7 +46,6 @@ DECLARE
         ROW('Tags_tags_text[]', 'Tags', 'tags', 'text[]', record_email)::field_type,
         ROW('ImageUrl_image_url_varchar', 'ImageUrl', 'image_url', 'varchar', record_email)::field_type,
         -- main fields
-        ROW('Id_id_text', 'Id', 'id', 'text', record_email)::field_type,
         ROW('Name_name_text', 'Name', 'name', 'text', record_email)::field_type,
         ROW('SampleText_sample_text_text', 'SampleText', 'sample_text', 'text', record_email)::field_type,
         ROW('TestObj_test_obj_jsonb', 'TestObj', 'test_obj', 'jsonb', record_email)::field_type

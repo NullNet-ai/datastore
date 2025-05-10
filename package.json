@@ -78,6 +78,7 @@
     "reflect-metadata": "^0.1.14",
     "rimraf": "^3.0.2",
     "rxjs": "^7.8.2",
+    "sha1": "^1.1.1",
     "split2": "^4.2.0",
     "typed-html": "^3.0.1",
     "uglify-js": "^3.19.3",

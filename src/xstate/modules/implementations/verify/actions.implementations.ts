@@ -14,6 +14,7 @@ export class VerifyActionsImplementations {
     verifyEntry: () => {
       this.logger.log('verifyEntry is called');
     },
+
     assignResponsibleAccount: assign({
       responsible_account: ({ event }) => {
         const [{ account }] = event?.output?.payload?.data || [];
@@ -40,7 +41,10 @@ export class VerifyActionsImplementations {
           table,
           main_fields,
         })}`;
-        return query;
+        return {
+          query,
+          account_organization_id: responsible_account.account_organization_id,
+        };
       },
     }),
   };
