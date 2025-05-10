@@ -80,6 +80,7 @@ export class FindActorsImplementations {
       const {
         query: dpquery,
         account_organization_id: account_organization_id_fr_dp,
+        schema: _aliased_schema,
       } = data_permissions_query;
       const custom_suffix = `${host}${cookie}${headers?.['user-agent'] ?? ''}}`;
       const main_table_permissions_cache_key = sha1(
@@ -123,14 +124,12 @@ export class FindActorsImplementations {
             this.logger.debug('@@@@@@@@@@@@@@cached_permissions hit');
           }
 
-          const { body: permitted_body, errors: acc_errors } =
-            Utility.getReadPermittedFields({
-              table,
-              permissions,
-              body,
-              errors,
-            });
-          body = permitted_body;
+          const { errors: acc_errors } = Utility.getReadPermittedFields({
+            table,
+            permissions,
+            errors,
+            schema: _aliased_schema,
+          });
           errors = acc_errors;
         } else {
           this.logger.warn(

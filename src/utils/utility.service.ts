@@ -1621,91 +1621,11 @@ export class Utility {
         )`;
   }
 
-  public static getReadPermittedFields({ table, permissions, body, errors }) {
-    function isReadJoinPermitted(
-      { entity: _entity, field: _field, alias },
-      property_name,
-      path,
-      index,
-    ) {
-      const aliased_entity = alias ? alias : _entity;
-      switch (property_name) {
-        case 'joins':
-          body.pluck_object[aliased_entity] = [];
-          return Utility.getPermittedJoins({
-            table,
-            permissions,
-            _field,
-            _entity,
-            index,
-            errors,
-            property_name,
-            path,
-            alias,
-            aliased_entity,
-            body,
-          });
-        default:
-          return false;
-      }
-    }
-
-    if (body.joins?.length) {
-      body.joins = body.joins.reduce((acc, je, index) => {
-        let permitted_join: Record<string, any> = {};
-        if (
-          isReadJoinPermitted(
-            je.field_relation.to,
-            'joins',
-            'field_relation > to',
-            index,
-          )
-        ) {
-          permitted_join = {
-            ...permitted_join,
-            type: je.type,
-            field_relation: {
-              ...permitted_join.field_relation,
-              to: je.field_relation.to,
-            },
-          };
-        }
-        if (
-          isReadJoinPermitted(
-            je.field_relation.from,
-            'joins',
-            'field_relation > from',
-            index,
-          )
-        ) {
-          permitted_join = {
-            ...permitted_join,
-            type: je.type,
-            field_relation: {
-              ...permitted_join.field_relation,
-              from: je.field_relation.from,
-            },
-          };
-        }
-        console.log('permitted_join', permitted_join);
-        if (Object.keys(permitted_join).length) acc.push(permitted_join);
-        return acc;
-      }, []);
-    }
-    console.log(
-      'overrided',
-      JSON.stringify(
-        {
-          joins: body?.joins ?? [],
-          // pluck_object: body.pluck_object,
-        },
-        null,
-        2,
-      ),
-    );
+  public static getReadPermittedFields(config) {
+    Utility.checkPermissions(config, 'read');
     return {
-      body,
-      errors,
+      ...config,
+      errors: config.errors,
     };
   }
 
@@ -1741,40 +1661,35 @@ export class Utility {
     return ms;
   }
 
-  // permitted properties
-  public static getPermittedJoins({
-    table,
-    permissions,
-    _field,
-    _entity,
-    index,
-    errors,
-    property_name,
-    path,
-    alias,
-    aliased_entity,
-    body,
-  }) {
-    return permissions.data.reduce((acc, { entity, field, read }) => {
-      if (!read || entity !== _entity || field !== _field) {
-        const msg = `[${index}][field]:${_field} is not permitted to access. ${property_name} > ${path} is automatically removed in the query.`;
-        if (!errors.find((e) => e.message === msg)) {
-          errors.push({
-            message: msg,
-            stack: `[${table}]: Found in [${property_name}][${index}] > ${path} > ${_entity}${
-              alias ? `(${alias})` : ''
-            } > ${_field}`,
-            status_code: 401,
-          });
-        }
+  public static checkPermissions(
+    { table, schema, permissions, errors },
+    permission_type: 'read' | 'write' | 'encrypted' | 'decrypted' | 'required',
+  ) {
+    switch (permission_type) {
+      case 'read':
+        schema.forEach(
+          ({ entity: _entity, field: _field, alias, path, property_name }) => {
+            const hasPermission = !!permissions.data.find(
+              (p) => p.read && p.entity === _entity && p.field === _field,
+            );
 
-        return false;
-      }
-
-      if (!body.pluck_object?.[aliased_entity].includes(field))
-        body.pluck_object[aliased_entity].push(field);
-
-      return acc && entity === _entity && field === _field && read === true;
-    }, true);
+            if (!hasPermission) {
+              const stack = `[${table}]: Found at ${property_name}${
+                alias ? `(${alias})` : ''
+              }${path}`;
+              if (!errors.find((e) => e.stack === stack)) {
+                errors.push({
+                  message: `${_field} is not permitted to access.`,
+                  stack,
+                  status_code: 401,
+                });
+              }
+            }
+          },
+        );
+        break;
+      default:
+        break;
+    }
   }
 }
