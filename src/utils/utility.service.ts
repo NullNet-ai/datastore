@@ -613,7 +613,7 @@ export class Utility {
     const concat_fields = concatenate_fields?.fields || {};
 
     if (joins.length) {
-      joins.forEach(({ type, field_relation, nested = false }) => {
+      joins.forEach(({ type, field_relation, nested = false }, index) => {
         const { from, to } = field_relation;
         const to_entity = to.entity;
         const from_alias = from.alias || from.entity; // Use alias if provided
@@ -631,11 +631,20 @@ export class Utility {
           );
 
           let sub_query = _client_db.select().from(aliased_to_entity);
+          let nested_additional_filter: any = [];
           if (nested) {
-            sub_query = sub_query.leftJoin(
-              schema[from_alias],
-              eq(aliased_to_entity.id, schema[from_alias].created_by),
-            );
+            const previous_join = joins[index - 1];
+            const { type, field_relation } = previous_join;
+            const { from: prev_join_from, to: prev_join_to } = field_relation;
+            const nested_from = type === 'self' ? prev_join_from : prev_join_to;
+
+            const parent_entity = nested_from.alias
+              ? aliasedTable(schema[nested_from.entity], nested_from.alias)
+              : schema[nested_from.entity];
+
+            nested_additional_filter = [
+              eq(aliased_to_entity.id, parent_entity[from.field]),
+            ];
           }
           sub_query = sub_query
             .where(
@@ -656,6 +665,7 @@ export class Utility {
                   time_zone,
                   date_format,
                 ),
+                ...nested_additional_filter,
               ),
             )
             .toSQL();
@@ -705,7 +715,7 @@ export class Utility {
           return _db;
         }
         switch (type) {
-         case 'left':
+          case 'left':
             _db = constructJoinQuery();
             break;
           case 'self':
@@ -1622,7 +1632,7 @@ export class Utility {
     table: string;
     table_schema: Record<string, any>;
     order_by: string;
-    aliased_entities: Record<string, any>;
+    aliased_entities: Record<string, any>[];
     transformed_concatenations: IParsedConcatenatedFields['expressions'];
     order_direction: string;
     is_case_sensitive_sorting: boolean;
@@ -1633,7 +1643,7 @@ export class Utility {
     let sort_schema = table_schema[by_entity_field[0] || 'id'];
     if (by_entity_field.length > 1) {
       const [_entity = '', by_field = 'id'] = by_entity_field;
-      const is_aliased = Object.values(aliased_entities).find(
+      const is_aliased = aliased_entities.find(
         ({ alias }) => alias === _entity,
       );
       sort_entity = !is_aliased ? pluralize(_entity) : _entity;
