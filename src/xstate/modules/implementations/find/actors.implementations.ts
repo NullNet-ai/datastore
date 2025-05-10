@@ -77,7 +77,6 @@ export class FindActorsImplementations {
         });
       }
 
-      // permissions for main table
       const {
         query: dpquery,
         account_organization_id: account_organization_id_fr_dp,
@@ -134,7 +133,7 @@ export class FindActorsImplementations {
           body = permitted_body;
           errors = acc_errors;
         } else {
-          this.logger.debug(
+          this.logger.warn(
             `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${responsible_account.account_id}.`,
           );
           // TODO: finalize the role based permissions
@@ -708,9 +707,8 @@ export class FindActorsImplementations {
         }
         this.logger.debug(`Query: ${_db.toSQL().sql}`);
         this.logger.debug(`Params: ${_db.toSQL().params}`);
-        const db_results = await _db
-          .prepare(sha1(_db.toSQL().sql + _db.toSQL().params))
-          .execute();
+        const prepared_query_key = sha1(_db.toSQL().sql + _db.toSQL().params);
+        const db_results = await _db.prepare(prepared_query_key).execute();
         const result = joins.length
           ? this.transformer(
               db_results,
@@ -752,7 +750,7 @@ export class FindActorsImplementations {
           stack: error.stack,
           status_code: error.status_code,
         });
-        if (error.status !== 400) throw error;
+        if (error.status !== 400 && error.status < 500) throw error;
         throw new BadRequestException({
           success: false,
           message: `An error occurred while processing your request. Please review your query for any incorrect assignments. If the issue persists, contact your database administrator for further assistance.`,

@@ -1610,18 +1610,19 @@ export class Utility {
     }, {});
   }
 
-  public static constructPermissionSelectWhereClause({ table, main_fields }) {
+  public static constructPermissionSelectWhereClause({ tables, main_fields }) {
     // ! for testing purpose
-    console.log({ table, main_fields });
     return `AND (
-          data_permissions.tombstone = 0 AND entities.name = '${table}' AND fields.name IN (${main_fields
+          data_permissions.tombstone = 0 AND entities.name IN (${tables
+            .map((table) => `'${table}'`)
+            .join(',')}) AND fields.name IN (${main_fields
       .map((field) => `'${field}'`)
       .join(',')})
-        ) `;
+        )`;
   }
 
   public static getReadPermittedFields({ table, permissions, body, errors }) {
-    function isReadPermitted(
+    function isReadJoinPermitted(
       { entity: _entity, field: _field, alias },
       property_name,
       path,
@@ -1653,7 +1654,7 @@ export class Utility {
       body.joins = body.joins.reduce((acc, je, index) => {
         let permitted_join: Record<string, any> = {};
         if (
-          isReadPermitted(
+          isReadJoinPermitted(
             je.field_relation.to,
             'joins',
             'field_relation > to',
@@ -1670,7 +1671,7 @@ export class Utility {
           };
         }
         if (
-          isReadPermitted(
+          isReadJoinPermitted(
             je.field_relation.from,
             'joins',
             'field_relation > from',
@@ -1702,7 +1703,6 @@ export class Utility {
         2,
       ),
     );
-    console.log('errors', errors);
     return {
       body,
       errors,
@@ -1721,6 +1721,10 @@ export class Utility {
         data: [],
       });
     }
+
+    this.logger.warn(
+      `As a Role ${role} (${account_id}) has the necessary permissions to access this resource.`,
+    );
   }
 
   public static getTimeMs(timeStr = '1d') {
@@ -1752,17 +1756,17 @@ export class Utility {
     body,
   }) {
     return permissions.data.reduce((acc, { entity, field, read }) => {
-      console.log({ entity, _entity, field, _field, read });
       if (!read || entity !== _entity || field !== _field) {
         const msg = `[${index}][field]:${_field} is not permitted to access. ${property_name} > ${path} is automatically removed in the query.`;
-        errors.push({
-          message: msg,
-          stack: `[${table}]: Found in [${property_name}][${index}] > ${path} > ${_entity}${
-            alias ? `(${alias})` : ''
-          } > ${_field}`,
-          status_code: 401,
-        });
-        console.log({ property_name, path });
+        if (!errors.find((e) => e.message === msg)) {
+          errors.push({
+            message: msg,
+            stack: `[${table}]: Found in [${property_name}][${index}] > ${path} > ${_entity}${
+              alias ? `(${alias})` : ''
+            } > ${_field}`,
+            status_code: 401,
+          });
+        }
 
         return false;
       }
