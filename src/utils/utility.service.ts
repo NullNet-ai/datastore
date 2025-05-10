@@ -1662,7 +1662,7 @@ export class Utility {
   }
 
   public static checkPermissions(
-    { table, schema, permissions, errors },
+    { table, schema, permissions, errors, body },
     permission_type: 'read' | 'write' | 'encrypted' | 'decrypted' | 'required',
   ) {
     switch (permission_type) {
@@ -1684,6 +1684,7 @@ export class Utility {
                   status_code: 401,
                 });
               }
+              body[property_name].pop(_field);
             }
           },
         );

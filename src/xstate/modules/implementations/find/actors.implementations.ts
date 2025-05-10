@@ -125,6 +125,7 @@ export class FindActorsImplementations {
           }
 
           const { errors: acc_errors } = Utility.getReadPermittedFields({
+            body,
             table,
             permissions,
             errors,
