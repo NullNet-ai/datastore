@@ -33,6 +33,8 @@ impl Table {
         }
     }
 
+    
+
     // pub fn insert_record_generic<'a, T, M, U>(
     //     &self,
     //     conn: &mut PgConnection,

@@ -21,6 +21,20 @@ pub struct RequestBody {
     pub record: Value,
 }
 
+#[derive(Deserialize)]
+pub struct BatchUpdateBody {
+    pub advance_filters: Vec<Value>,
+    pub updates: RequestBody,
+}
+
+#[derive(Debug)]
+pub struct SqlUpdate {
+    pub sql: String,
+    pub params: Vec<serde_json::Value>,
+}
+
+
+
 impl RequestBody {
     // Process record with common fields and return a Value directly
     pub fn process_record(&mut self, operation: &str) {
@@ -77,14 +91,15 @@ impl RequestBody {
             }
         }
 
-        if !self.record.get("id").is_some()
-            || self.record["id"].is_null()
-            || self.record["id"]
-                .as_str()
-                .map_or(true, |s| s.trim().is_empty())
-        {
-            self.record["id"] = json!(uuid_crate::new_v4().to_string());
-        }
+        if (operation == "create") && 
+        (!self.record.get("id").is_some()
+         || self.record["id"].is_null()
+         || self.record["id"]
+             .as_str()
+             .map_or(true, |s| s.trim().is_empty()))
+     {
+         self.record["id"] = json!(uuid_crate::new_v4().to_string());
+     }
     }
 }
 

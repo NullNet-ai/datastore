@@ -21,7 +21,7 @@ use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
-use controllers::store_controller::{create_record, update_record, batch_insert_records};
+use controllers::store_controller::{create_record, update_record, batch_insert_records, batch_update_records};
 use crate::batch_sync::BatchSyncService;
 use env_logger::Env;
 use std::sync::Arc;
@@ -127,8 +127,9 @@ async fn main() -> std::io::Result<()> {
             .configure(sync_endpoints_controller::configure)
             .service(
                 web::scope("/api/store")
-                    .wrap(Authentication)
+                    // .wrap(Authentication)
                     .route("/{table}", web::post().to(create_record))
+                    .route("/batch/{table}", web::patch().to(batch_update_records))
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records))
             )

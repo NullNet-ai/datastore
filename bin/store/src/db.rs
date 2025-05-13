@@ -3,7 +3,7 @@ use diesel::r2d2::{self, ConnectionManager, Pool, PooledConnection};
 use dotenv::dotenv;
 use std::env;
 use std::sync::OnceLock;
-
+use tokio_postgres::{Client, NoTls};
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
@@ -66,4 +66,30 @@ pub async fn get_async_connection() -> AsyncDbPooledConnection {
         log::error!("Failed to get async connection: {}", e);
         panic!("Async connection failure");
     })
+}
+
+
+pub async fn create_connection() -> Result<Client, Box<dyn std::error::Error>> {
+    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
+    let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
+    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
+    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
+    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+
+    let connection_string = format!(
+        "host={} port={} user={} password={} dbname={}",
+        host, port, user, password, dbname
+    );
+
+    let (client, connection) = tokio_postgres::connect(&connection_string, NoTls)
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            log::error!("PostgreSQL connection error: {}", e);
+        }
+    });
+
+    Ok(client)
 }

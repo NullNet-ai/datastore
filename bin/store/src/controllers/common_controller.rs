@@ -1,11 +1,11 @@
 use bytes::Bytes;
 use csv::WriterBuilder;
 use serde_json::Value;
-use tokio_postgres::{Client, NoTls};
+use tokio_postgres::{Client};
 use futures::{SinkExt, pin_mut};
-use std::env;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::RequestBody;
+
 
 #[derive(Debug)]
 pub enum AppError {
@@ -56,30 +56,6 @@ pub async fn execute_copy(
 }
 
 
-pub async fn create_connection() -> Result<Client, AppError> {
-    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
-    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
-
-    let connection_string = format!(
-        "host={} port={} user={} password={} dbname={}",
-        host, port, user, password, dbname
-    );
-
-    let (client, connection) = tokio_postgres::connect(&connection_string, NoTls)
-        .await
-        .map_err(|e| AppError::DbConnection(e.to_string()))?;
-
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            log::error!("PostgreSQL connection error: {}", e);
-        }
-    });
-
-    Ok(client)
-}
 
 pub fn process_records(
     records: Vec<Value>,
@@ -154,4 +130,89 @@ fn serialize_value(value: &Value) -> String {
             .join(",")),
         Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
     }
+}
+
+
+//BATCH UPDATE FUNCTIONS
+
+
+pub fn convert_params_to_sql_types(params: &[serde_json::Value]) -> Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> {
+    let mut converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> = Vec::new();
+    
+    for p in params {
+        let boxed_value: Box<dyn tokio_postgres::types::ToSql + Sync> = match p {
+            serde_json::Value::Null => Box::new(None::<String>),
+            serde_json::Value::Bool(b) => Box::new(*b),
+            serde_json::Value::Number(n) => {
+                if n.is_i64() {
+                    let i_val = n.as_i64().unwrap();
+                    if i_val >= i32::MIN as i64 && i_val <= i32::MAX as i64 {
+                        Box::new(i_val as i32)
+                    } else {
+                        Box::new(i_val)
+                    }
+                } else if n.is_u64() {
+                    let u_val = n.as_u64().unwrap();
+                    if u_val <= i32::MAX as u64 {
+                        Box::new(u_val as i32)
+                    } else if u_val <= i64::MAX as u64 {
+                        Box::new(u_val as i64)
+                    } else {
+                        Box::new(u_val.to_string())
+                    }
+                } else {
+                    Box::new(n.as_f64().unwrap())
+                }
+            },
+            serde_json::Value::String(s) => Box::new(s.clone()),
+            serde_json::Value::Array(arr) => {
+                // Convert array elements to Vec<String>
+                let string_array: Vec<String> = arr.iter()
+                    .map(|v| match v {
+                        serde_json::Value::String(s) => s.clone(),
+                        _ => v.to_string(),
+                    })
+                    .collect();
+                Box::new(string_array)
+            },
+            _ => Box::new(format!("{}", p)),
+        };
+        converted_values.push(boxed_value);
+    }
+    
+    converted_values
+}
+
+pub fn process_result_rows(
+    rows: &[tokio_postgres::Row], 
+    update_fields: &[(&String, &serde_json::Value)],
+    is_hypertable: bool
+) -> Vec<serde_json::Value> {
+    let mut result_rows: Vec<serde_json::Value> = Vec::new();
+    
+    for row in rows {
+        let mut obj = serde_json::Map::new();
+        
+        if let Ok(id) = row.try_get::<_, String>("id") {
+            obj.insert("id".to_string(), serde_json::Value::String(id));
+        }
+    
+        if let Ok(version) = row.try_get::<_, i32>("version") {
+            obj.insert("version".to_string(), serde_json::Value::Number(version.into()));
+        }
+
+        if is_hypertable {
+            if let Ok(timestamp) = row.try_get::<_, String>("hypertable_timestamp") {
+                obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
+            }
+        }
+    
+        for (key, value) in update_fields.iter() {
+            obj.insert(key.to_string(), (*value).clone());
+        }
+    
+        result_rows.push(serde_json::Value::Object(obj));
+    }
+    
+    result_rows
 }

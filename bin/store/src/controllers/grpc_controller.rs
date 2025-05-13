@@ -37,7 +37,8 @@ use tonic::{transport::Server, Request, Response, Status};
 use crate::schema::verify::field_exists_in_table;
 use crate::table_enum::Table;
 use crate::auth::auth_middleware::GrpcAuthInterceptor;
-use crate::controllers::common_controller::{process_records, convert_json_to_csv, create_connection, execute_copy};
+use crate::controllers::common_controller::{process_records, convert_json_to_csv, execute_copy};
+use crate::db::create_connection;
 
 
 
@@ -350,7 +351,7 @@ impl StoreService for GrpcController {
 
      // Send sync messages for each record
      for record in processed_records.iter() {
-        if let Err(e) = crate::batch_sync::BatchSyncService::send_message(table_name.clone(), record.clone()).await {
+        if let Err(e) = crate::batch_sync::BatchSyncService::send_insert_message(table_name.clone(), record.clone()).await {
             return Err(Status::internal(format!("Sync error: {}", e)));
         }
     }

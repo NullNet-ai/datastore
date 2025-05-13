@@ -1,18 +1,23 @@
 use crate::db;
-use crate::structs::structs::{ApiResponse, RequestBody, QueryParams};
+use crate::structs::structs::{ApiResponse, RequestBody, QueryParams, BatchUpdateBody};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
+use crate::utils::parse_filters::build_sql_filter;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
 use serde_json::Value;
-use futures::{SinkExt, pin_mut};
-use tokio_postgres::{NoTls, Client};
+use crate::utils::structs::FilterCriteria;
+use crate::utils::parse_filters::SqlFilter;
 use crate::batch_sync::BatchSyncService;
 use serde::Deserialize;
 use crate::schema::verify::field_exists_in_table;
-use crate::controllers::common_controller::{process_records, convert_json_to_csv, create_connection, execute_copy};
+use crate::controllers::common_controller::{process_records, convert_json_to_csv, execute_copy, convert_params_to_sql_types};
+use crate::structs::structs::SqlUpdate;
+use crate::db::create_connection;
+
+use super::common_controller::process_result_rows;
 
 #[derive(Serialize)]
 struct ApiError {
@@ -314,7 +319,7 @@ pub async fn batch_insert_records(
     // Convert JSON array to CSV in-memor
   
     for record in processed_records.iter() {
-        if let Err(e) = BatchSyncService::send_message(table_clone.clone(), record.clone()).await {
+        if let Err(e) = BatchSyncService::send_insert_message(table_clone.clone(), record.clone()).await {
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("Sync error: {e}"),
@@ -334,24 +339,281 @@ pub async fn batch_insert_records(
     HttpResponse::Ok().json(response)
 }
 
-fn extract_columns(records: &[Value]) -> Result<Vec<&str>, String> {
-    records.first()
-        .and_then(|v| v.as_object())
-        .map(|obj| obj.keys().map(|k| k.as_str()).collect())
-        .ok_or_else(|| "Invalid record format".to_string())
+pub async fn batch_update_records(
+    pool: web::Data<db::AsyncDbPool>,
+    table: web::Path<String>,
+    request: web::Json<BatchUpdateBody>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    let batch_data = request.into_inner();
+    let filters = batch_data.advance_filters;
+    let mut updates = batch_data.updates;
+    if updates.record.as_object().map_or(true, |obj| obj.is_empty()) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "No update fields provided".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    updates.process_record("update");
+    if let Some(record) = updates.record.as_object_mut() {
+        record.remove("version");
+    }
+    //change updates to Value
+    let updates = match serde_json::to_value(updates) {
+        Ok(value) => value,
+        Err(e) => {
+            log::error!("Failed to serialize updates to JSON: {}", e);
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to process update data: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    
+    // Validate the table exists
+     match Table::from_str(table_name.as_str()) {
+        Some(t) => t,
+        None => {
+            return HttpResponse::BadRequest().json(ApiError {
+                status: http::StatusCode::BAD_REQUEST.as_u16(),
+                message: format!("Unknown table: {}", table_name),
+            });
+        }
+    };
+    
+    // Convert the filters to FilterCriteria
+    let filter_criteria: Vec<FilterCriteria> = match serde_json::from_value(serde_json::Value::Array(filters)) {
+        Ok(criteria) => criteria,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid filter criteria: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let SqlFilter { sql, params } = build_sql_filter(&filter_criteria);
+    let update_result = build_sql_update(&updates, params.len() + 1);
+    // Build the SQL update statement
+    let (mut update_sql, update_params) = match update_result {
+        Ok(SqlUpdate { sql, params }) => (sql, params),
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: e,
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    update_sql = format!("{}, \"version\" = \"version\" + 1", update_sql);
+    let mut params = params;
+    params.extend(update_params);
+
+    let return_fields = "id, version, updated_date, updated_time, updated_by";
+
+    let is_hypertable=field_exists_in_table(&table_name, "hypertable_timestamp");
+
+    let hypertable_check = if is_hypertable {
+        ", hypertable_timestamp"
+    } else {
+        ""
+    };
+
+    let updated_fields = if let Some(update_obj) = updates.as_object() {
+        let fields: Vec<String> = update_obj.keys()
+            .filter(|&k| k != "record") // Exclude the 'record' key if it exists
+            .map(|k| format!("\"{k}\""))
+            .collect();
+        
+        if !fields.is_empty() {
+            format!(", {}", fields.join(", "))
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
+    
+   
+    let sql = format!(
+        "UPDATE {} SET {} WHERE {} RETURNING {}{}{}",
+        table_name,
+        update_sql,
+        sql,
+        return_fields,
+        hypertable_check,
+        updated_fields
+    );
+        
+    
+    // Get a database connection
+    let client = match create_connection().await {
+        Ok(client) => client,
+        Err(e) => return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Error creating database connection: {:?}", e),
+            count: 0,
+            data: vec![],
+        })
+    };
+
+    let converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> = convert_params_to_sql_types(&params);
+    
+    
+    // Now create a vector of references to our boxed values
+    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_values
+        .iter()
+        .map(|b| b.as_ref())
+        .collect();
+
+    let rows = match client.query(&sql, &pg_params[..]).await {
+        Ok(rows) => rows,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Error executing statement: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };    
+
+    let update_fields = if let Some(update_obj) = updates.as_object() {
+        update_obj.iter()
+            .filter(|(k, _)| *k != "record")
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+
+    // Create array of objects with id, version and updates
+    let result_rows: Vec<serde_json::Value> = process_result_rows(&rows, &update_fields, is_hypertable);
+
+    for record in result_rows.iter() {
+        if let Err(e) = BatchSyncService::send_update_message(table_name.clone(), record.clone()).await {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Sync error: {e}"),
+                count: 0,
+                data: vec![],
+            });
+        }
+    }
+
+    //use the below code if you want to return the updated fields to the user, can be inefficient if the updated fields are large
+
+    //print rows here
+    // let mut json_rows: Vec<serde_json::Value> = Vec::new();
+    // for row in &rows {
+    //     let mut json_obj = serde_json::Map::new();
+        
+    //     // Extract id
+    //     if let Ok(id) = row.try_get::<_, String>("id") {
+    //         json_obj.insert("id".to_string(), serde_json::Value::String(id));
+    //     }
+        
+    //     // Extract version
+    //     if let Ok(version) = row.try_get::<_, i32>("version") {
+    //         json_obj.insert("version".to_string(), serde_json::Value::Number(serde_json::Number::from(version)));
+    //     }
+        
+    //     // Extract updated_date
+    //     if let Ok(updated_date) = row.try_get::<_, String>("updated_date") {
+    //         json_obj.insert("updated_date".to_string(), serde_json::Value::String(updated_date));
+    //     }
+        
+    //     // Extract updated_time
+    //     if let Ok(updated_time) = row.try_get::<_, String>("updated_time") {
+    //         json_obj.insert("updated_time".to_string(), serde_json::Value::String(updated_time));
+    //     }
+        
+    //     // Extract updated_by
+    //     if let Ok(updated_by) = row.try_get::<_, String>("updated_by") {
+    //         json_obj.insert("updated_by".to_string(), serde_json::Value::String(updated_by));
+    //     }
+        
+    //     // Extract hypertable_timestamp if it exists
+    //     if field_exists_in_table(&table_name, "hypertable_timestamp") {
+    //         if let Ok(timestamp) = row.try_get::<_, String>("hypertable_timestamp") {
+    //             json_obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
+    //         }
+    //     }
+        
+    //     // Extract any updated fields
+    //     if let Some(update_obj) = updates.as_object() {
+    //         for key in update_obj.keys() {
+    //             if key != "record" {
+    //                 // Try to get the value as different types
+    //                 if let Ok(val) = row.try_get::<_, String>(key.as_str()) {
+    //                     json_obj.insert(key.clone(), serde_json::Value::String(val));
+    //                 } else if let Ok(val) = row.try_get::<_, i32>(key.as_str()) {
+    //                     json_obj.insert(key.clone(), serde_json::Value::Number(serde_json::Number::from(val)));
+    //                 } else if let Ok(val) = row.try_get::<_, i64>(key.as_str()) {
+    //                     json_obj.insert(key.clone(), serde_json::Value::Number(serde_json::Number::from(val)));
+    //                 } else if let Ok(val) = row.try_get::<_, f64>(key.as_str()) {
+    //                     if let Some(num) = serde_json::Number::from_f64(val) {
+    //                         json_obj.insert(key.clone(), serde_json::Value::Number(num));
+    //                     }
+    //                 } else if let Ok(val) = row.try_get::<_, bool>(key.as_str()) {
+    //                     json_obj.insert(key.clone(), serde_json::Value::Bool(val));
+    //                 }
+    //             }
+    //         }
+    //     }
+        
+    //     json_rows.push(serde_json::Value::Object(json_obj));
+    // }
+    
+    
+    
+    // Apply the filters and updates
+    let count = rows.len(); // Placeholder count
+    let response = ApiResponse {
+        success: true,
+        message: format!("Updated {} records in '{}'", count, table_name),
+        count: count as i32,
+        data: vec![],
+    };
+    
+    
+    HttpResponse::Ok().json(response)
 }
 
-fn serialize_value(value: &Value) -> String {
-    match value {
-        Value::String(s) => s.clone(),
-        Value::Null => String::new(),
-        Value::Number(n) => n.to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Array(arr) => format!("{{{}}}", arr.iter()
-            .map(serialize_value)
-            .collect::<Vec<_>>()
-            .join(",")),
-        Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
+pub fn build_sql_update(
+    updates: &serde_json::Value,
+    param_start_index: usize,
+) -> Result<SqlUpdate, String> {
+    let mut set_clauses = Vec::new();
+    let mut params = Vec::new();
+    let mut param_index = param_start_index;
+
+    if let Some(update_map) = updates.as_object() {
+        if update_map.is_empty() {
+            return Err("No update fields provided".to_string());
+        }
+
+        for (key, value) in update_map {
+            // Sanitize field name to prevent SQL injection
+            let field = format!("\"{}\"", key.replace('\"', "\"\""));
+            
+            set_clauses.push(format!("{} = ${}", field, param_index));
+            params.push(value.clone());
+            param_index += 1;
+        }
+
+        Ok(SqlUpdate {
+            sql: set_clauses.join(", "),
+            params,
+        })
+    } else {
+        Err("Updates must be an object".to_string())
     }
 }
-
