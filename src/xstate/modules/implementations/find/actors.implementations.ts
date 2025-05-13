@@ -137,7 +137,10 @@ export class FindActorsImplementations {
             `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${responsible_account.account_id}.`,
           );
           // TODO: finalize the role based permissions
-          Utility.isPermitted(responsible_account.account_id, 'Super Admin');
+          await Utility.isPermitted(
+            responsible_account.account_id,
+            'Super Admin',
+          );
         }
 
         const {
@@ -159,7 +162,9 @@ export class FindActorsImplementations {
           pluck_group_object = {},
           encrypted_fields = [],
         } = body;
-
+        console.log({
+          body: JSON.stringify(body.distinct_by, null, 2),
+        });
         if (group_advance_filters.length && advance_filters.length) {
           throw new BadRequestException({
             success: false,
@@ -213,9 +218,15 @@ export class FindActorsImplementations {
         });
 
         multiple_sort?.forEach(({ by_field }) => {
+          if (!by_field) {
+            throw new BadRequestException({
+              success: false,
+              message: `You must provide a [by_field] in the [multiple_sort] object.`,
+            });
+          }
           //check if by_field is separated by a dot if not then throw an error
           let entity = table;
-          let field = by_field.split('.')[0];
+          let field = by_field.split('.')?.[0];
           if (by_field.split('.').length > 1) {
             entity = by_field.split('.')[0];
             field = by_field.split('.')[1];

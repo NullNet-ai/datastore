@@ -38,6 +38,7 @@ export class VerifyActionsImplementations {
           multiple_sort = [],
           advance_filters = [],
           group_advance_filters = [],
+          distinct_by,
         } = body;
         const schema: {
           entity: string;
@@ -80,68 +81,87 @@ export class VerifyActionsImplementations {
           },
           [table],
         );
+        const common_fields_from_query = [
+          ...(group_by?.fields ?? []).reduce((acc, field, index) => {
+            const [table, _field] = field.split('.');
+            const _table = pluralize(table);
+            if (!acc.includes(_field)) {
+              acc.push(_field);
+            }
+            if (!tables.includes(_table)) {
+              tables.push(_table);
+            }
+            schema.push({
+              entity: _table,
+              alias: _table,
+              field: _field,
+              property_name: `group_by`,
+              path: `[${index}]fields`,
+            });
+            return acc;
+          }, []),
+          ...concatenate_fields.reduce((acc, cc, index) => {
+            if (!tables.includes(cc.entity)) {
+              tables.push(cc.entity);
+            }
+            cc.fields.forEach((field) => {
+              schema.push({
+                entity: cc.entity,
+                alias: cc.entity,
+                field,
+                property_name: `concatenate_fields`,
+                path: `[${index}]fields`,
+              });
+            });
 
-        const fieldsToUse = pluck_object?.[table]?.length
-          ? [
-              ...(group_by?.fields ?? []).reduce((acc, field, index) => {
-                const [table, _field] = field.split('.');
-                const _table = pluralize(table);
-                if (!acc.includes(_field)) {
-                  acc.push(_field);
-                }
-                if (!tables.includes(_table)) {
-                  tables.push(_table);
-                }
-                schema.push({
-                  entity: _table,
-                  alias: _table,
-                  field: _field,
-                  property_name: `group_by`,
-                  path: `[${index}]fields`,
-                });
-                return acc;
-              }, []),
-              ...pluck_object[table],
-              ...(pluck_group_object?.[table] || []),
-              ...join_fields,
-              ...concatenate_fields.reduce((acc, cc, index) => {
-                if (!tables.includes(cc.entity)) {
-                  tables.push(cc.entity);
-                }
-                cc.fields.forEach((field) => {
-                  schema.push({
-                    entity: cc.entity,
-                    alias: cc.entity,
-                    field,
-                    property_name: `concatenate_fields`,
-                    path: `[${index}]fields`,
-                  });
-                });
+            return [...acc, ...cc.fields];
+          }, []),
+          ...multiple_sort.reduce((acc, ms, index) => {
+            const by = ms.by_field.split('.');
+            const _table = by.length > 1 ? by[0] : table;
+            if (!tables.includes(_table)) {
+              tables.push(_table);
+            }
+            const field = by.length > 1 ? by[1] : by[0];
+            const _field = pluralize(field);
+            if (!acc.includes(_field) && _field) {
+              acc.push(_field);
+            }
 
-                return [...acc, ...cc.fields];
-              }, []),
-              ...multiple_sort.reduce((acc, ms, index) => {
-                const by = ms.by_field.split('.');
-                const _table = by.length > 1 ? by[0] : table;
-                if (!tables.includes(_table)) {
-                  tables.push(_table);
-                }
-                const field = by.length > 1 ? by[1] : by[0];
-                const _field = pluralize(field);
-                if (!acc.includes(_field) && _field) {
-                  acc.push(_field);
-                }
-
-                schema.push({
-                  entity: _table,
-                  alias: _table,
-                  field: _field,
-                  property_name: `multiple_sort`,
-                  path: `[${index}].by_field`,
-                });
-                return acc;
-              }, []),
-              ...advance_filters.reduce((acc, af, index) => {
+            schema.push({
+              entity: _table,
+              alias: _table,
+              field: _field,
+              property_name: `multiple_sort`,
+              path: `[${index}].by_field`,
+            });
+            return acc;
+          }, []),
+          ...advance_filters.reduce((acc, af, index) => {
+            if (af?.entity) {
+              const _table = pluralize(af.entity);
+              if (!tables.includes(_table)) {
+                tables.push(_table);
+              }
+            }
+            if (af?.field) {
+              if (!acc.includes(af.field)) {
+                acc.push(af.field);
+              }
+            }
+            schema.push({
+              entity: af?.entity ?? table,
+              alias: af?.entity ?? table,
+              field: af?.field,
+              property_name: `advance_filters`,
+              path: `[${index}].field`,
+            });
+            return acc;
+          }, []),
+          ...group_advance_filters.reduce((acc, gaf, gaf_index) => {
+            const { filters = [] } = gaf;
+            return acc.concat(
+              filters.reduce((_acc, af, af_index) => {
                 if (af?.entity) {
                   const _table = pluralize(af.entity);
                   if (!tables.includes(_table)) {
@@ -149,47 +169,51 @@ export class VerifyActionsImplementations {
                   }
                 }
                 if (af?.field) {
-                  if (!acc.includes(af.field)) {
-                    acc.push(af.field);
+                  if (!_acc.includes(af.field)) {
+                    _acc.push(af.field);
                   }
                 }
                 schema.push({
                   entity: af?.entity ?? table,
                   alias: af?.entity ?? table,
                   field: af?.field,
-                  property_name: `advance_filters`,
-                  path: `[${index}].field`,
+                  property_name: `group_advance_filters`,
+                  path: `[${gaf_index}].filters[${af_index}].field`,
                 });
-                return acc;
+                return _acc;
               }, []),
-              ...group_advance_filters.reduce((acc, gaf, gaf_index) => {
-                const { filters = [] } = gaf;
-                return acc.concat(
-                  filters.reduce((_acc, af, af_index) => {
-                    if (af?.entity) {
-                      const _table = pluralize(af.entity);
-                      if (!tables.includes(_table)) {
-                        tables.push(_table);
-                      }
-                    }
-                    if (af?.field) {
-                      if (!_acc.includes(af.field)) {
-                        _acc.push(af.field);
-                      }
-                    }
-                    schema.push({
-                      entity: af?.entity ?? table,
-                      alias: af?.entity ?? table,
-                      field: af?.field,
-                      property_name: `group_advance_filters`,
-                      path: `[${gaf_index}].filters[${af_index}].field`,
-                    });
-                    return _acc;
-                  }, []),
-                );
-              }, []),
+            );
+          }, []),
+          ...[distinct_by].map((field) => {
+            const split_field = field.split('.');
+            const _field =
+              split_field.length > 1 ? split_field[1] : split_field[0];
+            const split_entity = pluralize(
+              split_field.length > 1
+                ? pluralize(split_field[0])
+                : pluralize(table),
+            );
+            tables.push(split_entity);
+            schema.push({
+              entity: split_entity,
+              alias: split_entity,
+              field: _field,
+              property_name: `distinct_by`,
+              path: ``,
+            });
+
+            return _field;
+          }),
+        ];
+        const fieldsToUse = pluck_object?.[table]?.length
+          ? [
+              ...pluck_object[table],
+              ...common_fields_from_query,
+              ...(pluck_group_object?.[table] || []),
+              ...join_fields,
             ]
-          : pluck;
+          : [...pluck, ...common_fields_from_query];
+
         const main_fields = fieldsToUse.filter(
           (field, index, self) => self.indexOf(field) === index,
         );

@@ -1629,7 +1629,7 @@ export class Utility {
     };
   }
 
-  public static isPermitted(account_id, role) {
+  public static async isPermitted(account_id, role) {
     this.logger.warn(
       `Checking permissions for account_id: ${account_id}, role: ${role}`,
     );
@@ -1676,7 +1676,7 @@ export class Utility {
             if (!hasPermission) {
               const stack = `[${table}]: Found at ${property_name}${
                 alias ? `(${alias})` : ''
-              }${path}`;
+              }${path} (${_field})`;
               if (!errors.find((e) => e.stack === stack)) {
                 errors.push({
                   message: `${_field} is not permitted to access.`,
@@ -1684,7 +1684,87 @@ export class Utility {
                   status_code: 401,
                 });
               }
-              body[property_name].pop(_field);
+              console.log({
+                property_name,
+                _field,
+                hasPermission,
+              });
+              const cloned_body = { ...body };
+              switch (property_name) {
+                case 'joins':
+                  cloned_body?.[property_name]?.forEach((join, index) => {
+                    if (join?.field_relation.to.field === _field) {
+                      delete body?.[property_name][index]?.field_relation.to
+                        .field;
+                    } else if (join?.field_relation.from.field === _field) {
+                      delete body?.[property_name][index]?.field_relation.from
+                        .field;
+                    }
+                    if (
+                      !cloned_body?.[property_name][index]?.field_relation.to &&
+                      !cloned_body?.[property_name][index]?.field_relation.from
+                    ) {
+                      delete body?.[property_name][index].field_relation;
+                    }
+                  });
+                  break;
+                case 'pluck_object':
+                  if (
+                    cloned_body?.[property_name][alias ?? _entity].includes(
+                      _field,
+                    )
+                  ) {
+                    const index =
+                      body?.[property_name][alias ?? _entity]?.indexOf(_field);
+                    if (index > -1) {
+                      body?.[property_name][alias ?? _entity]?.splice(index, 1);
+                    }
+                  }
+                  break;
+                case 'multiple_sort':
+                  cloned_body?.[property_name]?.forEach((sort, index) => {
+                    if (pluralize(sort.by_field) === _field) {
+                      delete body?.[property_name][index].by_field;
+                    }
+                  });
+                  break;
+                case 'concatenate_fields':
+                  cloned_body?.[property_name]?.forEach((concat, index) => {
+                    if (concat?.fields.includes(_field)) {
+                      body?.[property_name][index]?.fields.splice(
+                        body?.[property_name][index]?.fields.indexOf(_field),
+                        1,
+                      );
+                    }
+                  });
+                  break;
+                case 'group_by':
+                  cloned_body?.[property_name]?.fields.forEach((f) => {
+                    const [entity, field] = f.split('.');
+                    if (field === _field) {
+                      body?.[property_name]?.fields.splice(
+                        body?.[property_name]?.fields.indexOf(
+                          `${entity}.${_field}`,
+                        ),
+                        1,
+                      );
+                    }
+                  });
+                  break;
+                case 'distinct_by':
+                  if (cloned_body?.[property_name] === _field) {
+                    delete body?.[property_name];
+                  }
+                  break;
+                default:
+                  if (cloned_body?.[property_name]?.includes(_field)) {
+                    if (body?.[property_name]?.includes(_field)) {
+                      const index = body[property_name].indexOf(_field);
+                      body[property_name].splice(index, 1);
+                    }
+                  }
+                  break;
+              }
             }
           },
         );
