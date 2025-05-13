@@ -216,6 +216,25 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  string durability = 2; // Durability level (e.g., \"soft\")\n");
     proto.push_str("}\n\n");
 
+    //Common structure for AdvanceFilter
+    proto.push_str("// Common parameter structure for AdvanceFilter requests\n");
+    proto.push_str("message AdvanceFilter {\n");
+    proto.push_str("  string entity = 1; // Table name\n");
+    proto.push_str("  string type = 2; // Filter type criteria or operator\n");
+    proto.push_str("  string field = 3; // Column name\n");
+    proto.push_str("  string operator = 4; // Equal, not equal etc\n");
+    proto.push_str("  string values = 5; // JSON string of values\n");
+    proto.push_str("}\n\n");
+
+   // Add BatchUpdate common structures
+   proto.push_str("// Common parameter structure for BatchUpdate requests\n");
+   proto.push_str("message BatchUpdateParams {\n");
+   proto.push_str("  string table = 1; // Table name\n");
+   proto.push_str("}\n\n");
+
+
+   
+
     // Common structures for Update requests
     proto.push_str("// Common parameter structure for Update requests\n");
     proto.push_str("message UpdateParams {\n");
@@ -324,6 +343,25 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str(&format!("  {} data = 4;\n", pascal_name));
         proto.push_str("}\n\n");
 
+         // BatchUpdate operation
+         proto.push_str(&format!("// BatchUpdate {} request\n", pascal_name));
+         proto.push_str(&format!("message BatchUpdate{}Request {{\n", pascal_name));
+         proto.push_str("  BatchUpdateParams params = 1;\n");
+         proto.push_str("  message BatchUpdateBody {\n");
+         proto.push_str("    repeated AdvanceFilter advance_filters = 1;\n");
+         proto.push_str(&format!("  {} updates = 2;\n", pascal_name));
+         proto.push_str("  }\n");
+         proto.push_str("  BatchUpdateBody body = 2;\n");
+         proto.push_str("}\n\n");
+
+         proto.push_str(&format!("// BatchUpdate {} response\n", pascal_name));
+         proto.push_str(&format!("message BatchUpdate{}Response {{\n", pascal_name));
+         proto.push_str("  bool success = 1;\n");
+         proto.push_str("  string message = 2;\n");
+         proto.push_str("  int32 count = 3;\n");
+         proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
+         proto.push_str("}\n\n");
+
         // Delete operation
         proto.push_str(&format!("// Delete {} request\n", pascal_name));
         proto.push_str(&format!("message Delete{}Request {{\n", pascal_name));
@@ -403,6 +441,13 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
              "  rpc BatchInsert{}(BatchInsert{}Request) returns (BatchInsert{}Response);\n\n",
              pascal_name, pascal_name, pascal_name
          ));
+
+          // BatchUpdate
+          proto.push_str(&format!("  // Batch update multiple {}s based on filters\n", pascal_name));
+          proto.push_str(&format!(
+              "  rpc BatchUpdate{}(BatchUpdate{}Request) returns (BatchUpdate{}Response);\n\n",
+              pascal_name, pascal_name, pascal_name
+          ));
     }
 
     proto.push_str("}\n");

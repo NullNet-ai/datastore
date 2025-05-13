@@ -13,11 +13,12 @@ use crate::utils::parse_filters::SqlFilter;
 use crate::batch_sync::BatchSyncService;
 use serde::Deserialize;
 use crate::schema::verify::field_exists_in_table;
-use crate::controllers::common_controller::{process_records, convert_json_to_csv, execute_copy, convert_params_to_sql_types};
+use crate::controllers::common_controller::{process_records, convert_json_to_csv, execute_copy, convert_params_to_sql_types, build_update_statement, process_result_rows};
 use crate::structs::structs::SqlUpdate;
 use crate::db::create_connection;
 
-use super::common_controller::process_result_rows;
+use super::common_controller::{perform_batch_update, sanitize_updates};
+
 
 #[derive(Serialize)]
 struct ApiError {
@@ -130,12 +131,21 @@ pub async fn update_record(
     }
 
 
-    let pluck_fields: Vec<String> = query
-        .pluck
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .collect();
-    
+    let pluck_fields: Vec<String> = if query.pluck.is_empty() {
+        vec!["id".to_string()]
+    } else {
+        query
+            .pluck
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect()
+    };
+
+
+    //add id in the record
+    if let Some(obj) = processed_record.as_object_mut() {
+        obj.insert("id".to_string(), serde_json::Value::String(record_id.clone()));
+    }
 
     let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
         Ok(val) => val,
@@ -150,6 +160,7 @@ pub async fn update_record(
     };
 
 
+
     // Use the update function from sync_service
     if let Err(e) = crate::sync::sync_service::update(&inner_log_table, record_value.clone(), &record_id).await {
         return HttpResponse::InternalServerError().json(ApiResponse {
@@ -159,6 +170,8 @@ pub async fn update_record(
             data: vec![],
         });
     }
+
+
 
     let plucked_record = table.pluck_fields(&record_value, pluck_fields);
 
@@ -360,9 +373,9 @@ pub async fn batch_update_records(
     if let Some(record) = updates.record.as_object_mut() {
         record.remove("version");
     }
-    //change updates to Value
-    let updates = match serde_json::to_value(updates) {
-        Ok(value) => value,
+    let updates_value = match serde_json::to_value(updates) {
+        Ok(Value::Object(map)) => sanitize_updates(map).unwrap_or(Value::Object(Default::default())),
+        Ok(_) => Value::Object(Default::default()),
         Err(e) => {
             log::error!("Failed to serialize updates to JSON: {}", e);
             return HttpResponse::InternalServerError().json(ApiResponse {
@@ -373,139 +386,29 @@ pub async fn batch_update_records(
             });
         }
     };
-    
-    // Validate the table exists
-     match Table::from_str(table_name.as_str()) {
-        Some(t) => t,
-        None => {
-            return HttpResponse::BadRequest().json(ApiError {
-                status: http::StatusCode::BAD_REQUEST.as_u16(),
-                message: format!("Unknown table: {}", table_name),
-            });
-        }
-    };
-    
-    // Convert the filters to FilterCriteria
-    let filter_criteria: Vec<FilterCriteria> = match serde_json::from_value(serde_json::Value::Array(filters)) {
-        Ok(criteria) => criteria,
-        Err(e) => {
-            return HttpResponse::BadRequest().json(ApiResponse {
-                success: false,
-                message: format!("Invalid filter criteria: {}", e),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
 
-    let SqlFilter { sql, params } = build_sql_filter(&filter_criteria);
-    let update_result = build_sql_update(&updates, params.len() + 1);
-    // Build the SQL update statement
-    let (mut update_sql, update_params) = match update_result {
-        Ok(SqlUpdate { sql, params }) => (sql, params),
-        Err(e) => {
-            return HttpResponse::BadRequest().json(ApiResponse {
-                success: false,
-                message: e,
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-    update_sql = format!("{}, \"version\" = \"version\" + 1", update_sql);
-    let mut params = params;
-    params.extend(update_params);
-
-    let return_fields = "id, version, updated_date, updated_time, updated_by";
-
-    let is_hypertable=field_exists_in_table(&table_name, "hypertable_timestamp");
-
-    let hypertable_check = if is_hypertable {
-        ", hypertable_timestamp"
-    } else {
-        ""
-    };
-
-    let updated_fields = if let Some(update_obj) = updates.as_object() {
-        let fields: Vec<String> = update_obj.keys()
-            .filter(|&k| k != "record") // Exclude the 'record' key if it exists
-            .map(|k| format!("\"{k}\""))
-            .collect();
-        
-        if !fields.is_empty() {
-            format!(", {}", fields.join(", "))
-        } else {
-            String::new()
-        }
-    } else {
-        String::new()
-    };
-
-    
-   
-    let sql = format!(
-        "UPDATE {} SET {} WHERE {} RETURNING {}{}{}",
-        table_name,
-        update_sql,
-        sql,
-        return_fields,
-        hypertable_check,
-        updated_fields
-    );
-        
-    
-    // Get a database connection
-    let client = match create_connection().await {
-        Ok(client) => client,
-        Err(e) => return HttpResponse::InternalServerError().json(ApiResponse {
+    if updates_value.as_object().map_or(true, |o| o.is_empty()) {
+        return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
-            message: format!("Error creating database connection: {:?}", e),
+            message: "No valid fields to update".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+
+    match perform_batch_update(&table_name, updates_value, filters).await {
+        Ok((count, _)) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: format!("Updated {} records in '{}'", count, table_name),
+            count: count as i32,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: e,
             count: 0,
             data: vec![],
         })
-    };
-
-    let converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> = convert_params_to_sql_types(&params);
-    
-    
-    // Now create a vector of references to our boxed values
-    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_values
-        .iter()
-        .map(|b| b.as_ref())
-        .collect();
-
-    let rows = match client.query(&sql, &pg_params[..]).await {
-        Ok(rows) => rows,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Error executing statement: {}", e),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };    
-
-    let update_fields = if let Some(update_obj) = updates.as_object() {
-        update_obj.iter()
-            .filter(|(k, _)| *k != "record")
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
-
-    // Create array of objects with id, version and updates
-    let result_rows: Vec<serde_json::Value> = process_result_rows(&rows, &update_fields, is_hypertable);
-
-    for record in result_rows.iter() {
-        if let Err(e) = BatchSyncService::send_update_message(table_name.clone(), record.clone()).await {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Sync error: {e}"),
-                count: 0,
-                data: vec![],
-            });
-        }
     }
 
     //use the below code if you want to return the updated fields to the user, can be inefficient if the updated fields are large
@@ -572,48 +475,5 @@ pub async fn batch_update_records(
     //     json_rows.push(serde_json::Value::Object(json_obj));
     // }
     
-    
-    
-    // Apply the filters and updates
-    let count = rows.len(); // Placeholder count
-    let response = ApiResponse {
-        success: true,
-        message: format!("Updated {} records in '{}'", count, table_name),
-        count: count as i32,
-        data: vec![],
-    };
-    
-    
-    HttpResponse::Ok().json(response)
 }
 
-pub fn build_sql_update(
-    updates: &serde_json::Value,
-    param_start_index: usize,
-) -> Result<SqlUpdate, String> {
-    let mut set_clauses = Vec::new();
-    let mut params = Vec::new();
-    let mut param_index = param_start_index;
-
-    if let Some(update_map) = updates.as_object() {
-        if update_map.is_empty() {
-            return Err("No update fields provided".to_string());
-        }
-
-        for (key, value) in update_map {
-            // Sanitize field name to prevent SQL injection
-            let field = format!("\"{}\"", key.replace('\"', "\"\""));
-            
-            set_clauses.push(format!("{} = ${}", field, param_index));
-            params.push(value.clone());
-            param_index += 1;
-        }
-
-        Ok(SqlUpdate {
-            sql: set_clauses.join(", "),
-            params,
-        })
-    } else {
-        Err("Updates must be an object".to_string())
-    }
-}

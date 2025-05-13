@@ -1,33 +1,7 @@
 use crate::db;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
 use crate::generated::store::{
-    CreateCrdtMerklesRequest, CreateCrdtMerklesResponse, CreateCrdtMessagesRequest,
-    CreateCrdtMessagesResponse, CreateItemsRequest, CreateItemsResponse, CreatePacketsRequest,
-    CreatePacketsResponse, CreateQueueItemsRequest, CreateQueueItemsResponse, CreateQueuesRequest,
-    CreateQueuesResponse, CreateSyncEndpointsRequest, CreateSyncEndpointsResponse,
-    CreateTransactionsRequest, CreateTransactionsResponse, DeleteCrdtMerklesRequest,
-    DeleteCrdtMerklesResponse, DeleteCrdtMessagesRequest, DeleteCrdtMessagesResponse,
-    DeleteItemsRequest, DeleteItemsResponse, DeletePacketsRequest, DeletePacketsResponse,
-    DeleteQueueItemsRequest, DeleteQueueItemsResponse, DeleteQueuesRequest, DeleteQueuesResponse,
-    DeleteSyncEndpointsRequest, DeleteSyncEndpointsResponse, DeleteTransactionsRequest,
-    DeleteTransactionsResponse, GetCrdtMerklesRequest, GetCrdtMerklesResponse,
-    GetCrdtMessagesRequest, GetCrdtMessagesResponse, GetItemsRequest, GetItemsResponse,
-    GetPacketsRequest, GetPacketsResponse, GetQueueItemsRequest, GetQueueItemsResponse,
-    GetQueuesRequest, GetQueuesResponse, GetSyncEndpointsRequest, GetSyncEndpointsResponse,
-    GetTransactionsRequest, GetTransactionsResponse, UpdateCrdtMerklesRequest,
-    UpdateCrdtMerklesResponse, UpdateCrdtMessagesRequest, UpdateCrdtMessagesResponse,
-    UpdateItemsRequest, UpdateItemsResponse, UpdatePacketsRequest, UpdatePacketsResponse,
-    UpdateQueueItemsRequest, UpdateQueueItemsResponse, UpdateQueuesRequest, UpdateQueuesResponse,
-    UpdateSyncEndpointsRequest, UpdateSyncEndpointsResponse, UpdateTransactionsRequest,
-    UpdateTransactionsResponse, GetConnectionsRequest, GetConnectionsResponse,
-    UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest,
-    DeleteConnectionsResponse, CreateConnectionsRequest, CreateConnectionsResponse, 
-    BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchInsertCrdtMerklesRequest,
-    BatchInsertCrdtMerklesResponse, BatchInsertCrdtMessagesRequest, BatchInsertCrdtMessagesResponse, 
-    BatchInsertItemsRequest, BatchInsertItemsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse,
-    BatchInsertQueueItemsRequest, BatchInsertQueueItemsResponse, BatchInsertQueuesRequest, BatchInsertQueuesResponse, 
-    BatchInsertSyncEndpointsRequest, BatchInsertSyncEndpointsResponse, BatchInsertTransactionsRequest, BatchInsertTransactionsResponse,
-    Connections, Packets
+    BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchInsertCrdtMerklesRequest, BatchInsertCrdtMerklesResponse, BatchInsertCrdtMessagesRequest, BatchInsertCrdtMessagesResponse, BatchInsertItemsRequest, BatchInsertItemsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchInsertQueueItemsRequest, BatchInsertQueueItemsResponse, BatchInsertQueuesRequest, BatchInsertQueuesResponse, BatchInsertSyncEndpointsRequest, BatchInsertSyncEndpointsResponse, BatchInsertTransactionsRequest, BatchInsertTransactionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchUpdateCrdtMerklesRequest, BatchUpdateCrdtMerklesResponse, BatchUpdateCrdtMessagesRequest, BatchUpdateCrdtMessagesResponse, BatchUpdateItemsRequest, BatchUpdateItemsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchUpdateQueueItemsRequest, BatchUpdateQueueItemsResponse, BatchUpdateQueuesRequest, BatchUpdateQueuesResponse, BatchUpdateSyncEndpointsRequest, BatchUpdateSyncEndpointsResponse, BatchUpdateTransactionsRequest, BatchUpdateTransactionsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, CreateCrdtMerklesRequest, CreateCrdtMerklesResponse, CreateCrdtMessagesRequest, CreateCrdtMessagesResponse, CreateItemsRequest, CreateItemsResponse, CreatePacketsRequest, CreatePacketsResponse, CreateQueueItemsRequest, CreateQueueItemsResponse, CreateQueuesRequest, CreateQueuesResponse, CreateSyncEndpointsRequest, CreateSyncEndpointsResponse, CreateTransactionsRequest, CreateTransactionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, DeleteCrdtMerklesRequest, DeleteCrdtMerklesResponse, DeleteCrdtMessagesRequest, DeleteCrdtMessagesResponse, DeleteItemsRequest, DeleteItemsResponse, DeletePacketsRequest, DeletePacketsResponse, DeleteQueueItemsRequest, DeleteQueueItemsResponse, DeleteQueuesRequest, DeleteQueuesResponse, DeleteSyncEndpointsRequest, DeleteSyncEndpointsResponse, DeleteTransactionsRequest, DeleteTransactionsResponse, GetConnectionsRequest, GetConnectionsResponse, GetCrdtMerklesRequest, GetCrdtMerklesResponse, GetCrdtMessagesRequest, GetCrdtMessagesResponse, GetItemsRequest, GetItemsResponse, GetPacketsRequest, GetPacketsResponse, GetQueueItemsRequest, GetQueueItemsResponse, GetQueuesRequest, GetQueuesResponse, GetSyncEndpointsRequest, GetSyncEndpointsResponse, GetTransactionsRequest, GetTransactionsResponse, Packets, UpdateConnectionsRequest, UpdateConnectionsResponse, UpdateCrdtMerklesRequest, UpdateCrdtMerklesResponse, UpdateCrdtMessagesRequest, UpdateCrdtMessagesResponse, UpdateItemsRequest, UpdateItemsResponse, UpdatePacketsRequest, UpdatePacketsResponse, UpdateQueueItemsRequest, UpdateQueueItemsResponse, UpdateQueuesRequest, UpdateQueuesResponse, UpdateSyncEndpointsRequest, UpdateSyncEndpointsResponse, UpdateTransactionsRequest, UpdateTransactionsResponse
 };
 use crate::structs::structs::RequestBody;
 use crate::sync::sync_service::insert;
@@ -37,9 +11,11 @@ use tonic::{transport::Server, Request, Response, Status};
 use crate::schema::verify::field_exists_in_table;
 use crate::table_enum::Table;
 use crate::auth::auth_middleware::GrpcAuthInterceptor;
-use crate::controllers::common_controller::{process_records, convert_json_to_csv, execute_copy};
+use crate::controllers::common_controller::{ convert_json_to_csv,  execute_copy, process_records,};
 use crate::db::create_connection;
+use serde_json::Value;
 
+use super::common_controller::{perform_batch_update, sanitize_updates};
 
 
 // Define your gRPC service struct
@@ -112,6 +88,13 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_update_items(
+        &self,
+        request: Request<BatchUpdateItemsRequest>,
+    ) -> Result<Response<BatchUpdateItemsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
 
     async fn create_connections(
         &self,
@@ -375,6 +358,14 @@ impl StoreService for GrpcController {
     Ok(Response::new(response))
     }
 
+    async fn batch_update_connections(
+        &self,
+        request: Request<BatchUpdateConnectionsRequest>,
+    ) -> Result<Response<BatchUpdateConnectionsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_packets(
         &self,
         request: Request<CreatePacketsRequest>,
@@ -569,6 +560,53 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_update_packets(
+        &self,
+        request: Request<BatchUpdatePacketsRequest>,
+    ) -> Result<Response<BatchUpdatePacketsResponse>, Status> {
+        let request = request.into_inner();
+        let params = request.params.ok_or_else(|| Status::invalid_argument("Params are required"))?;
+        let body = request.body.ok_or_else(|| Status::invalid_argument("Body is required"))?;
+        let updates = body.updates.ok_or_else(|| Status::invalid_argument("Updates are required"))?;
+    
+        let filters: Vec<Value> = body.advance_filters.into_iter().map(|mut filter| {
+            let mut value = serde_json::to_value(filter).unwrap_or_default();
+            if let Value::Object(ref mut map) = value {
+                if let Some(Value::String(s)) = map.get_mut("values") {
+                    if let Ok(parsed) = serde_json::from_str::<Value>(s) {
+                        if parsed.is_array() {
+                            *map.get_mut("values").unwrap() = parsed;
+                        }
+                    }
+                }
+            }
+            value
+        }).collect();
+    
+        let updates_map = match serde_json::to_value(&updates) {
+            Ok(Value::Object(map)) => map,
+            Ok(_) => return Err(Status::invalid_argument("Updates must be a JSON object")),
+            Err(e) => return Err(Status::internal(format!("Failed to convert data to JSON: {}", e))),
+        };
+    
+        let updates_value = sanitize_updates(updates_map)
+            .ok_or_else(|| Status::invalid_argument("No valid fields to update"))?;
+    
+        let (count, _) = perform_batch_update(&params.table, updates_value, filters)
+            .await.map_err(Status::internal)?;
+    
+        let response = BatchUpdatePacketsResponse {
+            success: true,
+            message: format!("Updated {} records in '{}'", count, params.table),
+            count: count as i32,
+            data: vec![],
+        };
+    
+        Ok(Response::new(response))
+
+    }
+
+    
     async fn create_crdt_messages(
         &self,
         request: Request<CreateCrdtMessagesRequest>,
@@ -605,6 +643,14 @@ impl StoreService for GrpcController {
         &self,
         request: Request<BatchInsertCrdtMessagesRequest>,
     ) -> Result<Response<BatchInsertCrdtMessagesResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
+    async fn batch_update_crdt_messages(
+        &self,
+        request: Request<BatchUpdateCrdtMessagesRequest>,
+    ) -> Result<Response<BatchUpdateCrdtMessagesResponse>, Status> {
         // Implementation for DeleteItems method
         todo!()
     }
@@ -649,6 +695,14 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_update_crdt_merkles(
+        &self,
+        request: Request<BatchUpdateCrdtMerklesRequest>,
+    ) -> Result<Response<BatchUpdateCrdtMerklesResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_sync_endpoints(
         &self,
         request: Request<CreateSyncEndpointsRequest>,
@@ -689,6 +743,13 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_update_sync_endpoints(
+        &self,
+        request: Request<BatchUpdateSyncEndpointsRequest>,
+    ) -> Result<Response<BatchUpdateSyncEndpointsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
     async fn create_queues(
         &self,
         request: Request<CreateQueuesRequest>,
@@ -725,6 +786,14 @@ impl StoreService for GrpcController {
         &self,
         request: Request<BatchInsertQueuesRequest>,
     ) -> Result<Response<BatchInsertQueuesResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
+    async fn batch_update_queues(
+        &self,
+        request: Request<BatchUpdateQueuesRequest>,
+    ) -> Result<Response<BatchUpdateQueuesResponse>, Status> {
         // Implementation for DeleteItems method
         todo!()
     }
@@ -769,6 +838,14 @@ impl StoreService for GrpcController {
         todo!()
     }
 
+    async fn batch_update_queue_items(
+        &self,
+        request: Request<BatchUpdateQueueItemsRequest>,
+    ) -> Result<Response<BatchUpdateQueueItemsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
     async fn create_transactions(
         &self,
         request: Request<CreateTransactionsRequest>,
@@ -805,6 +882,14 @@ impl StoreService for GrpcController {
         &self,
         request: Request<BatchInsertTransactionsRequest>,
     ) -> Result<Response<BatchInsertTransactionsResponse>, Status> {
+        // Implementation for DeleteItems method
+        todo!()
+    }
+
+    async fn batch_update_transactions(
+        &self,
+        request: Request<BatchUpdateTransactionsRequest>,
+    ) -> Result<Response<BatchUpdateTransactionsResponse>, Status> {
         // Implementation for DeleteItems method
         todo!()
     }
