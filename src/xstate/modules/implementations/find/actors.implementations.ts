@@ -22,7 +22,6 @@ import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
 import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 const pluralize = require('pluralize');
-import * as cache from 'memory-cache';
 import sha1 from 'sha1';
 @Injectable()
 export class FindActorsImplementations {
@@ -47,103 +46,53 @@ export class FindActorsImplementations {
       let metadata: Record<string, any> = [];
       let errors: { message: string; stack: string; status_code: number }[] =
         [];
-      const { context } = input;
-      if (!context?.controller_args)
-        return Promise.reject({
-          payload: {
-            success: false,
-            message: `No controller args found`,
-            count: 0,
-            data: [],
-          },
-        });
-      const { controller_args, responsible_account, data_permissions_query } =
-        context;
-      const { organization_id = '', account_organization_id } =
-        responsible_account;
-      const [_res, _req] = controller_args;
-      const { params, headers } = _req;
-      let { body } = _req;
-      const { time_zone, host, cookie } = headers;
-      const { table, type } = params;
-
-      if (this.not_allowed_entities.includes(table)) {
-        return Promise.reject({
-          payload: {
-            success: false,
-            message: `Table ${table} is not allowed.`,
-            count: 0,
-            data: [],
-          },
-        });
-      }
-
-      const {
-        query: dpquery,
-        account_organization_id: account_organization_id_fr_dp,
-        schema: _aliased_schema,
-      } = data_permissions_query;
-      const custom_suffix = `${host}${cookie}${headers?.['user-agent'] ?? ''}}`;
-      const main_table_permissions_cache_key = sha1(
-        `${table}_data_permissions:${custom_suffix}`,
-      );
-      const cached_permissions = JSON.parse(
-        cache.get(main_table_permissions_cache_key),
-      );
-
-      const permissions = cached_permissions
-        ? cached_permissions
-        : await this.db
-            .execute(dpquery.trim())
-            .then((response) => ({
-              data: response.rows,
-              account_organization_id,
-              cache: false,
-            }))
-            .catch(() => []);
-
-      this.logger.debug(
-        `data_permissions_query: ${data_permissions_query.query}`,
-      );
-      this.logger.debug(
-        `data_permissions_account_organization_id: ${data_permissions_query.account_organization_id}`,
-      );
       try {
-        // override body with error message if any of the fields are not in the permissions
-        if (permissions?.data?.length) {
-          if (cached_permissions === null) {
-            this.logger.debug('@@@@@@@@@@@@@@cached_permissions miss');
-            cache.put(
-              main_table_permissions_cache_key,
-              JSON.stringify({
-                ...permissions,
-                cache: true,
-              }),
-              Utility.getTimeMs(process.env.JWT_EXPIRES_IN ?? '2d'),
-            );
-          } else {
-            this.logger.debug('@@@@@@@@@@@@@@cached_permissions hit');
-          }
-
-          const { metadata: acc_metadata } = Utility.getReadPermittedFields({
-            body,
-            table,
-            permissions,
-            metadata,
-            schema: _aliased_schema,
+        const { context } = input;
+        if (!context?.controller_args)
+          return Promise.reject({
+            payload: {
+              success: false,
+              message: `No controller args found`,
+              count: 0,
+              data: [],
+            },
           });
-          metadata = acc_metadata;
-        } else {
-          this.logger.warn(
-            `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${responsible_account.account_id}.`,
-          );
-          // TODO: finalize the role based permissions
-          await Utility.isPermitted(
-            responsible_account.account_id,
-            'Super Admin',
-          );
+        const { controller_args, responsible_account, data_permissions_query } =
+          context;
+        const { organization_id = '', account_organization_id } =
+          responsible_account;
+        const [_res, _req] = controller_args;
+        const { params, headers } = _req;
+        let { body } = _req;
+        const { time_zone, host, cookie } = headers;
+        const { table, type } = params;
+        if (this.not_allowed_entities.includes(table)) {
+          return Promise.reject({
+            payload: {
+              success: false,
+              message: `Table ${table} is not allowed.`,
+              count: 0,
+              data: [],
+            },
+          });
         }
+        const { metadata: _metadata } = await Utility.getCachedPermissions(
+          'read',
+          {
+            data_permissions_query,
+            host,
+            cookie,
+            headers,
+            table,
+            account_organization_id,
+            db: this.db,
+            body,
+            account_id: responsible_account.account_id,
+            metadata,
+          },
+        );
 
+        metadata = _metadata;
         const {
           order_direction = 'asc',
           order_by = 'id',
@@ -481,17 +430,7 @@ export class FindActorsImplementations {
               total_group_count: (group_by_selections as Record<string, any>)
                 .total_group_count,
             };
-          const has_plucked_not_grouped_fields = Object.keys(
-            selections ?? {},
-          ).some((key) => !group_by_selections?.[table]?.[key]);
-          if (
-            Object.keys(group_by_selections).length &&
-            has_plucked_not_grouped_fields
-          )
-            throw new BadRequestException({
-              success: false,
-              message: `You can only select fields that are in the group_by fields.`,
-            });
+
           const selections_with_group_by = {
             ...count_selection,
             [table]: group_by_selections?.[table] ?? {},

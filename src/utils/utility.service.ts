@@ -46,6 +46,7 @@ import {
 
 const pluralize = require('pluralize');
 const { TZ = 'America/Los_Angeles' } = process.env;
+import * as cache from 'memory-cache';
 import sha1 from 'sha1';
 export class Utility {
   private static logger = new LoggerService('Utility');
@@ -1800,6 +1801,97 @@ export class Utility {
       default:
         break;
     }
+  }
+
+  public static async getCachedPermissions(
+    permission_type: 'read' | 'write',
+    {
+      data_permissions_query,
+      host,
+      cookie,
+      headers,
+      table,
+      account_organization_id,
+      db,
+      body,
+      metadata,
+      account_id,
+    },
+  ) {
+    const {
+      query: dpquery,
+      account_organization_id: account_organization_id_fr_dp,
+      schema: _aliased_schema,
+    } = data_permissions_query;
+    const custom_suffix = `${host}${cookie}${headers?.['user-agent'] ?? ''}}`;
+    const main_table_permissions_cache_key = sha1(
+      `${table}_data_permissions:${custom_suffix}`,
+    );
+    const cached_permissions = JSON.parse(
+      cache.get(main_table_permissions_cache_key),
+    );
+
+    const permissions = cached_permissions
+      ? cached_permissions
+      : await db
+          .execute(dpquery.trim())
+          .then((response) => ({
+            data: response.rows,
+            account_organization_id,
+            cache: false,
+          }))
+          .catch(() => []);
+
+    this.logger.debug(
+      `data_permissions_query: ${data_permissions_query.query}`,
+    );
+    this.logger.debug(
+      `data_permissions_account_organization_id: ${data_permissions_query.account_organization_id}`,
+    );
+
+    if (permissions?.data?.length) {
+      if (cached_permissions === null) {
+        this.logger.debug('@@@@@@@@@@@@@@cached_permissions miss');
+        cache.put(
+          main_table_permissions_cache_key,
+          JSON.stringify({
+            ...permissions,
+            cache: true,
+          }),
+          Utility.getTimeMs(process.env.JWT_EXPIRES_IN ?? '2d'),
+        );
+      } else {
+        this.logger.debug('@@@@@@@@@@@@@@cached_permissions hit');
+      }
+      switch (permission_type) {
+        case 'read':
+          const { metadata: acc_metadata } = Utility.getReadPermittedFields({
+            body,
+            table,
+            permissions,
+            metadata,
+            schema: _aliased_schema,
+          });
+
+          metadata = acc_metadata;
+          break;
+        case 'write':
+          this.logger.debug('@@@@@@@@@@@@@@write permissions');
+          break;
+        default:
+          break;
+      }
+    } else {
+      this.logger.warn(
+        `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${account_id}.`,
+      );
+      // TODO: finalize the role based permissions
+      await Utility.isPermitted(account_id, 'Super Admin');
+    }
+
+    return {
+      metadata,
+    };
   }
 }
 
