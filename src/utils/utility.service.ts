@@ -46,7 +46,7 @@ import {
 
 const pluralize = require('pluralize');
 const { TZ = 'America/Los_Angeles' } = process.env;
-
+import sha1 from 'sha1';
 export class Utility {
   private static logger = new LoggerService('Utility');
   public static createParse({
@@ -1488,29 +1488,50 @@ export class Utility {
     data,
     db,
     query,
+    organization_id,
+    account_id,
   }) {
     if (encrypted_fields?.length) {
       this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
+      const encryption_key = sha1(`${organization_id}_${table}`);
       const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
           const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
           if (encrypted_fields.includes(key)) {
             acc.push(
-              `${key} = pgp_sym_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
+              `${key} = pgp_sym_encrypt(${_value}, '${encryption_key}')`,
             );
-          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
+          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other field
           return acc;
         }, [])
         .join(',')}`;
+
+      const ek_query = `
+          INSERT INTO encryption_keys (id, entity, organization_id, created_by, timestamp, tombstone) 
+          VALUES(
+            '${encryption_key}', 
+            pgp_sym_encrypt('${table}', '${process.env.PGP_SYM_KEY}'), 
+            pgp_sym_encrypt('${organization_id}', '${process.env.PGP_SYM_KEY}'),
+            '${account_id}',
+            '${new Date().toISOString()}',
+            0
+          ) ON CONFLICT (id) DO NOTHING;
+          `;
       const _values = `${Object.keys(data)}) VALUES (${Utility.encryptData(
         data,
         encrypted_fields,
+        encryption_key,
       )}`;
-      const query = `PREPARE encrypted_insert_raw AS INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};`;
+      const query = `
+      BEGIN;
+      ${ek_query}
+      INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};
+      COMMIT;`;
       this.logger.debug(`Encrypting data: ${query}`);
-      return db
-        .execute(sql.raw(query))
-        .then(() => this.logger.debug('Encrypting data completed'));
+      return db.execute(sql.raw(query)).then(() => {
+        this.logger.debug('Encrypting data completed');
+        return data;
+      });
     }
     const { table_schema } = query;
     return db
@@ -1552,9 +1573,10 @@ export class Utility {
         '',
       )}`;
       this.logger.debug(`Encrypting data: ${query}`);
-      return db
-        .execute(sql.raw(query))
-        .then(() => this.logger.debug('Encrypting data completed'));
+      return db.execute(sql.raw(query)).then(() => {
+        this.logger.debug('Encrypting data completed');
+        return data;
+      });
     }
     const { table_schema } = query;
     return db
@@ -1570,12 +1592,18 @@ export class Utility {
       .then(([{ table_schema }]) => table_schema);
   }
 
-  public static encryptData(data: Record<string, any>, encryption_keys) {
+  public static encryptData(
+    data: Record<string, any>,
+    encryption_keys,
+    encrypt_key = '',
+  ) {
     const values = `${Object.entries(data)
       .reduce((encryptedData: any[], [key, value]) => {
         if ((encryption_keys as string[]).includes(key)) {
           encryptedData.push(
-            `pgp_sym_encrypt('${value}', '${process.env.PGP_SYM_KEY}')`,
+            `pgp_sym_encrypt('${value}', '${
+              encrypt_key ? encrypt_key : process.env.PGP_SYM_KEY
+            }')`,
           );
           return encryptedData;
         }

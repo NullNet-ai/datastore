@@ -48,6 +48,7 @@ export class CreateActorsImplementations {
         organization,
         is_root_account,
         account_organization_id,
+        account_id,
       } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body, query } = _req;
@@ -166,6 +167,8 @@ export class CreateActorsImplementations {
         data: parsed_data,
         encrypted_fields,
         db: this.db,
+        organization_id,
+        account_id,
       });
 
       if (SYNC_ENABLED === 'true') {
