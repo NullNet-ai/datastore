@@ -375,12 +375,13 @@ export class Utility {
           const join_type = join.type;
           const toEntity =
             join_type === 'self'
-              ? join.field_relation.from.entity
-              : join.field_relation.to.entity;
+              ? join.field_relation?.from?.entity
+              : join.field_relation?.to?.entity;
+
           const toAlias =
             join_type === 'self'
-              ? join.field_relation.from.alias || toEntity
-              : join.field_relation.to.alias || toEntity; // Use alias if provided
+              ? join.field_relation?.from?.alias || toEntity
+              : join.field_relation?.to?.alias || toEntity; // Use alias if provided
 
           // Only process if the entity has pluck_object fields
           const entity_concatenated_fields = concatenated_fields[toAlias] || [];
@@ -602,16 +603,17 @@ export class Utility {
 
     if (joins.length) {
       joins.forEach(({ type, field_relation, nested = false }) => {
-        const { from, to } = field_relation;
+        const { from, to } = field_relation as Record<string, any>;
         const to_entity = to?.entity;
         const from_alias = from?.alias || from?.entity; // Use alias if provided
         const to_alias = to?.alias || to_entity; // Use alias if provided
-        to.filters ??= [];
-        if (!from?.entity || !to?.entity || !from.field || !to.field) {
+        if (!from?.entity || !to?.entity || !from?.field || !to?.field) {
           throw new Error(
-            'Invalid join configuration. Ensure both `from` and `to` entities are defined.',
+            'Invalid join configuration. Ensure both `from` and `to` required properties are defined.',
           );
         }
+
+        if (!to) to.filters = [];
         const concatenate_query = expressions[to_alias] || [];
         function constructJoinQuery({ isSelfJoin = false } = {}) {
           if (to?.alias) aliased_entities.push(to?.alias);
@@ -1625,7 +1627,7 @@ export class Utility {
     Utility.checkPermissions(config, 'read');
     return {
       ...config,
-      errors: config.errors,
+      metadata: config.metadata,
     };
   }
 
@@ -1662,7 +1664,7 @@ export class Utility {
   }
 
   public static checkPermissions(
-    { table, schema, permissions, errors, body },
+    { table, schema, permissions, metadata, body },
     permission_type: 'read' | 'write' | 'encrypted' | 'decrypted' | 'required',
   ) {
     switch (permission_type) {
@@ -1677,32 +1679,30 @@ export class Utility {
               const stack = `[${table}]: Found at ${property_name}${
                 alias ? `(${alias})` : ''
               }${path} (${_field})`;
-              if (!errors.find((e) => e.stack === stack)) {
-                errors.push({
+              if (!metadata.find((e) => e.stack === stack)) {
+                metadata.push({
                   message: `${_field} is not permitted to access.`,
-                  stack,
-                  status_code: 401,
+                  path: stack,
+                  entity: _entity,
+                  field: _field,
+                  // status_code: 401,
                 });
               }
-              console.log({
-                property_name,
-                _field,
-                hasPermission,
-              });
               const cloned_body = { ...body };
               switch (property_name) {
                 case 'joins':
                   cloned_body?.[property_name]?.forEach((join, index) => {
-                    if (join?.field_relation.to.field === _field) {
+                    if (join?.field_relation?.to?.field === _field) {
                       delete body?.[property_name][index]?.field_relation.to
                         .field;
-                    } else if (join?.field_relation.from.field === _field) {
+                    } else if (join?.field_relation?.from?.field === _field) {
                       delete body?.[property_name][index]?.field_relation.from
                         .field;
                     }
                     if (
-                      !cloned_body?.[property_name][index]?.field_relation.to &&
-                      !cloned_body?.[property_name][index]?.field_relation.from
+                      !cloned_body?.[property_name][index]?.field_relation
+                        ?.to &&
+                      !cloned_body?.[property_name][index]?.field_relation?.from
                     ) {
                       delete body?.[property_name][index].field_relation;
                     }
@@ -1774,3 +1774,5 @@ export class Utility {
     }
   }
 }
+
+// TODO: dont use past tense in encryption fields

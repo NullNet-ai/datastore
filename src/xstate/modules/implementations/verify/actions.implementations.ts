@@ -51,32 +51,39 @@ export class VerifyActionsImplementations {
         const tables = joins.reduce(
           (acc, join, index) => {
             const { to, from } = join.field_relation;
-            schema.push({
-              entity: to.entity,
-              alias: to.alias,
-              field: to.field,
-              property_name: `joins`,
-              path: `[${index}].field_relation.to.field`,
-            });
-            schema.push({
-              entity: from.entity,
-              alias: from.alias,
-              field: from.field,
-              property_name: `joins`,
-              path: `[${index}].field_relation.from.field`,
-            });
-            if (!acc.includes(to.entity)) {
-              acc.push(to.entity);
+            if (to) {
+              schema.push({
+                entity: to.entity,
+                alias: to.alias,
+                field: to.field,
+                property_name: `joins`,
+                path: `[${index}].field_relation.to.field`,
+              });
+              if (!acc.includes(to?.entity)) {
+                acc.push(to.entity);
+              }
+              if (!join_fields.includes(to?.field)) {
+                join_fields.push(to.field);
+              }
             }
-            if (!acc.includes(from.entity)) {
-              acc.push(from.entity);
+
+            if (from) {
+              schema.push({
+                entity: from.entity,
+                alias: from.alias,
+                field: from.field,
+                property_name: `joins`,
+                path: `[${index}].field_relation.from.field`,
+              });
+              if (!acc.includes(from?.entity)) {
+                acc.push(from.entity);
+              }
+
+              if (!join_fields.includes(from?.field)) {
+                join_fields.push(from.field);
+              }
             }
-            if (!join_fields.includes(to.field)) {
-              join_fields.push(to.field);
-            }
-            if (!join_fields.includes(from.field)) {
-              join_fields.push(from.field);
-            }
+
             return acc;
           },
           [table],
@@ -184,26 +191,31 @@ export class VerifyActionsImplementations {
               }, []),
             );
           }, []),
-          ...[distinct_by].map((field) => {
-            const split_field = field.split('.');
-            const _field =
-              split_field.length > 1 ? split_field[1] : split_field[0];
-            const split_entity = pluralize(
-              split_field.length > 1
-                ? pluralize(split_field[0])
-                : pluralize(table),
-            );
-            tables.push(split_entity);
-            schema.push({
-              entity: split_entity,
-              alias: split_entity,
-              field: _field,
-              property_name: `distinct_by`,
-              path: ``,
-            });
+          ...[distinct_by]
+            .map((field) => {
+              const split_field = field?.split('.') ?? [];
+              const _field =
+                split_field.length > 1 ? split_field[1] : split_field[0];
 
-            return _field;
-          }),
+              if (_field) {
+                const split_entity = pluralize(
+                  split_field.length > 1
+                    ? pluralize(split_field[0])
+                    : pluralize(table),
+                );
+                tables.push(split_entity);
+                schema.push({
+                  entity: split_entity,
+                  alias: split_entity,
+                  field: _field,
+                  property_name: `distinct_by`,
+                  path: ``,
+                });
+              }
+
+              return _field;
+            })
+            .filter(Boolean),
         ];
         const fieldsToUse = pluck_object?.[table]?.length
           ? [

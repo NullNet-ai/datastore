@@ -44,6 +44,7 @@ export class FindActorsImplementations {
   }
   public readonly actors: IActors = {
     find: fromPromise(async ({ input }): Promise<IResponse> => {
+      let metadata: Record<string, any> = [];
       let errors: { message: string; stack: string; status_code: number }[] =
         [];
       const { context } = input;
@@ -124,14 +125,14 @@ export class FindActorsImplementations {
             this.logger.debug('@@@@@@@@@@@@@@cached_permissions hit');
           }
 
-          const { errors: acc_errors } = Utility.getReadPermittedFields({
+          const { metadata: acc_metadata } = Utility.getReadPermittedFields({
             body,
             table,
             permissions,
-            errors,
+            metadata,
             schema: _aliased_schema,
           });
-          errors = acc_errors;
+          metadata = acc_metadata;
         } else {
           this.logger.warn(
             `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${responsible_account.account_id}.`,
@@ -162,9 +163,7 @@ export class FindActorsImplementations {
           pluck_group_object = {},
           encrypted_fields = [],
         } = body;
-        console.log({
-          body: JSON.stringify(body.distinct_by, null, 2),
-        });
+
         if (group_advance_filters.length && advance_filters.length) {
           throw new BadRequestException({
             success: false,
@@ -211,9 +210,11 @@ export class FindActorsImplementations {
         });
 
         joins.forEach(({ field_relation }) => {
-          const { entity, alias } = field_relation.to;
-          if (alias) {
-            aliased_joined_entities.push({ alias, entity });
+          if (field_relation?.to) {
+            const { entity, alias } = field_relation.to;
+            if (alias) {
+              aliased_joined_entities.push({ alias, entity });
+            }
           }
         });
 
@@ -738,6 +739,7 @@ export class FindActorsImplementations {
             message: `No data found in ${table}`,
             count: 0,
             data: [],
+            metadata,
             errors,
           });
         }
@@ -752,6 +754,7 @@ export class FindActorsImplementations {
               acc.push(_item);
               return acc;
             }, []),
+            metadata,
             errors,
           },
         });
@@ -767,6 +770,7 @@ export class FindActorsImplementations {
           message: `An error occurred while processing your request. Please review your query for any incorrect assignments. If the issue persists, contact your database administrator for further assistance.`,
           count: 0,
           data: [],
+          metadata,
           errors,
         });
       }
