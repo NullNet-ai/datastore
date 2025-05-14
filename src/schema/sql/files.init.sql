@@ -12,8 +12,8 @@ CREATE TYPE permission_type AS (
     id TEXT, 
     read BOOLEAN, 
     write BOOLEAN, 
-    encrypted BOOLEAN, 
-    decrypted BOOLEAN, 
+    encrypt BOOLEAN, 
+    decrypt BOOLEAN, 
     required BOOLEAN, 
     created_by TEXT
 );
@@ -77,8 +77,8 @@ BEGIN
 
     -- loop permissions
     FOREACH arr_permission IN ARRAY arr_permissions LOOP
-        INSERT INTO permissions (id, read, write, encrypted, decrypted, required, created_by) 
-        SELECT arr_permission.id, arr_permission.read, arr_permission.write, arr_permission.encrypted, arr_permission.decrypted, arr_permission.required, record_email
+        INSERT INTO permissions (id, read, write, encrypt, decrypt, required, created_by) 
+        SELECT arr_permission.id, arr_permission.read, arr_permission.write, arr_permission.encrypt, arr_permission.decrypt, arr_permission.required, record_email
         WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = arr_permission.id);
     END LOOP;
 

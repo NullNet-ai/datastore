@@ -1665,7 +1665,7 @@ export class Utility {
 
   public static checkPermissions(
     { table, schema, permissions, metadata, body },
-    permission_type: 'read' | 'write' | 'encrypted' | 'decrypted' | 'required',
+    permission_type: 'read' | 'write' | 'encrypt' | 'decrypt' | 'required',
   ) {
     switch (permission_type) {
       case 'read':

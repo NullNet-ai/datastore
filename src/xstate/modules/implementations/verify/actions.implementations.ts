@@ -269,7 +269,7 @@ export class VerifyActionsImplementations {
         });
 
         const query = `
-        SELECT entities.name as entity,fields.name as field,permissions.read as read,permissions.write as write,permissions.encrypted as encrypted,permissions.decrypted as decrypted,permissions.required as required, data_permissions.account_organization_id as account_organization_id FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '${
+        SELECT entities.name as entity,fields.name as field,permissions.read as read,permissions.write as write,permissions.encrypt as encrypt,permissions.decrypt as decrypt,permissions.required as required, data_permissions.account_organization_id as account_organization_id FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '${
           responsible_account.account_organization_id
         }' ${Utility.constructPermissionSelectWhereClause({
           tables,
