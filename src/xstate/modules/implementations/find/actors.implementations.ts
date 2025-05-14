@@ -98,6 +98,8 @@ export class FindActorsImplementations {
         date_format,
         table,
       );
+      const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
+        Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
         pluck_object[key] = [
@@ -117,7 +119,6 @@ export class FindActorsImplementations {
       });
 
       multiple_sort.forEach(({ by_field }) => {
-        //check if by_field is separated by a dot if not then throw an error
         let entity = table;
         let field = by_field.split('.')[0];
         if (by_field.split('.').length > 1) {
@@ -344,9 +345,19 @@ export class FindActorsImplementations {
           joins,
           date_format,
           parsed_concatenated_fields,
-          multiple_sort,
+          multiple_sort: multiple_sort.length
+            ? multiple_sort
+            : [
+                {
+                  by_field: order_by,
+                  by_direction: order_direction,
+                  is_case_sensitive_sorting,
+                },
+              ],
           encrypted_fields,
           time_zone,
+          request_type: type,
+          aliased_joined_entities,
         });
         // const is_grouping_joined_entity = group_by_entities.some((key) =>
         //   Object.keys(join_selections ?? {}).includes(key),
@@ -448,8 +459,6 @@ export class FindActorsImplementations {
         date_format,
       );
 
-      const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
-        Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       // if (group_by_agg_selections[order_by]) {
       //   _db = _db.orderBy(
       //     ['asc', 'ascending'].includes(order_direction)
