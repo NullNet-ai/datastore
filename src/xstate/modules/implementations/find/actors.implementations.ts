@@ -515,6 +515,14 @@ export class FindActorsImplementations {
           } else if (sort_entity !== table) {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
             if (!is_case_sensitive_sorting) {
+              const sorted_field_type =
+                schema[sort_entity]?.[by_field]?.dataType;
+              if (sorted_field_type !== 'string') {
+                throw new BadRequestException(
+                  `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
+                );
+              }
+
               sort_query = `lower(${sort_query})`;
             }
             if (by_direction.toLowerCase() === 'asc') {
@@ -525,6 +533,16 @@ export class FindActorsImplementations {
           } else {
             let sort_query: any = `"${sort_entity}"."${by_field}"`;
             if (Object.keys(group_by_selections).length) {
+              if (!is_case_sensitive_sorting) {
+                const sorted_field_type =
+                  schema[sort_entity]?.[by_field]?.dataType;
+                if (sorted_field_type !== 'string') {
+                  throw new BadRequestException(
+                    `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
+                  );
+                }
+                sort_query = `lower(${sort_query})`;
+              }
               if (by_direction.toLowerCase() === 'asc') {
                 return sql.raw(`MIN(${sort_query})`);
               } else {
@@ -541,6 +559,18 @@ export class FindActorsImplementations {
           let sort_query: any = `"${sort_entity}"."${
             by_entity_field[0] || 'id'
           }"`;
+          if (!is_case_sensitive_sorting) {
+            const sorted_field_type =
+              schema[sort_entity]?.[by_entity_field[0] || 'id']?.dataType;
+            if (sorted_field_type !== 'string') {
+              throw new BadRequestException(
+                `Sorted field ${
+                  by_entity_field[0] || 'id'
+                } is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
+              );
+            }
+            sort_query = `lower(${sort_query})`;
+          }
           if (by_direction.toLowerCase() === 'asc') {
             return sql.raw(`MIN(${sort_query})`);
           } else {
@@ -585,6 +615,11 @@ export class FindActorsImplementations {
                   }
                 })();
                 if (!is_case_sensitive_sorting && !is_query_already_lowered) {
+                  const sorted_field_type = (sort_field_schema as any).dataType;
+                  if (sorted_field_type && sorted_field_type !== 'string')
+                    throw new BadRequestException(
+                      `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
+                    );
                   sort_field_schema = sql`lower(${sort_field_schema})`;
                 }
                 return ['asc', 'ascending'].includes(by_direction)
