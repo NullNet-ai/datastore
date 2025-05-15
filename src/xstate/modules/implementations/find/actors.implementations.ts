@@ -345,15 +345,6 @@ export class FindActorsImplementations {
           joins,
           date_format,
           parsed_concatenated_fields,
-          multiple_sort: multiple_sort.length
-            ? multiple_sort
-            : [
-                {
-                  by_field: order_by,
-                  by_direction: order_direction,
-                  is_case_sensitive_sorting,
-                },
-              ],
           encrypted_fields,
           time_zone,
           request_type: type,

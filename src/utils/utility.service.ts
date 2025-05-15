@@ -209,7 +209,7 @@ export class Utility {
   static formatIfDate = (
     field: string,
     dateFormat: string = 'MM/DD/YYYY',
-    toAlias,
+    to_entity,
     fields,
     time_zone,
     is_expression = false,
@@ -229,7 +229,7 @@ export class Utility {
       field.toLowerCase().endsWith('time')
     ) {
       return `'${field}', ${Utility.formatDate({
-        table: toAlias,
+        table: to_entity,
         field,
         date_format: dateFormat,
         time_zone,
@@ -237,7 +237,7 @@ export class Utility {
         fields,
       })}`;
     }
-    return `'${field}', "${toAlias}"."${field}"`;
+    return `'${field}', "${to_entity}"."${field}"`;
   };
 
   public static parseConcatenateFields = (
@@ -327,7 +327,6 @@ export class Utility {
     encrypted_fields = [],
     time_zone,
     request_type,
-    multiple_sort,
   }: {
     table: string;
     pluck_object: Record<string, any>;
@@ -335,13 +334,6 @@ export class Utility {
     joins: IJoins[];
     date_format: string;
     parsed_concatenated_fields: IParsedConcatenatedFields;
-    multiple_sort: [
-      {
-        by_field: string;
-        by_direction: string;
-        is_case_sensitive_sorting?: boolean;
-      },
-    ];
     encrypted_fields: string[];
     time_zone: string;
     request_type?: string;
@@ -402,7 +394,7 @@ export class Utility {
 
     // Handle join entity selections
     const joinSelections = joins?.length
-      ? joins.reduce((acc, join) => {
+      ? joins.reduce((acc, join, index) => {
           const join_type = join.type;
           const toEntity =
             join_type === 'self'
@@ -422,6 +414,10 @@ export class Utility {
           const join_is_case_sensitive_sorting =
             to.is_case_sensitive_sorting || false;
 
+          const previous_join = nested ? joins[index - 1] : null;
+          const { from: prev_join_from, to: prev_join_to } =
+            previous_join?.field_relation ?? {};
+
           // Only process if the entity has pluck_object fields
           const entity_concatenated_fields = concatenated_fields[toAlias] || [];
           const entity_concatenated_expressions =
@@ -434,7 +430,7 @@ export class Utility {
               Utility.formatIfDate(
                 Utility.decryptField(field, encrypted_fields),
                 date_format,
-                toAlias,
+                nested ? toAlias : toEntity,
                 fields,
                 time_zone,
               ),
@@ -445,7 +441,7 @@ export class Utility {
                 Utility.formatIfDate(
                   field,
                   date_format,
-                  toAlias,
+                  nested ? toAlias : toEntity,
                   fields,
                   time_zone,
                   !!entity_concatenated_expressions.length,
@@ -453,62 +449,81 @@ export class Utility {
                 ),
               );
 
-            const sub_query_from_clause = `"${toAlias}"."tombstone" = 0 ${
+            const default_filter_clause = `"${toEntity}"."tombstone" = 0 ${
               request_type !== 'root'
-                ? `AND "${toAlias}"."organization_id" IS NOT NULL AND "${toAlias}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
+                ? `AND "${toEntity}"."organization_id" IS NOT NULL AND "${toEntity}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
                 : ''
             }`;
-            const additional_where_and_clause = !nested
-              ? ` AND "${from.entity}"."${from.field}" = "${toAlias}"."${to.field}"`
-              : ``;
+
+            let additional_where_and_clause = ` AND "${from.entity}"."${from.field}" = "${toEntity}"."${to.field}"`;
+            if (nested)
+              additional_where_and_clause = ` AND "${
+                prev_join_to?.entity
+              }"."tombstone" = 0 ${
+                request_type !== 'root'
+                  ? `AND "${prev_join_to?.entity}"."organization_id" IS NOT NULL AND "${prev_join_to?.entity}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
+                  : ''
+              } AND "${prev_join_from?.entity}"."${prev_join_from?.field}" = "${
+                prev_join_to?.entity
+              }"."${prev_join_to?.field}"`;
 
             const joined_sort = [
               ...(join_order_by && join_order_direction
                 ? [
                     {
-                      by_field: join_order_by,
+                      by_field: `${toAlias}.${join_order_by}`,
                       by_direction: join_order_direction,
                       is_case_sensitive_sorting: join_is_case_sensitive_sorting,
                     },
                   ]
-                : multiple_sort),
-            ].map(
-              ({
-                by_direction,
-                by_field,
-                is_case_sensitive_sorting = false,
-              }) => {
-                const by_entity_field = by_field.split('.');
-                let sort_entity: any = toEntity;
-                if (by_entity_field.length > 1)
-                  sort_entity = by_entity_field[0];
-                if (sort_entity !== toAlias) return null;
+                : []),
+            ]
+              .map(
+                ({
+                  by_direction,
+                  by_field,
+                  is_case_sensitive_sorting = false,
+                }) => {
+                  const by_entity_field = by_field.split('.');
+                  let sort_entity: any = toEntity;
+                  if (by_entity_field.length > 1)
+                    sort_entity = by_entity_field[0];
+                  if (sort_entity !== toAlias) return null;
 
-                let sorted_field = `elem->>'${by_field.replace(
-                  `${sort_entity}.`,
-                  '',
-                )}'`;
-                if (is_case_sensitive_sorting)
-                  sorted_field = `LOWER(${sorted_field})`;
-                return `${sorted_field} ${
-                  ['asc', 'ascending'].includes(by_direction) ? 'asc' : 'desc'
-                }`;
-              },
-            );
+                  let sorted_field = `elem->>'${by_field.replace(
+                    `${sort_entity}.`,
+                    '',
+                  )}'`;
+                  if (is_case_sensitive_sorting)
+                    sorted_field = `LOWER(${sorted_field})`;
+                  return `${sorted_field} ${
+                    ['asc', 'ascending'].includes(by_direction) ? 'asc' : 'desc'
+                  }`;
+                },
+              )
+              .filter(Boolean)
+              .join(', ');
 
             const jsonAggSelection = sql
               .raw(
                 `COALESCE(
               (
-                SELECT JSONB_AGG(elem ORDER BY ${joined_sort.join(', ')})
+                SELECT JSONB_AGG(elem${
+                  joined_sort.length ? ` ORDER BY ${joined_sort}` : ''
+                })
                 FROM (
                   SELECT
                     JSONB_BUILD_OBJECT(${[
                       ...jsonAggFields,
                       ...jsonAggConcatenatedFields,
                     ].join(', ')}) AS elem
-                  FROM "${toAlias}"
-                  WHERE (${sub_query_from_clause}${additional_where_and_clause})
+                  FROM "${nested ? prev_join_to?.entity : toEntity}"
+                  ${
+                    nested
+                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."id" = "${prev_join_to?.entity}"."${from.field}"`
+                      : ''
+                  }
+                  WHERE (${default_filter_clause}${additional_where_and_clause})
                 ) sub
             ), '[]')`,
               )
@@ -763,6 +778,7 @@ export class Utility {
             Utility.getPopulatedQueryFrom(sub_query);
           const join_order_direction = to.order_direction || 'ASC';
           let order_by = to.order_by || 'created_date';
+          order_by = order_by.replace(`${to_alias}.`, '');
           const is_case_sensitive_sorting =
             to.is_case_sensitive_sorting || false;
           let sorted_field = `"joined_${to_alias}"."${order_by}"`;
