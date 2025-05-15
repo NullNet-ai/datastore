@@ -1,7 +1,8 @@
+-- default permissions
 update permissions SET 
 -- for read
-read = false,
-decrypt = false,
+read = true,
+decrypt = true,
 -- for write ( TODO )
 encrypt = true,
 write = true,

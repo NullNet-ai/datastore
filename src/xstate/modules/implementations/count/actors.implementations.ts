@@ -45,6 +45,7 @@ export class CountActorsImplementations {
         group_advance_filters = [],
         distinct_by = '',
       } = _req.body;
+      const { pfk: pass_field_key = '' } = _req.query;
       let _db = this.db;
 
       if (distinct_by) {
@@ -73,21 +74,22 @@ export class CountActorsImplementations {
           .from(local_schema[table]);
 
       const encrypted_fields = [];
-      _db = Utility.FilterAnalyzer(
-        _db,
+      _db = Utility.FilterAnalyzer({
+        db: this.db,
         table_schema,
         advance_filters,
         pluck_object,
         organization_id,
         joins,
-        this.db,
+        client_db: this.db,
         concatenate_fields,
         group_advance_filters,
         type,
         encrypted_fields,
         time_zone,
         table,
-      );
+        pass_field_key,
+      });
       const [{ count }] = await _db;
 
       return Promise.resolve({

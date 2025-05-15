@@ -62,7 +62,8 @@ export class FindActorsImplementations {
         const { organization_id = '', account_organization_id } =
           responsible_account;
         const [_res, _req] = controller_args;
-        const { params, headers } = _req;
+        const { params, headers, query } = _req;
+        const { pfk: pass_field_key = '' } = query;
         let { body } = _req;
         const { time_zone, host, cookie } = headers;
         const { table, type } = params;
@@ -114,7 +115,6 @@ export class FindActorsImplementations {
           encrypted_fields = permissions.data
             .filter((p) => p.decrypt)
             .map((p) => `${p.entity}.${p.field}`),
-          pass_field_key = '',
         } = body;
         if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
           throw new BadRequestException({
@@ -466,14 +466,14 @@ export class FindActorsImplementations {
             .from(table_schema);
         }
 
-        _db = Utility.FilterAnalyzer(
-          _db,
+        _db = Utility.FilterAnalyzer({
+          db: _db,
           table_schema,
           advance_filters,
           pluck_object,
           organization_id,
           joins,
-          this.db,
+          client_db: this.db,
           parsed_concatenated_fields,
           group_advance_filters,
           type,
@@ -481,7 +481,8 @@ export class FindActorsImplementations {
           time_zone,
           table,
           date_format,
-        );
+          pass_field_key,
+        });
 
         const getSortSchemaAndField = (
           order_by: string,

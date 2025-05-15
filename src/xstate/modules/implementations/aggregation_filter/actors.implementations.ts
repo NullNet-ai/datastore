@@ -48,18 +48,17 @@ export class AggregationFilterActorsImplementations {
       const { time_zone } = _req.headers;
       Utility.checkTable(table);
       let _db = this.db.select({ id: table_schema.id }).from(table_schema);
-      _db = Utility.AggregationFilterAnalyzer(
-        _db,
+      _db = Utility.AggregationFilterAnalyzer({
+        db: _db,
         table_schema,
         advance_filters,
         organization_id,
         joins,
-        this.db,
         type,
         time_zone,
         table,
         date_format,
-      );
+      });
       const from_clause = Utility.getPopulatedQueryFrom(_db.toSQL());
       let query = Utility.AggregationQueryGenerator(_req.body, from_clause);
       // add limit to the query in sql

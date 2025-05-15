@@ -64,7 +64,6 @@ export const config = (
               onDone: {
                 actions: [
                   'assignResponsibleAccount',
-                  'assignGetSessionExpiration',
                   'assignQueryDataPermissions',
                 ],
                 target: 'find',

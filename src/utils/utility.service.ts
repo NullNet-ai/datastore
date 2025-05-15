@@ -48,6 +48,69 @@ const pluralize = require('pluralize');
 const { TZ = 'America/Los_Angeles' } = process.env;
 import * as cache from 'memory-cache';
 import sha1 from 'sha1';
+interface IFilterAnalyzer {
+  db: any;
+  table_schema: any;
+  advance_filters?: IAdvanceFilters[];
+  pluck_object?: Record<string, any[]>;
+  organization_id: string;
+  joins?: any[];
+  client_db?: any;
+  concatenate_fields?: IParsedConcatenatedFields;
+  group_advance_filters?: IGroupAdvanceFilters[];
+  request_type?: string;
+  encrypted_fields?: string[];
+  time_zone?: string;
+  table?: string;
+  date_format?: string;
+  pass_field_key?: string;
+  parsed_concatenated_fields?: any;
+  type?: string;
+}
+interface IContructFilters {
+  table: any;
+  advance_filters?: IAdvanceFilters[];
+  table_schema?: any;
+  aliased_to_entity?: string;
+  aliased_entities?: string[];
+  expressions?: any;
+  time_zone?: string;
+  date_format?: string;
+  group_advance_filters?: IGroupAdvanceFilters[];
+  encrypted_fields?: any[];
+  pass_field_key?: string;
+  fields?: any[];
+}
+
+interface IEvaluateFilter {
+  operator: string;
+  table_schema: any;
+  field: string;
+  values: any[];
+  dz_filter_queue: any;
+  entity: string;
+  aliased_entities: string[];
+  expressions: any;
+  case_sensitive: boolean;
+  parse_as: string;
+  encrypted_fields?: string[];
+  fields: string[];
+  time_zone: string;
+  date_format: string;
+  pass_field_key?: string;
+}
+
+interface IAggregationFilerAnalyzer {
+  db: any;
+  table_schema: any;
+  advance_filters: IAdvanceFilters[];
+  organization_id: string;
+  joins?: IJoins[];
+  type?: string;
+  time_zone?: string;
+  table?: string;
+  date_format?: string;
+}
 export class Utility {
   private static logger = new LoggerService('Utility');
   public static createParse({
@@ -589,22 +652,23 @@ export class Utility {
     return query_from_part;
   }
 
-  public static FilterAnalyzer = (
+  public static FilterAnalyzer = ({
     db,
     table_schema,
     advance_filters,
-    pluck_object,
+    pluck_object = {},
     organization_id,
-    joins: any = [],
-    _client_db: any,
-    concatenate_fields?: IParsedConcatenatedFields,
-    group_advance_filters: IGroupAdvanceFilters[] = [],
-    request_type?: string,
+    joins = [],
+    client_db,
+    concatenate_fields,
+    group_advance_filters = [],
+    request_type,
     encrypted_fields = [],
-    time_zone?: string,
-    table?: string,
-    date_format?: string,
-  ) => {
+    time_zone,
+    table,
+    date_format,
+    pass_field_key,
+  }: IFilterAnalyzer) => {
     let _db = db;
     const aliased_entities: any = [];
     let expressions = concatenate_fields?.expressions || {};
@@ -634,7 +698,7 @@ export class Utility {
             `joined_${to_alias}`,
           );
 
-          let sub_query = _client_db.select().from(aliased_to_entity);
+          let sub_query = client_db.select().from(aliased_to_entity);
           if (nested) {
             sub_query = sub_query.leftJoin(
               schema[from_alias],
@@ -651,15 +715,15 @@ export class Utility {
                       eq(aliased_to_entity['organization_id'], organization_id),
                     ]
                   : []),
-                ...Utility.constructFilters(
+                ...Utility.constructFilters({
                   table,
-                  to.filters,
+                  advance_filters: to.filters,
                   aliased_to_entity,
-                  [`joined_${to_alias}`],
+                  aliased_entities: [`joined_${to_alias}`],
                   expressions,
                   time_zone,
                   date_format,
-                ),
+                }),
               ),
             )
             .toSQL();
@@ -734,33 +798,33 @@ export class Utility {
           : []),
         // TODO: inject permissions by user_organization_role_id
         // ! testing purpose only
-        ...Utility.constructFilters(
+        ...Utility.constructFilters({
           table,
           advance_filters,
           table_schema,
           aliased_entities,
-          transformed_expressions,
+          expressions: transformed_expressions,
           time_zone,
           date_format,
           group_advance_filters,
           encrypted_fields,
-        ),
+          pass_field_key,
+        }),
       ),
     );
   };
 
-  public static AggregationFilterAnalyzer(
+  public static AggregationFilterAnalyzer({
     db,
     table_schema,
-    _advance_filters: IAdvanceFilters[],
-    organization_id: string,
-    joins?: IJoins[],
-    _client_db: any = null,
-    type?: string,
-    time_zone?: string,
-    table?: string,
-    date_format?: string,
-  ) {
+    advance_filters: _advance_filters = [],
+    organization_id,
+    joins = [],
+    type,
+    time_zone = '',
+    table,
+    date_format = '',
+  }: IAggregationFilerAnalyzer) {
     let _db = db;
     const aliased_entities: string[] = [];
     if (joins?.length) {
@@ -807,15 +871,14 @@ export class Utility {
               eq(table_schema['organization_id'], organization_id),
             ]
           : []),
-        ...Utility.constructFilters(
+        ...Utility.constructFilters({
           table,
-          _advance_filters,
+          advance_filters: _advance_filters,
           table_schema,
           aliased_entities,
-          {},
           time_zone,
           date_format,
-        ),
+        }),
       ),
     );
   }
@@ -830,12 +893,12 @@ export class Utility {
     aliased_entities,
     expressions,
     case_sensitive,
-    parse_as,
+    parse_as = '',
     encrypted_fields = [],
     fields = [],
     time_zone,
     date_format,
-  }) {
+  }: IEvaluateFilter) {
     const is_aliased = aliased_entities.includes(entity);
     let _field = `${field}`;
     // if (!table_schema?.[field] && !is_aliased) return null;
@@ -964,17 +1027,18 @@ export class Utility {
     }
   }
 
-  public static constructFilters(
+  public static constructFilters({
     table,
-    advance_filters,
+    advance_filters = [],
     table_schema,
-    aliased_entities: string[] = [],
-    expressions: any,
-    time_zone,
-    date_format,
-    group_advance_filters: IGroupAdvanceFilters[] = [],
+    aliased_entities = [],
+    expressions,
+    time_zone = '',
+    date_format = '',
+    group_advance_filters = [],
     encrypted_fields = [],
-  ): any[] {
+    pass_field_key = '',
+  }: IContructFilters): any[] {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
     let _filter_queue: any[] = [];
@@ -996,15 +1060,18 @@ export class Utility {
 
         if (type === 'criteria') {
           group_criteria_queue.push(
-            this.constructFilters(
+            this.constructFilters({
               table,
-              filters,
+              advance_filters: filters,
               table_schema,
               aliased_entities,
               expressions,
               time_zone,
               date_format,
-            ),
+              group_advance_filters,
+              encrypted_fields,
+              pass_field_key,
+            }),
           );
         } else if (type === 'operator') {
           group_operator_queue.push(operator);
@@ -1064,18 +1131,30 @@ export class Utility {
       let [
         {
           operator,
-          field,
-          values,
+          field = '',
+          values = [],
           type = 'criteria',
           case_sensitive = false,
-          parse_as,
+          parse_as = '',
           fields = [],
         },
-      ] = advance_filters;
+      ] = advance_filters as IAdvanceFilters[] as [
+        {
+          field?: string;
+          operator: EOperator;
+          values?: string[] | number[] | boolean[] | Date[];
+          logical_operator?: 'AND' | 'OR';
+          type: 'criteria' | 'operator';
+          entity?: string;
+          case_sensitive?: boolean;
+          parse_as?: 'text';
+          fields?: Array<string>;
+        },
+      ];
       if (typeof values === 'string') {
         values = JSON.parse(values);
       }
-      let { entity } = advance_filters[0];
+      let { entity } = advance_filters[0] as { entity: string };
       if (type === 'operator') {
         throw new BadRequestException(
           `Invalid filter at index 0. Must be a criteria`,
@@ -1104,6 +1183,7 @@ export class Utility {
           fields,
           time_zone,
           date_format,
+          pass_field_key,
         }),
       ];
     }
@@ -1115,7 +1195,7 @@ export class Utility {
         field = '',
         values,
         case_sensitive = false,
-        parse_as,
+        parse_as = '',
         fields = [],
       } = filter;
       if (typeof values === 'string') {
@@ -1145,7 +1225,7 @@ export class Utility {
           operator,
           table_schema: _table_schema,
           field,
-          values: filter.values,
+          values: filter.values ?? [],
           dz_filter_queue,
           entity: entity || table,
           aliased_entities,
@@ -1167,7 +1247,7 @@ export class Utility {
             operator: _op.operator,
             table_schema: _table_schema,
             field,
-            values: filter.values,
+            values: filter.values ?? [],
             dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
             entity: entity || table,
             aliased_entities,
@@ -1968,10 +2048,10 @@ export class Utility {
       } else {
         this.logger.debug('@@@@@@@@@@@@@@cached_permissions hit');
       }
+      console.log('PERMISSIONS');
+      console.table(permissions.data);
       switch (permission_type) {
         case 'read':
-          console.log('PERMISSIONS');
-          console.table(permissions.data);
           const { metadata: acc_metadata } = Utility.getReadPermittedFields({
             body,
             table,
@@ -1979,7 +2059,6 @@ export class Utility {
             metadata,
             schema: _aliased_schema,
           });
-
           metadata = acc_metadata;
           break;
         case 'write':
