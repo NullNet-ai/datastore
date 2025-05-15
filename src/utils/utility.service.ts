@@ -186,11 +186,13 @@ export class Utility {
     const date_time_field = `(${Utility.decryptField(
       `"${table}"."${date_field}"`,
       encrypted_fields,
+      table,
     )}::timestamp${
       fields.includes(time_field)
         ? ` + ${Utility.decryptField(
             `"${table}"."${time_field}"`,
             encrypted_fields,
+            table,
           )}::interval`
         : ''
     })`;
@@ -352,7 +354,11 @@ export class Utility {
       return {
         ...acc,
         [field]: sql.raw(
-          Utility.decryptField(`"${table}"."${field}"`, encrypted_fields),
+          Utility.decryptField(
+            `"${table}"."${field}"`,
+            encrypted_fields,
+            table,
+          ),
         ),
       };
     }, {});
@@ -365,6 +371,7 @@ export class Utility {
           Utility.decryptField(
             selection.replaceAll('joined_', ''),
             encrypted_fields,
+            table,
           ),
         );
       });
@@ -396,7 +403,7 @@ export class Utility {
             const jsonAggFields = fields
               .map((field) =>
                 Utility.formatIfDate(
-                  Utility.decryptField(field, encrypted_fields),
+                  Utility.decryptField(field, encrypted_fields, toEntity),
                   date_format,
                   toAlias,
                   fields,
@@ -438,6 +445,7 @@ export class Utility {
                 `JSONB_AGG(${Utility.decryptField(
                   `"${table}"."${field}"`,
                   encrypted_fields,
+                  table,
                 )})`,
               )
               .as(alias),
@@ -525,19 +533,19 @@ export class Utility {
         const is_date_time_field =
           field.toLowerCase().endsWith('_date') ||
           field.toLowerCase().endsWith('_time');
-        const formatted_date = Utility.formatDate({
-          table,
-          field,
-          date_format,
-          time_zone,
-          encrypted_fields,
-          fields: pluck,
-        });
+
         return {
           ...acc,
           [field]: is_date_time_field
             ? sql.raw(
-                `${formatted_date}
+                `${Utility.formatDate({
+                  table,
+                  field,
+                  date_format,
+                  time_zone,
+                  encrypted_fields,
+                  fields: pluck,
+                })}
                AS "${field}"`,
               )
             : table_schema[field],
@@ -833,7 +841,7 @@ export class Utility {
     // if (!table_schema?.[field] && !is_aliased) return null;
     let schema_field;
     if (encrypted_fields?.length) {
-      _field = Utility.decryptField(_field, encrypted_fields);
+      _field = Utility.decryptField(_field, encrypted_fields, entity);
     }
 
     if (!table_schema?.[field] && !is_aliased && expressions[entity]) {
@@ -843,6 +851,7 @@ export class Utility {
             .find((exp) => exp.includes(field))
             .split(' AS ')[0],
           encrypted_fields,
+          entity,
         ),
       );
     } else {
@@ -851,12 +860,17 @@ export class Utility {
           `to_char(${Utility.decryptField(
             `"${entity}"."${field}"`,
             encrypted_fields,
+            entity,
           )}::date, '${date_format}')`,
         );
       } else
         schema_field = is_aliased
           ? sql.raw(
-              Utility.decryptField(`"${entity}"."${field}"`, encrypted_fields),
+              Utility.decryptField(
+                `"${entity}"."${field}"`,
+                encrypted_fields,
+                entity,
+              ),
             )
           : table_schema?.[field];
     }
@@ -867,6 +881,7 @@ export class Utility {
             `${Utility.decryptField(
               `"${entity}"."${field}"`,
               encrypted_fields,
+              entity,
             )}::TEXT`,
           )
         : sql.raw(`"${_field}"::TEXT`);
@@ -887,9 +902,11 @@ export class Utility {
       schema_field = sql.raw(`(${Utility.decryptField(
         `"${entity}"."${fields[date_field_index]}"`,
         encrypted_fields,
+        entity,
       )}::timestamp + ${Utility.decryptField(
         `"${entity}"."${fields[time_field_index]}"`,
         encrypted_fields,
+        entity,
       )}::interval) AT TIME ZONE '${TZ}'
       `);
       values = [
@@ -1615,28 +1632,94 @@ export class Utility {
       .join(',')}`;
     return values;
   }
-  public static decryptField(field: string, encrypted_fields: string[]) {
-    if (encrypted_fields.includes(field))
-      return `pgp_sym_decrypt(${field}::BYTEA, '${process.env.PGP_SYM_KEY}')`;
+  public static decryptField(
+    field: string,
+    encrypted_fields: string[],
+    table: string,
+    encryption_key: string = '',
+    value?: any,
+    permissions: Record<string, any> = {},
+    pass_field_key: string = '',
+  ) {
+    let _field = field.replaceAll('"', '');
+    let _entity = table;
+
+    const field_parts = _field.split('.');
+    if (field_parts.length === 2) {
+      _field = field_parts[1] as string;
+      _entity = field_parts[0] as string;
+    } else {
+      _field = field_parts[0] as string;
+    }
+    const can_decrypt = !!permissions?.data?.find(
+      (p) => p.entity === _entity && p.field === _field && p.decrypt === true,
+    );
+    const can_read = !!permissions?.data?.find(
+      (p) => p.entity === _entity && p.field === _field && p.read === true,
+    );
+
+    const encrypted_field = `${_entity ? `${_entity}.` : ''}${_field}`;
+    let data_type = `${encrypted_field}`;
+    if (pluralize.isPlural(encrypted_field)) {
+      data_type = `${encrypted_field}::TEXT`;
+    }
+
+    if (
+      encrypted_fields.includes(encrypted_field) &&
+      can_decrypt &&
+      can_read &&
+      pass_field_key
+    ) {
+      const decrypted_field = `safe_decrypt(${data_type}::BYTEA, '${
+        pass_field_key ? pass_field_key : encryption_key
+      }', ${data_type})${
+        pluralize.isPlural(encrypted_field) ? '::TEXT[]' : ''
+      }`;
+
+      if (value && decrypted_field !== field) {
+        return sql.raw(`${decrypted_field}`);
+      }
+      return decrypted_field;
+    }
+
+    if (value) {
+      console.log({
+        encrypted_fields,
+        field,
+      });
+      if (!encrypted_fields.includes(field) && can_read) {
+        return sql.raw(
+          `maskIfBytea(${data_type})${
+            pluralize.isPlural(field) ? '::TEXT[]' : ''
+          }`,
+        );
+      }
+      return value;
+    }
 
     return field;
   }
+
   public static decryptData(
     data: Record<string, any>,
     encrypted_fields: string[],
+    table,
+    permissions,
+    pass_field_key,
+    encryption_key = process.env.PGP_SYM_KEY ?? '',
   ) {
     return Object.entries(data).reduce((_data, [key, value]) => {
-      if (encrypted_fields.includes(key)) {
-        return {
-          ..._data,
-          [key]: sql.raw(
-            `pgp_sym_decrypt(${key}::BYTEA, '${process.env.PGP_SYM_KEY}')`,
-          ),
-        };
-      }
       return {
         ..._data,
-        [key]: value,
+        [key]: Utility.decryptField(
+          key,
+          encrypted_fields,
+          table,
+          encryption_key,
+          value,
+          permissions,
+          pass_field_key,
+        ),
       };
     }, {});
   }
@@ -1865,6 +1948,8 @@ export class Utility {
       }
       switch (permission_type) {
         case 'read':
+          console.log('PERMISSIONS');
+          console.table(permissions.data);
           const { metadata: acc_metadata } = Utility.getReadPermittedFields({
             body,
             table,
@@ -1891,6 +1976,7 @@ export class Utility {
 
     return {
       metadata,
+      permissions,
     };
   }
 }

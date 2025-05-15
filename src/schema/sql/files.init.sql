@@ -15,6 +15,9 @@ CREATE TYPE permission_type AS (
     encrypt BOOLEAN, 
     decrypt BOOLEAN, 
     required BOOLEAN, 
+    sensitive BOOLEAN, 
+    archive BOOLEAN, 
+    delete BOOLEAN, 
     created_by TEXT
 );
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -64,8 +67,8 @@ DECLARE
 
     ];
     arr_permissions permission_type[] := ARRAY[
-        ROW('0b023cd7-1471-4980-902e-b67f28e2c370', true, true, true, true, true, record_email)::permission_type,
-        ROW('26958631-a9a0-46de-ab71-442f9c970e26', false, true, true, true, true, record_email)::permission_type
+        ROW('0b023cd7-1471-4980-902e-b67f28e2c370', true, true, true, true, true,true, true, true, record_email)::permission_type,
+        ROW('26958631-a9a0-46de-ab71-442f9c970e26', false, true, true, true, true,false, true, true, record_email)::permission_type
     ];
     arr_permission permission_type;
     field field_type;
@@ -77,8 +80,8 @@ BEGIN
 
     -- loop permissions
     FOREACH arr_permission IN ARRAY arr_permissions LOOP
-        INSERT INTO permissions (id, read, write, encrypt, decrypt, required, created_by) 
-        SELECT arr_permission.id, arr_permission.read, arr_permission.write, arr_permission.encrypt, arr_permission.decrypt, arr_permission.required, record_email
+        INSERT INTO permissions (id, read, write, encrypt, decrypt, required, sensitive, archive, delete, created_by) 
+        SELECT arr_permission.id, arr_permission.read, arr_permission.write, arr_permission.encrypt, arr_permission.decrypt, arr_permission.required, arr_permission.sensitive, arr_permission.archive, arr_permission.delete, record_email
         WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = arr_permission.id);
     END LOOP;
 

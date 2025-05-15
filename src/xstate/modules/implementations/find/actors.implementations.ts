@@ -76,9 +76,8 @@ export class FindActorsImplementations {
             },
           });
         }
-        const { metadata: _metadata } = await Utility.getCachedPermissions(
-          'read',
-          {
+        const { metadata: _metadata, permissions } =
+          await Utility.getCachedPermissions('read', {
             data_permissions_query,
             host,
             cookie,
@@ -89,8 +88,7 @@ export class FindActorsImplementations {
             body,
             account_id: responsible_account.account_id,
             metadata,
-          },
-        );
+          });
 
         metadata = _metadata;
         const {
@@ -110,7 +108,10 @@ export class FindActorsImplementations {
           group_by = {},
           is_case_sensitive_sorting = false,
           pluck_group_object = {},
-          encrypted_fields = [],
+          encrypted_fields = permissions.data
+            .filter((p) => p.sensitive)
+            .map((p) => `${p.entity}.${p.field}`),
+          pass_field_key = '',
         } = body;
 
         if (group_advance_filters.length && advance_filters.length) {
@@ -419,6 +420,9 @@ export class FindActorsImplementations {
                     : join_selections),
                 },
                 encrypted_fields,
+                table,
+                permissions,
+                pass_field_key,
               ),
             )
             .from(table_schema);
@@ -444,6 +448,9 @@ export class FindActorsImplementations {
                     : selections),
                 },
                 encrypted_fields,
+                table,
+                permissions,
+                pass_field_key,
               ),
             )
             .from(table_schema);
