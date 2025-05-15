@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { IResponse, LoggerService } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/count/count.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
@@ -15,6 +15,7 @@ export class CountActorsImplementations {
   constructor(
     private readonly drizzleService: DrizzleService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
+    private readonly logger: LoggerService,
   ) {
     this.db = this.drizzleService.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
@@ -44,6 +45,7 @@ export class CountActorsImplementations {
         concatenate_fields = [],
         group_advance_filters = [],
         distinct_by = '',
+        date_format,
       } = _req.body;
       let _db = this.db;
 
@@ -72,6 +74,11 @@ export class CountActorsImplementations {
           .select({ count: countDistinct(local_schema[table].id) })
           .from(local_schema[table]);
 
+      const parsed_concatenated_fields = Utility.parseConcatenateFields(
+        concatenate_fields,
+        date_format,
+        table,
+      );
       const encrypted_fields = [];
       _db = Utility.FilterAnalyzer(
         _db,
@@ -81,13 +88,17 @@ export class CountActorsImplementations {
         organization_id,
         joins,
         this.db,
-        concatenate_fields,
+        parsed_concatenated_fields,
         group_advance_filters,
         type,
         encrypted_fields,
         time_zone,
         table,
+        date_format,
       );
+
+      this.logger.debug(`Query: ${_db.toSQL().sql}`);
+      this.logger.debug(`Params: ${_db.toSQL().params}`);
       const [{ count }] = await _db;
 
       return Promise.resolve({
