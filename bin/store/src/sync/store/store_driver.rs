@@ -1,4 +1,4 @@
-use crate::models::crdt_message_model::CrdtMessage;
+use crate::models::crdt_message_model::CrdtMessageModel;
 use crate::structs::structs::ColumnValue;
 use crate::table_enum::Table;
 use diesel_async::AsyncPgConnection;
@@ -8,16 +8,20 @@ use serde_json::{Map, Value};
 
 pub async fn apply(
     tx: &mut AsyncPgConnection,
-    message: &CrdtMessage,
+    message: &CrdtMessageModel,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let row = &message.row;
     let column = &message.column;
     let dataset = &message.dataset;
     let hypertable_timestamp = &message.hypertable_timestamp;
 
-    let value = if message.value.trim().is_empty() || message.value.trim() == "{}" || message.value.trim() == "[]" || message.value.trim() == "\"\"" {
+    let value = if message.value.trim().is_empty()
+        || message.value.trim() == "{}"
+        || message.value.trim() == "[]"
+        || message.value.trim() == "\"\""
+    {
         ColumnValue::None
-    }else if is_plural_column(column) {
+    } else if is_plural_column(column) {
         ColumnValue::Array(process_pg_array(&message.value)?)
     } else if column == "timestamp" {
         // Parse timestamp
@@ -62,7 +66,7 @@ pub async fn apply(
         ColumnValue::Integer(i) => {
             json_obj.insert(column.to_string(), json!(i));
         }
-         ColumnValue::None => {
+        ColumnValue::None => {
             // Handle None case - insert null value or skip insertion
             json_obj.insert(column.to_string(), json!(null));
         }
@@ -75,8 +79,6 @@ pub async fn apply(
             format!("Unknown table: {}", dataset),
         ))
     })?;
-
-
 
     if let Some(ht_timestamp) = hypertable_timestamp {
         // Parse timestamp

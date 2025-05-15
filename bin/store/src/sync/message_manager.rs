@@ -1,5 +1,5 @@
 use crate::db;
-use crate::models::crdt_message_model::CrdtMessage;
+use crate::models::crdt_message_model::CrdtMessageModel;
 use crate::sync::message_service;
 use once_cell::sync::OnceCell;
 use std::sync::Arc;
@@ -7,13 +7,13 @@ use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
 
 pub struct MessageManager {
-    receiver: mpsc::Receiver<CrdtMessage>,
+    receiver: mpsc::Receiver<CrdtMessageModel>,
     initialized: bool,
 }
 
-pub static SENDER: OnceCell<Arc<mpsc::Sender<CrdtMessage>>> = OnceCell::new();
+pub static SENDER: OnceCell<Arc<mpsc::Sender<CrdtMessageModel>>> = OnceCell::new();
 
-pub fn get_sender() -> Option<&'static Arc<mpsc::Sender<CrdtMessage>>> {
+pub fn get_sender() -> Option<&'static Arc<mpsc::Sender<CrdtMessageModel>>> {
     if let Some(sender) = SENDER.get() {
         Some(sender)
     } else {
@@ -23,7 +23,7 @@ pub fn get_sender() -> Option<&'static Arc<mpsc::Sender<CrdtMessage>>> {
 }
 
 impl MessageManager {
-    pub fn new(receiver: mpsc::Receiver<CrdtMessage>) -> Self {
+    pub fn new(receiver: mpsc::Receiver<CrdtMessageModel>) -> Self {
         MessageManager {
             receiver,
             initialized: false,
@@ -54,7 +54,7 @@ impl MessageManager {
 
     async fn process_message(
         &self,
-        message: CrdtMessage,
+        message: CrdtMessageModel,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = db::get_async_connection().await;
 
@@ -73,7 +73,7 @@ impl MessageManager {
 }
 
 // Create a channel for sending messages to the background service
-pub fn create_message_channel() -> mpsc::Sender<CrdtMessage> {
+pub fn create_message_channel() -> mpsc::Sender<CrdtMessageModel> {
     let (sender, receiver) = mpsc::channel(10000); // Buffer size of 100
 
     // Spawn the background service

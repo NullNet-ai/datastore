@@ -1,5 +1,4 @@
-use crate::db::DbPooledConnection;
-use crate::models::crdt_message_model::CrdtMessage;
+use crate::models::crdt_message_model::CrdtMessageModel;
 use crate::schema::schema::crdt_messages;
 use crate::sync::hlc::hlc_service;
 use diesel::prelude::*;
@@ -14,7 +13,7 @@ pub async fn create_messages(
     record: &Value,
     dataset: &String,
     operation: String,
-) -> Result<Vec<CrdtMessage>, DieselError> {
+) -> Result<Vec<CrdtMessageModel>, DieselError> {
     let object = record.as_object().expect("Expected a JSON object");
 
     let row = object
@@ -32,7 +31,7 @@ pub async fn create_messages(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let mut messages: Vec<CrdtMessage> = Vec::new();
+    let mut messages: Vec<CrdtMessageModel> = Vec::new();
 
     for (key, value) in object.iter() {
         if *key == "id" || value.is_null() {
@@ -41,7 +40,7 @@ pub async fn create_messages(
 
         let timestamp = hlc_service::HlcService::send(&mut tx).await.unwrap();
 
-        messages.push(CrdtMessage {
+        messages.push(CrdtMessageModel {
             database: None,
             dataset: dataset.to_string(),
             group_id: "".to_string(),
@@ -60,7 +59,7 @@ pub async fn create_messages(
 
 pub async fn insert_message(
     tx: &mut AsyncPgConnection,
-    mut message: CrdtMessage, // Changed to mutable
+    mut message: CrdtMessageModel, // Changed to mutable
 ) -> Result<usize, DieselError> {
     // Clean fields once upfront
     message.row = message.row.trim_matches('"').to_string();
@@ -89,8 +88,8 @@ pub async fn insert_message(
 
 pub async fn compare_messages(
     tx: &mut AsyncPgConnection,
-    messages: Vec<CrdtMessage>,
-) -> Result<Vec<(CrdtMessage, Option<CrdtMessage>)>, DieselError> {
+    messages: Vec<CrdtMessageModel>,
+) -> Result<Vec<(CrdtMessageModel, Option<CrdtMessageModel>)>, DieselError> {
     let mut result = Vec::new();
 
     // Use the iterator to process each message pair
@@ -98,7 +97,7 @@ pub async fn compare_messages(
         let (msg, existing_msg) = result_item?;
 
         // Clone the message to own it, and pair it with its existing counterpart
-        let owned_msg = CrdtMessage {
+        let owned_msg = CrdtMessageModel {
             database: msg.database.clone(),
             dataset: msg.dataset.clone(),
             group_id: msg.group_id.clone(),
@@ -119,8 +118,8 @@ pub async fn compare_messages(
 }
 pub async fn find_existing_messages<'a>(
     tx: &'a mut AsyncPgConnection,
-    messages: &'a Vec<CrdtMessage>,
-) -> Vec<Result<(&'a CrdtMessage, Option<CrdtMessage>), DieselError>> {
+    messages: &'a Vec<CrdtMessageModel>,
+) -> Vec<Result<(&'a CrdtMessageModel, Option<CrdtMessageModel>), DieselError>> {
     let mut results = Vec::new();
 
     for message in messages.iter() {
@@ -131,7 +130,7 @@ pub async fn find_existing_messages<'a>(
             .filter(crdt_messages::row.eq(&message.row))
             .order(crdt_messages::timestamp.desc())
             .limit(1)
-            .first::<CrdtMessage>(tx)
+            .first::<CrdtMessageModel>(tx)
             .await;
 
         let result = match existing_message_result {
@@ -154,7 +153,7 @@ pub async fn get_messages_since(
 
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))
-        .load::<CrdtMessage>(conn)
+        .load::<CrdtMessageModel>(conn)
         .await?;
 
     // Convert CrdtMessage objects to Value objects

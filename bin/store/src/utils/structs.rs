@@ -10,11 +10,8 @@ pub enum FilterCriteria {
         values: Vec<serde_json::Value>,
     },
     #[serde(rename = "operator")]
-    LogicalOperator {
-        operator: FilterOperator,
-    },
+    LogicalOperator { operator: FilterOperator },
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FilterOperator {

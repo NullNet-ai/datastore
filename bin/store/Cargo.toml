@@ -37,6 +37,8 @@ ipnetwork = { version = "0.20", features = ["serde"] }
 tokio-postgres = "0.7.13"
 csv = "1"
 bytes = "1.10.1"
+paste = "1.0"
+singularize = "0.1.0"
 
 [build-dependencies]
 tonic-build = "0.12.3"

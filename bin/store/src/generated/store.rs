@@ -57,6 +57,14 @@ pub struct BatchUpdateParams {
     #[prost(string, tag = "1")]
     pub table: ::prost::alloc::string::String,
 }
+/// Common parameter structure for BatchDelete requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteParams {
+    /// Table name
+    #[prost(string, tag = "1")]
+    pub table: ::prost::alloc::string::String,
+}
 /// Common parameter structure for Update requests
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -465,6 +473,37 @@ pub struct BatchUpdateItemsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Items>,
 }
+/// BatchDelete Items request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_items_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteItemsRequest`.
+pub mod batch_delete_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Items response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Items>,
+}
 /// Delete Items request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -480,6 +519,10 @@ pub struct DeleteItemsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Items>,
 }
 /// BatchInsert Items request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -618,6 +661,37 @@ pub struct BatchUpdatePacketsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Packets>,
 }
+/// BatchDelete Packets request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeletePacketsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_packets_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeletePacketsRequest`.
+pub mod batch_delete_packets_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Packets response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeletePacketsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Packets>,
+}
 /// Delete Packets request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -633,6 +707,10 @@ pub struct DeletePacketsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Packets>,
 }
 /// BatchInsert Packets request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -771,6 +849,37 @@ pub struct BatchUpdateConnectionsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Connections>,
 }
+/// BatchDelete Connections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_connections_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteConnectionsRequest`.
+pub mod batch_delete_connections_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Connections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Connections>,
+}
 /// Delete Connections request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -786,6 +895,10 @@ pub struct DeleteConnectionsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Connections>,
 }
 /// BatchInsert Connections request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -926,6 +1039,39 @@ pub struct BatchUpdateCrdtMessagesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<CrdtMessages>,
 }
+/// BatchDelete CrdtMessages request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteCrdtMessagesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_crdt_messages_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteCrdtMessagesRequest`.
+pub mod batch_delete_crdt_messages_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete CrdtMessages response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteCrdtMessagesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<CrdtMessages>,
+}
 /// Delete CrdtMessages request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -941,6 +1087,10 @@ pub struct DeleteCrdtMessagesResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<CrdtMessages>,
 }
 /// BatchInsert CrdtMessages request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1079,6 +1229,37 @@ pub struct BatchUpdateCrdtMerklesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<CrdtMerkles>,
 }
+/// BatchDelete CrdtMerkles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteCrdtMerklesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_crdt_merkles_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteCrdtMerklesRequest`.
+pub mod batch_delete_crdt_merkles_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete CrdtMerkles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteCrdtMerklesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<CrdtMerkles>,
+}
 /// Delete CrdtMerkles request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1094,6 +1275,10 @@ pub struct DeleteCrdtMerklesResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<CrdtMerkles>,
 }
 /// BatchInsert CrdtMerkles request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1234,6 +1419,39 @@ pub struct BatchUpdateSyncEndpointsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<SyncEndpoints>,
 }
+/// BatchDelete SyncEndpoints request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSyncEndpointsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_sync_endpoints_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteSyncEndpointsRequest`.
+pub mod batch_delete_sync_endpoints_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete SyncEndpoints response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSyncEndpointsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SyncEndpoints>,
+}
 /// Delete SyncEndpoints request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1249,6 +1467,10 @@ pub struct DeleteSyncEndpointsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SyncEndpoints>,
 }
 /// BatchInsert SyncEndpoints request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1387,6 +1609,37 @@ pub struct BatchUpdateQueuesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Queues>,
 }
+/// BatchDelete Queues request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteQueuesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_queues_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteQueuesRequest`.
+pub mod batch_delete_queues_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Queues response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteQueuesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Queues>,
+}
 /// Delete Queues request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1402,6 +1655,10 @@ pub struct DeleteQueuesResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Queues>,
 }
 /// BatchInsert Queues request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1540,6 +1797,37 @@ pub struct BatchUpdateQueueItemsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<QueueItems>,
 }
+/// BatchDelete QueueItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteQueueItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_queue_items_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteQueueItemsRequest`.
+pub mod batch_delete_queue_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete QueueItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteQueueItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<QueueItems>,
+}
 /// Delete QueueItems request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1555,6 +1843,10 @@ pub struct DeleteQueueItemsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<QueueItems>,
 }
 /// BatchInsert QueueItems request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1693,6 +1985,37 @@ pub struct BatchUpdateTransactionsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Transactions>,
 }
+/// BatchDelete Transactions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTransactionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_transactions_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteTransactionsRequest`.
+pub mod batch_delete_transactions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Transactions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTransactionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Transactions>,
+}
 /// Delete Transactions request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1708,6 +2031,10 @@ pub struct DeleteTransactionsResponse {
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Transactions>,
 }
 /// BatchInsert Transactions request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1805,6 +2132,14 @@ pub mod store_service_server {
             tonic::Response<super::BatchUpdateItemsResponse>,
             tonic::Status,
         >;
+        /// Batch delete multiple Itemss based on filters
+        async fn batch_delete_items(
+            &self,
+            request: tonic::Request<super::BatchDeleteItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteItemsResponse>,
+            tonic::Status,
+        >;
         /// Create a new Packets
         async fn create_packets(
             &self,
@@ -1851,6 +2186,14 @@ pub mod store_service_server {
             request: tonic::Request<super::BatchUpdatePacketsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::BatchUpdatePacketsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple Packetss based on filters
+        async fn batch_delete_packets(
+            &self,
+            request: tonic::Request<super::BatchDeletePacketsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeletePacketsResponse>,
             tonic::Status,
         >;
         /// Create a new Connections
@@ -1901,6 +2244,14 @@ pub mod store_service_server {
             tonic::Response<super::BatchUpdateConnectionsResponse>,
             tonic::Status,
         >;
+        /// Batch delete multiple Connectionss based on filters
+        async fn batch_delete_connections(
+            &self,
+            request: tonic::Request<super::BatchDeleteConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Create a new CrdtMessages
         async fn create_crdt_messages(
             &self,
@@ -1947,6 +2298,14 @@ pub mod store_service_server {
             request: tonic::Request<super::BatchUpdateCrdtMessagesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::BatchUpdateCrdtMessagesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple CrdtMessagess based on filters
+        async fn batch_delete_crdt_messages(
+            &self,
+            request: tonic::Request<super::BatchDeleteCrdtMessagesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteCrdtMessagesResponse>,
             tonic::Status,
         >;
         /// Create a new CrdtMerkles
@@ -1997,6 +2356,14 @@ pub mod store_service_server {
             tonic::Response<super::BatchUpdateCrdtMerklesResponse>,
             tonic::Status,
         >;
+        /// Batch delete multiple CrdtMerkless based on filters
+        async fn batch_delete_crdt_merkles(
+            &self,
+            request: tonic::Request<super::BatchDeleteCrdtMerklesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteCrdtMerklesResponse>,
+            tonic::Status,
+        >;
         /// Create a new SyncEndpoints
         async fn create_sync_endpoints(
             &self,
@@ -2043,6 +2410,14 @@ pub mod store_service_server {
             request: tonic::Request<super::BatchUpdateSyncEndpointsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::BatchUpdateSyncEndpointsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple SyncEndpointss based on filters
+        async fn batch_delete_sync_endpoints(
+            &self,
+            request: tonic::Request<super::BatchDeleteSyncEndpointsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteSyncEndpointsResponse>,
             tonic::Status,
         >;
         /// Create a new Queues
@@ -2093,6 +2468,14 @@ pub mod store_service_server {
             tonic::Response<super::BatchUpdateQueuesResponse>,
             tonic::Status,
         >;
+        /// Batch delete multiple Queuess based on filters
+        async fn batch_delete_queues(
+            &self,
+            request: tonic::Request<super::BatchDeleteQueuesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteQueuesResponse>,
+            tonic::Status,
+        >;
         /// Create a new QueueItems
         async fn create_queue_items(
             &self,
@@ -2141,6 +2524,14 @@ pub mod store_service_server {
             tonic::Response<super::BatchUpdateQueueItemsResponse>,
             tonic::Status,
         >;
+        /// Batch delete multiple QueueItemss based on filters
+        async fn batch_delete_queue_items(
+            &self,
+            request: tonic::Request<super::BatchDeleteQueueItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteQueueItemsResponse>,
+            tonic::Status,
+        >;
         /// Create a new Transactions
         async fn create_transactions(
             &self,
@@ -2187,6 +2578,14 @@ pub mod store_service_server {
             request: tonic::Request<super::BatchUpdateTransactionsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::BatchUpdateTransactionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple Transactionss based on filters
+        async fn batch_delete_transactions(
+            &self,
+            request: tonic::Request<super::BatchDeleteTransactionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTransactionsResponse>,
             tonic::Status,
         >;
     }
@@ -2539,6 +2938,52 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchDeleteItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteItemsRequest>
+                    for BatchDeleteItemsSvc<T> {
+                        type Response = super::BatchDeleteItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_items(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreatePackets" => {
                     #[allow(non_camel_case_types)]
                     struct CreatePacketsSvc<T: StoreService>(pub Arc<T>);
@@ -2796,6 +3241,52 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = BatchUpdatePacketsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeletePackets" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeletePacketsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeletePacketsRequest>
+                    for BatchDeletePacketsSvc<T> {
+                        type Response = super::BatchDeletePacketsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeletePacketsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_packets(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeletePacketsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -3077,6 +3568,55 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = BatchUpdateConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteConnectionsRequest>
+                    for BatchDeleteConnectionsSvc<T> {
+                        type Response = super::BatchDeleteConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteConnectionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -3378,6 +3918,57 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchDeleteCrdtMessages" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteCrdtMessagesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteCrdtMessagesRequest>
+                    for BatchDeleteCrdtMessagesSvc<T> {
+                        type Response = super::BatchDeleteCrdtMessagesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteCrdtMessagesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_crdt_messages(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteCrdtMessagesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateCrdtMerkles" => {
                     #[allow(non_camel_case_types)]
                     struct CreateCrdtMerklesSvc<T: StoreService>(pub Arc<T>);
@@ -3644,6 +4235,55 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = BatchUpdateCrdtMerklesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteCrdtMerkles" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteCrdtMerklesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteCrdtMerklesRequest>
+                    for BatchDeleteCrdtMerklesSvc<T> {
+                        type Response = super::BatchDeleteCrdtMerklesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteCrdtMerklesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_crdt_merkles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteCrdtMerklesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -3945,6 +4585,57 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchDeleteSyncEndpoints" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteSyncEndpointsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteSyncEndpointsRequest>
+                    for BatchDeleteSyncEndpointsSvc<T> {
+                        type Response = super::BatchDeleteSyncEndpointsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteSyncEndpointsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_sync_endpoints(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteSyncEndpointsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateQueues" => {
                     #[allow(non_camel_case_types)]
                     struct CreateQueuesSvc<T: StoreService>(pub Arc<T>);
@@ -4202,6 +4893,52 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = BatchUpdateQueuesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteQueues" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteQueuesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteQueuesRequest>
+                    for BatchDeleteQueuesSvc<T> {
+                        type Response = super::BatchDeleteQueuesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteQueuesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_queues(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteQueuesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -4498,6 +5235,55 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/BatchDeleteQueueItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteQueueItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteQueueItemsRequest>
+                    for BatchDeleteQueueItemsSvc<T> {
+                        type Response = super::BatchDeleteQueueItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteQueueItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_queue_items(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteQueueItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateTransactions" => {
                     #[allow(non_camel_case_types)]
                     struct CreateTransactionsSvc<T: StoreService>(pub Arc<T>);
@@ -4768,6 +5554,57 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = BatchUpdateTransactionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTransactions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTransactionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteTransactionsRequest>
+                    for BatchDeleteTransactionsSvc<T> {
+                        type Response = super::BatchDeleteTransactionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTransactionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_transactions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTransactionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

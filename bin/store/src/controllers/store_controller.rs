@@ -1,24 +1,19 @@
+use crate::batch_sync::BatchSyncService;
+use crate::controllers::common_controller::{convert_json_to_csv, execute_copy, process_records};
 use crate::db;
-use crate::structs::structs::{ApiResponse, RequestBody, QueryParams, BatchUpdateBody};
+use crate::db::create_connection;
+use crate::schema::verify::field_exists_in_table;
+use crate::structs::structs::{ApiResponse, BatchUpdateBody, QueryParams, RequestBody};
 use crate::sync::sync_service::insert;
 use crate::table_enum::Table;
-use crate::utils::parse_filters::build_sql_filter;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
+use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
-use crate::utils::structs::FilterCriteria;
-use crate::utils::parse_filters::SqlFilter;
-use crate::batch_sync::BatchSyncService;
-use serde::Deserialize;
-use crate::schema::verify::field_exists_in_table;
-use crate::controllers::common_controller::{process_records, convert_json_to_csv, execute_copy, convert_params_to_sql_types, build_update_statement, process_result_rows};
-use crate::structs::structs::SqlUpdate;
-use crate::db::create_connection;
 
-use super::common_controller::{perform_batch_update, sanitize_updates};
-
+use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates};
 
 #[derive(Serialize)]
 struct ApiError {
@@ -75,14 +70,7 @@ pub async fn update_record(
     request: web::Json<RequestBody>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
-    let pool = pool.clone();
-    let orig_request = request;
-    let mut request = orig_request.clone();
-    request.process_record("update");
     let (table_name, record_id) = path_params.into_inner();
-    let log_table = table_name.clone();
-    let inner_log_table = log_table.clone();
-    let mut processed_record = request.record.clone();
     let table = match Table::from_str(table_name.as_str()) {
         Some(t) => t,
         None => {
@@ -92,44 +80,26 @@ pub async fn update_record(
             });
         }
     };
-    if field_exists_in_table(&table_name, "hypertable_timestamp"){
 
-        let mut conn = match pool.get().await {
-            Ok(conn) => conn,
-            Err(e) => {
-                return HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Failed to get database connection: {}", e)
-                }));
-            }
-        };
-
-        let timestamp_result = match table.get_hypertable_timestamp(&mut conn, &record_id).await {
-            Ok(timestamp) => timestamp,
-            Err(e) => {
-                return HttpResponse::InternalServerError().json(ApiError::from(e));
-            }
-        };
-
-        if let Some(obj) = processed_record.as_object_mut() {
-            if let Some(timestamp) = timestamp_result {
-                log::debug!("Found hypertable timestamp: {}", timestamp);
-                obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
-            } else {
-                // If no timestamp found, use the timestamp from the record if available
-                log::warn!("No hypertable_timestamp found: {}", record_id);
-                //return error from here
-                return HttpResponse::InternalServerError().json(ApiResponse {
-                    message: format!("No hypertable_timestamp found: {}", record_id),
-                    success:false,
-                    count: 0,
-                    data: vec![],
-
-                });
-               
-            }
+    // Process the record using the common function
+    let processed_record = match process_record_for_update(
+        request.into_inner().record,
+        &table_name,
+        &record_id,
+        &table,
+    )
+    .await
+    {
+        Ok(record) => record,
+        Err(status) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: status.message().to_string(),
+                count: 0,
+                data: vec![],
+            });
         }
-    }
-
+    };
 
     let pluck_fields: Vec<String> = if query.pluck.is_empty() {
         vec!["id".to_string()]
@@ -141,47 +111,25 @@ pub async fn update_record(
             .collect()
     };
 
-
-    //add id in the record
-    if let Some(obj) = processed_record.as_object_mut() {
-        obj.insert("id".to_string(), serde_json::Value::String(record_id.clone()));
-    }
-
-    let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
-        Ok(val) => val,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                message: format!("Failed to process record: {}", e),
-                success:false,
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-
-
-
     // Use the update function from sync_service
-    if let Err(e) = crate::sync::sync_service::update(&inner_log_table, record_value.clone(), &record_id).await {
+    if let Err(e) = crate::sync::sync_service::update(&table_name, processed_record.clone(), &record_id).await {
         return HttpResponse::InternalServerError().json(ApiResponse {
             message: format!("Sync error: {}", e),
-            success:false,
+            success: false,
             count: 0,
             data: vec![],
         });
     }
 
-
-
-    let plucked_record = table.pluck_fields(&record_value, pluck_fields);
+    let plucked_record = table.pluck_fields(&processed_record, pluck_fields);
 
     let response = ApiResponse {
         success: true,
-        message: format!("Record updated in '{}'", &inner_log_table),
+        message: format!("Record updated in '{}'", &table_name),
         count: 1,
         data: vec![plucked_record],
     };
-    
+
     HttpResponse::Ok().json(response)
 }
 
@@ -191,60 +139,46 @@ pub async fn create_record(
     request: web::Json<RequestBody>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
-    let pool = pool.clone();
-    let orig_request = request;
-    let mut request = orig_request.clone();
-    request.process_record("create");
     let table_name = table.into_inner();
     let log_table = table_name.clone();
-    let inner_log_table = log_table.clone();
-    let mut processed_record = request.record.clone();
 
-    if field_exists_in_table(&table_name, "hypertable_timestamp"){
-        if let Some(obj) = processed_record.as_object_mut() {
-            if let Some(timestamp) = obj.get("timestamp") {
-                obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
-            }
+    // Process the record using common function
+    let record_value = match process_record_for_insert(request.record.clone(), &table_name).await {
+        Ok(val) => val,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to process record: {}", e),
+                count: 0,
+                data: vec![],
+            });
         }
-    }
+    };
 
     let pluck_fields: Vec<String> = query
         .pluck
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
+
     let table = match Table::from_str(table_name.as_str()) {
         Some(t) => t,
         None => {
-            return HttpResponse::BadRequest().json(ApiError {
-                status: http::StatusCode::BAD_REQUEST.as_u16(),
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
                 message: format!("Unknown table: {log_table}"),
+                count: 0,
+                data: vec![],
             });
         }
     };
 
-    // Execute the insert operation directly in async context
-    // let result = match table.insert_record(&mut conn, processed_record.clone(), orig_request).await {
-    //     Ok(record) => record,
-    //     Err(e) => {
-    //         return HttpResponse::InternalServerError().json(ApiError::from(e));
-    //     }
-    // };
-
-    let record_value: serde_json::Value = match serde_json::from_value(processed_record) {
-        Ok(val) => val,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiError {
-                status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                message: format!("Failed to process record: {}", e),
-            });
-        }
-    };
-
-    if let Err(e) = insert(&inner_log_table, record_value.clone()).await {
-        return HttpResponse::InternalServerError().json(ApiError {
-            status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+    if let Err(e) = insert(&log_table, record_value.clone()).await {
+        return HttpResponse::InternalServerError().json(ApiResponse  {
+            success: false,
             message: format!("Sync error: {}", e),
+            count: 0,
+            data: vec![],
         });
     }
 
@@ -252,7 +186,7 @@ pub async fn create_record(
 
     let response = ApiResponse {
         success: true,
-        message: format!("Record inserted into '{}'", &inner_log_table),
+        message: format!("Record inserted into '{}'", &log_table),
         count: 1,
         data: vec![plucked_record],
     };
@@ -275,50 +209,53 @@ pub async fn batch_insert_records(
     let json_records = batch_data.records;
 
     if json_records.is_empty() {
-        return HttpResponse::BadRequest().json(ApiResponse{
+        return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
             message: "No records provided".to_string(),
             count: 0,
             data: vec![],
-        })
+        });
     }
     let (processed_records, columns) = match process_records(json_records, &table_name) {
         Ok((records, cols)) => (records, cols),
-        Err(e) => return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: format!("Error processing records: {}", e),
-            count: 0,
-            data: vec![],
-        })
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Error processing records: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
     };
 
-    let csv_data =match convert_json_to_csv(&processed_records, &columns){
+    let csv_data = match convert_json_to_csv(&processed_records, &columns) {
         Ok(data) => data,
-        Err(e) => return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: format!("Error converting records to CSV: {:?}", e),
-            count: 0,
-            data: vec![],
-        })
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Error converting records to CSV: {:?}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
     };
 
     let client = match create_connection().await {
         Ok(client) => client,
-        Err(e) => return HttpResponse::InternalServerError().json(ApiResponse {
-            success: false,
-            message: format!("Error creating database connection: {:?}", e),
-            count: 0,
-            data: vec![],
-        })
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Error creating database connection: {:?}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
     };
 
     let column_refs: Vec<&str> = columns.iter().map(|s| s.as_str()).collect();
 
-    let records=match  execute_copy(&client, &table_name, &column_refs, csv_data)
-        .await {
-        Ok(_) => {
-            processed_records.clone()
-        }
+    let records = match execute_copy(&client, &table_name, &column_refs, csv_data).await {
+        Ok(_) => processed_records.clone(),
         Err(e) => {
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
@@ -330,9 +267,11 @@ pub async fn batch_insert_records(
     };
 
     // Convert JSON array to CSV in-memor
-  
+
     for record in processed_records.iter() {
-        if let Err(e) = BatchSyncService::send_insert_message(table_clone.clone(), record.clone()).await {
+        if let Err(e) =
+            BatchSyncService::send_insert_message(table_clone.clone(), record.clone()).await
+        {
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("Sync error: {e}"),
@@ -344,11 +283,15 @@ pub async fn batch_insert_records(
 
     let response = ApiResponse {
         success: true,
-        message: format!("Inserted {} records into '{}'", processed_records.len(), table_name),
+        message: format!(
+            "Inserted {} records into '{}'",
+            processed_records.len(),
+            table_name
+        ),
         count: processed_records.len() as i32,
         data: processed_records, // Include the processed records in the response
     };
-    
+
     HttpResponse::Ok().json(response)
 }
 
@@ -361,7 +304,11 @@ pub async fn batch_update_records(
     let batch_data = request.into_inner();
     let filters = batch_data.advance_filters;
     let mut updates = batch_data.updates;
-    if updates.record.as_object().map_or(true, |obj| obj.is_empty()) {
+    if updates
+        .record
+        .as_object()
+        .map_or(true, |obj| obj.is_empty())
+    {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
             message: "No update fields provided".to_string(),
@@ -374,7 +321,9 @@ pub async fn batch_update_records(
         record.remove("version");
     }
     let updates_value = match serde_json::to_value(updates) {
-        Ok(Value::Object(map)) => sanitize_updates(map).unwrap_or(Value::Object(Default::default())),
+        Ok(Value::Object(map)) => {
+            sanitize_updates(map).unwrap_or(Value::Object(Default::default()))
+        }
         Ok(_) => Value::Object(Default::default()),
         Err(e) => {
             log::error!("Failed to serialize updates to JSON: {}", e);
@@ -408,7 +357,7 @@ pub async fn batch_update_records(
             message: e,
             count: 0,
             data: vec![],
-        })
+        }),
     }
 
     //use the below code if you want to return the updated fields to the user, can be inefficient if the updated fields are large
@@ -417,39 +366,39 @@ pub async fn batch_update_records(
     // let mut json_rows: Vec<serde_json::Value> = Vec::new();
     // for row in &rows {
     //     let mut json_obj = serde_json::Map::new();
-        
+
     //     // Extract id
     //     if let Ok(id) = row.try_get::<_, String>("id") {
     //         json_obj.insert("id".to_string(), serde_json::Value::String(id));
     //     }
-        
+
     //     // Extract version
     //     if let Ok(version) = row.try_get::<_, i32>("version") {
     //         json_obj.insert("version".to_string(), serde_json::Value::Number(serde_json::Number::from(version)));
     //     }
-        
+
     //     // Extract updated_date
     //     if let Ok(updated_date) = row.try_get::<_, String>("updated_date") {
     //         json_obj.insert("updated_date".to_string(), serde_json::Value::String(updated_date));
     //     }
-        
+
     //     // Extract updated_time
     //     if let Ok(updated_time) = row.try_get::<_, String>("updated_time") {
     //         json_obj.insert("updated_time".to_string(), serde_json::Value::String(updated_time));
     //     }
-        
+
     //     // Extract updated_by
     //     if let Ok(updated_by) = row.try_get::<_, String>("updated_by") {
     //         json_obj.insert("updated_by".to_string(), serde_json::Value::String(updated_by));
     //     }
-        
+
     //     // Extract hypertable_timestamp if it exists
     //     if field_exists_in_table(&table_name, "hypertable_timestamp") {
     //         if let Ok(timestamp) = row.try_get::<_, String>("hypertable_timestamp") {
     //             json_obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
     //         }
     //     }
-        
+
     //     // Extract any updated fields
     //     if let Some(update_obj) = updates.as_object() {
     //         for key in update_obj.keys() {
@@ -471,9 +420,45 @@ pub async fn batch_update_records(
     //             }
     //         }
     //     }
-        
+
     //     json_rows.push(serde_json::Value::Object(json_obj));
     // }
-    
 }
 
+pub async fn batch_delete_records(
+    pool: web::Data<db::AsyncDbPool>,
+    table: web::Path<String>,
+    request: web::Json<BatchUpdateBody>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    let batch_data = request.into_inner();
+    let filters = batch_data.advance_filters;
+
+    // Create delete updates (setting tombstone and status)
+    let mut delete_updates = RequestBody {
+        record: serde_json::json!({}),
+    };
+
+    // Process the record through the common processing logic
+    delete_updates.process_record("delete");
+    if let Some(record) = delete_updates.record.as_object_mut() {
+        record.remove("version");
+    }
+
+    let updates_value = delete_updates.record;
+
+    match perform_batch_update(&table_name, updates_value, filters).await {
+        Ok((count, _)) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: format!("Deleted {} records in '{}'", count, table_name),
+            count: count as i32,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        }),
+    }
+}

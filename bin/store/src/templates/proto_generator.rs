@@ -2,6 +2,8 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
+use crate::utils::utils::{parse_tables, Table, Field};
+
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
     println!("Starting proto generation from schema: {}", schema_path);
 
@@ -98,92 +100,6 @@ fn clean_output_directory(output_dir: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-fn parse_tables(schema: &str) -> Vec<Table> {
-    let mut tables = Vec::new();
-    let mut current_table: Option<Table> = None;
-    let mut bracket_depth = 0;
-    let mut in_table_def = false;
-    let mut table_name = String::new();
-
-    for line in schema.lines() {
-        let line = line.trim();
-
-        // Skip empty lines and comments
-        if line.is_empty() || line.starts_with("//") {
-            continue;
-        }
-
-        // Start of table definition
-        if line.starts_with("table!") {
-            in_table_def = true;
-            bracket_depth = 0;
-        }
-
-        if in_table_def {
-            // Count brackets for nesting level
-            bracket_depth += line.chars().filter(|&c| c == '{').count();
-            bracket_depth -= line.chars().filter(|&c| c == '}').count();
-
-            // Extract table name from the line after "table!"
-            if table_name.is_empty() && line.contains("(") && !line.starts_with("table!") {
-                let name_part = line.split('(').next().unwrap_or("").trim();
-                if !name_part.is_empty() {
-                    table_name = name_part.to_string();
-                    println!("Found table: {}", table_name);
-                    current_table = Some(Table {
-                        name: table_name.clone(),
-                        fields: Vec::new(),
-                    });
-                }
-            }
-
-            // Parse field definitions
-            if bracket_depth > 0 && line.contains("->") {
-                if let Some(table) = &mut current_table {
-                    let parts: Vec<&str> = line.split("->").collect();
-                    if parts.len() == 2 {
-                        let field_name = parts[0].trim().trim_end_matches(',');
-                        let field_type = parts[1].trim().trim_end_matches(',');
-
-                        println!("Found field: {} -> {}", field_name, field_type);
-
-                        table.fields.push(Field {
-                            name: field_name.to_string(),
-                            proto_type: diesel_type_to_proto(field_type),
-                            is_optional: field_type.contains("Nullable"),
-                            is_array: field_type.contains("Array"),
-                        });
-                    }
-                }
-            }
-
-            // End of table definition
-            if bracket_depth == 0 && !table_name.is_empty() {
-                if let Some(table) = current_table.take() {
-                    if !table.fields.is_empty() {
-                        tables.push(table.clone());
-                        println!(
-                            "Added table: {} with {} fields",
-                            table_name,
-                            table.fields.len()
-                        );
-                    }
-                }
-                table_name = String::new();
-                in_table_def = false;
-            }
-        }
-    }
-
-    // Add any remaining table
-    if let Some(table) = current_table {
-        if !table.fields.is_empty() {
-            tables.push(table);
-        }
-    }
-
-    tables
-}
 
 pub fn generate_unified_proto(tables: &[Table]) -> String {
     let mut proto = String::new();
@@ -226,14 +142,17 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  string values = 5; // JSON string of values\n");
     proto.push_str("}\n\n");
 
-   // Add BatchUpdate common structures
-   proto.push_str("// Common parameter structure for BatchUpdate requests\n");
-   proto.push_str("message BatchUpdateParams {\n");
-   proto.push_str("  string table = 1; // Table name\n");
-   proto.push_str("}\n\n");
+    // Add BatchUpdate common structures
+    proto.push_str("// Common parameter structure for BatchUpdate requests\n");
+    proto.push_str("message BatchUpdateParams {\n");
+    proto.push_str("  string table = 1; // Table name\n");
+    proto.push_str("}\n\n");
 
-
-   
+    // Add BatchDelete common structures
+    proto.push_str("// Common parameter structure for BatchDelete requests\n");
+    proto.push_str("message BatchDeleteParams {\n");
+    proto.push_str("  string table = 1; // Table name\n");
+    proto.push_str("}\n\n");
 
     // Common structures for Update requests
     proto.push_str("// Common parameter structure for Update requests\n");
@@ -343,24 +262,42 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str(&format!("  {} data = 4;\n", pascal_name));
         proto.push_str("}\n\n");
 
-         // BatchUpdate operation
-         proto.push_str(&format!("// BatchUpdate {} request\n", pascal_name));
-         proto.push_str(&format!("message BatchUpdate{}Request {{\n", pascal_name));
-         proto.push_str("  BatchUpdateParams params = 1;\n");
-         proto.push_str("  message BatchUpdateBody {\n");
-         proto.push_str("    repeated AdvanceFilter advance_filters = 1;\n");
-         proto.push_str(&format!("  {} updates = 2;\n", pascal_name));
-         proto.push_str("  }\n");
-         proto.push_str("  BatchUpdateBody body = 2;\n");
-         proto.push_str("}\n\n");
+        // BatchUpdate operation
+        proto.push_str(&format!("// BatchUpdate {} request\n", pascal_name));
+        proto.push_str(&format!("message BatchUpdate{}Request {{\n", pascal_name));
+        proto.push_str("  BatchUpdateParams params = 1;\n");
+        proto.push_str("  message BatchUpdateBody {\n");
+        proto.push_str("    repeated AdvanceFilter advance_filters = 1;\n");
+        proto.push_str(&format!("  {} updates = 2;\n", pascal_name));
+        proto.push_str("  }\n");
+        proto.push_str("  BatchUpdateBody body = 2;\n");
+        proto.push_str("}\n\n");
 
-         proto.push_str(&format!("// BatchUpdate {} response\n", pascal_name));
-         proto.push_str(&format!("message BatchUpdate{}Response {{\n", pascal_name));
-         proto.push_str("  bool success = 1;\n");
-         proto.push_str("  string message = 2;\n");
-         proto.push_str("  int32 count = 3;\n");
-         proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
-         proto.push_str("}\n\n");
+        proto.push_str(&format!("// BatchUpdate {} response\n", pascal_name));
+        proto.push_str(&format!("message BatchUpdate{}Response {{\n", pascal_name));
+        proto.push_str("  bool success = 1;\n");
+        proto.push_str("  string message = 2;\n");
+        proto.push_str("  int32 count = 3;\n");
+        proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
+        proto.push_str("}\n\n");
+
+        // BatchDelete operation
+        proto.push_str(&format!("// BatchDelete {} request\n", pascal_name));
+        proto.push_str(&format!("message BatchDelete{}Request {{\n", pascal_name));
+        proto.push_str("  BatchDeleteParams params = 1;\n");
+        proto.push_str("  message BatchDeleteBody {\n");
+        proto.push_str("    repeated AdvanceFilter advance_filters = 1;\n");
+        proto.push_str("  }\n");
+        proto.push_str("  BatchDeleteBody body = 2;\n");
+        proto.push_str("}\n\n");
+
+        proto.push_str(&format!("// BatchDelete {} response\n", pascal_name));
+        proto.push_str(&format!("message BatchDelete{}Response {{\n", pascal_name));
+        proto.push_str("  bool success = 1;\n");
+        proto.push_str("  string message = 2;\n");
+        proto.push_str("  int32 count = 3;\n");
+        proto.push_str(&format!("  {} data = 4;\n", pascal_name));
+        proto.push_str("}\n\n");
 
         // Delete operation
         proto.push_str(&format!("// Delete {} request\n", pascal_name));
@@ -372,8 +309,9 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str(&format!("message Delete{}Response {{\n", pascal_name));
         proto.push_str("  bool success = 1;\n");
         proto.push_str("  string message = 2;\n");
+        proto.push_str("  int32 count = 3;\n");
+        proto.push_str(&format!("  {} data = 4;\n", pascal_name));
         proto.push_str("}\n\n");
-
 
         // BatchInsert operation
         proto.push_str(&format!("// BatchInsert {} request\n", pascal_name));
@@ -382,20 +320,22 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str("  BatchInsertQuery query = 2;\n");
         proto.push_str("  message BatchBody {\n");
         proto.push_str("    string entity_prefix = 1;\n");
-        proto.push_str(&format!("    repeated {} {} = 2;\n", pascal_name, snake_name));
+        proto.push_str(&format!(
+            "    repeated {} {} = 2;\n",
+            pascal_name, snake_name
+        ));
         proto.push_str("  }\n");
         proto.push_str("  BatchBody body = 3;\n");
         proto.push_str("}\n\n");
 
-
-         // BatchInsert response
-         proto.push_str(&format!("// BatchInsert {} response\n", pascal_name));
-         proto.push_str(&format!("message BatchInsert{}Response {{\n", pascal_name));
-         proto.push_str("  bool success = 1;\n");
-         proto.push_str("  string message = 2;\n");
-         proto.push_str("  int32 count = 3;\n");
-         proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
-         proto.push_str("}\n\n");
+        // BatchInsert response
+        proto.push_str(&format!("// BatchInsert {} response\n", pascal_name));
+        proto.push_str(&format!("message BatchInsert{}Response {{\n", pascal_name));
+        proto.push_str("  bool success = 1;\n");
+        proto.push_str("  string message = 2;\n");
+        proto.push_str("  int32 count = 3;\n");
+        proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
+        proto.push_str("}\n\n");
     }
 
     // Generate batch operations for multiple records - only once
@@ -435,19 +375,32 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
             pascal_name, pascal_name, pascal_name
         ));
 
-         // BatchInsert
-         proto.push_str(&format!("  // Batch insert multiple {}s\n", pascal_name));
-         proto.push_str(&format!(
-             "  rpc BatchInsert{}(BatchInsert{}Request) returns (BatchInsert{}Response);\n\n",
-             pascal_name, pascal_name, pascal_name
-         ));
+        // BatchInsert
+        proto.push_str(&format!("  // Batch insert multiple {}s\n", pascal_name));
+        proto.push_str(&format!(
+            "  rpc BatchInsert{}(BatchInsert{}Request) returns (BatchInsert{}Response);\n\n",
+            pascal_name, pascal_name, pascal_name
+        ));
 
-          // BatchUpdate
-          proto.push_str(&format!("  // Batch update multiple {}s based on filters\n", pascal_name));
-          proto.push_str(&format!(
-              "  rpc BatchUpdate{}(BatchUpdate{}Request) returns (BatchUpdate{}Response);\n\n",
-              pascal_name, pascal_name, pascal_name
-          ));
+        // BatchUpdate
+        proto.push_str(&format!(
+            "  // Batch update multiple {}s based on filters\n",
+            pascal_name
+        ));
+        proto.push_str(&format!(
+            "  rpc BatchUpdate{}(BatchUpdate{}Request) returns (BatchUpdate{}Response);\n\n",
+            pascal_name, pascal_name, pascal_name
+        ));
+
+        // BatchDelete
+        proto.push_str(&format!(
+            "  // Batch delete multiple {}s based on filters\n",
+            pascal_name
+        ));
+        proto.push_str(&format!(
+            "  rpc BatchDelete{}(BatchDelete{}Request) returns (BatchDelete{}Response);\n\n",
+            pascal_name, pascal_name, pascal_name
+        ));
     }
 
     proto.push_str("}\n");
@@ -534,19 +487,6 @@ pub fn diesel_type_to_proto(diesel_type: &str) -> &'static str {
     }
 }
 
-#[derive(Clone)]
-pub struct Table {
-    name: String,
-    fields: Vec<Field>,
-}
-#[derive(Clone)]
-pub struct Field {
-    name: String,
-    proto_type: &'static str,
-    is_optional: bool,
-    is_array: bool,
-}
-
 // Add case conversion trait and implementation
 pub trait CaseConvert {
     fn to_case(&self, case: Case) -> String;
@@ -584,19 +524,18 @@ pub enum Case {
     Pascal,
 }
 
-
 fn to_singular(name: &str) -> String {
     let name = name.to_lowercase();
-    
+
     // Handle common plural endings
     if name.ends_with("ies") {
-        return format!("{}y", &name[0..name.len()-3]);
+        return format!("{}y", &name[0..name.len() - 3]);
     } else if name.ends_with("ses") {
-        return format!("{}s", &name[0..name.len()-2]);
+        return format!("{}s", &name[0..name.len() - 2]);
     } else if name.ends_with("s") && !name.ends_with("ss") {
-        return name[0..name.len()-1].to_string();
+        return name[0..name.len() - 1].to_string();
     }
-    
+
     // Return original if no plural pattern matched
     name
 }

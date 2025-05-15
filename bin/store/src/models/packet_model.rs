@@ -1,18 +1,18 @@
 use diesel::prelude::*;
+use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use ipnetwork::IpNetwork;
 
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     t == &T::default()
 }
 #[derive(
-    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
 #[diesel(table_name = crate::schema::schema::packets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct Packet {
+pub struct PacketModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -36,6 +36,7 @@ pub struct Packet {
     pub destination_mac: Option<String>,
     pub ether_type: Option<String>,
     pub protocol: Option<String>,
+    pub total_length: Option<i32>,
     pub source_ip: Option<IpNetwork>,
     pub destination_ip: Option<IpNetwork>,
     pub source_port: Option<i32>,
@@ -49,5 +50,4 @@ pub struct Packet {
     pub tcp_urgent_pointer: Option<i32>,
     pub icmp_type: Option<i32>,
     pub icmp_code: Option<i32>,
-    pub total_length: Option<i32>
 }

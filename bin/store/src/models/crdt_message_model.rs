@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crdt_messages)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct CrdtMessage {
+pub struct CrdtMessageModel {
     pub database: Option<String>,
     pub dataset: String,
     pub group_id: String,

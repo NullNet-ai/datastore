@@ -1,5 +1,5 @@
 use crate::db;
-use crate::models::sync_endpoint_model::SyncEndpoint;
+use crate::models::sync_endpoint_model::SyncEndpointModel;
 use crate::sync::sync_endpoints_service;
 use crate::sync::transport::transport_driver::PostOpts;
 use actix_web::{get, post, put, web, HttpResponse, Responder};
@@ -12,7 +12,7 @@ pub struct ResponsePackage {
 
 #[derive(Deserialize)]
 pub struct EndpointRequest {
-    endpoint: SyncEndpoint,
+    endpoint: SyncEndpointModel,
 }
 
 #[get("/api/sync_endpoints")]

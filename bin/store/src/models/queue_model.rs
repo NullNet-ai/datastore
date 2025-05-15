@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = queues)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct Queue {
+pub struct QueueModel {
     pub id: String,
     pub name: String,
     pub size: i32,

@@ -1,13 +1,13 @@
 use diesel::pg::PgConnection;
 use diesel::r2d2::{self, ConnectionManager, Pool, PooledConnection};
-use dotenv::dotenv;
-use std::env;
-use std::sync::OnceLock;
-use tokio_postgres::{Client, NoTls};
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
+use dotenv::dotenv;
 use once_cell::sync::Lazy;
+use std::env;
+use std::sync::OnceLock;
+use tokio_postgres::{Client, NoTls};
 
 // -- Sync Types --
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
@@ -67,7 +67,6 @@ pub async fn get_async_connection() -> AsyncDbPooledConnection {
         panic!("Async connection failure");
     })
 }
-
 
 pub async fn create_connection() -> Result<Client, Box<dyn std::error::Error>> {
     let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());

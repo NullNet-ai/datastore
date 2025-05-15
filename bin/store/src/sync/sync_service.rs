@@ -1,5 +1,5 @@
 use crate::db;
-use crate::models::crdt_message_model::CrdtMessage;
+use crate::models::crdt_message_model::CrdtMessageModel;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::hlc_service::HlcService;
 use crate::sync::message_manager::get_sender;
@@ -26,7 +26,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
     let mut conn = db::get_async_connection().await;
 
-    let messages: Vec<CrdtMessage> = conn
+    let messages: Vec<CrdtMessageModel> = conn
         .transaction::<_, DieselError, _>(|mut tx| {
             Box::pin(async move {
                 let messages = create_messages(&mut tx, &row, table, operation)
@@ -69,7 +69,7 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
         obj.insert("id".to_string(), Value::String(id.clone()));
     }
 
-    let messages: Vec<CrdtMessage> = conn
+    let messages: Vec<CrdtMessageModel> = conn
         .transaction::<_, DieselError, _>(|mut tx| {
             Box::pin(async move {
                 let messages = create_messages(&mut tx, &modified_row, table, operation)
@@ -103,7 +103,7 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
 
 pub async fn send_messages(
     mut tx: &mut AsyncPgConnection,
-    messages: Vec<CrdtMessage>,
+    messages: Vec<CrdtMessageModel>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     apply_messages(&mut tx, messages.clone()).await?;
     let messages_value: Vec<Value> = messages
@@ -152,7 +152,7 @@ pub async fn send_messages(
 
 async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
-    messages: Vec<CrdtMessage>,
+    messages: Vec<CrdtMessageModel>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
     let sender = get_sender().cloned().unwrap_or_else(|| {
@@ -611,7 +611,7 @@ async fn receive_messages(
                         .get("message")
                         .ok_or_else(|| DieselError::RollbackTransaction)?;
 
-                    let crdt_message: CrdtMessage =
+                    let crdt_message: CrdtMessageModel =
                         serde_json::from_value(inner_message.clone())
                             .map_err(|_| DieselError::RollbackTransaction)?;
 

@@ -1,6 +1,6 @@
 use crate::db;
-use crate::models::queue_item_model::QueueItem;
-use crate::models::queue_model::Queue;
+use crate::models::queue_item_model::QueueItemModel;
+use crate::models::queue_model::QueueModel;
 use crate::schema::schema::{queue_items, queues};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -40,7 +40,7 @@ impl QueueService {
         let mut conn = db::get_async_connection().await;
         let queue = queues::table
             .filter(queues::name.eq(queue_name))
-            .first::<Queue>(&mut conn)
+            .first::<QueueModel>(&mut conn)
             .await
             .optional()?;
 
@@ -59,7 +59,7 @@ impl QueueService {
             Box::pin(async move {
                 let queue = queues::table
                     .filter(queues::name.eq(queue_name))
-                    .first::<Queue>(conn)
+                    .first::<QueueModel>(conn)
                     .await
                     .optional()?;
 
@@ -70,7 +70,7 @@ impl QueueService {
 
                 let new_order = queue.size + 1;
 
-                let queue_item = QueueItem {
+                let queue_item = QueueItemModel {
                     id: Uuid::new_v4().to_string(),
                     order: new_order,
                     queue_id: queue.id.clone(),
@@ -112,7 +112,7 @@ impl QueueService {
             Box::pin(async move {
                 let queue = queues::table
                     .filter(queues::name.eq(queue_name))
-                    .first::<Queue>(conn)
+                    .first::<QueueModel>(conn)
                     .await
                     .optional()?;
 
@@ -133,7 +133,7 @@ impl QueueService {
                     )
                     .order(queue_items::order.asc())
                     .limit(1)
-                    .first::<QueueItem>(conn)
+                    .first::<QueueItemModel>(conn)
                     .await
                     .optional()?;
 

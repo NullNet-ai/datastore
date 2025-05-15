@@ -1,16 +1,16 @@
-use bytes::Bytes;
-use csv::WriterBuilder;
-use serde_json::Value;
-use tokio_postgres::{Client};
-use futures::{SinkExt, pin_mut};
 use crate::batch_sync::BatchSyncService;
-use crate::db::create_connection;
+use crate::db::{self, create_connection};
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, RequestBody, SqlUpdate};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
-
-
+use bytes::Bytes;
+use csv::WriterBuilder;
+use futures::{pin_mut, SinkExt};
+use serde_json::Value;
+use tokio_postgres::Client;
+use tonic::Status;
+use crate::table_enum::Table;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -44,7 +44,8 @@ pub async fn execute_copy(
         columns.join(",")
     );
 
-    let sink = client.copy_in(&stmt)
+    let sink = client
+        .copy_in(&stmt)
         .await
         .map_err(|e| AppError::CopyCommand(e.to_string()))?;
 
@@ -59,8 +60,6 @@ pub async fn execute_copy(
 
     Ok(())
 }
-
-
 
 pub fn process_records(
     records: Vec<Value>,
@@ -91,37 +90,41 @@ pub fn process_records(
 }
 
 fn extract_columns_owned(records: &[Value]) -> Result<Vec<String>, String> {
-    records.first()
+    records
+        .first()
         .and_then(|v| v.as_object())
-        .map(|obj| obj.keys().map(|k| k.to_string()).collect())  // Use to_string() to create owned Strings
+        .map(|obj| obj.keys().map(|k| k.to_string()).collect()) // Use to_string() to create owned Strings
         .ok_or_else(|| "Invalid record format".to_string())
 }
 
 pub fn convert_json_to_csv(records: &[Value], columns: &[String]) -> Result<Vec<u8>, AppError> {
     let mut wtr = WriterBuilder::new().has_headers(false).from_writer(vec![]);
-    
+
     for record in records {
-        let obj = record.as_object().ok_or_else(|| {
-            AppError::CsvConversion("Invalid record format".to_string())
-        })?;
+        let obj = record
+            .as_object()
+            .ok_or_else(|| AppError::CsvConversion("Invalid record format".to_string()))?;
 
-        let row: Vec<String> = columns.iter().map(|col| {
-            serialize_value(obj.get(col).unwrap_or(&Value::Null))
-        }).collect();
+        let row: Vec<String> = columns
+            .iter()
+            .map(|col| serialize_value(obj.get(col).unwrap_or(&Value::Null)))
+            .collect();
 
-        wtr.write_record(&row).map_err(|e| AppError::CsvConversion(e.to_string()))?;
+        wtr.write_record(&row)
+            .map_err(|e| AppError::CsvConversion(e.to_string()))?;
     }
 
-    wtr.into_inner().map_err(|e| AppError::CsvConversion(e.to_string()))
+    wtr.into_inner()
+        .map_err(|e| AppError::CsvConversion(e.to_string()))
 }
 
 fn extract_columns(records: &[Value]) -> Result<Vec<&str>, String> {
-    records.first()
+    records
+        .first()
         .and_then(|v| v.as_object())
         .map(|obj| obj.keys().map(|k| k.as_str()).collect())
         .ok_or_else(|| "Invalid record format".to_string())
 }
-
 
 fn serialize_value(value: &Value) -> String {
     match value {
@@ -129,20 +132,24 @@ fn serialize_value(value: &Value) -> String {
         Value::Null => String::new(),
         Value::Number(n) => n.to_string(),
         Value::Bool(b) => b.to_string(),
-        Value::Array(arr) => format!("{{{}}}", arr.iter()
-            .map(serialize_value)
-            .collect::<Vec<_>>()
-            .join(",")),
+        Value::Array(arr) => format!(
+            "{{{}}}",
+            arr.iter()
+                .map(serialize_value)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
         Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
     }
 }
 
-
 //BATCH UPDATE FUNCTIONS
 
-pub fn convert_params_to_sql_types(params: &[serde_json::Value]) -> Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> {
+pub fn convert_params_to_sql_types(
+    params: &[serde_json::Value],
+) -> Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> {
     let mut converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> = Vec::new();
-    
+
     for p in params {
         let boxed_value: Box<dyn tokio_postgres::types::ToSql + Sync + Send> = match p {
             serde_json::Value::Null => Box::new(None::<String>),
@@ -167,7 +174,7 @@ pub fn convert_params_to_sql_types(params: &[serde_json::Value]) -> Vec<Box<dyn 
                 } else {
                     Box::new(n.as_f64().unwrap())
                 }
-            },
+            }
             serde_json::Value::String(s) => {
                 // Try to parse as IpAddr first for inet fields
                 if let Ok(ip) = s.parse::<std::net::IpAddr>() {
@@ -175,56 +182,63 @@ pub fn convert_params_to_sql_types(params: &[serde_json::Value]) -> Vec<Box<dyn 
                 } else {
                     Box::new(s.clone())
                 }
-            },
+            }
             serde_json::Value::Array(arr) => {
                 // Convert array elements to Vec<String>
-                let string_array: Vec<String> = arr.iter()
+                let string_array: Vec<String> = arr
+                    .iter()
                     .map(|v| match v {
                         serde_json::Value::String(s) => s.clone(),
                         _ => v.to_string(),
                     })
                     .collect();
                 Box::new(string_array)
-            },
+            }
             _ => Box::new(format!("{}", p)),
         };
         converted_values.push(boxed_value);
     }
-    
+
     converted_values
 }
 
 pub fn process_result_rows(
-    rows: &[tokio_postgres::Row], 
+    rows: &[tokio_postgres::Row],
     update_fields: &[(&String, &serde_json::Value)],
-    is_hypertable: bool
+    is_hypertable: bool,
 ) -> Vec<serde_json::Value> {
     let mut result_rows: Vec<serde_json::Value> = Vec::new();
-    
+
     for row in rows {
         let mut obj = serde_json::Map::new();
-        
+
         if let Ok(id) = row.try_get::<_, String>("id") {
             obj.insert("id".to_string(), serde_json::Value::String(id));
         }
-    
+
         if let Ok(version) = row.try_get::<_, i32>("version") {
-            obj.insert("version".to_string(), serde_json::Value::Number(version.into()));
+            obj.insert(
+                "version".to_string(),
+                serde_json::Value::Number(version.into()),
+            );
         }
 
         if is_hypertable {
             if let Ok(timestamp) = row.try_get::<_, String>("hypertable_timestamp") {
-                obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
+                obj.insert(
+                    "hypertable_timestamp".to_string(),
+                    serde_json::Value::String(timestamp),
+                );
             }
         }
-    
+
         for (key, value) in update_fields.iter() {
             obj.insert(key.to_string(), (*value).clone());
         }
-    
+
         result_rows.push(serde_json::Value::Object(obj));
     }
-    
+
     result_rows
 }
 
@@ -232,8 +246,8 @@ pub fn build_update_statement(
     update_result: Result<SqlUpdate, String>,
     updates: &serde_json::Value,
     table_name: &str,
-    params:Vec<Value>  
-) -> Result<(String, String, Vec<Value>,), ApiResponse> {
+    params: Vec<Value>,
+) -> Result<(String, String, Vec<Value>), ApiResponse> {
     // Handle the update result
     let (mut update_sql, update_params) = match update_result {
         Ok(SqlUpdate { sql, params }) => (sql, params),
@@ -265,11 +279,12 @@ pub fn build_update_statement(
 
     // Build updated fields list
     let updated_fields = if let Some(update_obj) = updates.as_object() {
-        let fields: Vec<String> = update_obj.keys()
+        let fields: Vec<String> = update_obj
+            .keys()
             .filter(|&k| k != "record")
             .map(|k| format!("\"{k}\""))
             .collect();
-        
+
         if !fields.is_empty() {
             format!(", {}", fields.join(", "))
         } else {
@@ -279,7 +294,11 @@ pub fn build_update_statement(
         String::new()
     };
 
-    Ok((return_fields.to_string() + hypertable_check + &updated_fields, update_sql, params))
+    Ok((
+        return_fields.to_string() + hypertable_check + &updated_fields,
+        update_sql,
+        params,
+    ))
 }
 
 pub fn build_sql_update(
@@ -298,7 +317,7 @@ pub fn build_sql_update(
         for (key, value) in update_map {
             // Sanitize field name to prevent SQL injection
             let field = format!("\"{}\"", key.replace('\"', "\"\""));
-            
+
             set_clauses.push(format!("{} = ${}", field, param_index));
             params.push(value.clone());
             param_index += 1;
@@ -312,7 +331,6 @@ pub fn build_sql_update(
         Err("Updates must be an object".to_string())
     }
 }
-
 
 pub async fn perform_batch_update(
     table_name: &str,
@@ -334,16 +352,20 @@ pub async fn perform_batch_update(
         table_name, update_sql, sql, return_fields
     );
 
-    let client = create_connection().await
+    let client = create_connection()
+        .await
         .map_err(|e| format!("DB connection failed: {:?}", e))?;
 
     let converted_values = convert_params_to_sql_types(&params);
     let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_values
-    .iter()
-    .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
-    .collect();
+        .iter()
+        .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
+        .collect();
+    
 
-    let rows = client.query(&sql, &pg_params[..]).await
+    let rows = client
+        .query(&sql, &pg_params[..])
+        .await
         .map_err(|e| format!("Failed to execute query: {}", e))?;
 
     let update_fields = updates
@@ -354,7 +376,8 @@ pub async fn perform_batch_update(
     let result_rows = process_result_rows(&rows, &update_fields, is_hypertable);
 
     for record in result_rows.iter() {
-        BatchSyncService::send_update_message(table_name.to_string(), record.clone()).await
+        BatchSyncService::send_update_message(table_name.to_string(), record.clone())
+            .await
             .map_err(|e| format!("Sync error: {e}"))?;
     }
 
@@ -370,4 +393,106 @@ pub fn sanitize_updates(mut record: serde_json::Map<String, Value>) -> Option<Va
     } else {
         Some(Value::Object(record))
     }
+}
+
+
+//Insert request
+
+pub async fn process_record_for_insert<T: serde::Serialize>(
+    record: T,
+    table_name: &str,
+) -> Result<serde_json::Value, Status> {
+    // Convert protobuf message to serde_json::Value
+    let mut processed_record = serde_json::to_value(&record)
+        .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
+
+    // Handle hypertable timestamp if needed
+    if field_exists_in_table(table_name, "hypertable_timestamp") {
+        if let Some(obj) = processed_record.as_object_mut() {
+            if let Some(timestamp) = obj.get("timestamp") {
+                obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
+            }
+        }
+    }
+
+    // Process record through common processing logic
+    let mut request_body = RequestBody {
+        record: processed_record,
+    };
+    request_body.process_record("create");
+    processed_record = request_body.record;
+
+    // Convert back to Value
+    let record_value = serde_json::from_value(processed_record)
+        .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
+
+    Ok(record_value)
+}
+
+
+// Update request
+
+pub async fn process_record_for_update<T: serde::Serialize>(
+    record: T,
+    table_name: &str,
+    record_id: &str,
+    table: &Table,
+) -> Result<serde_json::Value, Status> {
+    // Convert to serde_json::Value
+    let mut processed_record = serde_json::to_value(&record)
+        .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
+
+    // Process record through common processing logic
+    let mut request_body = RequestBody {
+        record: processed_record.clone(),
+    };
+    request_body.process_record("update");
+    processed_record = request_body.record;
+
+    // Check if record exists
+    let mut conn = db::get_async_connection().await;
+    let data_exists = table.get_by_id(&mut conn, record_id).await;
+    match data_exists {
+        Ok(record) => {
+            if record.is_none() {
+                return Err(Status::not_found(format!(
+                    "Record with ID '{}' not found in '{}'",
+                    record_id, table_name
+                )))
+            }
+        }
+        Err(e) => {
+            return Err(Status::internal(format!("Failed to get record: {}", e)));
+        }
+    }
+
+    // Handle hypertable timestamp if needed
+    if field_exists_in_table(table_name, "hypertable_timestamp") {
+        let timestamp_result = match table.get_hypertable_timestamp(&mut conn, record_id).await {
+            Ok(timestamp) => timestamp,
+            Err(e) => {
+                return Err(Status::internal(format!(
+                    "Failed to get hypertable_timestamp: {}",
+                    e
+                )));
+            }
+        };
+
+        if let Some(obj) = processed_record.as_object_mut() {
+            if let Some(timestamp) = timestamp_result {
+                log::debug!("Found hypertable timestamp: {}", timestamp);
+                obj.insert(
+                    "hypertable_timestamp".to_string(),
+                    serde_json::Value::String(timestamp),
+                );
+            } else {
+                log::warn!("No hypertable_timestamp found: {}", record_id);
+                return Err(Status::internal(format!(
+                    "Failed to insert hypertable timestamp in record"
+                )));
+            }
+        }
+    }
+
+    Ok(processed_record)
 }

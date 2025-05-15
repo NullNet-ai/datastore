@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::schema::items)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Item {
+pub struct ItemModel {
     pub tombstone: i32,
     pub status: String,
     pub previous_status: Option<String>,

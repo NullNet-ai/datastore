@@ -6,11 +6,7 @@ pub struct SqlFilter {
     pub params: Vec<serde_json::Value>,
 }
 
-
-
-pub fn build_sql_filter(
-    filters: &[FilterCriteria],
-) -> SqlFilter {
+pub fn build_sql_filter(filters: &[FilterCriteria]) -> SqlFilter {
     let mut sql_parts = Vec::new();
     let mut params = Vec::new();
     let mut param_index = 1;
@@ -27,7 +23,7 @@ pub fn build_sql_filter(
     if !filters.is_empty() {
         sql_parts.push("AND".to_string());
         sql_parts.push("(".to_string());
-        
+
         let mut first_filter = true;
         for filter in filters {
             if !first_filter {
@@ -52,9 +48,13 @@ pub fn build_sql_filter(
                     }
                 }
             }
-            
+
             match filter {
-                FilterCriteria::Criteria { field, operator, values } => {
+                FilterCriteria::Criteria {
+                    field,
+                    operator,
+                    values,
+                } => {
                     let (sql, mut vals, next_param_index) =
                         criteria_to_sql(field, operator, values, param_index);
                     sql_parts.push(sql);
@@ -72,7 +72,7 @@ pub fn build_sql_filter(
                 }
             }
         }
-        
+
         sql_parts.push(")".to_string());
     }
 
@@ -129,12 +129,22 @@ fn criteria_to_sql(
         IsBetween => {
             params.push(values[0].clone());
             params.push(values[1].clone());
-            format!("{} BETWEEN ${} AND ${}", field, param_index, param_index + 1)
+            format!(
+                "{} BETWEEN ${} AND ${}",
+                field,
+                param_index,
+                param_index + 1
+            )
         }
         IsNotBetween => {
             params.push(values[0].clone());
             params.push(values[1].clone());
-            format!("{} NOT BETWEEN ${} AND ${}", field, param_index, param_index + 1)
+            format!(
+                "{} NOT BETWEEN ${} AND ${}",
+                field,
+                param_index,
+                param_index + 1
+            )
         }
         IsEmpty => format!("{} = ''", field),
         IsNotEmpty => format!("{} <> ''", field),

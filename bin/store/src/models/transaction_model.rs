@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct Transaction {
+pub struct TransactionModel {
     pub id: String,
     pub timestamp: String,
     #[serde(default = "default_status")]

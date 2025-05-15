@@ -36,6 +36,11 @@ message BatchUpdateParams {
   string table = 1; // Table name
 }
 
+// Common parameter structure for BatchDelete requests
+message BatchDeleteParams {
+  string table = 1; // Table name
+}
+
 // Common parameter structure for Update requests
 message UpdateParams {
   string id = 1; // Record ID
@@ -267,6 +272,23 @@ message BatchUpdateItemsResponse {
   repeated Items data = 4;
 }
 
+// BatchDelete Items request
+message BatchDeleteItemsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Items response
+message BatchDeleteItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Items data = 4;
+}
+
 // Delete Items request
 message DeleteItemsRequest {
   string id = 1;
@@ -276,6 +298,8 @@ message DeleteItemsRequest {
 message DeleteItemsResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  Items data = 4;
 }
 
 // BatchInsert Items request
@@ -358,6 +382,23 @@ message BatchUpdatePacketsResponse {
   repeated Packets data = 4;
 }
 
+// BatchDelete Packets request
+message BatchDeletePacketsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Packets response
+message BatchDeletePacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Packets data = 4;
+}
+
 // Delete Packets request
 message DeletePacketsRequest {
   string id = 1;
@@ -367,6 +408,8 @@ message DeletePacketsRequest {
 message DeletePacketsResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  Packets data = 4;
 }
 
 // BatchInsert Packets request
@@ -449,6 +492,23 @@ message BatchUpdateConnectionsResponse {
   repeated Connections data = 4;
 }
 
+// BatchDelete Connections request
+message BatchDeleteConnectionsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Connections response
+message BatchDeleteConnectionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Connections data = 4;
+}
+
 // Delete Connections request
 message DeleteConnectionsRequest {
   string id = 1;
@@ -458,6 +518,8 @@ message DeleteConnectionsRequest {
 message DeleteConnectionsResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  Connections data = 4;
 }
 
 // BatchInsert Connections request
@@ -540,6 +602,23 @@ message BatchUpdateCrdtMessagesResponse {
   repeated CrdtMessages data = 4;
 }
 
+// BatchDelete CrdtMessages request
+message BatchDeleteCrdtMessagesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete CrdtMessages response
+message BatchDeleteCrdtMessagesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  CrdtMessages data = 4;
+}
+
 // Delete CrdtMessages request
 message DeleteCrdtMessagesRequest {
   string id = 1;
@@ -549,6 +628,8 @@ message DeleteCrdtMessagesRequest {
 message DeleteCrdtMessagesResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  CrdtMessages data = 4;
 }
 
 // BatchInsert CrdtMessages request
@@ -631,6 +712,23 @@ message BatchUpdateCrdtMerklesResponse {
   repeated CrdtMerkles data = 4;
 }
 
+// BatchDelete CrdtMerkles request
+message BatchDeleteCrdtMerklesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete CrdtMerkles response
+message BatchDeleteCrdtMerklesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  CrdtMerkles data = 4;
+}
+
 // Delete CrdtMerkles request
 message DeleteCrdtMerklesRequest {
   string id = 1;
@@ -640,6 +738,8 @@ message DeleteCrdtMerklesRequest {
 message DeleteCrdtMerklesResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  CrdtMerkles data = 4;
 }
 
 // BatchInsert CrdtMerkles request
@@ -722,6 +822,23 @@ message BatchUpdateSyncEndpointsResponse {
   repeated SyncEndpoints data = 4;
 }
 
+// BatchDelete SyncEndpoints request
+message BatchDeleteSyncEndpointsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete SyncEndpoints response
+message BatchDeleteSyncEndpointsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SyncEndpoints data = 4;
+}
+
 // Delete SyncEndpoints request
 message DeleteSyncEndpointsRequest {
   string id = 1;
@@ -731,6 +848,8 @@ message DeleteSyncEndpointsRequest {
 message DeleteSyncEndpointsResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  SyncEndpoints data = 4;
 }
 
 // BatchInsert SyncEndpoints request
@@ -813,6 +932,23 @@ message BatchUpdateQueuesResponse {
   repeated Queues data = 4;
 }
 
+// BatchDelete Queues request
+message BatchDeleteQueuesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Queues response
+message BatchDeleteQueuesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Queues data = 4;
+}
+
 // Delete Queues request
 message DeleteQueuesRequest {
   string id = 1;
@@ -822,6 +958,8 @@ message DeleteQueuesRequest {
 message DeleteQueuesResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  Queues data = 4;
 }
 
 // BatchInsert Queues request
@@ -904,6 +1042,23 @@ message BatchUpdateQueueItemsResponse {
   repeated QueueItems data = 4;
 }
 
+// BatchDelete QueueItems request
+message BatchDeleteQueueItemsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete QueueItems response
+message BatchDeleteQueueItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  QueueItems data = 4;
+}
+
 // Delete QueueItems request
 message DeleteQueueItemsRequest {
   string id = 1;
@@ -913,6 +1068,8 @@ message DeleteQueueItemsRequest {
 message DeleteQueueItemsResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  QueueItems data = 4;
 }
 
 // BatchInsert QueueItems request
@@ -995,6 +1152,23 @@ message BatchUpdateTransactionsResponse {
   repeated Transactions data = 4;
 }
 
+// BatchDelete Transactions request
+message BatchDeleteTransactionsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Transactions response
+message BatchDeleteTransactionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Transactions data = 4;
+}
+
 // Delete Transactions request
 message DeleteTransactionsRequest {
   string id = 1;
@@ -1004,6 +1178,8 @@ message DeleteTransactionsRequest {
 message DeleteTransactionsResponse {
   bool success = 1;
   string message = 2;
+  int32 count = 3;
+  Transactions data = 4;
 }
 
 // BatchInsert Transactions request
@@ -1045,6 +1221,9 @@ service StoreService {
   // Batch update multiple Itemss based on filters
   rpc BatchUpdateItems(BatchUpdateItemsRequest) returns (BatchUpdateItemsResponse);
 
+  // Batch delete multiple Itemss based on filters
+  rpc BatchDeleteItems(BatchDeleteItemsRequest) returns (BatchDeleteItemsResponse);
+
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
 
@@ -1062,6 +1241,9 @@ service StoreService {
 
   // Batch update multiple Packetss based on filters
   rpc BatchUpdatePackets(BatchUpdatePacketsRequest) returns (BatchUpdatePacketsResponse);
+
+  // Batch delete multiple Packetss based on filters
+  rpc BatchDeletePackets(BatchDeletePacketsRequest) returns (BatchDeletePacketsResponse);
 
   // Create a new Connections
   rpc CreateConnections(CreateConnectionsRequest) returns (CreateConnectionsResponse);
@@ -1081,6 +1263,9 @@ service StoreService {
   // Batch update multiple Connectionss based on filters
   rpc BatchUpdateConnections(BatchUpdateConnectionsRequest) returns (BatchUpdateConnectionsResponse);
 
+  // Batch delete multiple Connectionss based on filters
+  rpc BatchDeleteConnections(BatchDeleteConnectionsRequest) returns (BatchDeleteConnectionsResponse);
+
   // Create a new CrdtMessages
   rpc CreateCrdtMessages(CreateCrdtMessagesRequest) returns (CreateCrdtMessagesResponse);
 
@@ -1098,6 +1283,9 @@ service StoreService {
 
   // Batch update multiple CrdtMessagess based on filters
   rpc BatchUpdateCrdtMessages(BatchUpdateCrdtMessagesRequest) returns (BatchUpdateCrdtMessagesResponse);
+
+  // Batch delete multiple CrdtMessagess based on filters
+  rpc BatchDeleteCrdtMessages(BatchDeleteCrdtMessagesRequest) returns (BatchDeleteCrdtMessagesResponse);
 
   // Create a new CrdtMerkles
   rpc CreateCrdtMerkles(CreateCrdtMerklesRequest) returns (CreateCrdtMerklesResponse);
@@ -1117,6 +1305,9 @@ service StoreService {
   // Batch update multiple CrdtMerkless based on filters
   rpc BatchUpdateCrdtMerkles(BatchUpdateCrdtMerklesRequest) returns (BatchUpdateCrdtMerklesResponse);
 
+  // Batch delete multiple CrdtMerkless based on filters
+  rpc BatchDeleteCrdtMerkles(BatchDeleteCrdtMerklesRequest) returns (BatchDeleteCrdtMerklesResponse);
+
   // Create a new SyncEndpoints
   rpc CreateSyncEndpoints(CreateSyncEndpointsRequest) returns (CreateSyncEndpointsResponse);
 
@@ -1134,6 +1325,9 @@ service StoreService {
 
   // Batch update multiple SyncEndpointss based on filters
   rpc BatchUpdateSyncEndpoints(BatchUpdateSyncEndpointsRequest) returns (BatchUpdateSyncEndpointsResponse);
+
+  // Batch delete multiple SyncEndpointss based on filters
+  rpc BatchDeleteSyncEndpoints(BatchDeleteSyncEndpointsRequest) returns (BatchDeleteSyncEndpointsResponse);
 
   // Create a new Queues
   rpc CreateQueues(CreateQueuesRequest) returns (CreateQueuesResponse);
@@ -1153,6 +1347,9 @@ service StoreService {
   // Batch update multiple Queuess based on filters
   rpc BatchUpdateQueues(BatchUpdateQueuesRequest) returns (BatchUpdateQueuesResponse);
 
+  // Batch delete multiple Queuess based on filters
+  rpc BatchDeleteQueues(BatchDeleteQueuesRequest) returns (BatchDeleteQueuesResponse);
+
   // Create a new QueueItems
   rpc CreateQueueItems(CreateQueueItemsRequest) returns (CreateQueueItemsResponse);
 
@@ -1171,6 +1368,9 @@ service StoreService {
   // Batch update multiple QueueItemss based on filters
   rpc BatchUpdateQueueItems(BatchUpdateQueueItemsRequest) returns (BatchUpdateQueueItemsResponse);
 
+  // Batch delete multiple QueueItemss based on filters
+  rpc BatchDeleteQueueItems(BatchDeleteQueueItemsRequest) returns (BatchDeleteQueueItemsResponse);
+
   // Create a new Transactions
   rpc CreateTransactions(CreateTransactionsRequest) returns (CreateTransactionsResponse);
 
@@ -1188,5 +1388,8 @@ service StoreService {
 
   // Batch update multiple Transactionss based on filters
   rpc BatchUpdateTransactions(BatchUpdateTransactionsRequest) returns (BatchUpdateTransactionsResponse);
+
+  // Batch delete multiple Transactionss based on filters
+  rpc BatchDeleteTransactions(BatchDeleteTransactionsRequest) returns (BatchDeleteTransactionsResponse);
 
 }

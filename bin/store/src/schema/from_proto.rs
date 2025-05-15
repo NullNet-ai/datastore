@@ -1,6 +1,6 @@
 use crate::generated::store;
-use crate::models::item_model::Item;
-use crate::models::packet_model::Packet;
+use crate::models::item_model::ItemModel;
+use crate::models::packet_model::PacketModel;
 use chrono::NaiveDateTime;
 use std::convert::From;
 use uuid::Uuid;

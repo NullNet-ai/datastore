@@ -1,5 +1,5 @@
 use crate::db;
-use crate::models::transaction_model::Transaction;
+use crate::models::transaction_model::TransactionModel;
 use crate::schema::schema::transactions;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -41,7 +41,7 @@ impl TransactionService {
         let active_transactions = transactions::table
             .filter(transactions::status.eq("active"))
             .order(transactions::timestamp.asc())
-            .load::<Transaction>(&mut conn)
+            .load::<TransactionModel>(&mut conn)
             .await?;
 
         // Expire all active transactions
@@ -77,7 +77,7 @@ impl TransactionService {
             .filter(transactions::status.eq("active"))
             .order(transactions::timestamp.asc())
             .limit(1)
-            .load::<Transaction>(conn)
+            .load::<TransactionModel>(conn)
             .await?;
 
         if let Some(transaction) = active_transactions.get(0) {
@@ -103,7 +103,7 @@ impl TransactionService {
         let expiry = now + 30000; // 30 seconds expiry
         let new_id = Uuid::new_v4().to_string();
 
-        let new_transaction = Transaction {
+        let new_transaction = TransactionModel {
             id: new_id.clone(),
             timestamp,
             status: "active".to_string(),

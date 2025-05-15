@@ -1,5 +1,5 @@
 use crate::db::DbPooledConnection;
-use crate::models::sync_endpoint_model::SyncEndpoint;
+use crate::models::sync_endpoint_model::SyncEndpointModel;
 use crate::schema::schema::sync_endpoints;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -10,8 +10,8 @@ use super::transport::transport_driver::PostOpts;
 
 pub async fn get_all_sync_endpoints(
     conn: &mut AsyncPgConnection,
-) -> Result<Vec<SyncEndpoint>, DieselError> {
-    let endpoints = sync_endpoints::table.load::<SyncEndpoint>(conn).await?;
+) -> Result<Vec<SyncEndpointModel>, DieselError> {
+    let endpoints = sync_endpoints::table.load::<SyncEndpointModel>(conn).await?;
 
     if endpoints.is_empty() {
         return Err(DieselError::NotFound);
@@ -22,7 +22,7 @@ pub async fn get_all_sync_endpoints(
 
 pub async fn create_endpoint(
     conn: &mut AsyncPgConnection,
-    endpoint: &SyncEndpoint,
+    endpoint: &SyncEndpointModel,
 ) -> Result<serde_json::Value, DieselError> {
     // Log the endpoint data (similar to console.log in the TypeScript version)
     log::info!("@schema.sync_endpoints {:?}", endpoint);

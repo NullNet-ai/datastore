@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = sync_endpoints)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct SyncEndpoint {
+pub struct SyncEndpointModel {
     pub id: String,
     pub name: String,
     pub url: String,

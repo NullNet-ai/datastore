@@ -2,8 +2,10 @@ use actix_web::{web, App, HttpServer};
 use auth::auth_middleware::Authentication;
 use dotenv::dotenv;
 use std::env;
-use templates::{grpc_controller_generator, proto_generator};
+use templates::proto_generator;
+use templates::grpc_controller::grpc_controller_generator;
 mod auth;
+mod batch_sync;
 mod controllers;
 mod db;
 mod models;
@@ -13,7 +15,7 @@ mod sync;
 mod table_enum;
 mod templates;
 mod utils;
-mod batch_sync;
+use crate::batch_sync::BatchSyncService;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -21,11 +23,13 @@ use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
-use controllers::store_controller::{create_record, update_record, batch_insert_records, batch_update_records};
-use crate::batch_sync::BatchSyncService;
+use controllers::store_controller::{
+    batch_delete_records, batch_insert_records, batch_update_records, create_record, update_record,
+};
 use env_logger::Env;
 use std::sync::Arc;
 pub mod generated;
+use std::process;
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
@@ -48,23 +52,22 @@ fn run_build_script() -> std::io::Result<()> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     let generate_proto = env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string());
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
     let merkle_manager = MerkleManager::instance();
     // if (generate_proto == "true") {
-        println!("Generating proto files");
-        // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
-        // run_build_script()?;
-        // Run the generator
-        // if let Err(e) = grpc_controller_generator::run_generator() {
-        //     eprintln!("Error: {}", e);
-        //     process::exit(1);
-    // }
+    println!("Generating proto files");
+    // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
+    // run_build_script()?;
+    // Run the generator
+    if let Err(e) = grpc_controller_generator::run_generator() {
+        eprintln!("Error: {}", e);
+        process::exit(1);
+    }
 
-    // println!("gRPC controller generation completed successfully!");
+    println!("gRPC controller generation completed successfully!");
 
     // }
     merkle_manager.load_trees_from_db().await;
@@ -86,7 +89,7 @@ async fn main() -> std::io::Result<()> {
     println!("Database connected successfully.");
     TransactionService::initialize().await;
 
-    let grpc_addr = format!("{}:{}",grpc_url, grpc_port);
+    let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
             Ok(_) => println!("gRPC server started successfully"),
@@ -94,7 +97,7 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
-    //init batch sync 
+    //init batch sync
     if let Err(e) = BatchSyncService::init().await {
         log::error!("Failed to initialize queue: {}", e);
     } else {
@@ -127,11 +130,12 @@ async fn main() -> std::io::Result<()> {
             .configure(sync_endpoints_controller::configure)
             .service(
                 web::scope("/api/store")
-                    // .wrap(Authentication)
+                    .wrap(Authentication)
                     .route("/{table}", web::post().to(create_record))
                     .route("/batch/{table}", web::patch().to(batch_update_records))
+                    .route("/batch/{table}", web::delete().to(batch_delete_records))
                     .route("/{table}/{id}", web::patch().to(update_record))
-                    .route("/batch/{table}", web::post().to(batch_insert_records))
+                    .route("/batch/{table}", web::post().to(batch_insert_records)),
             )
     })
     .bind(server_url)?

@@ -1,9 +1,9 @@
 use diesel::prelude::*;
-use serde::{Deserialize, Serialize};
 use ipnetwork::IpNetwork;
+use serde::{Deserialize, Serialize};
 
 #[derive(
-    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
 #[diesel(table_name = crate::schema::schema::connections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -24,7 +24,6 @@ pub struct ConnectionModel {
     pub requested_by: Option<String>,
     pub tags: Option<Vec<String>>,
 
-
     pub id: String,
     pub timestamp: chrono::NaiveDateTime,
     pub interface_name: Option<String>,
@@ -38,5 +37,4 @@ pub struct ConnectionModel {
     pub remote_ip: Option<IpNetwork>,
     pub source_port: Option<i32>,
     pub destination_port: Option<i32>,
-   
 }
