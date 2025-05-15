@@ -96,7 +96,7 @@ export class FindActorsImplementations {
           order_by = 'id',
           limit = 50,
           offset = 0,
-          pluck = ['id'],
+          pluck = [],
           advance_filters = [],
           joins = [],
           multiple_sort = [],
@@ -222,7 +222,7 @@ export class FindActorsImplementations {
         });
 
         let _pluck: string[] =
-          pluck.length && !pluck.includes('*') ? pluck : ['id', 'code'];
+          pluck.length && !pluck.includes('*') ? pluck : [];
         const { table_schema, schema } = Utility.checkTable(table);
         let _plucked_fields = Utility.parsePluckedFields(
           table,
