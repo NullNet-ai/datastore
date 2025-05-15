@@ -1511,7 +1511,9 @@ export class Utility {
   }) {
     if (encrypted_fields?.length) {
       this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
-      const encryption_key = sha1(`${organization_id}_${table}`);
+      const encryption_key = sha1(
+        `${organization_id}_${table}_${process.env.PGP_SYM_KEY}`,
+      );
       const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
           const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
@@ -1617,12 +1619,9 @@ export class Utility {
   ) {
     const values = `${Object.entries(data)
       .reduce((encryptedData: any[], [key, value]) => {
-        if ((encryption_keys as string[]).includes(key)) {
-          encryptedData.push(
-            `pgp_sym_encrypt('${value}', '${
-              encrypt_key ? encrypt_key : process.env.PGP_SYM_KEY
-            }')`,
-          );
+        // const _key = pluralize.isPlural(key)? `${}` : key;
+        if ((encryption_keys as string[]).includes(key) && encrypt_key) {
+          encryptedData.push(`pgp_sym_encrypt('${value}', '${encrypt_key}')`);
           return encryptedData;
         }
         const _value = typeof value === 'string' ? `'${value}'` : value;
@@ -1645,6 +1644,7 @@ export class Utility {
     let _entity = table;
 
     const field_parts = _field.split('.');
+
     if (field_parts.length === 2) {
       _field = field_parts[1] as string;
       _entity = field_parts[0] as string;
@@ -1670,6 +1670,11 @@ export class Utility {
       can_read &&
       pass_field_key
     ) {
+      console.log({
+        can_decrypt,
+        can_read,
+        encrypted_fields,
+      });
       const decrypted_field = `safe_decrypt(${data_type}::BYTEA, '${
         pass_field_key ? pass_field_key : encryption_key
       }', ${data_type})${
@@ -1683,10 +1688,6 @@ export class Utility {
     }
 
     if (value) {
-      console.log({
-        encrypted_fields,
-        field,
-      });
       if (!encrypted_fields.includes(field) && can_read) {
         return sql.raw(
           `maskIfBytea(${data_type})${
@@ -1905,6 +1906,7 @@ export class Utility {
       query: dpquery,
       account_organization_id: account_organization_id_fr_dp,
       schema: _aliased_schema,
+      valid_pass_keys_query,
     } = data_permissions_query;
     const custom_suffix = `${host}${cookie}${headers?.['user-agent'] ?? ''}}`;
     const main_table_permissions_cache_key = sha1(
@@ -1913,6 +1915,26 @@ export class Utility {
     const cached_permissions = JSON.parse(
       cache.get(main_table_permissions_cache_key),
     );
+    const cached_valid_pass_keys_key = sha1(
+      `${table}_valid_pass_keys:${custom_suffix}`,
+    );
+    const cached_valid_pass_keys = JSON.parse(
+      cache.get(cached_valid_pass_keys_key),
+    );
+    const valid_pass_keys: string[] = cached_valid_pass_keys
+      ? cached_valid_pass_keys
+      : await db
+          .execute(valid_pass_keys_query?.trim())
+          .then((response) => response.rows.map((row) => row.id))
+          .catch(() => []);
+
+    if (cached_valid_pass_keys === null) {
+      cache.put(
+        cached_valid_pass_keys_key,
+        JSON.stringify(valid_pass_keys),
+        Utility.getTimeMs(process.env.JWT_EXPIRES_IN ?? '2d'),
+      );
+    }
 
     const permissions = cached_permissions
       ? cached_permissions
@@ -1977,6 +1999,7 @@ export class Utility {
     return {
       metadata,
       permissions,
+      valid_pass_keys,
     };
   }
 }

@@ -76,19 +76,22 @@ export class FindActorsImplementations {
             },
           });
         }
-        const { metadata: _metadata, permissions } =
-          await Utility.getCachedPermissions('read', {
-            data_permissions_query,
-            host,
-            cookie,
-            headers,
-            table,
-            account_organization_id,
-            db: this.db,
-            body,
-            account_id: responsible_account.account_id,
-            metadata,
-          });
+        const {
+          metadata: _metadata,
+          permissions,
+          valid_pass_keys,
+        } = await Utility.getCachedPermissions('read', {
+          data_permissions_query,
+          host,
+          cookie,
+          headers,
+          table,
+          account_organization_id,
+          db: this.db,
+          body,
+          account_id: responsible_account.account_id,
+          metadata,
+        });
 
         metadata = _metadata;
         const {
@@ -109,11 +112,18 @@ export class FindActorsImplementations {
           is_case_sensitive_sorting = false,
           pluck_group_object = {},
           encrypted_fields = permissions.data
-            .filter((p) => p.sensitive)
+            .filter((p) => p.decrypt)
             .map((p) => `${p.entity}.${p.field}`),
           pass_field_key = '',
         } = body;
-
+        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
+          throw new BadRequestException({
+            success: false,
+            message: `Pass field key is not valid.`,
+            count: 0,
+            data: [],
+          });
+        }
         if (group_advance_filters.length && advance_filters.length) {
           throw new BadRequestException({
             success: false,
