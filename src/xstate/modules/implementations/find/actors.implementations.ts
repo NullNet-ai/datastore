@@ -9,14 +9,7 @@ import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
 import * as local_schema from '../../../../schema';
-import {
-  asc,
-  desc,
-  sql,
-  SQLWrapper,
-  AnyColumn,
-  aliasedTable,
-} from 'drizzle-orm';
+import { asc, desc, sql, aliasedTable } from 'drizzle-orm';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
@@ -455,130 +448,6 @@ export class FindActorsImplementations {
         date_format,
       );
 
-      const getSortSchemaAndField = (
-        order_by: string,
-        aliased_entities: Record<string, any>,
-        transformed_concatenations: IParsedConcatenatedFields['expressions'],
-        by_direction: string = 'asc',
-        is_case_sensitive_sorting: boolean = false,
-        group_by_selections: Record<string, any>,
-      ) => {
-        const by_entity_field = order_by.split('.');
-        let sort_entity: any = table;
-        let sort_schema = table_schema[by_entity_field[0] || 'id'];
-        if (by_entity_field.length > 1) {
-          const [_entity = '', by_field = 'id'] = by_entity_field;
-          const is_aliased = Object.values(aliased_entities).find(
-            ({ alias }) => alias === _entity,
-          );
-          sort_entity = !is_aliased ? pluralize(_entity) : _entity;
-          // if (!join_keys.includes(entity) && !is_aliased)
-          //   throw new BadRequestException({
-          //     success: false,
-          //     message: `Other than main entity, you can only sort by joined entities. ${entity} is not a joined entity nor an aliased joined entity.`,
-          //   });
-          if (
-            !schema[sort_entity]?.[by_field] &&
-            transformed_concatenations[sort_entity] &&
-            sort_entity === table
-            //if sort_entity is the main table and check if it has any field that is concatenated, and that field doesn't exist in the schema
-          ) {
-            const concatenation = transformed_concatenations[sort_entity]?.find(
-              (exp) => exp.includes(by_field),
-            );
-            sort_schema = concatenation
-              ? sql.raw(concatenation.split(' AS ')[0] as string)
-              : undefined;
-          } else if (
-            !schema[sort_entity]?.[by_field] &&
-            transformed_concatenations[sort_entity] &&
-            transformed_concatenations[sort_entity]?.find((exp) =>
-              exp.includes(by_field),
-            )
-            //if entity is not in the schema or its field is not in the schema and it is in the transformed concatenations and the field is in the transformed concatenations
-          ) {
-            const concat_sort_field: any = transformed_concatenations[
-              sort_entity
-            ]?.find((exp) => {
-              return exp.includes(by_field);
-            });
-            let sort_query = concat_sort_field.split(' AS ')[0];
-            if (!is_case_sensitive_sorting) {
-              sort_query = `lower(${sort_query})`;
-            }
-
-            if (by_direction.toLowerCase() === 'asc') {
-              return sql.raw(`MIN(${sort_query})`);
-            } else {
-              return sql.raw(`MAX(${sort_query})`);
-            }
-          } else if (sort_entity !== table) {
-            let sort_query: any = `"${sort_entity}"."${by_field}"`;
-            if (!is_case_sensitive_sorting) {
-              const sorted_field_type =
-                schema[sort_entity]?.[by_field]?.dataType;
-              if (sorted_field_type !== 'string') {
-                throw new BadRequestException(
-                  `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
-                );
-              }
-
-              sort_query = `lower(${sort_query})`;
-            }
-            if (by_direction.toLowerCase() === 'asc') {
-              return sql.raw(`MIN(${sort_query})`);
-            } else {
-              return sql.raw(`MAX(${sort_query})`);
-            }
-          } else {
-            let sort_query: any = `"${sort_entity}"."${by_field}"`;
-            if (Object.keys(group_by_selections).length) {
-              if (!is_case_sensitive_sorting) {
-                const sorted_field_type =
-                  schema[sort_entity]?.[by_field]?.dataType;
-                if (sorted_field_type !== 'string') {
-                  throw new BadRequestException(
-                    `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
-                  );
-                }
-                sort_query = `lower(${sort_query})`;
-              }
-              if (by_direction.toLowerCase() === 'asc') {
-                return sql.raw(`MIN(${sort_query})`);
-              } else {
-                return sql.raw(`MAX(${sort_query})`);
-              }
-            }
-
-            sort_schema = is_aliased
-              ? sql.raw(sort_query)
-              : schema[sort_entity][by_field];
-          }
-        }
-        if (Object.keys(group_by_selections).length) {
-          let sort_query: any = `"${sort_entity}"."${
-            by_entity_field[0] || 'id'
-          }"`;
-          if (!is_case_sensitive_sorting) {
-            const sorted_field_type =
-              schema[sort_entity]?.[by_entity_field[0] || 'id']?.dataType;
-            if (sorted_field_type !== 'string') {
-              throw new BadRequestException(
-                `Sorted field ${
-                  by_entity_field[0] || 'id'
-                } is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
-              );
-            }
-            sort_query = `lower(${sort_query})`;
-          }
-          if (by_direction.toLowerCase() === 'asc') {
-            return sql.raw(`MIN(${sort_query})`);
-          } else {
-            return sql.raw(`MAX(${sort_query})`);
-          }
-        }
-        return sort_schema as SQLWrapper | AnyColumn;
-      };
       const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
         Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       // if (group_by_agg_selections[order_by]) {
@@ -597,14 +466,16 @@ export class FindActorsImplementations {
                 by_field,
                 is_case_sensitive_sorting = false,
               }) => {
-                let sort_field_schema = getSortSchemaAndField(
-                  by_field,
-                  aliased_joined_entities,
+                let sort_field_schema = Utility.getSortSchemaAndField({
+                  table,
+                  table_schema,
+                  order_by: by_field,
+                  aliased_entities: aliased_joined_entities,
                   transformed_concatenations,
-                  by_direction,
+                  order_direction: by_direction,
                   is_case_sensitive_sorting,
                   group_by_selections,
-                );
+                });
                 const is_query_already_lowered = (() => {
                   try {
                     return JSON.stringify(sort_field_schema, null, 2).includes(
@@ -630,14 +501,16 @@ export class FindActorsImplementations {
             .filter(Boolean),
         );
       } else if (order_direction && order_by) {
-        let sort_field_schema = getSortSchemaAndField(
+        let sort_field_schema = Utility.getSortSchemaAndField({
+          table,
+          table_schema,
           order_by,
-          aliased_joined_entities,
+          aliased_entities: aliased_joined_entities,
           transformed_concatenations,
           order_direction,
           is_case_sensitive_sorting,
           group_by_selections,
-        );
+        });
         const is_query_already_lowered = (() => {
           try {
             return JSON.stringify(sort_field_schema, null, 2).includes('lower');
@@ -755,8 +628,7 @@ export class FindActorsImplementations {
             const concatenated_related_fields = _concatenate_fields.find(
               (f) => (f.aliased_entity || pluralize(f.entity)) === name,
             );
-            let [item] = cloned_item[name];
-
+            let [item = {}] = cloned_item?.[name] ?? [];
             if (concatenated_related_fields) {
               item = {
                 ...item,
