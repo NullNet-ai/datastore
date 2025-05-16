@@ -74,14 +74,6 @@ export class VerifyActionsImplementations {
             break;
         }
 
-        console.log('METHOD: ', method);
-        console.log('URL: ', url);
-        console.log('query_string: ', req_query);
-        console.log('tables');
-        console.table(tables);
-        console.log('main fields');
-        console.table(main_fields);
-
         const query = `
         SELECT entities.name as entity,fields.name as field,permissions.sensitive as sensitive,permissions.read as read,permissions.write as write,permissions.encrypt as encrypt,permissions.decrypt as decrypt,permissions.required as required,permissions.archive as archive,permissions.delete as delete, data_permissions.account_organization_id as account_organization_id FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '${
           responsible_account.account_organization_id

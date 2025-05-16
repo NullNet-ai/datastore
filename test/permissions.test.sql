@@ -2,12 +2,12 @@
 update permissions SET 
 -- for read
 read = true,
-decrypt = true,
+decrypt = false,
+sensitive = true,
 -- for write ( TODO )
 encrypt = true,
 write = true,
 -- others ( TODO ) - use for frontend display as actions
-sensitive = true,
 required = true,
 archive = true,
 delete = true

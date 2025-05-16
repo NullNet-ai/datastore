@@ -234,14 +234,14 @@ export class FindActorsImplementations {
         let _pluck: string[] =
           pluck.length && !pluck.includes('*') ? pluck : [];
         const { table_schema, schema } = Utility.checkTable(table);
-        let _plucked_fields = Utility.parsePluckedFields(
+        let _plucked_fields = Utility.parsePluckedFields({
           table,
-          _pluck,
+          pluck: _pluck,
           date_format,
-          false,
           encrypted_fields,
           time_zone,
-        );
+          pass_field_key,
+        });
         _plucked_fields = Utility.parseMainConcatenations(
           concatenate_fields,
           table,
@@ -394,6 +394,7 @@ export class FindActorsImplementations {
             multiple_sort,
             encrypted_fields,
             time_zone,
+            pass_field_key,
           });
 
           let count_selection = {};
@@ -482,6 +483,7 @@ export class FindActorsImplementations {
           table,
           date_format,
           pass_field_key,
+          permissions
         });
 
         const getSortSchemaAndField = (

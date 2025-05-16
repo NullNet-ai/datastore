@@ -56,16 +56,17 @@ export class GetActorsImplementations {
       pluck = 'id',
       date_format = 'mm/dd/YYYY',
       encrypted_fields = [],
+      pfk: pass_field_key = '',
     } = query;
     const { table_schema } = Utility.checkTable(table);
-    const _plucked_fields = Utility.parsePluckedFields(
+    const _plucked_fields = Utility.parsePluckedFields({
       table,
-      pluck.split(','),
+      pluck: pluck.split(','),
       date_format,
-      false,
       encrypted_fields,
       time_zone,
-    );
+      pass_field_key,
+    });
 
     if (table === 'counters') {
       return Promise.resolve({
