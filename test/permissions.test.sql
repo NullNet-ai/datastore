@@ -3,7 +3,7 @@ update permissions SET
 -- for read
 read = true,
 decrypt = true,
-sensitive = false,
+sensitive = true,
 -- for write ( TODO )
 encrypt = true,
 write = true,
