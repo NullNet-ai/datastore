@@ -5,7 +5,7 @@ read = true,
 decrypt = true,
 sensitive = true,
 -- for write ( TODO )
-encrypt = true,
+encrypt = false,
 write = true,
 -- others ( TODO ) - use for frontend display as actions
 required = true,
