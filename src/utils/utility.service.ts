@@ -1654,14 +1654,24 @@ export class Utility {
       const encryption_key = sha1(
         `${organization_id}_${table}_${process.env.PGP_SYM_KEY}`,
       );
+
       const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
-          const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
-          if (encrypted_fields.includes(key)) {
-            acc.push(
-              `${key} = pgp_sym_encrypt(${_value}, '${encryption_key}')`,
-            );
-          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other field
+          let _value = `${typeof value === 'string' ? `'${value}'` : value}`;
+          if (Array.isArray(value)) {
+            _value = `to_jsonb(ARRAY[${value
+              .map((v) => `'${v}'`)
+              .join(', ')}])`;
+          }
+
+          if (encrypted_fields.includes(`${table}.${key}`)) {
+            if (Array.isArray(value))
+              _value = `safe_encrypt_array(${_value}, '${encryption_key}')`;
+            else
+              acc.push(`${key} = safe_encrypt(${_value}, '${encryption_key}')`);
+          } else {
+            acc.push(`${key} = ${_value}`);
+          } // Push the unencrypted value for other field
           return acc;
         }, [])
         .join(',')}`;
@@ -1670,22 +1680,23 @@ export class Utility {
           INSERT INTO encryption_keys (id, entity, organization_id, created_by, timestamp, tombstone) 
           VALUES(
             '${encryption_key}', 
-            pgp_sym_encrypt('${table}', '${process.env.PGP_SYM_KEY}'), 
-            pgp_sym_encrypt('${organization_id}', '${process.env.PGP_SYM_KEY}'),
+            safe_encrypt('${table}', '${process.env.PGP_SYM_KEY}'), 
+            safe_encrypt('${organization_id}', '${process.env.PGP_SYM_KEY}'),
             '${account_id}',
             '${new Date().toISOString()}',
             0
           ) ON CONFLICT (id) DO NOTHING;
           `;
-      const _values = `${Object.keys(data)}) VALUES (${Utility.encryptData(
+      const _values = `(${Object.keys(data)}) VALUES (${Utility.encryptData(
         data,
         encrypted_fields,
         encryption_key,
-      )}`;
+        table,
+      )})`;
       const query = `
       BEGIN;
       ${ek_query}
-      INSERT INTO ${table} (${_values}) ON CONFLICT (id) DO UPDATE SET ${set_val};
+      INSERT INTO ${table} ${_values} ON CONFLICT (id) DO UPDATE SET ${set_val};
       COMMIT;`;
       this.logger.debug(`Encrypting data: ${query}`);
       return db.execute(sql.raw(query)).then(() => {
@@ -1723,7 +1734,7 @@ export class Utility {
           const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
           if (encrypted_fields.includes(key)) {
             acc.push(
-              `${key} = pgp_sym_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
+              `${key} = safe_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
             );
           } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
           return acc;
@@ -1756,15 +1767,26 @@ export class Utility {
     data: Record<string, any>,
     encryption_keys,
     encrypt_key = '',
+    table,
   ) {
     const values = `${Object.entries(data)
       .reduce((encryptedData: any[], [key, value]) => {
-        // const _key = pluralize.isPlural(key)? `${}` : key;
-        if ((encryption_keys as string[]).includes(key) && encrypt_key) {
-          encryptedData.push(`pgp_sym_encrypt('${value}', '${encrypt_key}')`);
+        let _value = typeof value === 'string' ? `'${value}'` : value;
+        if (Array.isArray(value)) {
+          _value = `to_jsonb(ARRAY[${value.map((v) => `'${v}'`).join(', ')}])`;
+        }
+
+        if (
+          (encryption_keys as string[]).includes(`${table}.${key}`) &&
+          encrypt_key
+        ) {
+          if (Array.isArray(value))
+            _value = `safe_encrypt_array(${_value}, '${encrypt_key}')`;
+          else _value = `safe_encrypt(${_value}, '${encrypt_key}')`;
+          encryptedData.push(_value);
           return encryptedData;
         }
-        const _value = typeof value === 'string' ? `'${value}'` : value;
+
         encryptedData.push(_value !== undefined ? _value : null);
         return encryptedData;
       }, [])
@@ -1812,9 +1834,6 @@ export class Utility {
 
     const encrypted_field = `${_entity ? `${_entity}.` : ''}${_field}`;
     let data_type = `${encrypted_field}`;
-    if (pluralize.isPlural(encrypted_field)) {
-      data_type = `${encrypted_field}::TEXT`;
-    }
 
     if (
       encrypted_fields.includes(encrypted_field) &&
@@ -1822,11 +1841,13 @@ export class Utility {
       can_read &&
       pass_field_key
     ) {
-      const decrypted_field = `safe_decrypt(${data_type}::BYTEA, '${
-        pass_field_key ? pass_field_key : encryption_key
-      }', ${data_type})${
-        pluralize.isPlural(encrypted_field) ? '::TEXT[]' : ''
-      }`;
+      let decrypted_field = pluralize.isPlural(_field)
+        ? `safe_decrypt_array(to_jsonb(${data_type}), '${
+            pass_field_key ? pass_field_key : encryption_key
+          }')`
+        : `safe_decrypt(${data_type}::BYTEA, '${
+            pass_field_key ? pass_field_key : encryption_key
+          }')`;
 
       if (value && decrypted_field !== field) {
         return sql.raw(`${decrypted_field}`);
@@ -1836,11 +1857,7 @@ export class Utility {
 
     if (value) {
       if (!encrypted_fields.includes(field) && can_read) {
-        return sql.raw(
-          `${Utility.maskValue({ field: data_type, can_mask })}${
-            pluralize.isPlural(field) ? '::TEXT[]' : ''
-          }`,
-        );
+        return sql.raw(`${Utility.maskValue({ field: data_type, can_mask })}`);
       }
       return value;
     }
@@ -2100,7 +2117,8 @@ export class Utility {
             cache: false,
           }))
           .catch(() => []);
-
+    console.log('PERMISSIONS');
+    console.table(permissions.data);
     this.logger.debug(
       `data_permissions_query: ${data_permissions_query.query}`,
     );

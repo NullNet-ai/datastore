@@ -5,6 +5,7 @@ import {
   getConfigDefaults,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
+import { sql } from 'drizzle-orm';
 
 const filename = path.basename(__filename).replace(fileRegex, '');
 const config = getConfigDefaults.byIndex(filename);
@@ -15,7 +16,7 @@ export const table = pgTable(
     id: text('id').primaryKey(),
     name: text('name'),
     sample_text: text('sample_text'),
-    test_obj: jsonb().default([]),
+    test_obj: jsonb('test_obj').default(sql`'{}'::jsonb`),
     // time: timestamp('time', { withTimezone: true }), // NOT NULL timestamp
     // temperature: doublePrecision('temperature'), // NOT NULL double precision
     // humidity: doublePrecision('humidity'), // NOT NULL double precision

@@ -176,8 +176,7 @@ export class CreateActorsImplementations {
             data: [],
           });
         }
-        // // @ts-ignore
-        // return 'test';
+   
 
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);
