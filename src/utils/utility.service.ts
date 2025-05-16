@@ -417,6 +417,10 @@ export class Utility {
           const previous_join = nested ? joins[index - 1] : null;
           const { from: prev_join_from, to: prev_join_to } =
             previous_join?.field_relation ?? {};
+          const prev_join_to_entity =
+            previous_join?.type === 'self'
+              ? prev_join_from?.alias || prev_join_to?.entity
+              : prev_join_to?.alias || prev_join_to?.entity;
 
           // Only process if the entity has pluck_object fields
           const entity_concatenated_fields = concatenated_fields[toAlias] || [];
@@ -430,7 +434,7 @@ export class Utility {
               Utility.formatIfDate(
                 Utility.decryptField(field, encrypted_fields),
                 date_format,
-                nested ? toAlias : toEntity,
+                toAlias,
                 fields,
                 time_zone,
               ),
@@ -441,7 +445,7 @@ export class Utility {
                 Utility.formatIfDate(
                   field,
                   date_format,
-                  nested ? toAlias : toEntity,
+                  toAlias,
                   fields,
                   time_zone,
                   !!entity_concatenated_expressions.length,
@@ -449,23 +453,21 @@ export class Utility {
                 ),
               );
 
-            const default_filter_clause = `"${toEntity}"."tombstone" = 0 ${
+            const default_filter_clause = `"${toAlias}"."tombstone" = 0 ${
               request_type !== 'root'
-                ? `AND "${toEntity}"."organization_id" IS NOT NULL AND "${toEntity}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
+                ? `AND "${toAlias}"."organization_id" IS NOT NULL AND "${toAlias}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
                 : ''
             }`;
 
-            let additional_where_and_clause = ` AND "${from.entity}"."${from.field}" = "${toEntity}"."${to.field}"`;
+            let additional_where_and_clause = ` AND "${from.entity}"."${from.field}" = "${toAlias}"."${to.field}"`;
             if (nested)
-              additional_where_and_clause = ` AND "${
-                prev_join_to?.entity
-              }"."tombstone" = 0 ${
+              additional_where_and_clause = ` AND "${prev_join_to_entity}"."tombstone" = 0 ${
                 request_type !== 'root'
-                  ? `AND "${prev_join_to?.entity}"."organization_id" IS NOT NULL AND "${prev_join_to?.entity}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
+                  ? `AND "${prev_join_to_entity}"."organization_id" IS NOT NULL AND "${prev_join_to_entity}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
                   : ''
-              } AND "${prev_join_from?.entity}"."${prev_join_from?.field}" = "${
-                prev_join_to?.entity
-              }"."${prev_join_to?.field}"`;
+              } AND "${prev_join_from?.entity}"."${
+                prev_join_from?.field
+              }" = "${prev_join_to_entity}"."${prev_join_to?.field}"`;
 
             const joined_sort = [
               ...(join_order_by && join_order_direction
@@ -504,6 +506,8 @@ export class Utility {
               .filter(Boolean)
               .join(', ');
 
+            const from_entity = `${nested ? prev_join_to?.entity : toEntity}`;
+            const from_alias = `${nested ? prev_join_to_entity : toAlias}`;
             const jsonAggSelection = sql
               .raw(
                 `COALESCE(
@@ -517,10 +521,12 @@ export class Utility {
                       ...jsonAggFields,
                       ...jsonAggConcatenatedFields,
                     ].join(', ')}) AS elem
-                  FROM "${nested ? prev_join_to?.entity : toEntity}"
+                  FROM "${from_entity}"${
+                  from_entity !== from_alias ? ` "${from_alias}"` : ''
+                }
                   ${
                     nested
-                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."id" = "${prev_join_to?.entity}"."${from.field}"`
+                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."id" = "${prev_join_to_entity}"."${from.field}"`
                       : ''
                   }
                   WHERE (${default_filter_clause}${additional_where_and_clause})
