@@ -2,7 +2,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use crate::utils::utils::{parse_tables, Table, Field};
+use crate::utils::utils::{parse_tables, Field, Table};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
     println!("Starting proto generation from schema: {}", schema_path);
@@ -99,7 +99,6 @@ fn clean_output_directory(output_dir: &str) -> std::io::Result<()> {
 
     Ok(())
 }
-
 
 pub fn generate_unified_proto(tables: &[Table]) -> String {
     let mut proto = String::new();

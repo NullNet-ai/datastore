@@ -1,4 +1,5 @@
 use singularize::singularize;
+use crate::schema::system_tables::is_system_table;
 
 use crate::templates::proto_generator::diesel_type_to_proto;
 
@@ -7,7 +8,6 @@ pub fn to_singular(table_name: &str) -> String {
     singular.make_ascii_lowercase();
     singular
 }
-
 
 #[derive(Clone)]
 pub struct Table {
@@ -54,6 +54,14 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
                 let name_part = line.split('(').next().unwrap_or("").trim();
                 if !name_part.is_empty() {
                     table_name = name_part.to_string();
+
+                    if is_system_table(&table_name) {
+                        println!("Skipping system table: {}", table_name);
+                        in_table_def = false;
+                        table_name = String::new();
+                        continue;
+                    }
+
                     println!("Found table: {}", table_name);
                     current_table = Some(Table {
                         name: table_name.clone(),

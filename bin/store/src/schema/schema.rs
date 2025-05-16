@@ -1,29 +1,6 @@
 use diesel::table;
 
 table! {
-    items (id) {
-        tombstone -> Int4,
-        status -> Text,
-        previous_status -> Nullable<Text>,
-        version -> Int4,
-        created_date -> Nullable<Text>,
-        created_time -> Nullable<Text>,
-        updated_date -> Nullable<Text>,
-        updated_time -> Nullable<Text>,
-        organization_id -> Nullable<Text>,
-        created_by -> Nullable<Text>,
-        updated_by -> Nullable<Text>,
-        deleted_by -> Nullable<Text>,
-        requested_by -> Nullable<Text>,
-        tags -> Array<Text>,
-
-        id -> Int4,
-        name -> Varchar,
-        description -> Nullable<Text>,
-    }
-}
-
-table! {
     packets (id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,

@@ -1,4 +1,4 @@
-use crate::models::crdt_merkle_model::{MerkleModel, ParsedMerkle};
+use crate::models::crdt_merkle_model::{CrdtMerkleModel, ParsedMerkle};
 use crate::schema::schema::crdt_merkles;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -17,7 +17,7 @@ impl MerkleService {
     ) -> Result<Option<ParsedMerkle>, DieselError> {
         let merkles = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(group_id))
-            .load::<MerkleModel>(tx)
+            .load::<CrdtMerkleModel>(tx)
             .await?;
         if merkles.is_empty() {
             return Ok(None);
@@ -56,7 +56,7 @@ impl MerkleService {
         })?;
         let exists = crdt_merkles::table
             .filter(crdt_merkles::group_id.eq(&group_id))
-            .first::<MerkleModel>(tx)
+            .first::<CrdtMerkleModel>(tx)
             .await
             .optional()?
             .is_some();

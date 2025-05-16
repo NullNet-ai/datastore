@@ -1,11 +1,11 @@
+use crate::templates::proto_generator::{Case, CaseConvert};
+use crate::utils::utils::{parse_tables, to_singular};
 use regex::Regex;
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
-use std::process::Command;
-use crate::utils::utils::{parse_tables, to_singular};
 use std::process;
-use crate::templates::proto_generator::{Case, CaseConvert};
+use std::process::Command;
 
 pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Result<()> {
     println!("Generating gRPC controller from proto file: {}", proto_path);
@@ -20,18 +20,15 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
 
     let mut service_name = String::new();
     let mut rpc_methods = Vec::new();
-    let schema_path="src/schema/schema.rs";
-    let schema=match fs::read_to_string(schema_path) {
-        Ok(content) => {
-            content
-        }
+    let schema_path = "src/schema/schema.rs";
+    let schema = match fs::read_to_string(schema_path) {
+        Ok(content) => content,
         Err(e) => {
             eprintln!("Error reading schema file: {}", e);
             process::exit(1);
         }
     };
     let tables = parse_tables(&schema);
-
 
     if let Some(captures) = service_regex.captures(&proto_content) {
         service_name = captures.get(1).unwrap().as_str().to_string();
@@ -72,9 +69,16 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "use tonic::{{Request, Response, Status, transport::Server}};"
     )?;
-    writeln!(file, "use crate::auth::auth_middleware::GrpcAuthInterceptor;")?;
+    writeln!(
+        file,
+        "use crate::auth::auth_middleware::GrpcAuthInterceptor;"
+    )?;
     writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy}};")?;
-    writeln!(file, "use crate::generated::store::store_service_server::{{{}Server, {} }};", service_name, service_name)?;
+    writeln!(
+        file,
+        "use crate::generated::store::store_service_server::{{{}Server, {} }};",
+        service_name, service_name
+    )?;
     writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method}};")?;
 
     // Import request and response types
@@ -85,45 +89,75 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         }
         // Import the main type
         write!(file, "{}", table.name.to_case(Case::Pascal))?;
-        
+
         // Import all related request/response types
-        write!(file, ", Create{}Request, Create{}Response", 
-            table.name.to_case(Case::Pascal), 
-            table.name.to_case(Case::Pascal))?;
-        write!(file, ", Get{}Request, Get{}Response",
+        write!(
+            file,
+            ", Create{}Request, Create{}Response",
             table.name.to_case(Case::Pascal),
-            table.name.to_case(Case::Pascal))?;
-        write!(file, ", Update{}Request, Update{}Response",
+            table.name.to_case(Case::Pascal)
+        )?;
+        write!(
+            file,
+            ", Get{}Request, Get{}Response",
             table.name.to_case(Case::Pascal),
-            table.name.to_case(Case::Pascal))?;
-        write!(file, ", Delete{}Request, Delete{}Response",
+            table.name.to_case(Case::Pascal)
+        )?;
+        write!(
+            file,
+            ", Update{}Request, Update{}Response",
             table.name.to_case(Case::Pascal),
-            table.name.to_case(Case::Pascal))?;
-        write!(file, ", BatchInsert{}Request, BatchInsert{}Response",
+            table.name.to_case(Case::Pascal)
+        )?;
+        write!(
+            file,
+            ", Delete{}Request, Delete{}Response",
             table.name.to_case(Case::Pascal),
-            table.name.to_case(Case::Pascal))?;
-        write!(file, ", BatchUpdate{}Request, BatchUpdate{}Response",
+            table.name.to_case(Case::Pascal)
+        )?;
+        write!(
+            file,
+            ", BatchInsert{}Request, BatchInsert{}Response",
             table.name.to_case(Case::Pascal),
-            table.name.to_case(Case::Pascal))?;
-        write!(file, ", BatchDelete{}Request, BatchDelete{}Response",
+            table.name.to_case(Case::Pascal)
+        )?;
+        write!(
+            file,
+            ", BatchUpdate{}Request, BatchUpdate{}Response",
             table.name.to_case(Case::Pascal),
-            table.name.to_case(Case::Pascal))?;
+            table.name.to_case(Case::Pascal)
+        )?;
+        write!(
+            file,
+            ", BatchDelete{}Request, BatchDelete{}Response",
+            table.name.to_case(Case::Pascal),
+            table.name.to_case(Case::Pascal)
+        )?;
     }
     writeln!(file, "}};")?;
-
 
     // Initialize method
     writeln!(file, "pub struct GrpcController {{}}\n")?;
     writeln!(file, "impl GrpcController {{")?;
     writeln!(file, "    pub fn new() -> Self {{ GrpcController {{}} }}")?;
-    writeln!(file, "\n    pub async fn init(addr: &str) -> Result<(), Box<dyn std::error::Error>> {{")?;
+    writeln!(
+        file,
+        "\n    pub async fn init(addr: &str) -> Result<(), Box<dyn std::error::Error>> {{"
+    )?;
     writeln!(file, "        let addr: SocketAddr = addr.parse()?;")?;
     writeln!(file, "        let grpc_controller = GrpcController::new();")?;
-    writeln!(file, "        println!(\"gRPC Server listening on {{}}\", addr);")?;
-    writeln!(file, "        Server::builder()
+    writeln!(
+        file,
+        "        println!(\"gRPC Server listening on {{}}\", addr);"
+    )?;
+    writeln!(
+        file,
+        "        Server::builder()
             .add_service({}Server::with_interceptor(grpc_controller, GrpcAuthInterceptor))
             .serve(addr)
-            .await?;", service_name)?;
+            .await?;",
+        service_name
+    )?;
     writeln!(file, "        Ok(())")?;
     writeln!(file, "    }}")?;
     writeln!(file, "}}\n")?;
@@ -138,18 +172,18 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         writeln!(file, "    // CRUD methods for {}", table.name)?;
 
         writeln!(file, "    generate_create_method!({});", table.name)?;
-        writeln!(file, "    generate_update_method!({}, {});", table.name, singular_name)?;
+        writeln!(
+            file,
+            "    generate_update_method!({}, {});",
+            table.name, singular_name
+        )?;
         writeln!(file, "    generate_batch_insert_method!({});", table.name)?;
         writeln!(file, "    generate_batch_update_method!({});", table.name)?;
         writeln!(file, "    generate_get_method!({});", table.name)?;
         writeln!(file, "    generate_delete_method!({});", table.name)?;
         writeln!(file, "    generate_batch_delete_method!({});", table.name)?;
-
-
-
     }
     writeln!(file, "}}")?;
-
 
     // Add HTTP endpoints
     writeln!(

@@ -11,7 +11,9 @@ use super::transport::transport_driver::PostOpts;
 pub async fn get_all_sync_endpoints(
     conn: &mut AsyncPgConnection,
 ) -> Result<Vec<SyncEndpointModel>, DieselError> {
-    let endpoints = sync_endpoints::table.load::<SyncEndpointModel>(conn).await?;
+    let endpoints = sync_endpoints::table
+        .load::<SyncEndpointModel>(conn)
+        .await?;
 
     if endpoints.is_empty() {
         return Err(DieselError::NotFound);

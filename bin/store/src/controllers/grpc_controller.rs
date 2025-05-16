@@ -11,7 +11,7 @@ use crate::auth::auth_middleware::GrpcAuthInterceptor;
 use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy};
 use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
 use crate::{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method};
-use crate::generated::store::{Items, CreateItemsRequest, CreateItemsResponse, GetItemsRequest, GetItemsResponse, UpdateItemsRequest, UpdateItemsResponse, DeleteItemsRequest, DeleteItemsResponse, BatchInsertItemsRequest, BatchInsertItemsResponse, BatchUpdateItemsRequest, BatchUpdateItemsResponse, BatchDeleteItemsRequest, BatchDeleteItemsResponse, Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, CrdtMessages, CreateCrdtMessagesRequest, CreateCrdtMessagesResponse, GetCrdtMessagesRequest, GetCrdtMessagesResponse, UpdateCrdtMessagesRequest, UpdateCrdtMessagesResponse, DeleteCrdtMessagesRequest, DeleteCrdtMessagesResponse, BatchInsertCrdtMessagesRequest, BatchInsertCrdtMessagesResponse, BatchUpdateCrdtMessagesRequest, BatchUpdateCrdtMessagesResponse, BatchDeleteCrdtMessagesRequest, BatchDeleteCrdtMessagesResponse, CrdtMerkles, CreateCrdtMerklesRequest, CreateCrdtMerklesResponse, GetCrdtMerklesRequest, GetCrdtMerklesResponse, UpdateCrdtMerklesRequest, UpdateCrdtMerklesResponse, DeleteCrdtMerklesRequest, DeleteCrdtMerklesResponse, BatchInsertCrdtMerklesRequest, BatchInsertCrdtMerklesResponse, BatchUpdateCrdtMerklesRequest, BatchUpdateCrdtMerklesResponse, BatchDeleteCrdtMerklesRequest, BatchDeleteCrdtMerklesResponse, SyncEndpoints, CreateSyncEndpointsRequest, CreateSyncEndpointsResponse, GetSyncEndpointsRequest, GetSyncEndpointsResponse, UpdateSyncEndpointsRequest, UpdateSyncEndpointsResponse, DeleteSyncEndpointsRequest, DeleteSyncEndpointsResponse, BatchInsertSyncEndpointsRequest, BatchInsertSyncEndpointsResponse, BatchUpdateSyncEndpointsRequest, BatchUpdateSyncEndpointsResponse, BatchDeleteSyncEndpointsRequest, BatchDeleteSyncEndpointsResponse, Queues, CreateQueuesRequest, CreateQueuesResponse, GetQueuesRequest, GetQueuesResponse, UpdateQueuesRequest, UpdateQueuesResponse, DeleteQueuesRequest, DeleteQueuesResponse, BatchInsertQueuesRequest, BatchInsertQueuesResponse, BatchUpdateQueuesRequest, BatchUpdateQueuesResponse, BatchDeleteQueuesRequest, BatchDeleteQueuesResponse, QueueItems, CreateQueueItemsRequest, CreateQueueItemsResponse, GetQueueItemsRequest, GetQueueItemsResponse, UpdateQueueItemsRequest, UpdateQueueItemsResponse, DeleteQueueItemsRequest, DeleteQueueItemsResponse, BatchInsertQueueItemsRequest, BatchInsertQueueItemsResponse, BatchUpdateQueueItemsRequest, BatchUpdateQueueItemsResponse, BatchDeleteQueueItemsRequest, BatchDeleteQueueItemsResponse, Transactions, CreateTransactionsRequest, CreateTransactionsResponse, GetTransactionsRequest, GetTransactionsResponse, UpdateTransactionsRequest, UpdateTransactionsResponse, DeleteTransactionsRequest, DeleteTransactionsResponse, BatchInsertTransactionsRequest, BatchInsertTransactionsResponse, BatchUpdateTransactionsRequest, BatchUpdateTransactionsResponse, BatchDeleteTransactionsRequest, BatchDeleteTransactionsResponse};
+use crate::generated::store::{Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse};
 pub struct GrpcController {}
 
 impl GrpcController {
@@ -31,14 +31,6 @@ impl GrpcController {
 
 #[tonic::async_trait]
 impl StoreService for GrpcController {
-    // CRUD methods for items
-    generate_create_method!(items);
-    generate_update_method!(items, item);
-    generate_batch_insert_method!(items);
-    generate_batch_update_method!(items);
-    generate_get_method!(items);
-    generate_delete_method!(items);
-    generate_batch_delete_method!(items);
     // CRUD methods for packets
     generate_create_method!(packets);
     generate_update_method!(packets, packet);
@@ -55,54 +47,6 @@ impl StoreService for GrpcController {
     generate_get_method!(connections);
     generate_delete_method!(connections);
     generate_batch_delete_method!(connections);
-    // CRUD methods for crdt_messages
-    generate_create_method!(crdt_messages);
-    generate_update_method!(crdt_messages, crdt_message);
-    generate_batch_insert_method!(crdt_messages);
-    generate_batch_update_method!(crdt_messages);
-    generate_get_method!(crdt_messages);
-    generate_delete_method!(crdt_messages);
-    generate_batch_delete_method!(crdt_messages);
-    // CRUD methods for crdt_merkles
-    generate_create_method!(crdt_merkles);
-    generate_update_method!(crdt_merkles, crdt_merkle);
-    generate_batch_insert_method!(crdt_merkles);
-    generate_batch_update_method!(crdt_merkles);
-    generate_get_method!(crdt_merkles);
-    generate_delete_method!(crdt_merkles);
-    generate_batch_delete_method!(crdt_merkles);
-    // CRUD methods for sync_endpoints
-    generate_create_method!(sync_endpoints);
-    generate_update_method!(sync_endpoints, sync_endpoint);
-    generate_batch_insert_method!(sync_endpoints);
-    generate_batch_update_method!(sync_endpoints);
-    generate_get_method!(sync_endpoints);
-    generate_delete_method!(sync_endpoints);
-    generate_batch_delete_method!(sync_endpoints);
-    // CRUD methods for queues
-    generate_create_method!(queues);
-    generate_update_method!(queues, queue);
-    generate_batch_insert_method!(queues);
-    generate_batch_update_method!(queues);
-    generate_get_method!(queues);
-    generate_delete_method!(queues);
-    generate_batch_delete_method!(queues);
-    // CRUD methods for queue_items
-    generate_create_method!(queue_items);
-    generate_update_method!(queue_items, queue_item);
-    generate_batch_insert_method!(queue_items);
-    generate_batch_update_method!(queue_items);
-    generate_get_method!(queue_items);
-    generate_delete_method!(queue_items);
-    generate_batch_delete_method!(queue_items);
-    // CRUD methods for transactions
-    generate_create_method!(transactions);
-    generate_update_method!(transactions, transaction);
-    generate_batch_insert_method!(transactions);
-    generate_batch_update_method!(transactions);
-    generate_get_method!(transactions);
-    generate_delete_method!(transactions);
-    generate_batch_delete_method!(transactions);
 }
 
 // You can add HTTP endpoints to configure or check gRPC status

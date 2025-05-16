@@ -2,15 +2,19 @@ use crate::batch_sync::BatchSyncService;
 use crate::db::{self, create_connection};
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, RequestBody, SqlUpdate};
+use crate::sync::sync_service::{insert, update};
+use crate::table_enum::Table;
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
+use actix_web::{http, HttpResponse};
 use bytes::Bytes;
 use csv::WriterBuilder;
 use futures::{pin_mut, SinkExt};
-use serde_json::Value;
+use serde_json::{json, Value};
 use tokio_postgres::Client;
 use tonic::Status;
-use crate::table_enum::Table;
+
+use super::store_controller::ApiError;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -361,7 +365,6 @@ pub async fn perform_batch_update(
         .iter()
         .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
         .collect();
-    
 
     let rows = client
         .query(&sql, &pg_params[..])
@@ -395,9 +398,8 @@ pub fn sanitize_updates(mut record: serde_json::Map<String, Value>) -> Option<Va
     }
 }
 
-
 //Insert request
-
+type ControllerResult = Result<ApiResponse, ApiError>;
 pub async fn process_record_for_insert<T: serde::Serialize>(
     record: T,
     table_name: &str,
@@ -429,6 +431,46 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
     Ok(record_value)
 }
 
+pub async fn process_and_insert_record(
+    table_name: &str,
+    record: Value,
+    pluck_fields    : Option<Vec<String>>,  
+) -> ControllerResult {
+    // Process the record
+    let record_value = process_record_for_insert(record, table_name).await
+        .map_err(|e| ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to process record: {}", e)
+        ))?;
+
+    // Get table instance
+    let table = Table::from_str(table_name)
+        .ok_or_else(|| ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Unknown table: {}", table_name)
+        ))?;
+
+    // Insert record
+    insert(&table_name.to_string(), record_value.clone()).await
+        .map_err(|e| ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Sync error: {}", e)
+        ))?;
+        let plucked_record: serde_json::Value= match pluck_fields  {
+            Some(fields) => table.pluck_fields(&record_value, fields),
+            None => record_value
+            
+        };
+       
+    // Return success response
+    Ok(ApiResponse {
+        success: true,
+        message: format!("Record inserted into '{}'", table_name),
+        count: 1,
+        data: vec![plucked_record]
+})
+}
+
 
 // Update request
 
@@ -441,6 +483,10 @@ pub async fn process_record_for_update<T: serde::Serialize>(
     // Convert to serde_json::Value
     let mut processed_record = serde_json::to_value(&record)
         .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
+
+        if let Some(obj) = processed_record.as_object_mut() {
+            obj.insert("id".to_string(), serde_json::Value::String(record_id.to_string().clone()));
+        }
 
     // Process record through common processing logic
     let mut request_body = RequestBody {
@@ -458,7 +504,7 @@ pub async fn process_record_for_update<T: serde::Serialize>(
                 return Err(Status::not_found(format!(
                     "Record with ID '{}' not found in '{}'",
                     record_id, table_name
-                )))
+                )));
             }
         }
         Err(e) => {
@@ -466,6 +512,7 @@ pub async fn process_record_for_update<T: serde::Serialize>(
         }
     }
 
+    
     // Handle hypertable timestamp if needed
     if field_exists_in_table(table_name, "hypertable_timestamp") {
         let timestamp_result = match table.get_hypertable_timestamp(&mut conn, record_id).await {
@@ -496,3 +543,42 @@ pub async fn process_record_for_update<T: serde::Serialize>(
 
     Ok(processed_record)
 }
+
+pub async fn process_and_update_record(
+    table_name: &str,
+    record: Value,
+    id: &str,
+    pluck_fields    : Option<Vec<String>>,
+) -> ControllerResult {
+    let table = Table::from_str(table_name)
+        .ok_or_else(|| ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Unknown table: {}", table_name)
+        ))?;
+
+    let processed_record = process_record_for_update(record, table_name, id, &table).await
+        .map_err(|status| ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            status.message().to_string()
+        ))?;
+
+    update(&table_name.to_string(), processed_record.clone(), &id.to_string()).await
+        .map_err(|e| ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Sync error: {}", e)
+        ))?;
+
+        let plucked_record: serde_json::Value= match pluck_fields  {
+            Some(fields) => table.pluck_fields(&processed_record, fields),
+            None => processed_record
+            
+        };
+
+        Ok(ApiResponse {
+            success: true,
+            message: format!("Record updated in '{}'", table_name),
+            count: 1,
+            data: vec![plucked_record],
+        })
+}
+

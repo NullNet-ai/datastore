@@ -7,7 +7,7 @@ use serde_json::Value;
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = crdt_merkles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct MerkleModel {
+pub struct CrdtMerkleModel {
     pub group_id: String,
     pub timestamp: String,
     pub merkle: String,

@@ -2,8 +2,9 @@ use actix_web::{web, App, HttpServer};
 use auth::auth_middleware::Authentication;
 use dotenv::dotenv;
 use std::env;
-use templates::proto_generator;
 use templates::grpc_controller::grpc_controller_generator;
+use templates::table_enum::table_enum_generator;
+use templates::proto_generator;
 mod auth;
 mod batch_sync;
 mod controllers;
@@ -24,7 +25,7 @@ use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
 use controllers::store_controller::{
-    batch_delete_records, batch_insert_records, batch_update_records, create_record, update_record,
+    batch_delete_records, batch_insert_records, batch_update_records, create_record, update_record, upsert,
 };
 use env_logger::Env;
 use std::sync::Arc;
@@ -61,11 +62,15 @@ async fn main() -> std::io::Result<()> {
     println!("Generating proto files");
     // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
     // run_build_script()?;
-    // Run the generator
-    if let Err(e) = grpc_controller_generator::run_generator() {
-        eprintln!("Error: {}", e);
-        process::exit(1);
-    }
+    // // Run the generator
+    // if let Err(e) = grpc_controller_generator::run_generator() {
+    //     eprintln!("Error: {}", e);
+    //     process::exit(1);
+    // }
+
+    // if let Err(e) = table_enum_generator::run_generator() {
+    //     eprintln!("Failed to generate table enum: {}", e);
+    // }
 
     println!("gRPC controller generation completed successfully!");
 
@@ -132,6 +137,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/store")
                     .wrap(Authentication)
                     .route("/{table}", web::post().to(create_record))
+                    .route("/upsert/{table}", web::post().to(upsert))
                     .route("/batch/{table}", web::patch().to(batch_update_records))
                     .route("/batch/{table}", web::delete().to(batch_delete_records))
                     .route("/{table}/{id}", web::patch().to(update_record))

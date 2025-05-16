@@ -1,11 +1,11 @@
 use crate::batch_sync::BatchSyncService;
-use crate::controllers::common_controller::{convert_json_to_csv, execute_copy, process_records};
+use crate::controllers::common_controller::{convert_json_to_csv, convert_params_to_sql_types, execute_copy, process_and_insert_record, process_and_update_record, process_records};
 use crate::db;
 use crate::db::create_connection;
-use crate::schema::verify::field_exists_in_table;
-use crate::structs::structs::{ApiResponse, BatchUpdateBody, QueryParams, RequestBody};
-use crate::sync::sync_service::insert;
+use crate::structs::structs::{ApiResponse, BatchUpdateBody, QueryParams, RequestBody, UpsertRequestBody};
 use crate::table_enum::Table;
+use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
+use crate::utils::structs::FilterCriteria;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
@@ -13,12 +13,14 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 
-use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates};
+use super::common_controller::{
+    perform_batch_update, process_record_for_update, sanitize_updates,
+};
 
 #[derive(Serialize)]
-struct ApiError {
-    message: String,
-    status: u16,
+pub struct ApiError {
+    pub message: String,
+    pub status: u16,
 }
 impl From<BlockingError> for ApiError {
     fn from(error: BlockingError) -> Self {
@@ -30,7 +32,7 @@ impl From<BlockingError> for ApiError {
 }
 
 impl ApiError {
-    fn new(status: http::StatusCode, message: impl Into<String>) -> Self {
+   pub fn new(status: http::StatusCode, message: impl Into<String>) -> Self {
         Self {
             status: status.as_u16(),
             message: message.into(),
@@ -71,35 +73,6 @@ pub async fn update_record(
     query: web::Query<QueryParams>,
 ) -> impl Responder {
     let (table_name, record_id) = path_params.into_inner();
-    let table = match Table::from_str(table_name.as_str()) {
-        Some(t) => t,
-        None => {
-            return HttpResponse::BadRequest().json(ApiError {
-                status: http::StatusCode::BAD_REQUEST.as_u16(),
-                message: format!("Unknown table: {}", table_name),
-            });
-        }
-    };
-
-    // Process the record using the common function
-    let processed_record = match process_record_for_update(
-        request.into_inner().record,
-        &table_name,
-        &record_id,
-        &table,
-    )
-    .await
-    {
-        Ok(record) => record,
-        Err(status) => {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: status.message().to_string(),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
 
     let pluck_fields: Vec<String> = if query.pluck.is_empty() {
         vec!["id".to_string()]
@@ -110,27 +83,17 @@ pub async fn update_record(
             .map(|s| s.trim().to_string())
             .collect()
     };
-
-    // Use the update function from sync_service
-    if let Err(e) = crate::sync::sync_service::update(&table_name, processed_record.clone(), &record_id).await {
-        return HttpResponse::InternalServerError().json(ApiResponse {
-            message: format!("Sync error: {}", e),
-            success: false,
-            count: 0,
-            data: vec![],
-        });
+    match process_and_update_record(&table_name, request.record.clone(), &record_id, Some(pluck_fields)).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap())
+            .json(ApiResponse {
+                success: false,
+                message: error.message,
+                count: 0,
+                data: vec![],
+            })
     }
-
-    let plucked_record = table.pluck_fields(&processed_record, pluck_fields);
-
-    let response = ApiResponse {
-        success: true,
-        message: format!("Record updated in '{}'", &table_name),
-        count: 1,
-        data: vec![plucked_record],
-    };
-
-    HttpResponse::Ok().json(response)
+   
 }
 
 pub async fn create_record(
@@ -141,56 +104,22 @@ pub async fn create_record(
 ) -> impl Responder {
     let table_name = table.into_inner();
     let log_table = table_name.clone();
-
-    // Process the record using common function
-    let record_value = match process_record_for_insert(request.record.clone(), &table_name).await {
-        Ok(val) => val,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Failed to process record: {}", e),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-
     let pluck_fields: Vec<String> = query
-        .pluck
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .collect();
+      .pluck
+      .split(',')
+      .map(|s| s.trim().to_string())
+      .collect();
 
-    let table = match Table::from_str(table_name.as_str()) {
-        Some(t) => t,
-        None => {
-            return HttpResponse::BadRequest().json(ApiResponse {
+      match process_and_insert_record(&table_name, request.record.clone(), Some(pluck_fields)).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap())
+            .json(ApiResponse {
                 success: false,
-                message: format!("Unknown table: {log_table}"),
+                message: error.message,
                 count: 0,
                 data: vec![],
-            });
-        }
-    };
-
-    if let Err(e) = insert(&log_table, record_value.clone()).await {
-        return HttpResponse::InternalServerError().json(ApiResponse  {
-            success: false,
-            message: format!("Sync error: {}", e),
-            count: 0,
-            data: vec![],
-        });
+            })
     }
-
-    let plucked_record = table.pluck_fields(&record_value, pluck_fields);
-
-    let response = ApiResponse {
-        success: true,
-        message: format!("Record inserted into '{}'", &log_table),
-        count: 1,
-        data: vec![plucked_record],
-    };
-    HttpResponse::Ok().json(response)
 }
 
 #[derive(Deserialize)]
@@ -460,5 +389,89 @@ pub async fn batch_delete_records(
             count: 0,
             data: vec![],
         }),
+    }
+}
+
+
+pub async fn upsert(
+    pool: web::Data<db::AsyncDbPool>,
+    table_name: web::Path<String>,
+    request_body: web::Json<UpsertRequestBody>,
+) -> impl Responder {
+    let table_name = table_name.into_inner();
+    let request_body = request_body.into_inner();
+    let conflict_columns = request_body.conflict_columns;
+    let data = request_body.data;
+    let entity_prefix = request_body.entity_prefix;
+
+    let filters=match FilterCriteria::build_from_conflict_columns(conflict_columns, &data) {
+        Ok(filters) => {
+            filters
+        },
+        Err(e) => {
+            // Handle the error - in this case it would say "Missing required conflict columns in data: email"
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: e,
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+
+    let SqlFilter {sql, params}=build_sql_filter(&filters.clone()); 
+    let converted_params=convert_params_to_sql_types(&params);
+    let query = format!(
+        "SELECT id FROM {} WHERE {}",
+        table_name, sql
+    );
+    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_params
+        .iter()
+        .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
+        .collect();
+
+    println!("{}",query);
+
+    let mut conn = match db::create_connection().await {
+        Ok(connection) => connection,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to establish database connection: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let row = match conn.query_opt(&query, &pg_params[..]).await {
+        Ok(Some(row)) => row.get::<_, String>(0),
+        Ok(None) => "".to_string(),
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to execute query: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let result = if row.is_empty() {
+        // If the record doesn't exist, perform an insert
+process_and_insert_record(&table_name, data, None).await
+    } else {
+        // If the record exists, perform an update
+        process_and_update_record(&table_name, data, &row, None).await
+    };
+    match result {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap())
+            .json(ApiResponse {
+                success: false,
+                message: error.message,
+                count: 0,
+                data: vec![],
+            })
     }
 }

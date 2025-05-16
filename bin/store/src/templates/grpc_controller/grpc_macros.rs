@@ -42,7 +42,7 @@ macro_rules! generate_create_method {
                         .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
 
                     let response = [<Create $table:camel Response>] {
-                        success: true,                    
+                        success: true,
                         message: format!("Record inserted into '{}'", &table_name),
                         count: 1,
                         data: Some(data),
@@ -54,7 +54,6 @@ macro_rules! generate_create_method {
         }
     };
 }
-
 
 #[macro_export]
 macro_rules! generate_update_method {
@@ -130,7 +129,6 @@ macro_rules! generate_update_method {
         }
     };
 }
-
 
 #[macro_export]
 macro_rules! generate_batch_insert_method {
@@ -307,7 +305,7 @@ macro_rules! generate_batch_update_method {
                             .filter(|(_, v)| v.is_null())
                             .map(|(k, _)| k.clone())
                             .collect();
-                        
+
                         // Remove all null values
                         for key in null_keys {
                             map.remove(&key);
@@ -332,7 +330,6 @@ macro_rules! generate_batch_update_method {
     };
 }
 
-
 #[macro_export]
 macro_rules! generate_get_method {
     ($table:ident) => {
@@ -354,7 +351,6 @@ macro_rules! generate_get_method {
     };
 }
 
-
 #[macro_export]
 macro_rules! generate_delete_method {
     ($table:ident) => {
@@ -375,7 +371,6 @@ macro_rules! generate_delete_method {
         }
     };
 }
-
 
 #[macro_export]
 macro_rules! generate_batch_delete_method {
@@ -401,13 +396,13 @@ macro_rules! generate_batch_delete_method {
                     let mut delete_updates = RequestBody {
                         record: serde_json::json!({}),
                     };
-                
+
                     // Process the record through the common processing logic
                     delete_updates.process_record("delete");
                     if let Some(record) = delete_updates.record.as_object_mut() {
                         record.remove("version");
                     }
-                
+
                     let updates = delete_updates.record;
 
                     let filters: Vec<Value> = body

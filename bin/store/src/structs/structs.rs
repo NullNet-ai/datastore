@@ -21,6 +21,13 @@ pub struct RequestBody {
     pub record: Value,
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct UpsertRequestBody {
+    pub data: Value,
+    pub conflict_columns: Vec<String>,
+    pub entity_prefix: String,
+}
+
 #[derive(Deserialize)]
 pub struct BatchUpdateBody {
     pub advance_filters: Vec<Value>,
