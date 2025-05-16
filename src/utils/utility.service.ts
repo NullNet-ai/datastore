@@ -539,8 +539,25 @@ export class Utility {
       : {};
 
     const groupSelections = Object.entries(pluck_group_object).reduce(
-      (acc, [table, fields]) =>
-        fields.reduce((field_acc, field) => {
+      (acc, [table, fields]) => {
+        const plucked_join = joins.find(({ type, field_relation }) => {
+          const to = type === 'self' ? field_relation.from : field_relation.to;
+          return (to.alias || to.entity) === table;
+        });
+        if (!plucked_join)
+          this.logger.warn(`No join found for pluck group object ${table}`);
+        const { to } = plucked_join?.field_relation || {};
+        const join_order_by = to?.order_by || null;
+        const join_order_direction = to?.order_direction || EOrderDirection.ASC;
+        const join_is_case_sensitive_sorting =
+          to?.is_case_sensitive_sorting || false;
+        return fields.reduce((field_acc, field) => {
+          let sorted_field = `"${table}"."${join_order_by}"`;
+          if (join_is_case_sensitive_sorting)
+            sorted_field = `LOWER(${sorted_field})`;
+          const sort_schema = ` ORDER BY ${sorted_field} ${
+            ['asc', 'ascending'].includes(join_order_direction) ? 'asc' : 'desc'
+          }`;
           const alias = pluralize(field);
           return {
             ...field_acc,
@@ -549,11 +566,12 @@ export class Utility {
                 `JSONB_AGG(${Utility.decryptField(
                   `"${table}"."${field}"`,
                   encrypted_fields,
-                )})`,
+                )}${join_order_by && join_order_direction ? sort_schema : ''})`,
               )
               .as(`${table}_${alias}`),
           };
-        }, acc),
+        }, acc);
+      },
       {},
     );
 
