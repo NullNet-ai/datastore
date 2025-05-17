@@ -75,6 +75,7 @@ macro_rules! generate_get_by_id_match {
                     Table::$table => {
                         let result = schema::[<$table:lower>]::dsl::[<$table:lower>]
                             .filter(schema::[<$table:lower>]::id.eq($id))
+                            .filter(schema::[<$table:lower>]::tombstone.eq(0))
                             .select(schema::[<$table:lower>]::all_columns)
                             .first::<$model>($conn)
                             .await

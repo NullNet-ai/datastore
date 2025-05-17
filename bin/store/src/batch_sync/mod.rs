@@ -1,10 +1,12 @@
+use crate::controllers::common_controller::process_and_update_record;
 use crate::sync::sync_service::{insert, update};
 use log;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Mutex;
+use crate::table_enum::generate_code;
 
 // Define message types
 #[derive(Debug, Clone, PartialEq)]
@@ -13,6 +15,12 @@ pub enum MessageType {
     Update,
 }
 
+#[derive(Debug, Clone)]
+pub struct CodeAssignmentMessage {
+    pub table_name: String,
+    pub id: String,
+    pub entity_prefix: String,
+}
 // Define a message structure
 #[derive(Debug, Clone)]
 pub struct SyncMessage {
@@ -24,13 +32,16 @@ pub struct SyncMessage {
 // Global senders that can be accessed from anywhere
 static mut INSERT_SENDER: Option<Arc<Sender<SyncMessage>>> = None;
 static mut UPDATE_SENDER: Option<Arc<Sender<SyncMessage>>> = None;
+static mut CODE_ASSIGNMENT_SENDER: Option<Arc<Sender<CodeAssignmentMessage>>> = None;
 
 // Queue service to manage the message queues
 pub struct BatchSyncService {
     insert_receiver: Arc<Mutex<Receiver<SyncMessage>>>,
     update_receiver: Arc<Mutex<Receiver<SyncMessage>>>,
+    code_assignment_receiver: Arc<Mutex<Receiver<CodeAssignmentMessage>>>,
     insert_queue: Arc<Mutex<VecDeque<SyncMessage>>>,
     update_queue: Arc<Mutex<VecDeque<SyncMessage>>>,
+    code_assignment_queue: Arc<Mutex<VecDeque<CodeAssignmentMessage>>>,
 }
 
 impl BatchSyncService {
@@ -39,24 +50,29 @@ impl BatchSyncService {
         // Create channels with buffer sizes
         let (insert_sender, insert_receiver) = mpsc::channel::<SyncMessage>(100);
         let (update_sender, update_receiver) = mpsc::channel::<SyncMessage>(100);
+        let (code_sender, code_receiver) = mpsc::channel::<CodeAssignmentMessage>(100);
 
         // Store the senders in global variables for access from anywhere
         unsafe {
             INSERT_SENDER = Some(Arc::new(insert_sender));
             UPDATE_SENDER = Some(Arc::new(update_sender));
+            CODE_ASSIGNMENT_SENDER = Some(Arc::new(code_sender));
         }
 
         // Create the queue service
         let service = Self {
             insert_receiver: Arc::new(Mutex::new(insert_receiver)),
             update_receiver: Arc::new(Mutex::new(update_receiver)),
+            code_assignment_receiver: Arc::new(Mutex::new(code_receiver)),
             insert_queue: Arc::new(Mutex::new(VecDeque::new())),
             update_queue: Arc::new(Mutex::new(VecDeque::new())),
+            code_assignment_queue: Arc::new(Mutex::new(VecDeque::new())),
         };
 
         // Start the background processing tasks
         service.start_insert_processor().await;
         service.start_update_processor().await;
+        service.start_code_assignment_processor().await;
 
         Ok(())
     }
@@ -69,6 +85,10 @@ impl BatchSyncService {
     // Get the global update sender
     pub fn get_update_sender() -> Option<Arc<Sender<SyncMessage>>> {
         unsafe { UPDATE_SENDER.clone() }
+    }
+
+    pub fn get_code_assignment_sender() -> Option<Arc<Sender<CodeAssignmentMessage>>> {
+        unsafe { CODE_ASSIGNMENT_SENDER.clone() }
     }
 
     // Start the insert processor
@@ -197,6 +217,48 @@ impl BatchSyncService {
         });
     }
 
+    async fn start_code_assignment_processor(&self) {
+        let receiver = self.code_assignment_receiver.clone();
+        let queue = self.code_assignment_queue.clone();
+
+        tokio::spawn(async move {
+            log::info!("Starting background code assignment processor");
+
+            loop {
+                if let Some(message) = Self::get_next_code_assignment(&queue).await {
+                    if Self::process_code_assignment_message(message.clone()).await {
+                        println!("{:?}",message);
+                        log::debug!(
+                            "Successfully processed code assignment for table: {}",
+                            message.table_name
+                        );
+                    } else {
+                        log::warn!(
+                            "Failed to process code assignment for table: {}, will retry",
+                            message.table_name
+                        );
+                        Self::add_to_code_assignment_queue(&queue, message).await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                    }
+                } else {
+                    let mut rx = receiver.lock().await;
+                    match rx.recv().await {
+                        Some(message) => {
+                            if !Self::process_code_assignment_message(message.clone()).await {
+                                log::warn!("Failed to process code assignment, adding to retry queue");
+                                Self::add_to_code_assignment_queue(&queue, message).await;
+                            }
+                        }
+                        None => {
+                            log::error!("Code assignment channel closed, terminating processor");
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // Get the next message from a queue
     async fn get_next_message(queue: &Arc<Mutex<VecDeque<SyncMessage>>>) -> Option<SyncMessage> {
         let mut queue_lock = queue.lock().await;
@@ -282,5 +344,61 @@ impl BatchSyncService {
             .send(message)
             .await
             .map_err(|e| format!("Failed to send update message: {}", e))
+    }
+
+    async fn get_next_code_assignment(queue: &Arc<Mutex<VecDeque<CodeAssignmentMessage>>>) -> Option<CodeAssignmentMessage> {
+        let mut queue_lock = queue.lock().await;
+        queue_lock.pop_front()
+    }
+
+    async fn add_to_code_assignment_queue(queue: &Arc<Mutex<VecDeque<CodeAssignmentMessage>>>, message: CodeAssignmentMessage) {
+        let mut queue_lock = queue.lock().await;
+        queue_lock.push_back(message);
+    }
+
+    async fn process_code_assignment_message(message: CodeAssignmentMessage) -> bool {
+        let table_name = message.table_name;
+        let id = message.id;
+        let entity_prefix = message.entity_prefix;
+        let code=match generate_code(&table_name, &entity_prefix, 10000).await {
+            Ok(code) => code,
+            Err(e) => {
+                log::error!("Error processing code assignment message: {}", e);
+                return false; // Sync failed, will be retried
+            }
+        };
+        // Try to update the record
+        let record_obj = json!({
+            "code": code
+        });
+
+        match process_and_update_record(&table_name, record_obj, &id, None, "update").await {
+            Ok(response) => true,
+            Err(error) => {
+                log::error!("Error processing code assignment message: {}", error);
+               return false;
+            }
+        }
+    }
+
+    // Send a code assignment message to the queue
+    pub async fn send_code_assignment_message(
+        table_name: String,
+        id: String,
+        entity_prefix: String,
+    ) -> Result<(), String> {
+        let sender = Self::get_code_assignment_sender()
+            .ok_or_else(|| "Queue service not initialized".to_string())?;
+
+        let message = CodeAssignmentMessage {
+            table_name,
+            id,
+            entity_prefix,
+        };
+
+        sender
+            .send(message)
+            .await
+            .map_err(|e| format!("Failed to send code assignment message: {}", e))
     }
 }

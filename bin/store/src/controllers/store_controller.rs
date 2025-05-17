@@ -1,20 +1,18 @@
 use crate::batch_sync::BatchSyncService;
-use crate::controllers::common_controller::{convert_json_to_csv, convert_params_to_sql_types, execute_copy, process_and_insert_record, process_and_update_record, process_records};
+use crate::controllers::common_controller::{convert_json_to_csv, execute_copy, process_and_insert_record, process_and_update_record, process_records};
 use crate::db;
 use crate::db::create_connection;
 use crate::structs::structs::{ApiResponse, BatchUpdateBody, QueryParams, RequestBody, UpsertRequestBody};
-use crate::table_enum::Table;
-use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
-use crate::utils::structs::FilterCriteria;
+use crate::table_enum::generate_code;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
-
+use std::fmt;
 use super::common_controller::{
-    perform_batch_update, process_record_for_update, sanitize_updates,
+    perform_batch_update, perform_upsert, sanitize_updates
 };
 
 #[derive(Serialize)]
@@ -28,6 +26,12 @@ impl From<BlockingError> for ApiError {
             status: error.status_code().as_u16(),
             message: format!("Internal server error: {:?}", error),
         }
+    }
+}
+
+impl fmt::Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
     }
 }
 
@@ -83,7 +87,7 @@ pub async fn update_record(
             .map(|s| s.trim().to_string())
             .collect()
     };
-    match process_and_update_record(&table_name, request.record.clone(), &record_id, Some(pluck_fields)).await {
+    match process_and_update_record(&table_name, request.record.clone(), &record_id, Some(pluck_fields), "update").await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap())
             .json(ApiResponse {
@@ -109,6 +113,9 @@ pub async fn create_record(
       .split(',')
       .map(|s| s.trim().to_string())
       .collect();
+    //get entity_prefix from the request.record
+ 
+
 
       match process_and_insert_record(&table_name, request.record.clone(), Some(pluck_fields)).await {
         Ok(response) => HttpResponse::Ok().json(response),
@@ -136,6 +143,22 @@ pub async fn batch_insert_records(
     let table_clone = table_name.clone();
     let batch_data = records.into_inner();
     let json_records = batch_data.records;
+    let entity_prefix_exists = batch_data.entity_prefix;
+    let entity_prefix;
+
+    match entity_prefix_exists {
+        Some(prefix) => {
+            entity_prefix = prefix;
+        }
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Entity prefix is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
 
     if json_records.is_empty() {
         return HttpResponse::BadRequest().json(ApiResponse {
@@ -207,6 +230,14 @@ pub async fn batch_insert_records(
                 count: 0,
                 data: vec![],
             });
+        }
+
+        if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
+            if let Err(e) =
+                BatchSyncService::send_code_assignment_message(table_clone.clone(), id.to_string(), entity_prefix.clone()).await
+            {
+                log::error!("Code assignment error with id {id}: {e}");
+            }
         }
     }
 
@@ -393,79 +424,64 @@ pub async fn batch_delete_records(
 }
 
 
+// ... existing code ...
+
 pub async fn upsert(
     pool: web::Data<db::AsyncDbPool>,
     table_name: web::Path<String>,
     request_body: web::Json<UpsertRequestBody>,
+    query: web::Query<QueryParams>,
 ) -> impl Responder {
     let table_name = table_name.into_inner();
     let request_body = request_body.into_inner();
-    let conflict_columns = request_body.conflict_columns;
-    let data = request_body.data;
-    let entity_prefix = request_body.entity_prefix;
-
-    let filters=match FilterCriteria::build_from_conflict_columns(conflict_columns, &data) {
-        Ok(filters) => {
-            filters
-        },
-        Err(e) => {
-            // Handle the error - in this case it would say "Missing required conflict columns in data: email"
-            return HttpResponse::BadRequest().json(ApiResponse {
+    
+    // Extract pluck fields from query if provided
+    let pluck_fields = if !query.pluck.is_empty() {
+        Some(query.pluck.split(',').map(|s| s.trim().to_string()).collect())
+    } else {
+        None
+    };
+    
+    // Call the reusable function
+    match perform_upsert(
+        &table_name,
+        request_body.conflict_columns,
+        request_body.data,
+        request_body.entity_prefix,
+        pluck_fields
+    ).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap())
+            .json(ApiResponse {
                 success: false,
-                message: e,
+                message: error.message,
                 count: 0,
                 data: vec![],
             })
-        }
-    };
+    }
+}
 
-    let SqlFilter {sql, params}=build_sql_filter(&filters.clone()); 
-    let converted_params=convert_params_to_sql_types(&params);
-    let query = format!(
-        "SELECT id FROM {} WHERE {}",
-        table_name, sql
-    );
-    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_params
-        .iter()
-        .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
-        .collect();
+pub async fn delete_record(
+    pool: web::Data<db::AsyncDbPool>,
+    path_params: web::Path<(String, String)>,
+) -> impl Responder {
+    let (table_name, record_id) = path_params.into_inner();
+    
+    // Create delete updates (setting tombstone and status)
+    let delete_updates = serde_json::json!({
+    });
 
-    println!("{}",query);
-
-    let mut conn = match db::create_connection().await {
-        Ok(connection) => connection,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Failed to establish database connection: {}", e),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-
-    let row = match conn.query_opt(&query, &pg_params[..]).await {
-        Ok(Some(row)) => row.get::<_, String>(0),
-        Ok(None) => "".to_string(),
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Failed to execute query: {}", e),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-
-    let result = if row.is_empty() {
-        // If the record doesn't exist, perform an insert
-process_and_insert_record(&table_name, data, None).await
-    } else {
-        // If the record exists, perform an update
-        process_and_update_record(&table_name, data, &row, None).await
-    };
-    match result {
-        Ok(response) => HttpResponse::Ok().json(response),
+    match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete").await {
+        Ok(mut response) => {
+            // Parse the response as Value to modify it
+            let mut response_value: serde_json::Value = serde_json::from_str(&serde_json::to_string(&response).unwrap()).unwrap();
+            if let Some(obj) = response_value.as_object_mut() {
+                obj["message"] = serde_json::Value::String(
+                    format!("Record with ID '{}' deleted successfully from '{}'", record_id, table_name)
+                );
+            }
+            HttpResponse::Ok().json(response_value)
+        },
         Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap())
             .json(ApiResponse {
                 success: false,

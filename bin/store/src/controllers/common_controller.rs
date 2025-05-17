@@ -3,7 +3,7 @@ use crate::db::{self, create_connection};
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, RequestBody, SqlUpdate};
 use crate::sync::sync_service::{insert, update};
-use crate::table_enum::Table;
+use crate::table_enum::{generate_code, Table};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
 use actix_web::{http, HttpResponse};
@@ -433,10 +433,44 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
 
 pub async fn process_and_insert_record(
     table_name: &str,
-    record: Value,
+    mut record: Value,
     pluck_fields    : Option<Vec<String>>,  
 ) -> ControllerResult {
     // Process the record
+
+    let entity_prefix_exists = if let Some(record_obj) = record.as_object() {
+        record_obj.get("entity_prefix").and_then(|v| v.as_str())
+    } else {
+        None
+    };
+    let mut entity_prefix="";
+    // Return error if entity_prefix is not provided
+    if entity_prefix_exists.is_none() {
+        return Err(ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            "entity_prefix is required".to_string(),
+        ))
+    }
+    else{
+         entity_prefix = entity_prefix_exists.unwrap();
+    }
+    
+
+    let code = generate_code( table_name, entity_prefix, 100000).await
+    .map_err(|e| ApiError::new(
+        http::StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Unable to generate code: {}", e)
+    ))?;
+    //assign code in the record
+    if let Value::Object(ref mut map) = record {
+        map.insert("code".to_string(), Value::String(code));
+        map.remove("entity_prefix");
+    } else {
+        return Err(ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            "Record must be an object".to_string(),
+        ));
+    }
     let record_value = process_record_for_insert(record, table_name).await
         .map_err(|e| ApiError::new(
             http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -479,6 +513,7 @@ pub async fn process_record_for_update<T: serde::Serialize>(
     table_name: &str,
     record_id: &str,
     table: &Table,
+    operation: &str,
 ) -> Result<serde_json::Value, Status> {
     // Convert to serde_json::Value
     let mut processed_record = serde_json::to_value(&record)
@@ -492,7 +527,7 @@ pub async fn process_record_for_update<T: serde::Serialize>(
     let mut request_body = RequestBody {
         record: processed_record.clone(),
     };
-    request_body.process_record("update");
+    request_body.process_record(operation);
     processed_record = request_body.record;
 
     // Check if record exists
@@ -549,6 +584,7 @@ pub async fn process_and_update_record(
     record: Value,
     id: &str,
     pluck_fields    : Option<Vec<String>>,
+    operation: &str,
 ) -> ControllerResult {
     let table = Table::from_str(table_name)
         .ok_or_else(|| ApiError::new(
@@ -556,7 +592,7 @@ pub async fn process_and_update_record(
             format!("Unknown table: {}", table_name)
         ))?;
 
-    let processed_record = process_record_for_update(record, table_name, id, &table).await
+    let processed_record = process_record_for_update(record, table_name, id, &table, operation).await
         .map_err(|status| ApiError::new(
             http::StatusCode::INTERNAL_SERVER_ERROR,
             status.message().to_string()
@@ -568,6 +604,7 @@ pub async fn process_and_update_record(
             format!("Sync error: {}", e)
         ))?;
 
+        println!("Record updated: {:?}", processed_record);
         let plucked_record: serde_json::Value= match pluck_fields  {
             Some(fields) => table.pluck_fields(&processed_record, fields),
             None => processed_record
@@ -582,3 +619,64 @@ pub async fn process_and_update_record(
         })
 }
 
+
+//Common upsert
+// ... existing code ...
+
+pub async fn perform_upsert(
+    table_name: &str,
+    conflict_columns: Vec<String>,
+    mut data: serde_json::Value,
+    entity_prefix: String,
+    pluck_fields: Option<Vec<String>>
+) -> Result<ApiResponse, ApiError> {
+    // Build filters from conflict columns
+    let filters = FilterCriteria::build_from_conflict_columns(conflict_columns, &data)
+        .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, e))?;
+
+    // Build SQL filter
+    let SqlFilter {sql, params} = build_sql_filter(&filters.clone());
+    let converted_params = convert_params_to_sql_types(&params);
+    let query = format!(
+        "SELECT id FROM {} WHERE {} LIMIT 1",
+        table_name, sql
+    );
+    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_params
+        .iter()
+        .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
+        .collect();
+
+    // Create database connection
+    let conn = db::create_connection().await
+        .map_err(|e| ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to establish database connection: {}", e)
+        ))?;
+
+    // Check if record exists
+    let row = conn.query_opt(&query, &pg_params[..]).await
+        .map_err(|e| ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to execute query: {}", e)
+        ))?;
+
+    // Get record ID if exists, otherwise empty string
+    let record_id = match row {
+        Some(row) => row.get::<_, String>(0),
+        None => "".to_string(),
+    };
+
+
+    // Either insert or update based on existence
+    if record_id.is_empty() {
+        if let Value::Object(ref mut map) = data {
+            map.insert("entity_prefix".to_string(), Value::String(entity_prefix));
+        }
+        // If the record doesn't exist, perform an insert
+        process_and_insert_record(table_name, data, pluck_fields).await
+    } else {
+
+        // If the record exists, perform an update
+        process_and_update_record(table_name, data, &record_id, pluck_fields, "update").await
+    }
+}

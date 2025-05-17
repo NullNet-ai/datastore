@@ -16,6 +16,9 @@ table! {
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
         tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+
 
         id -> Text,
         timestamp -> Timestamp,
@@ -59,6 +62,9 @@ table! {
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
         tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+
 
         id -> Text,
         timestamp -> Timestamp,
@@ -75,6 +81,16 @@ table! {
         destination_port -> Nullable<Int4>,
     }
 }
+
+table! {
+    counters (entity) {
+        entity -> Text,
+        default_code -> Integer,
+        prefix -> Text,
+        counter -> Integer,
+    }
+}
+
 
 table! {
     crdt_messages (timestamp, group_id, row, column) {

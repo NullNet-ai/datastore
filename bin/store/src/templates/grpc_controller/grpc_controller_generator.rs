@@ -73,13 +73,13 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "use crate::auth::auth_middleware::GrpcAuthInterceptor;"
     )?;
-    writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy}};")?;
+    writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record}};")?;
     writeln!(
         file,
         "use crate::generated::store::store_service_server::{{{}Server, {} }};",
         service_name, service_name
     )?;
-    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method}};")?;
+    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method}};")?;
 
     // Import request and response types
     write!(file, "use crate::generated::store::{{")?;
@@ -133,6 +133,14 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
             table.name.to_case(Case::Pascal),
             table.name.to_case(Case::Pascal)
         )?;
+
+        write!(
+            file,
+            ", Upsert{}Request, Upsert{}Response",
+            table.name.to_case(Case::Pascal),
+            table.name.to_case(Case::Pascal)
+        )?;
+
     }
     writeln!(file, "}};")?;
 
@@ -182,6 +190,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         writeln!(file, "    generate_get_method!({});", table.name)?;
         writeln!(file, "    generate_delete_method!({});", table.name)?;
         writeln!(file, "    generate_batch_delete_method!({});", table.name)?;
+        writeln!(file, "    generate_upsert_method!({});", table.name)?;
     }
     writeln!(file, "}}")?;
 

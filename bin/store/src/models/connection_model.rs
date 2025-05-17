@@ -23,6 +23,8 @@ pub struct ConnectionModel {
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
     pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
 
     pub id: String,
     pub timestamp: chrono::NaiveDateTime,

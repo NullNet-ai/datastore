@@ -1,3 +1,4 @@
+#![recursion_limit = "2056"]
 use actix_web::{web, App, HttpServer};
 use auth::auth_middleware::Authentication;
 use dotenv::dotenv;
@@ -25,7 +26,7 @@ use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
 use controllers::store_controller::{
-    batch_delete_records, batch_insert_records, batch_update_records, create_record, update_record, upsert,
+    batch_delete_records, batch_insert_records, batch_update_records, create_record, update_record, upsert, delete_record
 };
 use env_logger::Env;
 use std::sync::Arc;
@@ -68,9 +69,9 @@ async fn main() -> std::io::Result<()> {
     //     process::exit(1);
     // }
 
-    // if let Err(e) = table_enum_generator::run_generator() {
-    //     eprintln!("Failed to generate table enum: {}", e);
-    // }
+    if let Err(e) = table_enum_generator::run_generator() {
+        eprintln!("Failed to generate table enum: {}", e);
+    }
 
     println!("gRPC controller generation completed successfully!");
 
@@ -114,11 +115,6 @@ async fn main() -> std::io::Result<()> {
     } else {
         println!("Queue initialized successfully");
     }
-    if let Err(e) = QueueService::init().await {
-        log::error!("Failed to initialize queue: {}", e);
-    } else {
-        println!("Queue initialized successfully");
-    }
 
     let server_url = format!("0.0.0.0:{}", port);
     println!("Server is running on {}", server_url);
@@ -141,6 +137,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/batch/{table}", web::patch().to(batch_update_records))
                     .route("/batch/{table}", web::delete().to(batch_delete_records))
                     .route("/{table}/{id}", web::patch().to(update_record))
+                    .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records)),
             )
     })

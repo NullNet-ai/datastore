@@ -26,11 +26,16 @@ macro_rules! generate_create_method {
                         None => return Err(Status::invalid_argument("Record is required")),
                     };
 
-                    let record_value = process_record_for_insert(record, &table_name).await?;
+                    let entity_prefix = request.entity_prefix;
+                    let mut record_value = serde_json::to_value(&record)
+                        .map_err(|e| Status::internal(format!("Failed to convert record to JSON: {}", e)))?;
 
-                    if let Err(e) = insert(&table_name, record_value.clone()).await {
-                        return Err(Status::internal(format!("Failed to insert record: {}", e)));
+                      // Add entity_prefix to the record
+                      if let Value::Object(ref mut map) = record_value {
+                        map.insert("entity_prefix".to_string(), Value::String(entity_prefix));
                     }
+
+
 
                     let pluck_fields: Vec<String> = query
                         .pluck
@@ -38,17 +43,23 @@ macro_rules! generate_create_method {
                         .map(|s| s.trim().to_string())
                         .collect();
 
-                    let data: [<$table:camel>] = serde_json::from_value(record_value)
-                        .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
-
-                    let response = [<Create $table:camel Response>] {
-                        success: true,
-                        message: format!("Record inserted into '{}'", &table_name),
-                        count: 1,
-                        data: Some(data),
-                    };
-
-                    Ok(Response::new(response))
+                        match process_and_insert_record(&table_name, record_value, Some(pluck_fields)).await {
+                            Ok(api_response) => {
+                                // Convert the data back to the specific type
+                                let data: [<$table:camel>] = serde_json::from_value(api_response.data[0].clone())
+                                    .map_err(|e| Status::internal(format!("Failed to convert response: {}", e)))?;
+    
+                                let response = [<Create $table:camel Response>] {
+                                    success: api_response.success,
+                                    message: api_response.message,
+                                    count: api_response.count,
+                                    data: Some(data),
+                                };
+    
+                                Ok(Response::new(response))
+                            },
+                            Err(e) => Err(Status::internal(e.message)),
+                        }
                 })
             }
         }
@@ -96,7 +107,7 @@ macro_rules! generate_update_method {
                     };
 
                     // Process record using common function
-                    let processed_record = match process_record_for_update(record, &table_name, &record_id, &table).await {
+                    let processed_record = match process_record_for_update(record, &table_name, &record_id, &table,"update").await {
                         Ok(processed) => processed,
                         Err(status) => {
                             return Err(status);
@@ -149,10 +160,16 @@ macro_rules! generate_batch_insert_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
                     let table_name = params.table;
-                    let records = match request.body {
-                        Some(batch_body) => batch_body.$table,
+                   let records;
+                   let entity_prefix;
+                     match request.body {
+                        Some(batch_body) => {
+                            entity_prefix=batch_body.entity_prefix;
+                            records=batch_body.$table}
                         None => return Err(Status::invalid_argument(format!("No {} provided", stringify!($table)))),
                     };
+
+
 
                     if records.is_empty() {
                         return Err(Status::invalid_argument("No records provided"));
@@ -212,6 +229,16 @@ macro_rules! generate_batch_insert_method {
                         .await
                         {
                             return Err(Status::internal(format!("Sync error: {}", e)));
+                        }
+
+                
+
+                        if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
+                            if let Err(e) =
+                            crate::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clone(), id.to_string(), entity_prefix.clone()).await
+                            {
+                                log::error!("Code assignment error with id {id}: {e}");
+                            }
                         }
                     }
 
@@ -351,6 +378,75 @@ macro_rules! generate_get_method {
     };
 }
 
+
+#[macro_export]
+macro_rules! generate_upsert_method {
+    ($table:ident) => {
+        paste::paste! {
+            fn [<upsert_ $table:lower>]<'life0, 'async_trait>(
+                &'life0 self,
+                request: Request<[<Upsert $table:camel Request>]>,
+            ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<Upsert $table:camel Response>]>, Status>> + Send + 'async_trait>>
+            where
+                'life0: 'async_trait,
+                Self: 'async_trait,
+            {
+                Box::pin(async move {
+                    let request = request.into_inner();
+                    let params = request
+                        .params
+                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                    let query = request
+                        .query
+                        .ok_or_else(|| Status::invalid_argument("Query is required"))?;
+                    let body = request
+                        .body
+                        .ok_or_else(|| Status::invalid_argument("Body is required"))?;                    
+                    // Extract pluck fields if provided
+                    let pluck_fields = if !query.pluck.is_empty() {
+                        Some(query.pluck.split(',').map(|s| s.trim().to_string()).collect())
+                    } else {
+                        None
+                    };
+
+                    let data_value = serde_json::to_value(&body.data)
+                        .map_err(|e| Status::internal(format!("Failed to convert data to JSON: {}", e)))?;
+                    
+                    
+                    // Call the reusable function
+                    match perform_upsert(
+                        &params.table,
+                        body.conflict_columns,
+                        data_value,
+                        body.entity_prefix,
+                        pluck_fields
+                    ).await {
+                        Ok(response) => {
+                            // Convert ApiResponse to gRPC response
+                            let typed_data: Vec<[<$table:camel>]> = response.data
+                            .into_iter()
+                            .map(|value| serde_json::from_value(value))
+                            .collect::<Result<Vec<_>, _>>()
+                            .map_err(|e| Status::internal(format!("Failed to convert response data: {}", e)))?;
+                            let grpc_response = [<Upsert $table:camel Response>] {
+                                success: response.success,
+                                message: response.message,
+                                count: response.count,
+                                data: typed_data,
+                            };
+                            Ok(Response::new(grpc_response))
+                        },
+                        Err(error) => {
+                            Err(Status::internal(error.message))
+                        }
+                    }
+                })
+            }
+        }
+    };
+}
+
+
 #[macro_export]
 macro_rules! generate_delete_method {
     ($table:ident) => {
@@ -364,8 +460,49 @@ macro_rules! generate_delete_method {
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    // Implementation for Delete method
-                    todo!()
+                    let request = request.into_inner();
+                    let params = request
+                        .params
+                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                    let query = request
+                        .query
+                        .ok_or_else(|| Status::invalid_argument("Query is required"))?;
+
+                    let table_name = params.table;
+                    let record_id = params.id;
+                    
+                    // Create empty delete updates
+                    let delete_updates = serde_json::json!({});
+
+                    // Process record using common function
+                    match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete").await {
+                        Ok(response) => {
+                            // Convert response to Value to modify message
+                            let mut response_value: serde_json::Value = serde_json::from_str(&serde_json::to_string(&response).unwrap())
+                                .map_err(|e| Status::internal(format!("Failed to parse response: {}", e)))?;
+                            
+                            if let Some(obj) = response_value.as_object_mut() {
+                                obj["message"] = serde_json::Value::String(
+                                    format!("Record with ID '{}' deleted successfully from '{}'", record_id, table_name)
+                                );
+                            }
+
+                            // Convert the modified response back to DeleteResponse
+                            let response: [<Delete $table:camel Response>] = serde_json::from_value(response_value)
+                                .map_err(|e| Status::internal(format!("Failed to create response: {}", e)))?;
+
+                            Ok(Response::new(response))
+                        },
+                        Err(error) => {
+                            let response = [<Delete $table:camel Response>] {
+                                success: false,
+                                message: error.to_string(),
+                                count: 0,
+                                data: None,
+                            };
+                            Ok(Response::new(response))
+                        }
+                    }
                 })
             }
         }
