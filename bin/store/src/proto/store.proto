@@ -185,6 +185,29 @@ message DeviceSshKeys {
   string device_id = 22;
 }
 
+// DeviceGroupSettings entity definition
+message DeviceGroupSettings {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string name = 19;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -578,6 +601,137 @@ message UpsertDeviceSshKeysResponse {
   repeated DeviceSshKeys data = 4;
 }
 
+// Create DeviceGroupSettings request
+message CreateDeviceGroupSettingsRequest {
+  DeviceGroupSettings device_group_settings = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceGroupSettings response
+message CreateDeviceGroupSettingsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// Get DeviceGroupSettings request
+message GetDeviceGroupSettingsRequest {
+  string id = 1;
+}
+
+// Get DeviceGroupSettings response
+message GetDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceGroupSettings data = 3;
+}
+
+// Update DeviceGroupSettings request
+message UpdateDeviceGroupSettingsRequest {
+  DeviceGroupSettings device_group_setting = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceGroupSettings response
+message UpdateDeviceGroupSettingsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// BatchUpdate DeviceGroupSettings request
+message BatchUpdateDeviceGroupSettingsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceGroupSettings updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceGroupSettings response
+message BatchUpdateDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceGroupSettings data = 4;
+}
+
+// BatchDelete DeviceGroupSettings request
+message BatchDeleteDeviceGroupSettingsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceGroupSettings response
+message BatchDeleteDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// Delete DeviceGroupSettings request
+message DeleteDeviceGroupSettingsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceGroupSettings response
+message DeleteDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// BatchInsert DeviceGroupSettings request
+message BatchInsertDeviceGroupSettingsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceGroupSettings device_group_settings = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceGroupSettings response
+message BatchInsertDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceGroupSettings data = 4;
+}
+
+// Upsert DeviceGroupSettings request
+message UpsertDeviceGroupSettingsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceGroupSettings data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceGroupSettings response
+message UpsertDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceGroupSettings data = 4;
+}
+
 // Store service definition with CRUD operations
 service StoreService {
   // Create a new Packets
@@ -651,5 +805,29 @@ service StoreService {
 
   // Upsert a DeviceSshKeys (create if not exists, update if exists)
   rpc UpsertDeviceSshKeys(UpsertDeviceSshKeysRequest) returns (UpsertDeviceSshKeysResponse);
+
+  // Create a new DeviceGroupSettings
+  rpc CreateDeviceGroupSettings(CreateDeviceGroupSettingsRequest) returns (CreateDeviceGroupSettingsResponse);
+
+  // Get a DeviceGroupSettings by ID
+  rpc GetDeviceGroupSettings(GetDeviceGroupSettingsRequest) returns (GetDeviceGroupSettingsResponse);
+
+  // Update an existing DeviceGroupSettings
+  rpc UpdateDeviceGroupSettings(UpdateDeviceGroupSettingsRequest) returns (UpdateDeviceGroupSettingsResponse);
+
+  // Delete a DeviceGroupSettings by ID
+  rpc DeleteDeviceGroupSettings(DeleteDeviceGroupSettingsRequest) returns (DeleteDeviceGroupSettingsResponse);
+
+  // Batch insert multiple DeviceGroupSettingss
+  rpc BatchInsertDeviceGroupSettings(BatchInsertDeviceGroupSettingsRequest) returns (BatchInsertDeviceGroupSettingsResponse);
+
+  // Batch update multiple DeviceGroupSettingss based on filters
+  rpc BatchUpdateDeviceGroupSettings(BatchUpdateDeviceGroupSettingsRequest) returns (BatchUpdateDeviceGroupSettingsResponse);
+
+  // Batch delete multiple DeviceGroupSettingss based on filters
+  rpc BatchDeleteDeviceGroupSettings(BatchDeleteDeviceGroupSettingsRequest) returns (BatchDeleteDeviceGroupSettingsResponse);
+
+  // Upsert a DeviceGroupSettings (create if not exists, update if exists)
+  rpc UpsertDeviceGroupSettings(UpsertDeviceGroupSettingsRequest) returns (UpsertDeviceGroupSettingsResponse);
 
 }

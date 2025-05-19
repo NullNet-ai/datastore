@@ -8,4 +8,5 @@ pub mod queue_item_model;
 pub mod queue_model;
 pub mod sync_endpoint_model;
 pub mod transaction_model;
+pub mod device_group_setting_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

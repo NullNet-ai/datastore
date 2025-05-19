@@ -2,6 +2,7 @@ use crate::{generate_get_by_id_match, generate_hypertable_timestamp_match, gener
 use crate::models::packet_model::PacketModel;
 use crate::models::connection_model::ConnectionModel;
 use crate::models::device_ssh_key_model::DeviceSshKeyModel;
+use crate::models::device_group_setting_model::DeviceGroupSettingModel;
 use crate::schema::schema;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
@@ -20,6 +21,7 @@ pub enum Table {
     Packets,
     Connections,
     DeviceSshKeys,
+    DeviceGroupSettings,
     // Add other tables here
 }
 
@@ -29,6 +31,7 @@ impl Table {
             "packets" => Some(Table::Packets),
             "connections" => Some(Table::Connections),
             "device_ssh_keys" => Some(Table::DeviceSshKeys),
+            "device_group_settings" => Some(Table::DeviceGroupSettings),
             // Add other tables here
             _ => None,
         }
@@ -72,7 +75,7 @@ impl Table {
             conn,
             record,
             request,
-            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -85,7 +88,7 @@ impl Table {
             self,
             conn,
             id,
-            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -98,7 +101,7 @@ impl Table {
             self,
             conn,
             record,
-            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -111,7 +114,7 @@ impl Table {
             self,
             conn,
             record,
-            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 }
