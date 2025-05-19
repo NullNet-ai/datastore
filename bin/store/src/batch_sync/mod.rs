@@ -1,12 +1,13 @@
 use crate::controllers::common_controller::process_and_update_record;
+use crate::structs::structs::Auth;
 use crate::sync::sync_service::{insert, update};
+use crate::table_enum::generate_code;
 use log;
 use serde_json::{json, Value};
 use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::Mutex;
-use crate::table_enum::generate_code;
 
 // Define message types
 #[derive(Debug, Clone, PartialEq)]
@@ -20,6 +21,7 @@ pub struct CodeAssignmentMessage {
     pub table_name: String,
     pub id: String,
     pub entity_prefix: String,
+    pub auth_data: Auth,
 }
 // Define a message structure
 #[derive(Debug, Clone)]
@@ -48,9 +50,9 @@ impl BatchSyncService {
     // Initialize the queue service
     pub async fn init() -> Result<(), String> {
         // Create channels with buffer sizes
-        let (insert_sender, insert_receiver) = mpsc::channel::<SyncMessage>(100);
-        let (update_sender, update_receiver) = mpsc::channel::<SyncMessage>(100);
-        let (code_sender, code_receiver) = mpsc::channel::<CodeAssignmentMessage>(100);
+        let (insert_sender, insert_receiver) = mpsc::channel::<SyncMessage>(1000000);
+        let (update_sender, update_receiver) = mpsc::channel::<SyncMessage>(1000000);
+        let (code_sender, code_receiver) = mpsc::channel::<CodeAssignmentMessage>(1000000);
 
         // Store the senders in global variables for access from anywhere
         unsafe {
@@ -227,7 +229,7 @@ impl BatchSyncService {
             loop {
                 if let Some(message) = Self::get_next_code_assignment(&queue).await {
                     if Self::process_code_assignment_message(message.clone()).await {
-                        println!("{:?}",message);
+                        println!("{:?}", message);
                         log::debug!(
                             "Successfully processed code assignment for table: {}",
                             message.table_name
@@ -245,7 +247,9 @@ impl BatchSyncService {
                     match rx.recv().await {
                         Some(message) => {
                             if !Self::process_code_assignment_message(message.clone()).await {
-                                log::warn!("Failed to process code assignment, adding to retry queue");
+                                log::warn!(
+                                    "Failed to process code assignment, adding to retry queue"
+                                );
                                 Self::add_to_code_assignment_queue(&queue, message).await;
                             }
                         }
@@ -346,12 +350,17 @@ impl BatchSyncService {
             .map_err(|e| format!("Failed to send update message: {}", e))
     }
 
-    async fn get_next_code_assignment(queue: &Arc<Mutex<VecDeque<CodeAssignmentMessage>>>) -> Option<CodeAssignmentMessage> {
+    async fn get_next_code_assignment(
+        queue: &Arc<Mutex<VecDeque<CodeAssignmentMessage>>>,
+    ) -> Option<CodeAssignmentMessage> {
         let mut queue_lock = queue.lock().await;
         queue_lock.pop_front()
     }
 
-    async fn add_to_code_assignment_queue(queue: &Arc<Mutex<VecDeque<CodeAssignmentMessage>>>, message: CodeAssignmentMessage) {
+    async fn add_to_code_assignment_queue(
+        queue: &Arc<Mutex<VecDeque<CodeAssignmentMessage>>>,
+        message: CodeAssignmentMessage,
+    ) {
         let mut queue_lock = queue.lock().await;
         queue_lock.push_back(message);
     }
@@ -360,7 +369,8 @@ impl BatchSyncService {
         let table_name = message.table_name;
         let id = message.id;
         let entity_prefix = message.entity_prefix;
-        let code=match generate_code(&table_name, &entity_prefix, 10000).await {
+        let auth_data = message.auth_data;
+        let code = match generate_code(&table_name, &entity_prefix, 10000).await {
             Ok(code) => code,
             Err(e) => {
                 log::error!("Error processing code assignment message: {}", e);
@@ -372,11 +382,13 @@ impl BatchSyncService {
             "code": code
         });
 
-        match process_and_update_record(&table_name, record_obj, &id, None, "update").await {
+        match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data)
+            .await
+        {
             Ok(response) => true,
             Err(error) => {
                 log::error!("Error processing code assignment message: {}", error);
-               return false;
+                return false;
             }
         }
     }
@@ -386,6 +398,7 @@ impl BatchSyncService {
         table_name: String,
         id: String,
         entity_prefix: String,
+        auth_data: Auth,
     ) -> Result<(), String> {
         let sender = Self::get_code_assignment_sender()
             .ok_or_else(|| "Queue service not initialized".to_string())?;
@@ -394,6 +407,7 @@ impl BatchSyncService {
             table_name,
             id,
             entity_prefix,
+            auth_data,
         };
 
         sender

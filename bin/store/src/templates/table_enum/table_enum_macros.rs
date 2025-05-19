@@ -28,11 +28,11 @@ macro_rules! generate_hypertable_timestamp_match {
 
 #[macro_export]
 macro_rules! generate_insert_record_match {
-    ($self:expr, $conn:expr, $record:expr, $request:expr, $($table:ident, $model:ty),*) => {
+    ($self:expr, $auth:expr, $conn:expr, $record:expr, $request:expr, $($table:ident, $model:ty),*) => {
         paste::paste! {
             {
                 let mut request = $request.into_inner();
-                request.process_record("create");
+                request.process_record("create", $auth);
 
                 match $self {
                     $(

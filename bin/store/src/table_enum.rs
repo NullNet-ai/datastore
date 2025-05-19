@@ -3,7 +3,7 @@ use crate::models::packet_model::PacketModel;
 use crate::models::connection_model::ConnectionModel;
 use crate::schema::schema;
 use crate::schema::verify::field_exists_in_table;
-use crate::structs::structs::RequestBody;
+use crate::structs::structs::{Auth, RequestBody};
 use actix_web::web;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
@@ -61,9 +61,11 @@ impl Table {
         conn: &mut AsyncPgConnection,
         record: Value,
         request: web::Json<RequestBody>,
+        auth: &Auth,
     ) -> Result<String, DieselError> {
         generate_insert_record_match!(
             self,
+            auth,
             conn,
             record,
             request,

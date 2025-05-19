@@ -68,7 +68,6 @@ pub async fn get_async_connection() -> AsyncDbPooledConnection {
     })
 }
 
-
 //raw database connection
 pub async fn create_connection() -> Result<Client, Box<dyn std::error::Error>> {
     let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());

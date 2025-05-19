@@ -42,9 +42,9 @@ pub struct SqlUpdate {
 
 impl RequestBody {
     // Process record with common fields and return a Value directly
-    pub fn process_record(&mut self, operation: &str) {
+    pub fn process_record(&mut self, operation: &str, auth: &Auth) {
         // // Add common fields to the record
-        self.add_common_fields(operation);
+        self.add_common_fields(operation, auth);
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
@@ -63,7 +63,7 @@ impl RequestBody {
     }
 
     // Helper method to add common fields
-    fn add_common_fields(&mut self, operation: &str) {
+    fn add_common_fields(&mut self, operation: &str, auth: &Auth) {
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
@@ -80,16 +80,21 @@ impl RequestBody {
                 self.record["updated_time"] = json!(time_str);
                 self.record["version"] = json!(1);
                 self.record["tombstone"] = json!(0);
+                self.record["organization_id"] = json!(auth.organization_id);
+                self.record["created_by"] = json!(auth.responsible_account);
             }
             "update" => {
                 self.record["updated_date"] = json!(date_str);
                 self.record["updated_time"] = json!(time_str);
+                self.record["updated_by"] = json!(auth.responsible_account);
                 self.record["version"] = json!(0); // ! don't change this, it gets discarded in the end, it's just a placeholder
             }
             "delete" => {
                 self.record["updated_date"] = json!(date_str);
                 self.record["updated_time"] = json!(time_str);
                 self.record["status"] = json!("Draft");
+                self.record["updated_by"] = json!(auth.responsible_account);
+                self.record["deleted_by"] = json!(auth.responsible_account);
                 self.record["tombstone"] = json!(1);
             }
             _ => {
@@ -174,4 +179,10 @@ pub struct Endpoint {
     pub id: Option<String>,
     pub group_id: Option<String>,
     pub status: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Auth {
+    pub organization_id: String,
+    pub responsible_account: String,
 }

@@ -4,8 +4,8 @@ use auth::auth_middleware::Authentication;
 use dotenv::dotenv;
 use std::env;
 use templates::grpc_controller::grpc_controller_generator;
-use templates::table_enum::table_enum_generator;
 use templates::proto_generator;
+use templates::table_enum::table_enum_generator;
 mod auth;
 mod batch_sync;
 mod controllers;
@@ -26,7 +26,8 @@ use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
 use controllers::store_controller::{
-    batch_delete_records, batch_insert_records, batch_update_records, create_record, update_record, upsert, delete_record
+    batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
+    update_record, upsert,
 };
 use env_logger::Env;
 use std::sync::Arc;

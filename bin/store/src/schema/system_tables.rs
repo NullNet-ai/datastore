@@ -8,7 +8,7 @@ pub const SYSTEM_TABLES: [&str; 7] = [
     "queues",
     "queue_items",
     "transactions",
-    "counters"
+    "counters",
 ];
 
 // Function to check if a table is a system table

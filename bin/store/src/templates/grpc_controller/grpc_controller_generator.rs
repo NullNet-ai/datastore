@@ -63,7 +63,9 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(file, "use std::net::SocketAddr;")?;
     writeln!(file, "use crate::table_enum::Table;")?;
     writeln!(file, "use crate::sync::sync_service::{{insert, update}};")?;
+    writeln!(file, "use crate::structs::structs::Auth;")?;
     writeln!(file, "use serde_json::Value;")?;
+
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
     writeln!(
         file,
@@ -140,7 +142,6 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
             table.name.to_case(Case::Pascal),
             table.name.to_case(Case::Pascal)
         )?;
-
     }
     writeln!(file, "}};")?;
 

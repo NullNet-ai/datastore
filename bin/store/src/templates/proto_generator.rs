@@ -188,12 +188,12 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("}\n\n");
 
     // Common query structure for Delete requests
-proto.push_str("// Common query structure for Delete requests\n");
-proto.push_str("message DeleteQuery {\n");
-proto.push_str("  string is_permanent = 1; // Whether to perform permanent deletion\n");
-proto.push_str("}\n\n");
+    proto.push_str("// Common query structure for Delete requests\n");
+    proto.push_str("message DeleteQuery {\n");
+    proto.push_str("  string is_permanent = 1; // Whether to perform permanent deletion\n");
+    proto.push_str("}\n\n");
 
-proto.push_str("// Common parameter structure for Delete requests\n");
+    proto.push_str("// Common parameter structure for Delete requests\n");
     proto.push_str("message DeleteParams {\n");
     proto.push_str("  string id = 1; // Record ID\n");
     proto.push_str("  string table = 2; // Table name\n");
@@ -323,10 +323,10 @@ proto.push_str("// Common parameter structure for Delete requests\n");
 
         // Delete operation
         proto.push_str(&format!("// Delete {} request\n", pascal_name));
-          proto.push_str(&format!("message Delete{}Request {{\n", pascal_name));
-          proto.push_str("  DeleteParams params = 1;\n");
-          proto.push_str("  DeleteQuery query = 2;\n");
-          proto.push_str("}\n\n");
+        proto.push_str(&format!("message Delete{}Request {{\n", pascal_name));
+        proto.push_str("  DeleteParams params = 1;\n");
+        proto.push_str("  DeleteQuery query = 2;\n");
+        proto.push_str("}\n\n");
 
         proto.push_str(&format!("// Delete {} response\n", pascal_name));
         proto.push_str(&format!("message Delete{}Response {{\n", pascal_name));
@@ -360,28 +360,26 @@ proto.push_str("// Common parameter structure for Delete requests\n");
         proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
         proto.push_str("}\n\n");
 
-          // Upsert operation
-          proto.push_str(&format!("// Upsert {} request\n", pascal_name));
-          proto.push_str(&format!("message Upsert{}Request {{\n", pascal_name));
-          proto.push_str("  UpsertParams params = 1;\n");
-          proto.push_str("  UpsertQuery query = 2;\n");
-          proto.push_str("  message UpsertBody {\n");
-          proto.push_str("    repeated string conflict_columns = 1;\n");
-          proto.push_str(&format!("    {} data = 2;\n", pascal_name));
-          proto.push_str("    string entity_prefix = 3;\n");
-          proto.push_str("  }\n");
-          proto.push_str("  UpsertBody body = 3;\n");
-          proto.push_str("}\n\n");
-  
-          proto.push_str(&format!("// Upsert {} response\n", pascal_name));
-          proto.push_str(&format!("message Upsert{}Response {{\n", pascal_name));
-          proto.push_str("  bool success = 1;\n");
-          proto.push_str("  string message = 2;\n");
-          proto.push_str("  int32 count = 3;\n");
-          proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
-          proto.push_str("}\n\n");
+        // Upsert operation
+        proto.push_str(&format!("// Upsert {} request\n", pascal_name));
+        proto.push_str(&format!("message Upsert{}Request {{\n", pascal_name));
+        proto.push_str("  UpsertParams params = 1;\n");
+        proto.push_str("  UpsertQuery query = 2;\n");
+        proto.push_str("  message UpsertBody {\n");
+        proto.push_str("    repeated string conflict_columns = 1;\n");
+        proto.push_str(&format!("    {} data = 2;\n", pascal_name));
+        proto.push_str("    string entity_prefix = 3;\n");
+        proto.push_str("  }\n");
+        proto.push_str("  UpsertBody body = 3;\n");
+        proto.push_str("}\n\n");
 
-          
+        proto.push_str(&format!("// Upsert {} response\n", pascal_name));
+        proto.push_str(&format!("message Upsert{}Response {{\n", pascal_name));
+        proto.push_str("  bool success = 1;\n");
+        proto.push_str("  string message = 2;\n");
+        proto.push_str("  int32 count = 3;\n");
+        proto.push_str(&format!("  repeated {} data = 4;\n", pascal_name));
+        proto.push_str("}\n\n");
     }
 
     // Generate batch operations for multiple records - only once
@@ -448,13 +446,15 @@ proto.push_str("// Common parameter structure for Delete requests\n");
             pascal_name, pascal_name, pascal_name
         ));
 
-         //Upsert
-         proto.push_str(&format!("  // Upsert a {} (create if not exists, update if exists)\n", pascal_name));
-         proto.push_str(&format!(
-             "  rpc Upsert{}(Upsert{}Request) returns (Upsert{}Response);\n\n",
-             pascal_name, pascal_name, pascal_name
-         ));
-
+        //Upsert
+        proto.push_str(&format!(
+            "  // Upsert a {} (create if not exists, update if exists)\n",
+            pascal_name
+        ));
+        proto.push_str(&format!(
+            "  rpc Upsert{}(Upsert{}Request) returns (Upsert{}Response);\n\n",
+            pascal_name, pascal_name, pascal_name
+        ));
     }
 
     proto.push_str("}\n");

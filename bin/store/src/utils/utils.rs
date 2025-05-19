@@ -1,5 +1,5 @@
-use singularize::singularize;
 use crate::schema::system_tables::is_system_table;
+use singularize::singularize;
 
 use crate::templates::proto_generator::diesel_type_to_proto;
 
@@ -116,4 +116,8 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
     }
 
     tables
+}
+
+pub fn token_data_extractor(token: &str) -> String {
+    todo!()
 }

@@ -1,3 +1,5 @@
+use crate::structs::structs::Auth;
+use actix_web::HttpMessage;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     http::header,
@@ -5,11 +7,25 @@ use actix_web::{
 };
 use futures::future::{ok, Ready};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::future::Future;
 use std::pin::Pin;
 use tonic::{Request, Status};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Account {
+    organization_id: String,
+    account_id: String,
+    organization_account_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Claims {
+    account: Account,
+    exp: usize,
+    iat: usize,
+}
 
 // Authentication middleware struct
 pub struct Authentication;
@@ -49,71 +65,91 @@ where
 
     forward_ready!(service);
 
-    fn call(&self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, auth: ServiceRequest) -> Self::Future {
         // Extract the token from the Authorization header
-        let auth_header = req
+        let auth_header = auth
             .headers()
             .get(header::AUTHORIZATION)
             .and_then(|h| h.to_str().ok());
 
         let token = extract_token(auth_header);
 
-        let auth_result = token.map(|t| validate_token(&t)).unwrap_or(false);
+        match token {
+            Some(t) => match validate_token(&t) {
+                Ok(claims) => {
+                    let auth_data = Auth {
+                        organization_id: claims.account.organization_id.clone(),
+                        responsible_account: claims.account.organization_account_id.clone(),
+                    };
 
-        if auth_result {
-            // If authentication is successful, call the next service
-            let fut = self.service.call(req);
-            Box::pin(async move {
-                let res = fut.await?;
-                Ok(res)
-            })
-        } else {
-            // If authentication fails, return a JSON error response
-            let error_response = serde_json::json!({
-                "success": false,
-                "message": "Token verification failed: Invalid or expired token"
-            });
+                    // Store the Auth object in request extensions
+                    auth.extensions_mut().insert(auth_data);
 
-            Box::pin(async move {
-                // Create a proper JSON response with correct content type
-                let json_error = actix_web::HttpResponse::Unauthorized()
-                    .content_type("application/json")
-                    .json(error_response);
-                Err(
-                    actix_web::error::InternalError::from_response("Unauthorized", json_error)
-                        .into(),
-                )
-            })
+                    let fut = self.service.call(auth);
+                    Box::pin(async move {
+                        let res = fut.await?;
+                        Ok(res)
+                    })
+                }
+                Err(_) => {
+                    let error_response = serde_json::json!({
+                        "success": false,
+                        "message": "Token verification failed: Invalid or expired token"
+                    });
+
+                    Box::pin(async move {
+                        let json_error = actix_web::HttpResponse::Unauthorized()
+                            .content_type("application/json")
+                            .json(error_response);
+                        Err(actix_web::error::InternalError::from_response(
+                            "Unauthorized",
+                            json_error,
+                        )
+                        .into())
+                    })
+                }
+            },
+            None => {
+                let error_response = serde_json::json!({
+                    "success": false,
+                    "message": "No authorization token provided"
+                });
+
+                Box::pin(async move {
+                    let json_error = actix_web::HttpResponse::Unauthorized()
+                        .content_type("application/json")
+                        .json(error_response);
+                    Err(
+                        actix_web::error::InternalError::from_response("Unauthorized", json_error)
+                            .into(),
+                    )
+                })
+            }
         }
     }
 }
 
 // Function to validate the token
-fn validate_token(token: &str) -> bool {
-    // JWT secret - you should store this in an environment variable
+fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let jwt_secret = match env::var("JWT_SECRET") {
         Ok(secret) => secret,
         Err(_) => {
             println!("JWT_SECRET environment variable not set");
-            return false;
+            return Err(jsonwebtoken::errors::Error::from(
+                jsonwebtoken::errors::ErrorKind::InvalidToken,
+            ));
         }
     };
 
     // Verify the JWT token
     let validation = Validation::new(Algorithm::HS256);
-
-    match decode::<Value>(
+    let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(jwt_secret.as_bytes()),
         &validation,
-    ) {
-        Ok(_token_data) => true,
-        Err(err) => {
-            // Token validation failed
-            println!("Token validation error: {:?}", err);
-            false
-        }
-    }
+    )?;
+
+    Ok(token_data.claims)
 }
 
 // Extract token from various sources
@@ -132,17 +168,11 @@ use tonic::service::Interceptor;
 pub struct GrpcAuthInterceptor;
 
 impl Interceptor for GrpcAuthInterceptor {
-    fn call(&mut self, request: Request<()>) -> Result<Request<()>, Status> {
-        // Try to get token from metadata
+    fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
         let metadata = request.metadata();
 
-        // First check for "authorization" metadata
         let auth_header = metadata.get("authorization").and_then(|v| v.to_str().ok());
-
-        let token = extract_token(auth_header);
-
-        // If no token in authorization header, check for "token" metadata
-        let token = token.or_else(|| {
+        let token = extract_token(auth_header).or_else(|| {
             metadata
                 .get("token")
                 .and_then(|v| v.to_str().ok())
@@ -150,10 +180,21 @@ impl Interceptor for GrpcAuthInterceptor {
         });
 
         match token {
-            Some(t) if validate_token(&t) => Ok(request),
-            _ => Err(Status::unauthenticated(
-                "Invalid or missing authentication token",
-            )),
+            Some(t) => match validate_token(&t) {
+                Ok(claims) => {
+                    // Create Auth object with both IDs
+                    let auth_data = Auth {
+                        organization_id: claims.account.organization_id,
+                        responsible_account: claims.account.organization_account_id,
+                    };
+
+                    // Store the Auth object in request extensions
+                    request.extensions_mut().insert(auth_data);
+                    Ok(request)
+                }
+                Err(_) => Err(Status::unauthenticated("Invalid token")),
+            },
+            None => Err(Status::unauthenticated("Missing authentication token")),
         }
     }
 }

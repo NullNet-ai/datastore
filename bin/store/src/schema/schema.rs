@@ -91,7 +91,6 @@ table! {
     }
 }
 
-
 table! {
     crdt_messages (timestamp, group_id, row, column) {
         database -> Nullable<Text>,
