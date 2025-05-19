@@ -924,7 +924,9 @@ pub struct BatchUpdateDeviceSshKeysRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchUpdateParams>,
     #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<batch_update_device_ssh_keys_request::BatchUpdateBody>,
+    pub body: ::core::option::Option<
+        batch_update_device_ssh_keys_request::BatchUpdateBody,
+    >,
 }
 /// Nested message and enum types in `BatchUpdateDeviceSshKeysRequest`.
 pub mod batch_update_device_ssh_keys_request {
@@ -960,7 +962,9 @@ pub struct BatchDeleteDeviceSshKeysRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchDeleteParams>,
     #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<batch_delete_device_ssh_keys_request::BatchDeleteBody>,
+    pub body: ::core::option::Option<
+        batch_delete_device_ssh_keys_request::BatchDeleteBody,
+    >,
 }
 /// Nested message and enum types in `BatchDeleteDeviceSshKeysRequest`.
 pub mod batch_delete_device_ssh_keys_request {
@@ -1095,7 +1099,7 @@ pub mod store_service_server {
         dead_code,
         missing_docs,
         clippy::wildcard_imports,
-        clippy::let_unit_value
+        clippy::let_unit_value,
     )]
     use tonic::codegen::*;
     /// Generated trait containing gRPC methods that should be implemented for use with StoreServiceServer.
@@ -1105,62 +1109,98 @@ pub mod store_service_server {
         async fn create_packets(
             &self,
             request: tonic::Request<super::CreatePacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::CreatePacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::CreatePacketsResponse>,
+            tonic::Status,
+        >;
         /// Get a Packets by ID
         async fn get_packets(
             &self,
             request: tonic::Request<super::GetPacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetPacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::GetPacketsResponse>,
+            tonic::Status,
+        >;
         /// Update an existing Packets
         async fn update_packets(
             &self,
             request: tonic::Request<super::UpdatePacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpdatePacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::UpdatePacketsResponse>,
+            tonic::Status,
+        >;
         /// Delete a Packets by ID
         async fn delete_packets(
             &self,
             request: tonic::Request<super::DeletePacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::DeletePacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::DeletePacketsResponse>,
+            tonic::Status,
+        >;
         /// Batch insert multiple Packetss
         async fn batch_insert_packets(
             &self,
             request: tonic::Request<super::BatchInsertPacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::BatchInsertPacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertPacketsResponse>,
+            tonic::Status,
+        >;
         /// Batch update multiple Packetss based on filters
         async fn batch_update_packets(
             &self,
             request: tonic::Request<super::BatchUpdatePacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::BatchUpdatePacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdatePacketsResponse>,
+            tonic::Status,
+        >;
         /// Batch delete multiple Packetss based on filters
         async fn batch_delete_packets(
             &self,
             request: tonic::Request<super::BatchDeletePacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::BatchDeletePacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeletePacketsResponse>,
+            tonic::Status,
+        >;
         /// Upsert a Packets (create if not exists, update if exists)
         async fn upsert_packets(
             &self,
             request: tonic::Request<super::UpsertPacketsRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpsertPacketsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertPacketsResponse>,
+            tonic::Status,
+        >;
         /// Create a new Connections
         async fn create_connections(
             &self,
             request: tonic::Request<super::CreateConnectionsRequest>,
-        ) -> std::result::Result<tonic::Response<super::CreateConnectionsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::CreateConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Get a Connections by ID
         async fn get_connections(
             &self,
             request: tonic::Request<super::GetConnectionsRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetConnectionsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::GetConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Update an existing Connections
         async fn update_connections(
             &self,
             request: tonic::Request<super::UpdateConnectionsRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpdateConnectionsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Delete a Connections by ID
         async fn delete_connections(
             &self,
             request: tonic::Request<super::DeleteConnectionsRequest>,
-        ) -> std::result::Result<tonic::Response<super::DeleteConnectionsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Batch insert multiple Connectionss
         async fn batch_insert_connections(
             &self,
@@ -1189,27 +1229,42 @@ pub mod store_service_server {
         async fn upsert_connections(
             &self,
             request: tonic::Request<super::UpsertConnectionsRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpsertConnectionsResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertConnectionsResponse>,
+            tonic::Status,
+        >;
         /// Create a new DeviceSshKeys
         async fn create_device_ssh_keys(
             &self,
             request: tonic::Request<super::CreateDeviceSshKeysRequest>,
-        ) -> std::result::Result<tonic::Response<super::CreateDeviceSshKeysResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::CreateDeviceSshKeysResponse>,
+            tonic::Status,
+        >;
         /// Get a DeviceSshKeys by ID
         async fn get_device_ssh_keys(
             &self,
             request: tonic::Request<super::GetDeviceSshKeysRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetDeviceSshKeysResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::GetDeviceSshKeysResponse>,
+            tonic::Status,
+        >;
         /// Update an existing DeviceSshKeys
         async fn update_device_ssh_keys(
             &self,
             request: tonic::Request<super::UpdateDeviceSshKeysRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpdateDeviceSshKeysResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateDeviceSshKeysResponse>,
+            tonic::Status,
+        >;
         /// Delete a DeviceSshKeys by ID
         async fn delete_device_ssh_keys(
             &self,
             request: tonic::Request<super::DeleteDeviceSshKeysRequest>,
-        ) -> std::result::Result<tonic::Response<super::DeleteDeviceSshKeysResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteDeviceSshKeysResponse>,
+            tonic::Status,
+        >;
         /// Batch insert multiple DeviceSshKeyss
         async fn batch_insert_device_ssh_keys(
             &self,
@@ -1238,7 +1293,10 @@ pub mod store_service_server {
         async fn upsert_device_ssh_keys(
             &self,
             request: tonic::Request<super::UpsertDeviceSshKeysRequest>,
-        ) -> std::result::Result<tonic::Response<super::UpsertDeviceSshKeysResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertDeviceSshKeysResponse>,
+            tonic::Status,
+        >;
     }
     /// Store service definition with CRUD operations
     #[derive(Debug)]
@@ -1262,7 +1320,10 @@ pub mod store_service_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -1317,11 +1378,15 @@ pub mod store_service_server {
                 "/store.StoreService/CreatePackets" => {
                     #[allow(non_camel_case_types)]
                     struct CreatePacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService> tonic::server::UnaryService<super::CreatePacketsRequest>
-                        for CreatePacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreatePacketsRequest>
+                    for CreatePacketsSvc<T> {
                         type Response = super::CreatePacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CreatePacketsRequest>,
@@ -1358,9 +1423,15 @@ pub mod store_service_server {
                 "/store.StoreService/GetPackets" => {
                     #[allow(non_camel_case_types)]
                     struct GetPacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService> tonic::server::UnaryService<super::GetPacketsRequest> for GetPacketsSvc<T> {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetPacketsRequest>
+                    for GetPacketsSvc<T> {
                         type Response = super::GetPacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::GetPacketsRequest>,
@@ -1397,11 +1468,15 @@ pub mod store_service_server {
                 "/store.StoreService/UpdatePackets" => {
                     #[allow(non_camel_case_types)]
                     struct UpdatePacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService> tonic::server::UnaryService<super::UpdatePacketsRequest>
-                        for UpdatePacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdatePacketsRequest>
+                    for UpdatePacketsSvc<T> {
                         type Response = super::UpdatePacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::UpdatePacketsRequest>,
@@ -1438,11 +1513,15 @@ pub mod store_service_server {
                 "/store.StoreService/DeletePackets" => {
                     #[allow(non_camel_case_types)]
                     struct DeletePacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService> tonic::server::UnaryService<super::DeletePacketsRequest>
-                        for DeletePacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeletePacketsRequest>
+                    for DeletePacketsSvc<T> {
                         type Response = super::DeletePacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::DeletePacketsRequest>,
@@ -1479,19 +1558,23 @@ pub mod store_service_server {
                 "/store.StoreService/BatchInsertPackets" => {
                     #[allow(non_camel_case_types)]
                     struct BatchInsertPacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchInsertPacketsRequest>
-                        for BatchInsertPacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertPacketsRequest>
+                    for BatchInsertPacketsSvc<T> {
                         type Response = super::BatchInsertPacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::BatchInsertPacketsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_insert_packets(&inner, request).await
+                                <T as StoreService>::batch_insert_packets(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1521,19 +1604,23 @@ pub mod store_service_server {
                 "/store.StoreService/BatchUpdatePackets" => {
                     #[allow(non_camel_case_types)]
                     struct BatchUpdatePacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchUpdatePacketsRequest>
-                        for BatchUpdatePacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdatePacketsRequest>
+                    for BatchUpdatePacketsSvc<T> {
                         type Response = super::BatchUpdatePacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::BatchUpdatePacketsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_update_packets(&inner, request).await
+                                <T as StoreService>::batch_update_packets(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1563,19 +1650,23 @@ pub mod store_service_server {
                 "/store.StoreService/BatchDeletePackets" => {
                     #[allow(non_camel_case_types)]
                     struct BatchDeletePacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchDeletePacketsRequest>
-                        for BatchDeletePacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeletePacketsRequest>
+                    for BatchDeletePacketsSvc<T> {
                         type Response = super::BatchDeletePacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::BatchDeletePacketsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_delete_packets(&inner, request).await
+                                <T as StoreService>::batch_delete_packets(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1605,11 +1696,15 @@ pub mod store_service_server {
                 "/store.StoreService/UpsertPackets" => {
                     #[allow(non_camel_case_types)]
                     struct UpsertPacketsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService> tonic::server::UnaryService<super::UpsertPacketsRequest>
-                        for UpsertPacketsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertPacketsRequest>
+                    for UpsertPacketsSvc<T> {
                         type Response = super::UpsertPacketsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::UpsertPacketsRequest>,
@@ -1646,19 +1741,23 @@ pub mod store_service_server {
                 "/store.StoreService/CreateConnections" => {
                     #[allow(non_camel_case_types)]
                     struct CreateConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::CreateConnectionsRequest>
-                        for CreateConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateConnectionsRequest>
+                    for CreateConnectionsSvc<T> {
                         type Response = super::CreateConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CreateConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::create_connections(&inner, request).await
+                                <T as StoreService>::create_connections(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1688,11 +1787,15 @@ pub mod store_service_server {
                 "/store.StoreService/GetConnections" => {
                     #[allow(non_camel_case_types)]
                     struct GetConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService> tonic::server::UnaryService<super::GetConnectionsRequest>
-                        for GetConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetConnectionsRequest>
+                    for GetConnectionsSvc<T> {
                         type Response = super::GetConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::GetConnectionsRequest>,
@@ -1729,19 +1832,23 @@ pub mod store_service_server {
                 "/store.StoreService/UpdateConnections" => {
                     #[allow(non_camel_case_types)]
                     struct UpdateConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::UpdateConnectionsRequest>
-                        for UpdateConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateConnectionsRequest>
+                    for UpdateConnectionsSvc<T> {
                         type Response = super::UpdateConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::UpdateConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::update_connections(&inner, request).await
+                                <T as StoreService>::update_connections(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1771,19 +1878,23 @@ pub mod store_service_server {
                 "/store.StoreService/DeleteConnections" => {
                     #[allow(non_camel_case_types)]
                     struct DeleteConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::DeleteConnectionsRequest>
-                        for DeleteConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteConnectionsRequest>
+                    for DeleteConnectionsSvc<T> {
                         type Response = super::DeleteConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::DeleteConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::delete_connections(&inner, request).await
+                                <T as StoreService>::delete_connections(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1813,19 +1924,26 @@ pub mod store_service_server {
                 "/store.StoreService/BatchInsertConnections" => {
                     #[allow(non_camel_case_types)]
                     struct BatchInsertConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchInsertConnectionsRequest>
-                        for BatchInsertConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertConnectionsRequest>
+                    for BatchInsertConnectionsSvc<T> {
                         type Response = super::BatchInsertConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::BatchInsertConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_insert_connections(&inner, request).await
+                                <T as StoreService>::batch_insert_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1855,19 +1973,26 @@ pub mod store_service_server {
                 "/store.StoreService/BatchUpdateConnections" => {
                     #[allow(non_camel_case_types)]
                     struct BatchUpdateConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchUpdateConnectionsRequest>
-                        for BatchUpdateConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateConnectionsRequest>
+                    for BatchUpdateConnectionsSvc<T> {
                         type Response = super::BatchUpdateConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::BatchUpdateConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_update_connections(&inner, request).await
+                                <T as StoreService>::batch_update_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1897,19 +2022,26 @@ pub mod store_service_server {
                 "/store.StoreService/BatchDeleteConnections" => {
                     #[allow(non_camel_case_types)]
                     struct BatchDeleteConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchDeleteConnectionsRequest>
-                        for BatchDeleteConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteConnectionsRequest>
+                    for BatchDeleteConnectionsSvc<T> {
                         type Response = super::BatchDeleteConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::BatchDeleteConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_delete_connections(&inner, request).await
+                                <T as StoreService>::batch_delete_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1939,19 +2071,23 @@ pub mod store_service_server {
                 "/store.StoreService/UpsertConnections" => {
                     #[allow(non_camel_case_types)]
                     struct UpsertConnectionsSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::UpsertConnectionsRequest>
-                        for UpsertConnectionsSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertConnectionsRequest>
+                    for UpsertConnectionsSvc<T> {
                         type Response = super::UpsertConnectionsResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::UpsertConnectionsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::upsert_connections(&inner, request).await
+                                <T as StoreService>::upsert_connections(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1981,19 +2117,23 @@ pub mod store_service_server {
                 "/store.StoreService/CreateDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct CreateDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::CreateDeviceSshKeysRequest>
-                        for CreateDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateDeviceSshKeysRequest>
+                    for CreateDeviceSshKeysSvc<T> {
                         type Response = super::CreateDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CreateDeviceSshKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::create_device_ssh_keys(&inner, request).await
+                                <T as StoreService>::create_device_ssh_keys(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -2023,19 +2163,23 @@ pub mod store_service_server {
                 "/store.StoreService/GetDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct GetDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::GetDeviceSshKeysRequest>
-                        for GetDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetDeviceSshKeysRequest>
+                    for GetDeviceSshKeysSvc<T> {
                         type Response = super::GetDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::GetDeviceSshKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::get_device_ssh_keys(&inner, request).await
+                                <T as StoreService>::get_device_ssh_keys(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -2065,19 +2209,23 @@ pub mod store_service_server {
                 "/store.StoreService/UpdateDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct UpdateDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::UpdateDeviceSshKeysRequest>
-                        for UpdateDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateDeviceSshKeysRequest>
+                    for UpdateDeviceSshKeysSvc<T> {
                         type Response = super::UpdateDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::UpdateDeviceSshKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::update_device_ssh_keys(&inner, request).await
+                                <T as StoreService>::update_device_ssh_keys(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -2107,19 +2255,23 @@ pub mod store_service_server {
                 "/store.StoreService/DeleteDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct DeleteDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::DeleteDeviceSshKeysRequest>
-                        for DeleteDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteDeviceSshKeysRequest>
+                    for DeleteDeviceSshKeysSvc<T> {
                         type Response = super::DeleteDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::DeleteDeviceSshKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::delete_device_ssh_keys(&inner, request).await
+                                <T as StoreService>::delete_device_ssh_keys(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -2149,19 +2301,27 @@ pub mod store_service_server {
                 "/store.StoreService/BatchInsertDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct BatchInsertDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchInsertDeviceSshKeysRequest>
-                        for BatchInsertDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertDeviceSshKeysRequest>
+                    for BatchInsertDeviceSshKeysSvc<T> {
                         type Response = super::BatchInsertDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::BatchInsertDeviceSshKeysRequest>,
+                            request: tonic::Request<
+                                super::BatchInsertDeviceSshKeysRequest,
+                            >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_insert_device_ssh_keys(&inner, request)
+                                <T as StoreService>::batch_insert_device_ssh_keys(
+                                        &inner,
+                                        request,
+                                    )
                                     .await
                             };
                             Box::pin(fut)
@@ -2192,19 +2352,27 @@ pub mod store_service_server {
                 "/store.StoreService/BatchUpdateDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct BatchUpdateDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchUpdateDeviceSshKeysRequest>
-                        for BatchUpdateDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateDeviceSshKeysRequest>
+                    for BatchUpdateDeviceSshKeysSvc<T> {
                         type Response = super::BatchUpdateDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::BatchUpdateDeviceSshKeysRequest>,
+                            request: tonic::Request<
+                                super::BatchUpdateDeviceSshKeysRequest,
+                            >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_update_device_ssh_keys(&inner, request)
+                                <T as StoreService>::batch_update_device_ssh_keys(
+                                        &inner,
+                                        request,
+                                    )
                                     .await
                             };
                             Box::pin(fut)
@@ -2235,19 +2403,27 @@ pub mod store_service_server {
                 "/store.StoreService/BatchDeleteDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct BatchDeleteDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::BatchDeleteDeviceSshKeysRequest>
-                        for BatchDeleteDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteDeviceSshKeysRequest>
+                    for BatchDeleteDeviceSshKeysSvc<T> {
                         type Response = super::BatchDeleteDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::BatchDeleteDeviceSshKeysRequest>,
+                            request: tonic::Request<
+                                super::BatchDeleteDeviceSshKeysRequest,
+                            >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_delete_device_ssh_keys(&inner, request)
+                                <T as StoreService>::batch_delete_device_ssh_keys(
+                                        &inner,
+                                        request,
+                                    )
                                     .await
                             };
                             Box::pin(fut)
@@ -2278,19 +2454,23 @@ pub mod store_service_server {
                 "/store.StoreService/UpsertDeviceSshKeys" => {
                     #[allow(non_camel_case_types)]
                     struct UpsertDeviceSshKeysSvc<T: StoreService>(pub Arc<T>);
-                    impl<T: StoreService>
-                        tonic::server::UnaryService<super::UpsertDeviceSshKeysRequest>
-                        for UpsertDeviceSshKeysSvc<T>
-                    {
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertDeviceSshKeysRequest>
+                    for UpsertDeviceSshKeysSvc<T> {
                         type Response = super::UpsertDeviceSshKeysResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::UpsertDeviceSshKeysRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::upsert_device_ssh_keys(&inner, request).await
+                                <T as StoreService>::upsert_device_ssh_keys(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -2317,19 +2497,23 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                _ => Box::pin(async move {
-                    let mut response = http::Response::new(empty_body());
-                    let headers = response.headers_mut();
-                    headers.insert(
-                        tonic::Status::GRPC_STATUS,
-                        (tonic::Code::Unimplemented as i32).into(),
-                    );
-                    headers.insert(
-                        http::header::CONTENT_TYPE,
-                        tonic::metadata::GRPC_CONTENT_TYPE,
-                    );
-                    Ok(response)
-                }),
+                _ => {
+                    Box::pin(async move {
+                        let mut response = http::Response::new(empty_body());
+                        let headers = response.headers_mut();
+                        headers
+                            .insert(
+                                tonic::Status::GRPC_STATUS,
+                                (tonic::Code::Unimplemented as i32).into(),
+                            );
+                        headers
+                            .insert(
+                                http::header::CONTENT_TYPE,
+                                tonic::metadata::GRPC_CONTENT_TYPE,
+                            );
+                        Ok(response)
+                    })
+                }
             }
         }
     }

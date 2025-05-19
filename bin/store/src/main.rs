@@ -1,12 +1,12 @@
 #![recursion_limit = "2056"]
 use actix_web::{web, App, HttpServer};
-use auth::auth_middleware::Authentication;
+use middlewares::auth_middleware::Authentication;
 use dotenv::dotenv;
 use std::env;
 use templates::grpc_controller::grpc_controller_generator;
 use templates::proto_generator;
 use templates::table_enum::table_enum_generator;
-mod auth;
+mod middlewares;
 mod batch_sync;
 mod controllers;
 mod db;

@@ -41,9 +41,9 @@ macro_rules! generate_insert_record_match {
                                 .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 
                             // Set hypertable_timestamp if the model has a timestamp field
-                            if field_exists_in_table(stringify!([<$table:lower>]), "hypertable_timestamp") {
-                                value.hypertable_timestamp = Some(value.timestamp.to_string());
-                            }
+                            // if field_exists_in_table(stringify!([<$table:lower>]), "hypertable_timestamp") {
+                            //     value.hypertable_timestamp = Some(value.timestamp.to_string());
+                            // }
 
                             diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                 .values(value.clone())

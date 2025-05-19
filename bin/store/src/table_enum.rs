@@ -1,15 +1,10 @@
-use crate::db;
-use crate::models::connection_model::ConnectionModel;
-use crate::models::counter_model::CounterModel;
-use crate::models::device_ssh_key_model::DeviceSshKeyModel;
+use crate::{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_with_timestamp_match};
 use crate::models::packet_model::PacketModel;
+use crate::models::connection_model::ConnectionModel;
+use crate::models::device_ssh_key_model::DeviceSshKeyModel;
 use crate::schema::schema;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
-use crate::{
-    generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,
-    generate_upsert_record_match, generate_upsert_record_with_timestamp_match,
-};
 use actix_web::web;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
@@ -17,6 +12,8 @@ use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::{Map, Value};
+use crate::db;
+use crate::models::counter_model::CounterModel;
 
 #[derive(Debug)]
 pub enum Table {
@@ -75,12 +72,7 @@ impl Table {
             conn,
             record,
             request,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
         )
     }
 
@@ -93,12 +85,7 @@ impl Table {
             self,
             conn,
             id,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
         )
     }
 
@@ -111,12 +98,7 @@ impl Table {
             self,
             conn,
             record,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
         )
     }
 
@@ -129,50 +111,45 @@ impl Table {
             self,
             conn,
             record,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
         )
     }
 }
-pub async fn generate_code(
-    table: &str,
-    prefix_param: &str,
-    default_code_param: i32,
-) -> Result<String, DieselError> {
-    let mut conn = db::get_async_connection().await;
+    pub async fn generate_code(
+        table: &str,
+        prefix_param: &str,
+        default_code_param: i32,
+    ) -> Result<String, DieselError> {
 
-    let new_counter = CounterModel {
-        entity: table.to_string(),
-        counter: 1,
-        prefix: prefix_param.to_string(),
-        default_code: default_code_param,
-    };
+        let mut conn = db::get_async_connection().await;
 
-    // Attempt the insert with conflict handling
-    let result = diesel::insert_into(schema::counters::dsl::counters::table())
+        let new_counter = CounterModel {
+            entity: table.to_string(),
+            counter: 1,
+            prefix: prefix_param.to_string(),
+            default_code: default_code_param,
+        };
+        
+        // Attempt the insert with conflict handling
+        let result = diesel::insert_into(schema::counters::dsl::counters::table())
         .values(&new_counter)
-        .on_conflict(schema::counters::entity)
-        .do_update()
-        .set(schema::counters::counter.eq(schema::counters::counter + 1))
-        .returning((
-            schema::counters::prefix,
-            schema::counters::default_code,
-            schema::counters::counter,
-        ))
-        .get_result::<(String, i32, i32)>(&mut conn)
-        .await
-        .map_err(|e| {
-            log::error!("Error generating code: {}", e);
-            e
-        })?;
-
-    // Format the code
-    let (prefix_val, default_code_val, counter_val) = result;
-    let code = format!("{}{}", prefix_val, default_code_val + counter_val);
-
-    Ok(code)
-}
+            .on_conflict(schema::counters::entity)
+            .do_update()
+            .set(schema::counters::counter.eq(schema::counters::counter + 1))
+            .returning((schema::counters::prefix, schema::counters::default_code, schema::counters::counter))
+            .get_result::<(String, i32, i32)>(&mut conn).await
+            .map_err(|e| {
+                log::error!("Error generating code: {}", e);
+                e
+            })?;
+        
+        // Format the code
+        let (prefix_val, default_code_val, counter_val) = result;
+        let code = format!(
+            "{}{}",
+            prefix_val,
+            default_code_val + counter_val
+        );
+        
+        Ok(code)
+    }
