@@ -117,7 +117,7 @@ export interface IAdvanceFilters<f = string> {
   entity?: string;
   case_sensitive?: boolean;
   parse_as?: 'text';
-  fields?: Array<f>
+  fields?: Array<f>;
 }
 export interface IWhereClauses {
   and: Array<IAdvanceFilters>;
@@ -143,6 +143,7 @@ export interface IOrder<fs = Record<string, any>> {
 
 export interface IJoins {
   type: 'inner' | 'left' | 'right' | 'full' | 'self';
+  nested?: boolean;
   field_relation: {
     from: {
       alias?: string;
@@ -153,6 +154,9 @@ export interface IJoins {
       alias?: string;
       entity: string;
       field: string;
+      order_by?: string;
+      order_direction?: EOrderDirection;
+      is_case_sensitive_sorting?: boolean;
     };
   };
 }
