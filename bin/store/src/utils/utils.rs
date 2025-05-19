@@ -5,7 +5,6 @@ use crate::templates::proto_generator::diesel_type_to_proto;
 
 pub fn to_singular(table_name: &str) -> String {
     let mut singular = singularize(table_name);
-    singular.make_ascii_lowercase();
     singular
 }
 

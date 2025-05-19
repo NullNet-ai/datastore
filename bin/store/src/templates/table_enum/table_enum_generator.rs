@@ -1,4 +1,5 @@
 use crate::proto_generator::{Case, CaseConvert};
+use crate::schema::verify::field_exists_in_table;
 use crate::utils::utils::{parse_tables, to_singular};
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -124,8 +125,9 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "    ) -> Result<Option<String>, DieselError> {{")?;
 
     // Create a comma-separated list of table names for the macro
-    let table_list = tables
+    let tables_with_timestamp = tables
         .iter()
+        .filter(|t| field_exists_in_table(&t.name.to_lowercase(), "hypertable_timestamp"))
         .map(|t| t.name.to_case(Case::Pascal))
         .collect::<Vec<_>>()
         .join(", ");
@@ -133,7 +135,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(
         file,
         "        generate_hypertable_timestamp_match!(self, conn, id, {})",
-        table_list
+        tables_with_timestamp
     )?;
     writeln!(file, "    }}")?;
     writeln!(file, "")?;
@@ -154,7 +156,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
         .map(|t| {
             let pascal_name = t.name.to_case(Case::Pascal);
             let singular = to_singular(&pascal_name);
-            let model_name = format!("{}Model", singular.to_case(Case::Pascal));
+            let model_name = format!("{}Model", singular);
             format!("{}, {}", pascal_name, model_name)
         })
         .collect::<Vec<_>>()

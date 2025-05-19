@@ -5,9 +5,9 @@ macro_rules! generate_hypertable_timestamp_match {
             match $self {
                 $(
                     Table::$table => {
-                        let result = schema::[<$table:lower>]::dsl::[<$table:lower>]
-                            .filter(schema::[<$table:lower>]::id.eq($id))
-                            .select(schema::[<$table:lower>]::hypertable_timestamp)
+                        let result = schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
+                            .filter(schema::[<$table:snake:lower>]::id.eq($id))
+                            .select(schema::[<$table:snake:lower>]::hypertable_timestamp)
                             .first::<Option<String>>($conn)
                             .await;
 
@@ -45,7 +45,7 @@ macro_rules! generate_insert_record_match {
                                 value.hypertable_timestamp = Some(value.timestamp.to_string());
                             }
 
-                            diesel::insert_into(schema::[<$table:lower>]::dsl::[<$table:lower>]::table())
+                            diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                 .values(value.clone())
                                 .execute($conn)
                                 .await?;
@@ -73,10 +73,10 @@ macro_rules! generate_get_by_id_match {
             match $self {
                 $(
                     Table::$table => {
-                        let result = schema::[<$table:lower>]::dsl::[<$table:lower>]
-                            .filter(schema::[<$table:lower>]::id.eq($id))
-                            .filter(schema::[<$table:lower>]::tombstone.eq(0))
-                            .select(schema::[<$table:lower>]::all_columns)
+                        let result = schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
+                            .filter(schema::[<$table:snake:lower>]::id.eq($id))
+                            .filter(schema::[<$table:snake:lower>]::tombstone.eq(0))
+                            .select(schema::[<$table:snake:lower>]::all_columns)
                             .first::<$model>($conn)
                             .await
                             .optional()?;
@@ -112,18 +112,18 @@ macro_rules! generate_upsert_record_match {
                             })?;
 
                             if has_version {
-                                diesel::insert_into(schema::[<$table:lower>]::dsl::[<$table:lower>]::table())
+                                diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(value.clone())
-                                    .on_conflict((schema::[<$table:lower>]::id))
+                                    .on_conflict((schema::[<$table:snake:lower>]::id))
                                     .do_update()
-                                    .set(schema::[<$table:lower>]::version.eq(schema::[<$table:lower>]::version + 1))
+                                    .set(schema::[<$table:snake:lower>]::version.eq(schema::[<$table:snake:lower>]::version + 1))
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
                             } else {
-                                diesel::insert_into(schema::[<$table:lower>]::dsl::[<$table:lower>]::table())
+                                diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(value.clone())
-                                    .on_conflict((schema::[<$table:lower>]::id))
+                                    .on_conflict((schema::[<$table:snake:lower>]::id))
                                     .do_update()
                                     .set(value)
                                     .execute($conn)
@@ -161,18 +161,18 @@ macro_rules! generate_upsert_record_with_timestamp_match {
                             })?;
 
                             if has_version {
-                                diesel::insert_into(schema::[<$table:lower>]::dsl::[<$table:lower>]::table())
+                                diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(value.clone())
-                                    .on_conflict((schema::[<$table:lower>]::id, schema::[<$table:lower>]::timestamp))
+                                    .on_conflict((schema::[<$table:snake:lower>]::id, schema::[<$table:snake:lower>]::timestamp))
                                     .do_update()
-                                    .set(schema::[<$table:lower>]::version.eq(schema::[<$table:lower>]::version + 1))
+                                    .set(schema::[<$table:snake:lower>]::version.eq(schema::[<$table:snake:lower>]::version + 1))
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
                             } else {
-                                diesel::insert_into(schema::[<$table:lower>]::dsl::[<$table:lower>]::table())
+                                diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(value.clone())
-                                    .on_conflict((schema::[<$table:lower>]::id, schema::[<$table:lower>]::timestamp))
+                                    .on_conflict((schema::[<$table:snake:lower>]::id, schema::[<$table:snake:lower>]::timestamp))
                                     .do_update()
                                     .set(value)
                                     .execute($conn)

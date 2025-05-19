@@ -2,6 +2,7 @@ pub mod connection_model;
 pub mod counter_model;
 pub mod crdt_merkle_model;
 pub mod crdt_message_model;
+pub mod device_ssh_key_model;
 pub mod packet_model;
 pub mod queue_item_model;
 pub mod queue_model;

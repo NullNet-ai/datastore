@@ -81,6 +81,33 @@ table! {
         destination_port -> Nullable<Int4>,
     }
 }
+table! {
+    device_ssh_keys (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+
+        id -> Text,
+        timestamp -> Timestamp,
+        public_key -> Text,
+        private_key -> Text,
+        passphrase -> Text,
+        device_id -> Text,
+    }
+}
 
 table! {
     counters (entity) {

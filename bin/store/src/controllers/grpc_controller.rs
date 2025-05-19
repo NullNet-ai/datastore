@@ -7,17 +7,22 @@ use crate::auth::auth_middleware::GrpcAuthInterceptor;
 use crate::db::create_connection;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
 use crate::generated::store::{
-    BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, BatchDeletePacketsRequest,
-    BatchDeletePacketsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse,
-    BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdateConnectionsRequest,
-    BatchUpdateConnectionsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse,
-    Connections, CreateConnectionsRequest, CreateConnectionsResponse, CreatePacketsRequest,
-    CreatePacketsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse,
-    DeletePacketsRequest, DeletePacketsResponse, GetConnectionsRequest, GetConnectionsResponse,
-    GetPacketsRequest, GetPacketsResponse, Packets, UpdateConnectionsRequest,
-    UpdateConnectionsResponse, UpdatePacketsRequest, UpdatePacketsResponse,
-    UpsertConnectionsRequest, UpsertConnectionsResponse, UpsertPacketsRequest,
-    UpsertPacketsResponse,
+    BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, BatchDeleteDeviceSshKeysRequest,
+    BatchDeleteDeviceSshKeysResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse,
+    BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchInsertDeviceSshKeysRequest,
+    BatchInsertDeviceSshKeysResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse,
+    BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchUpdateDeviceSshKeysRequest,
+    BatchUpdateDeviceSshKeysResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse,
+    Connections, CreateConnectionsRequest, CreateConnectionsResponse, CreateDeviceSshKeysRequest,
+    CreateDeviceSshKeysResponse, CreatePacketsRequest, CreatePacketsResponse,
+    DeleteConnectionsRequest, DeleteConnectionsResponse, DeleteDeviceSshKeysRequest,
+    DeleteDeviceSshKeysResponse, DeletePacketsRequest, DeletePacketsResponse, DeviceSshKeys,
+    GetConnectionsRequest, GetConnectionsResponse, GetDeviceSshKeysRequest,
+    GetDeviceSshKeysResponse, GetPacketsRequest, GetPacketsResponse, Packets,
+    UpdateConnectionsRequest, UpdateConnectionsResponse, UpdateDeviceSshKeysRequest,
+    UpdateDeviceSshKeysResponse, UpdatePacketsRequest, UpdatePacketsResponse,
+    UpsertConnectionsRequest, UpsertConnectionsResponse, UpsertDeviceSshKeysRequest,
+    UpsertDeviceSshKeysResponse, UpsertPacketsRequest, UpsertPacketsResponse,
 };
 use crate::structs::structs::Auth;
 use crate::structs::structs::RequestBody;
@@ -75,6 +80,15 @@ impl StoreService for GrpcController {
     generate_delete_method!(connections);
     generate_batch_delete_method!(connections);
     generate_upsert_method!(connections);
+    // CRUD methods for device_ssh_keys
+    generate_create_method!(device_ssh_keys);
+    generate_update_method!(device_ssh_keys, device_ssh_key);
+    generate_batch_insert_method!(device_ssh_keys);
+    generate_batch_update_method!(device_ssh_keys);
+    generate_get_method!(device_ssh_keys);
+    generate_delete_method!(device_ssh_keys);
+    generate_batch_delete_method!(device_ssh_keys);
+    generate_upsert_method!(device_ssh_keys);
 }
 
 // You can add HTTP endpoints to configure or check gRPC status

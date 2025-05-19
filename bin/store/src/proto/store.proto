@@ -159,6 +159,32 @@ message Connections {
   optional int32 destination_port = 29;
 }
 
+// DeviceSshKeys entity definition
+message DeviceSshKeys {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  string public_key = 19;
+  string private_key = 20;
+  string passphrase = 21;
+  string device_id = 22;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -421,6 +447,137 @@ message UpsertConnectionsResponse {
   repeated Connections data = 4;
 }
 
+// Create DeviceSshKeys request
+message CreateDeviceSshKeysRequest {
+  DeviceSshKeys device_ssh_keys = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceSshKeys response
+message CreateDeviceSshKeysResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceSshKeys data = 4;
+}
+
+// Get DeviceSshKeys request
+message GetDeviceSshKeysRequest {
+  string id = 1;
+}
+
+// Get DeviceSshKeys response
+message GetDeviceSshKeysResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceSshKeys data = 3;
+}
+
+// Update DeviceSshKeys request
+message UpdateDeviceSshKeysRequest {
+  DeviceSshKeys device_ssh_key = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceSshKeys response
+message UpdateDeviceSshKeysResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceSshKeys data = 4;
+}
+
+// BatchUpdate DeviceSshKeys request
+message BatchUpdateDeviceSshKeysRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceSshKeys updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceSshKeys response
+message BatchUpdateDeviceSshKeysResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceSshKeys data = 4;
+}
+
+// BatchDelete DeviceSshKeys request
+message BatchDeleteDeviceSshKeysRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceSshKeys response
+message BatchDeleteDeviceSshKeysResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceSshKeys data = 4;
+}
+
+// Delete DeviceSshKeys request
+message DeleteDeviceSshKeysRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceSshKeys response
+message DeleteDeviceSshKeysResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceSshKeys data = 4;
+}
+
+// BatchInsert DeviceSshKeys request
+message BatchInsertDeviceSshKeysRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceSshKeys device_ssh_keys = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceSshKeys response
+message BatchInsertDeviceSshKeysResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceSshKeys data = 4;
+}
+
+// Upsert DeviceSshKeys request
+message UpsertDeviceSshKeysRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceSshKeys data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceSshKeys response
+message UpsertDeviceSshKeysResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceSshKeys data = 4;
+}
+
 // Store service definition with CRUD operations
 service StoreService {
   // Create a new Packets
@@ -470,5 +627,29 @@ service StoreService {
 
   // Upsert a Connections (create if not exists, update if exists)
   rpc UpsertConnections(UpsertConnectionsRequest) returns (UpsertConnectionsResponse);
+
+  // Create a new DeviceSshKeys
+  rpc CreateDeviceSshKeys(CreateDeviceSshKeysRequest) returns (CreateDeviceSshKeysResponse);
+
+  // Get a DeviceSshKeys by ID
+  rpc GetDeviceSshKeys(GetDeviceSshKeysRequest) returns (GetDeviceSshKeysResponse);
+
+  // Update an existing DeviceSshKeys
+  rpc UpdateDeviceSshKeys(UpdateDeviceSshKeysRequest) returns (UpdateDeviceSshKeysResponse);
+
+  // Delete a DeviceSshKeys by ID
+  rpc DeleteDeviceSshKeys(DeleteDeviceSshKeysRequest) returns (DeleteDeviceSshKeysResponse);
+
+  // Batch insert multiple DeviceSshKeyss
+  rpc BatchInsertDeviceSshKeys(BatchInsertDeviceSshKeysRequest) returns (BatchInsertDeviceSshKeysResponse);
+
+  // Batch update multiple DeviceSshKeyss based on filters
+  rpc BatchUpdateDeviceSshKeys(BatchUpdateDeviceSshKeysRequest) returns (BatchUpdateDeviceSshKeysResponse);
+
+  // Batch delete multiple DeviceSshKeyss based on filters
+  rpc BatchDeleteDeviceSshKeys(BatchDeleteDeviceSshKeysRequest) returns (BatchDeleteDeviceSshKeysResponse);
+
+  // Upsert a DeviceSshKeys (create if not exists, update if exists)
+  rpc UpsertDeviceSshKeys(UpsertDeviceSshKeysRequest) returns (UpsertDeviceSshKeysResponse);
 
 }
