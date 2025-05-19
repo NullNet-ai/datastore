@@ -63,6 +63,7 @@ export class CreateActorsImplementations {
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }
+        body.created_by = account_organization_id;
 
         const { permissions, valid_pass_keys } =
           await Utility.getCachedPermissions('write', {
@@ -77,8 +78,6 @@ export class CreateActorsImplementations {
             account_id: responsible_account.account_id,
             metadata,
           });
-
-        body.created_by = account_organization_id;
 
         if (table === 'organizations' && body?.organization_id) {
           await this.minioService.makeBucket(
@@ -104,6 +103,21 @@ export class CreateActorsImplementations {
           ? new Date(body?.timestamp)
           : new Date().toISOString();
         body.id = body.id === undefined ? ulid() : body.id;
+
+        const {
+          encrypted_fields = permissions.data
+            .filter((p) => p.encrypt)
+            .map((p) => `${p.entity}.${p.field}`),
+          ..._body
+        } = body;
+        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
+          throw new BadRequestException({
+            success: false,
+            message: `Pass field key is not valid.`,
+            count: 0,
+            data: [],
+          });
+        }
 
         const { schema }: any = Utility.checkCreateSchema(
           table,
@@ -162,21 +176,6 @@ export class CreateActorsImplementations {
             body.code = constructCode(code);
           }
         }
-        const {
-          encrypted_fields = permissions.data
-            .filter((p) => p.encrypt)
-            .map((p) => `${p.entity}.${p.field}`),
-          ..._body
-        } = body;
-        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
-          throw new BadRequestException({
-            success: false,
-            message: `Pass field key is not valid.`,
-            count: 0,
-            data: [],
-          });
-        }
-   
 
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);

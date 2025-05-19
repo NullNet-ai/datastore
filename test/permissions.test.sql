@@ -5,12 +5,12 @@ read = true,
 decrypt = true,
 sensitive = true,
 -- for write ( TODO )
-encrypt = false,
-write = true,
+encrypt = true,
+write = false,
 -- others ( TODO ) - use for frontend display as actions
 required = true,
-archive = true,
-delete = true
+archive = false,
+delete = false
 where id = '0b023cd7-1471-4980-902e-b67f28e2c370';
 
 update permissions SET 

@@ -1726,17 +1726,30 @@ export class Utility {
     db,
     where,
     returning,
+    organization_id,
   }) {
     if (encrypted_fields?.length) {
       this.logger.log(`Encrypting data... ${encrypted_fields.join(',')}`);
+      const encryption_key = sha1(
+        `${organization_id}_${table}_${process.env.PGP_SYM_KEY}`,
+      );
       const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
-          const _value = `${typeof value === 'string' ? `'${value}'` : value}`;
-          if (encrypted_fields.includes(key)) {
-            acc.push(
-              `${key} = safe_encrypt(${_value}, '${process.env.PGP_SYM_KEY}')`,
-            );
-          } else acc.push(`${key} = ${_value}`); // Push the unencrypted value for other fields
+          let _value = `${typeof value === 'string' ? `'${value}'` : value}`;
+          if (Array.isArray(value)) {
+            _value = `to_jsonb(ARRAY[${value
+              .map((v) => `'${v}'`)
+              .join(', ')}])`;
+          }
+
+          if (encrypted_fields.includes(`${table}.${key}`)) {
+            if (Array.isArray(value))
+              _value = `safe_encrypt_array(${_value}, '${encryption_key}')`;
+            else
+              acc.push(`${key} = safe_encrypt(${_value}, '${encryption_key}')`);
+          } else {
+            acc.push(`${key} = ${_value}`);
+          } // Push the unencrypted value for other field
           return acc;
         }, [])
         .join(',')}`;
@@ -1907,14 +1920,6 @@ export class Utility {
         )`;
   }
 
-  public static getReadPermittedFields(config) {
-    Utility.checkPermissions(config, 'read');
-    return {
-      ...config,
-      metadata: config.metadata,
-    };
-  }
-
   public static async isPermitted(account_id, role) {
     this.logger.warn(
       `Checking permissions for account_id: ${account_id}, role: ${role}`,
@@ -1945,6 +1950,22 @@ export class Utility {
 
     const ms = value * (multiplier || 0);
     return ms;
+  }
+
+  public static getReadPermittedFields(config) {
+    Utility.checkPermissions(config, 'read');
+    return {
+      ...config,
+      metadata: config.metadata,
+    };
+  }
+
+  public static getWritePermittedFields(config) {
+    Utility.checkPermissions(config, 'write');
+    return {
+      ...config,
+      metadata: config.metadata,
+    };
   }
 
   public static checkPermissions(
@@ -2053,6 +2074,11 @@ export class Utility {
           },
         );
         break;
+      case 'write':
+        console.log({
+          schema,
+        });
+        break;
       default:
         break;
     }
@@ -2143,17 +2169,26 @@ export class Utility {
 
       switch (permission_type) {
         case 'read':
-          const { metadata: acc_metadata } = Utility.getReadPermittedFields({
-            body,
-            table,
-            permissions,
-            metadata,
-            schema: _aliased_schema,
-          });
-          metadata = acc_metadata;
+          const { metadata: acc_read_metadata } =
+            Utility.getReadPermittedFields({
+              body,
+              table,
+              permissions,
+              metadata,
+              schema: _aliased_schema,
+            });
+          metadata = acc_read_metadata;
           break;
         case 'write':
-          this.logger.debug('@@@@@@@@@@@@@@write permissions');
+          const { metadata: acc_write_metadata } =
+            Utility.getWritePermittedFields({
+              body,
+              table,
+              permissions,
+              metadata,
+              schema: _aliased_schema,
+            });
+          metadata = acc_write_metadata;
           break;
         default:
           break;
