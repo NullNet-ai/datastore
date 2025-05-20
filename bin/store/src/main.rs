@@ -1,16 +1,16 @@
 #![recursion_limit = "2056"]
 use actix_web::{web, App, HttpServer};
 use batch_sync::background_sync;
-use middlewares::auth_middleware::Authentication;
 use dotenv::dotenv;
+use middlewares::auth_middleware::Authentication;
 use std::env;
 use templates::grpc_controller::grpc_controller_generator;
 use templates::proto_generator;
 use templates::table_enum::table_enum_generator;
-mod middlewares;
 mod batch_sync;
 mod controllers;
 mod db;
+mod middlewares;
 mod models;
 mod schema;
 mod structs;
@@ -82,14 +82,13 @@ async fn main() -> std::io::Result<()> {
             return Ok(());
         }
     };
-    
+
     // Spawn it in a background task
     tokio::spawn(async move {
         if let Err(e) = background_sync_service.init().await {
             log::error!("Error in background sync service: {}", e);
         }
     });
-
 
     // }
     merkle_manager.load_trees_from_db().await;
