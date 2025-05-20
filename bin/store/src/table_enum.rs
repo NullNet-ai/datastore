@@ -1,5 +1,6 @@
 use crate::{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_with_timestamp_match};
 use crate::models::address_model::AddressModel;
+use crate::models::app_firewall_model::AppFirewallModel;
 use crate::models::packet_model::PacketModel;
 use crate::models::connection_model::ConnectionModel;
 use crate::models::device_ssh_key_model::DeviceSshKeyModel;
@@ -21,6 +22,7 @@ use crate::models::counter_model::CounterModel;
 #[derive(Debug)]
 pub enum Table {
     Addresses,
+    AppFirewalls,
     Packets,
     Connections,
     DeviceSshKeys,
@@ -33,6 +35,7 @@ impl Table {
     pub fn from_str(name: &str) -> Option<Self> {
         match name {
             "addresses" => Some(Table::Addresses),
+            "app_firewalls" => Some(Table::AppFirewalls),
             "packets" => Some(Table::Packets),
             "connections" => Some(Table::Connections),
             "device_ssh_keys" => Some(Table::DeviceSshKeys),
@@ -81,7 +84,7 @@ impl Table {
             conn,
             record,
             request,
-            Addresses, AddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -94,7 +97,7 @@ impl Table {
             self,
             conn,
             id,
-            Addresses, AddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -107,7 +110,7 @@ impl Table {
             self,
             conn,
             record,
-            Addresses, AddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -120,7 +123,7 @@ impl Table {
             self,
             conn,
             record,
-            Addresses, AddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 }

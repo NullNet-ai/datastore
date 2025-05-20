@@ -11,4 +11,5 @@ pub mod transaction_model;
 pub mod device_group_setting_model;
 pub mod device_model;
 pub mod address_model;
+pub mod app_firewall_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs
