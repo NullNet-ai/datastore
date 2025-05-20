@@ -43,24 +43,24 @@ pub async fn execute_copy(
     csv_data: Vec<u8>,
 ) -> Result<(), AppError> {
     let temp_table_name = format!("temp_{}", table_name);
-    
+
     // Create statements for both tables
     let stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
         table_name,
         columns.join(",")
     );
-    
+
     let temp_stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
         temp_table_name,
         columns.join(",")
     );
-    
+
     // Clone the client and data for parallel operations
     let client_clone = client.clone();
     let csv_data_clone = csv_data.clone();
-    
+
     // Execute both copy operations in parallel
     let (main_result, temp_result) = tokio::join!(
         async {
@@ -68,12 +68,12 @@ pub async fn execute_copy(
                 .copy_in(&stmt)
                 .await
                 .map_err(|e| AppError::CopyCommand(e.to_string()))?;
-            
+
             pin_mut!(sink);
             sink.send(Bytes::from(csv_data))
                 .await
                 .map_err(|e| AppError::DataSend(e.to_string()))?;
-            
+
             sink.close()
                 .await
                 .map_err(|e| AppError::DataSend(e.to_string()))
@@ -83,22 +83,22 @@ pub async fn execute_copy(
                 .copy_in(&temp_stmt)
                 .await
                 .map_err(|e| AppError::CopyCommand(e.to_string()))?;
-            
+
             pin_mut!(sink);
             sink.send(Bytes::from(csv_data_clone))
                 .await
                 .map_err(|e| AppError::DataSend(e.to_string()))?;
-            
+
             sink.close()
                 .await
                 .map_err(|e| AppError::DataSend(e.to_string()))
         }
     );
-    
+
     // Check results from both operations
     main_result?;
     temp_result?;
-    
+
     Ok(())
 }
 
@@ -159,7 +159,6 @@ pub fn convert_json_to_csv(records: &[Value], columns: &[String]) -> Result<Vec<
     wtr.into_inner()
         .map_err(|e| AppError::CsvConversion(e.to_string()))
 }
-
 
 fn serialize_value(value: &Value) -> String {
     match value {

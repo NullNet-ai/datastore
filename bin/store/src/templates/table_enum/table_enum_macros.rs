@@ -103,6 +103,7 @@ macro_rules! generate_upsert_record_match {
         paste::paste! {
             {
                 let has_version = $record.get("version").is_some();
+                let has_status = $record.get("status").is_some();
 
                 match $self {
                     $(
@@ -121,6 +122,18 @@ macro_rules! generate_upsert_record_match {
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
+                            } else if (has_status){
+                                diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                .values(value.clone())
+                                .on_conflict((schema::[<$table:snake:lower>]::id))
+                                .do_update()
+                                .set((
+                                schema::[<$table:snake:lower>]::previous_status.eq(schema::[<$table:snake:lower>]::status),
+                                schema::[<$table:snake:lower>]::status.eq(value.status.clone()),
+                                ))
+                                .execute($conn)
+                                .await
+                                .map(|_| ())
                             } else {
                                 diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(value.clone())
@@ -151,7 +164,7 @@ macro_rules! generate_upsert_record_with_timestamp_match {
         paste::paste! {
             {
                 let has_version = $record.get("version").is_some();
-
+                let has_status = $record.get("status").is_some();
                 match $self {
                     $(
                         Table::$table => {
@@ -170,6 +183,18 @@ macro_rules! generate_upsert_record_with_timestamp_match {
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
+                            }else if (has_status){
+                                diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                .values(value.clone())
+                                .on_conflict((schema::[<$table:snake:lower>]::id, schema::[<$table:snake:lower>]::timestamp))
+                                .do_update()
+                                .set((
+                                schema::[<$table:snake:lower>]::previous_status.eq(schema::[<$table:snake:lower>]::status),
+                                schema::[<$table:snake:lower>]::status.eq(value.status.clone()),
+                                ))
+                                .execute($conn)
+                                .await
+                                .map(|_| ())
                             } else {
                                 diesel::insert_into(schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(value.clone())

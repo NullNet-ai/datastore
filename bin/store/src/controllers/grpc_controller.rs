@@ -1,30 +1,60 @@
+use super::common_controller::{
+    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,
+    process_and_insert_record, process_and_update_record, process_record_for_insert,
+    process_record_for_update, process_records, sanitize_updates,
+};
 use crate::db::create_connection;
-use actix_web::{HttpResponse, Responder, web};
-use std::pin::Pin;
-use std::net::SocketAddr;
-use crate::table_enum::Table;
-use crate::sync::sync_service::{insert, update};
-use crate::structs::structs::Auth;
-use serde_json::Value;
-use crate::structs::structs::RequestBody;
-use tonic::{Request, Response, Status, transport::Server};
+use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
+use crate::generated::store::{
+    BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, BatchDeleteDeviceSshKeysRequest,
+    BatchDeleteDeviceSshKeysResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse,
+    BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchInsertDeviceSshKeysRequest,
+    BatchInsertDeviceSshKeysResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse,
+    BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchUpdateDeviceSshKeysRequest,
+    BatchUpdateDeviceSshKeysResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse,
+    Connections, CreateConnectionsRequest, CreateConnectionsResponse, CreateDeviceSshKeysRequest,
+    CreateDeviceSshKeysResponse, CreatePacketsRequest, CreatePacketsResponse,
+    DeleteConnectionsRequest, DeleteConnectionsResponse, DeleteDeviceSshKeysRequest,
+    DeleteDeviceSshKeysResponse, DeletePacketsRequest, DeletePacketsResponse, DeviceSshKeys,
+    GetConnectionsRequest, GetConnectionsResponse, GetDeviceSshKeysRequest,
+    GetDeviceSshKeysResponse, GetPacketsRequest, GetPacketsResponse, Packets,
+    UpdateConnectionsRequest, UpdateConnectionsResponse, UpdateDeviceSshKeysRequest,
+    UpdateDeviceSshKeysResponse, UpdatePacketsRequest, UpdatePacketsResponse,
+    UpsertConnectionsRequest, UpsertConnectionsResponse, UpsertDeviceSshKeysRequest,
+    UpsertDeviceSshKeysResponse, UpsertPacketsRequest, UpsertPacketsResponse,
+};
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
+use crate::structs::structs::Auth;
+use crate::structs::structs::RequestBody;
+use crate::sync::sync_service::{insert, update};
+use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
-use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record};
-use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
-use crate::{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method};
-use crate::generated::store::{Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, UpsertPacketsRequest, UpsertPacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, UpsertConnectionsRequest, UpsertConnectionsResponse, DeviceSshKeys, CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, BatchInsertDeviceSshKeysRequest, BatchInsertDeviceSshKeysResponse, BatchUpdateDeviceSshKeysRequest, BatchUpdateDeviceSshKeysResponse, BatchDeleteDeviceSshKeysRequest, BatchDeleteDeviceSshKeysResponse, UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse, DeviceGroupSettings, CreateDeviceGroupSettingsRequest, CreateDeviceGroupSettingsResponse, GetDeviceGroupSettingsRequest, GetDeviceGroupSettingsResponse, UpdateDeviceGroupSettingsRequest, UpdateDeviceGroupSettingsResponse, DeleteDeviceGroupSettingsRequest, DeleteDeviceGroupSettingsResponse, BatchInsertDeviceGroupSettingsRequest, BatchInsertDeviceGroupSettingsResponse, BatchUpdateDeviceGroupSettingsRequest, BatchUpdateDeviceGroupSettingsResponse, BatchDeleteDeviceGroupSettingsRequest, BatchDeleteDeviceGroupSettingsResponse, UpsertDeviceGroupSettingsRequest, UpsertDeviceGroupSettingsResponse};
+use crate::{
+    generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method,
+    generate_create_method, generate_delete_method, generate_get_method, generate_update_method,
+    generate_upsert_method,
+};
+use actix_web::{web, HttpResponse, Responder};
+use serde_json::Value;
+use std::net::SocketAddr;
+use std::pin::Pin;
+use tonic::{transport::Server, Request, Response, Status};
 pub struct GrpcController {}
 
 impl GrpcController {
-    pub fn new() -> Self { GrpcController {} }
+    pub fn new() -> Self {
+        GrpcController {}
+    }
 
     pub async fn init(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
         let addr: SocketAddr = addr.parse()?;
         let grpc_controller = GrpcController::new();
         println!("gRPC Server listening on {}", addr);
         Server::builder()
-            .add_service(StoreServiceServer::with_interceptor(grpc_controller, GrpcAuthInterceptor))
+            .add_service(StoreServiceServer::with_interceptor(
+                grpc_controller,
+                GrpcAuthInterceptor,
+            ))
             .serve(addr)
             .await?;
         Ok(())

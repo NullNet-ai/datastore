@@ -208,11 +208,11 @@ pub async fn batch_insert_records(
             });
         }
     };
-    let temp_table= format!("temp_{}", table_name);
+    let temp_table = format!("temp_{}", table_name);
     match table_exists(&temp_table) {
         Ok(table) => {
             // Table exists, proceed with your logic using the table
-        },
+        }
         Err(error) => {
             // Table doesn't exist, return an error response
             return HttpResponse::BadRequest().json(ApiResponse {
