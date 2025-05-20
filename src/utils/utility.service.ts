@@ -745,7 +745,8 @@ export class Utility {
         const { from, to } = field_relation;
         const to_entity = to.entity;
         const from_alias = from.alias || from.entity; // Use alias if provided
-        const to_alias = to.alias || to_entity; // Use alias if provided
+        const to_alias =
+          type === 'self' ? from.alias || from.entity : to.alias || to_entity; // Use alias if provided
         to.filters ??= [];
         const concatenate_query = expressions[to_alias] || [];
         function constructJoinQuery({ isSelfJoin = false } = {}) {
