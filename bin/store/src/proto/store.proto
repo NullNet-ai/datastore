@@ -185,6 +185,40 @@ message DeviceSshKeys {
   string device_id = 22;
 }
 
+// Devices entity definition
+message Devices {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string model = 19;
+  optional string address_id = 20;
+  optional string instance_name = 21;
+  optional string is_connection_established = 22;
+  optional string system_id = 23;
+  optional string device_version = 24;
+  optional string last_heartbeat = 25;
+  optional string is_monitoring_enabled = 26;
+  optional string is_remote_access_enabled = 27;
+  optional string ip_address = 28;
+  optional string device_status = 29;
+  optional string device_gui_protocol = 30;
+}
+
 // DeviceGroupSettings entity definition
 message DeviceGroupSettings {
   optional int32 tombstone = 1;
@@ -601,6 +635,137 @@ message UpsertDeviceSshKeysResponse {
   repeated DeviceSshKeys data = 4;
 }
 
+// Create Devices request
+message CreateDevicesRequest {
+  Devices devices = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create Devices response
+message CreateDevicesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Devices data = 4;
+}
+
+// Get Devices request
+message GetDevicesRequest {
+  string id = 1;
+}
+
+// Get Devices response
+message GetDevicesResponse {
+  bool success = 1;
+  string message = 2;
+  Devices data = 3;
+}
+
+// Update Devices request
+message UpdateDevicesRequest {
+  Devices device = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update Devices response
+message UpdateDevicesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Devices data = 4;
+}
+
+// BatchUpdate Devices request
+message BatchUpdateDevicesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  Devices updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate Devices response
+message BatchUpdateDevicesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Devices data = 4;
+}
+
+// BatchDelete Devices request
+message BatchDeleteDevicesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Devices response
+message BatchDeleteDevicesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Devices data = 4;
+}
+
+// Delete Devices request
+message DeleteDevicesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete Devices response
+message DeleteDevicesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Devices data = 4;
+}
+
+// BatchInsert Devices request
+message BatchInsertDevicesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Devices devices = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Devices response
+message BatchInsertDevicesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Devices data = 4;
+}
+
+// Upsert Devices request
+message UpsertDevicesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    Devices data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert Devices response
+message UpsertDevicesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Devices data = 4;
+}
+
 // Create DeviceGroupSettings request
 message CreateDeviceGroupSettingsRequest {
   DeviceGroupSettings device_group_settings = 1;
@@ -805,6 +970,30 @@ service StoreService {
 
   // Upsert a DeviceSshKeys (create if not exists, update if exists)
   rpc UpsertDeviceSshKeys(UpsertDeviceSshKeysRequest) returns (UpsertDeviceSshKeysResponse);
+
+  // Create a new Devices
+  rpc CreateDevices(CreateDevicesRequest) returns (CreateDevicesResponse);
+
+  // Get a Devices by ID
+  rpc GetDevices(GetDevicesRequest) returns (GetDevicesResponse);
+
+  // Update an existing Devices
+  rpc UpdateDevices(UpdateDevicesRequest) returns (UpdateDevicesResponse);
+
+  // Delete a Devices by ID
+  rpc DeleteDevices(DeleteDevicesRequest) returns (DeleteDevicesResponse);
+
+  // Batch insert multiple Devicess
+  rpc BatchInsertDevices(BatchInsertDevicesRequest) returns (BatchInsertDevicesResponse);
+
+  // Batch update multiple Devicess based on filters
+  rpc BatchUpdateDevices(BatchUpdateDevicesRequest) returns (BatchUpdateDevicesResponse);
+
+  // Batch delete multiple Devicess based on filters
+  rpc BatchDeleteDevices(BatchDeleteDevicesRequest) returns (BatchDeleteDevicesResponse);
+
+  // Upsert a Devices (create if not exists, update if exists)
+  rpc UpsertDevices(UpsertDevicesRequest) returns (UpsertDevicesResponse);
 
   // Create a new DeviceGroupSettings
   rpc CreateDeviceGroupSettings(CreateDeviceGroupSettingsRequest) returns (CreateDeviceGroupSettingsResponse);

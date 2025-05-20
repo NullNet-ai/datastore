@@ -110,6 +110,42 @@ table! {
 }
 
 table! {
+    devices (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        model -> Nullable<Text>,
+        address_id -> Nullable<Uuid>,
+        instance_name -> Nullable<Text>,
+        is_connection_established -> Nullable<Bool>,
+        system_id -> Nullable<Text>,
+        device_version -> Nullable<Text>,
+        last_heartbeat -> Nullable<Text>, // Adjust if using Timestamp
+        is_monitoring_enabled -> Nullable<Bool>,
+        is_remote_access_enabled -> Nullable<Bool>,
+        ip_address -> Nullable<Inet>,
+        device_status -> Nullable<Text>,
+        device_gui_protocol -> Nullable<Text>,
+    }
+}
+
+table! {
     device_group_settings (id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
