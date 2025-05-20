@@ -144,6 +144,30 @@ message AppFirewalls {
   optional string firewall = 20;
 }
 
+// AppguardLogs entity definition
+message AppguardLogs {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string level = 19;
+  optional string message = 20;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -563,6 +587,137 @@ message UpsertAppFirewallsResponse {
   string message = 2;
   int32 count = 3;
   repeated AppFirewalls data = 4;
+}
+
+// Create AppguardLogs request
+message CreateAppguardLogsRequest {
+  AppguardLogs appguard_logs = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create AppguardLogs response
+message CreateAppguardLogsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  AppguardLogs data = 4;
+}
+
+// Get AppguardLogs request
+message GetAppguardLogsRequest {
+  string id = 1;
+}
+
+// Get AppguardLogs response
+message GetAppguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  AppguardLogs data = 3;
+}
+
+// Update AppguardLogs request
+message UpdateAppguardLogsRequest {
+  AppguardLogs appguard_log = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update AppguardLogs response
+message UpdateAppguardLogsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  AppguardLogs data = 4;
+}
+
+// BatchUpdate AppguardLogs request
+message BatchUpdateAppguardLogsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  AppguardLogs updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate AppguardLogs response
+message BatchUpdateAppguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AppguardLogs data = 4;
+}
+
+// BatchDelete AppguardLogs request
+message BatchDeleteAppguardLogsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete AppguardLogs response
+message BatchDeleteAppguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  AppguardLogs data = 4;
+}
+
+// Delete AppguardLogs request
+message DeleteAppguardLogsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete AppguardLogs response
+message DeleteAppguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  AppguardLogs data = 4;
+}
+
+// BatchInsert AppguardLogs request
+message BatchInsertAppguardLogsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated AppguardLogs appguard_logs = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert AppguardLogs response
+message BatchInsertAppguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AppguardLogs data = 4;
+}
+
+// Upsert AppguardLogs request
+message UpsertAppguardLogsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    AppguardLogs data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert AppguardLogs response
+message UpsertAppguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AppguardLogs data = 4;
 }
 
 // Create Packets request
@@ -1269,6 +1424,30 @@ service StoreService {
 
   // Upsert a AppFirewalls (create if not exists, update if exists)
   rpc UpsertAppFirewalls(UpsertAppFirewallsRequest) returns (UpsertAppFirewallsResponse);
+
+  // Create a new AppguardLogs
+  rpc CreateAppguardLogs(CreateAppguardLogsRequest) returns (CreateAppguardLogsResponse);
+
+  // Get a AppguardLogs by ID
+  rpc GetAppguardLogs(GetAppguardLogsRequest) returns (GetAppguardLogsResponse);
+
+  // Update an existing AppguardLogs
+  rpc UpdateAppguardLogs(UpdateAppguardLogsRequest) returns (UpdateAppguardLogsResponse);
+
+  // Delete a AppguardLogs by ID
+  rpc DeleteAppguardLogs(DeleteAppguardLogsRequest) returns (DeleteAppguardLogsResponse);
+
+  // Batch insert multiple AppguardLogss
+  rpc BatchInsertAppguardLogs(BatchInsertAppguardLogsRequest) returns (BatchInsertAppguardLogsResponse);
+
+  // Batch update multiple AppguardLogss based on filters
+  rpc BatchUpdateAppguardLogs(BatchUpdateAppguardLogsRequest) returns (BatchUpdateAppguardLogsResponse);
+
+  // Batch delete multiple AppguardLogss based on filters
+  rpc BatchDeleteAppguardLogs(BatchDeleteAppguardLogsRequest) returns (BatchDeleteAppguardLogsResponse);
+
+  // Upsert a AppguardLogs (create if not exists, update if exists)
+  rpc UpsertAppguardLogs(UpsertAppguardLogsRequest) returns (UpsertAppguardLogsResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
