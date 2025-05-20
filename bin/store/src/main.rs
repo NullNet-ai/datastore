@@ -13,12 +13,15 @@ mod db;
 mod middlewares;
 mod models;
 mod schema;
+mod shutdown_handler;
 mod structs;
 mod sync;
 mod table_enum;
 mod templates;
 mod utils;
+mod generated;
 use crate::batch_sync::BatchSyncService;
+use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -32,7 +35,7 @@ use controllers::store_controller::{
 };
 use env_logger::Env;
 use std::sync::Arc;
-pub mod generated;
+use std::process;
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
@@ -60,15 +63,16 @@ async fn main() -> std::io::Result<()> {
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
     let merkle_manager = MerkleManager::instance();
+    shutdown_handler::setup_shutdown_handler().await;
     // if (generate_proto == "true") {
     println!("Generating proto files");
     // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
     // run_build_script()?;
     // // Run the generator
-    // if let Err(e) = grpc_controller_generator::run_generator() {
-    //     eprintln!("Error: {}", e);
-    //     process::exit(1);
-    // }
+    if let Err(e) = grpc_controller_generator::run_generator() {
+        eprintln!("Error: {}", e);
+        process::exit(1);
+    }
 
     // if let Err(e) = table_enum_generator::run_generator() {
     //     eprintln!("Failed to generate table enum: {}", e);
@@ -141,6 +145,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api/store")
                     .wrap(Authentication)
+                    .wrap(ShutdownGuard)
                     .route("/{table}", web::post().to(create_record))
                     .route("/upsert/{table}", web::post().to(upsert))
                     .route("/batch/{table}", web::patch().to(batch_update_records))

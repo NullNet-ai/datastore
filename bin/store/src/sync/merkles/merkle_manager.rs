@@ -107,10 +107,7 @@ impl MerkleManager {
         let trees = self.trees.read().await;
 
         for (group_id, entry) in trees.iter() {
-            print!(
-                "Saving tree for group {} with timestamp {}",
-                group_id, entry.timestamp
-            );
+          
             log::debug!(
                 "Saving tree for group {} with timestamp {}",
                 group_id,
@@ -125,6 +122,11 @@ impl MerkleManager {
                     &mut conn,
                 )
                 .await?;
+
+                println!(
+                    "Saved tree for group {} with timestamp {}",
+                    group_id, entry.timestamp
+                );
         }
 
         Ok(())
