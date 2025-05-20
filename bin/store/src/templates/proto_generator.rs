@@ -2,7 +2,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use crate::utils::utils::{parse_tables, Field, Table};
+use crate::utils::utils::{parse_tables, Field, Table, to_singular};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
     println!("Starting proto generation from schema: {}", schema_path);
@@ -576,20 +576,4 @@ impl CaseConvert for str {
 pub enum Case {
     Snake,
     Pascal,
-}
-
-fn to_singular(name: &str) -> String {
-    let name = name.to_lowercase();
-
-    // Handle common plural endings
-    if name.ends_with("ies") {
-        return format!("{}y", &name[0..name.len() - 3]);
-    } else if name.ends_with("ses") {
-        return format!("{}s", &name[0..name.len() - 2]);
-    } else if name.ends_with("s") && !name.ends_with("ss") {
-        return name[0..name.len() - 1].to_string();
-    }
-
-    // Return original if no plural pattern matched
-    name
 }

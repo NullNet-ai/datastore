@@ -83,6 +83,43 @@ message DeleteParams {
   string table = 2; // Table name
 }
 
+// Addresses entity definition
+message Addresses {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string address = 19;
+  optional string address_line_one = 20;
+  optional string address_line_two = 21;
+  optional string latitude = 22;
+  optional string longitude = 23;
+  optional string place_id = 24;
+  optional string street_number = 25;
+  optional string street = 26;
+  optional string region = 27;
+  optional string region_code = 28;
+  optional string country_code = 29;
+  optional string postal_code = 30;
+  optional string country = 31;
+  optional string state = 32;
+  optional string city = 33;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -240,6 +277,137 @@ message DeviceGroupSettings {
   string id = 17;
   string timestamp = 18;
   optional string name = 19;
+}
+
+// Create Addresses request
+message CreateAddressesRequest {
+  Addresses addresses = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create Addresses response
+message CreateAddressesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Addresses data = 4;
+}
+
+// Get Addresses request
+message GetAddressesRequest {
+  string id = 1;
+}
+
+// Get Addresses response
+message GetAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  Addresses data = 3;
+}
+
+// Update Addresses request
+message UpdateAddressesRequest {
+  Addresses address = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update Addresses response
+message UpdateAddressesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Addresses data = 4;
+}
+
+// BatchUpdate Addresses request
+message BatchUpdateAddressesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  Addresses updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate Addresses response
+message BatchUpdateAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Addresses data = 4;
+}
+
+// BatchDelete Addresses request
+message BatchDeleteAddressesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Addresses response
+message BatchDeleteAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Addresses data = 4;
+}
+
+// Delete Addresses request
+message DeleteAddressesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete Addresses response
+message DeleteAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Addresses data = 4;
+}
+
+// BatchInsert Addresses request
+message BatchInsertAddressesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Addresses addresses = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Addresses response
+message BatchInsertAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Addresses data = 4;
+}
+
+// Upsert Addresses request
+message UpsertAddressesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    Addresses data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert Addresses response
+message UpsertAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Addresses data = 4;
 }
 
 // Create Packets request
@@ -899,6 +1067,30 @@ message UpsertDeviceGroupSettingsResponse {
 
 // Store service definition with CRUD operations
 service StoreService {
+  // Create a new Addresses
+  rpc CreateAddresses(CreateAddressesRequest) returns (CreateAddressesResponse);
+
+  // Get a Addresses by ID
+  rpc GetAddresses(GetAddressesRequest) returns (GetAddressesResponse);
+
+  // Update an existing Addresses
+  rpc UpdateAddresses(UpdateAddressesRequest) returns (UpdateAddressesResponse);
+
+  // Delete a Addresses by ID
+  rpc DeleteAddresses(DeleteAddressesRequest) returns (DeleteAddressesResponse);
+
+  // Batch insert multiple Addressess
+  rpc BatchInsertAddresses(BatchInsertAddressesRequest) returns (BatchInsertAddressesResponse);
+
+  // Batch update multiple Addressess based on filters
+  rpc BatchUpdateAddresses(BatchUpdateAddressesRequest) returns (BatchUpdateAddressesResponse);
+
+  // Batch delete multiple Addressess based on filters
+  rpc BatchDeleteAddresses(BatchDeleteAddressesRequest) returns (BatchDeleteAddressesResponse);
+
+  // Upsert a Addresses (create if not exists, update if exists)
+  rpc UpsertAddresses(UpsertAddressesRequest) returns (UpsertAddressesResponse);
+
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
 
