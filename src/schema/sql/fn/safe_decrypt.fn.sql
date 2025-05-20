@@ -16,7 +16,7 @@ BEGIN
       RAISE NOTICE 'Decryption failed, converted bytea to UTF8 text';
     EXCEPTION WHEN OTHERS THEN
       -- If conversion fails too, return a placeholder
-      result := '**********';
+      result := input::TEXT;
       RAISE NOTICE 'Both decryption and conversion failed, returning placeholder';
     END;
   END;
