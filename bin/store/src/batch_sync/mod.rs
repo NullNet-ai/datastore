@@ -3,6 +3,7 @@ use crate::structs::structs::Auth;
 use crate::sync::sync_service::{insert, update};
 use crate::table_enum::generate_code;
 use log;
+pub mod background_sync;
 use serde_json::{json, Value};
 use std::collections::VecDeque;
 use std::sync::Arc;

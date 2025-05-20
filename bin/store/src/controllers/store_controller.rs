@@ -10,6 +10,7 @@ use crate::structs::structs::{
     ApiResponse, BatchUpdateBody, QueryParams, RequestBody, UpsertRequestBody,
 };
 use crate::table_enum::generate_code;
+use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use actix_web::{HttpMessage, HttpRequest};
@@ -207,6 +208,22 @@ pub async fn batch_insert_records(
             });
         }
     };
+    let temp_table= format!("temp_{}", table_name);
+    match table_exists(&temp_table) {
+        Ok(table) => {
+            // Table exists, proceed with your logic using the table
+        },
+        Err(error) => {
+            // Table doesn't exist, return an error response
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: error.message,
+                count: 0,
+                data: vec![],
+            });
+        }
+    }
+
     let table_clone = table_name.clone();
     let batch_data = records.into_inner();
     let json_records = batch_data.records;
@@ -289,17 +306,6 @@ pub async fn batch_insert_records(
     // Convert JSON array to CSV in-memor
 
     for record in processed_records.iter() {
-        if let Err(e) =
-            BatchSyncService::send_insert_message(table_clone.clone(), record.clone()).await
-        {
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Sync error: {e}"),
-                count: 0,
-                data: vec![],
-            });
-        }
-
         if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
             if let Err(e) = BatchSyncService::send_code_assignment_message(
                 table_clone.clone(),

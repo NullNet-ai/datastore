@@ -33,6 +33,7 @@ macro_rules! generate_insert_record_match {
             {
                 let mut request = $request.into_inner();
                 request.process_record("create", $auth);
+                // ! needs refactoring for hypertable_timestamp
 
                 match $self {
                     $(
