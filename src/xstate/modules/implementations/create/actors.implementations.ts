@@ -59,25 +59,25 @@ export class CreateActorsImplementations {
         const { params, body, query, headers } = _req;
         const { host, cookie } = headers;
         const { table } = params;
-        const { pluck = 'id', pfk: pass_field_key = '' } = query;
+        const { pluck = 'id' } = query;
+
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }
         body.created_by = account_organization_id;
 
-        const { permissions, valid_pass_keys } =
-          await Utility.getCachedPermissions('write', {
-            data_permissions_query,
-            host,
-            cookie,
-            headers,
-            table,
-            account_organization_id,
-            db: this.db,
-            body,
-            account_id: responsible_account.account_id,
-            metadata,
-          });
+        const { permissions } = await Utility.getCachedPermissions('write', {
+          data_permissions_query,
+          host,
+          cookie,
+          headers,
+          table,
+          account_organization_id,
+          db: this.db,
+          body,
+          account_id: responsible_account.account_id,
+          metadata,
+        });
 
         if (table === 'organizations' && body?.organization_id) {
           await this.minioService.makeBucket(
@@ -110,14 +110,7 @@ export class CreateActorsImplementations {
             .map((p) => `${p.entity}.${p.field}`),
           ..._body
         } = body;
-        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
-          throw new BadRequestException({
-            success: false,
-            message: `Pass field key is not valid.`,
-            count: 0,
-            data: [],
-          });
-        }
+
 
         const { schema }: any = Utility.checkCreateSchema(
           table,

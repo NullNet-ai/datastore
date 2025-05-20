@@ -81,13 +81,15 @@ export class VerifyActionsImplementations {
           tables,
           main_fields,
         })}`;
+        const valid_pass_keys_query = `
+        SELECT id FROM encryption_keys WHERE safe_decrypt(organization_id::BYTEA,'${process.env.PGP_SYM_KEY}') = '${responsible_account.organization_id}' AND safe_decrypt(entity::BYTEA,'${process.env.PGP_SYM_KEY}') = '${table}'
+        `;
+
         return {
           query,
           account_organization_id: responsible_account.account_organization_id,
           schema,
-          valid_pass_keys_query: `
-          SELECT id FROM encryption_keys WHERE safe_decrypt(organization_id::BYTEA,'dummy_secret_key') = '${responsible_account.organization_id}'
-          `,
+          valid_pass_keys_query,
         };
       },
     }),

@@ -63,7 +63,7 @@ export class FindActorsImplementations {
           responsible_account;
         const [_res, _req] = controller_args;
         const { params, headers, query } = _req;
-        const { pfk: pass_field_key = '' } = query;
+        let { pfk: pass_field_key = '' } = query;
         let { body } = _req;
         const { time_zone, host, cookie } = headers;
         const { table, type } = params;
@@ -94,6 +94,7 @@ export class FindActorsImplementations {
           metadata,
         });
 
+        pass_field_key = !query?.pfk ? valid_pass_keys?.[0] ?? '' : query?.pfk;
         metadata = _metadata;
         const {
           order_direction = 'asc',
@@ -116,6 +117,7 @@ export class FindActorsImplementations {
             .filter((p) => p.decrypt)
             .map((p) => `${p.entity}.${p.field}`),
         } = body;
+
         if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
           throw new BadRequestException({
             success: false,
@@ -124,6 +126,7 @@ export class FindActorsImplementations {
             data: [],
           });
         }
+
         if (group_advance_filters.length && advance_filters.length) {
           throw new BadRequestException({
             success: false,
@@ -483,7 +486,7 @@ export class FindActorsImplementations {
           table,
           date_format,
           pass_field_key,
-          permissions
+          permissions,
         });
 
         const getSortSchemaAndField = (
@@ -691,7 +694,19 @@ export class FindActorsImplementations {
               group_by,
             )
           : db_results;
-
+        const meta_permissions = permissions.data.map((p) =>
+          pick(p, [
+            'entity',
+            'field',
+            'read',
+            'write',
+            'encrypt',
+            'decrypt',
+            'sensitive',
+            'archive',
+            'delete',
+          ]),
+        );
         if (!result || !result.length) {
           throw new NotFoundException({
             success: true,
@@ -700,6 +715,7 @@ export class FindActorsImplementations {
             data: [],
             metadata,
             errors,
+            permissions: meta_permissions,
           });
         }
 
@@ -715,6 +731,7 @@ export class FindActorsImplementations {
             }, []),
             metadata,
             errors,
+            permissions: meta_permissions,
           },
         });
       } catch (error: any) {

@@ -43,7 +43,6 @@ import {
   date_options,
   timezone,
 } from '@dna-platform/crdt-lww-postgres/build/modules/constants';
-
 const pluralize = require('pluralize');
 const { TZ = 'America/Los_Angeles' } = process.env;
 import * as cache from 'memory-cache';
@@ -1834,9 +1833,10 @@ export class Utility {
     } else {
       _field = field_parts[0] as string;
     }
-    const can_mask = !!permissions?.data?.find(
-      (p) => p.entity === _entity && p.field === _field && p.sensitive === true,
-    );
+    const can_mask = false;
+    // const can_mask = !!permissions?.data?.find(
+    //   (p) => p.entity === _entity && p.field === _field && p.sensitive === true,
+    // );
 
     const can_decrypt = !!permissions?.data?.find(
       (p) => p.entity === _entity && p.field === _field && p.decrypt === true,
@@ -1976,10 +1976,10 @@ export class Utility {
       case 'read':
         schema.forEach(
           ({ entity: _entity, field: _field, alias, path, property_name }) => {
-            const hasPermission = !!permissions.data.find(
+            const permission = permissions.data.find(
               (p) => p.read && p.entity === _entity && p.field === _field,
             );
-
+            const hasPermission = !!permission;
             if (!hasPermission) {
               const stack = `[${table}]: Found at ${property_name}${
                 alias ? `(${alias})` : ''
@@ -1990,7 +1990,6 @@ export class Utility {
                   path: stack,
                   entity: _entity,
                   field: _field,
-                  // status_code: 401,
                 });
               }
               const cloned_body = { ...body };
@@ -2143,8 +2142,13 @@ export class Utility {
             cache: false,
           }))
           .catch(() => []);
+    console.log('VALID PASS KEYS');
+    console.table(valid_pass_keys);
     console.log('PERMISSIONS');
     console.table(permissions.data);
+    this.logger.debug(
+      `Pass key query: ${data_permissions_query.valid_pass_keys_query}`,
+    );
     this.logger.debug(
       `data_permissions_query: ${data_permissions_query.query}`,
     );
