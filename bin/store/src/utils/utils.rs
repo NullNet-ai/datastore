@@ -1,7 +1,9 @@
 use crate::schema::system_tables::is_system_table;
 use singularize::singularize;
-
+use crate::controllers::store_controller::ApiError;
 use crate::templates::proto_generator::diesel_type_to_proto;
+use actix_web::http;
+use crate::table_enum::Table as TableEnum;
 
 pub fn to_singular(table_name: &str) -> String {
     let mut singular = singularize(table_name);
@@ -119,4 +121,14 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
 
 pub fn token_data_extractor(token: &str) -> String {
     todo!()
+}
+
+
+pub fn table_exists(table_name: &str) -> Result<TableEnum, ApiError> {
+    TableEnum::from_str(table_name).ok_or_else(|| {
+        ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Unknown table: {}", table_name),
+        )
+    })
 }

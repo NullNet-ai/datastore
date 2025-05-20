@@ -1,5 +1,6 @@
 #![recursion_limit = "2056"]
 use actix_web::{web, App, HttpServer};
+use batch_sync::background_sync;
 use middlewares::auth_middleware::Authentication;
 use dotenv::dotenv;
 use std::env;
@@ -32,7 +33,6 @@ use controllers::store_controller::{
 use env_logger::Env;
 use std::sync::Arc;
 pub mod generated;
-use std::process;
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
@@ -62,19 +62,34 @@ async fn main() -> std::io::Result<()> {
     let merkle_manager = MerkleManager::instance();
     // if (generate_proto == "true") {
     println!("Generating proto files");
-    proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
-    run_build_script()?;
+    // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
+    // run_build_script()?;
     // // Run the generator
-    if let Err(e) = grpc_controller_generator::run_generator() {
-        eprintln!("Error: {}", e);
-        process::exit(1);
-    }
+    // if let Err(e) = grpc_controller_generator::run_generator() {
+    //     eprintln!("Error: {}", e);
+    //     process::exit(1);
+    // }
 
-    if let Err(e) = table_enum_generator::run_generator() {
-        eprintln!("Failed to generate table enum: {}", e);
-    }
-
+    // if let Err(e) = table_enum_generator::run_generator() {
+    //     eprintln!("Failed to generate table enum: {}", e);
+    // }
     println!("gRPC controller generation completed successfully!");
+
+    let background_sync_service = match background_sync::BackgroundSyncService::new().await {
+        Ok(service) => service,
+        Err(e) => {
+            log::error!("Failed to initialize BackgroundSyncService: {}", e);
+            return Ok(());
+        }
+    };
+    
+    // Spawn it in a background task
+    tokio::spawn(async move {
+        if let Err(e) = background_sync_service.init().await {
+            log::error!("Error in background sync service: {}", e);
+        }
+    });
+
 
     // }
     merkle_manager.load_trees_from_db().await;
@@ -97,12 +112,6 @@ async fn main() -> std::io::Result<()> {
     TransactionService::initialize().await;
 
     let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
-    tokio::spawn(async move {
-        match GrpcController::init(&grpc_addr).await {
-            Ok(_) => println!("gRPC server started successfully"),
-            Err(e) => eprintln!("Failed to start gRPC server: {}", e),
-        }
-    });
 
     //init batch sync
     if let Err(e) = BatchSyncService::init().await {

@@ -191,6 +191,18 @@ macro_rules! generate_batch_insert_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
                     let table_name = params.table;
+                    let temp_table= format!("temp_{}", table_name);
+                    match table_exists(&temp_table) {
+                        Ok(table) => {
+                            // Table exists, proceed with your logic using the table
+                        },
+                        Err(error) => {
+                            return Err(Status::internal(format!(
+                                "Table '{}' does not exist",
+                                temp_table
+                            )));
+                        }
+                    }
                    let records;
                    let entity_prefix;
                      match request.body {
@@ -253,16 +265,6 @@ macro_rules! generate_batch_insert_method {
 
                     // Send sync messages for each record
                     for record in processed_records.iter() {
-                        if let Err(e) = crate::batch_sync::BatchSyncService::send_insert_message(
-                            table_name.clone(),
-                            record.clone(),
-                        )
-                        .await
-                        {
-                            return Err(Status::internal(format!("Sync error: {}", e)));
-                        }
-
-
 
                         if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
                             if let Err(e) =

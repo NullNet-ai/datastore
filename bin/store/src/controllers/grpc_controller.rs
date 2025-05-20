@@ -9,6 +9,7 @@ use serde_json::Value;
 use crate::structs::structs::RequestBody;
 use tonic::{Request, Response, Status, transport::Server};
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
+use crate::utils::utils::table_exists;
 use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record};
 use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
 use crate::{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method};
