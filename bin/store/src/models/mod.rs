@@ -18,4 +18,5 @@ pub mod device_configuration_model;
 pub mod device_interface_address_model;
 pub mod device_interface_model;
 pub mod device_remote_access_session_model;
+pub mod device_rule_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

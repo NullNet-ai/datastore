@@ -7,6 +7,7 @@ use crate::models::device_configuration_model::DeviceConfigurationModel;
 use crate::models::device_interface_address_model::DeviceInterfaceAddressModel;
 use crate::models::device_interface_model::DeviceInterfaceModel;
 use crate::models::device_remote_access_session_model::DeviceRemoteAccessSessionModel;
+use crate::models::device_rule_model::DeviceRuleModel;
 use crate::models::packet_model::PacketModel;
 use crate::models::connection_model::ConnectionModel;
 use crate::models::device_ssh_key_model::DeviceSshKeyModel;
@@ -35,6 +36,7 @@ pub enum Table {
     DeviceInterfaceAddresses,
     DeviceInterfaces,
     DeviceRemoteAccessSessions,
+    DeviceRules,
     Packets,
     Connections,
     DeviceSshKeys,
@@ -54,6 +56,7 @@ impl Table {
             "device_interface_addresses" => Some(Table::DeviceInterfaceAddresses),
             "device_interfaces" => Some(Table::DeviceInterfaces),
             "device_remote_access_sessions" => Some(Table::DeviceRemoteAccessSessions),
+            "device_rules" => Some(Table::DeviceRules),
             "packets" => Some(Table::Packets),
             "connections" => Some(Table::Connections),
             "device_ssh_keys" => Some(Table::DeviceSshKeys),
@@ -102,7 +105,7 @@ impl Table {
             conn,
             record,
             request,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -115,7 +118,7 @@ impl Table {
             self,
             conn,
             id,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -128,7 +131,7 @@ impl Table {
             self,
             conn,
             record,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -141,7 +144,7 @@ impl Table {
             self,
             conn,
             record,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 }

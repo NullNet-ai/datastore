@@ -298,6 +298,45 @@ message DeviceRemoteAccessSessions {
   optional string remote_access_category = 23;
 }
 
+// DeviceRules entity definition
+message DeviceRules {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string device_configuration_id = 19;
+  optional string disabled = 20;
+  optional string rule_type = 21;
+  optional string policy = 22;
+  optional string protocol = 23;
+  optional string source_port = 24;
+  optional string source_addr = 25;
+  optional string source_type = 26;
+  optional string destination_port = 27;
+  optional string destination_addr = 28;
+  optional string description = 29;
+  optional string device_rule_status = 30;
+  optional string interface = 31;
+  optional int32 order = 32;
+  optional string destination_inversed = 33;
+  optional string destination_type = 34;
+  optional string source_inversed = 35;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -1505,6 +1544,137 @@ message UpsertDeviceRemoteAccessSessionsResponse {
   repeated DeviceRemoteAccessSessions data = 4;
 }
 
+// Create DeviceRules request
+message CreateDeviceRulesRequest {
+  DeviceRules device_rules = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceRules response
+message CreateDeviceRulesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceRules data = 4;
+}
+
+// Get DeviceRules request
+message GetDeviceRulesRequest {
+  string id = 1;
+}
+
+// Get DeviceRules response
+message GetDeviceRulesResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceRules data = 3;
+}
+
+// Update DeviceRules request
+message UpdateDeviceRulesRequest {
+  DeviceRules device_rule = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceRules response
+message UpdateDeviceRulesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceRules data = 4;
+}
+
+// BatchUpdate DeviceRules request
+message BatchUpdateDeviceRulesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceRules updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceRules response
+message BatchUpdateDeviceRulesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceRules data = 4;
+}
+
+// BatchDelete DeviceRules request
+message BatchDeleteDeviceRulesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceRules response
+message BatchDeleteDeviceRulesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceRules data = 4;
+}
+
+// Delete DeviceRules request
+message DeleteDeviceRulesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceRules response
+message DeleteDeviceRulesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceRules data = 4;
+}
+
+// BatchInsert DeviceRules request
+message BatchInsertDeviceRulesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceRules device_rules = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceRules response
+message BatchInsertDeviceRulesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceRules data = 4;
+}
+
+// Upsert DeviceRules request
+message UpsertDeviceRulesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceRules data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceRules response
+message UpsertDeviceRulesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceRules data = 4;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -2353,6 +2523,30 @@ service StoreService {
 
   // Upsert a DeviceRemoteAccessSessions (create if not exists, update if exists)
   rpc UpsertDeviceRemoteAccessSessions(UpsertDeviceRemoteAccessSessionsRequest) returns (UpsertDeviceRemoteAccessSessionsResponse);
+
+  // Create a new DeviceRules
+  rpc CreateDeviceRules(CreateDeviceRulesRequest) returns (CreateDeviceRulesResponse);
+
+  // Get a DeviceRules by ID
+  rpc GetDeviceRules(GetDeviceRulesRequest) returns (GetDeviceRulesResponse);
+
+  // Update an existing DeviceRules
+  rpc UpdateDeviceRules(UpdateDeviceRulesRequest) returns (UpdateDeviceRulesResponse);
+
+  // Delete a DeviceRules by ID
+  rpc DeleteDeviceRules(DeleteDeviceRulesRequest) returns (DeleteDeviceRulesResponse);
+
+  // Batch insert multiple DeviceRuless
+  rpc BatchInsertDeviceRules(BatchInsertDeviceRulesRequest) returns (BatchInsertDeviceRulesResponse);
+
+  // Batch update multiple DeviceRuless based on filters
+  rpc BatchUpdateDeviceRules(BatchUpdateDeviceRulesRequest) returns (BatchUpdateDeviceRulesResponse);
+
+  // Batch delete multiple DeviceRuless based on filters
+  rpc BatchDeleteDeviceRules(BatchDeleteDeviceRulesRequest) returns (BatchDeleteDeviceRulesResponse);
+
+  // Upsert a DeviceRules (create if not exists, update if exists)
+  rpc UpsertDeviceRules(UpsertDeviceRulesRequest) returns (UpsertDeviceRulesResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);

@@ -19,7 +19,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Timestamp,
-        
+
         id -> Text,
         address -> Nullable<Text>,
         address_line_one -> Nullable<Text>,
@@ -58,7 +58,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Timestamp,
-        
+
         id -> Text,
         app_id -> Nullable<Text>,
         firewall -> Nullable<Text>,
@@ -84,7 +84,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Timestamp,
-        
+
         id -> Text,
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -229,6 +229,48 @@ table! {
         remote_access_session -> Nullable<Text>,
         remote_access_status -> Nullable<Text>,
         remote_access_category -> Nullable<Text>,
+    }
+}
+
+table! {
+    device_rules(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        device_configuration_id -> Nullable<Text>,
+        disabled -> Nullable<Bool>,
+        #[sql_name = "type"]
+        rule_type -> Nullable<Text>,
+        policy -> Nullable<Text>,
+        protocol -> Nullable<Text>,
+        source_port -> Nullable<Text>,
+        source_addr -> Nullable<Text>,
+        source_type -> Nullable<Text>,
+        destination_port -> Nullable<Text>,
+        destination_addr -> Nullable<Text>,
+        description -> Nullable<Text>,
+        device_rule_status -> Nullable<Text>,
+        interface -> Nullable<Text>,
+        order -> Nullable<Int4>,
+        destination_inversed -> Nullable<Bool>,
+        destination_type -> Nullable<Text>,
+        source_inversed -> Nullable<Bool>,
     }
 }
 
@@ -397,7 +439,7 @@ table! {
         code -> Nullable<Text>,
         id -> Text,
         timestamp -> Timestamp,
-        
+
         name -> Nullable<Text>,
     }
 }
