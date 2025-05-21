@@ -63,7 +63,8 @@ export class FindActorsImplementations {
           responsible_account;
         const [_res, _req] = controller_args;
         const { params, headers, query } = _req;
-        let { pfk: pass_field_key = '', p, rp } = query;
+        const { p, rp } = query;
+
         let { body } = _req;
         const { time_zone, host, cookie } = headers;
         const { table, type } = params;
@@ -97,9 +98,11 @@ export class FindActorsImplementations {
         const permissions = p === 'true' ? await getPermissions : { data: [] };
         const record_permissions =
           rp === 'true' ? await getRecordPermissions : { data: [] };
-        const valid_pass_keys = await getValidPassKeys;
-        pass_field_key = !query?.pfk ? valid_pass_keys?.[0] ?? '' : query?.pfk;
-        metadata = _metadata;
+        let { data: valid_pass_keys } = await getValidPassKeys;
+        valid_pass_keys = valid_pass_keys?.map((key) => key.id);
+        const pass_field_key = !query?.pfk
+          ? valid_pass_keys?.[0] ?? ''
+          : query?.pfk;
         const {
           order_direction = 'asc',
           order_by = 'id',
@@ -122,7 +125,7 @@ export class FindActorsImplementations {
             .map((p) => `${p.entity}.${p.field}`),
         } = body;
 
-        if (!valid_pass_keys?.data.includes(pass_field_key) && pass_field_key) {
+        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
           throw new BadRequestException({
             success: false,
             message: `Pass field key is not valid.`,

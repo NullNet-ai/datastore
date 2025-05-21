@@ -93,6 +93,7 @@ export class VerifyActionsImplementations {
           SELECT 
           entities.name as entity,
           count(fields.name) AS total_fields,
+          COUNT(*) FILTER (WHERE permissions.write IS TRUE) as total_fields_with_write,
           CASE WHEN COUNT(*) FILTER (WHERE permissions.sensitive IS TRUE) != count(fields.name) THEN false ELSE true END AS sensitive,
           CASE WHEN COUNT(*) FILTER (WHERE permissions.read IS TRUE) != count(fields.name) THEN false ELSE true END AS read,
           CASE WHEN COUNT(*) FILTER (WHERE permissions.write IS TRUE) != count(fields.name) THEN false ELSE true END AS write,

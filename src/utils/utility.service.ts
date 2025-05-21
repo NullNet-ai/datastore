@@ -2081,6 +2081,7 @@ export class Utility {
               (p) => p.write && p.entity === _entity && p.field === _field,
             );
             const hasPermission = !!permission;
+
             if (!hasPermission) {
               const stack = `[${table}]: Found at ${property_name}${
                 alias ? `(${alias})` : ''

@@ -78,7 +78,7 @@ export class DeleteActorsImplementations {
         }
 
         const { getPermissions, getRecordPermissions } =
-          await Utility.getCachedPermissions('write', {
+          Utility.getCachedPermissions('write', {
             data_permissions_query,
             host,
             cookie,
@@ -98,8 +98,8 @@ export class DeleteActorsImplementations {
         );
         const meta_record_permissions = record_permissions.data;
         if (meta_record_permissions.length) {
-          const [{ write }] = meta_record_permissions;
-          if (!write) {
+          const [{ write, delete: _delete }] = meta_record_permissions;
+          if (!write || !_delete)
             throw new BadRequestException({
               success: false,
               message: `You do not have permission to delete this record`,
@@ -110,8 +110,8 @@ export class DeleteActorsImplementations {
               permissions: meta_permissions,
               record_permissions: meta_record_permissions,
             });
-          }
         }
+
         this.logger.debug(`Soft deleting ${table} record with id: ${id}`);
         const result = await this.db
           .update(table_schema)

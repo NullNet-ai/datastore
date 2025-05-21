@@ -60,13 +60,12 @@ export class CreateActorsImplementations {
         const { host, cookie } = headers;
         const { table } = params;
         const { pluck = 'id', p, rp } = query;
-
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }
         body.created_by = account_organization_id;
 
-        const { getPermissions, getRecordPermissions } =
+        const { getPermissions, getRecordPermissions, getValidPassKeys } =
           Utility.getCachedPermissions('write', {
             data_permissions_query,
             host,
@@ -87,19 +86,30 @@ export class CreateActorsImplementations {
         );
         const meta_record_permissions = record_permissions.data;
         if (meta_record_permissions.length) {
-          const [{ write }] = meta_record_permissions;
-          if (!write) {
+          const [{ total_fields_with_write }] = meta_record_permissions;
+          const hasPermission = total_fields_with_write === 0;
+          if (!hasPermission) {
             throw new BadRequestException({
               success: false,
-              message: `You do not have permission to create this record`,
+              message: `You do not have permission to create a new record in ${table}`,
               count: 0,
               data: [],
-              metadata,
-              errors,
-              permissions: meta_permissions,
-              record_permissions: meta_record_permissions,
             });
           }
+        }
+        let { data: valid_pass_keys } = await getValidPassKeys;
+        valid_pass_keys = valid_pass_keys?.map((key) => key.id);
+
+        const pass_field_key = !query?.pfk
+          ? valid_pass_keys?.[0] ?? ''
+          : query?.pfk;
+        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
+          throw new BadRequestException({
+            success: false,
+            message: `Pass field key is not valid.`,
+            count: 0,
+            data: [],
+          });
         }
         if (table === 'organizations' && body?.organization_id) {
           await this.minioService.makeBucket(

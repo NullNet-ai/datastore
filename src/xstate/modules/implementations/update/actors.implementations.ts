@@ -75,17 +75,14 @@ export class UpdateActorsImplementations {
         );
         const meta_record_permissions = record_permissions.data;
         if (meta_record_permissions.length) {
-          const [{ write }] = meta_record_permissions;
-          if (!write) {
+          const [{ total_fields_with_write }] = meta_record_permissions;
+          const hasPermission = total_fields_with_write === 0;
+          if (!hasPermission) {
             throw new BadRequestException({
               success: false,
-              message: `You do not have permission to update this record`,
+              message: `You do not have permission to update a record ${id}`,
               count: 0,
               data: [],
-              metadata,
-              errors,
-              permissions: meta_permissions,
-              record_permissions: meta_record_permissions,
             });
           }
         }
