@@ -55,11 +55,6 @@ export class VerifyActionsImplementations {
         const write_endpoint = `${write_method}:/api/store/${table}${
           single_write_record ? `/${single_write_record}` : ``
         }${query_string}`;
-        console.log({
-          read_endpoint,
-          write_endpoint,
-          request_info,
-        });
         switch (request_info) {
           case read_endpoint:
             const { main_fields: read_main_fields, tables: read_tables } =
@@ -159,9 +154,6 @@ export class VerifyActionsImplementations {
     if (type === 'getById') {
       const { pluck = '' } = req_query;
       tables.push(table);
-      console.log({
-        req_query,
-      });
       pluck?.split(',').forEach((key) => {
         main_fields.push(key);
         schema.push({
@@ -171,10 +163,6 @@ export class VerifyActionsImplementations {
           property_name: ``,
           path: key,
         });
-      });
-      console.log({
-        tables,
-        main_fields,
       });
       return {
         tables,

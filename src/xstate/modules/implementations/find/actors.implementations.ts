@@ -774,6 +774,7 @@ export class FindActorsImplementations {
     _concatenate_fields,
     group_by,
   ) {
+    return results;
     return results?.map((main_item) => {
       let cloned_item = { ...main_item };
       if (group_by.fields?.length) {

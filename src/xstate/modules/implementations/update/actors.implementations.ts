@@ -77,7 +77,7 @@ export class UpdateActorsImplementations {
         const meta_record_permissions = record_permissions.data;
         if (meta_record_permissions.length) {
           const [{ total_fields_with_write }] = meta_record_permissions;
-          const hasPermission = total_fields_with_write === 0;
+          const hasPermission = total_fields_with_write > 0;
           if (!hasPermission) {
             throw new BadRequestException({
               success: false,

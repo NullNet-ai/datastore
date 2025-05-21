@@ -605,6 +605,7 @@ export class Utility {
     encrypted_fields = [],
     time_zone,
     pass_field_key,
+    permissions = {},
   }: {
     table: string;
     pluck: string[];
@@ -612,6 +613,7 @@ export class Utility {
     encrypted_fields?: string[];
     time_zone?: string;
     pass_field_key: string;
+    permissions?: Record<string, any>;
   }): Record<string, any> | null {
     const table_schema = this.checkTable(table).table_schema;
     if (!pluck?.length || !pluck) {
@@ -644,6 +646,7 @@ export class Utility {
                   encrypted_fields,
                   table,
                   pass_field_key,
+                  permissions,
                 }),
               ),
         };
@@ -1855,7 +1858,6 @@ export class Utility {
 
     const encrypted_field = `${_entity ? `${_entity}.` : ''}${_field}`;
     let data_type = `${encrypted_field}`;
-
     if (
       encrypted_fields.includes(encrypted_field) &&
       can_decrypt &&
@@ -2149,7 +2151,10 @@ export class Utility {
       valid_pass_keys_query,
       record_valid_pass_keys_query,
     } = data_permissions_query;
-    const custom_suffix = `${host}${cookie}${headers?.['user-agent'] ?? ''}}`;
+    const custom_suffix = `${host}${cookie}${
+      headers?.['user-agent'] ?? ''
+    }}${JSON.stringify(query)}`;
+    this.logger.debug(`custom_suffix: ${custom_suffix}`);
     const getByQueries = async ({
       type,
       cache_key,

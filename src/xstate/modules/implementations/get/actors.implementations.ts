@@ -62,12 +62,7 @@ export class GetActorsImplementations {
       const { params, query, headers } = _req;
       const { time_zone, host, cookie } = headers;
       const { table = 'files', id, type } = params;
-      const {
-        date_format = 'mm/dd/YYYY',
-        encrypted_fields = [],
-        p,
-        rp,
-      } = query;
+      const { date_format = 'mm/dd/YYYY', p, rp } = query;
       let { body } = _req;
       const {
         metadata: _metadata,
@@ -89,6 +84,9 @@ export class GetActorsImplementations {
       });
 
       const permissions = p === 'true' ? await getPermissions : { data: [] };
+      query.encrypted_fields = permissions.data
+        .filter((p) => p.decrypt)
+        .map((p) => `${p.entity}.${p.field}`);
       const record_permissions =
         rp === 'true' ? await getRecordPermissions : { data: [] };
       let { data: valid_pass_keys } = await getValidPassKeys;
@@ -115,9 +113,10 @@ export class GetActorsImplementations {
         table,
         pluck: query.pluck?.split(',') || '',
         date_format,
-        encrypted_fields,
+        encrypted_fields: query.encrypted_fields,
         time_zone,
         pass_field_key,
+        permissions,
       });
 
       if (table === 'counters') {
