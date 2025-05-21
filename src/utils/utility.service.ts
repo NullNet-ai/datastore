@@ -638,7 +638,14 @@ export class Utility {
                 })}
                AS "${field}"`,
               )
-            : table_schema[field],
+            : sql.raw(
+                Utility.decryptField({
+                  field: `"${table}"."${field}"`,
+                  encrypted_fields,
+                  table,
+                  pass_field_key,
+                }),
+              ),
         };
       }
       return acc;
