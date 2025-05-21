@@ -4,7 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from '../../../../utils/utility.service';
 import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
-import { pick } from 'lodash';
+import pick from 'lodash.pick';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
 import { eq } from 'drizzle-orm';
@@ -53,9 +53,9 @@ export class UpdateActorsImplementations {
         const { params, body, query, headers } = _req;
         const { host, cookie } = headers;
         const { table, id } = params;
-        let { pluck = 'id', pfk: pass_field_key = '' } = query;
-        const { permissions, valid_pass_keys } =
-          await Utility.getCachedPermissions('write', {
+        let { pluck = 'id', p, rp } = query;
+        const { getPermissions, getRecordPermissions } =
+          Utility.getCachedPermissions('write', {
             data_permissions_query,
             host,
             cookie,
@@ -67,7 +67,13 @@ export class UpdateActorsImplementations {
             account_id: responsible_account.account_id,
             metadata,
           });
-
+        const permissions = p === 'true' ? await getPermissions : { data: [] };
+        const record_permissions =
+          rp === 'true' ? await getRecordPermissions : { data: [] };
+        const meta_permissions = permissions.data?.map((p) =>
+          pick(p, ['entity', 'field', 'write', 'encrypt']),
+        );
+        const meta_record_permissions = record_permissions.data;
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }
@@ -76,18 +82,10 @@ export class UpdateActorsImplementations {
 
         const {
           encrypted_fields = permissions.data
-            .filter((p) => p.encrypt)
+            ?.filter((p) => p.encrypt)
             .map((p) => `${p.entity}.${p.field}`),
           ..._body
         } = body;
-        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
-          throw new BadRequestException({
-            success: false,
-            message: `Pass field key is not valid.`,
-            count: 0,
-            data: [],
-          });
-        }
 
         const { schema } = Utility.checkUpdateSchema(
           table,
@@ -115,6 +113,10 @@ export class UpdateActorsImplementations {
               message: `Successfully updated in ${table}`,
               count: 1,
               data: [pick(result, pluck.split(','))],
+              metadata,
+              errors,
+              permissions: meta_permissions,
+              record_permissions: meta_record_permissions,
             },
           });
         }
@@ -200,6 +202,10 @@ export class UpdateActorsImplementations {
             message: `Successfully updated in ${table}`,
             count: 1,
             data: [pick(result, pluck.split(','))],
+            metadata,
+            errors,
+            permissions: meta_permissions,
+            record_permissions: meta_record_permissions,
           },
         });
       } catch (error: any) {

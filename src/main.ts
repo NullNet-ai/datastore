@@ -25,7 +25,7 @@ const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
 async function bootstrap() {
   const app = await NestFactory.create(HttpModule, {
     // !TODO: causes an issue with winston transport for lowdb reading a file from debug.json
-    // logger,
+    logger: process.env.NODE_ENV === 'production' ? false : logger,
   });
 
   app.use(cookieParser());
@@ -54,6 +54,7 @@ async function bootstrapBatchSyncService() {
       options: {
         host: '0.0.0.0', // Localhost (can be omitted for defaults)
       },
+      logger: process.env.NODE_ENV === 'production' ? false : logger,
     },
   );
 
@@ -71,6 +72,7 @@ async function bootstrapGrpc() {
       loader: {
         keepCase: true, // Prevents snake_case to camelCase conversion
       },
+      logger: process.env.NODE_ENV === 'production' ? false : logger,
     },
   });
   app.useLogger(logger);

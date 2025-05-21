@@ -8,3 +8,5 @@
 \i ./src/schema/sql/init/data_permissions.init.sql
 \i ./src/schema/sql/init/files.init.sql
 \i ./src/schema/sql/init/samples.init.sql
+ -- data
+\i ./src/schema/sql/init/data/samples.data.sql

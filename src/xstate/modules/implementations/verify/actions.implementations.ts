@@ -44,53 +44,80 @@ export class VerifyActionsImplementations {
             return `${key}=${val}`;
           })
           .join('&');
+          const write_method = _req.method === 'POST' ? 'POST' : 'PATCH';
+          const single_record = _req.method === 'PATCH' ? params.id : '';
+          const write_endpoint = `${write_method}:/api/store/${table}${
+            single_record ? `/${single_record}` : ``
+          }${query_string}`;
 
-        switch (request_info) {
-          case `POST:/api/store/${table}/filter${query_string}`:
-            const { main_fields: read_main_fields, tables: read_tables } =
-              this.accumulateReadInformation.bind(this)({
-                body,
-                table,
-                tables,
-                main_fields,
-                schema,
-              });
-            tables = read_tables;
-            main_fields = read_main_fields;
-            break;
-          case `POST:/api/store/${table}${query_string}`:
-            const { main_fields: write_main_fields, tables: write_tables } =
-              this.accumulateWriteInformation.bind(this)({
-                body,
-                table,
-                tables,
-                main_fields,
-                schema,
-              });
-            tables = write_tables;
-            main_fields = write_main_fields;
-            break;
-          default:
-            break;
-        }
+          switch (request_info) {
+            case `POST:/api/store/${table}/filter${query_string}`:
+              const { main_fields: read_main_fields, tables: read_tables } =
+                this.accumulateReadInformation.bind(this)({
+                  body,
+                  table,
+                  tables,
+                  main_fields,
+                  schema,
+                });
+              tables = read_tables;
+              main_fields = read_main_fields;
+              break;
+            case write_endpoint:
+              const { main_fields: write_main_fields, tables: write_tables } =
+                this.accumulateWriteInformation.bind(this)({
+                  body,
+                  table,
+                  tables,
+                  main_fields,
+                  schema,
+                });
+              tables = write_tables;
+              main_fields = write_main_fields;
+              break;
+            default:
+              break;
+          }
 
-        const query = `
-        SELECT entities.name as entity,fields.name as field,permissions.sensitive as sensitive,permissions.read as read,permissions.write as write,permissions.encrypt as encrypt,permissions.decrypt as decrypt,permissions.required as required,permissions.archive as archive,permissions.delete as delete, data_permissions.account_organization_id as account_organization_id FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '${
+          const query = `
+        SELECT entities.name as entity,fields.name as field,permissions.sensitive as sensitive,permissions.read as read,permissions.write as write,permissions.encrypt as encrypt,permissions.decrypt as decrypt,permissions.required as required,permissions.archive as archive,permissions.delete as delete, data_permissions.account_organization_id as account_organization_id, permissions.id as pid FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '${
           responsible_account.account_organization_id
         }' ${Utility.constructPermissionSelectWhereClause({
-          tables,
-          main_fields,
-        })}`;
-        const valid_pass_keys_query = `
+            tables,
+            main_fields,
+          })}`;
+          const valid_pass_keys_query = `
         SELECT id FROM encryption_keys WHERE safe_decrypt(organization_id::BYTEA,'${process.env.PGP_SYM_KEY}') = '${responsible_account.organization_id}' AND safe_decrypt(entity::BYTEA,'${process.env.PGP_SYM_KEY}') = '${table}'
         `;
+          const record_valid_pass_keys_query = `
+          SELECT 
+          entities.name as entity,
+          count(fields.name) AS total_fields,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.sensitive IS TRUE) != count(fields.name) THEN false ELSE true END AS sensitive,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.read IS TRUE) != count(fields.name) THEN false ELSE true END AS read,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.write IS TRUE) != count(fields.name) THEN false ELSE true END AS write,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.encrypt IS TRUE) != count(fields.name) THEN false ELSE true END AS encrypt,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.decrypt IS TRUE) != count(fields.name) THEN false ELSE true END AS decrypt,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.required IS TRUE) != count(fields.name) THEN false ELSE true END AS required,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.archive IS TRUE) != count(fields.name) THEN false ELSE true END AS archive,
+          CASE WHEN COUNT(*) FILTER (WHERE permissions.delete IS TRUE) != count(fields.name) THEN false ELSE true END AS delete
+          FROM data_permissions 
+          LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id 
+          LEFT JOIN fields on entity_fields.field_id = fields.id 
+          LEFT JOIN entities on entity_fields.entity_id = entities.id 
+          LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id 
+          WHERE entities.name = '${table}'
+          GROUP BY entities.name;
+        `;
 
-        return {
-          query,
-          account_organization_id: responsible_account.account_organization_id,
-          schema,
-          valid_pass_keys_query,
-        };
+          return {
+            query,
+            account_organization_id:
+              responsible_account.account_organization_id,
+            schema,
+            valid_pass_keys_query,
+            record_valid_pass_keys_query,
+          };
       },
     }),
   };
@@ -358,7 +385,7 @@ export class VerifyActionsImplementations {
         alias: '',
         field,
         property_name: ``,
-        path: `${field} = ${main_fields[field]}`,
+        path: `${field} = ${body?.[field]}`,
       });
     });
     return {

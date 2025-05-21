@@ -53,24 +53,15 @@ DECLARE
         ROW('SampleText_sample_text_text', 'SampleText', 'sample_text', 'text', record_email)::field_type,
         ROW('TestObj_test_obj_jsonb', 'TestObj', 'test_obj', 'jsonb', record_email)::field_type
     ];
-    arr_permissions permission_type[] := ARRAY[
-        ROW('0b023cd7-1471-4980-902e-b67f28e2c370', true, true, true, true, true,true, true, true, record_email)::permission_type,
-        ROW('26958631-a9a0-46de-ab71-442f9c970e26', false, true, true, true, true,false, true, true, record_email)::permission_type
-    ];
     arr_permission permission_type;
     field field_type;
+    permission_id TEXT;
 BEGIN
+    RAISE NOTICE 'main_entity = %', main_entity;
     -- entities
     INSERT INTO entities (id, name, organization_id, created_by)
     SELECT entity_record_id, main_entity, organization_record_id, record_email
     WHERE NOT EXISTS (SELECT 1 FROM entities WHERE id = entity_record_id);
-
-    -- loop permissions
-    FOREACH arr_permission IN ARRAY arr_permissions LOOP
-        INSERT INTO permissions (id, read, write, encrypt, decrypt, required, sensitive, archive, delete, created_by) 
-        SELECT arr_permission.id, arr_permission.read, arr_permission.write, arr_permission.encrypt, arr_permission.decrypt, arr_permission.required, arr_permission.sensitive, arr_permission.archive, arr_permission.delete, record_email
-        WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = arr_permission.id);
-    END LOOP;
 
     -- loop fields
     FOREACH field IN ARRAY fields LOOP
@@ -79,8 +70,16 @@ BEGIN
         WHERE NOT EXISTS (SELECT 1 FROM fields WHERE id = field.id);
 
         DECLARE
-            entity_field_record_id TEXT := uuid_generate_v4()::text;
+            entity_field_record_id TEXT := uuid_generate_v4()::TEXT;
             account_organization_record_id TEXT;
+            read BOOLEAN := true;
+            write BOOLEAN := true;
+            encrypt BOOLEAN := true;
+            decrypt BOOLEAN := true;
+            required BOOLEAN := false;
+            sensitive BOOLEAN := false;
+            archive BOOLEAN := true;
+            delete BOOLEAN := true;
         BEGIN
             -- entity fields
             INSERT INTO entity_fields (id, entity_id, field_id, created_by) 
@@ -92,13 +91,20 @@ BEGIN
             FROM account_organizations 
             WHERE email = record_email;
 
+            permission_id := uuid_generate_v4()::TEXT;
+
             RAISE NOTICE 'account_organization_record_id = %', account_organization_record_id;
             RAISE NOTICE 'record_email = %', record_email;
+            RAISE NOTICE 'permission_id = %', permission_id;
+            -- create permissions per field
+            INSERT INTO permissions (id, read, write, encrypt, decrypt, required, sensitive, archive, delete, created_by) 
+            SELECT permission_id, read, write, encrypt, decrypt, required, sensitive, archive, delete, record_email
+            WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = permission_id);
 
             -- Check if arr_permissions has elements before accessing
             IF account_organization_record_id IS NOT NULL THEN
                 INSERT INTO data_permissions (id, entity_field_id, inherited_permission_id, account_organization_id, created_by) 
-                SELECT uuid_generate_v4()::text, entity_field_record_id, arr_permissions[1].id, account_organization_record_id, record_email
+                SELECT uuid_generate_v4()::text, entity_field_record_id, permission_id, account_organization_record_id, record_email
                 WHERE NOT EXISTS (SELECT 1 FROM data_permissions WHERE entity_field_id = entity_field_record_id);
             END IF;
         END;

@@ -9,6 +9,7 @@ import * as local_schema from '../../../../schema';
 import { VerifyActorsImplementations } from '../verify';
 import { Utility } from '../../../../utils/utility.service';
 import { LoggerService } from '@dna-platform/common';
+import pick from 'lodash.pick';
 const { SYNC_ENABLED = 'false' } = process.env;
 @Injectable()
 export class DeleteActorsImplementations {
@@ -59,7 +60,7 @@ export class DeleteActorsImplementations {
         const { params, body, query, headers } = _req;
         const { host, cookie } = headers;
         const { table, id } = params;
-        const { is_permanent = 'false', pfk: pass_field_key = '' } = query;
+        const { is_permanent = 'false', p, rp } = query;
         const date = new Date();
         const table_schema = local_schema[table];
         if (!table_schema) {
@@ -76,9 +77,8 @@ export class DeleteActorsImplementations {
           body.organization_id = organization_id;
         }
 
-        const { valid_pass_keys } = await Utility.getCachedPermissions(
-          'write',
-          {
+        const { getPermissions, getRecordPermissions } =
+          await Utility.getCachedPermissions('write', {
             data_permissions_query,
             host,
             cookie,
@@ -89,17 +89,14 @@ export class DeleteActorsImplementations {
             body,
             account_id: responsible_account.account_id,
             metadata,
-          },
-        );
-
-        if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
-          throw new BadRequestException({
-            success: false,
-            message: `Pass field key is not valid.`,
-            count: 0,
-            data: [],
           });
-        }
+        const permissions = p === 'true' ? await getPermissions : { data: [] };
+        const record_permissions =
+          rp === 'true' ? await getRecordPermissions : { data: [] };
+        const meta_permissions = permissions.data?.map((p) =>
+          pick(p, ['entity', 'field', 'write', 'encrypt']),
+        );
+        const meta_record_permissions = record_permissions.data;
         this.logger.debug(`Soft deleting ${table} record with id: ${id}`);
         const result = await this.db
           .update(table_schema)
@@ -133,13 +130,29 @@ export class DeleteActorsImplementations {
         if (SYNC_ENABLED === 'true') {
           await this.syncService.delete(table, id, is_permanent === 'true');
         }
-
+        if (meta_record_permissions.length) {
+          const [{ write }] = meta_record_permissions;
+          if (!write) {
+            throw new BadRequestException({
+              success: false,
+              message: `You do not have permission to delete this record`,
+              count: 0,
+              data: [],
+              metadata,
+              errors,
+            });
+          }
+        }
         return Promise.resolve({
           payload: {
             success: true,
             message: `Successfully deleted in ${table}`,
             count: 1,
             data: [{ id }],
+            metadata,
+            errors,
+            permissions: meta_permissions,
+            record_permissions: meta_record_permissions,
           },
         });
       } catch (error: any) {

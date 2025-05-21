@@ -1653,7 +1653,7 @@ export class Utility {
       const encryption_key = sha1(
         `${organization_id}_${table}_${process.env.PGP_SYM_KEY}`,
       );
-
+      this.logger.debug(`encryption_key: ${encryption_key}`);
       const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
           let _value = `${typeof value === 'string' ? `'${value}'` : value}`;
@@ -1732,6 +1732,7 @@ export class Utility {
       const encryption_key = sha1(
         `${organization_id}_${table}_${process.env.PGP_SYM_KEY}`,
       );
+      this.logger.debug(`encryption_key: ${encryption_key}`);
       const set_val = `${Object.entries(data)
         .reduce((acc: string[], [key, value]) => {
           let _value = `${typeof value === 'string' ? `'${value}'` : value}`;
@@ -2074,16 +2075,35 @@ export class Utility {
         );
         break;
       case 'write':
-        console.log({
-          schema,
-        });
+        schema.forEach(
+          ({ entity: _entity, field: _field, alias, path, property_name }) => {
+            const permission = permissions.data.find(
+              (p) => p.write && p.entity === _entity && p.field === _field,
+            );
+            const hasPermission = !!permission;
+            if (!hasPermission) {
+              const stack = `[${table}]: Found at ${property_name}${
+                alias ? `(${alias})` : ''
+              }${path} (${_field})`;
+              if (!metadata.find((e) => e.stack === stack)) {
+                metadata.push({
+                  message: `${permission_type} access to the '${_field}' field is not permitted.`,
+                  path: stack,
+                  entity: _entity,
+                  field: _field,
+                });
+              }
+              delete body[property_name];
+            }
+          },
+        );
         break;
       default:
         break;
     }
   }
 
-  public static async getCachedPermissions(
+  public static getCachedPermissions(
     permission_type: 'read' | 'write',
     {
       data_permissions_query,
@@ -2103,112 +2123,109 @@ export class Utility {
       account_organization_id: account_organization_id_fr_dp,
       schema: _aliased_schema,
       valid_pass_keys_query,
+      record_valid_pass_keys_query,
     } = data_permissions_query;
     const custom_suffix = `${host}${cookie}${headers?.['user-agent'] ?? ''}}`;
-    const main_table_permissions_cache_key = sha1(
-      `${table}_data_permissions:${custom_suffix}`,
-    );
-    const cached_permissions = JSON.parse(
-      cache.get(main_table_permissions_cache_key),
-    );
-    const cached_valid_pass_keys_key = sha1(
-      `${table}_valid_pass_keys:${custom_suffix}`,
-    );
-    const cached_valid_pass_keys = JSON.parse(
-      cache.get(cached_valid_pass_keys_key),
-    );
-    const valid_pass_keys: string[] = cached_valid_pass_keys
-      ? cached_valid_pass_keys
-      : await db
-          .execute(valid_pass_keys_query?.trim())
-          .then((response) => response.rows.map((row) => row.id))
-          .catch(() => []);
-
-    if (cached_valid_pass_keys === null) {
-      cache.put(
-        cached_valid_pass_keys_key,
-        JSON.stringify(valid_pass_keys),
-        Utility.getTimeMs(process.env.JWT_EXPIRES_IN ?? '2d'),
-      );
-    }
-
-    const permissions = cached_permissions
-      ? cached_permissions
-      : await db
-          .execute(dpquery.trim())
-          .then((response) => ({
-            data: response.rows,
-            account_organization_id,
-            cache: false,
-          }))
-          .catch(() => []);
-    console.log('VALID PASS KEYS');
-    console.table(valid_pass_keys);
-    console.log('PERMISSIONS');
-    console.table(permissions.data);
-    this.logger.debug(
-      `Pass key query: ${data_permissions_query.valid_pass_keys_query}`,
-    );
-    this.logger.debug(
-      `data_permissions_query: ${data_permissions_query.query}`,
-    );
-    this.logger.debug(
-      `data_permissions_account_organization_id: ${data_permissions_query.account_organization_id}`,
-    );
-
-    if (permissions?.data?.length) {
-      if (cached_permissions === null) {
-        this.logger.debug('cached_permissions miss');
+    const getByQueries = async ({
+      type,
+      cache_key,
+      query,
+      expiry,
+    }): Promise<Record<string, any>> => {
+      this.logger.debug(`Getting ${type} permissions`);
+      const data = JSON.parse(cache.get(cache_key));
+      const cached = data
+        ? data
+        : await db
+            .execute(query.trim())
+            .then((response) => ({
+              data: response.rows,
+              account_organization_id,
+              cache: false,
+            }))
+            .catch(() => []);
+      this.logger.debug(`Getting ${type} permissions completed.`);
+      if (process.env.DEBUG === 'true') console.table(cached.data);
+      if (data === null) {
+        this.logger.debug(`${type} cache miss`);
         cache.put(
-          main_table_permissions_cache_key,
+          cache_key,
           JSON.stringify({
-            ...permissions,
+            ...cached,
             cache: true,
           }),
-          Utility.getTimeMs(process.env.JWT_EXPIRES_IN ?? '2d'),
+          Utility.getTimeMs(expiry ?? '2d'),
         );
       } else {
-        this.logger.debug('cached_permissions hit');
+        this.logger.debug(`${type} cache hit`);
       }
 
-      switch (permission_type) {
-        case 'read':
-          const { metadata: acc_read_metadata } =
-            Utility.getReadPermittedFields({
-              body,
-              table,
-              permissions,
-              metadata,
-              schema: _aliased_schema,
-            });
-          metadata = acc_read_metadata;
-          break;
-        case 'write':
-          const { metadata: acc_write_metadata } =
-            Utility.getWritePermittedFields({
-              body,
-              table,
-              permissions,
-              metadata,
-              schema: _aliased_schema,
-            });
-          metadata = acc_write_metadata;
-          break;
+      switch (type) {
+        case 'field_permissions':
+          if (cached?.data?.length) {
+            switch (permission_type) {
+              case 'read':
+                const { metadata: acc_read_metadata } =
+                  Utility.getReadPermittedFields({
+                    body,
+                    table,
+                    permissions: cached,
+                    metadata,
+                    schema: _aliased_schema,
+                  });
+                metadata = acc_read_metadata;
+                break;
+              case 'write':
+                const { metadata: acc_write_metadata } =
+                  Utility.getWritePermittedFields({
+                    body,
+                    table,
+                    permissions: cached,
+                    metadata,
+                    schema: _aliased_schema,
+                  });
+                metadata = acc_write_metadata;
+                break;
+              default:
+                break;
+            }
+          } else {
+            this.logger.warn(
+              `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${account_id}.`,
+            );
+            // TODO: finalize the role based permissions
+            await Utility.isPermitted(account_id, 'Super Admin');
+          }
+          return cached;
         default:
-          break;
+          return cached;
       }
-    } else {
-      this.logger.warn(
-        `No permissions assigned to table:${table} from account_organization_id: ${account_organization_id_fr_dp} | ${account_id}.`,
-      );
-      // TODO: finalize the role based permissions
-      await Utility.isPermitted(account_id, 'Super Admin');
-    }
+    };
 
     return {
       metadata,
-      permissions,
-      valid_pass_keys,
+      getPermissions: getByQueries({
+        type: 'field_permissions',
+        cache_key: sha1(`${table}_data_permissions:${custom_suffix}`),
+        query: dpquery,
+        expiry: process.env.JWT_EXPIRES_IN,
+      }),
+      getValidPassKeys: getByQueries({
+        type: 'valid_pass_keys',
+        cache_key: sha1(
+          `${table}_valid_pass_keys:${custom_suffix}:${account_organization_id}`,
+        ),
+        query: valid_pass_keys_query,
+        expiry: process.env.JWT_EXPIRES_IN,
+      }),
+      getRecordPermissions: getByQueries({
+        type: 'record_permissions',
+        cache_key: sha1(
+          `${table}_record_permissions:${custom_suffix}:${account_organization_id}`,
+        ),
+        query: record_valid_pass_keys_query,
+        expiry: process.env.JWT_EXPIRES_IN,
+      }),
     };
   }
 }

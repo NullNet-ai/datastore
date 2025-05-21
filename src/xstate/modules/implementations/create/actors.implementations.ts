@@ -4,10 +4,10 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
 import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
-import { eq, pick } from 'lodash';
+import pick from 'lodash.pick';
 import { VerifyActorsImplementations } from '../verify';
 import { MinioService } from '../../../../providers/files/minio.service';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { ulid } from 'ulid';
 import * as local_schema from '../../../../schema';
 import { LoggerService } from '@dna-platform/common';
@@ -59,26 +59,33 @@ export class CreateActorsImplementations {
         const { params, body, query, headers } = _req;
         const { host, cookie } = headers;
         const { table } = params;
-        const { pluck = 'id' } = query;
+        const { pluck = 'id', p, rp } = query;
 
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }
         body.created_by = account_organization_id;
 
-        const { permissions } = await Utility.getCachedPermissions('write', {
-          data_permissions_query,
-          host,
-          cookie,
-          headers,
-          table,
-          account_organization_id,
-          db: this.db,
-          body,
-          account_id: responsible_account.account_id,
-          metadata,
-        });
-
+        const { getPermissions, getRecordPermissions } =
+          Utility.getCachedPermissions('write', {
+            data_permissions_query,
+            host,
+            cookie,
+            headers,
+            table,
+            account_organization_id,
+            db: this.db,
+            body,
+            account_id: responsible_account.account_id,
+            metadata,
+          });
+        const permissions = p === 'true' ? await getPermissions : { data: [] };
+        const record_permissions =
+          rp === 'true' ? await getRecordPermissions : { data: [] };
+        const meta_permissions = permissions.data.map((p) =>
+          pick(p, ['entity', 'field', 'write', 'encrypt']),
+        );
+        const meta_record_permissions = record_permissions.data;
         if (table === 'organizations' && body?.organization_id) {
           await this.minioService.makeBucket(
             organization.name,
@@ -110,7 +117,6 @@ export class CreateActorsImplementations {
             .map((p) => `${p.entity}.${p.field}`),
           ..._body
         } = body;
-
 
         const { schema }: any = Utility.checkCreateSchema(
           table,
@@ -195,6 +201,10 @@ export class CreateActorsImplementations {
             message: `Successfully created in ${table}`,
             count: 1,
             data: [pick(results, pluck.split(','))],
+            metadata,
+            errors,
+            permissions: meta_permissions,
+            record_permissions: meta_record_permissions,
           },
         });
       } catch (error: any) {
