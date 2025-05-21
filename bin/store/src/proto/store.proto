@@ -527,6 +527,30 @@ message Resolutions {
   optional string resolution_type = 19;
 }
 
+// WallguardLogs entity definition
+message WallguardLogs {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string level = 19;
+  optional string message = 20;
+}
+
 // OrganizationAccounts entity definition
 message OrganizationAccounts {
   optional int32 tombstone = 1;
@@ -2543,6 +2567,137 @@ message UpsertResolutionsResponse {
   repeated Resolutions data = 4;
 }
 
+// Create WallguardLogs request
+message CreateWallguardLogsRequest {
+  WallguardLogs wallguard_logs = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create WallguardLogs response
+message CreateWallguardLogsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  WallguardLogs data = 4;
+}
+
+// Get WallguardLogs request
+message GetWallguardLogsRequest {
+  string id = 1;
+}
+
+// Get WallguardLogs response
+message GetWallguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  WallguardLogs data = 3;
+}
+
+// Update WallguardLogs request
+message UpdateWallguardLogsRequest {
+  WallguardLogs wallguard_log = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update WallguardLogs response
+message UpdateWallguardLogsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  WallguardLogs data = 4;
+}
+
+// BatchUpdate WallguardLogs request
+message BatchUpdateWallguardLogsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  WallguardLogs updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate WallguardLogs response
+message BatchUpdateWallguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated WallguardLogs data = 4;
+}
+
+// BatchDelete WallguardLogs request
+message BatchDeleteWallguardLogsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete WallguardLogs response
+message BatchDeleteWallguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  WallguardLogs data = 4;
+}
+
+// Delete WallguardLogs request
+message DeleteWallguardLogsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete WallguardLogs response
+message DeleteWallguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  WallguardLogs data = 4;
+}
+
+// BatchInsert WallguardLogs request
+message BatchInsertWallguardLogsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated WallguardLogs wallguard_logs = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert WallguardLogs response
+message BatchInsertWallguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated WallguardLogs data = 4;
+}
+
+// Upsert WallguardLogs request
+message UpsertWallguardLogsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    WallguardLogs data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert WallguardLogs response
+message UpsertWallguardLogsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated WallguardLogs data = 4;
+}
+
 // Create OrganizationAccounts request
 message CreateOrganizationAccountsRequest {
   OrganizationAccounts organization_accounts = 1;
@@ -3166,6 +3321,30 @@ service StoreService {
 
   // Upsert a Resolutions (create if not exists, update if exists)
   rpc UpsertResolutions(UpsertResolutionsRequest) returns (UpsertResolutionsResponse);
+
+  // Create a new WallguardLogs
+  rpc CreateWallguardLogs(CreateWallguardLogsRequest) returns (CreateWallguardLogsResponse);
+
+  // Get a WallguardLogs by ID
+  rpc GetWallguardLogs(GetWallguardLogsRequest) returns (GetWallguardLogsResponse);
+
+  // Update an existing WallguardLogs
+  rpc UpdateWallguardLogs(UpdateWallguardLogsRequest) returns (UpdateWallguardLogsResponse);
+
+  // Delete a WallguardLogs by ID
+  rpc DeleteWallguardLogs(DeleteWallguardLogsRequest) returns (DeleteWallguardLogsResponse);
+
+  // Batch insert multiple WallguardLogss
+  rpc BatchInsertWallguardLogs(BatchInsertWallguardLogsRequest) returns (BatchInsertWallguardLogsResponse);
+
+  // Batch update multiple WallguardLogss based on filters
+  rpc BatchUpdateWallguardLogs(BatchUpdateWallguardLogsRequest) returns (BatchUpdateWallguardLogsResponse);
+
+  // Batch delete multiple WallguardLogss based on filters
+  rpc BatchDeleteWallguardLogs(BatchDeleteWallguardLogsRequest) returns (BatchDeleteWallguardLogsResponse);
+
+  // Upsert a WallguardLogs (create if not exists, update if exists)
+  rpc UpsertWallguardLogs(UpsertWallguardLogsRequest) returns (UpsertWallguardLogsResponse);
 
   // Create a new OrganizationAccounts
   rpc CreateOrganizationAccounts(CreateOrganizationAccountsRequest) returns (CreateOrganizationAccountsResponse);

@@ -1009,6 +1009,52 @@ pub struct Resolutions {
     #[prost(string, optional, tag = "19")]
     pub resolution_type: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// WallguardLogs entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct WallguardLogs {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// OrganizationAccounts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -4860,6 +4906,257 @@ pub struct UpsertResolutionsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Resolutions>,
 }
+/// Create WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub wallguard_logs: ::core::option::Option<WallguardLogs>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<WallguardLogs>,
+}
+/// Get WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetWallguardLogsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<WallguardLogs>,
+}
+/// Update WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub wallguard_log: ::core::option::Option<WallguardLogs>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<WallguardLogs>,
+}
+/// BatchUpdate WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_wallguard_logs_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateWallguardLogsRequest`.
+pub mod batch_update_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::WallguardLogs>,
+    }
+}
+/// BatchUpdate WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<WallguardLogs>,
+}
+/// BatchDelete WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_wallguard_logs_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteWallguardLogsRequest`.
+pub mod batch_delete_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<WallguardLogs>,
+}
+/// Delete WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<WallguardLogs>,
+}
+/// BatchInsert WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_wallguard_logs_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertWallguardLogsRequest`.
+pub mod batch_insert_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub wallguard_logs: ::prost::alloc::vec::Vec<super::WallguardLogs>,
+    }
+}
+/// BatchInsert WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<WallguardLogs>,
+}
+/// Upsert WallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_wallguard_logs_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertWallguardLogsRequest`.
+pub mod upsert_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::WallguardLogs>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert WallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<WallguardLogs>,
+}
 /// Create OrganizationAccounts request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -6337,6 +6634,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertResolutionsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertResolutionsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new WallguardLogs
+        async fn create_wallguard_logs(
+            &self,
+            request: tonic::Request<super::CreateWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Get a WallguardLogs by ID
+        async fn get_wallguard_logs(
+            &self,
+            request: tonic::Request<super::GetWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing WallguardLogs
+        async fn update_wallguard_logs(
+            &self,
+            request: tonic::Request<super::UpdateWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a WallguardLogs by ID
+        async fn delete_wallguard_logs(
+            &self,
+            request: tonic::Request<super::DeleteWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple WallguardLogss
+        async fn batch_insert_wallguard_logs(
+            &self,
+            request: tonic::Request<super::BatchInsertWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple WallguardLogss based on filters
+        async fn batch_update_wallguard_logs(
+            &self,
+            request: tonic::Request<super::BatchUpdateWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple WallguardLogss based on filters
+        async fn batch_delete_wallguard_logs(
+            &self,
+            request: tonic::Request<super::BatchDeleteWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a WallguardLogs (create if not exists, update if exists)
+        async fn upsert_wallguard_logs(
+            &self,
+            request: tonic::Request<super::UpsertWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertWallguardLogsResponse>,
             tonic::Status,
         >;
         /// Create a new OrganizationAccounts
@@ -12321,6 +12682,389 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertResolutionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateWallguardLogsRequest>
+                    for CreateWallguardLogsSvc<T> {
+                        type Response = super::CreateWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateWallguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_wallguard_logs(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetWallguardLogsRequest>
+                    for GetWallguardLogsSvc<T> {
+                        type Response = super::GetWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetWallguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_wallguard_logs(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateWallguardLogsRequest>
+                    for UpdateWallguardLogsSvc<T> {
+                        type Response = super::UpdateWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateWallguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_wallguard_logs(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteWallguardLogsRequest>
+                    for DeleteWallguardLogsSvc<T> {
+                        type Response = super::DeleteWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteWallguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_wallguard_logs(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertWallguardLogsRequest>
+                    for BatchInsertWallguardLogsSvc<T> {
+                        type Response = super::BatchInsertWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateWallguardLogsRequest>
+                    for BatchUpdateWallguardLogsSvc<T> {
+                        type Response = super::BatchUpdateWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteWallguardLogsRequest>
+                    for BatchDeleteWallguardLogsSvc<T> {
+                        type Response = super::BatchDeleteWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertWallguardLogsRequest>
+                    for UpsertWallguardLogsSvc<T> {
+                        type Response = super::UpsertWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertWallguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_wallguard_logs(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertWallguardLogsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

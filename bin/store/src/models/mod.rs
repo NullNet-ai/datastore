@@ -22,4 +22,5 @@ pub mod device_rule_model;
 pub mod organization_account_model;
 pub mod ip_info_model;
 pub mod resolution_model;
+pub mod wallguard_log_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs
