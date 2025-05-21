@@ -420,6 +420,69 @@ table! {
 }
 
 table! {
+    ip_infos(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+        id -> Text,
+
+        country -> Nullable<Text>,
+        asn -> Nullable<Text>,
+        org -> Nullable<Text>,
+        continent_code -> Nullable<Text>,
+        city -> Nullable<Text>,
+        region -> Nullable<Text>,
+        postal -> Nullable<Text>,
+        timezone -> Nullable<Text>,
+        blacklist -> Nullable<Bool>,
+    }
+}
+
+table! {
+    organization_accounts(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        organization_contact_id -> Nullable<Text>,
+        account_id -> Nullable<Text>,
+        account_secret -> Nullable<Text>,
+        role_id -> Nullable<Text>,
+        contact_id -> Nullable<Text>,
+        device_id -> Nullable<Text>,
+    }
+}
+
+table! {
     device_group_settings (id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
