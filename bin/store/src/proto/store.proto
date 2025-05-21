@@ -504,6 +504,29 @@ message IpInfos {
   optional string blacklist = 27;
 }
 
+// Resolutions entity definition
+message Resolutions {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string resolution_type = 19;
+}
+
 // OrganizationAccounts entity definition
 message OrganizationAccounts {
   optional int32 tombstone = 1;
@@ -2389,6 +2412,137 @@ message UpsertIpInfosResponse {
   repeated IpInfos data = 4;
 }
 
+// Create Resolutions request
+message CreateResolutionsRequest {
+  Resolutions resolutions = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create Resolutions response
+message CreateResolutionsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Resolutions data = 4;
+}
+
+// Get Resolutions request
+message GetResolutionsRequest {
+  string id = 1;
+}
+
+// Get Resolutions response
+message GetResolutionsResponse {
+  bool success = 1;
+  string message = 2;
+  Resolutions data = 3;
+}
+
+// Update Resolutions request
+message UpdateResolutionsRequest {
+  Resolutions resolution = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update Resolutions response
+message UpdateResolutionsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Resolutions data = 4;
+}
+
+// BatchUpdate Resolutions request
+message BatchUpdateResolutionsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  Resolutions updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate Resolutions response
+message BatchUpdateResolutionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Resolutions data = 4;
+}
+
+// BatchDelete Resolutions request
+message BatchDeleteResolutionsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Resolutions response
+message BatchDeleteResolutionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Resolutions data = 4;
+}
+
+// Delete Resolutions request
+message DeleteResolutionsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete Resolutions response
+message DeleteResolutionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Resolutions data = 4;
+}
+
+// BatchInsert Resolutions request
+message BatchInsertResolutionsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Resolutions resolutions = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Resolutions response
+message BatchInsertResolutionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Resolutions data = 4;
+}
+
+// Upsert Resolutions request
+message UpsertResolutionsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    Resolutions data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert Resolutions response
+message UpsertResolutionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Resolutions data = 4;
+}
+
 // Create OrganizationAccounts request
 message CreateOrganizationAccountsRequest {
   OrganizationAccounts organization_accounts = 1;
@@ -2988,6 +3142,30 @@ service StoreService {
 
   // Upsert a IpInfos (create if not exists, update if exists)
   rpc UpsertIpInfos(UpsertIpInfosRequest) returns (UpsertIpInfosResponse);
+
+  // Create a new Resolutions
+  rpc CreateResolutions(CreateResolutionsRequest) returns (CreateResolutionsResponse);
+
+  // Get a Resolutions by ID
+  rpc GetResolutions(GetResolutionsRequest) returns (GetResolutionsResponse);
+
+  // Update an existing Resolutions
+  rpc UpdateResolutions(UpdateResolutionsRequest) returns (UpdateResolutionsResponse);
+
+  // Delete a Resolutions by ID
+  rpc DeleteResolutions(DeleteResolutionsRequest) returns (DeleteResolutionsResponse);
+
+  // Batch insert multiple Resolutionss
+  rpc BatchInsertResolutions(BatchInsertResolutionsRequest) returns (BatchInsertResolutionsResponse);
+
+  // Batch update multiple Resolutionss based on filters
+  rpc BatchUpdateResolutions(BatchUpdateResolutionsRequest) returns (BatchUpdateResolutionsResponse);
+
+  // Batch delete multiple Resolutionss based on filters
+  rpc BatchDeleteResolutions(BatchDeleteResolutionsRequest) returns (BatchDeleteResolutionsResponse);
+
+  // Upsert a Resolutions (create if not exists, update if exists)
+  rpc UpsertResolutions(UpsertResolutionsRequest) returns (UpsertResolutionsResponse);
 
   // Create a new OrganizationAccounts
   rpc CreateOrganizationAccounts(CreateOrganizationAccountsRequest) returns (CreateOrganizationAccountsResponse);
