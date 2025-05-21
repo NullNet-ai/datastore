@@ -142,7 +142,7 @@ table! {
         timestamp -> Timestamp,
 
         id -> Text,
-        device_id -> Nullable<Uuid>,
+        device_id -> Nullable<Text>,
         digest -> Nullable<Text>,
         hostname -> Nullable<Text>,
         raw_content -> Nullable<Text>,
@@ -171,7 +171,7 @@ table! {
         timestamp -> Timestamp,
 
         id -> Text,
-        device_interface_id -> Nullable<Uuid>,
+        device_interface_id -> Nullable<Text>,
         address -> Nullable<Inet>,
     }
 }
@@ -197,7 +197,7 @@ table! {
         timestamp -> Timestamp,
 
         id -> Text,
-        device_configuration_id -> Nullable<Uuid>,
+        device_configuration_id -> Nullable<Text>,
         name -> Nullable<Text>,
         device -> Nullable<Text>,
     }
@@ -224,7 +224,7 @@ table! {
         timestamp -> Timestamp,
 
         id -> Text,
-        device_id -> Nullable<Uuid>,
+        device_id -> Nullable<Text>,
         remote_access_type -> Nullable<Text>,
         remote_access_session -> Nullable<Text>,
         remote_access_status -> Nullable<Text>,
@@ -298,7 +298,7 @@ table! {
         timestamp -> Timestamp,
         hypertable_timestamp -> Nullable<Text>,
         interface_name -> Nullable<Text>,
-        device_id -> Nullable<Uuid>,
+        device_id -> Nullable<Text>,
         source_mac -> Nullable<Text>,
         destination_mac -> Nullable<Text>,
         ether_type -> Nullable<Text>,
@@ -405,7 +405,7 @@ table! {
         timestamp -> Timestamp,
 
         model -> Nullable<Text>,
-        address_id -> Nullable<Uuid>,
+        address_id -> Nullable<Text>,
         instance_name -> Nullable<Text>,
         is_connection_established -> Nullable<Bool>,
         system_id -> Nullable<Text>,

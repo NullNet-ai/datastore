@@ -29,6 +29,6 @@ pub struct DeviceInterfaceAddressModel {
     pub timestamp: chrono::NaiveDateTime,
 
     pub id: String,
-    pub device_interface_id: Option<Uuid>,
+    pub device_interface_id: Option<String>,
     pub address: Option<IpNetwork>,
 }

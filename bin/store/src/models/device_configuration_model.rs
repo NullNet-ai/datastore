@@ -1,6 +1,5 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -28,7 +27,7 @@ pub struct DeviceConfigurationModel {
     pub timestamp: chrono::NaiveDateTime,
 
     pub id : String,
-    pub device_id : Option<Uuid>,
+    pub device_id : Option<String>,
     pub digest : Option<String>,
     pub hostname : Option<String>,
     pub raw_content : Option<String>,

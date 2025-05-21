@@ -29,7 +29,7 @@ pub struct DeviceInterfaceModel {
     pub timestamp: chrono::NaiveDateTime,
 
     pub id: String,
-    pub device_configuration_id: Option<Uuid>,
+    pub device_configuration_id: Option<String>,
     pub name: Option<String>,
     pub device: Option<String>,
 }

@@ -34,7 +34,7 @@ pub struct DeviceModel {
     pub timestamp: NaiveDateTime,
 
     pub model: Option<String>,
-    pub address_id: Option<Uuid>,
+    pub address_id: Option<String>,
     pub instance_name: Option<String>,
     pub is_connection_established: Option<bool>,
     pub system_id: Option<String>,

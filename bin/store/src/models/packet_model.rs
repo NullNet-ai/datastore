@@ -34,7 +34,7 @@ pub struct PacketModel {
     pub timestamp: chrono::NaiveDateTime,
     pub hypertable_timestamp: Option<String>,
     pub interface_name: Option<String>,
-    pub device_id: Option<Uuid>,
+    pub device_id: Option<String>,
     pub source_mac: Option<String>,
     pub destination_mac: Option<String>,
     pub ether_type: Option<String>,
