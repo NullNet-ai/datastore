@@ -246,6 +246,31 @@ message DeviceInterfaceAddresses {
   optional string address = 20;
 }
 
+// DeviceInterfaces entity definition
+message DeviceInterfaces {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string device_configuration_id = 19;
+  optional string name = 20;
+  optional string device = 21;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -1191,6 +1216,137 @@ message UpsertDeviceInterfaceAddressesResponse {
   repeated DeviceInterfaceAddresses data = 4;
 }
 
+// Create DeviceInterfaces request
+message CreateDeviceInterfacesRequest {
+  DeviceInterfaces device_interfaces = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceInterfaces response
+message CreateDeviceInterfacesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceInterfaces data = 4;
+}
+
+// Get DeviceInterfaces request
+message GetDeviceInterfacesRequest {
+  string id = 1;
+}
+
+// Get DeviceInterfaces response
+message GetDeviceInterfacesResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceInterfaces data = 3;
+}
+
+// Update DeviceInterfaces request
+message UpdateDeviceInterfacesRequest {
+  DeviceInterfaces device_interface = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceInterfaces response
+message UpdateDeviceInterfacesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceInterfaces data = 4;
+}
+
+// BatchUpdate DeviceInterfaces request
+message BatchUpdateDeviceInterfacesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceInterfaces updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceInterfaces response
+message BatchUpdateDeviceInterfacesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceInterfaces data = 4;
+}
+
+// BatchDelete DeviceInterfaces request
+message BatchDeleteDeviceInterfacesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceInterfaces response
+message BatchDeleteDeviceInterfacesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceInterfaces data = 4;
+}
+
+// Delete DeviceInterfaces request
+message DeleteDeviceInterfacesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceInterfaces response
+message DeleteDeviceInterfacesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceInterfaces data = 4;
+}
+
+// BatchInsert DeviceInterfaces request
+message BatchInsertDeviceInterfacesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceInterfaces device_interfaces = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceInterfaces response
+message BatchInsertDeviceInterfacesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceInterfaces data = 4;
+}
+
+// Upsert DeviceInterfaces request
+message UpsertDeviceInterfacesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceInterfaces data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceInterfaces response
+message UpsertDeviceInterfacesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceInterfaces data = 4;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -1991,6 +2147,30 @@ service StoreService {
 
   // Upsert a DeviceInterfaceAddresses (create if not exists, update if exists)
   rpc UpsertDeviceInterfaceAddresses(UpsertDeviceInterfaceAddressesRequest) returns (UpsertDeviceInterfaceAddressesResponse);
+
+  // Create a new DeviceInterfaces
+  rpc CreateDeviceInterfaces(CreateDeviceInterfacesRequest) returns (CreateDeviceInterfacesResponse);
+
+  // Get a DeviceInterfaces by ID
+  rpc GetDeviceInterfaces(GetDeviceInterfacesRequest) returns (GetDeviceInterfacesResponse);
+
+  // Update an existing DeviceInterfaces
+  rpc UpdateDeviceInterfaces(UpdateDeviceInterfacesRequest) returns (UpdateDeviceInterfacesResponse);
+
+  // Delete a DeviceInterfaces by ID
+  rpc DeleteDeviceInterfaces(DeleteDeviceInterfacesRequest) returns (DeleteDeviceInterfacesResponse);
+
+  // Batch insert multiple DeviceInterfacess
+  rpc BatchInsertDeviceInterfaces(BatchInsertDeviceInterfacesRequest) returns (BatchInsertDeviceInterfacesResponse);
+
+  // Batch update multiple DeviceInterfacess based on filters
+  rpc BatchUpdateDeviceInterfaces(BatchUpdateDeviceInterfacesRequest) returns (BatchUpdateDeviceInterfacesResponse);
+
+  // Batch delete multiple DeviceInterfacess based on filters
+  rpc BatchDeleteDeviceInterfaces(BatchDeleteDeviceInterfacesRequest) returns (BatchDeleteDeviceInterfacesResponse);
+
+  // Upsert a DeviceInterfaces (create if not exists, update if exists)
+  rpc UpsertDeviceInterfaces(UpsertDeviceInterfacesRequest) returns (UpsertDeviceInterfacesResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
