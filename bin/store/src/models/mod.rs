@@ -13,4 +13,5 @@ pub mod device_model;
 pub mod address_model;
 pub mod app_firewall_model;
 pub mod appguard_log_model;
+pub mod device_alias_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

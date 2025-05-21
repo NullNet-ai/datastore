@@ -91,6 +91,36 @@ table! {
     }
 }
 
+table! {
+    device_aliases (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        #[sql_name = "type"]
+        alias_type -> Nullable<Text>,
+        name -> Nullable<Text>,
+        value -> Nullable<Text>,
+        description -> Nullable<Text>,
+        device_alias_status -> Nullable<Text>,
+    }
+}
+
 
 table! {
     packets (id) {

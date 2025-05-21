@@ -155,8 +155,8 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
         .iter()
         .map(|t| {
             let pascal_name = t.name.to_case(Case::Pascal);
-            let singular = to_singular(&pascal_name);
-            let model_name = format!("{}Model", singular);
+            let singular = to_singular(t.name.as_str());
+            let model_name = format!("{}Model", singular.to_case(Case::Pascal));
             format!("{}, {}", pascal_name, model_name)
         })
         .collect::<Vec<_>>()

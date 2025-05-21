@@ -168,6 +168,33 @@ message AppguardLogs {
   optional string message = 20;
 }
 
+// DeviceAliases entity definition
+message DeviceAliases {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string alias_type = 19;
+  optional string name = 20;
+  optional string value = 21;
+  optional string description = 22;
+  optional string device_alias_status = 23;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -718,6 +745,137 @@ message UpsertAppguardLogsResponse {
   string message = 2;
   int32 count = 3;
   repeated AppguardLogs data = 4;
+}
+
+// Create DeviceAliases request
+message CreateDeviceAliasesRequest {
+  DeviceAliases device_aliases = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceAliases response
+message CreateDeviceAliasesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceAliases data = 4;
+}
+
+// Get DeviceAliases request
+message GetDeviceAliasesRequest {
+  string id = 1;
+}
+
+// Get DeviceAliases response
+message GetDeviceAliasesResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceAliases data = 3;
+}
+
+// Update DeviceAliases request
+message UpdateDeviceAliasesRequest {
+  DeviceAliases device_alias = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceAliases response
+message UpdateDeviceAliasesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceAliases data = 4;
+}
+
+// BatchUpdate DeviceAliases request
+message BatchUpdateDeviceAliasesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceAliases updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceAliases response
+message BatchUpdateDeviceAliasesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceAliases data = 4;
+}
+
+// BatchDelete DeviceAliases request
+message BatchDeleteDeviceAliasesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceAliases response
+message BatchDeleteDeviceAliasesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceAliases data = 4;
+}
+
+// Delete DeviceAliases request
+message DeleteDeviceAliasesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceAliases response
+message DeleteDeviceAliasesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceAliases data = 4;
+}
+
+// BatchInsert DeviceAliases request
+message BatchInsertDeviceAliasesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceAliases device_aliases = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceAliases response
+message BatchInsertDeviceAliasesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceAliases data = 4;
+}
+
+// Upsert DeviceAliases request
+message UpsertDeviceAliasesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceAliases data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceAliases response
+message UpsertDeviceAliasesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceAliases data = 4;
 }
 
 // Create Packets request
@@ -1448,6 +1606,30 @@ service StoreService {
 
   // Upsert a AppguardLogs (create if not exists, update if exists)
   rpc UpsertAppguardLogs(UpsertAppguardLogsRequest) returns (UpsertAppguardLogsResponse);
+
+  // Create a new DeviceAliases
+  rpc CreateDeviceAliases(CreateDeviceAliasesRequest) returns (CreateDeviceAliasesResponse);
+
+  // Get a DeviceAliases by ID
+  rpc GetDeviceAliases(GetDeviceAliasesRequest) returns (GetDeviceAliasesResponse);
+
+  // Update an existing DeviceAliases
+  rpc UpdateDeviceAliases(UpdateDeviceAliasesRequest) returns (UpdateDeviceAliasesResponse);
+
+  // Delete a DeviceAliases by ID
+  rpc DeleteDeviceAliases(DeleteDeviceAliasesRequest) returns (DeleteDeviceAliasesResponse);
+
+  // Batch insert multiple DeviceAliasess
+  rpc BatchInsertDeviceAliases(BatchInsertDeviceAliasesRequest) returns (BatchInsertDeviceAliasesResponse);
+
+  // Batch update multiple DeviceAliasess based on filters
+  rpc BatchUpdateDeviceAliases(BatchUpdateDeviceAliasesRequest) returns (BatchUpdateDeviceAliasesResponse);
+
+  // Batch delete multiple DeviceAliasess based on filters
+  rpc BatchDeleteDeviceAliases(BatchDeleteDeviceAliasesRequest) returns (BatchDeleteDeviceAliasesResponse);
+
+  // Upsert a DeviceAliases (create if not exists, update if exists)
+  rpc UpsertDeviceAliases(UpsertDeviceAliasesRequest) returns (UpsertDeviceAliasesResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
