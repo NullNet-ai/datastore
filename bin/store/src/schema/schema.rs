@@ -204,6 +204,35 @@ table! {
 }
 
 table! {
+    device_remote_access_sessions(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        device_id -> Nullable<Uuid>,
+        remote_access_type -> Nullable<Text>,
+        remote_access_session -> Nullable<Text>,
+        remote_access_status -> Nullable<Text>,
+        remote_access_category -> Nullable<Text>,
+    }
+}
+
+table! {
     packets (id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,

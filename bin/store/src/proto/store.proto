@@ -271,6 +271,33 @@ message DeviceInterfaces {
   optional string device = 21;
 }
 
+// DeviceRemoteAccessSessions entity definition
+message DeviceRemoteAccessSessions {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string device_id = 19;
+  optional string remote_access_type = 20;
+  optional string remote_access_session = 21;
+  optional string remote_access_status = 22;
+  optional string remote_access_category = 23;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -1347,6 +1374,137 @@ message UpsertDeviceInterfacesResponse {
   repeated DeviceInterfaces data = 4;
 }
 
+// Create DeviceRemoteAccessSessions request
+message CreateDeviceRemoteAccessSessionsRequest {
+  DeviceRemoteAccessSessions device_remote_access_sessions = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceRemoteAccessSessions response
+message CreateDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceRemoteAccessSessions data = 4;
+}
+
+// Get DeviceRemoteAccessSessions request
+message GetDeviceRemoteAccessSessionsRequest {
+  string id = 1;
+}
+
+// Get DeviceRemoteAccessSessions response
+message GetDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceRemoteAccessSessions data = 3;
+}
+
+// Update DeviceRemoteAccessSessions request
+message UpdateDeviceRemoteAccessSessionsRequest {
+  DeviceRemoteAccessSessions device_remote_access_session = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceRemoteAccessSessions response
+message UpdateDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceRemoteAccessSessions data = 4;
+}
+
+// BatchUpdate DeviceRemoteAccessSessions request
+message BatchUpdateDeviceRemoteAccessSessionsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceRemoteAccessSessions updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceRemoteAccessSessions response
+message BatchUpdateDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceRemoteAccessSessions data = 4;
+}
+
+// BatchDelete DeviceRemoteAccessSessions request
+message BatchDeleteDeviceRemoteAccessSessionsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceRemoteAccessSessions response
+message BatchDeleteDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceRemoteAccessSessions data = 4;
+}
+
+// Delete DeviceRemoteAccessSessions request
+message DeleteDeviceRemoteAccessSessionsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceRemoteAccessSessions response
+message DeleteDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceRemoteAccessSessions data = 4;
+}
+
+// BatchInsert DeviceRemoteAccessSessions request
+message BatchInsertDeviceRemoteAccessSessionsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceRemoteAccessSessions device_remote_access_sessions = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceRemoteAccessSessions response
+message BatchInsertDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceRemoteAccessSessions data = 4;
+}
+
+// Upsert DeviceRemoteAccessSessions request
+message UpsertDeviceRemoteAccessSessionsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceRemoteAccessSessions data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceRemoteAccessSessions response
+message UpsertDeviceRemoteAccessSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceRemoteAccessSessions data = 4;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -2171,6 +2329,30 @@ service StoreService {
 
   // Upsert a DeviceInterfaces (create if not exists, update if exists)
   rpc UpsertDeviceInterfaces(UpsertDeviceInterfacesRequest) returns (UpsertDeviceInterfacesResponse);
+
+  // Create a new DeviceRemoteAccessSessions
+  rpc CreateDeviceRemoteAccessSessions(CreateDeviceRemoteAccessSessionsRequest) returns (CreateDeviceRemoteAccessSessionsResponse);
+
+  // Get a DeviceRemoteAccessSessions by ID
+  rpc GetDeviceRemoteAccessSessions(GetDeviceRemoteAccessSessionsRequest) returns (GetDeviceRemoteAccessSessionsResponse);
+
+  // Update an existing DeviceRemoteAccessSessions
+  rpc UpdateDeviceRemoteAccessSessions(UpdateDeviceRemoteAccessSessionsRequest) returns (UpdateDeviceRemoteAccessSessionsResponse);
+
+  // Delete a DeviceRemoteAccessSessions by ID
+  rpc DeleteDeviceRemoteAccessSessions(DeleteDeviceRemoteAccessSessionsRequest) returns (DeleteDeviceRemoteAccessSessionsResponse);
+
+  // Batch insert multiple DeviceRemoteAccessSessionss
+  rpc BatchInsertDeviceRemoteAccessSessions(BatchInsertDeviceRemoteAccessSessionsRequest) returns (BatchInsertDeviceRemoteAccessSessionsResponse);
+
+  // Batch update multiple DeviceRemoteAccessSessionss based on filters
+  rpc BatchUpdateDeviceRemoteAccessSessions(BatchUpdateDeviceRemoteAccessSessionsRequest) returns (BatchUpdateDeviceRemoteAccessSessionsResponse);
+
+  // Batch delete multiple DeviceRemoteAccessSessionss based on filters
+  rpc BatchDeleteDeviceRemoteAccessSessions(BatchDeleteDeviceRemoteAccessSessionsRequest) returns (BatchDeleteDeviceRemoteAccessSessionsResponse);
+
+  // Upsert a DeviceRemoteAccessSessions (create if not exists, update if exists)
+  rpc UpsertDeviceRemoteAccessSessions(UpsertDeviceRemoteAccessSessionsRequest) returns (UpsertDeviceRemoteAccessSessionsResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);

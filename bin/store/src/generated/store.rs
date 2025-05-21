@@ -511,6 +511,58 @@ pub struct DeviceInterfaces {
     #[prost(string, optional, tag = "21")]
     pub device: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// DeviceRemoteAccessSessions entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeviceRemoteAccessSessions {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Packets entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -2582,6 +2634,265 @@ pub struct UpsertDeviceInterfacesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceInterfaces>,
 }
+/// Create DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub device_remote_access_sessions: ::core::option::Option<
+        DeviceRemoteAccessSessions,
+    >,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DeviceRemoteAccessSessions>,
+}
+/// Get DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDeviceRemoteAccessSessionsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<DeviceRemoteAccessSessions>,
+}
+/// Update DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub device_remote_access_session: ::core::option::Option<DeviceRemoteAccessSessions>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DeviceRemoteAccessSessions>,
+}
+/// BatchUpdate DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_device_remote_access_sessions_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateDeviceRemoteAccessSessionsRequest`.
+pub mod batch_update_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::DeviceRemoteAccessSessions>,
+    }
+}
+/// BatchUpdate DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DeviceRemoteAccessSessions>,
+}
+/// BatchDelete DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_device_remote_access_sessions_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteDeviceRemoteAccessSessionsRequest`.
+pub mod batch_delete_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DeviceRemoteAccessSessions>,
+}
+/// Delete DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DeviceRemoteAccessSessions>,
+}
+/// BatchInsert DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_device_remote_access_sessions_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertDeviceRemoteAccessSessionsRequest`.
+pub mod batch_insert_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub device_remote_access_sessions: ::prost::alloc::vec::Vec<
+            super::DeviceRemoteAccessSessions,
+        >,
+    }
+}
+/// BatchInsert DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DeviceRemoteAccessSessions>,
+}
+/// Upsert DeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        upsert_device_remote_access_sessions_request::UpsertBody,
+    >,
+}
+/// Nested message and enum types in `UpsertDeviceRemoteAccessSessionsRequest`.
+pub mod upsert_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::DeviceRemoteAccessSessions>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert DeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DeviceRemoteAccessSessions>,
+}
 /// Create Packets request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -4286,6 +4597,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertDeviceInterfacesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Create a new DeviceRemoteAccessSessions
+        async fn create_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::CreateDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Get a DeviceRemoteAccessSessions by ID
+        async fn get_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::GetDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing DeviceRemoteAccessSessions
+        async fn update_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::UpdateDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a DeviceRemoteAccessSessions by ID
+        async fn delete_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::DeleteDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple DeviceRemoteAccessSessionss
+        async fn batch_insert_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::BatchInsertDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple DeviceRemoteAccessSessionss based on filters
+        async fn batch_update_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::BatchUpdateDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple DeviceRemoteAccessSessionss based on filters
+        async fn batch_delete_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::BatchDeleteDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a DeviceRemoteAccessSessions (create if not exists, update if exists)
+        async fn upsert_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::UpsertDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertDeviceRemoteAccessSessionsResponse>,
             tonic::Status,
         >;
         /// Create a new Packets
@@ -7432,6 +7807,436 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateDeviceRemoteAccessSessionsRequest,
+                    > for CreateDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::CreateDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetDeviceRemoteAccessSessionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::GetDeviceRemoteAccessSessionsRequest,
+                    > for GetDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::GetDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateDeviceRemoteAccessSessionsRequest,
+                    > for UpdateDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::UpdateDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteDeviceRemoteAccessSessionsRequest,
+                    > for DeleteDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::DeleteDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertDeviceRemoteAccessSessionsRequest,
+                    > for BatchInsertDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::BatchInsertDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateDeviceRemoteAccessSessionsRequest,
+                    > for BatchUpdateDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::BatchUpdateDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteDeviceRemoteAccessSessionsRequest,
+                    > for BatchDeleteDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::BatchDeleteDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertDeviceRemoteAccessSessionsRequest,
+                    > for UpsertDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::UpsertDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertDeviceRemoteAccessSessionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
