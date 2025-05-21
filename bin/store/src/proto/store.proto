@@ -195,6 +195,33 @@ message DeviceAliases {
   optional string device_alias_status = 23;
 }
 
+// DeviceConfigurations entity definition
+message DeviceConfigurations {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string device_id = 19;
+  optional string digest = 20;
+  optional string hostname = 21;
+  optional string raw_content = 22;
+  optional int32 config_version = 23;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -876,6 +903,137 @@ message UpsertDeviceAliasesResponse {
   string message = 2;
   int32 count = 3;
   repeated DeviceAliases data = 4;
+}
+
+// Create DeviceConfigurations request
+message CreateDeviceConfigurationsRequest {
+  DeviceConfigurations device_configurations = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceConfigurations response
+message CreateDeviceConfigurationsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceConfigurations data = 4;
+}
+
+// Get DeviceConfigurations request
+message GetDeviceConfigurationsRequest {
+  string id = 1;
+}
+
+// Get DeviceConfigurations response
+message GetDeviceConfigurationsResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceConfigurations data = 3;
+}
+
+// Update DeviceConfigurations request
+message UpdateDeviceConfigurationsRequest {
+  DeviceConfigurations device_configuration = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceConfigurations response
+message UpdateDeviceConfigurationsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceConfigurations data = 4;
+}
+
+// BatchUpdate DeviceConfigurations request
+message BatchUpdateDeviceConfigurationsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceConfigurations updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceConfigurations response
+message BatchUpdateDeviceConfigurationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceConfigurations data = 4;
+}
+
+// BatchDelete DeviceConfigurations request
+message BatchDeleteDeviceConfigurationsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceConfigurations response
+message BatchDeleteDeviceConfigurationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceConfigurations data = 4;
+}
+
+// Delete DeviceConfigurations request
+message DeleteDeviceConfigurationsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceConfigurations response
+message DeleteDeviceConfigurationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceConfigurations data = 4;
+}
+
+// BatchInsert DeviceConfigurations request
+message BatchInsertDeviceConfigurationsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceConfigurations device_configurations = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceConfigurations response
+message BatchInsertDeviceConfigurationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceConfigurations data = 4;
+}
+
+// Upsert DeviceConfigurations request
+message UpsertDeviceConfigurationsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceConfigurations data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceConfigurations response
+message UpsertDeviceConfigurationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceConfigurations data = 4;
 }
 
 // Create Packets request
@@ -1630,6 +1788,30 @@ service StoreService {
 
   // Upsert a DeviceAliases (create if not exists, update if exists)
   rpc UpsertDeviceAliases(UpsertDeviceAliasesRequest) returns (UpsertDeviceAliasesResponse);
+
+  // Create a new DeviceConfigurations
+  rpc CreateDeviceConfigurations(CreateDeviceConfigurationsRequest) returns (CreateDeviceConfigurationsResponse);
+
+  // Get a DeviceConfigurations by ID
+  rpc GetDeviceConfigurations(GetDeviceConfigurationsRequest) returns (GetDeviceConfigurationsResponse);
+
+  // Update an existing DeviceConfigurations
+  rpc UpdateDeviceConfigurations(UpdateDeviceConfigurationsRequest) returns (UpdateDeviceConfigurationsResponse);
+
+  // Delete a DeviceConfigurations by ID
+  rpc DeleteDeviceConfigurations(DeleteDeviceConfigurationsRequest) returns (DeleteDeviceConfigurationsResponse);
+
+  // Batch insert multiple DeviceConfigurationss
+  rpc BatchInsertDeviceConfigurations(BatchInsertDeviceConfigurationsRequest) returns (BatchInsertDeviceConfigurationsResponse);
+
+  // Batch update multiple DeviceConfigurationss based on filters
+  rpc BatchUpdateDeviceConfigurations(BatchUpdateDeviceConfigurationsRequest) returns (BatchUpdateDeviceConfigurationsResponse);
+
+  // Batch delete multiple DeviceConfigurationss based on filters
+  rpc BatchDeleteDeviceConfigurations(BatchDeleteDeviceConfigurationsRequest) returns (BatchDeleteDeviceConfigurationsResponse);
+
+  // Upsert a DeviceConfigurations (create if not exists, update if exists)
+  rpc UpsertDeviceConfigurations(UpsertDeviceConfigurationsRequest) returns (UpsertDeviceConfigurationsResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
