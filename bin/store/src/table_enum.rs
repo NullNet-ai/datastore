@@ -4,6 +4,7 @@ use crate::models::app_firewall_model::AppFirewallModel;
 use crate::models::appguard_log_model::AppguardLogModel;
 use crate::models::device_alias_model::DeviceAliasModel;
 use crate::models::device_configuration_model::DeviceConfigurationModel;
+use crate::models::device_interface_address_model::DeviceInterfaceAddressModel;
 use crate::models::packet_model::PacketModel;
 use crate::models::connection_model::ConnectionModel;
 use crate::models::device_ssh_key_model::DeviceSshKeyModel;
@@ -29,6 +30,7 @@ pub enum Table {
     AppguardLogs,
     DeviceAliases,
     DeviceConfigurations,
+    DeviceInterfaceAddresses,
     Packets,
     Connections,
     DeviceSshKeys,
@@ -45,6 +47,7 @@ impl Table {
             "appguard_logs" => Some(Table::AppguardLogs),
             "device_aliases" => Some(Table::DeviceAliases),
             "device_configurations" => Some(Table::DeviceConfigurations),
+            "device_interface_addresses" => Some(Table::DeviceInterfaceAddresses),
             "packets" => Some(Table::Packets),
             "connections" => Some(Table::Connections),
             "device_ssh_keys" => Some(Table::DeviceSshKeys),
@@ -93,7 +96,7 @@ impl Table {
             conn,
             record,
             request,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -106,7 +109,7 @@ impl Table {
             self,
             conn,
             id,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -119,7 +122,7 @@ impl Table {
             self,
             conn,
             record,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -132,7 +135,7 @@ impl Table {
             self,
             conn,
             record,
-            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 }

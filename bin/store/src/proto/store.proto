@@ -222,6 +222,30 @@ message DeviceConfigurations {
   optional int32 config_version = 23;
 }
 
+// DeviceInterfaceAddresses entity definition
+message DeviceInterfaceAddresses {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string timestamp = 17;
+  string id = 18;
+  optional string device_interface_id = 19;
+  optional string address = 20;
+}
+
 // Packets entity definition
 message Packets {
   optional int32 tombstone = 1;
@@ -1036,6 +1060,137 @@ message UpsertDeviceConfigurationsResponse {
   repeated DeviceConfigurations data = 4;
 }
 
+// Create DeviceInterfaceAddresses request
+message CreateDeviceInterfaceAddressesRequest {
+  DeviceInterfaceAddresses device_interface_addresses = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceInterfaceAddresses response
+message CreateDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceInterfaceAddresses data = 4;
+}
+
+// Get DeviceInterfaceAddresses request
+message GetDeviceInterfaceAddressesRequest {
+  string id = 1;
+}
+
+// Get DeviceInterfaceAddresses response
+message GetDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceInterfaceAddresses data = 3;
+}
+
+// Update DeviceInterfaceAddresses request
+message UpdateDeviceInterfaceAddressesRequest {
+  DeviceInterfaceAddresses device_interface_address = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceInterfaceAddresses response
+message UpdateDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceInterfaceAddresses data = 4;
+}
+
+// BatchUpdate DeviceInterfaceAddresses request
+message BatchUpdateDeviceInterfaceAddressesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceInterfaceAddresses updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceInterfaceAddresses response
+message BatchUpdateDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceInterfaceAddresses data = 4;
+}
+
+// BatchDelete DeviceInterfaceAddresses request
+message BatchDeleteDeviceInterfaceAddressesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceInterfaceAddresses response
+message BatchDeleteDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceInterfaceAddresses data = 4;
+}
+
+// Delete DeviceInterfaceAddresses request
+message DeleteDeviceInterfaceAddressesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceInterfaceAddresses response
+message DeleteDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceInterfaceAddresses data = 4;
+}
+
+// BatchInsert DeviceInterfaceAddresses request
+message BatchInsertDeviceInterfaceAddressesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceInterfaceAddresses device_interface_addresses = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceInterfaceAddresses response
+message BatchInsertDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceInterfaceAddresses data = 4;
+}
+
+// Upsert DeviceInterfaceAddresses request
+message UpsertDeviceInterfaceAddressesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceInterfaceAddresses data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceInterfaceAddresses response
+message UpsertDeviceInterfaceAddressesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceInterfaceAddresses data = 4;
+}
+
 // Create Packets request
 message CreatePacketsRequest {
   Packets packets = 1;
@@ -1812,6 +1967,30 @@ service StoreService {
 
   // Upsert a DeviceConfigurations (create if not exists, update if exists)
   rpc UpsertDeviceConfigurations(UpsertDeviceConfigurationsRequest) returns (UpsertDeviceConfigurationsResponse);
+
+  // Create a new DeviceInterfaceAddresses
+  rpc CreateDeviceInterfaceAddresses(CreateDeviceInterfaceAddressesRequest) returns (CreateDeviceInterfaceAddressesResponse);
+
+  // Get a DeviceInterfaceAddresses by ID
+  rpc GetDeviceInterfaceAddresses(GetDeviceInterfaceAddressesRequest) returns (GetDeviceInterfaceAddressesResponse);
+
+  // Update an existing DeviceInterfaceAddresses
+  rpc UpdateDeviceInterfaceAddresses(UpdateDeviceInterfaceAddressesRequest) returns (UpdateDeviceInterfaceAddressesResponse);
+
+  // Delete a DeviceInterfaceAddresses by ID
+  rpc DeleteDeviceInterfaceAddresses(DeleteDeviceInterfaceAddressesRequest) returns (DeleteDeviceInterfaceAddressesResponse);
+
+  // Batch insert multiple DeviceInterfaceAddressess
+  rpc BatchInsertDeviceInterfaceAddresses(BatchInsertDeviceInterfaceAddressesRequest) returns (BatchInsertDeviceInterfaceAddressesResponse);
+
+  // Batch update multiple DeviceInterfaceAddressess based on filters
+  rpc BatchUpdateDeviceInterfaceAddresses(BatchUpdateDeviceInterfaceAddressesRequest) returns (BatchUpdateDeviceInterfaceAddressesResponse);
+
+  // Batch delete multiple DeviceInterfaceAddressess based on filters
+  rpc BatchDeleteDeviceInterfaceAddresses(BatchDeleteDeviceInterfaceAddressesRequest) returns (BatchDeleteDeviceInterfaceAddressesResponse);
+
+  // Upsert a DeviceInterfaceAddresses (create if not exists, update if exists)
+  rpc UpsertDeviceInterfaceAddresses(UpsertDeviceInterfaceAddressesRequest) returns (UpsertDeviceInterfaceAddressesResponse);
 
   // Create a new Packets
   rpc CreatePackets(CreatePacketsRequest) returns (CreatePacketsResponse);
