@@ -74,6 +74,21 @@ export class UpdateActorsImplementations {
           pick(p, ['entity', 'field', 'write', 'encrypt']),
         );
         const meta_record_permissions = record_permissions.data;
+        if (meta_record_permissions.length) {
+          const [{ write }] = meta_record_permissions;
+          if (!write) {
+            throw new BadRequestException({
+              success: false,
+              message: `You do not have permission to update this record`,
+              count: 0,
+              data: [],
+              metadata,
+              errors,
+              permissions: meta_permissions,
+              record_permissions: meta_record_permissions,
+            });
+          }
+        }
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }

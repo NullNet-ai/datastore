@@ -97,6 +97,21 @@ export class DeleteActorsImplementations {
           pick(p, ['entity', 'field', 'write', 'encrypt']),
         );
         const meta_record_permissions = record_permissions.data;
+        if (meta_record_permissions.length) {
+          const [{ write }] = meta_record_permissions;
+          if (!write) {
+            throw new BadRequestException({
+              success: false,
+              message: `You do not have permission to delete this record`,
+              count: 0,
+              data: [],
+              metadata,
+              errors,
+              permissions: meta_permissions,
+              record_permissions: meta_record_permissions,
+            });
+          }
+        }
         this.logger.debug(`Soft deleting ${table} record with id: ${id}`);
         const result = await this.db
           .update(table_schema)
@@ -130,21 +145,7 @@ export class DeleteActorsImplementations {
         if (SYNC_ENABLED === 'true') {
           await this.syncService.delete(table, id, is_permanent === 'true');
         }
-        if (meta_record_permissions.length) {
-          const [{ write }] = meta_record_permissions;
-          if (!write) {
-            throw new BadRequestException({
-              success: false,
-              message: `You do not have permission to delete this record`,
-              count: 0,
-              data: [],
-              metadata,
-              errors,
-              permissions: meta_permissions,
-              record_permissions: meta_record_permissions,
-            });
-          }
-        }
+
         return Promise.resolve({
           payload: {
             success: true,

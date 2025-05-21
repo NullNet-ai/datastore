@@ -86,6 +86,21 @@ export class CreateActorsImplementations {
           pick(p, ['entity', 'field', 'write', 'encrypt']),
         );
         const meta_record_permissions = record_permissions.data;
+        if (meta_record_permissions.length) {
+          const [{ write }] = meta_record_permissions;
+          if (!write) {
+            throw new BadRequestException({
+              success: false,
+              message: `You do not have permission to create this record`,
+              count: 0,
+              data: [],
+              metadata,
+              errors,
+              permissions: meta_permissions,
+              record_permissions: meta_record_permissions,
+            });
+          }
+        }
         if (table === 'organizations' && body?.organization_id) {
           await this.minioService.makeBucket(
             organization.name,
