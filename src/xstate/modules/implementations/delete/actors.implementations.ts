@@ -140,6 +140,8 @@ export class DeleteActorsImplementations {
               data: [],
               metadata,
               errors,
+              permissions: meta_permissions,
+              record_permissions: meta_record_permissions,
             });
           }
         }
