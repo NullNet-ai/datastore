@@ -62,7 +62,10 @@ export const config = (
               src: 'verify',
               input: ({ context }) => ({ context }),
               onDone: {
-                actions: ['assignResponsibleAccount'],
+                actions: [
+                  'assignResponsibleAccount',
+                  'assignQueryDataPermissions',
+                ],
                 target: 'get',
               },
               onError: {

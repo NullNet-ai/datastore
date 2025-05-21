@@ -14,6 +14,8 @@ export class GetActionsImplementations {
   ) {
     this.actions.assignResponsibleAccount =
       this.verifyActionsImplementations.actions.assignResponsibleAccount;
+    this.actions.assignQueryDataPermissions =
+      this.verifyActionsImplementations.actions.assignQueryDataPermissions;
   }
   public readonly actions: typeof GetMachine.prototype.actions & IActions = {
     getEntry: () => {

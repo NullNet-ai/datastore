@@ -94,6 +94,7 @@ export class FindActorsImplementations {
           body,
           account_id: responsible_account.account_id,
           metadata,
+          query,
         });
         const permissions = p === 'true' ? await getPermissions : { data: [] };
         const record_permissions =
@@ -103,6 +104,20 @@ export class FindActorsImplementations {
         const pass_field_key = !query?.pfk
           ? valid_pass_keys?.[0] ?? ''
           : query?.pfk;
+        const meta_permissions = permissions.data.map((p) =>
+          pick(p, [
+            'entity',
+            'field',
+            'read',
+            'write',
+            'encrypt',
+            'decrypt',
+            'sensitive',
+            'archive',
+            'delete',
+          ]),
+        );
+        const meta_record_permissions = record_permissions.data;
         const {
           order_direction = 'asc',
           order_by = 'id',
@@ -701,20 +716,7 @@ export class FindActorsImplementations {
               group_by,
             )
           : db_results;
-        const meta_permissions = permissions.data.map((p) =>
-          pick(p, [
-            'entity',
-            'field',
-            'read',
-            'write',
-            'encrypt',
-            'decrypt',
-            'sensitive',
-            'archive',
-            'delete',
-          ]),
-        );
-        const meta_record_permissions = record_permissions.data;
+
         if (!result || !result.length) {
           throw new NotFoundException({
             success: true,

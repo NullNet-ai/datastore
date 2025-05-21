@@ -77,6 +77,7 @@ export class CreateActorsImplementations {
             body,
             account_id: responsible_account.account_id,
             metadata,
+            query,
           });
         const permissions = p === 'true' ? await getPermissions : { data: [] };
         const record_permissions =

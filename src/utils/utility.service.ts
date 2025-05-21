@@ -1970,7 +1970,7 @@ export class Utility {
   }
 
   public static checkPermissions(
-    { table, schema, permissions, metadata, body },
+    { table, schema, permissions, metadata, body, query },
     permission_type: 'read' | 'write' | 'encrypt' | 'decrypt' | 'required',
   ) {
     switch (permission_type) {
@@ -1993,82 +1993,97 @@ export class Utility {
                   field: _field,
                 });
               }
-              const cloned_body = { ...body };
-              switch (property_name) {
-                case 'joins':
-                  cloned_body?.[property_name]?.forEach((join, index) => {
-                    if (join?.field_relation?.to?.field === _field) {
-                      delete body?.[property_name][index]?.field_relation.to
-                        .field;
-                    } else if (join?.field_relation?.from?.field === _field) {
-                      delete body?.[property_name][index]?.field_relation.from
-                        .field;
-                    }
+
+              if (query.pluck) {
+                query.pluck = query.pluck
+                  .split(',')
+                  .filter((f) => f !== _field)
+                  .join(',');
+              } else {
+                // removing data from body
+                const cloned_body = { ...body };
+                switch (property_name) {
+                  case 'joins':
+                    cloned_body?.[property_name]?.forEach((join, index) => {
+                      if (join?.field_relation?.to?.field === _field) {
+                        delete body?.[property_name][index]?.field_relation.to
+                          .field;
+                      } else if (join?.field_relation?.from?.field === _field) {
+                        delete body?.[property_name][index]?.field_relation.from
+                          .field;
+                      }
+                      if (
+                        !cloned_body?.[property_name][index]?.field_relation
+                          ?.to &&
+                        !cloned_body?.[property_name][index]?.field_relation
+                          ?.from
+                      ) {
+                        delete body?.[property_name][index].field_relation;
+                      }
+                    });
+                    break;
+                  case 'pluck_object':
                     if (
-                      !cloned_body?.[property_name][index]?.field_relation
-                        ?.to &&
-                      !cloned_body?.[property_name][index]?.field_relation?.from
+                      cloned_body?.[property_name][alias ?? _entity].includes(
+                        _field,
+                      )
                     ) {
-                      delete body?.[property_name][index].field_relation;
+                      const index =
+                        body?.[property_name][alias ?? _entity]?.indexOf(
+                          _field,
+                        );
+                      if (index > -1) {
+                        body?.[property_name][alias ?? _entity]?.splice(
+                          index,
+                          1,
+                        );
+                      }
                     }
-                  });
-                  break;
-                case 'pluck_object':
-                  if (
-                    cloned_body?.[property_name][alias ?? _entity].includes(
-                      _field,
-                    )
-                  ) {
-                    const index =
-                      body?.[property_name][alias ?? _entity]?.indexOf(_field);
-                    if (index > -1) {
-                      body?.[property_name][alias ?? _entity]?.splice(index, 1);
+                    break;
+                  case 'multiple_sort':
+                    cloned_body?.[property_name]?.forEach((sort, index) => {
+                      if (pluralize(sort.by_field) === _field) {
+                        delete body?.[property_name][index].by_field;
+                      }
+                    });
+                    break;
+                  case 'concatenate_fields':
+                    cloned_body?.[property_name]?.forEach((concat, index) => {
+                      if (concat?.fields.includes(_field)) {
+                        body?.[property_name][index]?.fields.splice(
+                          body?.[property_name][index]?.fields.indexOf(_field),
+                          1,
+                        );
+                      }
+                    });
+                    break;
+                  case 'group_by':
+                    cloned_body?.[property_name]?.fields.forEach((f) => {
+                      const [entity, field] = f.split('.');
+                      if (field === _field) {
+                        body?.[property_name]?.fields.splice(
+                          body?.[property_name]?.fields.indexOf(
+                            `${entity}.${_field}`,
+                          ),
+                          1,
+                        );
+                      }
+                    });
+                    break;
+                  case 'distinct_by':
+                    if (cloned_body?.[property_name] === _field) {
+                      delete body?.[property_name];
                     }
-                  }
-                  break;
-                case 'multiple_sort':
-                  cloned_body?.[property_name]?.forEach((sort, index) => {
-                    if (pluralize(sort.by_field) === _field) {
-                      delete body?.[property_name][index].by_field;
+                    break;
+                  default:
+                    if (cloned_body?.[property_name]?.includes(_field)) {
+                      if (body?.[property_name]?.includes(_field)) {
+                        const index = body[property_name].indexOf(_field);
+                        body[property_name].splice(index, 1);
+                      }
                     }
-                  });
-                  break;
-                case 'concatenate_fields':
-                  cloned_body?.[property_name]?.forEach((concat, index) => {
-                    if (concat?.fields.includes(_field)) {
-                      body?.[property_name][index]?.fields.splice(
-                        body?.[property_name][index]?.fields.indexOf(_field),
-                        1,
-                      );
-                    }
-                  });
-                  break;
-                case 'group_by':
-                  cloned_body?.[property_name]?.fields.forEach((f) => {
-                    const [entity, field] = f.split('.');
-                    if (field === _field) {
-                      body?.[property_name]?.fields.splice(
-                        body?.[property_name]?.fields.indexOf(
-                          `${entity}.${_field}`,
-                        ),
-                        1,
-                      );
-                    }
-                  });
-                  break;
-                case 'distinct_by':
-                  if (cloned_body?.[property_name] === _field) {
-                    delete body?.[property_name];
-                  }
-                  break;
-                default:
-                  if (cloned_body?.[property_name]?.includes(_field)) {
-                    if (body?.[property_name]?.includes(_field)) {
-                      const index = body[property_name].indexOf(_field);
-                      body[property_name].splice(index, 1);
-                    }
-                  }
-                  break;
+                    break;
+                }
               }
             }
           },
@@ -2117,6 +2132,7 @@ export class Utility {
       body,
       metadata,
       account_id,
+      query,
     },
   ) {
     const {
@@ -2130,7 +2146,7 @@ export class Utility {
     const getByQueries = async ({
       type,
       cache_key,
-      query,
+      query: q,
       expiry,
     }): Promise<Record<string, any>> => {
       this.logger.debug(`Getting ${type} permissions`);
@@ -2138,7 +2154,7 @@ export class Utility {
       const cached = data
         ? data
         : await db
-            .execute(query.trim())
+            .execute(q.trim())
             .then((response) => ({
               data: response.rows,
               account_organization_id,
@@ -2173,6 +2189,7 @@ export class Utility {
                     permissions: cached,
                     metadata,
                     schema: _aliased_schema,
+                    query,
                   });
                 metadata = acc_read_metadata;
                 break;

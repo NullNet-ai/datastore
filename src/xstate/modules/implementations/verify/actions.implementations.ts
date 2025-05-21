@@ -44,52 +44,64 @@ export class VerifyActionsImplementations {
             return `${key}=${val}`;
           })
           .join('&');
-          const write_method = _req.method === 'POST' ? 'POST' : 'PATCH';
-          const single_record = _req.method === 'PATCH' ? params.id : '';
-          const write_endpoint = `${write_method}:/api/store/${table}${
-            single_record ? `/${single_record}` : ``
-          }${query_string}`;
+        const read_method = _req.method === 'GET' ? 'GET' : 'POST';
+        const single_read_record = _req.method === 'GET' ? params.id : '';
+        const read_endpoint = `${read_method}:/api/store/${table}${
+          single_read_record ? `/${single_read_record}` : `/filter`
+        }${query_string}`;
 
-          switch (request_info) {
-            case `POST:/api/store/${table}/filter${query_string}`:
-              const { main_fields: read_main_fields, tables: read_tables } =
-                this.accumulateReadInformation.bind(this)({
-                  body,
-                  table,
-                  tables,
-                  main_fields,
-                  schema,
-                });
-              tables = read_tables;
-              main_fields = read_main_fields;
-              break;
-            case write_endpoint:
-              const { main_fields: write_main_fields, tables: write_tables } =
-                this.accumulateWriteInformation.bind(this)({
-                  body,
-                  table,
-                  tables,
-                  main_fields,
-                  schema,
-                });
-              tables = write_tables;
-              main_fields = write_main_fields;
-              break;
-            default:
-              break;
-          }
+        const write_method = _req.method === 'POST' ? 'POST' : 'PATCH';
+        const single_write_record = _req.method === 'PATCH' ? params.id : '';
+        const write_endpoint = `${write_method}:/api/store/${table}${
+          single_write_record ? `/${single_write_record}` : ``
+        }${query_string}`;
+        console.log({
+          read_endpoint,
+          write_endpoint,
+          request_info,
+        });
+        switch (request_info) {
+          case read_endpoint:
+            const { main_fields: read_main_fields, tables: read_tables } =
+              this.accumulateReadInformation.bind(this)({
+                body,
+                table,
+                tables,
+                main_fields,
+                schema,
+                type: read_method === 'GET' ? 'getById' : 'getByFilter',
+                req_query,
+              });
+            tables = read_tables;
+            main_fields = read_main_fields;
+            break;
+          case write_endpoint:
+            const { main_fields: write_main_fields, tables: write_tables } =
+              this.accumulateWriteInformation.bind(this)({
+                body,
+                table,
+                tables,
+                main_fields,
+                schema,
+              });
+            tables = write_tables;
+            main_fields = write_main_fields;
+            break;
+          default:
+            break;
+        }
 
-          const query = `
+        const query = `
         SELECT entities.name as entity,fields.name as field,permissions.sensitive as sensitive,permissions.read as read,permissions.write as write,permissions.encrypt as encrypt,permissions.decrypt as decrypt,permissions.required as required,permissions.archive as archive,permissions.delete as delete, data_permissions.account_organization_id as account_organization_id, permissions.id as pid FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '${
           responsible_account.account_organization_id
         }' ${Utility.constructPermissionSelectWhereClause({
-            tables,
-            main_fields,
-          })}`;
-          const valid_pass_keys_query = `
+          tables,
+          main_fields,
+        })}`;
+        const valid_pass_keys_query = `
         SELECT id FROM encryption_keys WHERE safe_decrypt(organization_id::BYTEA,'${process.env.PGP_SYM_KEY}') = '${responsible_account.organization_id}' AND safe_decrypt(entity::BYTEA,'${process.env.PGP_SYM_KEY}') = '${table}'
         `;
-          const record_valid_pass_keys_query = `
+        const record_valid_pass_keys_query = `
           SELECT 
           entities.name as entity,
           count(fields.name) AS total_fields,
@@ -111,14 +123,13 @@ export class VerifyActionsImplementations {
           GROUP BY entities.name;
         `;
 
-          return {
-            query,
-            account_organization_id:
-              responsible_account.account_organization_id,
-            schema,
-            valid_pass_keys_query,
-            record_valid_pass_keys_query,
-          };
+        return {
+          query,
+          account_organization_id: responsible_account.account_organization_id,
+          schema,
+          valid_pass_keys_query,
+          record_valid_pass_keys_query,
+        };
       },
     }),
   };
@@ -129,6 +140,8 @@ export class VerifyActionsImplementations {
     tables,
     schema,
     main_fields,
+    type = 'getByFilter',
+    req_query,
   }) {
     this.logger.debug(`accumulateReadInformation`);
     const {
@@ -143,7 +156,31 @@ export class VerifyActionsImplementations {
       group_advance_filters = [],
       distinct_by,
     } = body;
-
+    if (type === 'getById') {
+      const { pluck = '' } = req_query;
+      tables.push(table);
+      console.log({
+        req_query,
+      });
+      pluck?.split(',').forEach((key) => {
+        main_fields.push(key);
+        schema.push({
+          entity: table,
+          alias: '',
+          field: key,
+          property_name: ``,
+          path: key,
+        });
+      });
+      console.log({
+        tables,
+        main_fields,
+      });
+      return {
+        tables,
+        main_fields,
+      };
+    }
     const join_fields: string[] = [];
     tables = joins.reduce(
       (acc, join, index) => {
