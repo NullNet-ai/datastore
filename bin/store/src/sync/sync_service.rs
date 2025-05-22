@@ -1,5 +1,6 @@
 use crate::db;
 use crate::models::crdt_message_model::CrdtMessageModel;
+use crate::shutdown_handler;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::hlc_service::HlcService;
 use crate::sync::message_manager::get_sender;
@@ -18,7 +19,6 @@ use hlc;
 use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
-use crate::shutdown_handler;
 use tokio::time::sleep;
 
 use super::transport::transport_driver::PostOpts;

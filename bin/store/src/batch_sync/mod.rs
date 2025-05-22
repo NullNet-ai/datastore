@@ -84,12 +84,12 @@ impl BatchSyncService {
     pub fn get_insert_sender() -> Option<Arc<UnboundedSender<SyncMessage>>> {
         unsafe { INSERT_SENDER.clone() }
     }
-    
+
     // Get the global update sender
     pub fn get_update_sender() -> Option<Arc<UnboundedSender<SyncMessage>>> {
         unsafe { UPDATE_SENDER.clone() }
     }
-    
+
     pub fn get_code_assignment_sender() -> Option<Arc<UnboundedSender<CodeAssignmentMessage>>> {
         unsafe { CODE_ASSIGNMENT_SENDER.clone() }
     }

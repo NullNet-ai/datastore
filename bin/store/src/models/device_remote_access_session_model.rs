@@ -28,9 +28,9 @@ pub struct DeviceRemoteAccessSessionModel {
     pub timestamp: chrono::NaiveDateTime,
 
     pub id: String,
-    pub device_id : Option<String>,
-    pub remote_access_type : Option<String>,
-    pub remote_access_session : Option<String>,
-    pub remote_access_status : Option<String>,
-    pub remote_access_category : Option<String>,
+    pub device_id: Option<String>,
+    pub remote_access_type: Option<String>,
+    pub remote_access_session: Option<String>,
+    pub remote_access_status: Option<String>,
+    pub remote_access_category: Option<String>,
 }

@@ -500,7 +500,6 @@ table! {
     }
 }
 
-
 table! {
     temp_packets (id) {
         tombstone -> Nullable<Int4>,

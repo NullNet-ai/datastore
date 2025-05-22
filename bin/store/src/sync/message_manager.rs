@@ -18,7 +18,6 @@ pub fn is_queue_empty() -> bool {
     QUEUE_EMPTY.load(Ordering::SeqCst)
 }
 
-
 pub fn get_queue_size() -> usize {
     QUEUE_SIZE.load(Ordering::SeqCst)
 }
@@ -63,7 +62,7 @@ impl MessageManager {
             // Increment queue size when message is received
             let current_size = QUEUE_SIZE.fetch_add(1, Ordering::SeqCst);
             log::debug!("Message received. Queue size: {}", current_size + 1);
-            
+
             match self.process_message(message).await {
                 Ok(_) => {
                     log::debug!("Successfully processed message");
@@ -72,7 +71,7 @@ impl MessageManager {
                     log::error!("Error processing message: {}", e);
                 }
             }
-            
+
             // Decrement queue size after processing
             let new_size = QUEUE_SIZE.fetch_sub(1, Ordering::SeqCst) - 1;
             if new_size == 0 {
@@ -141,11 +140,11 @@ pub async fn save_pending_messages() -> Result<(), String> {
                     COUNTER / 10,
                     current_size
                 );
-                
+
                 // Check if the size hasn't changed for multiple iterations
                 if current_size == last_size && current_size > 0 {
                     stuck_count += 1;
-                    
+
                     // If stuck for too long (15 seconds with no change), reset the counter
                     if stuck_count >= 3 {
                         log::warn!("Queue size hasn't changed for 15 seconds. Possible counter desynchronization. Resetting counter.");
@@ -156,7 +155,7 @@ pub async fn save_pending_messages() -> Result<(), String> {
                 } else {
                     stuck_count = 0;
                 }
-                
+
                 last_size = current_size;
             }
         }
@@ -165,7 +164,6 @@ pub async fn save_pending_messages() -> Result<(), String> {
     log::info!("Message queue is empty or timeout reached, proceeding with shutdown");
     Ok(())
 }
-
 
 // Create a channel for sending messages to the background service
 pub fn create_message_channel() -> mpsc::UnboundedSender<CrdtMessageModel> {

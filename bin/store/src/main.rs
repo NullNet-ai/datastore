@@ -10,6 +10,7 @@ use templates::table_enum::table_enum_generator;
 mod batch_sync;
 mod controllers;
 mod db;
+mod generated;
 mod middlewares;
 mod models;
 mod schema;
@@ -19,9 +20,9 @@ mod sync;
 mod table_enum;
 mod templates;
 mod utils;
-mod generated;
 use crate::batch_sync::BatchSyncService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
+use crate::shutdown_handler::setup_shutdown_handler;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -34,10 +35,9 @@ use controllers::store_controller::{
     update_record, upsert,
 };
 use env_logger::Env;
-use std::sync::Arc;
-use crate::shutdown_handler::{setup_shutdown_handler};
-use tokio::signal::unix::{signal, SignalKind};
 use std::process;
+use std::sync::Arc;
+use tokio::signal::unix::{signal, SignalKind};
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
@@ -60,25 +60,48 @@ fn run_build_script() -> std::io::Result<()> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let generate_proto = env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string());
+    let generate_proto =
+        env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string()) == "true";
+    let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
+    let generate_table_enum =
+        env::var("GENERATE_TABLE_ENUM").unwrap_or_else(|_| "false".to_string()) == "true";
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
     let merkle_manager = MerkleManager::instance();
-    // if (generate_proto == "true") {
-    println!("Generating proto files");
-    // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
-    // run_build_script()?;
-    // // Run the generator
-    // if let Err(e) = grpc_controller_generator::run_generator() {
-    //     eprintln!("Error: {}", e);
-    //     process::exit(1);
-    // }
-
-    if let Err(e) = table_enum_generator::run_generator() {
-        eprintln!("Failed to generate table enum: {}", e);
+    println!("{} {} {}",generate_proto, generate_grpc, generate_table_enum);
+    if generate_proto || generate_grpc || generate_table_enum {
+        println!("Starting code generation...");
+        
+        // Proto generation
+        if generate_proto {
+            println!("Generating proto files");
+            proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
+            
+            if let Err(e) = run_build_script() {
+                eprintln!("Failed to run build script: {}", e);
+            }
+        }
+        
+        // gRPC controller generation
+        if generate_grpc {
+            println!("Generating gRPC controllers");
+            if let Err(e) = grpc_controller_generator::run_generator() {
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+        
+        // Table enum generation
+        if generate_table_enum {
+            println!("Generating table enums");
+            if let Err(e) = table_enum_generator::run_generator() {
+                eprintln!("Failed to generate table enum: {}", e);
+            }
+        }
+        
+        println!("Code generation completed successfully!");
     }
-    println!("gRPC controller generation completed successfully!");
 
     let background_sync_service = match background_sync::BackgroundSyncService::new().await {
         Ok(service) => service,
@@ -143,7 +166,7 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
-   let server= HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .configure(sync_endpoints_controller::configure)
@@ -170,25 +193,24 @@ async fn main() -> std::io::Result<()> {
         _ = server => {},
         _ = sigint.recv() => {
             println!("SIGINT received, running custom shutdown...");
-            
+
             // Set the shutdown flag
             shutdown_handler::request_shutdown();
-            
+
             // Perform your async cleanup operations
             if let Err(e) = shutdown_handler::save_data_before_shutdown().await {
                 log::error!("Error during shutdown process: {}", e);
             } else {
                 log::info!("Successfully saved all data before shutdown");
             }
-            
+
             // Wait for 5 seconds before proceeding with shutdown
             println!("Waiting 5 seconds before final shutdown...");
             tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-            
+
             println!("Shutdown delay complete, exiting now");
         },
     }
 
     Ok(())
-    
 }

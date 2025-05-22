@@ -158,7 +158,6 @@ pub async fn create_record(
         .collect();
     //get entity_prefix from the request.record
 
-
     match process_and_insert_record(
         &table_name,
         request.record.clone(),

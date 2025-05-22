@@ -26,10 +26,10 @@ pub struct DeviceConfigurationModel {
     pub code: Option<String>,
     pub timestamp: chrono::NaiveDateTime,
 
-    pub id : String,
-    pub device_id : Option<String>,
-    pub digest : Option<String>,
-    pub hostname : Option<String>,
-    pub raw_content : Option<String>,
-    pub config_version : Option<i32>,
+    pub id: String,
+    pub device_id: Option<String>,
+    pub digest: Option<String>,
+    pub hostname: Option<String>,
+    pub raw_content: Option<String>,
+    pub config_version: Option<i32>,
 }

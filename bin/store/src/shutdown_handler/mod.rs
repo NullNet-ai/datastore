@@ -1,11 +1,11 @@
+use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager;
+use actix_web::dev::ServerHandle;
 use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::signal::unix::{signal, SignalKind};
-use crate::sync::merkles::merkle_manager::MerkleManager;
 use std::sync::Arc;
+use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::Notify;
-use actix_web::dev::ServerHandle;
 
 // Global flag to track shutdown status
 lazy_static! {

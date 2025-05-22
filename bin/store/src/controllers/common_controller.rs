@@ -454,7 +454,6 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
         }
     }
 
-
     println!("Processed record: {:?}", processed_record);
 
     // Convert back to Value
