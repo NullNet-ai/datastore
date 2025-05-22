@@ -478,7 +478,7 @@ table! {
 }
 
 table! {
-    wallguard_logs(id) {
+    wallguard_logs(id, timestamp) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -499,7 +499,8 @@ table! {
         id -> Text,
 
         level -> Nullable<Text>,
-        message -> Nullable<Text>
+        message -> Nullable<Text>,
+        hypertable_timestamp -> Nullable<Text>,
     }
 }
 
