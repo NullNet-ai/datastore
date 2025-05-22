@@ -92,7 +92,63 @@ table! {
 }
 
 table! {
+    temp_appguard_logs (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        level -> Nullable<Text>,
+        message -> Nullable<Text>,
+    }
+}
+
+table! {
     device_aliases (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        #[sql_name = "type"]
+        alias_type -> Nullable<Text>,
+        name -> Nullable<Text>,
+        value -> Nullable<Text>,
+        description -> Nullable<Text>,
+        device_alias_status -> Nullable<Text>,
+    }
+}
+
+table! {
+    temp_device_aliases (id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -177,7 +233,60 @@ table! {
 }
 
 table! {
+    temp_device_interface_addresses (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        device_interface_id -> Nullable<Text>,
+        address -> Nullable<Inet>,
+    }
+}
+
+table! {
     device_interfaces(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        device_configuration_id -> Nullable<Text>,
+        name -> Nullable<Text>,
+        device -> Nullable<Text>,
+    }
+}
+
+table! {
+    temp_device_interfaces(id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -233,7 +342,78 @@ table! {
 }
 
 table! {
+    temp_device_remote_access_sessions(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        device_id -> Nullable<Text>,
+        remote_access_type -> Nullable<Text>,
+        remote_access_session -> Nullable<Text>,
+        remote_access_status -> Nullable<Text>,
+        remote_access_category -> Nullable<Text>,
+    }
+}
+
+table! {
     device_rules(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+
+        id -> Text,
+        device_configuration_id -> Nullable<Text>,
+        disabled -> Nullable<Bool>,
+        #[sql_name = "type"]
+        rule_type -> Nullable<Text>,
+        policy -> Nullable<Text>,
+        protocol -> Nullable<Text>,
+        source_port -> Nullable<Text>,
+        source_addr -> Nullable<Text>,
+        source_type -> Nullable<Text>,
+        destination_port -> Nullable<Text>,
+        destination_addr -> Nullable<Text>,
+        description -> Nullable<Text>,
+        device_rule_status -> Nullable<Text>,
+        interface -> Nullable<Text>,
+        order -> Nullable<Int4>,
+        destination_inversed -> Nullable<Bool>,
+        destination_type -> Nullable<Text>,
+        source_inversed -> Nullable<Bool>,
+    }
+}
+
+table! {
+    temp_device_rules(id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -355,6 +535,43 @@ table! {
         destination_port -> Nullable<Int4>,
     }
 }
+
+table! {
+    temp_connections (id, timestamp) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+
+
+        id -> Text,
+        timestamp -> Timestamp,
+        interface_name -> Nullable<Text>,
+        hypertable_timestamp -> Nullable<Text>,
+        total_packet -> Nullable<Int4>,
+        total_byte -> Nullable<Int4>,
+        device_id -> Nullable<Text>,
+        protocol -> Nullable<Text>,
+        source_ip -> Nullable<Inet>,
+        destination_ip -> Nullable<Inet>,
+        remote_ip -> Nullable<Inet>,
+        source_port -> Nullable<Int4>,
+        destination_port -> Nullable<Int4>,
+    }
+}
+
 table! {
     device_ssh_keys (id) {
         tombstone -> Nullable<Int4>,
@@ -479,6 +696,33 @@ table! {
 
 table! {
     wallguard_logs(id, timestamp) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Timestamp,
+        id -> Text,
+
+        level -> Nullable<Text>,
+        message -> Nullable<Text>,
+        hypertable_timestamp -> Nullable<Text>,
+    }
+}
+
+table! {
+    temp_wallguard_logs(id, timestamp) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,

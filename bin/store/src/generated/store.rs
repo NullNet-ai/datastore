@@ -313,11 +313,109 @@ pub struct AppguardLogs {
     #[prost(string, optional, tag = "20")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// TempAppguardLogs entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempAppguardLogs {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// DeviceAliases entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeviceAliases {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub device_alias_status: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// TempDeviceAliases entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempDeviceAliases {
     #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
@@ -463,11 +561,105 @@ pub struct DeviceInterfaceAddresses {
     #[prost(string, optional, tag = "20")]
     pub address: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// TempDeviceInterfaceAddresses entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempDeviceInterfaceAddresses {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub address: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// DeviceInterfaces entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeviceInterfaces {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub device: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// TempDeviceInterfaces entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempDeviceInterfaces {
     #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
@@ -563,11 +755,139 @@ pub struct DeviceRemoteAccessSessions {
     #[prost(string, optional, tag = "23")]
     pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// TempDeviceRemoteAccessSessions entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempDeviceRemoteAccessSessions {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// DeviceRules entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeviceRules {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub policy: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
+    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
+    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
+    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "30")]
+    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "31")]
+    pub interface: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "32")]
+    pub order: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "33")]
+    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "34")]
+    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "35")]
+    pub source_inversed: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// TempDeviceRules entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempDeviceRules {
     #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
@@ -728,6 +1048,70 @@ pub struct Packets {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Connections {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "21")]
+    pub total_packet: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "22")]
+    pub total_byte: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "23")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
+    pub remote_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "28")]
+    pub source_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "29")]
+    pub destination_port: ::core::option::Option<i32>,
+}
+/// TempConnections entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempConnections {
     #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
@@ -1014,6 +1398,54 @@ pub struct Resolutions {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct WallguardLogs {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, tag = "17")]
+    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, tag = "18")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "19")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// TempWallguardLogs entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TempWallguardLogs {
     #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
@@ -2136,6 +2568,257 @@ pub struct UpsertAppguardLogsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<AppguardLogs>,
 }
+/// Create TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_appguard_logs: ::core::option::Option<TempAppguardLogs>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempAppguardLogs>,
+}
+/// Get TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempAppguardLogsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempAppguardLogs>,
+}
+/// Update TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_appguard_log: ::core::option::Option<TempAppguardLogs>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempAppguardLogs>,
+}
+/// BatchUpdate TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_appguard_logs_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempAppguardLogsRequest`.
+pub mod batch_update_temp_appguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempAppguardLogs>,
+    }
+}
+/// BatchUpdate TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempAppguardLogs>,
+}
+/// BatchDelete TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_appguard_logs_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempAppguardLogsRequest`.
+pub mod batch_delete_temp_appguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempAppguardLogs>,
+}
+/// Delete TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempAppguardLogs>,
+}
+/// BatchInsert TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_temp_appguard_logs_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertTempAppguardLogsRequest`.
+pub mod batch_insert_temp_appguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_appguard_logs: ::prost::alloc::vec::Vec<super::TempAppguardLogs>,
+    }
+}
+/// BatchInsert TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempAppguardLogs>,
+}
+/// Upsert TempAppguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempAppguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_temp_appguard_logs_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertTempAppguardLogsRequest`.
+pub mod upsert_temp_appguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempAppguardLogs>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempAppguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempAppguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempAppguardLogs>,
+}
 /// Create DeviceAliases request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -2386,6 +3069,259 @@ pub struct UpsertDeviceAliasesResponse {
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceAliases>,
+}
+/// Create TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_aliases: ::core::option::Option<TempDeviceAliases>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceAliases>,
+}
+/// Get TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceAliasesRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempDeviceAliases>,
+}
+/// Update TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_alias: ::core::option::Option<TempDeviceAliases>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceAliases>,
+}
+/// BatchUpdate TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_device_aliases_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempDeviceAliasesRequest`.
+pub mod batch_update_temp_device_aliases_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempDeviceAliases>,
+    }
+}
+/// BatchUpdate TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceAliases>,
+}
+/// BatchDelete TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_device_aliases_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempDeviceAliasesRequest`.
+pub mod batch_delete_temp_device_aliases_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceAliases>,
+}
+/// Delete TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceAliases>,
+}
+/// BatchInsert TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_temp_device_aliases_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertTempDeviceAliasesRequest`.
+pub mod batch_insert_temp_device_aliases_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_device_aliases: ::prost::alloc::vec::Vec<super::TempDeviceAliases>,
+    }
+}
+/// BatchInsert TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceAliases>,
+}
+/// Upsert TempDeviceAliases request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceAliasesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_temp_device_aliases_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertTempDeviceAliasesRequest`.
+pub mod upsert_temp_device_aliases_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempDeviceAliases>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempDeviceAliases response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceAliasesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceAliases>,
 }
 /// Create DeviceConfigurations request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2897,6 +3833,267 @@ pub struct UpsertDeviceInterfaceAddressesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceInterfaceAddresses>,
 }
+/// Create TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_interface_addresses: ::core::option::Option<
+        TempDeviceInterfaceAddresses,
+    >,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaceAddresses>,
+}
+/// Get TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceInterfaceAddressesRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempDeviceInterfaceAddresses>,
+}
+/// Update TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_interface_address: ::core::option::Option<
+        TempDeviceInterfaceAddresses,
+    >,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaceAddresses>,
+}
+/// BatchUpdate TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_device_interface_addresses_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempDeviceInterfaceAddressesRequest`.
+pub mod batch_update_temp_device_interface_addresses_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempDeviceInterfaceAddresses>,
+    }
+}
+/// BatchUpdate TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceInterfaceAddresses>,
+}
+/// BatchDelete TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_device_interface_addresses_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempDeviceInterfaceAddressesRequest`.
+pub mod batch_delete_temp_device_interface_addresses_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaceAddresses>,
+}
+/// Delete TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaceAddresses>,
+}
+/// BatchInsert TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_temp_device_interface_addresses_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertTempDeviceInterfaceAddressesRequest`.
+pub mod batch_insert_temp_device_interface_addresses_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_device_interface_addresses: ::prost::alloc::vec::Vec<
+            super::TempDeviceInterfaceAddresses,
+        >,
+    }
+}
+/// BatchInsert TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceInterfaceAddresses>,
+}
+/// Upsert TempDeviceInterfaceAddresses request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceInterfaceAddressesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        upsert_temp_device_interface_addresses_request::UpsertBody,
+    >,
+}
+/// Nested message and enum types in `UpsertTempDeviceInterfaceAddressesRequest`.
+pub mod upsert_temp_device_interface_addresses_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempDeviceInterfaceAddresses>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempDeviceInterfaceAddresses response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceInterfaceAddressesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceInterfaceAddresses>,
+}
 /// Create DeviceInterfaces request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -3147,6 +4344,261 @@ pub struct UpsertDeviceInterfacesResponse {
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceInterfaces>,
+}
+/// Create TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_interfaces: ::core::option::Option<TempDeviceInterfaces>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaces>,
+}
+/// Get TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceInterfacesRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempDeviceInterfaces>,
+}
+/// Update TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_interface: ::core::option::Option<TempDeviceInterfaces>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaces>,
+}
+/// BatchUpdate TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_device_interfaces_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempDeviceInterfacesRequest`.
+pub mod batch_update_temp_device_interfaces_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempDeviceInterfaces>,
+    }
+}
+/// BatchUpdate TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceInterfaces>,
+}
+/// BatchDelete TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_device_interfaces_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempDeviceInterfacesRequest`.
+pub mod batch_delete_temp_device_interfaces_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaces>,
+}
+/// Delete TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceInterfaces>,
+}
+/// BatchInsert TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_temp_device_interfaces_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertTempDeviceInterfacesRequest`.
+pub mod batch_insert_temp_device_interfaces_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_device_interfaces: ::prost::alloc::vec::Vec<
+            super::TempDeviceInterfaces,
+        >,
+    }
+}
+/// BatchInsert TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceInterfaces>,
+}
+/// Upsert TempDeviceInterfaces request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceInterfacesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_temp_device_interfaces_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertTempDeviceInterfacesRequest`.
+pub mod upsert_temp_device_interfaces_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempDeviceInterfaces>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempDeviceInterfaces response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceInterfacesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceInterfaces>,
 }
 /// Create DeviceRemoteAccessSessions request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -3407,6 +4859,267 @@ pub struct UpsertDeviceRemoteAccessSessionsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceRemoteAccessSessions>,
 }
+/// Create TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_remote_access_sessions: ::core::option::Option<
+        TempDeviceRemoteAccessSessions,
+    >,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRemoteAccessSessions>,
+}
+/// Get TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceRemoteAccessSessionsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempDeviceRemoteAccessSessions>,
+}
+/// Update TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_remote_access_session: ::core::option::Option<
+        TempDeviceRemoteAccessSessions,
+    >,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRemoteAccessSessions>,
+}
+/// BatchUpdate TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_device_remote_access_sessions_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempDeviceRemoteAccessSessionsRequest`.
+pub mod batch_update_temp_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempDeviceRemoteAccessSessions>,
+    }
+}
+/// BatchUpdate TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceRemoteAccessSessions>,
+}
+/// BatchDelete TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_device_remote_access_sessions_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempDeviceRemoteAccessSessionsRequest`.
+pub mod batch_delete_temp_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRemoteAccessSessions>,
+}
+/// Delete TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRemoteAccessSessions>,
+}
+/// BatchInsert TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_temp_device_remote_access_sessions_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertTempDeviceRemoteAccessSessionsRequest`.
+pub mod batch_insert_temp_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_device_remote_access_sessions: ::prost::alloc::vec::Vec<
+            super::TempDeviceRemoteAccessSessions,
+        >,
+    }
+}
+/// BatchInsert TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceRemoteAccessSessions>,
+}
+/// Upsert TempDeviceRemoteAccessSessions request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceRemoteAccessSessionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        upsert_temp_device_remote_access_sessions_request::UpsertBody,
+    >,
+}
+/// Nested message and enum types in `UpsertTempDeviceRemoteAccessSessionsRequest`.
+pub mod upsert_temp_device_remote_access_sessions_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempDeviceRemoteAccessSessions>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempDeviceRemoteAccessSessions response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceRemoteAccessSessionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceRemoteAccessSessions>,
+}
 /// Create DeviceRules request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -3653,6 +5366,257 @@ pub struct UpsertDeviceRulesResponse {
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceRules>,
+}
+/// Create TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_rules: ::core::option::Option<TempDeviceRules>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRules>,
+}
+/// Get TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceRulesRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempDeviceRules>,
+}
+/// Update TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_device_rule: ::core::option::Option<TempDeviceRules>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRules>,
+}
+/// BatchUpdate TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_device_rules_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempDeviceRulesRequest`.
+pub mod batch_update_temp_device_rules_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempDeviceRules>,
+    }
+}
+/// BatchUpdate TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceRules>,
+}
+/// BatchDelete TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_device_rules_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempDeviceRulesRequest`.
+pub mod batch_delete_temp_device_rules_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRules>,
+}
+/// Delete TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempDeviceRules>,
+}
+/// BatchInsert TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_temp_device_rules_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertTempDeviceRulesRequest`.
+pub mod batch_insert_temp_device_rules_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_device_rules: ::prost::alloc::vec::Vec<super::TempDeviceRules>,
+    }
+}
+/// BatchInsert TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceRules>,
+}
+/// Upsert TempDeviceRules request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceRulesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_temp_device_rules_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertTempDeviceRulesRequest`.
+pub mod upsert_temp_device_rules_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempDeviceRules>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempDeviceRules response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempDeviceRulesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempDeviceRules>,
 }
 /// Create Packets request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -4147,6 +6111,257 @@ pub struct UpsertConnectionsResponse {
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Connections>,
+}
+/// Create TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_connections: ::core::option::Option<TempConnections>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempConnections>,
+}
+/// Get TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempConnectionsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempConnections>,
+}
+/// Update TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_connection: ::core::option::Option<TempConnections>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempConnections>,
+}
+/// BatchUpdate TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_connections_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempConnectionsRequest`.
+pub mod batch_update_temp_connections_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempConnections>,
+    }
+}
+/// BatchUpdate TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempConnections>,
+}
+/// BatchDelete TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_connections_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempConnectionsRequest`.
+pub mod batch_delete_temp_connections_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempConnections>,
+}
+/// Delete TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempConnections>,
+}
+/// BatchInsert TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_temp_connections_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertTempConnectionsRequest`.
+pub mod batch_insert_temp_connections_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_connections: ::prost::alloc::vec::Vec<super::TempConnections>,
+    }
+}
+/// BatchInsert TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempConnections>,
+}
+/// Upsert TempConnections request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempConnectionsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_temp_connections_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertTempConnectionsRequest`.
+pub mod upsert_temp_connections_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempConnections>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempConnections response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempConnectionsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempConnections>,
 }
 /// Create DeviceSshKeys request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -5390,6 +7605,259 @@ pub struct UpsertWallguardLogsResponse {
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<WallguardLogs>,
+}
+/// Create TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_wallguard_logs: ::core::option::Option<TempWallguardLogs>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempWallguardLogs>,
+}
+/// Get TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempWallguardLogsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<TempWallguardLogs>,
+}
+/// Update TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub temp_wallguard_log: ::core::option::Option<TempWallguardLogs>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempWallguardLogs>,
+}
+/// BatchUpdate TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_temp_wallguard_logs_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateTempWallguardLogsRequest`.
+pub mod batch_update_temp_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::TempWallguardLogs>,
+    }
+}
+/// BatchUpdate TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempWallguardLogs>,
+}
+/// BatchDelete TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_temp_wallguard_logs_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteTempWallguardLogsRequest`.
+pub mod batch_delete_temp_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempWallguardLogs>,
+}
+/// Delete TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<TempWallguardLogs>,
+}
+/// BatchInsert TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_temp_wallguard_logs_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertTempWallguardLogsRequest`.
+pub mod batch_insert_temp_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub temp_wallguard_logs: ::prost::alloc::vec::Vec<super::TempWallguardLogs>,
+    }
+}
+/// BatchInsert TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempWallguardLogs>,
+}
+/// Upsert TempWallguardLogs request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempWallguardLogsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_temp_wallguard_logs_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertTempWallguardLogsRequest`.
+pub mod upsert_temp_wallguard_logs_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::TempWallguardLogs>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert TempWallguardLogs response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertTempWallguardLogsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<TempWallguardLogs>,
 }
 /// Create DeviceGroupSettings request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -7357,6 +9825,70 @@ pub mod store_service_server {
             tonic::Response<super::UpsertAppguardLogsResponse>,
             tonic::Status,
         >;
+        /// Create a new TempAppguardLogs
+        async fn create_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::CreateTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempAppguardLogs by ID
+        async fn get_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::GetTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempAppguardLogs
+        async fn update_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::UpdateTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempAppguardLogs by ID
+        async fn delete_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::DeleteTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempAppguardLogss
+        async fn batch_insert_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::BatchInsertTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempAppguardLogss based on filters
+        async fn batch_update_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::BatchUpdateTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempAppguardLogss based on filters
+        async fn batch_delete_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::BatchDeleteTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempAppguardLogs (create if not exists, update if exists)
+        async fn upsert_temp_appguard_logs(
+            &self,
+            request: tonic::Request<super::UpsertTempAppguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempAppguardLogsResponse>,
+            tonic::Status,
+        >;
         /// Create a new DeviceAliases
         async fn create_device_aliases(
             &self,
@@ -7419,6 +9951,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertDeviceAliasesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Create a new TempDeviceAliases
+        async fn create_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::CreateTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempDeviceAliases by ID
+        async fn get_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::GetTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempDeviceAliases
+        async fn update_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::UpdateTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempDeviceAliases by ID
+        async fn delete_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::DeleteTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempDeviceAliasess
+        async fn batch_insert_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::BatchInsertTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempDeviceAliasess based on filters
+        async fn batch_update_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::BatchUpdateTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempDeviceAliasess based on filters
+        async fn batch_delete_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::BatchDeleteTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempDeviceAliasesResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempDeviceAliases (create if not exists, update if exists)
+        async fn upsert_temp_device_aliases(
+            &self,
+            request: tonic::Request<super::UpsertTempDeviceAliasesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempDeviceAliasesResponse>,
             tonic::Status,
         >;
         /// Create a new DeviceConfigurations
@@ -7549,6 +10145,76 @@ pub mod store_service_server {
             tonic::Response<super::UpsertDeviceInterfaceAddressesResponse>,
             tonic::Status,
         >;
+        /// Create a new TempDeviceInterfaceAddresses
+        async fn create_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<super::CreateTempDeviceInterfaceAddressesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempDeviceInterfaceAddresses by ID
+        async fn get_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<super::GetTempDeviceInterfaceAddressesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempDeviceInterfaceAddresses
+        async fn update_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<super::UpdateTempDeviceInterfaceAddressesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempDeviceInterfaceAddresses by ID
+        async fn delete_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<super::DeleteTempDeviceInterfaceAddressesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempDeviceInterfaceAddressess
+        async fn batch_insert_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<
+                super::BatchInsertTempDeviceInterfaceAddressesRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempDeviceInterfaceAddressess based on filters
+        async fn batch_update_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<
+                super::BatchUpdateTempDeviceInterfaceAddressesRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempDeviceInterfaceAddressess based on filters
+        async fn batch_delete_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<
+                super::BatchDeleteTempDeviceInterfaceAddressesRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempDeviceInterfaceAddresses (create if not exists, update if exists)
+        async fn upsert_temp_device_interface_addresses(
+            &self,
+            request: tonic::Request<super::UpsertTempDeviceInterfaceAddressesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempDeviceInterfaceAddressesResponse>,
+            tonic::Status,
+        >;
         /// Create a new DeviceInterfaces
         async fn create_device_interfaces(
             &self,
@@ -7611,6 +10277,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertDeviceInterfacesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Create a new TempDeviceInterfaces
+        async fn create_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::CreateTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempDeviceInterfaces by ID
+        async fn get_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::GetTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempDeviceInterfaces
+        async fn update_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::UpdateTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempDeviceInterfaces by ID
+        async fn delete_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::DeleteTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempDeviceInterfacess
+        async fn batch_insert_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::BatchInsertTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempDeviceInterfacess based on filters
+        async fn batch_update_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::BatchUpdateTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempDeviceInterfacess based on filters
+        async fn batch_delete_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::BatchDeleteTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempDeviceInterfacesResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempDeviceInterfaces (create if not exists, update if exists)
+        async fn upsert_temp_device_interfaces(
+            &self,
+            request: tonic::Request<super::UpsertTempDeviceInterfacesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempDeviceInterfacesResponse>,
             tonic::Status,
         >;
         /// Create a new DeviceRemoteAccessSessions
@@ -7677,6 +10407,76 @@ pub mod store_service_server {
             tonic::Response<super::UpsertDeviceRemoteAccessSessionsResponse>,
             tonic::Status,
         >;
+        /// Create a new TempDeviceRemoteAccessSessions
+        async fn create_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::CreateTempDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempDeviceRemoteAccessSessions by ID
+        async fn get_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::GetTempDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempDeviceRemoteAccessSessions
+        async fn update_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::UpdateTempDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempDeviceRemoteAccessSessions by ID
+        async fn delete_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::DeleteTempDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempDeviceRemoteAccessSessionss
+        async fn batch_insert_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<
+                super::BatchInsertTempDeviceRemoteAccessSessionsRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempDeviceRemoteAccessSessionss based on filters
+        async fn batch_update_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<
+                super::BatchUpdateTempDeviceRemoteAccessSessionsRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempDeviceRemoteAccessSessionss based on filters
+        async fn batch_delete_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<
+                super::BatchDeleteTempDeviceRemoteAccessSessionsRequest,
+            >,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempDeviceRemoteAccessSessions (create if not exists, update if exists)
+        async fn upsert_temp_device_remote_access_sessions(
+            &self,
+            request: tonic::Request<super::UpsertTempDeviceRemoteAccessSessionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempDeviceRemoteAccessSessionsResponse>,
+            tonic::Status,
+        >;
         /// Create a new DeviceRules
         async fn create_device_rules(
             &self,
@@ -7739,6 +10539,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertDeviceRulesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Create a new TempDeviceRules
+        async fn create_temp_device_rules(
+            &self,
+            request: tonic::Request<super::CreateTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempDeviceRules by ID
+        async fn get_temp_device_rules(
+            &self,
+            request: tonic::Request<super::GetTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempDeviceRules
+        async fn update_temp_device_rules(
+            &self,
+            request: tonic::Request<super::UpdateTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempDeviceRules by ID
+        async fn delete_temp_device_rules(
+            &self,
+            request: tonic::Request<super::DeleteTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempDeviceRuless
+        async fn batch_insert_temp_device_rules(
+            &self,
+            request: tonic::Request<super::BatchInsertTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempDeviceRuless based on filters
+        async fn batch_update_temp_device_rules(
+            &self,
+            request: tonic::Request<super::BatchUpdateTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempDeviceRuless based on filters
+        async fn batch_delete_temp_device_rules(
+            &self,
+            request: tonic::Request<super::BatchDeleteTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempDeviceRulesResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempDeviceRules (create if not exists, update if exists)
+        async fn upsert_temp_device_rules(
+            &self,
+            request: tonic::Request<super::UpsertTempDeviceRulesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempDeviceRulesResponse>,
             tonic::Status,
         >;
         /// Create a new Packets
@@ -7867,6 +10731,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertConnectionsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new TempConnections
+        async fn create_temp_connections(
+            &self,
+            request: tonic::Request<super::CreateTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempConnections by ID
+        async fn get_temp_connections(
+            &self,
+            request: tonic::Request<super::GetTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempConnections
+        async fn update_temp_connections(
+            &self,
+            request: tonic::Request<super::UpdateTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempConnections by ID
+        async fn delete_temp_connections(
+            &self,
+            request: tonic::Request<super::DeleteTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempConnectionss
+        async fn batch_insert_temp_connections(
+            &self,
+            request: tonic::Request<super::BatchInsertTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempConnectionss based on filters
+        async fn batch_update_temp_connections(
+            &self,
+            request: tonic::Request<super::BatchUpdateTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempConnectionss based on filters
+        async fn batch_delete_temp_connections(
+            &self,
+            request: tonic::Request<super::BatchDeleteTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempConnectionsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempConnections (create if not exists, update if exists)
+        async fn upsert_temp_connections(
+            &self,
+            request: tonic::Request<super::UpsertTempConnectionsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempConnectionsResponse>,
             tonic::Status,
         >;
         /// Create a new DeviceSshKeys
@@ -8187,6 +11115,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertWallguardLogsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new TempWallguardLogs
+        async fn create_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::CreateTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Get a TempWallguardLogs by ID
+        async fn get_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::GetTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing TempWallguardLogs
+        async fn update_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::UpdateTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a TempWallguardLogs by ID
+        async fn delete_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::DeleteTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple TempWallguardLogss
+        async fn batch_insert_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::BatchInsertTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple TempWallguardLogss based on filters
+        async fn batch_update_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::BatchUpdateTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple TempWallguardLogss based on filters
+        async fn batch_delete_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::BatchDeleteTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteTempWallguardLogsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a TempWallguardLogs (create if not exists, update if exists)
+        async fn upsert_temp_wallguard_logs(
+            &self,
+            request: tonic::Request<super::UpsertTempWallguardLogsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertTempWallguardLogsResponse>,
             tonic::Status,
         >;
         /// Create a new DeviceGroupSettings
@@ -9844,6 +12836,404 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/CreateTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateTempAppguardLogsRequest>
+                    for CreateTempAppguardLogsSvc<T> {
+                        type Response = super::CreateTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateTempAppguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetTempAppguardLogsRequest>
+                    for GetTempAppguardLogsSvc<T> {
+                        type Response = super::GetTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetTempAppguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_appguard_logs(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateTempAppguardLogsRequest>
+                    for UpdateTempAppguardLogsSvc<T> {
+                        type Response = super::UpdateTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateTempAppguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteTempAppguardLogsRequest>
+                    for DeleteTempAppguardLogsSvc<T> {
+                        type Response = super::DeleteTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteTempAppguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempAppguardLogsRequest,
+                    > for BatchInsertTempAppguardLogsSvc<T> {
+                        type Response = super::BatchInsertTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempAppguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempAppguardLogsRequest,
+                    > for BatchUpdateTempAppguardLogsSvc<T> {
+                        type Response = super::BatchUpdateTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempAppguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempAppguardLogsRequest,
+                    > for BatchDeleteTempAppguardLogsSvc<T> {
+                        type Response = super::BatchDeleteTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempAppguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempAppguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempAppguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertTempAppguardLogsRequest>
+                    for UpsertTempAppguardLogsSvc<T> {
+                        type Response = super::UpsertTempAppguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertTempAppguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_appguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempAppguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateDeviceAliases" => {
                     #[allow(non_camel_case_types)]
                     struct CreateDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
@@ -10212,6 +13602,415 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateTempDeviceAliasesRequest>
+                    for CreateTempDeviceAliasesSvc<T> {
+                        type Response = super::CreateTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetTempDeviceAliasesRequest>
+                    for GetTempDeviceAliasesSvc<T> {
+                        type Response = super::GetTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetTempDeviceAliasesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateTempDeviceAliasesRequest>
+                    for UpdateTempDeviceAliasesSvc<T> {
+                        type Response = super::UpdateTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteTempDeviceAliasesRequest>
+                    for DeleteTempDeviceAliasesSvc<T> {
+                        type Response = super::DeleteTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempDeviceAliasesRequest,
+                    > for BatchInsertTempDeviceAliasesSvc<T> {
+                        type Response = super::BatchInsertTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempDeviceAliasesRequest,
+                    > for BatchUpdateTempDeviceAliasesSvc<T> {
+                        type Response = super::BatchUpdateTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempDeviceAliasesRequest,
+                    > for BatchDeleteTempDeviceAliasesSvc<T> {
+                        type Response = super::BatchDeleteTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempDeviceAliasesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempDeviceAliases" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempDeviceAliasesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertTempDeviceAliasesRequest>
+                    for UpsertTempDeviceAliasesSvc<T> {
+                        type Response = super::UpsertTempDeviceAliasesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertTempDeviceAliasesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_device_aliases(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempDeviceAliasesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -11078,6 +14877,438 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/CreateTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateTempDeviceInterfaceAddressesRequest,
+                    > for CreateTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::CreateTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::GetTempDeviceInterfaceAddressesRequest,
+                    > for GetTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::GetTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateTempDeviceInterfaceAddressesRequest,
+                    > for UpdateTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::UpdateTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteTempDeviceInterfaceAddressesRequest,
+                    > for DeleteTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::DeleteTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempDeviceInterfaceAddressesRequest,
+                    > for BatchInsertTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::BatchInsertTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempDeviceInterfaceAddressesRequest,
+                    > for BatchUpdateTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::BatchUpdateTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempDeviceInterfaceAddressesRequest,
+                    > for BatchDeleteTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::BatchDeleteTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempDeviceInterfaceAddresses" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempDeviceInterfaceAddressesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertTempDeviceInterfaceAddressesRequest,
+                    > for UpsertTempDeviceInterfaceAddressesSvc<T> {
+                        type Response = super::UpsertTempDeviceInterfaceAddressesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertTempDeviceInterfaceAddressesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_device_interface_addresses(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempDeviceInterfaceAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateDeviceInterfaces" => {
                     #[allow(non_camel_case_types)]
                     struct CreateDeviceInterfacesSvc<T: StoreService>(pub Arc<T>);
@@ -11461,6 +15692,427 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempDeviceInterfacesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateTempDeviceInterfacesRequest,
+                    > for CreateTempDeviceInterfacesSvc<T> {
+                        type Response = super::CreateTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempDeviceInterfacesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetTempDeviceInterfacesRequest>
+                    for GetTempDeviceInterfacesSvc<T> {
+                        type Response = super::GetTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempDeviceInterfacesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateTempDeviceInterfacesRequest,
+                    > for UpdateTempDeviceInterfacesSvc<T> {
+                        type Response = super::UpdateTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempDeviceInterfacesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteTempDeviceInterfacesRequest,
+                    > for DeleteTempDeviceInterfacesSvc<T> {
+                        type Response = super::DeleteTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempDeviceInterfacesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempDeviceInterfacesRequest,
+                    > for BatchInsertTempDeviceInterfacesSvc<T> {
+                        type Response = super::BatchInsertTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempDeviceInterfacesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempDeviceInterfacesRequest,
+                    > for BatchUpdateTempDeviceInterfacesSvc<T> {
+                        type Response = super::BatchUpdateTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempDeviceInterfacesSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempDeviceInterfacesRequest,
+                    > for BatchDeleteTempDeviceInterfacesSvc<T> {
+                        type Response = super::BatchDeleteTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempDeviceInterfacesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempDeviceInterfaces" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempDeviceInterfacesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertTempDeviceInterfacesRequest,
+                    > for UpsertTempDeviceInterfacesSvc<T> {
+                        type Response = super::UpsertTempDeviceInterfacesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertTempDeviceInterfacesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_device_interfaces(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempDeviceInterfacesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -11906,6 +16558,438 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
+                "/store.StoreService/CreateTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateTempDeviceRemoteAccessSessionsRequest,
+                    > for CreateTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::CreateTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::GetTempDeviceRemoteAccessSessionsRequest,
+                    > for GetTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::GetTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateTempDeviceRemoteAccessSessionsRequest,
+                    > for UpdateTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::UpdateTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteTempDeviceRemoteAccessSessionsRequest,
+                    > for DeleteTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::DeleteTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempDeviceRemoteAccessSessionsRequest,
+                    > for BatchInsertTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::BatchInsertTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempDeviceRemoteAccessSessionsRequest,
+                    > for BatchUpdateTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::BatchUpdateTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempDeviceRemoteAccessSessionsRequest,
+                    > for BatchDeleteTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::BatchDeleteTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempDeviceRemoteAccessSessions" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempDeviceRemoteAccessSessionsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertTempDeviceRemoteAccessSessionsRequest,
+                    > for UpsertTempDeviceRemoteAccessSessionsSvc<T> {
+                        type Response = super::UpsertTempDeviceRemoteAccessSessionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertTempDeviceRemoteAccessSessionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_device_remote_access_sessions(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempDeviceRemoteAccessSessionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateDeviceRules" => {
                     #[allow(non_camel_case_types)]
                     struct CreateDeviceRulesSvc<T: StoreService>(pub Arc<T>);
@@ -12267,6 +17351,404 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateTempDeviceRulesRequest>
+                    for CreateTempDeviceRulesSvc<T> {
+                        type Response = super::CreateTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateTempDeviceRulesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetTempDeviceRulesRequest>
+                    for GetTempDeviceRulesSvc<T> {
+                        type Response = super::GetTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetTempDeviceRulesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_device_rules(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateTempDeviceRulesRequest>
+                    for UpdateTempDeviceRulesSvc<T> {
+                        type Response = super::UpdateTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateTempDeviceRulesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteTempDeviceRulesRequest>
+                    for DeleteTempDeviceRulesSvc<T> {
+                        type Response = super::DeleteTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteTempDeviceRulesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempDeviceRulesRequest,
+                    > for BatchInsertTempDeviceRulesSvc<T> {
+                        type Response = super::BatchInsertTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempDeviceRulesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempDeviceRulesRequest,
+                    > for BatchUpdateTempDeviceRulesSvc<T> {
+                        type Response = super::BatchUpdateTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempDeviceRulesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempDeviceRulesRequest,
+                    > for BatchDeleteTempDeviceRulesSvc<T> {
+                        type Response = super::BatchDeleteTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempDeviceRulesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempDeviceRulesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempDeviceRules" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempDeviceRulesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertTempDeviceRulesRequest>
+                    for UpsertTempDeviceRulesSvc<T> {
+                        type Response = super::UpsertTempDeviceRulesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertTempDeviceRulesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_device_rules(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempDeviceRulesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -13006,6 +18488,404 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateTempConnectionsRequest>
+                    for CreateTempConnectionsSvc<T> {
+                        type Response = super::CreateTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateTempConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetTempConnectionsRequest>
+                    for GetTempConnectionsSvc<T> {
+                        type Response = super::GetTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetTempConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_connections(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateTempConnectionsRequest>
+                    for UpdateTempConnectionsSvc<T> {
+                        type Response = super::UpdateTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateTempConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteTempConnectionsRequest>
+                    for DeleteTempConnectionsSvc<T> {
+                        type Response = super::DeleteTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteTempConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempConnectionsRequest,
+                    > for BatchInsertTempConnectionsSvc<T> {
+                        type Response = super::BatchInsertTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempConnectionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempConnectionsRequest,
+                    > for BatchUpdateTempConnectionsSvc<T> {
+                        type Response = super::BatchUpdateTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempConnectionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempConnectionsRequest,
+                    > for BatchDeleteTempConnectionsSvc<T> {
+                        type Response = super::BatchDeleteTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempConnectionsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempConnectionsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempConnections" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempConnectionsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertTempConnectionsRequest>
+                    for UpsertTempConnectionsSvc<T> {
+                        type Response = super::UpsertTempConnectionsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertTempConnectionsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_connections(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempConnectionsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -14874,6 +20754,415 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateTempWallguardLogsRequest>
+                    for CreateTempWallguardLogsSvc<T> {
+                        type Response = super::CreateTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetTempWallguardLogsRequest>
+                    for GetTempWallguardLogsSvc<T> {
+                        type Response = super::GetTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetTempWallguardLogsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateTempWallguardLogsRequest>
+                    for UpdateTempWallguardLogsSvc<T> {
+                        type Response = super::UpdateTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteTempWallguardLogsRequest>
+                    for DeleteTempWallguardLogsSvc<T> {
+                        type Response = super::DeleteTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTempWallguardLogsRequest,
+                    > for BatchInsertTempWallguardLogsSvc<T> {
+                        type Response = super::BatchInsertTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTempWallguardLogsRequest,
+                    > for BatchUpdateTempWallguardLogsSvc<T> {
+                        type Response = super::BatchUpdateTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTempWallguardLogsRequest,
+                    > for BatchDeleteTempWallguardLogsSvc<T> {
+                        type Response = super::BatchDeleteTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTempWallguardLogsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTempWallguardLogs" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTempWallguardLogsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertTempWallguardLogsRequest>
+                    for UpsertTempWallguardLogsSvc<T> {
+                        type Response = super::UpsertTempWallguardLogsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertTempWallguardLogsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_temp_wallguard_logs(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTempWallguardLogsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
