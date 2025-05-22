@@ -377,7 +377,7 @@ export class FindActorsImplementations {
                 ...count_selection,
                 [entity]: {
                   ...(fields as Record<string, any>),
-                  ...join_selections,
+                  // ...join_selections,
                 },
               };
             },
@@ -566,6 +566,7 @@ export class FindActorsImplementations {
             joins,
             concatenate_fields,
             group_by,
+            aliased_joined_entities,
           )
         : await _db;
 
@@ -601,6 +602,7 @@ export class FindActorsImplementations {
     joins,
     _concatenate_fields,
     group_by,
+    aliased_joined_entities,
   ) {
     const main_fields_concatenated =
       _concatenate_fields.find(
@@ -612,8 +614,33 @@ export class FindActorsImplementations {
       if (group_by.fields?.length) {
         cloned_item = {
           ...cloned_item[table],
+          ...group_by.fields?.reduce((acc, field) => {
+            let group_by_entity = table;
+            const _field = field.split('.');
+            if (_field.length > 1) {
+              const [entity] = _field;
+              group_by_entity = entity;
+            }
+            const alias = aliased_joined_entities?.find(
+              ({ alias }) => alias === group_by_entity,
+            );
+            group_by_entity = alias
+              ? group_by_entity
+              : pluralize(group_by_entity || table);
+
+            return {
+              ...acc,
+              [group_by_entity]: [
+                {
+                  ...acc?.[group_by_entity]?.[0],
+                  ...(main_item[group_by_entity] && main_item[group_by_entity]),
+                },
+              ],
+            };
+          }, {}),
         };
       }
+
       return joins
         .map((join) => {
           const isSelfJoin = join.type === 'self';
