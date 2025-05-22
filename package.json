@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.30",
+  "version": "1.0.41",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -117,7 +117,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "4.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "5.7.2"
   },
   "jest": {
     "moduleFileExtensions": [
