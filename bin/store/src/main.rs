@@ -75,9 +75,9 @@ async fn main() -> std::io::Result<()> {
     //     process::exit(1);
     // }
 
-    // if let Err(e) = table_enum_generator::run_generator() {
-    //     eprintln!("Failed to generate table enum: {}", e);
-    // }
+    if let Err(e) = table_enum_generator::run_generator() {
+        eprintln!("Failed to generate table enum: {}", e);
+    }
     println!("gRPC controller generation completed successfully!");
 
     let background_sync_service = match background_sync::BackgroundSyncService::new().await {
