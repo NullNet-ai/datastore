@@ -66,6 +66,14 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(file, "use crate::sync::sync_service::{{insert, update}};")?;
     writeln!(file, "use crate::structs::structs::Auth;")?;
     writeln!(file, "use serde_json::Value;")?;
+    writeln!(
+        file,
+        "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
+    )?;
+    writeln!(
+        file,
+        "use crate::middlewares::interceptor_chain::InterceptorChain;"
+    )?;
 
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
     writeln!(
@@ -160,12 +168,25 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "        println!(\"gRPC Server listening on {{}}\", addr);"
     )?;
+    writeln!(file, "        // Create a chain of interceptors")?;
+    writeln!(file, "        let auth_interceptor = GrpcAuthInterceptor;")?;
+    writeln!(
+        file,
+        "        let shutdown_interceptor = GrpcShutdownInterceptor;"
+    )?;
+    writeln!(
+        file,
+        "        let interceptor_chain = InterceptorChain::new(shutdown_interceptor, auth_interceptor);"
+    )?;
     writeln!(
         file,
         "        Server::builder()
-            .add_service({}Server::with_interceptor(grpc_controller, GrpcAuthInterceptor))
-            .serve(addr)
-            .await?;",
+                .add_service({}Server::with_interceptor(
+                    grpc_controller,
+                    interceptor_chain
+                ))
+                .serve(addr)
+                .await?;",
         service_name
     )?;
     writeln!(file, "        Ok(())")?;

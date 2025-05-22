@@ -439,7 +439,13 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
     let mut processed_record = serde_json::to_value(&record)
         .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
 
-    // Handle hypertable timestamp if needed
+    // Process record through common processing logic
+    let mut request_body = RequestBody {
+        record: processed_record,
+    };
+    request_body.process_record("create", auth);
+    processed_record = request_body.record;
+
     if field_exists_in_table(table_name, "hypertable_timestamp") {
         if let Some(obj) = processed_record.as_object_mut() {
             if let Some(timestamp) = obj.get("timestamp") {
@@ -448,12 +454,8 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
         }
     }
 
-    // Process record through common processing logic
-    let mut request_body = RequestBody {
-        record: processed_record,
-    };
-    request_body.process_record("create", auth);
-    processed_record = request_body.record;
+
+    println!("Processed record: {:?}", processed_record);
 
     // Convert back to Value
     let record_value = serde_json::from_value(processed_record)

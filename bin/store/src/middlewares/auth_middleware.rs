@@ -1,4 +1,4 @@
-use crate::structs::structs::Auth;
+use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
@@ -110,10 +110,12 @@ where
                 }
             },
             None => {
-                let error_response = serde_json::json!({
-                    "success": false,
-                    "message": "No authorization token provided"
-                });
+                let error_response = ApiResponse {
+                    success: false,
+                    message: "Token verification failed: Invalid or expired token".to_string(),
+                    count: 0,
+                    data: vec![],
+                };
 
                 Box::pin(async move {
                     let json_error = actix_web::HttpResponse::Unauthorized()

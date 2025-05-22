@@ -60,6 +60,12 @@ impl RequestBody {
                 *timestamp = json!(cleaned_ts);
             }
         }
+        else {
+            println!("Timestamp not found");
+            let now = chrono::Utc::now();
+            let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f+00:00").to_string();
+            self.record["timestamp"] = json!(formatted_timestamp);
+        }
     }
 
     // Helper method to add common fields
@@ -73,6 +79,8 @@ impl RequestBody {
 
         match operation {
             "create" => {
+
+                
                 self.record["status"] = json!("Active");
                 self.record["created_date"] = json!(date_str);
                 self.record["created_time"] = json!(time_str);

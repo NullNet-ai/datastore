@@ -577,3 +577,7 @@ pub enum Case {
     Snake,
     Pascal,
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> wip/deployment

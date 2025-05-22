@@ -158,10 +158,6 @@ pub async fn create_record(
         .collect();
     //get entity_prefix from the request.record
 
-    println!(
-        "Organization ID: {}, Response Account: {}",
-        auth_data.organization_id, auth_data.responsible_account
-    );
 
     match process_and_insert_record(
         &table_name,
