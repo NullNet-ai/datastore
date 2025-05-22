@@ -93,6 +93,13 @@ export class FindActorsImplementations {
         });
       }
 
+      const concatenated_field_expressions =
+        Utility.generateConcatenatedExpressions(
+          concatenate_fields,
+          date_format,
+          table,
+        );
+
       const parsed_concatenated_fields = Utility.parseConcatenateFields(
         concatenate_fields,
         date_format,
@@ -225,18 +232,17 @@ export class FindActorsImplementations {
               : schema[group_by_entity];
             let group_field_schema = grouped_entity_schema[group_by_field];
             const group_field = `${group_by_entity}.${group_by_field}`;
-            // if (
-            //   parsed_concatenated_fields.fields[group_by_entity]?.includes(
-            //     group_by_field,
-            //   )
-            // )
-            //   throw new BadRequestException({
-            //     success: false,
-            //     message: `You can't group by concatenated fields`,
-            //   });
-            // else
-            group_by_fields[group_field] = group_field;
-            if (!group_field_schema)
+
+            const group_concatenated_field_exp =
+              concatenated_field_expressions?.[group_by_entity]?.[
+                group_by_field
+              ]?.expression;
+
+            group_by_fields[group_field] = group_concatenated_field_exp
+              ? group_concatenated_field_exp
+              : group_field;
+
+            if (!group_field_schema && !group_concatenated_field_exp)
               throw new BadRequestException({
                 success: false,
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
@@ -245,7 +251,8 @@ export class FindActorsImplementations {
             if (!temp_pluck_object?.[group_by_entity])
               temp_pluck_object[group_by_entity] = ['id'];
 
-            temp_pluck_object[group_by_entity].push(group_by_field);
+            if (!group_concatenated_field_exp)
+              temp_pluck_object[group_by_entity].push(group_by_field);
 
             if (fields.length - 1 === index) {
               pluck_object[group_by_entity] =
@@ -287,7 +294,11 @@ export class FindActorsImplementations {
               [group_by_entity]: {
                 ...(acc?.[group_by_entity] ?? {}),
                 [group_by_field]: sql.raw(
-                  `${group_by_entity}.${group_by_field}`,
+                  `${
+                    group_concatenated_field_exp?.length
+                      ? `${group_concatenated_field_exp} AS ${group_by_field}`
+                      : `${group_by_entity}.${group_by_field}`
+                  }`,
                 ),
               },
             };
@@ -349,6 +360,7 @@ export class FindActorsImplementations {
           time_zone,
           request_type: type,
           aliased_joined_entities,
+          concatenated_field_expressions,
         });
         // const is_grouping_joined_entity = group_by_entities.some((key) =>
         //   Object.keys(join_selections ?? {}).includes(key),
@@ -448,6 +460,7 @@ export class FindActorsImplementations {
         time_zone,
         table,
         date_format,
+        concatenated_field_expressions,
       );
 
       // if (group_by_agg_selections[order_by]) {
@@ -605,9 +618,9 @@ export class FindActorsImplementations {
     aliased_joined_entities,
   ) {
     const main_fields_concatenated =
-      _concatenate_fields.find(
-        (f) => (f.aliased_entity || pluralize(f.entity)) === table,
-      )?.fields ?? [];
+      _concatenate_fields
+        .filter((f) => (f.aliased_entity || pluralize(f.entity)) === table)
+        ?.map((f) => f.field_name) ?? [];
 
     return results.map((main_item) => {
       let cloned_item = { ...main_item };
@@ -659,10 +672,12 @@ export class FindActorsImplementations {
             if (concatenated_related_fields) {
               item = {
                 ...item,
-                [concatenated_related_fields.field_name]:
-                  concatenated_related_fields.fields
-                    .map((field) => item?.[field] ?? '')
-                    .join(concatenated_related_fields?.separator ?? ''),
+                ...(!item[concatenated_related_fields.field_name] && {
+                  [concatenated_related_fields.field_name]:
+                    concatenated_related_fields.fields
+                      .map((field) => item?.[field] ?? '')
+                      .join(concatenated_related_fields?.separator ?? ''),
+                }),
               };
             }
 
