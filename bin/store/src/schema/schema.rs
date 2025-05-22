@@ -505,36 +505,6 @@ table! {
 }
 
 table! {
-    organization_accounts(id) {
-        tombstone -> Nullable<Int4>,
-        status -> Nullable<Text>,
-        previous_status -> Nullable<Text>,
-        version -> Nullable<Int4>,
-        created_date -> Nullable<Text>,
-        created_time -> Nullable<Text>,
-        updated_date -> Nullable<Text>,
-        updated_time -> Nullable<Text>,
-        organization_id -> Nullable<Text>,
-        created_by -> Nullable<Text>,
-        updated_by -> Nullable<Text>,
-        deleted_by -> Nullable<Text>,
-        requested_by -> Nullable<Text>,
-        tags -> Nullable<Array<Text>>,
-        categories -> Nullable<Array<Text>>,
-        code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
-
-        organization_contact_id -> Nullable<Text>,
-        account_id -> Nullable<Text>,
-        account_secret -> Nullable<Text>,
-        role_id -> Nullable<Text>,
-        contact_id -> Nullable<Text>,
-        device_id -> Nullable<Text>,
-    }
-}
-
-table! {
     device_group_settings (id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
@@ -631,5 +601,166 @@ table! {
         timestamp -> Text,
         status -> Text,
         expiry -> BigInt,
+    }
+}
+
+table! {
+    organizations(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        parent_organization_id -> Nullable<Text>,
+        name -> Nullable<Text>
+    }
+}
+
+table! {
+    organization_contacts(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        contact_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    organization_accounts(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        organization_contact_id -> Nullable<Text>,
+        account_id -> Nullable<Text>,
+        account_secret -> Nullable<Text>,
+        role_id -> Nullable<Text>,
+        contact_id -> Nullable<Text>,
+        device_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    contacts(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        first_name -> Nullable<Text>,
+        middle_name -> Nullable<Text>,
+        last_name -> Nullable<Text>,
+        date_of_birth -> Nullable<Text>,
+    }
+}
+
+table! {
+    contact_phone_numbers(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        contact_id -> Nullable<Text>,
+        phone_number_raw -> Nullable<Text>,
+    }
+}
+
+table! {
+    contact_emails(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Text,
+        timestamp -> Timestamp,
+
+        contact_id -> Nullable<Text>,
+        email -> Nullable<Text>,
     }
 }

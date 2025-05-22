@@ -549,6 +549,77 @@ message WallguardLogs {
   string id = 18;
   optional string level = 19;
   optional string message = 20;
+  optional string hypertable_timestamp = 21;
+}
+
+// DeviceGroupSettings entity definition
+message DeviceGroupSettings {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string name = 19;
+}
+
+// Organizations entity definition
+message Organizations {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string parent_organization_id = 19;
+  optional string name = 20;
+}
+
+// OrganizationContacts entity definition
+message OrganizationContacts {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string contact_id = 19;
 }
 
 // OrganizationAccounts entity definition
@@ -579,8 +650,8 @@ message OrganizationAccounts {
   optional string device_id = 24;
 }
 
-// DeviceGroupSettings entity definition
-message DeviceGroupSettings {
+// Contacts entity definition
+message Contacts {
   optional int32 tombstone = 1;
   optional string status = 2;
   optional string previous_status = 3;
@@ -599,7 +670,58 @@ message DeviceGroupSettings {
   optional string code = 16;
   string id = 17;
   string timestamp = 18;
-  optional string name = 19;
+  optional string first_name = 19;
+  optional string middle_name = 20;
+  optional string last_name = 21;
+  optional string date_of_birth = 22;
+}
+
+// ContactPhoneNumbers entity definition
+message ContactPhoneNumbers {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string contact_id = 19;
+  optional string phone_number_raw = 20;
+}
+
+// ContactEmails entity definition
+message ContactEmails {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string contact_id = 19;
+  optional string email = 20;
 }
 
 // Create Addresses request
@@ -2698,6 +2820,399 @@ message UpsertWallguardLogsResponse {
   repeated WallguardLogs data = 4;
 }
 
+// Create DeviceGroupSettings request
+message CreateDeviceGroupSettingsRequest {
+  DeviceGroupSettings device_group_settings = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create DeviceGroupSettings response
+message CreateDeviceGroupSettingsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// Get DeviceGroupSettings request
+message GetDeviceGroupSettingsRequest {
+  string id = 1;
+}
+
+// Get DeviceGroupSettings response
+message GetDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  DeviceGroupSettings data = 3;
+}
+
+// Update DeviceGroupSettings request
+message UpdateDeviceGroupSettingsRequest {
+  DeviceGroupSettings device_group_setting = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DeviceGroupSettings response
+message UpdateDeviceGroupSettingsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// BatchUpdate DeviceGroupSettings request
+message BatchUpdateDeviceGroupSettingsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  DeviceGroupSettings updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DeviceGroupSettings response
+message BatchUpdateDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceGroupSettings data = 4;
+}
+
+// BatchDelete DeviceGroupSettings request
+message BatchDeleteDeviceGroupSettingsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DeviceGroupSettings response
+message BatchDeleteDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// Delete DeviceGroupSettings request
+message DeleteDeviceGroupSettingsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DeviceGroupSettings response
+message DeleteDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DeviceGroupSettings data = 4;
+}
+
+// BatchInsert DeviceGroupSettings request
+message BatchInsertDeviceGroupSettingsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated DeviceGroupSettings device_group_settings = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DeviceGroupSettings response
+message BatchInsertDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceGroupSettings data = 4;
+}
+
+// Upsert DeviceGroupSettings request
+message UpsertDeviceGroupSettingsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DeviceGroupSettings data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DeviceGroupSettings response
+message UpsertDeviceGroupSettingsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DeviceGroupSettings data = 4;
+}
+
+// Create Organizations request
+message CreateOrganizationsRequest {
+  Organizations organizations = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create Organizations response
+message CreateOrganizationsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Organizations data = 4;
+}
+
+// Get Organizations request
+message GetOrganizationsRequest {
+  string id = 1;
+}
+
+// Get Organizations response
+message GetOrganizationsResponse {
+  bool success = 1;
+  string message = 2;
+  Organizations data = 3;
+}
+
+// Update Organizations request
+message UpdateOrganizationsRequest {
+  Organizations organization = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update Organizations response
+message UpdateOrganizationsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Organizations data = 4;
+}
+
+// BatchUpdate Organizations request
+message BatchUpdateOrganizationsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  Organizations updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate Organizations response
+message BatchUpdateOrganizationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Organizations data = 4;
+}
+
+// BatchDelete Organizations request
+message BatchDeleteOrganizationsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Organizations response
+message BatchDeleteOrganizationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Organizations data = 4;
+}
+
+// Delete Organizations request
+message DeleteOrganizationsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete Organizations response
+message DeleteOrganizationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Organizations data = 4;
+}
+
+// BatchInsert Organizations request
+message BatchInsertOrganizationsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated Organizations organizations = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Organizations response
+message BatchInsertOrganizationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Organizations data = 4;
+}
+
+// Upsert Organizations request
+message UpsertOrganizationsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    Organizations data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert Organizations response
+message UpsertOrganizationsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Organizations data = 4;
+}
+
+// Create OrganizationContacts request
+message CreateOrganizationContactsRequest {
+  OrganizationContacts organization_contacts = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create OrganizationContacts response
+message CreateOrganizationContactsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  OrganizationContacts data = 4;
+}
+
+// Get OrganizationContacts request
+message GetOrganizationContactsRequest {
+  string id = 1;
+}
+
+// Get OrganizationContacts response
+message GetOrganizationContactsResponse {
+  bool success = 1;
+  string message = 2;
+  OrganizationContacts data = 3;
+}
+
+// Update OrganizationContacts request
+message UpdateOrganizationContactsRequest {
+  OrganizationContacts organization_contact = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update OrganizationContacts response
+message UpdateOrganizationContactsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  OrganizationContacts data = 4;
+}
+
+// BatchUpdate OrganizationContacts request
+message BatchUpdateOrganizationContactsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  OrganizationContacts updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate OrganizationContacts response
+message BatchUpdateOrganizationContactsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated OrganizationContacts data = 4;
+}
+
+// BatchDelete OrganizationContacts request
+message BatchDeleteOrganizationContactsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete OrganizationContacts response
+message BatchDeleteOrganizationContactsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  OrganizationContacts data = 4;
+}
+
+// Delete OrganizationContacts request
+message DeleteOrganizationContactsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete OrganizationContacts response
+message DeleteOrganizationContactsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  OrganizationContacts data = 4;
+}
+
+// BatchInsert OrganizationContacts request
+message BatchInsertOrganizationContactsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated OrganizationContacts organization_contacts = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert OrganizationContacts response
+message BatchInsertOrganizationContactsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated OrganizationContacts data = 4;
+}
+
+// Upsert OrganizationContacts request
+message UpsertOrganizationContactsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    OrganizationContacts data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert OrganizationContacts response
+message UpsertOrganizationContactsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated OrganizationContacts data = 4;
+}
+
 // Create OrganizationAccounts request
 message CreateOrganizationAccountsRequest {
   OrganizationAccounts organization_accounts = 1;
@@ -2829,69 +3344,69 @@ message UpsertOrganizationAccountsResponse {
   repeated OrganizationAccounts data = 4;
 }
 
-// Create DeviceGroupSettings request
-message CreateDeviceGroupSettingsRequest {
-  DeviceGroupSettings device_group_settings = 1;
+// Create Contacts request
+message CreateContactsRequest {
+  Contacts contacts = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
   string entity_prefix = 4; // Entity prefix code
 }
 
-// Create DeviceGroupSettings response
-message CreateDeviceGroupSettingsResponse {
+// Create Contacts response
+message CreateContactsResponse {
   bool success = 1;
   int32 count = 2;
   string message = 3;
-  DeviceGroupSettings data = 4;
+  Contacts data = 4;
 }
 
-// Get DeviceGroupSettings request
-message GetDeviceGroupSettingsRequest {
+// Get Contacts request
+message GetContactsRequest {
   string id = 1;
 }
 
-// Get DeviceGroupSettings response
-message GetDeviceGroupSettingsResponse {
+// Get Contacts response
+message GetContactsResponse {
   bool success = 1;
   string message = 2;
-  DeviceGroupSettings data = 3;
+  Contacts data = 3;
 }
 
-// Update DeviceGroupSettings request
-message UpdateDeviceGroupSettingsRequest {
-  DeviceGroupSettings device_group_setting = 1;
+// Update Contacts request
+message UpdateContactsRequest {
+  Contacts contact = 1;
   UpdateParams params = 2;
   UpdateQuery query = 3;
 }
 
-// Update DeviceGroupSettings response
-message UpdateDeviceGroupSettingsResponse {
+// Update Contacts response
+message UpdateContactsResponse {
   bool success = 1;
   int32 count = 2;
   string message = 3;
-  DeviceGroupSettings data = 4;
+  Contacts data = 4;
 }
 
-// BatchUpdate DeviceGroupSettings request
-message BatchUpdateDeviceGroupSettingsRequest {
+// BatchUpdate Contacts request
+message BatchUpdateContactsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
     repeated AdvanceFilter advance_filters = 1;
-  DeviceGroupSettings updates = 2;
+  Contacts updates = 2;
   }
   BatchUpdateBody body = 2;
 }
 
-// BatchUpdate DeviceGroupSettings response
-message BatchUpdateDeviceGroupSettingsResponse {
+// BatchUpdate Contacts response
+message BatchUpdateContactsResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated DeviceGroupSettings data = 4;
+  repeated Contacts data = 4;
 }
 
-// BatchDelete DeviceGroupSettings request
-message BatchDeleteDeviceGroupSettingsRequest {
+// BatchDelete Contacts request
+message BatchDeleteContactsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
     repeated AdvanceFilter advance_filters = 1;
@@ -2899,65 +3414,327 @@ message BatchDeleteDeviceGroupSettingsRequest {
   BatchDeleteBody body = 2;
 }
 
-// BatchDelete DeviceGroupSettings response
-message BatchDeleteDeviceGroupSettingsResponse {
+// BatchDelete Contacts response
+message BatchDeleteContactsResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  DeviceGroupSettings data = 4;
+  Contacts data = 4;
 }
 
-// Delete DeviceGroupSettings request
-message DeleteDeviceGroupSettingsRequest {
+// Delete Contacts request
+message DeleteContactsRequest {
   DeleteParams params = 1;
   DeleteQuery query = 2;
 }
 
-// Delete DeviceGroupSettings response
-message DeleteDeviceGroupSettingsResponse {
+// Delete Contacts response
+message DeleteContactsResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  DeviceGroupSettings data = 4;
+  Contacts data = 4;
 }
 
-// BatchInsert DeviceGroupSettings request
-message BatchInsertDeviceGroupSettingsRequest {
+// BatchInsert Contacts request
+message BatchInsertContactsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
     string entity_prefix = 1;
-    repeated DeviceGroupSettings device_group_settings = 2;
+    repeated Contacts contacts = 2;
   }
   BatchBody body = 3;
 }
 
-// BatchInsert DeviceGroupSettings response
-message BatchInsertDeviceGroupSettingsResponse {
+// BatchInsert Contacts response
+message BatchInsertContactsResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated DeviceGroupSettings data = 4;
+  repeated Contacts data = 4;
 }
 
-// Upsert DeviceGroupSettings request
-message UpsertDeviceGroupSettingsRequest {
+// Upsert Contacts request
+message UpsertContactsRequest {
   UpsertParams params = 1;
   UpsertQuery query = 2;
   message UpsertBody {
     repeated string conflict_columns = 1;
-    DeviceGroupSettings data = 2;
+    Contacts data = 2;
     string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
 
-// Upsert DeviceGroupSettings response
-message UpsertDeviceGroupSettingsResponse {
+// Upsert Contacts response
+message UpsertContactsResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated DeviceGroupSettings data = 4;
+  repeated Contacts data = 4;
+}
+
+// Create ContactPhoneNumbers request
+message CreateContactPhoneNumbersRequest {
+  ContactPhoneNumbers contact_phone_numbers = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create ContactPhoneNumbers response
+message CreateContactPhoneNumbersResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  ContactPhoneNumbers data = 4;
+}
+
+// Get ContactPhoneNumbers request
+message GetContactPhoneNumbersRequest {
+  string id = 1;
+}
+
+// Get ContactPhoneNumbers response
+message GetContactPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  ContactPhoneNumbers data = 3;
+}
+
+// Update ContactPhoneNumbers request
+message UpdateContactPhoneNumbersRequest {
+  ContactPhoneNumbers contact_phone_number = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update ContactPhoneNumbers response
+message UpdateContactPhoneNumbersResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  ContactPhoneNumbers data = 4;
+}
+
+// BatchUpdate ContactPhoneNumbers request
+message BatchUpdateContactPhoneNumbersRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  ContactPhoneNumbers updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate ContactPhoneNumbers response
+message BatchUpdateContactPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated ContactPhoneNumbers data = 4;
+}
+
+// BatchDelete ContactPhoneNumbers request
+message BatchDeleteContactPhoneNumbersRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete ContactPhoneNumbers response
+message BatchDeleteContactPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  ContactPhoneNumbers data = 4;
+}
+
+// Delete ContactPhoneNumbers request
+message DeleteContactPhoneNumbersRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete ContactPhoneNumbers response
+message DeleteContactPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  ContactPhoneNumbers data = 4;
+}
+
+// BatchInsert ContactPhoneNumbers request
+message BatchInsertContactPhoneNumbersRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated ContactPhoneNumbers contact_phone_numbers = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert ContactPhoneNumbers response
+message BatchInsertContactPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated ContactPhoneNumbers data = 4;
+}
+
+// Upsert ContactPhoneNumbers request
+message UpsertContactPhoneNumbersRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    ContactPhoneNumbers data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert ContactPhoneNumbers response
+message UpsertContactPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated ContactPhoneNumbers data = 4;
+}
+
+// Create ContactEmails request
+message CreateContactEmailsRequest {
+  ContactEmails contact_emails = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create ContactEmails response
+message CreateContactEmailsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  ContactEmails data = 4;
+}
+
+// Get ContactEmails request
+message GetContactEmailsRequest {
+  string id = 1;
+}
+
+// Get ContactEmails response
+message GetContactEmailsResponse {
+  bool success = 1;
+  string message = 2;
+  ContactEmails data = 3;
+}
+
+// Update ContactEmails request
+message UpdateContactEmailsRequest {
+  ContactEmails contact_email = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update ContactEmails response
+message UpdateContactEmailsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  ContactEmails data = 4;
+}
+
+// BatchUpdate ContactEmails request
+message BatchUpdateContactEmailsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  ContactEmails updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate ContactEmails response
+message BatchUpdateContactEmailsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated ContactEmails data = 4;
+}
+
+// BatchDelete ContactEmails request
+message BatchDeleteContactEmailsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete ContactEmails response
+message BatchDeleteContactEmailsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  ContactEmails data = 4;
+}
+
+// Delete ContactEmails request
+message DeleteContactEmailsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete ContactEmails response
+message DeleteContactEmailsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  ContactEmails data = 4;
+}
+
+// BatchInsert ContactEmails request
+message BatchInsertContactEmailsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated ContactEmails contact_emails = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert ContactEmails response
+message BatchInsertContactEmailsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated ContactEmails data = 4;
+}
+
+// Upsert ContactEmails request
+message UpsertContactEmailsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    ContactEmails data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert ContactEmails response
+message UpsertContactEmailsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated ContactEmails data = 4;
 }
 
 // Store service definition with CRUD operations
@@ -3346,6 +4123,78 @@ service StoreService {
   // Upsert a WallguardLogs (create if not exists, update if exists)
   rpc UpsertWallguardLogs(UpsertWallguardLogsRequest) returns (UpsertWallguardLogsResponse);
 
+  // Create a new DeviceGroupSettings
+  rpc CreateDeviceGroupSettings(CreateDeviceGroupSettingsRequest) returns (CreateDeviceGroupSettingsResponse);
+
+  // Get a DeviceGroupSettings by ID
+  rpc GetDeviceGroupSettings(GetDeviceGroupSettingsRequest) returns (GetDeviceGroupSettingsResponse);
+
+  // Update an existing DeviceGroupSettings
+  rpc UpdateDeviceGroupSettings(UpdateDeviceGroupSettingsRequest) returns (UpdateDeviceGroupSettingsResponse);
+
+  // Delete a DeviceGroupSettings by ID
+  rpc DeleteDeviceGroupSettings(DeleteDeviceGroupSettingsRequest) returns (DeleteDeviceGroupSettingsResponse);
+
+  // Batch insert multiple DeviceGroupSettingss
+  rpc BatchInsertDeviceGroupSettings(BatchInsertDeviceGroupSettingsRequest) returns (BatchInsertDeviceGroupSettingsResponse);
+
+  // Batch update multiple DeviceGroupSettingss based on filters
+  rpc BatchUpdateDeviceGroupSettings(BatchUpdateDeviceGroupSettingsRequest) returns (BatchUpdateDeviceGroupSettingsResponse);
+
+  // Batch delete multiple DeviceGroupSettingss based on filters
+  rpc BatchDeleteDeviceGroupSettings(BatchDeleteDeviceGroupSettingsRequest) returns (BatchDeleteDeviceGroupSettingsResponse);
+
+  // Upsert a DeviceGroupSettings (create if not exists, update if exists)
+  rpc UpsertDeviceGroupSettings(UpsertDeviceGroupSettingsRequest) returns (UpsertDeviceGroupSettingsResponse);
+
+  // Create a new Organizations
+  rpc CreateOrganizations(CreateOrganizationsRequest) returns (CreateOrganizationsResponse);
+
+  // Get a Organizations by ID
+  rpc GetOrganizations(GetOrganizationsRequest) returns (GetOrganizationsResponse);
+
+  // Update an existing Organizations
+  rpc UpdateOrganizations(UpdateOrganizationsRequest) returns (UpdateOrganizationsResponse);
+
+  // Delete a Organizations by ID
+  rpc DeleteOrganizations(DeleteOrganizationsRequest) returns (DeleteOrganizationsResponse);
+
+  // Batch insert multiple Organizationss
+  rpc BatchInsertOrganizations(BatchInsertOrganizationsRequest) returns (BatchInsertOrganizationsResponse);
+
+  // Batch update multiple Organizationss based on filters
+  rpc BatchUpdateOrganizations(BatchUpdateOrganizationsRequest) returns (BatchUpdateOrganizationsResponse);
+
+  // Batch delete multiple Organizationss based on filters
+  rpc BatchDeleteOrganizations(BatchDeleteOrganizationsRequest) returns (BatchDeleteOrganizationsResponse);
+
+  // Upsert a Organizations (create if not exists, update if exists)
+  rpc UpsertOrganizations(UpsertOrganizationsRequest) returns (UpsertOrganizationsResponse);
+
+  // Create a new OrganizationContacts
+  rpc CreateOrganizationContacts(CreateOrganizationContactsRequest) returns (CreateOrganizationContactsResponse);
+
+  // Get a OrganizationContacts by ID
+  rpc GetOrganizationContacts(GetOrganizationContactsRequest) returns (GetOrganizationContactsResponse);
+
+  // Update an existing OrganizationContacts
+  rpc UpdateOrganizationContacts(UpdateOrganizationContactsRequest) returns (UpdateOrganizationContactsResponse);
+
+  // Delete a OrganizationContacts by ID
+  rpc DeleteOrganizationContacts(DeleteOrganizationContactsRequest) returns (DeleteOrganizationContactsResponse);
+
+  // Batch insert multiple OrganizationContactss
+  rpc BatchInsertOrganizationContacts(BatchInsertOrganizationContactsRequest) returns (BatchInsertOrganizationContactsResponse);
+
+  // Batch update multiple OrganizationContactss based on filters
+  rpc BatchUpdateOrganizationContacts(BatchUpdateOrganizationContactsRequest) returns (BatchUpdateOrganizationContactsResponse);
+
+  // Batch delete multiple OrganizationContactss based on filters
+  rpc BatchDeleteOrganizationContacts(BatchDeleteOrganizationContactsRequest) returns (BatchDeleteOrganizationContactsResponse);
+
+  // Upsert a OrganizationContacts (create if not exists, update if exists)
+  rpc UpsertOrganizationContacts(UpsertOrganizationContactsRequest) returns (UpsertOrganizationContactsResponse);
+
   // Create a new OrganizationAccounts
   rpc CreateOrganizationAccounts(CreateOrganizationAccountsRequest) returns (CreateOrganizationAccountsResponse);
 
@@ -3370,28 +4219,76 @@ service StoreService {
   // Upsert a OrganizationAccounts (create if not exists, update if exists)
   rpc UpsertOrganizationAccounts(UpsertOrganizationAccountsRequest) returns (UpsertOrganizationAccountsResponse);
 
-  // Create a new DeviceGroupSettings
-  rpc CreateDeviceGroupSettings(CreateDeviceGroupSettingsRequest) returns (CreateDeviceGroupSettingsResponse);
+  // Create a new Contacts
+  rpc CreateContacts(CreateContactsRequest) returns (CreateContactsResponse);
 
-  // Get a DeviceGroupSettings by ID
-  rpc GetDeviceGroupSettings(GetDeviceGroupSettingsRequest) returns (GetDeviceGroupSettingsResponse);
+  // Get a Contacts by ID
+  rpc GetContacts(GetContactsRequest) returns (GetContactsResponse);
 
-  // Update an existing DeviceGroupSettings
-  rpc UpdateDeviceGroupSettings(UpdateDeviceGroupSettingsRequest) returns (UpdateDeviceGroupSettingsResponse);
+  // Update an existing Contacts
+  rpc UpdateContacts(UpdateContactsRequest) returns (UpdateContactsResponse);
 
-  // Delete a DeviceGroupSettings by ID
-  rpc DeleteDeviceGroupSettings(DeleteDeviceGroupSettingsRequest) returns (DeleteDeviceGroupSettingsResponse);
+  // Delete a Contacts by ID
+  rpc DeleteContacts(DeleteContactsRequest) returns (DeleteContactsResponse);
 
-  // Batch insert multiple DeviceGroupSettingss
-  rpc BatchInsertDeviceGroupSettings(BatchInsertDeviceGroupSettingsRequest) returns (BatchInsertDeviceGroupSettingsResponse);
+  // Batch insert multiple Contactss
+  rpc BatchInsertContacts(BatchInsertContactsRequest) returns (BatchInsertContactsResponse);
 
-  // Batch update multiple DeviceGroupSettingss based on filters
-  rpc BatchUpdateDeviceGroupSettings(BatchUpdateDeviceGroupSettingsRequest) returns (BatchUpdateDeviceGroupSettingsResponse);
+  // Batch update multiple Contactss based on filters
+  rpc BatchUpdateContacts(BatchUpdateContactsRequest) returns (BatchUpdateContactsResponse);
 
-  // Batch delete multiple DeviceGroupSettingss based on filters
-  rpc BatchDeleteDeviceGroupSettings(BatchDeleteDeviceGroupSettingsRequest) returns (BatchDeleteDeviceGroupSettingsResponse);
+  // Batch delete multiple Contactss based on filters
+  rpc BatchDeleteContacts(BatchDeleteContactsRequest) returns (BatchDeleteContactsResponse);
 
-  // Upsert a DeviceGroupSettings (create if not exists, update if exists)
-  rpc UpsertDeviceGroupSettings(UpsertDeviceGroupSettingsRequest) returns (UpsertDeviceGroupSettingsResponse);
+  // Upsert a Contacts (create if not exists, update if exists)
+  rpc UpsertContacts(UpsertContactsRequest) returns (UpsertContactsResponse);
+
+  // Create a new ContactPhoneNumbers
+  rpc CreateContactPhoneNumbers(CreateContactPhoneNumbersRequest) returns (CreateContactPhoneNumbersResponse);
+
+  // Get a ContactPhoneNumbers by ID
+  rpc GetContactPhoneNumbers(GetContactPhoneNumbersRequest) returns (GetContactPhoneNumbersResponse);
+
+  // Update an existing ContactPhoneNumbers
+  rpc UpdateContactPhoneNumbers(UpdateContactPhoneNumbersRequest) returns (UpdateContactPhoneNumbersResponse);
+
+  // Delete a ContactPhoneNumbers by ID
+  rpc DeleteContactPhoneNumbers(DeleteContactPhoneNumbersRequest) returns (DeleteContactPhoneNumbersResponse);
+
+  // Batch insert multiple ContactPhoneNumberss
+  rpc BatchInsertContactPhoneNumbers(BatchInsertContactPhoneNumbersRequest) returns (BatchInsertContactPhoneNumbersResponse);
+
+  // Batch update multiple ContactPhoneNumberss based on filters
+  rpc BatchUpdateContactPhoneNumbers(BatchUpdateContactPhoneNumbersRequest) returns (BatchUpdateContactPhoneNumbersResponse);
+
+  // Batch delete multiple ContactPhoneNumberss based on filters
+  rpc BatchDeleteContactPhoneNumbers(BatchDeleteContactPhoneNumbersRequest) returns (BatchDeleteContactPhoneNumbersResponse);
+
+  // Upsert a ContactPhoneNumbers (create if not exists, update if exists)
+  rpc UpsertContactPhoneNumbers(UpsertContactPhoneNumbersRequest) returns (UpsertContactPhoneNumbersResponse);
+
+  // Create a new ContactEmails
+  rpc CreateContactEmails(CreateContactEmailsRequest) returns (CreateContactEmailsResponse);
+
+  // Get a ContactEmails by ID
+  rpc GetContactEmails(GetContactEmailsRequest) returns (GetContactEmailsResponse);
+
+  // Update an existing ContactEmails
+  rpc UpdateContactEmails(UpdateContactEmailsRequest) returns (UpdateContactEmailsResponse);
+
+  // Delete a ContactEmails by ID
+  rpc DeleteContactEmails(DeleteContactEmailsRequest) returns (DeleteContactEmailsResponse);
+
+  // Batch insert multiple ContactEmailss
+  rpc BatchInsertContactEmails(BatchInsertContactEmailsRequest) returns (BatchInsertContactEmailsResponse);
+
+  // Batch update multiple ContactEmailss based on filters
+  rpc BatchUpdateContactEmails(BatchUpdateContactEmailsRequest) returns (BatchUpdateContactEmailsResponse);
+
+  // Batch delete multiple ContactEmailss based on filters
+  rpc BatchDeleteContactEmails(BatchDeleteContactEmailsRequest) returns (BatchDeleteContactEmailsResponse);
+
+  // Upsert a ContactEmails (create if not exists, update if exists)
+  rpc UpsertContactEmails(UpsertContactEmailsRequest) returns (UpsertContactEmailsResponse);
 
 }
