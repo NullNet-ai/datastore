@@ -1,8 +1,22 @@
 use crate::{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_with_timestamp_match};
+use crate::models::address_model::AddressModel;
+use crate::models::app_firewall_model::AppFirewallModel;
+use crate::models::appguard_log_model::AppguardLogModel;
+use crate::models::device_alias_model::DeviceAliasModel;
+use crate::models::device_configuration_model::DeviceConfigurationModel;
+use crate::models::device_interface_address_model::DeviceInterfaceAddressModel;
+use crate::models::device_interface_model::DeviceInterfaceModel;
+use crate::models::device_remote_access_session_model::DeviceRemoteAccessSessionModel;
+use crate::models::device_rule_model::DeviceRuleModel;
 use crate::models::packet_model::PacketModel;
-use crate::models::temp_packet_model::TempPacketModel;
 use crate::models::connection_model::ConnectionModel;
 use crate::models::device_ssh_key_model::DeviceSshKeyModel;
+use crate::models::device_model::DeviceModel;
+use crate::models::ip_info_model::IpInfoModel;
+use crate::models::resolution_model::ResolutionModel;
+use crate::models::wallguard_log_model::WallguardLogModel;
+use crate::models::organization_account_model::OrganizationAccountModel;
+use crate::models::device_group_setting_model::DeviceGroupSettingModel;
 use crate::schema::schema;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
@@ -18,20 +32,48 @@ use crate::models::counter_model::CounterModel;
 
 #[derive(Debug)]
 pub enum Table {
+    Addresses,
+    AppFirewalls,
+    AppguardLogs,
+    DeviceAliases,
+    DeviceConfigurations,
+    DeviceInterfaceAddresses,
+    DeviceInterfaces,
+    DeviceRemoteAccessSessions,
+    DeviceRules,
     Packets,
-    TempPackets,
     Connections,
     DeviceSshKeys,
+    Devices,
+    IpInfos,
+    Resolutions,
+    WallguardLogs,
+    OrganizationAccounts,
+    DeviceGroupSettings,
     // Add other tables here
 }
 
 impl Table {
     pub fn from_str(name: &str) -> Option<Self> {
         match name {
+            "addresses" => Some(Table::Addresses),
+            "app_firewalls" => Some(Table::AppFirewalls),
+            "appguard_logs" => Some(Table::AppguardLogs),
+            "device_aliases" => Some(Table::DeviceAliases),
+            "device_configurations" => Some(Table::DeviceConfigurations),
+            "device_interface_addresses" => Some(Table::DeviceInterfaceAddresses),
+            "device_interfaces" => Some(Table::DeviceInterfaces),
+            "device_remote_access_sessions" => Some(Table::DeviceRemoteAccessSessions),
+            "device_rules" => Some(Table::DeviceRules),
             "packets" => Some(Table::Packets),
-            "temp_packets" => Some(Table::TempPackets),
             "connections" => Some(Table::Connections),
             "device_ssh_keys" => Some(Table::DeviceSshKeys),
+            "devices" => Some(Table::Devices),
+            "ip_infos" => Some(Table::IpInfos),
+            "resolutions" => Some(Table::Resolutions),
+            "wallguard_logs" => Some(Table::WallguardLogs),
+            "organization_accounts" => Some(Table::OrganizationAccounts),
+            "device_group_settings" => Some(Table::DeviceGroupSettings),
             // Add other tables here
             _ => None,
         }
@@ -59,7 +101,7 @@ impl Table {
         conn: &mut AsyncPgConnection,
         id: &str,
     ) -> Result<Option<String>, DieselError> {
-        generate_hypertable_timestamp_match!(self, conn, id, Packets, TempPackets, Connections)
+        generate_hypertable_timestamp_match!(self, conn, id, Packets, Connections)
     }
 
     pub async fn insert_record(
@@ -75,7 +117,7 @@ impl Table {
             conn,
             record,
             request,
-            Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, OrganizationAccounts, OrganizationAccountModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -88,7 +130,7 @@ impl Table {
             self,
             conn,
             id,
-            Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, OrganizationAccounts, OrganizationAccountModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -101,7 +143,7 @@ impl Table {
             self,
             conn,
             record,
-            Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, OrganizationAccounts, OrganizationAccountModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 
@@ -114,45 +156,45 @@ impl Table {
             self,
             conn,
             record,
-            Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel // Add other tables and their models here as needed
+            Addresses, AddressModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, DeviceAliases, DeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, Packets, PacketModel, Connections, ConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, OrganizationAccounts, OrganizationAccountModel, DeviceGroupSettings, DeviceGroupSettingModel // Add other tables and their models here as needed
         )
     }
 }
-    pub async fn generate_code(
-        table: &str,
-        prefix_param: &str,
-        default_code_param: i32,
-    ) -> Result<String, DieselError> {
+pub async fn generate_code(
+    table: &str,
+    prefix_param: &str,
+    default_code_param: i32,
+) -> Result<String, DieselError> {
+    let mut conn = db::get_async_connection().await;
 
-        let mut conn = db::get_async_connection().await;
+    let new_counter = CounterModel {
+        entity: table.to_string(),
+        counter: 1,
+        prefix: prefix_param.to_string(),
+        default_code: default_code_param,
+    };
 
-        let new_counter = CounterModel {
-            entity: table.to_string(),
-            counter: 1,
-            prefix: prefix_param.to_string(),
-            default_code: default_code_param,
-        };
-        
-        // Attempt the insert with conflict handling
-        let result = diesel::insert_into(schema::counters::dsl::counters::table())
+    // Attempt the insert with conflict handling
+    let result = diesel::insert_into(schema::counters::dsl::counters::table())
         .values(&new_counter)
-            .on_conflict(schema::counters::entity)
-            .do_update()
-            .set(schema::counters::counter.eq(schema::counters::counter + 1))
-            .returning((schema::counters::prefix, schema::counters::default_code, schema::counters::counter))
-            .get_result::<(String, i32, i32)>(&mut conn).await
-            .map_err(|e| {
-                log::error!("Error generating code: {}", e);
-                e
-            })?;
-        
-        // Format the code
-        let (prefix_val, default_code_val, counter_val) = result;
-        let code = format!(
-            "{}{}",
-            prefix_val,
-            default_code_val + counter_val
-        );
-        
-        Ok(code)
-    }
+        .on_conflict(schema::counters::entity)
+        .do_update()
+        .set(schema::counters::counter.eq(schema::counters::counter + 1))
+        .returning((
+            schema::counters::prefix,
+            schema::counters::default_code,
+            schema::counters::counter,
+        ))
+        .get_result::<(String, i32, i32)>(&mut conn)
+        .await
+        .map_err(|e| {
+            log::error!("Error generating code: {}", e);
+            e
+        })?;
+
+    // Format the code
+    let (prefix_val, default_code_val, counter_val) = result;
+    let code = format!("{}{}", prefix_val, default_code_val + counter_val);
+
+    Ok(code)
+}

@@ -15,7 +15,7 @@ use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
 use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record};
 use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
 use crate::{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method};
-use crate::generated::store::{Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, UpsertPacketsRequest, UpsertPacketsResponse, TempPackets, CreateTempPacketsRequest, CreateTempPacketsResponse, GetTempPacketsRequest, GetTempPacketsResponse, UpdateTempPacketsRequest, UpdateTempPacketsResponse, DeleteTempPacketsRequest, DeleteTempPacketsResponse, BatchInsertTempPacketsRequest, BatchInsertTempPacketsResponse, BatchUpdateTempPacketsRequest, BatchUpdateTempPacketsResponse, BatchDeleteTempPacketsRequest, BatchDeleteTempPacketsResponse, UpsertTempPacketsRequest, UpsertTempPacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, UpsertConnectionsRequest, UpsertConnectionsResponse, DeviceSshKeys, CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, BatchInsertDeviceSshKeysRequest, BatchInsertDeviceSshKeysResponse, BatchUpdateDeviceSshKeysRequest, BatchUpdateDeviceSshKeysResponse, BatchDeleteDeviceSshKeysRequest, BatchDeleteDeviceSshKeysResponse, UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse};
+use crate::generated::store::{Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, UpsertPacketsRequest, UpsertPacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, UpsertConnectionsRequest, UpsertConnectionsResponse, DeviceSshKeys, CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, BatchInsertDeviceSshKeysRequest, BatchInsertDeviceSshKeysResponse, BatchUpdateDeviceSshKeysRequest, BatchUpdateDeviceSshKeysResponse, BatchDeleteDeviceSshKeysRequest, BatchDeleteDeviceSshKeysResponse, UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse};
 pub struct GrpcController {}
 
 impl GrpcController {
@@ -42,6 +42,141 @@ impl GrpcController {
 
 #[tonic::async_trait]
 impl StoreService for GrpcController {
+    // CRUD methods for addresses
+    generate_create_method!(addresses);
+    generate_update_method!(addresses, address);
+    generate_batch_insert_method!(addresses);
+    generate_batch_update_method!(addresses);
+    generate_get_method!(addresses);
+    generate_delete_method!(addresses);
+    generate_batch_delete_method!(addresses);
+    generate_upsert_method!(addresses);
+    // CRUD methods for app_firewalls
+    generate_create_method!(app_firewalls);
+    generate_update_method!(app_firewalls, app_firewall);
+    generate_batch_insert_method!(app_firewalls);
+    generate_batch_update_method!(app_firewalls);
+    generate_get_method!(app_firewalls);
+    generate_delete_method!(app_firewalls);
+    generate_batch_delete_method!(app_firewalls);
+    generate_upsert_method!(app_firewalls);
+    // CRUD methods for appguard_logs
+    generate_create_method!(appguard_logs);
+    generate_update_method!(appguard_logs, appguard_log);
+    generate_batch_insert_method!(appguard_logs);
+    generate_batch_update_method!(appguard_logs);
+    generate_get_method!(appguard_logs);
+    generate_delete_method!(appguard_logs);
+    generate_batch_delete_method!(appguard_logs);
+    generate_upsert_method!(appguard_logs);
+    // CRUD methods for temp_appguard_logs
+    generate_create_method!(temp_appguard_logs);
+    generate_update_method!(temp_appguard_logs, temp_appguard_log);
+    generate_batch_insert_method!(temp_appguard_logs);
+    generate_batch_update_method!(temp_appguard_logs);
+    generate_get_method!(temp_appguard_logs);
+    generate_delete_method!(temp_appguard_logs);
+    generate_batch_delete_method!(temp_appguard_logs);
+    generate_upsert_method!(temp_appguard_logs);
+    // CRUD methods for device_aliases
+    generate_create_method!(device_aliases);
+    generate_update_method!(device_aliases, device_alias);
+    generate_batch_insert_method!(device_aliases);
+    generate_batch_update_method!(device_aliases);
+    generate_get_method!(device_aliases);
+    generate_delete_method!(device_aliases);
+    generate_batch_delete_method!(device_aliases);
+    generate_upsert_method!(device_aliases);
+    // CRUD methods for temp_device_aliases
+    generate_create_method!(temp_device_aliases);
+    generate_update_method!(temp_device_aliases, temp_device_alias);
+    generate_batch_insert_method!(temp_device_aliases);
+    generate_batch_update_method!(temp_device_aliases);
+    generate_get_method!(temp_device_aliases);
+    generate_delete_method!(temp_device_aliases);
+    generate_batch_delete_method!(temp_device_aliases);
+    generate_upsert_method!(temp_device_aliases);
+    // CRUD methods for device_configurations
+    generate_create_method!(device_configurations);
+    generate_update_method!(device_configurations, device_configuration);
+    generate_batch_insert_method!(device_configurations);
+    generate_batch_update_method!(device_configurations);
+    generate_get_method!(device_configurations);
+    generate_delete_method!(device_configurations);
+    generate_batch_delete_method!(device_configurations);
+    generate_upsert_method!(device_configurations);
+    // CRUD methods for device_interface_addresses
+    generate_create_method!(device_interface_addresses);
+    generate_update_method!(device_interface_addresses, device_interface_address);
+    generate_batch_insert_method!(device_interface_addresses);
+    generate_batch_update_method!(device_interface_addresses);
+    generate_get_method!(device_interface_addresses);
+    generate_delete_method!(device_interface_addresses);
+    generate_batch_delete_method!(device_interface_addresses);
+    generate_upsert_method!(device_interface_addresses);
+    // CRUD methods for temp_device_interface_addresses
+    generate_create_method!(temp_device_interface_addresses);
+    generate_update_method!(temp_device_interface_addresses, temp_device_interface_address);
+    generate_batch_insert_method!(temp_device_interface_addresses);
+    generate_batch_update_method!(temp_device_interface_addresses);
+    generate_get_method!(temp_device_interface_addresses);
+    generate_delete_method!(temp_device_interface_addresses);
+    generate_batch_delete_method!(temp_device_interface_addresses);
+    generate_upsert_method!(temp_device_interface_addresses);
+    // CRUD methods for device_interfaces
+    generate_create_method!(device_interfaces);
+    generate_update_method!(device_interfaces, device_interface);
+    generate_batch_insert_method!(device_interfaces);
+    generate_batch_update_method!(device_interfaces);
+    generate_get_method!(device_interfaces);
+    generate_delete_method!(device_interfaces);
+    generate_batch_delete_method!(device_interfaces);
+    generate_upsert_method!(device_interfaces);
+    // CRUD methods for temp_device_interfaces
+    generate_create_method!(temp_device_interfaces);
+    generate_update_method!(temp_device_interfaces, temp_device_interface);
+    generate_batch_insert_method!(temp_device_interfaces);
+    generate_batch_update_method!(temp_device_interfaces);
+    generate_get_method!(temp_device_interfaces);
+    generate_delete_method!(temp_device_interfaces);
+    generate_batch_delete_method!(temp_device_interfaces);
+    generate_upsert_method!(temp_device_interfaces);
+    // CRUD methods for device_remote_access_sessions
+    generate_create_method!(device_remote_access_sessions);
+    generate_update_method!(device_remote_access_sessions, device_remote_access_session);
+    generate_batch_insert_method!(device_remote_access_sessions);
+    generate_batch_update_method!(device_remote_access_sessions);
+    generate_get_method!(device_remote_access_sessions);
+    generate_delete_method!(device_remote_access_sessions);
+    generate_batch_delete_method!(device_remote_access_sessions);
+    generate_upsert_method!(device_remote_access_sessions);
+    // CRUD methods for temp_device_remote_access_sessions
+    generate_create_method!(temp_device_remote_access_sessions);
+    generate_update_method!(temp_device_remote_access_sessions, temp_device_remote_access_session);
+    generate_batch_insert_method!(temp_device_remote_access_sessions);
+    generate_batch_update_method!(temp_device_remote_access_sessions);
+    generate_get_method!(temp_device_remote_access_sessions);
+    generate_delete_method!(temp_device_remote_access_sessions);
+    generate_batch_delete_method!(temp_device_remote_access_sessions);
+    generate_upsert_method!(temp_device_remote_access_sessions);
+    // CRUD methods for device_rules
+    generate_create_method!(device_rules);
+    generate_update_method!(device_rules, device_rule);
+    generate_batch_insert_method!(device_rules);
+    generate_batch_update_method!(device_rules);
+    generate_get_method!(device_rules);
+    generate_delete_method!(device_rules);
+    generate_batch_delete_method!(device_rules);
+    generate_upsert_method!(device_rules);
+    // CRUD methods for temp_device_rules
+    generate_create_method!(temp_device_rules);
+    generate_update_method!(temp_device_rules, temp_device_rule);
+    generate_batch_insert_method!(temp_device_rules);
+    generate_batch_update_method!(temp_device_rules);
+    generate_get_method!(temp_device_rules);
+    generate_delete_method!(temp_device_rules);
+    generate_batch_delete_method!(temp_device_rules);
+    generate_upsert_method!(temp_device_rules);
     // CRUD methods for packets
     generate_create_method!(packets);
     generate_update_method!(packets, packet);
@@ -69,6 +204,15 @@ impl StoreService for GrpcController {
     generate_delete_method!(connections);
     generate_batch_delete_method!(connections);
     generate_upsert_method!(connections);
+    // CRUD methods for temp_connections
+    generate_create_method!(temp_connections);
+    generate_update_method!(temp_connections, temp_connection);
+    generate_batch_insert_method!(temp_connections);
+    generate_batch_update_method!(temp_connections);
+    generate_get_method!(temp_connections);
+    generate_delete_method!(temp_connections);
+    generate_batch_delete_method!(temp_connections);
+    generate_upsert_method!(temp_connections);
     // CRUD methods for device_ssh_keys
     generate_create_method!(device_ssh_keys);
     generate_update_method!(device_ssh_keys, device_ssh_key);
@@ -78,6 +222,114 @@ impl StoreService for GrpcController {
     generate_delete_method!(device_ssh_keys);
     generate_batch_delete_method!(device_ssh_keys);
     generate_upsert_method!(device_ssh_keys);
+    // CRUD methods for devices
+    generate_create_method!(devices);
+    generate_update_method!(devices, device);
+    generate_batch_insert_method!(devices);
+    generate_batch_update_method!(devices);
+    generate_get_method!(devices);
+    generate_delete_method!(devices);
+    generate_batch_delete_method!(devices);
+    generate_upsert_method!(devices);
+    // CRUD methods for ip_infos
+    generate_create_method!(ip_infos);
+    generate_update_method!(ip_infos, ip_info);
+    generate_batch_insert_method!(ip_infos);
+    generate_batch_update_method!(ip_infos);
+    generate_get_method!(ip_infos);
+    generate_delete_method!(ip_infos);
+    generate_batch_delete_method!(ip_infos);
+    generate_upsert_method!(ip_infos);
+    // CRUD methods for resolutions
+    generate_create_method!(resolutions);
+    generate_update_method!(resolutions, resolution);
+    generate_batch_insert_method!(resolutions);
+    generate_batch_update_method!(resolutions);
+    generate_get_method!(resolutions);
+    generate_delete_method!(resolutions);
+    generate_batch_delete_method!(resolutions);
+    generate_upsert_method!(resolutions);
+    // CRUD methods for wallguard_logs
+    generate_create_method!(wallguard_logs);
+    generate_update_method!(wallguard_logs, wallguard_log);
+    generate_batch_insert_method!(wallguard_logs);
+    generate_batch_update_method!(wallguard_logs);
+    generate_get_method!(wallguard_logs);
+    generate_delete_method!(wallguard_logs);
+    generate_batch_delete_method!(wallguard_logs);
+    generate_upsert_method!(wallguard_logs);
+    // CRUD methods for temp_wallguard_logs
+    generate_create_method!(temp_wallguard_logs);
+    generate_update_method!(temp_wallguard_logs, temp_wallguard_log);
+    generate_batch_insert_method!(temp_wallguard_logs);
+    generate_batch_update_method!(temp_wallguard_logs);
+    generate_get_method!(temp_wallguard_logs);
+    generate_delete_method!(temp_wallguard_logs);
+    generate_batch_delete_method!(temp_wallguard_logs);
+    generate_upsert_method!(temp_wallguard_logs);
+    // CRUD methods for device_group_settings
+    generate_create_method!(device_group_settings);
+    generate_update_method!(device_group_settings, device_group_setting);
+    generate_batch_insert_method!(device_group_settings);
+    generate_batch_update_method!(device_group_settings);
+    generate_get_method!(device_group_settings);
+    generate_delete_method!(device_group_settings);
+    generate_batch_delete_method!(device_group_settings);
+    generate_upsert_method!(device_group_settings);
+    // CRUD methods for organizations
+    generate_create_method!(organizations);
+    generate_update_method!(organizations, organization);
+    generate_batch_insert_method!(organizations);
+    generate_batch_update_method!(organizations);
+    generate_get_method!(organizations);
+    generate_delete_method!(organizations);
+    generate_batch_delete_method!(organizations);
+    generate_upsert_method!(organizations);
+    // CRUD methods for organization_contacts
+    generate_create_method!(organization_contacts);
+    generate_update_method!(organization_contacts, organization_contact);
+    generate_batch_insert_method!(organization_contacts);
+    generate_batch_update_method!(organization_contacts);
+    generate_get_method!(organization_contacts);
+    generate_delete_method!(organization_contacts);
+    generate_batch_delete_method!(organization_contacts);
+    generate_upsert_method!(organization_contacts);
+    // CRUD methods for organization_accounts
+    generate_create_method!(organization_accounts);
+    generate_update_method!(organization_accounts, organization_account);
+    generate_batch_insert_method!(organization_accounts);
+    generate_batch_update_method!(organization_accounts);
+    generate_get_method!(organization_accounts);
+    generate_delete_method!(organization_accounts);
+    generate_batch_delete_method!(organization_accounts);
+    generate_upsert_method!(organization_accounts);
+    // CRUD methods for contacts
+    generate_create_method!(contacts);
+    generate_update_method!(contacts, contact);
+    generate_batch_insert_method!(contacts);
+    generate_batch_update_method!(contacts);
+    generate_get_method!(contacts);
+    generate_delete_method!(contacts);
+    generate_batch_delete_method!(contacts);
+    generate_upsert_method!(contacts);
+    // CRUD methods for contact_phone_numbers
+    generate_create_method!(contact_phone_numbers);
+    generate_update_method!(contact_phone_numbers, contact_phone_number);
+    generate_batch_insert_method!(contact_phone_numbers);
+    generate_batch_update_method!(contact_phone_numbers);
+    generate_get_method!(contact_phone_numbers);
+    generate_delete_method!(contact_phone_numbers);
+    generate_batch_delete_method!(contact_phone_numbers);
+    generate_upsert_method!(contact_phone_numbers);
+    // CRUD methods for contact_emails
+    generate_create_method!(contact_emails);
+    generate_update_method!(contact_emails, contact_email);
+    generate_batch_insert_method!(contact_emails);
+    generate_batch_update_method!(contact_emails);
+    generate_get_method!(contact_emails);
+    generate_delete_method!(contact_emails);
+    generate_batch_delete_method!(contact_emails);
+    generate_upsert_method!(contact_emails);
 }
 
 // You can add HTTP endpoints to configure or check gRPC status
