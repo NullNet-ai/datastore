@@ -15,7 +15,7 @@ use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
 use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record};
 use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
 use crate::{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method};
-use crate::generated::store::{Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, UpsertPacketsRequest, UpsertPacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, UpsertConnectionsRequest, UpsertConnectionsResponse, DeviceSshKeys, CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, BatchInsertDeviceSshKeysRequest, BatchInsertDeviceSshKeysResponse, BatchUpdateDeviceSshKeysRequest, BatchUpdateDeviceSshKeysResponse, BatchDeleteDeviceSshKeysRequest, BatchDeleteDeviceSshKeysResponse, UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse};
+use crate::generated::store::{Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, UpsertPacketsRequest, UpsertPacketsResponse, TempPackets, CreateTempPacketsRequest, CreateTempPacketsResponse, GetTempPacketsRequest, GetTempPacketsResponse, UpdateTempPacketsRequest, UpdateTempPacketsResponse, DeleteTempPacketsRequest, DeleteTempPacketsResponse, BatchInsertTempPacketsRequest, BatchInsertTempPacketsResponse, BatchUpdateTempPacketsRequest, BatchUpdateTempPacketsResponse, BatchDeleteTempPacketsRequest, BatchDeleteTempPacketsResponse, UpsertTempPacketsRequest, UpsertTempPacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, UpsertConnectionsRequest, UpsertConnectionsResponse, DeviceSshKeys, CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, BatchInsertDeviceSshKeysRequest, BatchInsertDeviceSshKeysResponse, BatchUpdateDeviceSshKeysRequest, BatchUpdateDeviceSshKeysResponse, BatchDeleteDeviceSshKeysRequest, BatchDeleteDeviceSshKeysResponse, UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse};
 pub struct GrpcController {}
 
 impl GrpcController {
@@ -51,6 +51,15 @@ impl StoreService for GrpcController {
     generate_delete_method!(packets);
     generate_batch_delete_method!(packets);
     generate_upsert_method!(packets);
+    // CRUD methods for temp_packets
+    generate_create_method!(temp_packets);
+    generate_update_method!(temp_packets, temp_packet);
+    generate_batch_insert_method!(temp_packets);
+    generate_batch_update_method!(temp_packets);
+    generate_get_method!(temp_packets);
+    generate_delete_method!(temp_packets);
+    generate_batch_delete_method!(temp_packets);
+    generate_upsert_method!(temp_packets);
     // CRUD methods for connections
     generate_create_method!(connections);
     generate_update_method!(connections, connection);

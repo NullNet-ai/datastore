@@ -57,7 +57,7 @@ impl BackgroundSyncService {
                 Ok(_) => {
                     log::debug!("Batch sync cycle completed, continuing...");
                     // Add a small delay before starting next cycle
-                    sleep(Duration::from_secs(5)).await;
+                    sleep(Duration::from_secs(1)).await;
                 }
                 Err(e) => {
                     log::error!("Error in background batch sync: {}", e);

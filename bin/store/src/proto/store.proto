@@ -126,6 +126,49 @@ message Packets {
   optional int32 icmp_code = 39;
 }
 
+// TempPackets entity definition
+message TempPackets {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  string id = 17;
+  string timestamp = 18;
+  optional string hypertable_timestamp = 19;
+  optional string interface_name = 20;
+  optional string device_id = 21;
+  optional string source_mac = 22;
+  optional string destination_mac = 23;
+  optional string ether_type = 24;
+  optional string protocol = 25;
+  optional int32 total_length = 26;
+  optional string source_ip = 27;
+  optional string destination_ip = 28;
+  optional int32 source_port = 29;
+  optional int32 destination_port = 30;
+  optional int32 tcp_header_length = 31;
+  optional int64 tcp_sequence_number = 32;
+  optional int64 tcp_acknowledgment_number = 33;
+  optional int32 tcp_data_offset = 34;
+  optional int32 tcp_flags = 35;
+  optional int32 tcp_window_size = 36;
+  optional int32 tcp_urgent_pointer = 37;
+  optional int32 icmp_type = 38;
+  optional int32 icmp_code = 39;
+}
+
 // Connections entity definition
 message Connections {
   optional int32 tombstone = 1;
@@ -314,6 +357,137 @@ message UpsertPacketsResponse {
   string message = 2;
   int32 count = 3;
   repeated Packets data = 4;
+}
+
+// Create TempPackets request
+message CreateTempPacketsRequest {
+  TempPackets temp_packets = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+  string entity_prefix = 4; // Entity prefix code
+}
+
+// Create TempPackets response
+message CreateTempPacketsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  TempPackets data = 4;
+}
+
+// Get TempPackets request
+message GetTempPacketsRequest {
+  string id = 1;
+}
+
+// Get TempPackets response
+message GetTempPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  TempPackets data = 3;
+}
+
+// Update TempPackets request
+message UpdateTempPacketsRequest {
+  TempPackets temp_packet = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update TempPackets response
+message UpdateTempPacketsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  TempPackets data = 4;
+}
+
+// BatchUpdate TempPackets request
+message BatchUpdateTempPacketsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  TempPackets updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate TempPackets response
+message BatchUpdateTempPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TempPackets data = 4;
+}
+
+// BatchDelete TempPackets request
+message BatchDeleteTempPacketsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete TempPackets response
+message BatchDeleteTempPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  TempPackets data = 4;
+}
+
+// Delete TempPackets request
+message DeleteTempPacketsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete TempPackets response
+message DeleteTempPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  TempPackets data = 4;
+}
+
+// BatchInsert TempPackets request
+message BatchInsertTempPacketsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    string entity_prefix = 1;
+    repeated TempPackets temp_packets = 2;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert TempPackets response
+message BatchInsertTempPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TempPackets data = 4;
+}
+
+// Upsert TempPackets request
+message UpsertTempPacketsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    TempPackets data = 2;
+    string entity_prefix = 3;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert TempPackets response
+message UpsertTempPacketsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TempPackets data = 4;
 }
 
 // Create Connections request
@@ -603,6 +777,30 @@ service StoreService {
 
   // Upsert a Packets (create if not exists, update if exists)
   rpc UpsertPackets(UpsertPacketsRequest) returns (UpsertPacketsResponse);
+
+  // Create a new TempPackets
+  rpc CreateTempPackets(CreateTempPacketsRequest) returns (CreateTempPacketsResponse);
+
+  // Get a TempPackets by ID
+  rpc GetTempPackets(GetTempPacketsRequest) returns (GetTempPacketsResponse);
+
+  // Update an existing TempPackets
+  rpc UpdateTempPackets(UpdateTempPacketsRequest) returns (UpdateTempPacketsResponse);
+
+  // Delete a TempPackets by ID
+  rpc DeleteTempPackets(DeleteTempPacketsRequest) returns (DeleteTempPacketsResponse);
+
+  // Batch insert multiple TempPacketss
+  rpc BatchInsertTempPackets(BatchInsertTempPacketsRequest) returns (BatchInsertTempPacketsResponse);
+
+  // Batch update multiple TempPacketss based on filters
+  rpc BatchUpdateTempPackets(BatchUpdateTempPacketsRequest) returns (BatchUpdateTempPacketsResponse);
+
+  // Batch delete multiple TempPacketss based on filters
+  rpc BatchDeleteTempPackets(BatchDeleteTempPacketsRequest) returns (BatchDeleteTempPacketsResponse);
+
+  // Upsert a TempPackets (create if not exists, update if exists)
+  rpc UpsertTempPackets(UpsertTempPacketsRequest) returns (UpsertTempPacketsResponse);
 
   // Create a new Connections
   rpc CreateConnections(CreateConnectionsRequest) returns (CreateConnectionsResponse);

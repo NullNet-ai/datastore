@@ -46,6 +46,53 @@ table! {
     }
 }
 
+
+table! {
+    temp_packets (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+
+
+        id -> Text,
+        timestamp -> Timestamp,
+        hypertable_timestamp -> Nullable<Text>,
+        interface_name -> Nullable<Text>,
+        device_id -> Nullable<Uuid>,
+        source_mac -> Nullable<Text>,
+        destination_mac -> Nullable<Text>,
+        ether_type -> Nullable<Text>,
+        protocol -> Nullable<Text>,
+        total_length -> Nullable<Int4>,
+        source_ip -> Nullable<Inet>,
+        destination_ip -> Nullable<Inet>,
+        source_port -> Nullable<Int4>,
+        destination_port -> Nullable<Int4>,
+        tcp_header_length -> Nullable<Int4>,
+        tcp_sequence_number -> Nullable<BigInt>,
+        tcp_acknowledgment_number -> Nullable<BigInt>,
+        tcp_data_offset -> Nullable<Int4>,
+        tcp_flags -> Nullable<Int4>,
+        tcp_window_size -> Nullable<Int4>,
+        tcp_urgent_pointer -> Nullable<Int4>,
+        icmp_type -> Nullable<Int4>,
+        icmp_code -> Nullable<Int4>,
+    }
+}
+
 table! {
     connections (id, timestamp) {
         tombstone -> Nullable<Int4>,

@@ -3,9 +3,12 @@ use actix_web::{HttpResponse, Responder, web};
 use std::pin::Pin;
 use std::net::SocketAddr;
 use crate::table_enum::Table;
+use crate::utils::utils::table_exists;
 use crate::sync::sync_service::{insert, update};
 use crate::structs::structs::Auth;
 use serde_json::Value;
+use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
+use crate::middlewares::interceptor_chain::InterceptorChain;
 use crate::structs::structs::RequestBody;
 use tonic::{Request, Response, Status, transport::Server};
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
@@ -22,10 +25,17 @@ impl GrpcController {
         let addr: SocketAddr = addr.parse()?;
         let grpc_controller = GrpcController::new();
         println!("gRPC Server listening on {}", addr);
+        // Create a chain of interceptors
+        let auth_interceptor = GrpcAuthInterceptor;
+        let shutdown_interceptor = GrpcShutdownInterceptor;
+        let interceptor_chain = InterceptorChain::new(shutdown_interceptor, auth_interceptor);
         Server::builder()
-            .add_service(StoreServiceServer::with_interceptor(grpc_controller, GrpcAuthInterceptor))
-            .serve(addr)
-            .await?;
+                .add_service(StoreServiceServer::with_interceptor(
+                    grpc_controller,
+                    interceptor_chain
+                ))
+                .serve(addr)
+                .await?;
         Ok(())
     }
 }

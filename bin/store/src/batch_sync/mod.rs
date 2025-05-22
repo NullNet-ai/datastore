@@ -7,7 +7,7 @@ pub mod background_sync;
 use serde_json::{json, Value};
 use std::collections::VecDeque;
 use std::sync::Arc;
-use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::sync::mpsc::{self, Sender, UnboundedReceiver, UnboundedSender};
 use tokio::sync::Mutex;
 
 // Define message types
@@ -33,15 +33,15 @@ pub struct SyncMessage {
 }
 
 // Global senders that can be accessed from anywhere
-static mut INSERT_SENDER: Option<Arc<Sender<SyncMessage>>> = None;
-static mut UPDATE_SENDER: Option<Arc<Sender<SyncMessage>>> = None;
-static mut CODE_ASSIGNMENT_SENDER: Option<Arc<Sender<CodeAssignmentMessage>>> = None;
+static mut INSERT_SENDER: Option<Arc<UnboundedSender<SyncMessage>>> = None;
+static mut UPDATE_SENDER: Option<Arc<UnboundedSender<SyncMessage>>> = None;
+static mut CODE_ASSIGNMENT_SENDER: Option<Arc<UnboundedSender<CodeAssignmentMessage>>> = None;
 
 // Queue service to manage the message queues
 pub struct BatchSyncService {
-    insert_receiver: Arc<Mutex<Receiver<SyncMessage>>>,
-    update_receiver: Arc<Mutex<Receiver<SyncMessage>>>,
-    code_assignment_receiver: Arc<Mutex<Receiver<CodeAssignmentMessage>>>,
+    insert_receiver: Arc<Mutex<UnboundedReceiver<SyncMessage>>>,
+    update_receiver: Arc<Mutex<UnboundedReceiver<SyncMessage>>>,
+    code_assignment_receiver: Arc<Mutex<UnboundedReceiver<CodeAssignmentMessage>>>,
     insert_queue: Arc<Mutex<VecDeque<SyncMessage>>>,
     update_queue: Arc<Mutex<VecDeque<SyncMessage>>>,
     code_assignment_queue: Arc<Mutex<VecDeque<CodeAssignmentMessage>>>,
@@ -51,9 +51,9 @@ impl BatchSyncService {
     // Initialize the queue service
     pub async fn init() -> Result<(), String> {
         // Create channels with buffer sizes
-        let (insert_sender, insert_receiver) = mpsc::channel::<SyncMessage>(1000000);
-        let (update_sender, update_receiver) = mpsc::channel::<SyncMessage>(1000000);
-        let (code_sender, code_receiver) = mpsc::channel::<CodeAssignmentMessage>(1000000);
+        let (insert_sender, insert_receiver) = mpsc::unbounded_channel::<SyncMessage>();
+        let (update_sender, update_receiver) = mpsc::unbounded_channel::<SyncMessage>();
+        let (code_sender, code_receiver) = mpsc::unbounded_channel::<CodeAssignmentMessage>();
 
         // Store the senders in global variables for access from anywhere
         unsafe {
@@ -81,19 +81,18 @@ impl BatchSyncService {
     }
 
     // Get the global insert sender
-    pub fn get_insert_sender() -> Option<Arc<Sender<SyncMessage>>> {
+    pub fn get_insert_sender() -> Option<Arc<UnboundedSender<SyncMessage>>> {
         unsafe { INSERT_SENDER.clone() }
     }
-
+    
     // Get the global update sender
-    pub fn get_update_sender() -> Option<Arc<Sender<SyncMessage>>> {
+    pub fn get_update_sender() -> Option<Arc<UnboundedSender<SyncMessage>>> {
         unsafe { UPDATE_SENDER.clone() }
     }
-
-    pub fn get_code_assignment_sender() -> Option<Arc<Sender<CodeAssignmentMessage>>> {
+    
+    pub fn get_code_assignment_sender() -> Option<Arc<UnboundedSender<CodeAssignmentMessage>>> {
         unsafe { CODE_ASSIGNMENT_SENDER.clone() }
     }
-
     // Start the insert processor
     async fn start_insert_processor(&self) {
         let receiver = self.insert_receiver.clone();
@@ -330,7 +329,6 @@ impl BatchSyncService {
 
         sender
             .send(message)
-            .await
             .map_err(|e| format!("Failed to send insert message: {}", e))
     }
 
@@ -347,7 +345,6 @@ impl BatchSyncService {
 
         sender
             .send(message)
-            .await
             .map_err(|e| format!("Failed to send update message: {}", e))
     }
 
@@ -413,7 +410,6 @@ impl BatchSyncService {
 
         sender
             .send(message)
-            .await
             .map_err(|e| format!("Failed to send code assignment message: {}", e))
     }
 }

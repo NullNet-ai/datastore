@@ -35,6 +35,8 @@ use controllers::store_controller::{
 };
 use env_logger::Env;
 use std::sync::Arc;
+use crate::shutdown_handler::{setup_shutdown_handler};
+use tokio::signal::unix::{signal, SignalKind};
 use std::process;
 
 fn run_build_script() -> std::io::Result<()> {
@@ -63,16 +65,15 @@ async fn main() -> std::io::Result<()> {
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
     let merkle_manager = MerkleManager::instance();
-    shutdown_handler::setup_shutdown_handler().await;
     // if (generate_proto == "true") {
     println!("Generating proto files");
     // proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
     // run_build_script()?;
     // // Run the generator
-    if let Err(e) = grpc_controller_generator::run_generator() {
-        eprintln!("Error: {}", e);
-        process::exit(1);
-    }
+    // if let Err(e) = grpc_controller_generator::run_generator() {
+    //     eprintln!("Error: {}", e);
+    //     process::exit(1);
+    // }
 
     // if let Err(e) = table_enum_generator::run_generator() {
     //     eprintln!("Failed to generate table enum: {}", e);
@@ -115,7 +116,12 @@ async fn main() -> std::io::Result<()> {
     TransactionService::initialize().await;
 
     let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
-
+    tokio::spawn(async move {
+        match GrpcController::init(&grpc_addr).await {
+            Ok(_) => println!("gRPC server started successfully"),
+            Err(e) => eprintln!("Failed to start gRPC server: {}", e),
+        }
+    });
     //init batch sync
     if let Err(e) = BatchSyncService::init().await {
         log::error!("Failed to initialize queue: {}", e);
@@ -131,14 +137,13 @@ async fn main() -> std::io::Result<()> {
 
     let server_url = format!("0.0.0.0:{}", port);
     println!("Server is running on {}", server_url);
-    // ! not using async generator
     tokio::spawn(async {
         if let Err(e) = bg_sync().await {
             log::error!("Error starting background sync: {}", e);
         }
     });
 
-    HttpServer::new(move || {
+   let server= HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .configure(sync_endpoints_controller::configure)
@@ -155,7 +160,35 @@ async fn main() -> std::io::Result<()> {
                     .route("/batch/{table}", web::post().to(batch_insert_records)),
             )
     })
+    .disable_signals()
     .bind(server_url)?
-    .run()
-    .await
+    .run();
+
+    let mut sigint = signal(SignalKind::interrupt())?;
+
+    tokio::select! {
+        _ = server => {},
+        _ = sigint.recv() => {
+            println!("SIGINT received, running custom shutdown...");
+            
+            // Set the shutdown flag
+            shutdown_handler::request_shutdown();
+            
+            // Perform your async cleanup operations
+            if let Err(e) = shutdown_handler::save_data_before_shutdown().await {
+                log::error!("Error during shutdown process: {}", e);
+            } else {
+                log::info!("Successfully saved all data before shutdown");
+            }
+            
+            // Wait for 5 seconds before proceeding with shutdown
+            println!("Waiting 5 seconds before final shutdown...");
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            
+            println!("Shutdown delay complete, exiting now");
+        },
+    }
+
+    Ok(())
+    
 }

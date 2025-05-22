@@ -18,6 +18,7 @@ use hlc;
 use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
+use crate::shutdown_handler;
 use tokio::time::sleep;
 
 use super::transport::transport_driver::PostOpts;
@@ -176,7 +177,7 @@ async fn apply_messages(
 
             // println!("time till insert2 {:?}", time_till_insert2);
 
-            sender.send(updated_msg).await?;
+            sender.send(updated_msg)?;
         }
     }
 
@@ -359,6 +360,9 @@ pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    if shutdown_handler::is_shutdown_requested() {
+        return Ok(());
+    }
     log::debug!("Sync Service Initialized");
 
     // Get endpoints from sync_endpoints_service
@@ -386,7 +390,7 @@ pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
                         if e.to_string().contains("Existing Transaction") {
                             log::error!("Error in bg_sync: Existing Transaction Detected");
                         } else {
-                            log::error!("Error in bg_sync: {}", e);
+                            log::error!("Error in bg_sync1: {}", e);
                         }
                     }
                 }
@@ -414,7 +418,7 @@ fn schedule_next_sync(delay_ms: u64) {
         // Create the connection inside the spawned task and handle the Result
 
         if let Err(e) = bg_sync().await {
-            log::error!("Error in bg_sync: {}", e);
+            log::error!("Error in bg_sync reshedule: {}", e);
         }
     });
 }

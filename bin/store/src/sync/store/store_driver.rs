@@ -45,6 +45,9 @@ pub async fn apply(
     } else {
         if let Ok(int_value) = message.value.parse::<i32>() {
             ColumnValue::Integer(int_value)
+        } 
+         else if let Ok(float_value) = message.value.parse::<f64>() {
+            ColumnValue::Float(float_value)
         } else {
             ColumnValue::String(message.value.clone())
         }
@@ -65,6 +68,9 @@ pub async fn apply(
         }
         ColumnValue::Integer(i) => {
             json_obj.insert(column.to_string(), json!(i));
+        }
+        ColumnValue::Float(f) => {
+            json_obj.insert(column.to_string(), json!(f));
         }
         ColumnValue::None => {
             // Handle None case - insert null value or skip insertion

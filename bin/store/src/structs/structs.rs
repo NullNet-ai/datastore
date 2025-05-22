@@ -61,7 +61,6 @@ impl RequestBody {
             }
         }
         else {
-            println!("Timestamp not found");
             let now = chrono::Utc::now();
             let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f+00:00").to_string();
             self.record["timestamp"] = json!(formatted_timestamp);
@@ -144,6 +143,7 @@ pub enum ColumnValue {
     String(String),
     Array(Vec<String>),
     Integer(i32),
+    Float(f64), 
     Timestamp(chrono::DateTime<chrono::FixedOffset>),
     None,
 }
