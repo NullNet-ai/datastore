@@ -18,7 +18,6 @@ import {
   gt,
   gte,
   ilike,
-  inArray,
   isNotNull,
   isNull,
   like,
@@ -69,6 +68,7 @@ interface IFilterAnalyzer {
   parsed_concatenated_fields?: any;
   type?: string;
   permissions?: Record<string, any>;
+  concatenated_field_expressions?: Record<string, any>;
 }
 interface IContructFilters {
   table: any;
@@ -84,6 +84,7 @@ interface IContructFilters {
   pass_field_key?: string;
   fields?: any[];
   permissions?: Record<string, any>;
+  concatenated_field_expressions?: Record<string, any>
 }
 
 interface IEvaluateFilter {
@@ -94,7 +95,7 @@ interface IEvaluateFilter {
   dz_filter_queue: any;
   entity: string;
   aliased_entities: string[];
-  expressions: any;
+  expressions?: any;
   case_sensitive: boolean;
   parse_as: string;
   encrypted_fields?: string[];
@@ -103,9 +104,10 @@ interface IEvaluateFilter {
   date_format: string;
   pass_field_key?: string;
   permissions?: Record<string, any>;
+  concatenated_field_expressions?: Record<string, any>
 }
 
-interface IAggregationFilerAnalyzer {
+interface IAggregationFilterAnalyzer {
   db: any;
   table_schema: any;
   advance_filters: IAdvanceFilters[];
@@ -115,6 +117,7 @@ interface IAggregationFilerAnalyzer {
   time_zone?: string;
   table?: string;
   date_format?: string;
+  client_db?: any
 }
 export class Utility {
   private static logger = new LoggerService('Utility');
@@ -397,11 +400,11 @@ export class Utility {
     pluck_group_object,
     joins,
     date_format,
-    parsed_concatenated_fields,
     encrypted_fields = [],
     time_zone,
     pass_field_key,
     request_type,
+    concatenated_field_expressions = {},
   }: {
     table: string;
     pluck_object: Record<string, any>;
@@ -415,10 +418,9 @@ export class Utility {
     pass_field_key: string;
     request_type?: string;
     aliased_joined_entities?: Record<string, any>[];
+    concatenated_field_expressions?: Record<string, any>;
   }): Record<string, string[]> => {
     const pluck_object_keys = Object.keys(pluck_object || {});
-    const { fields: concatenated_fields, expressions } =
-      parsed_concatenated_fields;
 
     pluck_object_keys.forEach((key) => {
       //check if the value of key is string then parse it to array
@@ -462,19 +464,23 @@ export class Utility {
       };
     }, {});
 
-    const main_concatenate_selections = expressions[table] || [];
-    if (main_concatenate_selections.length) {
-      main_concatenate_selections.forEach((selection: any) => {
-        const [_expression, field_name] = selection.split(' AS ');
-        mainSelections[field_name.replace(/["\/]/g, '')] = sql.raw(
-          Utility.decryptField({
-            field: selection.replaceAll('joined_', ''),
-            encrypted_fields,
-            table,
-            pass_field_key,
-          }),
-        );
-      });
+    const main_concatenated_entity =
+      concatenated_field_expressions?.[table] || {};
+    if (Object.keys(main_concatenated_entity)?.length) {
+      Object.entries(main_concatenated_entity)?.forEach(
+        ([field_name, concatenated]: any) => {
+          mainSelections[field_name] = sql.raw(
+            `${Utility.decryptField(
+              {
+                field: concatenated.expression,
+                encrypted_fields,
+                table,
+                pass_field_key
+              }
+            )} AS ${field_name}`,
+          );
+        },
+      );
     }
 
     // Handle join entity selections
@@ -509,9 +515,6 @@ export class Utility {
               : prev_join_to?.alias || prev_join_to?.entity;
 
           // Only process if the entity has pluck_object fields
-          const entity_concatenated_fields = concatenated_fields[toAlias] || [];
-          const entity_concatenated_expressions =
-            Utility.removeJoinedKeyword(expressions)?.[toAlias] || [];
           if (pluck_object_keys.includes(toAlias)) {
             const fields = pluck_object[toAlias];
 
@@ -524,29 +527,25 @@ export class Utility {
                 fields,
                 time_zone,
                 pass_field_key,
-                !!entity_concatenated_expressions.length,
-                entity_concatenated_fields[index],
               ),
             );
 
-            const jsonAggConcatenatedFields =
-              entity_concatenated_expressions.map((field, index) =>
-                Utility.formatIfDate(
-                  Utility.decryptField({
-                    field,
-                    encrypted_fields,
-                    table: toEntity,
-                    pass_field_key,
-                  }),
-                  date_format,
-                  toAlias,
-                  fields,
-                  time_zone,
-                  pass_field_key,
-                  !!entity_concatenated_expressions.length,
-                  entity_concatenated_fields[index],
-                ),
-              );
+            const concatenate_fields_selections = Object.entries(
+              concatenated_field_expressions?.[toAlias] ?? {},
+            )?.map(([field_name, concatenated]) =>
+              Utility.formatIfDate(
+                (concatenated as { expression: string; fields: string[] })
+                  .expression as string,
+                date_format,
+                toAlias,
+                fields,
+                time_zone,
+                pass_field_key,
+                !!(concatenated as { expression: string; fields: string[] })
+                  .expression,
+                field_name,
+              ),
+            );
 
             const default_filter_clause = `"${toAlias}"."tombstone" = 0 ${
               request_type !== 'root'
@@ -614,7 +613,7 @@ export class Utility {
                   SELECT
                     JSONB_BUILD_OBJECT(${[
                       ...jsonAggFields,
-                      ...jsonAggConcatenatedFields,
+                      ...concatenate_fields_selections,
                     ].join(', ')}) AS elem
                   FROM "${from_entity}"${
                   from_entity !== from_alias ? ` "${from_alias}"` : ''
@@ -850,6 +849,7 @@ export class Utility {
     date_format,
     pass_field_key,
     permissions,
+    concatenated_field_expressions = {},
   }: IFilterAnalyzer) => {
     let _db = db;
     const aliased_entities: any = [];
@@ -857,21 +857,17 @@ export class Utility {
     const concat_fields = concatenate_fields?.fields || {};
 
     if (joins.length) {
-      joins.forEach(({ type, field_relation, nested = false }, index) => {
-        const { from, to } = field_relation as Record<string, any>;
-        const to_entity = to?.entity;
-        const from_alias = from?.alias || from?.entity; // Use alias if provided
-        const to_alias = to?.alias || to_entity; // Use alias if provided
-        if (!from?.entity || !to?.entity || !from?.field || !to?.field) {
-          throw new Error(
-            'Invalid join configuration. Ensure both `from` and `to` required properties are defined.',
-          );
-        }
-
-        if (!to) to.filters = [];
-        const concatenate_query = expressions[to_alias] || [];
+      joins.forEach(({ type, field_relation, nested = false }: Record<string, any>, index) => {
+        const { from, to } = field_relation;
+        const to_entity = to.entity;
+        const from_alias = from.alias || from.entity; // Use alias if provided
+        const to_alias =
+          type === 'self' ? from.alias || from.entity : to.alias || to_entity; // Use alias if provided
+        to.filters ??= [];
+        const concatenated_entity =
+          concatenated_field_expressions[to_alias] || {};
         function constructJoinQuery({ isSelfJoin = false } = {}) {
-          if (to?.alias) aliased_entities.push(to?.alias);
+          if (to.alias) aliased_entities.push(to.alias);
           // Retrieve fields from pluck_object for the specified `to` entity
           const fields = pluck_object[to_alias] || [];
           const to_table_schema = schema[to_entity];
@@ -880,10 +876,11 @@ export class Utility {
             `joined_${to_alias}`,
           );
 
+
           let sub_query = client_db.select().from(aliased_to_entity);
           let nested_additional_filter: any = [];
           if (nested) {
-            const previous_join = joins[index - 1];
+            const previous_join: any = joins[index - 1];
             const { type, field_relation } = previous_join;
             const { from: prev_join_from, to: prev_join_to } = field_relation;
             const nested_from = type === 'self' ? prev_join_from : prev_join_to;
@@ -909,11 +906,13 @@ export class Utility {
                 ...Utility.constructFilters({
                   table,
                   advance_filters: to.filters,
-                  aliased_to_entity,
+                  table_schema: aliased_to_entity,
                   aliased_entities: [`joined_${to_alias}`],
-                  expressions,
                   time_zone,
                   date_format,
+                  encrypted_fields,
+                  pass_field_key,
+                  permissions
                 }),
                 ...nested_additional_filter,
               ),
@@ -947,14 +946,24 @@ export class Utility {
             ? `AND "${from.entity}"."${from.field}" = "joined_${to_alias}"."${to.field}"`
             : ``;
 
+          const joined_concatenated_selections = Object.values(
+            concatenated_entity,
+          )
+            ?.map((concatenated) =>
+              (concatenated as any)?.fields
+                ?.map((field) => `"joined_${to_alias}"."${field}"`)
+                .join(', '),
+            )
+            .join(', ');
+
           const lateral_join = sql.raw(`
             LATERAL (
               SELECT ${fields
                 .map((field) => `"joined_${to_alias}"."${field}"`)
                 .join(', ')}
                 ${
-                  concatenate_query.length
-                    ? `, ${concatenate_query.join(', ').replace(/,\s*$/, '')}`
+                  Object.keys(concatenated_entity)?.length
+                    ? `, ${joined_concatenated_selections}`
                     : ''
                 }
               ${sub_query_from_clause} ${additional_where_and_clause}
@@ -982,9 +991,7 @@ export class Utility {
         }
       });
     }
-    const transformed_expressions = Utility.removeJoinedKeyword(expressions);
 
-    //remove joined keyword from every entity in expressions
     return _db.where(
       and(
         eq(table_schema['tombstone'], 0),
@@ -994,20 +1001,16 @@ export class Utility {
               eq(table_schema['organization_id'], organization_id),
             ]
           : []),
-        // TODO: inject permissions by user_organization_role_id
-        // ! testing purpose only
         ...Utility.constructFilters({
           table,
           advance_filters,
           table_schema,
           aliased_entities,
-          expressions: transformed_expressions,
           time_zone,
           date_format,
           group_advance_filters,
           encrypted_fields,
-          pass_field_key,
-          permissions,
+          concatenated_field_expressions,
         }),
       ),
     );
@@ -1019,11 +1022,12 @@ export class Utility {
     advance_filters: _advance_filters = [],
     organization_id,
     joins = [],
+    client_db: _client_db,
     type,
     time_zone = '',
     table,
     date_format = '',
-  }: IAggregationFilerAnalyzer) {
+  }: IAggregationFilterAnalyzer) {
     let _db = db;
     const aliased_entities: string[] = [];
     if (joins?.length) {
@@ -1090,7 +1094,6 @@ export class Utility {
     dz_filter_queue,
     entity,
     aliased_entities,
-    expressions,
     case_sensitive,
     parse_as = '',
     encrypted_fields = [],
@@ -1099,6 +1102,7 @@ export class Utility {
     date_format,
     pass_field_key = '',
     permissions,
+    concatenated_field_expressions = {}
   }: IEvaluateFilter) {
     const is_aliased = aliased_entities.includes(entity);
     let _field = `${field}`;
@@ -1114,17 +1118,18 @@ export class Utility {
       });
     }
 
-    if (!table_schema?.[field] && !is_aliased && expressions[entity]) {
+    const concatenated_entity = concatenated_field_expressions?.[entity] ?? {};
+    if (!table_schema?.[field] && Object.keys(concatenated_entity)?.length) {
       schema_field = sql.raw(
-        Utility.decryptField({
-          field: expressions[entity]
-            .find((exp) => exp.includes(field))
-            ?.split(' AS ')[0],
-          encrypted_fields,
-          table: entity,
-          pass_field_key,
-          permissions,
-        }),
+        Utility.decryptField(
+          {
+            field: concatenated_entity?.[field].expression,
+            encrypted_fields,
+            table: entity,
+            pass_field_key,
+            permissions,
+          }
+        ),
       );
     } else {
       if (field.endsWith('_date')) {
@@ -1224,9 +1229,15 @@ export class Utility {
       case EOperator.IS_NOT_NULL:
         return isNotNull(schema_field);
       case EOperator.CONTAINS:
-        return inArray(schema_field, [values]);
+        if (case_sensitive) {
+          return or(...values.map((value) => like(schema_field, `%${value}%`)));
+        }
+        return or(...values.map((value) => ilike(schema_field, `%${value}%`)));
       case EOperator.NOT_CONTAINS:
-        return notInArray(schema_field, [values]);
+        if (case_sensitive) {
+          return or(...values.map((value) => notLike(schema_field, `%${value}%`)));
+        }
+        return or(...values.map((value) => notIlike(schema_field, `%${value}%`)));
       case EOperator.IS_BETWEEN:
         return between(schema_field, values[0], values[1]);
       case EOperator.IS_NOT_BETWEEN:
@@ -1266,6 +1277,7 @@ export class Utility {
     encrypted_fields = [],
     pass_field_key = '',
     permissions,
+    concatenated_field_expressions = {},
   }: IContructFilters): any[] {
     let dz_filter_queue: any[] = [];
     let where_clause_queue: any[] = [];
@@ -1293,12 +1305,11 @@ export class Utility {
               advance_filters: filters,
               table_schema,
               aliased_entities,
-              expressions,
               time_zone,
               date_format,
-              group_advance_filters,
+              concatenated_field_expressions,
               encrypted_fields,
-              pass_field_key,
+              pass_field_key
             }),
           );
         } else if (type === 'operator') {
@@ -1390,7 +1401,9 @@ export class Utility {
       }
 
       entity =
-        entity && !aliased_entities.includes(entity) && !expressions[entity]
+        entity &&
+        !aliased_entities.includes(entity) &&
+        !Object.keys(concatenated_field_expressions?.[entity] ?? {}).length
           ? pluralize.plural(entity)
           : entity;
 
@@ -1404,7 +1417,6 @@ export class Utility {
           dz_filter_queue: [],
           entity: entity || table,
           aliased_entities,
-          expressions,
           case_sensitive,
           parse_as,
           encrypted_fields,
@@ -1413,6 +1425,7 @@ export class Utility {
           date_format,
           pass_field_key,
           permissions,
+          concatenated_field_expressions,
         }),
       ];
     }
@@ -1458,12 +1471,12 @@ export class Utility {
           dz_filter_queue,
           entity: entity || table,
           aliased_entities,
-          expressions,
           case_sensitive,
           parse_as,
           fields,
           time_zone,
           date_format,
+          expressions
         }),
       );
 
@@ -1480,7 +1493,6 @@ export class Utility {
             dz_filter_queue: where_clause_queue.concat(allowed_to_merged),
             entity: entity || table,
             aliased_entities,
-            expressions,
             case_sensitive,
             parse_as,
             fields,
@@ -2543,6 +2555,38 @@ export class Utility {
       }
     }
     return sort_schema as SQLWrapper | AnyColumn;
+  }
+
+  public static generateConcatenatedExpressions(
+    concatenate_fields: IConcatenateField[],
+    date_format?: string,
+    _table?: string,
+  ) {
+    return concatenate_fields.reduce(
+      (
+        acc,
+        { fields, field_name, separator, entity: _entity, aliased_entity },
+      ) => {
+        const entity = aliased_entity || pluralize(_entity);
+
+        const concatenated_expression = `(${fields
+          .map((field) => {
+            if (field.endsWith('_date'))
+              return `COALESCE(to_char("${entity}"."${field}"::date, '${date_format}'), '')`;
+            return `COALESCE("${entity}"."${field}", '')`;
+          })
+          .join(` || '${separator}' || `)})`;
+
+        return {
+          ...acc,
+          [entity]: {
+            ...acc[entity],
+            [field_name]: { expression: concatenated_expression, fields },
+          },
+        };
+      },
+      {},
+    );
   }
 }
 // TODO: dont use past tense in encryption fields
