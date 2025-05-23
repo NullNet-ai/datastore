@@ -55,6 +55,16 @@ export class VerifyActionsImplementations {
         const write_endpoint = `${write_method}:/api/store/${table}${
           single_write_record ? `/${single_write_record}` : ``
         }${query_string}`;
+        if (!req_query?.p && !req_query?.rp)
+          return {
+            query: '',
+            account_organization_id:
+              responsible_account.account_organization_id,
+            schema: [],
+            valid_pass_keys_query: '',
+            record_valid_pass_keys_query: '',
+          };
+
         switch (request_info) {
           case read_endpoint:
             const { main_fields: read_main_fields, tables: read_tables } =
