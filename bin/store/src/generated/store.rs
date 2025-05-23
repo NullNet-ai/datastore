@@ -186,10 +186,10 @@ pub struct Addresses {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub address: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -258,10 +258,10 @@ pub struct AppFirewalls {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub app_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -304,10 +304,10 @@ pub struct AppguardLogs {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -350,10 +350,10 @@ pub struct TempAppguardLogs {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -396,10 +396,10 @@ pub struct DeviceAliases {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -448,10 +448,10 @@ pub struct TempDeviceAliases {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -500,10 +500,10 @@ pub struct DeviceConfigurations {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -552,10 +552,10 @@ pub struct DeviceInterfaceAddresses {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -598,10 +598,10 @@ pub struct TempDeviceInterfaceAddresses {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -644,10 +644,10 @@ pub struct DeviceInterfaces {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -692,10 +692,10 @@ pub struct TempDeviceInterfaces {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -740,10 +740,10 @@ pub struct DeviceRemoteAccessSessions {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -792,10 +792,10 @@ pub struct TempDeviceRemoteAccessSessions {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -844,10 +844,10 @@ pub struct DeviceRules {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -920,10 +920,10 @@ pub struct TempDeviceRules {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -996,10 +996,10 @@ pub struct Packets {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1080,10 +1080,10 @@ pub struct TempPackets {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1164,10 +1164,10 @@ pub struct Connections {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1228,10 +1228,10 @@ pub struct TempConnections {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1292,18 +1292,18 @@ pub struct DeviceSshKeys {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "19")]
-    pub public_key: ::prost::alloc::string::String,
-    #[prost(string, tag = "20")]
-    pub private_key: ::prost::alloc::string::String,
-    #[prost(string, tag = "21")]
-    pub passphrase: ::prost::alloc::string::String,
-    #[prost(string, tag = "22")]
-    pub device_id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub public_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub private_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub passphrase: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Devices entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1342,10 +1342,10 @@ pub struct Devices {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub model: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1410,10 +1410,10 @@ pub struct IpInfos {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub country: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1470,10 +1470,10 @@ pub struct Resolutions {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub resolution_type: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -1514,10 +1514,10 @@ pub struct WallguardLogs {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1562,10 +1562,10 @@ pub struct TempWallguardLogs {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub timestamp: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1610,10 +1610,10 @@ pub struct DeviceGroupSettings {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -1654,10 +1654,10 @@ pub struct Organizations {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1700,10 +1700,10 @@ pub struct OrganizationContacts {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -1744,10 +1744,10 @@ pub struct OrganizationAccounts {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1798,10 +1798,10 @@ pub struct Contacts {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub first_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1848,10 +1848,10 @@ pub struct ContactPhoneNumbers {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
@@ -1894,10 +1894,10 @@ pub struct ContactEmails {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, tag = "17")]
-    pub id: ::prost::alloc::string::String,
-    #[prost(string, tag = "18")]
-    pub timestamp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]

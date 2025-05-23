@@ -101,8 +101,8 @@ message Addresses {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string address = 19;
   optional string address_line_one = 20;
   optional string address_line_two = 21;
@@ -138,8 +138,8 @@ message AppFirewalls {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string app_id = 19;
   optional string firewall = 20;
 }
@@ -162,8 +162,8 @@ message AppguardLogs {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string level = 19;
   optional string message = 20;
 }
@@ -186,8 +186,8 @@ message TempAppguardLogs {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string level = 19;
   optional string message = 20;
 }
@@ -210,8 +210,8 @@ message DeviceAliases {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string alias_type = 19;
   optional string name = 20;
   optional string value = 21;
@@ -237,8 +237,8 @@ message TempDeviceAliases {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string alias_type = 19;
   optional string name = 20;
   optional string value = 21;
@@ -264,8 +264,8 @@ message DeviceConfigurations {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_id = 19;
   optional string digest = 20;
   optional string hostname = 21;
@@ -291,8 +291,8 @@ message DeviceInterfaceAddresses {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_interface_id = 19;
   optional string address = 20;
 }
@@ -315,8 +315,8 @@ message TempDeviceInterfaceAddresses {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_interface_id = 19;
   optional string address = 20;
 }
@@ -339,8 +339,8 @@ message DeviceInterfaces {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_configuration_id = 19;
   optional string name = 20;
   optional string device = 21;
@@ -364,8 +364,8 @@ message TempDeviceInterfaces {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_configuration_id = 19;
   optional string name = 20;
   optional string device = 21;
@@ -389,8 +389,8 @@ message DeviceRemoteAccessSessions {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_id = 19;
   optional string remote_access_type = 20;
   optional string remote_access_session = 21;
@@ -416,8 +416,8 @@ message TempDeviceRemoteAccessSessions {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_id = 19;
   optional string remote_access_type = 20;
   optional string remote_access_session = 21;
@@ -443,8 +443,8 @@ message DeviceRules {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_configuration_id = 19;
   optional string disabled = 20;
   optional string rule_type = 21;
@@ -482,8 +482,8 @@ message TempDeviceRules {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string device_configuration_id = 19;
   optional string disabled = 20;
   optional string rule_type = 21;
@@ -521,8 +521,8 @@ message Packets {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string hypertable_timestamp = 19;
   optional string interface_name = 20;
   optional string device_id = 21;
@@ -564,8 +564,8 @@ message TempPackets {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string hypertable_timestamp = 19;
   optional string interface_name = 20;
   optional string device_id = 21;
@@ -607,8 +607,8 @@ message Connections {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string interface_name = 19;
   optional string hypertable_timestamp = 20;
   optional int32 total_packet = 21;
@@ -640,8 +640,8 @@ message TempConnections {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string interface_name = 19;
   optional string hypertable_timestamp = 20;
   optional int32 total_packet = 21;
@@ -673,12 +673,12 @@ message DeviceSshKeys {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
-  string public_key = 19;
-  string private_key = 20;
-  string passphrase = 21;
-  string device_id = 22;
+  optional string id = 17;
+  optional string timestamp = 18;
+  optional string public_key = 19;
+  optional string private_key = 20;
+  optional string passphrase = 21;
+  optional string device_id = 22;
 }
 
 // Devices entity definition
@@ -699,8 +699,8 @@ message Devices {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string model = 19;
   optional string address_id = 20;
   optional string instance_name = 21;
@@ -733,8 +733,8 @@ message IpInfos {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string country = 19;
   optional string asn = 20;
   optional string org = 21;
@@ -764,8 +764,8 @@ message Resolutions {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string resolution_type = 19;
 }
 
@@ -787,8 +787,8 @@ message WallguardLogs {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string level = 19;
   optional string message = 20;
   optional string hypertable_timestamp = 21;
@@ -812,8 +812,8 @@ message TempWallguardLogs {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string timestamp = 17;
-  string id = 18;
+  optional string timestamp = 17;
+  optional string id = 18;
   optional string level = 19;
   optional string message = 20;
   optional string hypertable_timestamp = 21;
@@ -837,8 +837,8 @@ message DeviceGroupSettings {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string name = 19;
 }
 
@@ -860,8 +860,8 @@ message Organizations {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string parent_organization_id = 19;
   optional string name = 20;
 }
@@ -884,8 +884,8 @@ message OrganizationContacts {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string contact_id = 19;
 }
 
@@ -907,8 +907,8 @@ message OrganizationAccounts {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string organization_contact_id = 19;
   optional string account_id = 20;
   optional string account_secret = 21;
@@ -935,8 +935,8 @@ message Contacts {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string first_name = 19;
   optional string middle_name = 20;
   optional string last_name = 21;
@@ -961,8 +961,8 @@ message ContactPhoneNumbers {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string contact_id = 19;
   optional string phone_number_raw = 20;
 }
@@ -985,8 +985,8 @@ message ContactEmails {
   repeated string tags = 14;
   repeated string categories = 15;
   optional string code = 16;
-  string id = 17;
-  string timestamp = 18;
+  optional string id = 17;
+  optional string timestamp = 18;
   optional string contact_id = 19;
   optional string email = 20;
 }
