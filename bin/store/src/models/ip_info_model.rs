@@ -24,8 +24,8 @@ pub struct IpInfoModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: chrono::NaiveDateTime,
-    pub id: String,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub id: Option<String>,
 
     pub country: Option<String>,
     pub asn: Option<String>,

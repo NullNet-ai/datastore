@@ -27,8 +27,8 @@ pub struct ResolutionModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: NaiveDateTime,
-    pub id: String,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub id: Option<String>,
 
     pub resolution_type: Option<String>,
 }

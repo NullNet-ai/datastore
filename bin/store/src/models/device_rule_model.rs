@@ -25,9 +25,9 @@ pub struct DeviceRuleModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub id: String,
+    pub id: Option<String>,
     pub device_configuration_id: Option<String>,
     pub disabled: Option<bool>,
     pub rule_type: Option<String>,

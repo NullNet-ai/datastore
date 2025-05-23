@@ -24,8 +24,8 @@ pub struct OrganizationAccountModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub id: String,
-    pub timestamp: chrono::NaiveDateTime,
+    pub id: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
 
     pub organization_contact_id: Option<String>,
     pub account_id: Option<String>,

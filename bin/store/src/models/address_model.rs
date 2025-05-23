@@ -24,9 +24,9 @@ pub struct AddressModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub id: String,
+    pub id: Option<String>,
     pub address: Option<String>,
     pub address_line_one: Option<String>,
     pub address_line_two: Option<String>,

@@ -18,9 +18,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         address -> Nullable<Text>,
         address_line_one -> Nullable<Text>,
         address_line_two -> Nullable<Text>,
@@ -57,9 +57,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         app_id -> Nullable<Text>,
         firewall -> Nullable<Text>,
     }
@@ -83,9 +83,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         level -> Nullable<Text>,
         message -> Nullable<Text>,
     }
@@ -109,9 +109,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         level -> Nullable<Text>,
         message -> Nullable<Text>,
     }
@@ -135,9 +135,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         #[sql_name = "type"]
         alias_type -> Nullable<Text>,
         name -> Nullable<Text>,
@@ -165,9 +165,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         #[sql_name = "type"]
         alias_type -> Nullable<Text>,
         name -> Nullable<Text>,
@@ -195,9 +195,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_id -> Nullable<Text>,
         digest -> Nullable<Text>,
         hostname -> Nullable<Text>,
@@ -224,9 +224,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_interface_id -> Nullable<Text>,
         address -> Nullable<Inet>,
     }
@@ -250,9 +250,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_interface_id -> Nullable<Text>,
         address -> Nullable<Inet>,
     }
@@ -276,9 +276,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
         name -> Nullable<Text>,
         device -> Nullable<Text>,
@@ -303,9 +303,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
         name -> Nullable<Text>,
         device -> Nullable<Text>,
@@ -330,9 +330,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_id -> Nullable<Text>,
         remote_access_type -> Nullable<Text>,
         remote_access_session -> Nullable<Text>,
@@ -359,9 +359,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_id -> Nullable<Text>,
         remote_access_type -> Nullable<Text>,
         remote_access_session -> Nullable<Text>,
@@ -388,9 +388,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
         disabled -> Nullable<Bool>,
         #[sql_name = "type"]
@@ -430,9 +430,9 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
+        timestamp -> Nullable<Timestamp>,
 
-        id -> Text,
+        id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
         disabled -> Nullable<Bool>,
         #[sql_name = "type"]
@@ -474,8 +474,8 @@ table! {
         code -> Nullable<Text>,
 
 
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         hypertable_timestamp -> Nullable<Text>,
         interface_name -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -520,8 +520,8 @@ table! {
         code -> Nullable<Text>,
 
 
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         hypertable_timestamp -> Nullable<Text>,
         interface_name -> Nullable<Text>,
         device_id -> Nullable<Uuid>,
@@ -566,8 +566,8 @@ table! {
         code -> Nullable<Text>,
 
 
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
         total_packet -> Nullable<Int4>,
@@ -602,8 +602,8 @@ table! {
         code -> Nullable<Text>,
 
 
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
         total_packet -> Nullable<Int4>,
@@ -637,12 +637,12 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
 
-        id -> Text,
-        timestamp -> Timestamp,
-        public_key -> Text,
-        private_key -> Text,
-        passphrase -> Text,
-        device_id -> Text,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        public_key -> Nullable<Text>,
+        private_key -> Nullable<Text>,
+        passphrase -> Nullable<Text>,
+        device_id -> Nullable<Text>,
     }
 }
 
@@ -664,8 +664,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         model -> Nullable<Text>,
         address_id -> Nullable<Text>,
@@ -700,8 +700,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
-        id -> Text,
+        timestamp -> Nullable<Timestamp>,
+        id -> Nullable<Text>,
 
         country -> Nullable<Text>,
         asn -> Nullable<Text>,
@@ -733,8 +733,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
-        id -> Text,
+        timestamp -> Nullable<Timestamp>,
+        id -> Nullable<Text>,
 
         resolution_type -> Nullable<Text>
     }
@@ -758,8 +758,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
-        id -> Text,
+        timestamp -> Nullable<Timestamp>,
+        id -> Nullable<Text>,
 
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -785,8 +785,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Timestamp,
-        id -> Text,
+        timestamp -> Nullable<Timestamp>,
+        id -> Nullable<Text>,
 
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -812,8 +812,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         name -> Nullable<Text>,
     }
@@ -912,8 +912,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         parent_organization_id -> Nullable<Text>,
         name -> Nullable<Text>
@@ -938,8 +938,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         contact_id -> Nullable<Text>,
     }
@@ -963,8 +963,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         organization_contact_id -> Nullable<Text>,
         account_id -> Nullable<Text>,
@@ -993,8 +993,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         first_name -> Nullable<Text>,
         middle_name -> Nullable<Text>,
@@ -1021,8 +1021,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         contact_id -> Nullable<Text>,
         phone_number_raw -> Nullable<Text>,
@@ -1047,8 +1047,8 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        id -> Text,
-        timestamp -> Timestamp,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,

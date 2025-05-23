@@ -24,9 +24,9 @@ pub struct TempDeviceAliasModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub id: String,
+    pub id: Option<String>,
     pub alias_type: Option<String>,
     pub name: Option<String>,
     pub value: Option<String>,

@@ -24,9 +24,9 @@ pub struct TempAppguardLogModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub id: String,
+    pub id: Option<String>,
     pub level: Option<String>,
     pub message: Option<String>,
 }

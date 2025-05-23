@@ -29,10 +29,10 @@ pub struct DeviceSshKeyModel {
     pub code: Option<String>,
 
     // SSH key specific fields
-    pub id: String,
-    pub timestamp: NaiveDateTime,
-    pub public_key: String,
-    pub private_key: String,
-    pub passphrase: String,
-    pub device_id: String,
+    pub id: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub public_key: Option<String>,
+    pub private_key: Option<String>,
+    pub passphrase: Option<String>,
+    pub device_id: Option<String>,
 }

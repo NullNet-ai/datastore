@@ -30,8 +30,8 @@ pub struct TempPacketModel {
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
 
-    pub id: String,
-    pub timestamp: chrono::NaiveDateTime,
+    pub id: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
     pub hypertable_timestamp: Option<String>,
     pub interface_name: Option<String>,
     pub device_id: Option<Uuid>,

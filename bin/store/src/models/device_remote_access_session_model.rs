@@ -25,9 +25,9 @@ pub struct DeviceRemoteAccessSessionModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: chrono::NaiveDateTime,
+    pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub id: String,
+    pub id: Option<String>,
     pub device_id: Option<String>,
     pub remote_access_type: Option<String>,
     pub remote_access_session: Option<String>,
