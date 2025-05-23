@@ -1773,19 +1773,19 @@ export class Utility {
     table_schema,
     order_by,
     aliased_entities,
-    transformed_concatenations,
     order_direction = 'asc',
     is_case_sensitive_sorting = false,
     group_by_selections,
+    concatenated_field_expressions = {},
   }: {
     table: string;
     table_schema: Record<string, any>;
     order_by: string;
     aliased_entities: Record<string, any>[];
-    transformed_concatenations: IParsedConcatenatedFields['expressions'];
     order_direction: string;
     is_case_sensitive_sorting: boolean;
     group_by_selections: Record<string, any>;
+    concatenated_field_expressions: Record<string, any>;
   }) {
     const by_entity_field = order_by.split('.');
     let sort_entity: any = table;
@@ -1796,32 +1796,31 @@ export class Utility {
         ({ alias }) => alias === _entity,
       );
       sort_entity = !is_aliased ? pluralize(_entity) : _entity;
+      const concatenated_entity =
+        concatenated_field_expressions?.[sort_entity] ?? {};
+      const sorted_entity_schema = is_aliased
+        ? aliasedTable(schema[is_aliased?.entity], sort_entity)
+        : schema[sort_entity];
       if (
         !schema[sort_entity]?.[by_field] &&
-        transformed_concatenations[sort_entity] &&
+        Object.keys(concatenated_entity)?.length &&
         sort_entity === table
         //if sort_entity is the main table and check if it has any field that is concatenated, and that field doesn't exist in the schema
       ) {
-        const concatenation = transformed_concatenations[sort_entity]?.find(
-          (exp) => exp.includes(by_field),
-        );
-        sort_schema = concatenation
-          ? sql.raw(concatenation.split(' AS ')[0] as string)
+        const field_concatenated_exp = (concatenated_entity?.[by_field] ?? {})
+          ?.expression;
+        sort_schema = field_concatenated_exp
+          ? sql.raw(field_concatenated_exp)
           : undefined;
       } else if (
         !schema[sort_entity]?.[by_field] &&
-        transformed_concatenations[sort_entity] &&
-        transformed_concatenations[sort_entity]?.find((exp) =>
-          exp.includes(by_field),
-        )
+        concatenated_entity &&
+        concatenated_entity?.[by_field]?.expression
         //if entity is not in the schema or its field is not in the schema and it is in the transformed concatenations and the field is in the transformed concatenations
       ) {
-        const concat_sort_field: any = transformed_concatenations[
-          sort_entity
-        ]?.find((exp) => {
-          return exp.includes(by_field);
-        });
-        let sort_query = concat_sort_field.split(' AS ')[0];
+        const field_concatenated_exp = (concatenated_entity?.[by_field] ?? {})
+          ?.expression;
+        let sort_query = field_concatenated_exp;
         if (!is_case_sensitive_sorting) {
           sort_query = `lower(${sort_query})`;
         }
@@ -1834,7 +1833,7 @@ export class Utility {
       } else if (sort_entity !== table) {
         let sort_query: any = `"${sort_entity}"."${by_field}"`;
         if (!is_case_sensitive_sorting) {
-          const sorted_field_type = schema[sort_entity]?.[by_field]?.dataType;
+          const sorted_field_type = sorted_entity_schema?.[by_field]?.dataType;
           if (sorted_field_type !== 'string') {
             throw new BadRequestException(
               `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,
@@ -1852,7 +1851,8 @@ export class Utility {
         let sort_query: any = `"${sort_entity}"."${by_field}"`;
         if (Object.keys(group_by_selections).length) {
           if (!is_case_sensitive_sorting) {
-            const sorted_field_type = schema[sort_entity]?.[by_field]?.dataType;
+            const sorted_field_type =
+              sorted_entity_schema?.[by_field]?.dataType;
             if (sorted_field_type !== 'string') {
               throw new BadRequestException(
                 `Sorted field ${by_field} is of type ${sorted_field_type}. Set is_case_sensitive_sorting to true to sort non-text fields.`,

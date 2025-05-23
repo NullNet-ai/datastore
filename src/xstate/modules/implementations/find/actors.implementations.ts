@@ -13,7 +13,6 @@ import { asc, desc, sql, aliasedTable } from 'drizzle-orm';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
-import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
@@ -105,8 +104,6 @@ export class FindActorsImplementations {
         date_format,
         table,
       );
-      const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
-        Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
         pluck_object[key] = [
@@ -132,13 +129,14 @@ export class FindActorsImplementations {
           entity = by_field.split('.')[0];
           field = by_field.split('.')[1];
         }
-        const concat_fields = parsed_concatenated_fields.fields;
         const sorted_entity: string =
           aliased_joined_entities.find(({ alias }) => alias === entity)
             ?.entity || pluralize(entity);
+        const concatenated_fields =
+          Object.keys(concatenated_field_expressions?.[entity] || {}) || [];
         const field_exists =
-          local_schema[sorted_entity]?.[field] ||
-          concat_fields[sorted_entity]?.find((exp) => exp.includes(field));
+          local_schema?.[sorted_entity]?.[field] ||
+          concatenated_fields.includes(field);
         if (!field_exists) {
           let message;
           if (sorted_entity === entity) {
@@ -484,10 +482,10 @@ export class FindActorsImplementations {
                   table_schema,
                   order_by: by_field,
                   aliased_entities: aliased_joined_entities,
-                  transformed_concatenations,
                   order_direction: by_direction,
                   is_case_sensitive_sorting,
                   group_by_selections,
+                  concatenated_field_expressions,
                 });
                 const is_query_already_lowered = (() => {
                   try {
@@ -519,10 +517,10 @@ export class FindActorsImplementations {
           table_schema,
           order_by,
           aliased_entities: aliased_joined_entities,
-          transformed_concatenations,
           order_direction,
           is_case_sensitive_sorting,
           group_by_selections,
+          concatenated_field_expressions,
         });
         const is_query_already_lowered = (() => {
           try {
