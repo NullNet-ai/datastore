@@ -827,26 +827,18 @@ export class Utility {
             ? `AND "${from.entity}"."${from.field}" = "joined_${to_alias}"."${to.field}"`
             : ``;
 
-          const joined_concatenated_selections = Object.values(
-            concatenated_entity,
-          )
-            ?.map((concatenated) =>
-              (concatenated as any)?.fields
-                ?.map((field) => `"joined_${to_alias}"."${field}"`)
-                .join(', '),
-            )
-            .join(', ');
+          const concatenated_fields = Object.values(concatenated_entity)
+            ?.map((concatenated) => (concatenated as any)?.fields)
+            .flat();
 
+          const joined_selected_fields = [
+            ...new Set([...fields, ...concatenated_fields]),
+          ];
           const lateral_join = sql.raw(`
             LATERAL (
-              SELECT ${fields
+              SELECT ${joined_selected_fields
                 .map((field) => `"joined_${to_alias}"."${field}"`)
                 .join(', ')}
-                ${
-                  Object.keys(concatenated_entity)?.length
-                    ? `, ${joined_concatenated_selections}`
-                    : ''
-                }
               ${sub_query_from_clause} ${additional_where_and_clause}
               ${
                 to.order_by
@@ -995,7 +987,7 @@ export class Utility {
     if (!table_schema?.[field] && Object.keys(concatenated_entity)?.length) {
       schema_field = sql.raw(
         Utility.decryptField(
-          concatenated_entity?.[field].expression,
+          concatenated_entity?.[field]?.expression,
           encrypted_fields,
         ),
       );
@@ -1306,6 +1298,7 @@ export class Utility {
           fields,
           time_zone,
           date_format,
+          concatenated_field_expressions,
         }),
       );
 
@@ -1327,6 +1320,7 @@ export class Utility {
             fields,
             time_zone,
             date_format,
+            concatenated_field_expressions,
           }),
         );
         if (where_clause_queue.length > 1) where_clause_queue.shift();
