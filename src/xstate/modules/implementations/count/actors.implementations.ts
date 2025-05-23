@@ -79,6 +79,12 @@ export class CountActorsImplementations {
         date_format,
         table,
       );
+      const concatenated_field_expressions =
+        Utility.generateConcatenatedExpressions(
+          concatenate_fields,
+          date_format,
+          table,
+        );
       const encrypted_fields = [];
       _db = Utility.FilterAnalyzer(
         _db,
@@ -95,6 +101,7 @@ export class CountActorsImplementations {
         time_zone,
         table,
         date_format,
+        concatenated_field_expressions,
       );
 
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
