@@ -162,6 +162,7 @@ export class CreateActorsImplementations {
               .select({ id: local_schema[table].id })
               .from(local_schema[table])
               .where(eq(local_schema[table].id, body.id))
+              .prepare(`existing_record_${table}`)
               .execute()[0];
           }
           if (!exist) {
@@ -181,7 +182,7 @@ export class CreateActorsImplementations {
                 counter: counter_schema.counter,
                 digits_number: counter_schema.digits_number,
               })
-              .prepare('insert_counter')
+              .prepare(`insert_counter_${table}`)
               .execute();
 
             function constructCode([
