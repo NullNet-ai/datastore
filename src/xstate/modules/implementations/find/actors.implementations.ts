@@ -559,6 +559,7 @@ export class FindActorsImplementations {
           permissions,
           concatenated_field_expressions,
           concatenate_fields,
+          request_type: type,
         });
 
         // if (group_by_agg_selections[order_by]) {
