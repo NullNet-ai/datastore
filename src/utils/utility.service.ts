@@ -206,6 +206,17 @@ export class Utility {
 
     return _data;
   }
+
+  public static validateFields(table, schema, data) {
+    Object.keys(data).forEach((key) => {
+      if (!schema[table]?.[key]) {
+        throw new BadRequestException(
+          `Field ${key} does not exist in ${table}`,
+        );
+      }
+    });
+  }
+
   public static checkCreateSchema(
     table: string,
     meta: Record<string, any>,
@@ -215,7 +226,7 @@ export class Utility {
     if (!data) {
       throw new BadRequestException('Data is required in Body');
     }
-
+    Utility.validateFields(table, schema, data);
     return { schema: createInsertSchema(schema_table as any), data, meta };
   }
 
@@ -1540,7 +1551,7 @@ export class Utility {
     if (!data) {
       throw new BadRequestException('Data is required in Body');
     }
-
+    Utility.validateFields(table, schema, data);
     return { schema: createUpdateSchema(schema_table), data, meta };
   }
   public static advanceFilter(advance_filters, organization_id) {
