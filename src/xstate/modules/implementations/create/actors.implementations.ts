@@ -162,7 +162,6 @@ export class CreateActorsImplementations {
               .select({ id: local_schema[table].id })
               .from(local_schema[table])
               .where(eq(local_schema[table].id, body.id))
-              .prepare('existing_record')
               .execute()[0];
           }
           if (!exist) {
