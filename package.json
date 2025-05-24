@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -59,8 +59,8 @@
     "cookie-parser": "^1.4.7",
     "csv-stringify": "^6.5.2",
     "dotenv": "^16.5.0",
-    "drizzle-orm": "^0.38.4",
-    "drizzle-zod": "^0.6.1",
+    "drizzle-orm": "0.38.4",
+    "drizzle-zod": "0.6.1",
     "express": "^3.21.2",
     "jsonwebtoken": "^9.0.2",
     "lodash.omit": "^4.5.0",
