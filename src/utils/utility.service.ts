@@ -856,7 +856,7 @@ export class Utility {
     permissions,
     concatenated_field_expressions = {},
   }: IFilterAnalyzer) => {
-    let _db = db;
+    let _db: any = db;
     const aliased_entities: any = [];
     let expressions = concatenate_fields?.expressions || {};
     const concat_fields = concatenate_fields?.fields || {};
@@ -980,7 +980,7 @@ export class Utility {
             ) AS "${isSelfJoin ? from_alias : to_alias}"
           `);
 
-            _db = _db.leftJoin(lateral_join, sql`TRUE`);
+            _db = _db?.leftJoin(lateral_join, sql`TRUE`);
             return _db;
           }
           switch (type) {
