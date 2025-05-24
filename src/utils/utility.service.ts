@@ -405,6 +405,7 @@ export class Utility {
     pass_field_key,
     request_type,
     concatenated_field_expressions = {},
+    organization_id,
   }: {
     table: string;
     pluck_object: Record<string, any>;
@@ -419,6 +420,7 @@ export class Utility {
     request_type?: string;
     aliased_joined_entities?: Record<string, any>[];
     concatenated_field_expressions?: Record<string, any>;
+    organization_id: string;
   }): Record<string, string[]> => {
     const pluck_object_keys = Object.keys(pluck_object || {});
 
@@ -552,7 +554,7 @@ export class Utility {
 
             const default_filter_clause = `"${toAlias}"."tombstone" = 0 ${
               request_type !== 'root'
-                ? `AND "${toAlias}"."organization_id" IS NOT NULL AND "${toAlias}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
+                ? `AND "${toAlias}"."organization_id" IS NOT NULL AND "${toAlias}"."organization_id" = '${organization_id}'`
                 : ''
             }`;
 
@@ -560,7 +562,7 @@ export class Utility {
             if (nested)
               additional_where_and_clause = ` AND "${prev_join_to_entity}"."tombstone" = 0 ${
                 request_type !== 'root'
-                  ? `AND "${prev_join_to_entity}"."organization_id" IS NOT NULL AND "${prev_join_to_entity}"."organization_id" = '01JBHKXHYSKPP247HZZWHA3JCT'`
+                  ? `AND "${prev_join_to_entity}"."organization_id" IS NOT NULL AND "${prev_join_to_entity}"."organization_id" = '${organization_id}'`
                   : ''
               } AND "${prev_join_from?.entity}"."${
                 prev_join_from?.field
