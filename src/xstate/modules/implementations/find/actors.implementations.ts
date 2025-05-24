@@ -13,7 +13,6 @@ import { asc, desc, sql, aliasedTable } from 'drizzle-orm';
 import pick from 'lodash.pick';
 import omit from 'lodash.omit';
 import { VerifyActorsImplementations } from '../verify';
-import { IParsedConcatenatedFields } from '../../../../types/utility.types';
 const pluralize = require('pluralize');
 @Injectable()
 export class FindActorsImplementations {
@@ -93,13 +92,18 @@ export class FindActorsImplementations {
         });
       }
 
+      const concatenated_field_expressions =
+        Utility.generateConcatenatedExpressions(
+          concatenate_fields,
+          date_format,
+          table,
+        );
+
       const parsed_concatenated_fields = Utility.parseConcatenateFields(
         concatenate_fields,
         date_format,
         table,
       );
-      const transformed_concatenations: IParsedConcatenatedFields['expressions'] =
-        Utility.removeJoinedKeyword(parsed_concatenated_fields.expressions);
       let aliased_joined_entities: Record<string, any>[] = [];
       Object.keys(pluck_object).forEach((key) => {
         pluck_object[key] = [
@@ -125,13 +129,14 @@ export class FindActorsImplementations {
           entity = by_field.split('.')[0];
           field = by_field.split('.')[1];
         }
-        const concat_fields = parsed_concatenated_fields.fields;
         const sorted_entity: string =
           aliased_joined_entities.find(({ alias }) => alias === entity)
             ?.entity || pluralize(entity);
+        const concatenated_fields =
+          Object.keys(concatenated_field_expressions?.[entity] || {}) || [];
         const field_exists =
-          local_schema[sorted_entity]?.[field] ||
-          concat_fields[sorted_entity]?.find((exp) => exp.includes(field));
+          local_schema?.[sorted_entity]?.[field] ||
+          concatenated_fields.includes(field);
         if (!field_exists) {
           let message;
           if (sorted_entity === entity) {
@@ -225,18 +230,17 @@ export class FindActorsImplementations {
               : schema[group_by_entity];
             let group_field_schema = grouped_entity_schema[group_by_field];
             const group_field = `${group_by_entity}.${group_by_field}`;
-            // if (
-            //   parsed_concatenated_fields.fields[group_by_entity]?.includes(
-            //     group_by_field,
-            //   )
-            // )
-            //   throw new BadRequestException({
-            //     success: false,
-            //     message: `You can't group by concatenated fields`,
-            //   });
-            // else
-            group_by_fields[group_field] = group_field;
-            if (!group_field_schema)
+
+            const group_concatenated_field_exp =
+              concatenated_field_expressions?.[group_by_entity]?.[
+                group_by_field
+              ]?.expression;
+
+            group_by_fields[group_field] = group_concatenated_field_exp
+              ? group_concatenated_field_exp
+              : group_field;
+
+            if (!group_field_schema && !group_concatenated_field_exp)
               throw new BadRequestException({
                 success: false,
                 message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
@@ -245,7 +249,8 @@ export class FindActorsImplementations {
             if (!temp_pluck_object?.[group_by_entity])
               temp_pluck_object[group_by_entity] = ['id'];
 
-            temp_pluck_object[group_by_entity].push(group_by_field);
+            if (!group_concatenated_field_exp)
+              temp_pluck_object[group_by_entity].push(group_by_field);
 
             if (fields.length - 1 === index) {
               pluck_object[group_by_entity] =
@@ -287,7 +292,11 @@ export class FindActorsImplementations {
               [group_by_entity]: {
                 ...(acc?.[group_by_entity] ?? {}),
                 [group_by_field]: sql.raw(
-                  `${group_by_entity}.${group_by_field}`,
+                  `${
+                    group_concatenated_field_exp?.length
+                      ? `${group_concatenated_field_exp} AS ${group_by_field}`
+                      : `${group_by_entity}.${group_by_field}`
+                  }`,
                 ),
               },
             };
@@ -349,6 +358,7 @@ export class FindActorsImplementations {
           time_zone,
           request_type: type,
           aliased_joined_entities,
+          concatenated_field_expressions,
         });
         // const is_grouping_joined_entity = group_by_entities.some((key) =>
         //   Object.keys(join_selections ?? {}).includes(key),
@@ -448,6 +458,7 @@ export class FindActorsImplementations {
         time_zone,
         table,
         date_format,
+        concatenated_field_expressions,
       );
 
       // if (group_by_agg_selections[order_by]) {
@@ -471,10 +482,10 @@ export class FindActorsImplementations {
                   table_schema,
                   order_by: by_field,
                   aliased_entities: aliased_joined_entities,
-                  transformed_concatenations,
                   order_direction: by_direction,
                   is_case_sensitive_sorting,
                   group_by_selections,
+                  concatenated_field_expressions,
                 });
                 const is_query_already_lowered = (() => {
                   try {
@@ -506,10 +517,10 @@ export class FindActorsImplementations {
           table_schema,
           order_by,
           aliased_entities: aliased_joined_entities,
-          transformed_concatenations,
           order_direction,
           is_case_sensitive_sorting,
           group_by_selections,
+          concatenated_field_expressions,
         });
         const is_query_already_lowered = (() => {
           try {
@@ -605,9 +616,9 @@ export class FindActorsImplementations {
     aliased_joined_entities,
   ) {
     const main_fields_concatenated =
-      _concatenate_fields.find(
-        (f) => (f.aliased_entity || pluralize(f.entity)) === table,
-      )?.fields ?? [];
+      _concatenate_fields
+        .filter((f) => (f.aliased_entity || pluralize(f.entity)) === table)
+        ?.map((f) => f.field_name) ?? [];
 
     return results.map((main_item) => {
       let cloned_item = { ...main_item };
@@ -659,10 +670,12 @@ export class FindActorsImplementations {
             if (concatenated_related_fields) {
               item = {
                 ...item,
-                [concatenated_related_fields.field_name]:
-                  concatenated_related_fields.fields
-                    .map((field) => item?.[field] ?? '')
-                    .join(concatenated_related_fields?.separator ?? ''),
+                ...(!item[concatenated_related_fields.field_name] && {
+                  [concatenated_related_fields.field_name]:
+                    concatenated_related_fields.fields
+                      .map((field) => item?.[field] ?? '')
+                      .join(concatenated_related_fields?.separator ?? ''),
+                }),
               };
             }
 
