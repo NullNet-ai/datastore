@@ -140,18 +140,6 @@ export class CreateActorsImplementations {
           : new Date().toISOString();
         body.id = body.id === undefined ? ulid() : body.id;
 
-        const {
-          encrypted_fields = permissions.data
-            .filter((p) => p.encrypt)
-            .map((p) => `${p.entity}.${p.field}`),
-          ..._body
-        } = body;
-
-        const { schema }: any = Utility.checkCreateSchema(
-          table,
-          undefined as any,
-          body,
-        );
         //get first three characters of the table name as prefix
         // auto generate code
         if (table !== 'counters') {
@@ -204,6 +192,19 @@ export class CreateActorsImplementations {
             body.code = constructCode(code);
           }
         }
+
+        const {
+          encrypted_fields = permissions.data
+            .filter((p) => p.encrypt)
+            .map((p) => `${p.entity}.${p.field}`),
+          ..._body
+        } = body;
+
+        const { schema }: any = Utility.checkCreateSchema(
+          table,
+          undefined as any,
+          body,
+        );
 
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);
