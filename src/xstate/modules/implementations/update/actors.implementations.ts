@@ -117,7 +117,7 @@ export class UpdateActorsImplementations {
               default_code: local_schema[table].default_code,
               prefix: local_schema[table].prefix,
             })
-            .prepare('update_counters')
+            .prepare(`update_counters_${table}`)
             .execute();
 
           return Promise.resolve({
