@@ -391,6 +391,22 @@ export class InitializerService {
       .then(() => this.logger.debug(`Encryption extension created`))
       .catch(() => this.logger.debug(`Encryption extension already exists`));
   }
+
+  async createDefaultDataPermissions() {
+    // TODO: create entities
+    // await this.db
+    //   .insert(schema.entities)
+    //   .values({
+    //     id: ulid(),
+    //     name: '',
+    //   })
+    //   .catch(() => null);
+    // TODO: create fields
+    // TODO: create entity_fields
+    // TODO: create permissions
+    // TODO: create data_permissions
+    // TODO: use the src/schema/init.sql file to create the default data permissions
+  }
 }
 
 @Injectable()

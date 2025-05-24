@@ -4,7 +4,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/transactions/transactions.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import * as schema from '../../../../schema';
-import { eq } from 'lodash';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class TransactionsActorsImplementations {

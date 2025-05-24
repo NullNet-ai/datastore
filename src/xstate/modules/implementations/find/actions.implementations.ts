@@ -14,6 +14,8 @@ export class FindActionsImplementations {
   ) {
     this.actions.assignResponsibleAccount =
       this.verifyActionsImplementations.actions.assignResponsibleAccount;
+    this.actions.assignQueryDataPermissions =
+      this.verifyActionsImplementations.actions.assignQueryDataPermissions;
   }
   public readonly actions: typeof FindMachine.prototype.actions & IActions = {
     findEntry: () => {
