@@ -22,7 +22,6 @@ mod templates;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
-use crate::shutdown_handler::setup_shutdown_handler;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};

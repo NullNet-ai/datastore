@@ -379,6 +379,7 @@ impl BatchSyncService {
         let record_obj = json!({
             "code": code
         });
+        
 
         match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data)
             .await
