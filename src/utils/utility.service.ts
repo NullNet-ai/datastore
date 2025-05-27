@@ -1229,6 +1229,12 @@ export class Utility {
 
     switch (operator) {
       case EOperator.EQUAL:
+        if (pluralize.isPlural(field)) {
+          return eq(
+            schema_field,
+            sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
+          );
+        }
         return or(...values.map((value) => eq(schema_field, value)));
       case EOperator.NOT_EQUAL:
         return notInArray(schema_field, values);
