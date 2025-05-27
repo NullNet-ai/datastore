@@ -1,25 +1,22 @@
-import { boolean, index, integer, pgTable, text } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, integer, pgTable, text } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { table as contacts } from './contacts';
-import { sql } from 'drizzle-orm';
 const filename = path.basename(__filename).replace(fileRegex, '');
 
 const fields = {
   title: text(),
   description: text(),
-  timestamp: text(),
+  event_timestamp: text(),
   link: text().default(''),
   icon: text().default(''),
   source: text(),
   is_pinned: boolean().default(false),
   recipient_id: text().references(() => (contacts as Record<string, any>).id),
-  actions: text('columns')
-    .array()
-    .default(sql`ARRAY[]::text[]`),
+  actions: jsonb("actions").default([]),
   notification_status: text().default('unread'),
   priority_label: text().default('low'),
   priority_level: integer().default(0),
