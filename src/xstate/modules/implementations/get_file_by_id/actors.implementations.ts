@@ -38,13 +38,18 @@ export class GetFileByIdActorsImplementations {
       const [_res, _req, _file] = controller_args;
       const { params, query } = _req;
       const { table = 'files', id } = params;
-      const { pluck = 'id', date_format = 'mm/dd/YYYY' } = query;
+      const {
+        pluck = 'id',
+        date_format = 'mm/dd/YYYY',
+        pfk: pass_field_key = '',
+      } = query;
       const { table_schema } = Utility.checkTable(table);
-      const _plucked_fields = Utility.parsePluckedFields(
+      const _plucked_fields = Utility.parsePluckedFields({
         table,
-        pluck.split(','),
+        pluck: pluck.split(','),
         date_format,
-      );
+        pass_field_key,
+      });
       const selections = _plucked_fields === null ? undefined : _plucked_fields;
       const result = await this.db
         .select(selections)

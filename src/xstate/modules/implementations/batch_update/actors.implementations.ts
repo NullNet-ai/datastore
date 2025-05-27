@@ -50,7 +50,7 @@ export class BatchUpdateActorsImplementations {
         responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
-      const { table, type } = params;
+      const { table } = params;
       let { advance_filters, updates } = body;
       const table_schema = local_schema[table];
 
@@ -81,16 +81,13 @@ export class BatchUpdateActorsImplementations {
       Object.keys(parsed_updates).forEach((key) => {
         return_data[key] = table_schema[key];
       });
-      _db = Utility.FilterAnalyzer(
-        _db,
+      _db = Utility.FilterAnalyzer({
+        db: _db,
         table_schema,
         advance_filters,
-        [],
         organization_id,
-        [],
-        this.db,
-        type,
-      );
+        client_db: this.db,
+      });
       const result = await _db
         .returning({
           id: table_schema.id,

@@ -47,6 +47,7 @@ export class CountActorsImplementations {
         distinct_by = '',
         date_format,
       } = _req.body;
+
       let _db = this.db;
 
       if (distinct_by) {
@@ -86,14 +87,14 @@ export class CountActorsImplementations {
           table,
         );
       const encrypted_fields = [];
-      _db = Utility.FilterAnalyzer(
-        _db,
+      _db = Utility.FilterAnalyzer({
+        db: _db,
         table_schema,
         advance_filters,
         pluck_object,
         organization_id,
         joins,
-        this.db,
+        client_db: this.db,
         parsed_concatenated_fields,
         group_advance_filters,
         type,
@@ -102,7 +103,7 @@ export class CountActorsImplementations {
         table,
         date_format,
         concatenated_field_expressions,
-      );
+      });
 
       this.logger.debug(`Query: ${_db.toSQL().sql}`);
       this.logger.debug(`Params: ${_db.toSQL().params}`);

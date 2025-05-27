@@ -1,0 +1,5 @@
+SELECT entities.name as entity,fields.name as field,permissions.sensitive as sensitive,permissions.read as read,permissions.write as write,permissions.encrypt as encrypt,permissions.decrypt as decrypt,permissions.required as required,permissions.archive as archive,permissions.delete as delete, data_permissions.account_organization_id as account_organization_id FROM data_permissions LEFT JOIN entity_fields on data_permissions.entity_field_id = entity_fields.id LEFT JOIN fields on entity_fields.field_id = fields.id LEFT JOIN entities on entity_fields.entity_id = entities.id LEFT JOIN permissions on data_permissions.inherited_permission_id = permissions.id WHERE data_permissions.account_organization_id = '01JV9C6X14M7X6X5JYVBYD849A' AND (
+    data_permissions.tombstone = 0 AND 
+    entities.name IN ('samples') AND 
+    fields.name IN ('id','sample_text','categories','status','state')
+) LIMIT 100
