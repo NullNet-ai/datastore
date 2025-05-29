@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use crate::models::counter_model::CounterModel;
-use diesel::prelude::*;
 use crate::db;
+use crate::models::counter_model::CounterModel;
 use crate::schema::schema;
-use diesel::result::Error as DieselError;
 use diesel::associations::HasTable;
+use diesel::prelude::*;
+use diesel::result::Error as DieselError;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodePrefixInitializer {
@@ -15,7 +15,7 @@ pub struct CodePrefixInitializer {
 impl CodePrefixInitializer {
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
-        
+
         // Initialize with the example provided
         prefixes.insert(
             "connections".to_string(),
@@ -26,7 +26,7 @@ impl CodePrefixInitializer {
                 entity: "packets".to_string(),
             },
         );
-        
+
         // Add more table configurations as needed
         // Example:
         // prefixes.insert(
@@ -38,23 +38,23 @@ impl CodePrefixInitializer {
         //         entity: "devices".to_string(),
         //     },
         // );
-        
+
         CodePrefixInitializer { prefixes }
     }
-    
+
     pub fn get_config(&self, table_name: &str) -> Option<&CounterModel> {
         self.prefixes.get(table_name)
     }
-    
+
     pub fn add_config(&mut self, table_name: String, config: CounterModel) {
         self.prefixes.insert(table_name, config);
     }
-    
+
     /// Inserts all prefix configurations into the counter table in the database
     /// If a record with the same entity already exists, it will be skipped
     pub fn initialize_counter_table(&self) -> Result<(), DieselError> {
         let mut conn = db::get_sync_connection();
-        
+
         // Start a transaction to ensure all inserts succeed or fail together
         conn.transaction::<_, DieselError, _>(|conn| {
             for (_, counter) in &self.prefixes {
@@ -64,13 +64,17 @@ impl CodePrefixInitializer {
                     .on_conflict_do_nothing()
                     .execute(conn)
                     .map_err(|e| {
-                        log::error!("Error inserting counter for entity {}: {}", counter.entity, e);
+                        log::error!(
+                            "Error inserting counter for entity {}: {}",
+                            counter.entity,
+                            e
+                        );
                         e
                     })?;
-                
+
                 log::info!("Initialized counter for entity: {}", counter.entity);
             }
-            
+
             Ok(())
         })
     }

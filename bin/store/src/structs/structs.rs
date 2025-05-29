@@ -1,10 +1,13 @@
+use crate::schema::verify::{field_exists_in_table, field_type_in_table};
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
+use actix_web::error::ErrorBadRequest;
 use chrono::Utc;
-use diesel::sql_types::{Text, Uuid};
+use diesel::sql_types::Text;
 use diesel::AsExpression;
 use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use uuid::Uuid as uuid_crate;
 
 #[derive(Serialize, Deserialize)]
@@ -190,4 +193,227 @@ pub struct Endpoint {
 pub struct Auth {
     pub organization_id: String,
     pub responsible_account: String,
+}
+
+// get by filter
+#[derive(Clone, Debug)]
+pub struct ParsedConcatenatedFields {
+    pub fields: HashMap<String, Vec<String>>,
+    pub expressions: HashMap<String, Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GetByFilter {
+    #[serde(default = "default_pluck_vec")]
+    pub pluck: Vec<String>,
+
+    #[serde(default)]
+    pub pluck_object: HashMap<String, Vec<String>>,
+
+    #[serde(default)]
+    pub advance_filters: Vec<String>,
+
+    #[serde(default)]
+    pub group_advance_filters: HashMap<String, Vec<String>>,
+
+    #[serde(default)]
+    pub joins: Vec<Join>,
+
+    #[serde(default)]
+    pub group_by: HashMap<String, Vec<String>>,
+
+    #[serde(default)]
+    pub concatenate_fields: Vec<ConcatenateField>,
+
+    #[serde(default)]
+    pub multiple_sort: Vec<SortOption>,
+
+    #[serde(default = "default_date_format")]
+    pub date_format: String,
+
+    #[serde(default = "default_date_format")]
+    pub order_by: String,
+
+    #[serde(default = "default_date_format")]
+    pub order_direction: String,
+
+    #[serde(default = "default_offset")]
+    pub offset: usize,
+
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+
+    pub distinct_by: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConcatenateField {
+    pub fields: Vec<String>,
+    pub field_name: String,
+    pub separator: String,
+    pub entity: String,
+}
+
+impl ConcatenateField {
+    /// Generates the SQL expression for this concatenate field.
+    pub fn to_sql_expression(&self) -> String {
+        let joined_fields = self
+            .fields
+            .iter()
+            .map(|field| format!("COALESCE(\"joined_{}\".\"{}\", '')", self.entity, field))
+            .collect::<Vec<_>>()
+            .join(&format!(" || '{}' || ", self.separator));
+        format!("({}) AS \"{}\"", joined_fields, self.field_name)
+    }
+
+    pub fn parse_main_concatenations(
+        concatenate_fields: &[ConcatenateField],
+        table_name: &str,
+        mut plucked_fields: HashMap<String, serde_json::Value>,
+    ) -> Result<Option<HashMap<String, serde_json::Value>>, actix_web::Error> {
+        use crate::schema::verify;
+        use actix_web::error::ErrorBadRequest;
+
+        for field in concatenate_fields {
+            if field.entity != table_name {
+                continue;
+            }
+
+            // Check if all fields exist and are valid string types
+            for f in &field.fields {
+                let field_type = verify::field_type_in_table(table_name, f).ok_or_else(|| {
+                    ErrorBadRequest(format!(
+                        "Field \"{}\" doesn't exist in the schema of {}",
+                        f, table_name
+                    ))
+                })?;
+
+                let field_lower = f.to_lowercase();
+                if field_type != "Text"
+                    || field_lower.ends_with("date")
+                    || field_lower.contains("id")
+                {
+                    return Err(ErrorBadRequest(format!(
+                        "Concatenated fields must be of type string. Verify the fields in {}",
+                        table_name
+                    )));
+                }
+            }
+
+            let sql_expression = field.to_sql_expression();
+            plucked_fields.insert(
+                field.field_name.clone(),
+                serde_json::Value::String(sql_expression),
+            );
+        }
+
+        if plucked_fields.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(plucked_fields))
+        }
+    }
+
+    pub fn parse_concatenate_fields(
+        concatenate_fields: &[ConcatenateField],
+        table:String,
+    ) -> ParsedConcatenatedFields {
+        let (fields, expressions) = concatenate_fields.iter().fold(
+            (HashMap::new(), HashMap::new()),
+            |(mut fields, mut expressions), field| {
+                // Initialize vectors for this entity if they don't exist
+                expressions
+                    .entry(field.entity.clone())
+                    .or_insert_with(Vec::new);
+                fields.entry(field.entity.clone()).or_insert_with(Vec::new);
+
+                // Build the concatenated SQL expression using the existing to_sql_expression method
+                let mut concatenated_field = field.to_sql_expression();
+                if(field.entity==table){
+                    //remove joined_ prefix from concatenated_field
+                    concatenated_field = concatenated_field.replace("joined_", "");
+                }
+
+                // Store the expression
+                expressions
+                    .get_mut(&field.entity)
+                    .unwrap()
+                    .push(concatenated_field);
+
+                // Store the field name in the fields HashMap if not already present
+                if !fields
+                    .get(&field.entity)
+                    .unwrap()
+                    .contains(&field.field_name)
+                {
+                    fields
+                        .get_mut(&field.entity)
+                        .unwrap()
+                        .push(field.field_name.clone());
+                }
+
+                (fields, expressions)
+            },
+        );
+
+        ParsedConcatenatedFields {
+            fields,
+            expressions,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SortOption {
+    pub by_field: String,
+    pub by_direction: String,
+    #[serde(default = "default_case_sensitive")]
+    pub is_case_sensitive_sorting: String,
+}
+
+fn default_date_format() -> String {
+    "YYYY-MM-DD".to_string()
+}
+
+fn default_limit() -> usize {
+    10
+}
+
+fn default_order_driection() -> String {
+    "asc".to_string()
+}
+fn default_order_by() -> String {
+    "id".to_string()
+}
+
+fn default_offset() -> usize {
+    0
+}
+
+fn default_case_sensitive() -> String {
+    "false".to_string()
+}
+
+fn default_pluck_vec() -> Vec<String> {
+    vec!["id".to_string()]
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Join {
+    pub r#type: String, // use r#type because `type` is a Rust keyword
+    pub field_relation: FieldRelation,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FieldRelation {
+    pub to: RelationEndpoint,
+    pub from: RelationEndpoint,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RelationEndpoint {
+    pub entity: String,
+    pub field: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
 }

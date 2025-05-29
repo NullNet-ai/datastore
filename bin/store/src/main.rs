@@ -31,7 +31,7 @@ use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
 use controllers::store_controller::{
     batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
-    update_record, upsert,
+    get_by_filter, update_record, upsert,
 };
 use env_logger::Env;
 use std::process;
@@ -68,20 +68,23 @@ async fn main() -> std::io::Result<()> {
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
     let merkle_manager = MerkleManager::instance();
-    println!("{} {} {}",generate_proto, generate_grpc, generate_table_enum);
+    println!(
+        "{} {} {}",
+        generate_proto, generate_grpc, generate_table_enum
+    );
     if generate_proto || generate_grpc || generate_table_enum {
         println!("Starting code generation...");
-        
+
         // Proto generation
         if generate_proto {
             println!("Generating proto files");
             proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
-            
+
             if let Err(e) = run_build_script() {
                 eprintln!("Failed to run build script: {}", e);
             }
         }
-        
+
         // gRPC controller generation
         if generate_grpc {
             println!("Generating gRPC controllers");
@@ -90,7 +93,7 @@ async fn main() -> std::io::Result<()> {
                 process::exit(1);
             }
         }
-        
+
         // Table enum generation
         if generate_table_enum {
             println!("Generating table enums");
@@ -98,7 +101,7 @@ async fn main() -> std::io::Result<()> {
                 eprintln!("Failed to generate table enum: {}", e);
             }
         }
-        
+
         println!("Code generation completed successfully!");
     }
 
@@ -144,7 +147,7 @@ async fn main() -> std::io::Result<()> {
             Err(e) => eprintln!("Failed to start gRPC server: {}", e),
         }
     });
-    //init batch sync
+    // init batch sync
     if let Err(e) = BatchSyncService::init().await {
         log::error!("Failed to initialize queue: {}", e);
     } else {
@@ -177,6 +180,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/upsert/{table}", web::post().to(upsert))
                     .route("/batch/{table}", web::patch().to(batch_update_records))
                     .route("/batch/{table}", web::delete().to(batch_delete_records))
+                    .route("/{table}/filter", web::post().to(get_by_filter))
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records)),
@@ -205,7 +209,7 @@ async fn main() -> std::io::Result<()> {
 
             // Wait for 5 seconds before proceeding with shutdown
             println!("Waiting 5 seconds before final shutdown...");
-            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            // tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
             println!("Shutdown delay complete, exiting now");
         },

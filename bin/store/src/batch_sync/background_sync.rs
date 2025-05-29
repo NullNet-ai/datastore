@@ -17,7 +17,6 @@ pub struct BackgroundSyncService {
     batch_sync_type: String,
 }
 
-
 impl BackgroundSyncService {
     pub async fn new() -> Result<Self, String> {
         dotenv().ok();

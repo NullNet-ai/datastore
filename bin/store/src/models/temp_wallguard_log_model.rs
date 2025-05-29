@@ -29,5 +29,5 @@ pub struct TempWallguardLogModel {
 
     pub level: Option<String>,
     pub message: Option<String>,
-    pub hypertable_timestamp: Option<String>
+    pub hypertable_timestamp: Option<String>,
 }

@@ -69,6 +69,64 @@ pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
     false // Return false if table not found
 }
 
+pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<String> {
+    // Path to schema.rs file
+    let possible_paths = vec![Path::new("src/schema/schema.rs"), Path::new("schema.rs")];
+    // Read the schema file
+    let mut schema_content = String::new();
+    for path in possible_paths {
+        if let Ok(content) = fs::read_to_string(&path) {
+            schema_content = content;
+            break;
+        }
+    }
+
+    if schema_content.is_empty() {
+        log::error!("Could not find schema file");
+        schema_content = SCHEMA_CONTENT.to_string();
+    }
+
+    // Create a regex pattern to find the table definition
+    let table_pattern = format!(
+        r"(?s)table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{(.*?)\}}\s*\}}",
+        regex::escape(table_name)
+    );
+    let table_regex = match Regex::new(&table_pattern) {
+        Ok(re) => re,
+        Err(e) => {
+            log::error!("Failed to create table regex: {}", e);
+            return None;
+        }
+    };
+
+    // Find the table definition
+    if let Some(captures) = table_regex.captures(&schema_content) {
+        if let Some(table_body) = captures.get(1) {
+            // Get the table body content
+            let table_content = table_body.as_str();
+
+            // Create a regex pattern to find the field and capture its type
+            let field_pattern = format!(r"(?m)^\s*{}\s*->\s*([^,\s]+)", field_name);
+            let field_regex = match Regex::new(&field_pattern) {
+                Ok(re) => re,
+                Err(e) => {
+                    log::error!("Failed to create field regex: {}", e);
+                    return None;
+                }
+            };
+
+            // Extract the field type if found
+            if let Some(field_captures) = field_regex.captures(table_content) {
+                if let Some(field_type) = field_captures.get(1) {
+                    return Some(field_type.as_str().to_string());
+                }
+            }
+        }
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
