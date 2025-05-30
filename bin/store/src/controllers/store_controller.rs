@@ -849,7 +849,7 @@ pub async fn get_by_filter(
     });
 
     //print selections here
-    // println!("{:#?}", selections);
+    println!("{:#?}", selections);
 
     //validate multiple sort
 

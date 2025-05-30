@@ -72,11 +72,10 @@ pub fn create_selections(
         for selection in main_concatenate_selections {
             if let Some(pos) = selection.find(" AS ") {
                 let field_name = &selection[pos + 4..].replace("\"", "").replace("/", "");
-                let modified_selection = selection.replace("joined_", "");
-                selections.insert(field_name.to_string(), modified_selection);
+                selections.insert(field_name.to_string(), selection.clone());
             }
         }
-    }
+    };
 
     // Process join selections
     if !joins.is_empty() {
@@ -226,5 +225,8 @@ pub fn get_sort_field(
             sort_query = format!("MAX({})", sort_query);
         }
     }
+//remove joined_ keyword from sort_query
+sort_query = sort_query.replace("joined_", "");
+    // Return the sort_query valu
     Ok(sort_query)
 }
