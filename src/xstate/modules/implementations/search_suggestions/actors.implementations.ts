@@ -274,7 +274,6 @@ export class SearchSuggestionsActorsImplementations {
         '',
       );
 
-      console.log("%c 🥚: SearchSuggestionsActorsImplementations -> json_build_object_query ", "font-size:16px;background-color:#f10bbe;color:white;", json_build_object_query)
       const raw_query = sql.raw(
         `SELECT JSON_BUILD_OBJECT(${json_build_object_query}) AS results`,
       );
