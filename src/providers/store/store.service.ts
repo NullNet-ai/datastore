@@ -95,6 +95,9 @@ export class StoreQueryDriver {
 
   @Machine('count')
   async getCount(_res: Response, _req: Request) {}
+
+  @Machine('searchSuggestions')
+  async searchSuggestions(_res: Response, _req: Request) {}
 }
 
 @Injectable()

@@ -41,6 +41,7 @@ import { GrpcController } from './store.grpc.controller';
 import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations/auth.service';
 import { StoreGrpcService } from './store.grpc.service';
 import { BatchUpdateImplementationModule } from '../../xstate/modules/implementations/batch_update/batch_update.implementation.module';
+import { SearchSuggestionsImplementationModule } from 'src/xstate/modules/implementations/search_suggestions/search_suggestions.implementation.module';
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
 const machines_providers = machine_providers([
@@ -53,6 +54,7 @@ const machines_providers = machine_providers([
   machines.AggregationFilterMachine,
   machines.BatchInsertMachine,
   machines.BatchUpdateMachine,
+  machines.SearchSuggestionsMachine,
 
   // Hypertable
   machines.CreateHypertablesMachine,
@@ -97,6 +99,7 @@ const shared_machine_imports = [
   AggregationFilterImplementationModule,
   BatchInsertImplementationModule,
   BatchUpdateImplementationModule,
+  SearchSuggestionsImplementationModule,
 
   //Hypertable
   CreateHypertablesImplementationModule,

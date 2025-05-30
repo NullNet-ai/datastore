@@ -109,6 +109,25 @@ export class StoreController {
   async delete(@Res() _res: Response, @Req() _req: Request) {
     return this.storeMutation.delete(_res, _req);
   }
+
+  @Post('/:table/filter/suggestions')
+  @ValidateZod({
+    body: z.object({
+      pluck: z.array(
+        z
+          .string()
+          .min(1, "pluck fields is required, for getting all fields use ' * '"),
+      ),
+      advance_filters: z.array(advanceFilterValidation),
+      order_by: z.string().optional(),
+      limit: z.number().optional().default(50),
+      offset: z.number().default(0),
+      order_direction: z.enum(['asc', 'desc']).default('asc'),
+    }),
+  })
+  async searchSuggestions(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeQuery.searchSuggestions(_res, _req);
+  }
 }
 
 @Controller('/api/hypertable')
