@@ -2,7 +2,9 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::{
-    main, schema::verify::field_exists_in_table, structs::structs::{Join, ParsedConcatenatedFields}
+    main,
+    schema::verify::field_exists_in_table,
+    structs::structs::{Join, ParsedConcatenatedFields},
 };
 
 pub fn validate_pluck_object(
@@ -158,7 +160,7 @@ pub fn get_sort_field(
     let field_is_aliased = aliased_entities.contains_key(sort_field);
     let entity_is_main_table = sort_entity == main_table;
 
-    if!field_exists_in_schema &&!field_exists_in_concatenations &&!field_is_aliased {
+    if !field_exists_in_schema && !field_exists_in_concatenations && !field_is_aliased {
         return Err(format!(
             "Field '{}' does not exist in the schema, aliases or concatenations",
             by_field
@@ -166,10 +168,7 @@ pub fn get_sort_field(
     }
     let is_case_sensitive = case_sensitive == "true";
 
-
-    let mut sort_query : String = String::new();
-
-
+    let mut sort_query: String = String::new();
 
     if !field_exists_in_schema && field_exists_in_concatenations {
         // Get the index of the field in the concatenated fields
@@ -179,54 +178,53 @@ pub fn get_sort_field(
                 if let Some(expressions) = concatenations.expressions.get(sort_entity) {
                     if index < expressions.len() {
                         let expression = &expressions[index];
-                        
+
                         // Simply split by " AS " and extract the field name
                         let parts: Vec<&str> = expression.split(" AS ").collect();
                         if parts.len() >= 2 {
                             // Extract the field name and remove quotes
                             sort_query = parts[0].trim().trim_matches('"').to_string();
-                           
-                            
-                        
-                        }
-                        else{
+                        } else {
                             return Err(format!(
                                 "Error while sorting by concatenated field '{}', invalid expression format, missing AS keyword",
                                 by_field
-                            ))
+                            ));
                         }
-                    }
-                    else{
+                    } else {
                         return Err(format!(
                             "Error while sorting by concatenated field '{}', expressions and fields length mismatch",
                             by_field
-                        ))
+                        ));
                     }
                 }
             }
         }
-    }
-    else {
+    } else {
         // If the field is aliased, use the alias
-        sort_query = format!(
-            "\"{}\".\"{}\"",
-            sort_entity, sort_field
-        )
+        sort_query = format!("\"{}\".\"{}\"", sort_entity, sort_field)
     }
 
-    if(is_case_sensitive){
+    if (is_case_sensitive) {
         sort_query = format!("lower({})", sort_query);
     }
 
-    if(!entity_is_main_table){
+    if (!entity_is_main_table) {
         if by_direction.to_lowercase() == "asc" {
             sort_query = format!("MIN({})", sort_query);
         } else {
             sort_query = format!("MAX({})", sort_query);
         }
     }
-//remove joined_ keyword from sort_query
-sort_query = sort_query.replace("joined_", "");
+    //remove joined_ keyword from sort_query
+    sort_query = sort_query.replace("joined_", "");
+    let direction =
+        if by_direction.to_lowercase() == "asc" || by_direction.to_lowercase() == "ascending" {
+            "ASC"
+        } else {
+            "DESC"
+        };
+    sort_query = format!("{} {}", sort_query, direction);
+    // Add the direction to the sort_query
     // Return the sort_query valu
     Ok(sort_query)
 }

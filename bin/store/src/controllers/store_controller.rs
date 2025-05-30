@@ -823,29 +823,33 @@ pub async fn get_by_filter(
         }
     }
 
-
     let selections = create_selections(
         table.clone(),
         pluck_object,
         &joins,
         date_format,
         &ParsedConcatenatedFields {
-            fields:fields.clone(),
-            expressions:expressions.clone(),
+            fields: fields.clone(),
+            expressions: expressions.clone(),
         },
     );
-
 
     multiple_sort.iter().for_each(|sort_option| {
         let by_field = &sort_option.by_field;
         let by_direction = &sort_option.by_direction;
         let is_case_sensitive_sorting = sort_option.is_case_sensitive_sorting.clone();
-        let multiple_sort_query = get_sort_field(by_field.to_string(), aliased_fields.clone(), ParsedConcatenatedFields {
-            fields: fields.clone(),
-            expressions: expressions.clone(),
-        }, by_direction.to_string(), Some(is_case_sensitive_sorting), table.clone());
-    println!("{:#?}", multiple_sort_query);
-
+        let multiple_sort_query = get_sort_field(
+            by_field.to_string(),
+            aliased_fields.clone(),
+            ParsedConcatenatedFields {
+                fields: fields.clone(),
+                expressions: expressions.clone(),
+            },
+            by_direction.to_string(),
+            Some(is_case_sensitive_sorting),
+            table.clone(),
+        );
+        println!("{:#?}", multiple_sort_query);
     });
 
     //print selections here

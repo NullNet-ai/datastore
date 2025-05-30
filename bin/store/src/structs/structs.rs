@@ -316,7 +316,7 @@ impl ConcatenateField {
 
     pub fn parse_concatenate_fields(
         concatenate_fields: &[ConcatenateField],
-        table:String,
+        table: String,
     ) -> ParsedConcatenatedFields {
         let (fields, expressions) = concatenate_fields.iter().fold(
             (HashMap::new(), HashMap::new()),
@@ -329,7 +329,7 @@ impl ConcatenateField {
 
                 // Build the concatenated SQL expression using the existing to_sql_expression method
                 let mut concatenated_field = field.to_sql_expression();
-                if(field.entity==table){
+                if (field.entity == table) {
                     //remove joined_ prefix from concatenated_field
                     concatenated_field = concatenated_field.replace("joined_", "");
                 }
