@@ -260,7 +260,7 @@ export class Utility {
     time_zone?: string;
     encrypted_fields: Array<string>;
     fields: Array<string>;
-    pass_field_key;
+    pass_field_key?: any;
   }) => {
     const field_prefix = field.replace(/(_date)|(_time)$/, '');
     const date_field = `${field_prefix}_date`;
@@ -1142,7 +1142,11 @@ export class Utility {
 
     const concatenated_entity = concatenated_field_expressions?.[entity] ?? {};
     // Handle concatenated fields for schema_field
-    if (!table_schema?.[field] && Object.keys(concatenated_entity)?.length) {
+    if (
+      !table_schema?.[field] &&
+      Object.keys(concatenated_entity)?.length &&
+      concatenated_entity?.[field]?.expression
+    ) {
       schema_field = sql.raw(
         Utility.decryptField({
           field: concatenated_entity?.[field]?.expression,
@@ -1154,7 +1158,7 @@ export class Utility {
       );
     } else {
       // Handle schema fields for date fields
-      if (field.endsWith('_date')) {
+      if (field?.endsWith('_date')) {
         schema_field = sql.raw(
           `to_char(${Utility.decryptField({
             field: `"${entity}"."${field}"`,

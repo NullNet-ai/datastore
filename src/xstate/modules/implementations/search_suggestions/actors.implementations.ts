@@ -51,6 +51,7 @@ export class SearchSuggestionsActorsImplementations {
         concatenate_fields = [],
         group_advance_filters = [],
         date_format,
+        encrypted_fields = [],
       } = _req.body;
 
       if (!advance_filters.length)
@@ -81,17 +82,17 @@ export class SearchSuggestionsActorsImplementations {
       // format entity names of advance filters and get the filtered fields and search term
       const formatted_advance_filters: Array<Record<string, any>> =
         advance_filters.map((filter) => {
-          const { type, entity, field, values, is_searched = false } = filter;
+          const { type, entity, field, values, is_search = false } = filter;
           let filtered_entity = entity;
           const is_aliased = aliased_joined_entities?.find(
             ({ alias }) => alias === filtered_entity,
           );
-          if (type === 'criteria' && is_searched)
-            search_term = values?.[0] || '';
+          if (type === 'criteria' && is_search) search_term = values?.[0] || '';
           filtered_entity = is_aliased
             ? filtered_entity
             : pluralize(filtered_entity || table);
-          if (type === 'criteria')
+
+          if (type === 'criteria' && is_search)
             filtered_fields = {
               ...filtered_fields,
               [filtered_entity]: filtered_fields[filtered_entity]
@@ -121,6 +122,7 @@ export class SearchSuggestionsActorsImplementations {
         time_zone,
         table,
         date_format,
+        concatenate_fields,
         concatenated_field_expressions,
       };
       const json_build_object_query = await Bluebird.reduce(
@@ -129,7 +131,8 @@ export class SearchSuggestionsActorsImplementations {
           const field_object_agg = await Bluebird.map(
             await filtered_fields[entity],
             async (field: string) => {
-              const entity_field = `${entity}.${field}`;
+              let entity_field = `${entity}.${field}`;
+              let add_alias = false;
               let db_field_group = this.db;
               let db_field = this.db;
               // Generate the subquery for the field group
@@ -140,20 +143,27 @@ export class SearchSuggestionsActorsImplementations {
               let all_field_filters: Array<Record<string, any>> = [];
 
               let field_filter: Record<string, any> = {};
-              formatted_advance_filters.forEach((filter) => {
+              formatted_advance_filters.forEach((filter, index) => {
                 const {
                   type,
                   entity: filtered_entity,
                   field: filtered_field,
                   values,
-                  is_searched = false,
+                  is_search = false,
                 } = filter;
                 const filtered_value = values?.[0];
                 // if or/and operation and the last pushed was criteria
+                // and (if next is criteria and not search term or previous is criteria and not search term)
                 if (
                   type === 'operator' &&
                   all_field_filters[all_field_filters.length - 1]?.type ===
-                    'criteria'
+                    'criteria' &&
+                  ((formatted_advance_filters[index + 1]?.type === 'criteria' &&
+                    !formatted_advance_filters[index + 1]?.is_search) ||
+                    (all_field_filters[all_field_filters.length - 1]?.type ===
+                      'criteria' &&
+                      !all_field_filters[all_field_filters.length - 1]
+                        ?.is_search))
                 )
                   all_field_filters.push(filter);
                 // if filter for the current field iterated
@@ -161,7 +171,7 @@ export class SearchSuggestionsActorsImplementations {
                   type === 'criteria' &&
                   entity === filtered_entity &&
                   field === filtered_field &&
-                  is_searched
+                  is_search
                 ) {
                   field_filter = filter;
                   all_field_filters.push(filter);
@@ -180,23 +190,52 @@ export class SearchSuggestionsActorsImplementations {
                 db_field_group,
                 {
                   ...filter_analyzer_params,
-                  // Only pass the filter specific for the field and no other else to give the correct count
-                  advance_filters: [field_filter],
+                  // Pass the filter specific for the field and all default filters from portal
+                  advance_filters: all_field_filters,
                 },
               );
+
+              // Concatenated expression for field
+              const concatenated_field_exp =
+                concatenated_field_expressions?.[entity]?.[field]?.expression;
+
+              if (field.endsWith('_date')) {
+                add_alias = true;
+                entity_field = Utility.formatDate({
+                  table: entity,
+                  field,
+                  date_format,
+                  time_zone,
+                  fields: pluck_object[entity],
+                  encrypted_fields,
+                }) as any;
+              } else if (concatenated_field_exp) {
+                add_alias = true;
+                entity_field = concatenated_field_exp;
+              }
 
               // Generate the subquery for the field
               db_field = db_field
                 .select({
-                  [entity]: sql.raw(entity_field),
+                  [entity]: sql.raw(
+                    `${entity_field}${add_alias ? ` AS ${field}` : ''}`,
+                  ),
                   count: sql.raw(`COUNT(*)`),
                 })
                 .from(table_schema);
+
               const field_subquery = this.generateFieldSubquery(db_field, {
                 ...filter_analyzer_params,
                 // Pass the filter specific for the field and all the default filters
                 advance_filters: all_field_filters,
               });
+
+              // Handle grouping
+              let group_by_entity_field = entity_field;
+
+              group_by_entity_field = concatenated_field_exp
+                ? concatenated_field_exp
+                : group_by_entity_field;
 
               const group_count_query = `
                 '${field}_group', (
@@ -206,7 +245,7 @@ export class SearchSuggestionsActorsImplementations {
                   )
                   FROM (
                     ${field_group_subquery}
-                    GROUP BY ${entity}.${field}
+                    GROUP BY ${group_by_entity_field}
                   ) AS ${field}_group
                 )`;
 
@@ -246,7 +285,7 @@ export class SearchSuggestionsActorsImplementations {
                 })
                 .from(
                   sql.raw(
-                    `(${field_subquery} GROUP BY ${entity}.${field} OFFSET ${offset} LIMIT ${limit}) AS ${field}`,
+                    `(${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}) AS ${field}`,
                   ),
                 )
                 .where(field_filter_query);
