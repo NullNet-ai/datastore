@@ -3,7 +3,7 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_insert_record, process_and_update_record,
     process_records,
 };
-use crate::controllers::common_find::get_sort_field;
+use crate::controllers::common_find::{filter_analyzer, get_sort_field};
 use crate::db;
 use crate::db::create_connection;
 use crate::schema::verify::field_exists_in_table;
@@ -611,6 +611,8 @@ pub async fn delete_record(
         }
     };
 
+    let organization_id = &auth_data.organization_id;
+
     // Create delete updates (setting tombstone and status)
     let delete_updates = serde_json::json!({});
 
@@ -670,6 +672,7 @@ pub async fn get_by_filter(
         }
     };
 
+    let organization_id = &auth_data.organization_id;
     let GetByFilter {
         pluck,
         mut pluck_object,
@@ -815,17 +818,48 @@ pub async fn get_by_filter(
 
         // Add fields to pluck_object if joins exist
         if !joins.is_empty() {
+            // Find if this field is part of a concatenation
+            let concat = concatenate_fields.iter().find(
+                |concat_entity| 
+                    concat_entity.field_name == field && 
+                    concat_entity.entity == entity
+            );
+            
             // Initialize entity entry in pluck_object if it doesn't exist
-            pluck_object
-                .entry(entity.to_string())
-                .or_insert_with(Vec::new)
-                .push(field.to_string());
+            // and add either the single field or all concatenated fields
+            if let Some(entry) = pluck_object.get_mut(&entity.to_string()) {
+                // Add the field or concatenated fields to the existing entry
+                if let Some(concat_fields) = concat {
+                    // Add all fields from the concatenation
+                    for concat_field in &concat_fields.fields {
+                        if !entry.contains(&concat_field.to_string()) {
+                            entry.push(concat_field.to_string());
+                        }
+                    }
+                } else {
+                    // Add just the single field if not already present
+                    if !entry.contains(&field.to_string()) {
+                        entry.push(field.to_string());
+                    }
+                }
+            } else {
+                // Create a new entry with either the single field or all concatenated fields
+                let mut fields = Vec::new();
+                if let Some(concat_fields) = concat {
+                    // Add all fields from the concatenation
+                    fields.extend(concat_fields.fields.iter().map(|f| f.to_string()));
+                } else {
+                    // Add just the single field
+                    fields.push(field.to_string());
+                }
+                pluck_object.insert(entity.to_string(), fields);
+            }
         }
     }
 
     let selections = create_selections(
         table.clone(),
-        pluck_object,
+        pluck_object.clone(),
         &joins,
         date_format,
         &ParsedConcatenatedFields {
@@ -833,6 +867,25 @@ pub async fn get_by_filter(
             expressions: expressions.clone(),
         },
     );
+
+    //filter analyzer
+
+    let filter_analyzer = filter_analyzer(table.clone(), advance_filters, pluck_object.clone(), organization_id.to_string(), &joins, ParsedConcatenatedFields {
+        fields: fields.clone(),
+        expressions: expressions.clone(),
+    }, group_advance_filters, aliased_fields.clone(), selections.clone());
+    if filter_analyzer.is_err() {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: filter_analyzer.err().unwrap(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let filter_analyzer = filter_analyzer.unwrap();
+    println!("{:#?}", filter_analyzer);
+
+
 
     multiple_sort.iter().for_each(|sort_option| {
         let by_field = &sort_option.by_field;

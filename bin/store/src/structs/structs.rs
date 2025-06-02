@@ -211,10 +211,10 @@ pub struct GetByFilter {
     pub pluck_object: HashMap<String, Vec<String>>,
 
     #[serde(default)]
-    pub advance_filters: Vec<String>,
+    pub advance_filters: Vec<FilterCriteria>,
 
     #[serde(default)]
-    pub group_advance_filters: HashMap<String, Vec<String>>,
+    pub group_advance_filters: Vec<GroupAdvanceFilter>,
 
     #[serde(default)]
     pub joins: Vec<Join>,
@@ -405,6 +405,13 @@ pub struct Join {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupAdvanceFilter {
+    pub operator: FilterOperator,
+    pub filters: Vec<FilterCriteria>,
+    pub r#type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldRelation {
     pub to: RelationEndpoint,
     pub from: RelationEndpoint,
@@ -416,4 +423,94 @@ pub struct RelationEndpoint {
     pub field: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
+    pub order_direction: Option<String>,
+    pub order_by: Option<String>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+}
+
+
+//advance filters
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FilterCriteria {
+    #[serde(rename = "criteria")]
+    Criteria {
+        field: String,
+        operator: FilterOperator,
+        values: Vec<serde_json::Value>,
+        r#type: FilterType,
+        entity: String,
+    },
+    #[serde(rename = "operator")]
+    LogicalOperator { operator: LogicalOperator },
+}
+
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub enum FilterType {
+    Criteria,
+    Operator,
+}
+impl ToString for FilterType {
+    fn to_string(&self) -> String {
+        match self {
+            FilterType::Criteria => "AND".to_string(),
+            FilterType::Operator => "OR".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum LogicalOperator {
+    And,
+    Or,
+}
+impl ToString for LogicalOperator {
+    fn to_string(&self) -> String {
+        match self {
+            LogicalOperator::And => "AND".to_string(),
+            LogicalOperator::Or => "OR".to_string(),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FilterOperator {
+    #[serde(rename = "equal")]
+    Equal,
+    #[serde(rename = "not_equal")]
+    NotEqual,
+    #[serde(rename = "greater_than")]
+    GreaterThan,
+    #[serde(rename = "greater_than_or_equal")]
+    GreaterThanOrEqual,
+    #[serde(rename = "less_than")]
+    LessThan,
+    #[serde(rename = "less_than_or_equal")]
+    LessThanOrEqual,
+    #[serde(rename = "is_null")]
+    IsNull,
+    #[serde(rename = "is_not_null")]
+    IsNotNull,
+    #[serde(rename = "contains")]
+    Contains,
+    #[serde(rename = "not_contains")]
+    NotContains,
+    #[serde(rename = "is_between")]
+    IsBetween,
+    #[serde(rename = "is_not_between")]
+    IsNotBetween,
+    #[serde(rename = "is_empty")]
+    IsEmpty,
+    #[serde(rename = "is_not_empty")]
+    IsNotEmpty,
+    #[serde(rename = "and")]
+    And,
+    #[serde(rename = "or")]
+    Or,
+    #[serde(rename = "like")]
+    Like,
 }
