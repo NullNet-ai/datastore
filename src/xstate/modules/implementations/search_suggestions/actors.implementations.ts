@@ -54,11 +54,11 @@ export class SearchSuggestionsActorsImplementations {
         encrypted_fields = [],
       } = _req.body;
 
-      if (!advance_filters.length)
+      if (!advance_filters?.length && !group_advance_filters?.length)
         return Promise.resolve({
           payload: {
             success: true,
-            message: 'No advance filters provided',
+            message: 'No advance or group filters provided',
             count: 0,
             data: [],
           },
@@ -79,31 +79,49 @@ export class SearchSuggestionsActorsImplementations {
 
       let filtered_fields = {};
       let search_term = '';
-      // format entity names of advance filters and get the filtered fields and search term
-      const formatted_advance_filters: Array<Record<string, any>> =
-        advance_filters.map((filter) => {
-          const { type, entity, field, values, is_search = false } = filter;
-          let filtered_entity = entity;
-          const is_aliased = aliased_joined_entities?.find(
-            ({ alias }) => alias === filtered_entity,
-          );
-          if (type === 'criteria' && is_search) search_term = values?.[0] || '';
-          filtered_entity = is_aliased
-            ? filtered_entity
-            : pluralize(filtered_entity || table);
+      let formatted_advance_filters: Array<Record<string, any>> = [];
+      let formatted_group_advance_filters: Array<Record<string, any>> = [];
+      if (group_advance_filters?.length) {
+        // format entity names of group advance filters and get the filtered fields and search term
+        formatted_group_advance_filters = group_advance_filters.map(
+          (grouped_filters) => {
+            const {
+              formatted_filters,
+              search_term: _search_term,
+              filtered_fields: _filtered_fields,
+            } = this.formatFilters({
+              filters: grouped_filters.filters,
+              aliased_joined_entities,
+              table,
+              filtered_fields,
+              search_term,
+            });
 
-          if (type === 'criteria' && is_search)
-            filtered_fields = {
-              ...filtered_fields,
-              [filtered_entity]: filtered_fields[filtered_entity]
-                ? [...filtered_fields[filtered_entity], field]
-                : [field],
+            filtered_fields = _filtered_fields;
+            search_term = _search_term;
+            return {
+              ...grouped_filters,
+              filters: formatted_filters,
             };
-          return {
-            ...filter,
-            entity: filtered_entity,
-          };
+          },
+        );
+      } else {
+        // format entity names of advance filters and get the filtered fields and search term
+        const {
+          formatted_filters,
+          search_term: _search_term,
+          filtered_fields: _filtered_fields,
+        } = this.formatFilters({
+          filters: advance_filters,
+          aliased_joined_entities,
+          table,
+          filtered_fields,
+          search_term,
         });
+        formatted_advance_filters = formatted_filters;
+        filtered_fields = _filtered_fields;
+        search_term = _search_term;
+      }
 
       const concatenated_field_expressions =
         Utility.generateConcatenatedExpressions(
@@ -111,13 +129,12 @@ export class SearchSuggestionsActorsImplementations {
           date_format,
           table,
         );
+      // default FilterAnalyzer params
       const filter_analyzer_params = {
         table_schema,
-        formatted_advance_filters,
         pluck_object,
         organization_id,
         joins,
-        group_advance_filters,
         type,
         time_zone,
         table,
@@ -141,50 +158,42 @@ export class SearchSuggestionsActorsImplementations {
                 .from(table_schema);
 
               let all_field_filters: Array<Record<string, any>> = [];
-
               let field_filter: Record<string, any> = {};
-              formatted_advance_filters.forEach((filter, index) => {
+              let all_field_group_filters: Array<Record<string, any>> = [];
+              if (group_advance_filters?.length) {
+                // get all field search and the default filter from the group_advance_filters
+                all_field_group_filters = formatted_group_advance_filters.map(
+                  (grouped_filters) => {
+                    const { all_field_filters, field_filter: _field_filter } =
+                      this.getFieldFilters({
+                        filters: grouped_filters.filters,
+                        field,
+                        entity,
+                        search_term,
+                      });
+                    field_filter = Object.keys(field_filter)?.length
+                      ? field_filter
+                      : _field_filter;
+                    return {
+                      ...grouped_filters,
+                      filters: all_field_filters,
+                    };
+                  },
+                );
+              } else {
+                // get all field search and the default filter from the advance_filters
                 const {
-                  type,
-                  entity: filtered_entity,
-                  field: filtered_field,
-                  values,
-                  is_search = false,
-                } = filter;
-                const filtered_value = values?.[0];
-                // if or/and operation and the last pushed was criteria
-                // and (if next is criteria and not search term or previous is criteria and not search term)
-                if (
-                  type === 'operator' &&
-                  all_field_filters[all_field_filters.length - 1]?.type ===
-                    'criteria' &&
-                  ((formatted_advance_filters[index + 1]?.type === 'criteria' &&
-                    !formatted_advance_filters[index + 1]?.is_search) ||
-                    (all_field_filters[all_field_filters.length - 1]?.type ===
-                      'criteria' &&
-                      !all_field_filters[all_field_filters.length - 1]
-                        ?.is_search))
-                )
-                  all_field_filters.push(filter);
-                // if filter for the current field iterated
-                else if (
-                  type === 'criteria' &&
-                  entity === filtered_entity &&
-                  field === filtered_field &&
-                  is_search
-                ) {
-                  field_filter = filter;
-                  all_field_filters.push(filter);
-                }
-                // if not part of the or operation or not the search term
-                // (possible additional filter on portal side during search)
-                else if (
-                  type === 'criteria' &&
-                  filtered_value !== search_term
-                ) {
-                  all_field_filters.push(filter);
-                }
-              });
+                  all_field_filters: _all_field_filters,
+                  field_filter: _field_filter,
+                } = this.getFieldFilters({
+                  filters: formatted_advance_filters,
+                  field,
+                  entity,
+                  search_term,
+                });
+                all_field_filters = _all_field_filters;
+                field_filter = _field_filter;
+              }
 
               const field_group_subquery = this.generateFieldSubquery(
                 db_field_group,
@@ -192,6 +201,7 @@ export class SearchSuggestionsActorsImplementations {
                   ...filter_analyzer_params,
                   // Pass the filter specific for the field and all default filters from portal
                   advance_filters: all_field_filters,
+                  group_advance_filters: all_field_group_filters,
                 },
               );
 
@@ -228,6 +238,7 @@ export class SearchSuggestionsActorsImplementations {
                 ...filter_analyzer_params,
                 // Pass the filter specific for the field and all the default filters
                 advance_filters: all_field_filters,
+                group_advance_filters: all_field_group_filters,
               });
 
               // Handle grouping
@@ -329,6 +340,96 @@ export class SearchSuggestionsActorsImplementations {
       });
     }),
   };
+
+  private formatFilters({
+    filters,
+    aliased_joined_entities,
+    table,
+    filtered_fields,
+    search_term,
+  }) {
+    const formatted_filters = filters.map((filter) => {
+      const { type, entity, field, values, is_search = false } = filter;
+      let filtered_entity = entity;
+      const is_aliased = aliased_joined_entities?.find(
+        ({ alias }) => alias === filtered_entity,
+      );
+      if (type === 'criteria' && is_search) search_term = values?.[0] || '';
+      filtered_entity = is_aliased
+        ? filtered_entity
+        : pluralize(filtered_entity || table);
+
+      if (type === 'criteria' && is_search)
+        filtered_fields = {
+          ...filtered_fields,
+          [filtered_entity]: filtered_fields[filtered_entity]
+            ? [...new Set([...filtered_fields[filtered_entity], field])]
+            : [field],
+        };
+      return {
+        ...filter,
+        entity: filtered_entity,
+      };
+    });
+    return { formatted_filters, search_term, filtered_fields };
+  }
+
+  private getFieldFilters({
+    filters = [],
+    field,
+    entity,
+    search_term,
+  }: {
+    filters: Array<Record<string, any>>;
+    field: string;
+    entity: string;
+    search_term: string;
+  }) {
+    let all_field_filters: Array<Record<string, any>> = [];
+    let field_filter: Record<string, any> = {};
+    filters.forEach((filter, index) => {
+      const {
+        type,
+        entity: filtered_entity,
+        field: filtered_field,
+        values,
+        is_search = false,
+      } = filter;
+
+      const filtered_value = values?.[0];
+      // if or/and operation and the last pushed was criteria
+      // and (if next is criteria and not search term or previous is criteria and not search term)
+      if (
+        type === 'operator' &&
+        all_field_filters[all_field_filters.length - 1]?.type === 'criteria' &&
+        ((filters[index + 1]?.type === 'criteria' &&
+          !filters[index + 1]?.is_search) ||
+          (all_field_filters[all_field_filters.length - 1]?.type ===
+            'criteria' &&
+            !all_field_filters[all_field_filters.length - 1]?.is_search))
+      )
+        all_field_filters.push(filter);
+      // if filter for the current field iterated
+      else if (
+        type === 'criteria' &&
+        entity === filtered_entity &&
+        field === filtered_field &&
+        is_search
+      ) {
+        field_filter = filter;
+        all_field_filters.push(filter);
+      }
+      // if not part of the or operation or not the search term
+      // (possible additional filter on portal side during search)
+      else if (type === 'criteria' && filtered_value !== search_term) {
+        all_field_filters.push(filter);
+      }
+    });
+    return {
+      all_field_filters,
+      field_filter,
+    };
+  }
 
   private generateFieldSubquery(
     db,
