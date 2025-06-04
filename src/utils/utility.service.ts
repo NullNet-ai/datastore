@@ -26,7 +26,6 @@ import {
   ne,
   notBetween,
   notIlike,
-  notInArray,
   notLike,
   or,
   sql,
@@ -99,7 +98,7 @@ interface IEvaluateFilter {
   case_sensitive: boolean;
   parse_as: string;
   encrypted_fields?: string[];
-  fields: string[];
+  fields?: string[];
   time_zone: string;
   date_format: string;
   pass_field_key?: string;
@@ -477,6 +476,7 @@ export class Utility {
       };
     }, {});
 
+    // Handle concatenated fields for main selections
     const main_concatenated_entity =
       concatenated_field_expressions?.[table] || {};
     if (Object.keys(main_concatenated_entity)?.length) {
@@ -545,7 +545,7 @@ export class Utility {
                 pass_field_key,
               ),
             );
-
+            // Handle concatenated fields selections
             const concatenate_fields_selections = Object.entries(
               concatenated_field_expressions?.[toAlias] ?? {},
             )?.map(([field_name, concatenated]) =>
@@ -570,6 +570,7 @@ export class Utility {
             }`;
 
             let additional_where_and_clause = ` AND "${from.entity}"."${from.field}" = "${toAlias}"."${to.field}"`;
+            // Handle additional where clause for nested joins
             if (nested)
               additional_where_and_clause = ` AND "${prev_join_to_entity}"."tombstone" = 0 ${
                 request_type !== 'root'
@@ -579,6 +580,7 @@ export class Utility {
                 prev_join_from?.field
               }" = "${prev_join_to_entity}"."${prev_join_to?.field}"`;
 
+            // Handle sorting for data of joined entities
             const joined_sort = [
               ...(join_order_by && join_order_direction
                 ? [
@@ -654,6 +656,7 @@ export class Utility {
         }, {})
       : {};
 
+    // Handle pluck group object selections
     const groupSelections = Object.entries(pluck_group_object).reduce(
       (acc, [table, fields]) => {
         const plucked_join = joins.find(({ type, field_relation }) => {
@@ -1126,6 +1129,7 @@ export class Utility {
     let _field = `${field}`;
     // if (!table_schema?.[field] && !is_aliased) return null;
     let schema_field;
+    // Handle encrypted fields for Permission
     if (encrypted_fields?.length) {
       _field = Utility.decryptField({
         field: _field,
@@ -1137,6 +1141,7 @@ export class Utility {
     }
 
     const concatenated_entity = concatenated_field_expressions?.[entity] ?? {};
+    // Handle concatenated fields for schema_field
     if (!table_schema?.[field] && Object.keys(concatenated_entity)?.length) {
       schema_field = sql.raw(
         Utility.decryptField({
@@ -1148,6 +1153,7 @@ export class Utility {
         }),
       );
     } else {
+      // Handle schema fields for date fields
       if (field.endsWith('_date')) {
         schema_field = sql.raw(
           `to_char(${Utility.decryptField({
@@ -1180,6 +1186,7 @@ export class Utility {
             );
     }
 
+    // Handle parsing to text for non text fields in filtering
     if (parse_as === 'text') {
       schema_field = entity
         ? sql.raw(
@@ -1194,6 +1201,7 @@ export class Utility {
         : sql.raw(`"${_field}"::TEXT`);
     }
 
+    // Handle filtering with consideration of the Time Zone (for date and time fields)
     if (fields.length) {
       const date_field_index = (fields as Array<any>).findIndex((f) =>
         f.endsWith('_date'),
@@ -1229,6 +1237,7 @@ export class Utility {
 
     switch (operator) {
       case EOperator.EQUAL:
+        // exact value for an array field
         if (pluralize.isPlural(field)) {
           return eq(
             schema_field,
@@ -1237,7 +1246,13 @@ export class Utility {
         }
         return or(...values.map((value) => eq(schema_field, value)));
       case EOperator.NOT_EQUAL:
-        return notInArray(schema_field, values);
+        if (pluralize.isPlural(field)) {
+          return ne(
+            schema_field,
+            sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
+          );
+        }
+        return or(...values.map((value) => ne(schema_field, value)));
       case EOperator.GREATER_THAN:
         return gt(schema_field, values[0]);
       case EOperator.GREATER_THAN_OR_EQUAL:
@@ -1251,6 +1266,7 @@ export class Utility {
       case EOperator.IS_NOT_NULL:
         return isNotNull(schema_field);
       case EOperator.CONTAINS:
+        // Can be used on string or array fields (must be parsed as text)
         if (case_sensitive) {
           return or(...values.map((value) => like(schema_field, `%${value}%`)));
         }
@@ -2479,6 +2495,7 @@ export class Utility {
     let sort_entity: any = table;
     let sort_field = by_entity_field[0] || 'id';
     let sort_schema = table_schema[sort_field];
+    // Handle for dot notation format of field to be sorted
     if (by_entity_field.length > 1) {
       const [_entity = '', by_field = 'id'] = by_entity_field;
       sort_field = by_field;
@@ -2565,6 +2582,15 @@ export class Utility {
       },
       {},
     );
+  }
+
+  public static replacePlaceholders(query, values) {
+    values.forEach((value, index) => {
+      const placeholder = `\\$${index + 1}`;
+      const formatted_value = typeof value === 'string' ? `'${value}'` : value;
+      query = query.replace(new RegExp(placeholder, 'g'), formatted_value);
+    });
+    return query;
   }
 }
 // TODO: dont use past tense in encryption fields
