@@ -308,7 +308,11 @@ export class SearchSuggestionsActorsImplementations {
               )})`;
 
               // Modify the raw query filter to use the field alias instead of the entity field
-              field_query = this.modifyQueryFilterString(field_query, field);
+              field_query = this.modifyQueryFilterString(
+                field_query,
+                field,
+                parse_as,
+              );
               return group_count_query + ', ' + field_query;
             },
           );
@@ -396,7 +400,7 @@ export class SearchSuggestionsActorsImplementations {
         is_search = false,
       } = filter;
 
-      const filtered_value = values?.[0];
+      const filtered_value = JSON.stringify(values);
       // if or/and operation and the last pushed was criteria
       // and (if next is criteria and not search term or previous is criteria and not search term)
       if (
@@ -421,9 +425,12 @@ export class SearchSuggestionsActorsImplementations {
       }
       // if not part of the or operation or not the search term
       // (possible additional filter on portal side during search)
-      else if (type === 'criteria' && filtered_value !== search_term) {
+      else if (
+        type === 'criteria' &&
+        filtered_value !== JSON.stringify([search_term]) &&
+        !is_search
+      )
         all_field_filters.push(filter);
-      }
     });
     return {
       all_field_filters,
@@ -465,12 +472,15 @@ export class SearchSuggestionsActorsImplementations {
     return Utility.replacePlaceholders(db.toSQL().sql, db.toSQL().params);
   }
 
-  private modifyQueryFilterString(query: string, field) {
+  private modifyQueryFilterString(query: string, field, parse_as: string) {
     const query_agg = query.split(` AS ${field} where `);
     let [filtered_field = '', value] = query_agg[1]?.split(' ilike ') || [];
     filtered_field = field;
     return (
-      query_agg[0] + ` AS ${field} where ` + filtered_field + ' ilike ' + value
+      query_agg[0] +
+      ` AS ${field} where ${filtered_field}${
+        parse_as === 'text' ? '::TEXT' : ''
+      } ilike ${value}`
     );
   }
 }
