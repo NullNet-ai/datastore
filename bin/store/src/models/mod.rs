@@ -22,6 +22,7 @@ pub mod organization_account_model;
 pub mod organization_contact_model;
 pub mod organization_model;
 pub mod packet_model;
+pub mod postgres_channel_model;
 pub mod queue_item_model;
 pub mod queue_model;
 pub mod resolution_model;

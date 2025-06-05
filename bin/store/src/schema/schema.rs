@@ -714,6 +714,31 @@ table! {
         blacklist -> Nullable<Bool>,
     }
 }
+table! {
+    postgres_channels(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        id -> Nullable<Text>,
+
+        channel_name -> Nullable<Text>,
+        function -> Nullable<Text>,
+    }
+}
 
 table! {
     resolutions(id) {
