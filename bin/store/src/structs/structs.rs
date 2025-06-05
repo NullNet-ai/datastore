@@ -429,7 +429,6 @@ pub struct RelationEndpoint {
     pub offset: Option<usize>,
 }
 
-
 //advance filters
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -445,7 +444,6 @@ pub enum FilterCriteria {
     #[serde(rename = "operator")]
     LogicalOperator { operator: LogicalOperator },
 }
-
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum FilterType {
@@ -475,7 +473,6 @@ impl ToString for LogicalOperator {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FilterOperator {

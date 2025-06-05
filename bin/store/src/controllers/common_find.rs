@@ -1,9 +1,12 @@
 use serde_json::Value;
-use tokio_postgres::types::Field;
 use std::collections::HashMap;
+use tokio_postgres::types::Field;
 
 use crate::{
-    schema::verify::field_exists_in_table, structs::structs::{FieldRelation, GroupAdvanceFilter, Join, ParsedConcatenatedFields, FilterCriteria}
+    schema::verify::field_exists_in_table,
+    structs::structs::{
+        FieldRelation, FilterCriteria, GroupAdvanceFilter, Join, ParsedConcatenatedFields,
+    },
 };
 
 pub fn validate_pluck_object(
@@ -228,7 +231,6 @@ pub fn get_sort_field(
     Ok(sort_query)
 }
 
-
 pub fn filter_analyzer(
     table_name: String,
     advance_filters: Vec<FilterCriteria>,
@@ -236,37 +238,43 @@ pub fn filter_analyzer(
     organization_id: String,
     joins: &[Join],
     concatenations: ParsedConcatenatedFields,
-    group_advance_filters : Vec<GroupAdvanceFilter>,
+    group_advance_filters: Vec<GroupAdvanceFilter>,
     aliased_entites: HashMap<String, String>,
     selections: HashMap<String, String>,
-)->Result<String, String>{
-    let fields= concatenations.fields;
+) -> Result<String, String> {
+    let fields = concatenations.fields;
     let expressions = concatenations.expressions;
     let mut result_query = String::new();
 
     if !joins.is_empty() {
         // Use a for loop instead of for_each
         for join in joins.iter() {
-            let FieldRelation{from, to} = &join.field_relation;
+            let FieldRelation { from, to } = &join.field_relation;
 
-            let join_type=join.r#type.to_uppercase();
+            let join_type = join.r#type.to_uppercase();
             let to_entity = to.entity.clone();
             let to_alias = to.alias.clone().unwrap_or(to_entity.clone());
             let concatenate_query = expressions.get(&to_alias).cloned().unwrap_or_default();
 
             match join_type.as_str() {
                 "LEFT" => {
-                    let fields=pluck_object.get(&to_alias).cloned().unwrap_or_default();
-                    let where_clause ="".to_string(); //to be created
-                    let join_order_direction = to.order_direction.clone().unwrap_or_else(|| String::from("ASC"));
-                    let order_by = to.order_by.clone().unwrap_or_else(|| String::from("created_date"));
+                    let fields = pluck_object.get(&to_alias).cloned().unwrap_or_default();
+                    let where_clause = "".to_string(); //to be created
+                    let join_order_direction = to
+                        .order_direction
+                        .clone()
+                        .unwrap_or_else(|| String::from("ASC"));
+                    let order_by = to
+                        .order_by
+                        .clone()
+                        .unwrap_or_else(|| String::from("created_date"));
 
                     let field_selection = fields
-                    .iter()
-                    .map(|field| format!("joined_{}.{}", to_alias, field))
-                    .collect::<Vec<String>>()
-                    .join(", ");
-                
+                        .iter()
+                        .map(|field| format!("joined_{}.{}", to_alias, field))
+                        .collect::<Vec<String>>()
+                        .join(", ");
+
                     // Add concatenate query if present
                     let concatenate_part = if !concatenate_query.is_empty() {
                         format!(", {}", concatenate_query.join(", ").trim_end_matches(','))
@@ -276,11 +284,16 @@ pub fn filter_analyzer(
 
                     // Build ORDER BY clause if present
                     let order_clause = if to.order_by.is_some() {
-                        format!("ORDER BY joined_{}.{} {}", to_alias, order_by, join_order_direction.to_uppercase())
+                        format!(
+                            "ORDER BY joined_{}.{} {}",
+                            to_alias,
+                            order_by,
+                            join_order_direction.to_uppercase()
+                        )
                     } else {
                         String::new()
                     };
-                    
+
                     // Build LIMIT clause if present
                     let limit_clause = if let Some(limit) = to.limit {
                         format!("LIMIT {}", limit)
@@ -297,8 +310,11 @@ pub fn filter_analyzer(
                         field_selection,
                         concatenate_part,
                         from_clause,
-                        "where_clause", // placeholder 
-                        format!("AND {}.{} = joined_{}.{}", from.entity, from.field, to_alias, to.field),
+                        "where_clause", // placeholder
+                        format!(
+                            "AND {}.{} = joined_{}.{}",
+                            from.entity, from.field, to_alias, to.field
+                        ),
                         order_clause,
                         limit_clause,
                         to_alias
@@ -308,10 +324,13 @@ pub fn filter_analyzer(
                         result_query.push_str(" ");
                     }
                     result_query.push_str(&lateral_join);
-                },
+                }
                 _ => {
                     // Now this return will exit the entire function
-                    return Err(format!("Invalid join type: {}, supported types are: LEFT", join.r#type));
+                    return Err(format!(
+                        "Invalid join type: {}, supported types are: LEFT",
+                        join.r#type
+                    ));
                 }
             }
         }

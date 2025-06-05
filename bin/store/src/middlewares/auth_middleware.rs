@@ -14,15 +14,15 @@ use std::pin::Pin;
 use tonic::{Request, Status};
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Account {
-    organization_id: String,
+pub struct Account {
+    pub organization_id: String,
     account_id: String,
     organization_account_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    account: Account,
+pub struct Claims {
+    pub account: Account,
     exp: usize,
     iat: usize,
 }
@@ -132,7 +132,7 @@ where
 }
 
 // Function to validate the token
-fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let jwt_secret = match env::var("JWT_SECRET") {
         Ok(secret) => secret,
         Err(_) => {

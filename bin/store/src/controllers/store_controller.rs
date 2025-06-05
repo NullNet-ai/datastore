@@ -819,12 +819,10 @@ pub async fn get_by_filter(
         // Add fields to pluck_object if joins exist
         if !joins.is_empty() {
             // Find if this field is part of a concatenation
-            let concat = concatenate_fields.iter().find(
-                |concat_entity| 
-                    concat_entity.field_name == field && 
-                    concat_entity.entity == entity
-            );
-            
+            let concat = concatenate_fields.iter().find(|concat_entity| {
+                concat_entity.field_name == field && concat_entity.entity == entity
+            });
+
             // Initialize entity entry in pluck_object if it doesn't exist
             // and add either the single field or all concatenated fields
             if let Some(entry) = pluck_object.get_mut(&entity.to_string()) {
@@ -870,10 +868,20 @@ pub async fn get_by_filter(
 
     //filter analyzer
 
-    let filter_analyzer = filter_analyzer(table.clone(), advance_filters, pluck_object.clone(), organization_id.to_string(), &joins, ParsedConcatenatedFields {
-        fields: fields.clone(),
-        expressions: expressions.clone(),
-    }, group_advance_filters, aliased_fields.clone(), selections.clone());
+    let filter_analyzer = filter_analyzer(
+        table.clone(),
+        advance_filters,
+        pluck_object.clone(),
+        organization_id.to_string(),
+        &joins,
+        ParsedConcatenatedFields {
+            fields: fields.clone(),
+            expressions: expressions.clone(),
+        },
+        group_advance_filters,
+        aliased_fields.clone(),
+        selections.clone(),
+    );
     if filter_analyzer.is_err() {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -884,8 +892,6 @@ pub async fn get_by_filter(
     }
     let filter_analyzer = filter_analyzer.unwrap();
     println!("{:#?}", filter_analyzer);
-
-
 
     multiple_sort.iter().for_each(|sort_option| {
         let by_field = &sort_option.by_field;

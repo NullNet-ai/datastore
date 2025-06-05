@@ -2,6 +2,7 @@
 use actix_web::{web, App, HttpServer};
 use batch_sync::background_sync;
 use dotenv::dotenv;
+use message_stream::gateway::create_socket_io;
 use middlewares::auth_middleware::Authentication;
 use std::env;
 use templates::grpc_controller::grpc_controller_generator;
@@ -11,6 +12,7 @@ mod batch_sync;
 mod controllers;
 mod db;
 mod generated;
+mod message_stream;
 mod middlewares;
 mod models;
 mod schema;
@@ -21,6 +23,7 @@ mod table_enum;
 mod templates;
 mod utils;
 use crate::batch_sync::BatchSyncService;
+use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
@@ -34,6 +37,7 @@ use controllers::store_controller::{
     get_by_filter, update_record, upsert,
 };
 use env_logger::Env;
+use socketioxide::SocketIo;
 use std::process;
 use std::sync::Arc;
 use tokio::signal::unix::{signal, SignalKind};
@@ -120,6 +124,14 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
+    //Pg listener service
+    println!("Starting PgListenerService...");
+    if let Err(e) = PgListenerService::initialize().await {
+        log::error!("Failed to initialize PgListenerService: {}", e);
+    } else {
+        log::info!("PgListenerService initialized successfully");
+    }
+
     // }
     merkle_manager.load_trees_from_db().await;
 
@@ -166,6 +178,25 @@ async fn main() -> std::io::Result<()> {
         if let Err(e) = bg_sync().await {
             log::error!("Error starting background sync: {}", e);
         }
+    });
+
+    let socketio_server = tokio::spawn(async move {
+        use axum::Router;
+
+        // Use your gateway function that includes all the handlers
+        let (layer, io) = create_socket_io();
+
+        let app = Router::new().layer(layer);
+
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:3001")
+            .await
+            .expect("Failed to bind Socket.IO server to port 3001");
+
+        println!("Socket.IO server running on http://0.0.0.0:3001");
+
+        axum::serve(listener, app)
+            .await
+            .expect("Socket.IO server failed");
     });
 
     let server = HttpServer::new(move || {

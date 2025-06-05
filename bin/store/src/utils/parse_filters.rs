@@ -15,7 +15,7 @@ pub fn build_sql_filter(filters: &[FilterCriteria]) -> SqlFilter {
 
     sql_parts.push("(".to_string());
     // ! refactor to IS NOT NULL
-    sql_parts.push("organization_id IS NULL".to_string());
+    sql_parts.push("organization_id IS NOT NULL".to_string());
     sql_parts.push("AND".to_string());
     sql_parts.push("tombstone = 0".to_string());
     sql_parts.push(")".to_string());
