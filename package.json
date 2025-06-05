@@ -50,6 +50,7 @@
     "@nestjs/core": "^10.4.17",
     "@nestjs/microservices": "^10.4.17",
     "@nestjs/platform-express": "^10.4.17",
+    "@nestjs/platform-socket.io": "^11.1.2",
     "@nestjs/serve-static": "^4.0.2",
     "@nestjs/websockets": "^11.1.2",
     "argon2": "^0.41.1",
