@@ -23,6 +23,7 @@ import {
   StoreQueryDriver,
   CustomCreateService,
   RootStoreService,
+  PgListenerDriver,
 } from '../../providers/store/store.service';
 import { AuthGuard } from '@dna-platform/crdt-lww-postgres';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -385,5 +386,25 @@ export class RootStoreController extends StoreController {
     } catch (error: any) {
       res.send(error?.response || error);
     }
+  }
+}
+
+@Controller('/api/listener')
+export class PgListenerController {
+  constructor(private readonly pgListenerService: PgListenerDriver) {}
+
+  @Post('/function')
+  async createTriggerFunction(@Res() _res: Response, @Req() _req: Request) {
+    await this.pgListenerService.pgListener(_res, _req);
+  }
+
+  @Get('/')
+  async pgListenerGet(@Res() _res: Response, @Req() _req: Request) {
+    await this.pgListenerService.getListener(_res, _req);
+  }
+
+  @Delete('/:function_name')
+  async pgListenerDelete(@Res() _res: Response, @Req() _req: Request) {
+    await this.pgListenerService.deleteListener(_res, _req);
   }
 }

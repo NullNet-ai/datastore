@@ -8,6 +8,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
+import { EDateFormats } from '../../../../utils/utility.types';
 import * as local_schema from '../../../../schema';
 import { asc, desc, sql, aliasedTable } from 'drizzle-orm';
 import pick from 'lodash.pick';
@@ -122,7 +123,7 @@ export class FindActorsImplementations {
           multiple_sort = [],
           pluck_object = {},
           concatenate_fields = [],
-          date_format = 'YYYY-MM-DD',
+          date_format = EDateFormats['mm/dd/YYYY'],
           group_advance_filters = [],
           distinct_by = '',
           group_by = {},

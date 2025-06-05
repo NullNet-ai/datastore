@@ -48,6 +48,7 @@ const pluralize = require('pluralize');
 const { TZ = 'America/Los_Angeles' } = process.env;
 import * as cache from 'memory-cache';
 import sha1 from 'sha1';
+import { EDateFormats } from './utility.types';
 interface IFilterAnalyzer {
   db: any;
   table_schema: any;
@@ -62,7 +63,7 @@ interface IFilterAnalyzer {
   encrypted_fields?: string[];
   time_zone?: string;
   table?: string;
-  date_format?: string;
+  date_format?: EDateFormats;
   pass_field_key?: string;
   parsed_concatenated_fields?: any;
   type?: string;
@@ -77,7 +78,7 @@ interface IContructFilters {
   aliased_entities?: string[];
   expressions?: any;
   time_zone?: string;
-  date_format?: string;
+  date_format?: EDateFormats;
   group_advance_filters?: IGroupAdvanceFilters[];
   encrypted_fields?: any[];
   pass_field_key?: string;
@@ -100,7 +101,7 @@ interface IEvaluateFilter {
   encrypted_fields?: string[];
   fields?: string[];
   time_zone: string;
-  date_format: string;
+  date_format: EDateFormats;
   pass_field_key?: string;
   permissions?: Record<string, any>;
   concatenated_field_expressions?: Record<string, any>;
@@ -115,7 +116,7 @@ interface IAggregationFilterAnalyzer {
   type?: string;
   time_zone?: string;
   table?: string;
-  date_format?: string;
+  date_format?: EDateFormats;
   client_db?: any;
 }
 export class Utility {
@@ -248,7 +249,7 @@ export class Utility {
   static formatDate = ({
     table,
     field,
-    date_format,
+    date_format = EDateFormats['mm/dd/YYYY'],
     time_zone,
     encrypted_fields,
     fields,
@@ -256,7 +257,7 @@ export class Utility {
   }: {
     table: string;
     field: string;
-    date_format: string;
+    date_format: EDateFormats;
     time_zone?: string;
     encrypted_fields: Array<string>;
     fields: Array<string>;
@@ -293,7 +294,7 @@ export class Utility {
 
   static formatIfDate = (
     field: string,
-    dateFormat: string = 'MM/DD/YYYY',
+    date_format: EDateFormats = EDateFormats['mm/dd/YYYY'],
     to_entity,
     fields,
     time_zone,
@@ -317,7 +318,7 @@ export class Utility {
       return `'${field}', ${Utility.formatDate({
         table: to_entity,
         field,
-        date_format: dateFormat,
+        date_format,
         time_zone,
         encrypted_fields: [],
         fields,
@@ -329,7 +330,7 @@ export class Utility {
 
   public static parseConcatenateFields = (
     concatenate_fields: IConcatenateField[],
-    date_format?: string,
+    date_format?: EDateFormats,
     table?: string,
   ) => {
     return concatenate_fields.reduce(
@@ -421,7 +422,7 @@ export class Utility {
     pluck_object: Record<string, any>;
     pluck_group_object: Record<string, any>;
     joins: IJoins[];
-    date_format: string;
+    date_format: EDateFormats;
     parsed_concatenated_fields: IParsedConcatenatedFields;
     multiple_sort: [{ by_field: string; by_direction: string }];
     encrypted_fields: string[];
@@ -710,7 +711,7 @@ export class Utility {
     concatenate_fields: IConcatenateField[],
     table_name: string,
     plucked_fields: Record<string, any> = {},
-    date_format?: string,
+    date_format: EDateFormats = EDateFormats['mm/dd/YYYY'],
   ) {
     for (const field of concatenate_fields) {
       if (field.entity !== table_name) {
@@ -773,7 +774,7 @@ export class Utility {
   }: {
     table: string;
     pluck: string[];
-    date_format: string;
+    date_format: EDateFormats;
     encrypted_fields?: string[];
     time_zone?: string;
     pass_field_key: string;
@@ -1047,7 +1048,7 @@ export class Utility {
     type,
     time_zone = '',
     table,
-    date_format = '',
+    date_format = EDateFormats['mm/dd/YYYY'],
   }: IAggregationFilterAnalyzer) {
     let _db = db;
     const aliased_entities: string[] = [];
@@ -1317,7 +1318,7 @@ export class Utility {
     table_schema,
     aliased_entities = [],
     time_zone = '',
-    date_format = '',
+    date_format = EDateFormats['mm/dd/YYYY'],
     group_advance_filters = [],
     encrypted_fields = [],
     pass_field_key = '',
@@ -2558,7 +2559,7 @@ export class Utility {
 
   public static generateConcatenatedExpressions(
     concatenate_fields: IConcatenateField[],
-    date_format?: string,
+    date_format: EDateFormats = EDateFormats['mm/dd/YYYY'],
     _table?: string,
   ) {
     return concatenate_fields.reduce(

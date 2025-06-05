@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-time Notifications</title>
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  <style>
+      body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          line-height: 1.6;
+      }
+      #connection-status {
+          padding: 10px;
+          margin-bottom: 20px;
+          border-radius: 4px;
+      }
+      .connected {
+          background-color: #d4edda;
+          color: #155724;
+      }
+      .disconnected {
+          background-color: #f8d7da;
+          color: #721c24;
+      }
+      #notifications {
+          border: 1px solid #ddd;
+          padding: 15px;
+          height: 400px;
+          overflow-y: auto;
+          background-color: #f9f9f9;
+      }
+      .notification {
+          padding: 10px;
+          margin-bottom: 10px;
+          background-color: white;
+          border-left: 4px solid #007bff;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      }
+      #auth-form {
+          margin-bottom: 20px;
+          padding: 15px;
+          background-color: #e9ecef;
+          border-radius: 4px;
+      }
+      input, button {
+          padding: 8px;
+          margin: 5px 0;
+      }
+      button {
+          background-color: #007bff;
+          color: white;
+          border: none;
+          cursor: pointer;
+          border-radius: 4px;
+      }
+      button:hover {
+          background-color: #0069d9;
+      }
+      #stats {
+          background-color: #e2f3fd;
+          padding: 10px;
+          margin-bottom: 20px;
+          border-radius: 4px;
+      }
+  </style>
+</head>
+<body>
+<h1>Real-time Database Notifications</h1>
+
+<div id="auth-form">
+  <h3>Authentication</h3>
+  <div>
+    <label for="token">JWT Token:</label>
+    <input type="text" id="token" placeholder="Enter your JWT token" style="width: 350px;">
+    <button id="connect-btn">Connect</button>
+    <button id="disconnect-btn">Disconnect</button>
+  </div>
+</div>
+
+<div id="connection-status" class="disconnected">
+  Disconnected
+</div>
+
+<div id="stats">
+  <h3>Statistics</h3>
+  <div>
+    <p>Total messages received: <span id="total-messages">0</span></p>
+    <p>Unique messages received: <span id="unique-messages">0</span></p>
+    <p>Duplicate messages received: <span id="duplicate-messages">0</span></p>
+    <p>Total data received: <span id="total-data">0</span> bytes</p>
+    <button id="reset-stats-btn">Reset Stats</button>
+  </div>
+</div>
+
+<h2>Notifications</h2>
+<div id="notifications"></div>
+<h2>Duplicate Records</h2>
+<div id="duplicates" style="border: 1px solid #ddd; padding: 10px; background-color: #fff3cd; max-height: 300px; overflow-y: auto;">
+  <ul id="duplicate-list" style="margin: 0; padding-left: 20px;"></ul>
+</div>
+
+<div id="highWaterMark-form">
+  <h3>HighWaterMark Management</h3>
+  <div>
+    <label for="channel-name">Channel Name:</label>
+    <input type="text" id="channel-name" placeholder="Enter channel name" style="width: 350px;">
+    <label for="highWaterMark">HighWaterMark:</label>
+    <input type="number" id="highWaterMark" placeholder="Enter highWaterMark value" style="width: 100px;">
+    <button id="update-highWaterMark-btn">Update HighWaterMark</button>
+    <button id="get-highWaterMark-btn">Get Current HighWaterMark</button>
+    <button id="force-flush-btn">Force Queue Flush</button>
+  </div>
+</div>
+
+<script>
+  let socket;  
+  const connectBtn = document.getElementById('connect-btn');
+  const disconnectBtn = document.getElementById('disconnect-btn');
+  const tokenInput = document.getElementById('token');
+  const statusDiv = document.getElementById('connection-status');
+  const notificationsDiv = document.getElementById('notifications');
+  const updateHighWaterMarkBtn = document.getElementById('update-highWaterMark-btn');
+  const getHighWaterMarkBtn = document.getElementById('get-highWaterMark-btn');
+  const forceFlushBtn = document.getElementById('force-flush-btn');
+  const channelNameInput = document.getElementById('channel-name');
+  const highWaterMarkInput = document.getElementById('highWaterMark');
+  const totalMessagesSpan = document.getElementById('total-messages');
+  const totalDataSpan = document.getElementById('total-data');
+  const resetStatsBtn = document.getElementById('reset-stats-btn');
+  let seenRecords = new Set();
+  const duplicateListEl = document.getElementById('duplicate-list');
+  const duplicatesSet = new Set();
+  let uniqueMessages = 0;
+  let duplicateMessages = 0;
+
+  const uniqueMessagesSpan = document.createElement('span');
+  const duplicateMessagesSpan = document.createElement('span');
+
+  document.getElementById('unique-messages').replaceWith(uniqueMessagesSpan);
+  document.getElementById('duplicate-messages').replaceWith(duplicateMessagesSpan);
+
+
+  // Stats tracking
+  let totalMessages = 0;
+  let totalDataBytes = 0;
+
+  // Connect to socket with authentication
+  connectBtn.addEventListener('click', () => {
+    const token = tokenInput.value.trim();
+    if (!token) {
+      alert('Please enter a JWT token');
+      return;
+    }
+
+    // Initialize socket connection with auth token
+    socket = io('http://localhost:5005', {
+      transports: ['websocket'],
+      auth: {
+        token: token
+      }
+    });
+
+    // Socket event handlers
+    socket.on('connect', () => {
+      updateStatus(true);
+      addNotification('System', 'Connected to notification server');
+    });
+
+    socket.on('disconnect', () => {
+      updateStatus(false);
+      addNotification('System', 'Disconnected from notification server');
+    });
+
+    socket.on('connect_error', (error) => {
+      updateStatus(false);
+      addNotification('Error', `Connection failed: ${error.message}`);
+      console.error('Connection error:', error);
+    });
+
+    // Listen for database change events
+    socket.on('live_map-01JBHKXHYSKPP247HZZWHA3JCT', (data) => {
+      totalMessages++;
+      const dataSize = JSON.stringify(data).length;
+      totalDataBytes += dataSize;
+
+      // Use a proper deduplication key
+      const accountId = data?.account?.[0]?.id ?? 'unknown';
+      const type = data?.type ?? 'unknown';
+      const key = `${type}-${accountId}-${data?.id ?? ''}`;
+
+      if (seenRecords.has(key)) {
+        duplicateMessages++;
+
+        if (!duplicatesSet.has(key)) {
+          duplicatesSet.add(key);
+          const li = document.createElement('li');
+          li.textContent = key;
+          duplicateListEl.appendChild(li);
+        }
+      } else {
+        seenRecords.add(key);
+        uniqueMessages++;
+      }
+
+      // Update display
+      totalMessagesSpan.textContent = totalMessages;
+      totalDataSpan.textContent = totalDataBytes;
+      uniqueMessagesSpan.textContent = uniqueMessages;
+      duplicateMessagesSpan.textContent = duplicateMessages;
+
+      addNotification('Database Change', data);
+    });
+
+
+    // Listen for current highWaterMark value
+    socket.on('currentHighWaterMark', (data) => {
+      addNotification('HighWaterMark', `Current HighWaterMark for ${data.channel_name}: ${data.currentHighWaterMark}`);
+    });
+
+    // Listen for queue status
+    socket.on('queueStatus', (data) => {
+      addNotification('Queue Status', data);
+    });
+  });
+
+  // Disconnect from socket
+  disconnectBtn.addEventListener('click', () => {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+  });
+
+  // Update highWaterMark
+  updateHighWaterMarkBtn.addEventListener('click', () => {
+    const channelName = channelNameInput.value.trim();
+    const highWaterMark = parseInt(highWaterMarkInput.value.trim(), 10);
+
+    if (!channelName || isNaN(highWaterMark)) {
+      alert('Please enter a valid channel name and highWaterMark value');
+      return;
+    }
+
+    socket.emit('updateHighWaterMark', { channel_name: channelName, highWaterMark: highWaterMark });
+  });
+
+  // Get current highWaterMark
+  getHighWaterMarkBtn.addEventListener('click', () => {
+    const channelName = channelNameInput.value.trim();
+
+    if (!channelName) {
+      alert('Please enter a valid channel name');
+      return;
+    }
+
+    socket.emit('getCurrentHighWaterMark', { channel_name: channelName });
+  });
+
+  // Force queue flush
+  forceFlushBtn.addEventListener('click', () => {
+    const channelName = channelNameInput.value.trim();
+
+    if (!channelName) {
+      alert('Please enter a valid channel name');
+      return;
+    }
+
+    socket.emit('forceFlushQueue', { channel_name: channelName });
+    addNotification('System', `Requested queue flush for ${channelName}`);
+  });
+
+  // Reset stats
+  resetStatsBtn.addEventListener('click', () => {
+    totalMessages = 0;
+    totalDataBytes = 0;
+    uniqueMessages = 0;
+    duplicateMessages = 0;
+    seenRecords.clear();
+    duplicatesSet.clear();
+    duplicateListEl.innerHTML = '';
+
+    totalMessagesSpan.textContent = '0';
+    totalDataSpan.textContent = '0';
+    uniqueMessagesSpan.textContent = '0';
+    duplicateMessagesSpan.textContent = '0';
+
+    addNotification('System', 'Stats reset');
+  });
+
+
+  // Update connection status display
+  function updateStatus(connected) {
+    if (connected) {
+      statusDiv.className = 'connected';
+      statusDiv.textContent = 'Connected';
+    } else {
+      statusDiv.className = 'disconnected';
+      statusDiv.textContent = 'Disconnected';
+    }
+  }
+
+  // Add a notification to the display
+  function addNotification(type, data) {
+    const notificationDiv = document.createElement('div');
+    notificationDiv.className = 'notification';
+
+    const timestamp = new Date().toLocaleTimeString();
+    const heading = document.createElement('h4');
+    heading.textContent = `${type} - ${timestamp}`;
+    notificationDiv.appendChild(heading);
+
+    const content = document.createElement('pre');
+    content.textContent = typeof data === 'object'
+      ? JSON.stringify(data, null, 2)
+      : data.toString();
+    notificationDiv.appendChild(content);
+
+    notificationsDiv.prepend(notificationDiv);
+
+    // Limit the number of notifications to prevent memory issues
+    if (notificationsDiv.children.length > 100) {
+      notificationsDiv.removeChild(notificationsDiv.lastChild);
+    }
+  }
+
+  // Initialize as disconnected
+  updateStatus(false);
+</script>
+</body>
+</html>
