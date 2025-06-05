@@ -29,3 +29,5 @@ export * from './aggregation_filter/aggregation_filter.machine';
 export * from './batch_insert/batch_insert.machine';
 
 export * from './batch_update/batch_update.machine';
+
+export * from './search_suggestions/search_suggestions.machine';
