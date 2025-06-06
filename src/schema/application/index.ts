@@ -11,3 +11,45 @@ export { table as invitations } from './invitations';
 export { table as grid_filters } from './grid_filters';
 export { table as communication_templates } from './communication_templates';
 export { table as locations } from './locations';
+// define the schema for the application
+export { table as samples } from '../application/samples';
+export { table as connections } from '../application/connections'; //hypertable
+export { table as packets } from '../application/packets'; //hypertable
+export { table as dummy_packets } from '../application/dummy_packets'; //hypertable
+export { table as temp_packets } from '../application/temp_packets';
+export { table as temp_connections } from '../application/temp_connections';
+export { table as device_group_settings } from '../application/device_group_settings';
+export { table as device_groups } from '../application/device_groups';
+export { table as device_heartbeats } from '../application/device_heartbeats'; //hypertable
+export { table as device_configurations } from '../application/device_configurations';
+export { table as device_rules } from '../application/device_rules';
+export { table as temp_device_rules } from '../application/temp_device_rules';
+export { table as device_aliases } from '../application/device_aliases';
+export { table as temp_device_aliases } from '../application/temp_device_aliases';
+export { table as device_interfaces } from '../application/device_interfaces';
+export { table as temp_device_interfaces } from '../application/temp_device_interfaces';
+export { table as dead_letter_queue } from '../application/dead_letter_queue';
+export { table as wallguard_logs } from '../application/wallguard_logs';
+export { table as temp_wallguard_logs } from '../application/temp_wallguard_logs';
+export { table as appguard_logs } from '../application/appguard_logs';
+export { table as temp_appguard_logs } from '../application/temp_appguard_logs';
+export { table as device_interface_addresses } from '../application/device_interface_addresses';
+export { table as temp_device_interface_addresses } from '../application/temp_device_interface_addresses';
+export { table as device_remote_access_sessions } from '../application/device_remote_access_sessions';
+export { table as temp_device_remote_access_sessions } from '../application/temp_device_remote_access_sessions';
+// export { table as device_interface_addresses } from "../application/device_interface_addresses";
+// export { table as temp_device_interface_addresses } from "../application/temp_device_interface_addresses";
+export { table as tcp_connections } from '../application/tcp_connections';
+export { table as ip_infos } from './ip_infos';
+export { table as app_firewalls } from './app_firewalls';
+export { table as http_requests } from '../application/http_requests';
+export { table as http_responses } from '../application/http_responses';
+export { table as smtp_requests } from '../application/smtp_requests';
+export { table as smtp_responses } from '../application/smtp_responses';
+export { table as temp_ip_blacklist } from '../application/temp_ip_blacklist';
+export { table as ip_blacklist } from '../application/ip_blacklist';
+export { table as postgres_channels } from '../application/postgres_channels';
+export { table as resolutions } from '../application/resolutions'; // new entity
+export { table as device_ssh_keys } from '../application/device_ssh_keys';
+export { table as system_resources } from './system_resources';
+export { table as temp_system_resources } from './temp_system_resources';
