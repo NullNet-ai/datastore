@@ -95,6 +95,9 @@ export class StoreQueryDriver {
 
   @Machine('count')
   async getCount(_res: Response, _req: Request) {}
+
+  @Machine('searchSuggestions')
+  async searchSuggestions(_res: Response, _req: Request) {}
 }
 
 @Injectable()
@@ -990,4 +993,16 @@ export class RootStoreService {
       ],
     };
   }
+}
+
+@Injectable()
+export class PgListenerDriver {
+  @Machine('pgFunction')
+  async pgListener(_res: Response, _req: Request) {}
+
+  @Machine('pgListenerGet')
+  async getListener(_res: Response, _req: Request) {}
+
+  @Machine('pgListenerDelete')
+  async deleteListener(_res: Response, _req: Request) {}
 }

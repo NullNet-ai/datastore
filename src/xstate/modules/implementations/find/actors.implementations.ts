@@ -8,6 +8,7 @@ import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/find/find.schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { Utility } from '../../../../utils/utility.service';
+import { EDateFormats } from '../../../../utils/utility.types';
 import * as local_schema from '../../../../schema';
 import { asc, desc, sql, aliasedTable } from 'drizzle-orm';
 import pick from 'lodash.pick';
@@ -122,7 +123,7 @@ export class FindActorsImplementations {
           multiple_sort = [],
           pluck_object = {},
           concatenate_fields = [],
-          date_format = 'YYYY-MM-DD',
+          date_format = EDateFormats['mm/dd/YYYY'],
           group_advance_filters = [],
           distinct_by = '',
           group_by = {},
@@ -174,6 +175,7 @@ export class FindActorsImplementations {
           });
         }
 
+        // Create the concatenated expressions for all the fields to concatenate, without the aliasing ('AS')
         const concatenated_field_expressions =
           Utility.generateConcatenatedExpressions(
             concatenate_fields,
@@ -197,6 +199,7 @@ export class FindActorsImplementations {
           ];
         });
 
+        // assign all aliased entity/ies
         joins.forEach(({ field_relation }) => {
           const { entity, alias } = field_relation.to;
           if (alias) {
@@ -204,6 +207,7 @@ export class FindActorsImplementations {
           }
         });
 
+        // Modify the pluck object in consideration with sorting and concatenating
         multiple_sort.forEach(({ by_field }) => {
           let entity = table;
           let field = by_field.split('.')[0];
@@ -288,6 +292,9 @@ export class FindActorsImplementations {
         if (group_by?.fields?.length) {
           const { fields = [], has_count = false } = group_by;
           const temp_pluck_object = {};
+          // create the group by selections (including count and overall group count
+          // and modify pluck objects accordingly
+          // get the grouped fields to be used on groupBy
           group_by_selections = fields.reduce(
             (acc, field, index) => {
               let group_by_entity = table;
@@ -400,6 +407,8 @@ export class FindActorsImplementations {
             },
           );
         }
+        // Adding/Modifying selections for distinct
+        // Distinct feature is not tested properly as it's not used on portal
         if (distinct_by) {
           const _distinct = distinct_by.split('.');
           let distinct_entity = table;
@@ -436,6 +445,7 @@ export class FindActorsImplementations {
             })
             .from(table_schema);
         } else if (!distinct_by && joins?.length) {
+          // Creating selections with Join
           const join_selections = Utility.createSelections({
             table,
             pluck_object,
@@ -450,7 +460,7 @@ export class FindActorsImplementations {
             concatenated_field_expressions,
             pass_field_key,
             multiple_sort,
-            organization_id
+            organization_id,
           });
           // const is_grouping_joined_entity = group_by_entities.some((key) =>
           //   Object.keys(join_selections ?? {}).includes(key),
@@ -462,6 +472,7 @@ export class FindActorsImplementations {
           //     message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
           //   });
 
+          // Modifying selections if results are being grouped
           let count_selection = {};
           if ((group_by_selections as Record<string, any>)?.count)
             count_selection = {
@@ -504,6 +515,7 @@ export class FindActorsImplementations {
 
             .from(table_schema);
         } else {
+          // Selections with no join
           let count_selection = {};
           if ((group_by_selections as Record<string, any>)?.count)
             count_selection = {
@@ -522,6 +534,7 @@ export class FindActorsImplementations {
               success: false,
               message: `You can only select fields that are in the group_by fields.`,
             });
+          // Modifying selections if being grouped
           const selections_with_group_by = {
             ...count_selection,
             [table]: group_by_selections?.[table] ?? {},
@@ -543,6 +556,7 @@ export class FindActorsImplementations {
             .from(table_schema);
         }
 
+        // Adding the left join and where clauses
         _db = Utility?.FilterAnalyzer({
           db: _db,
           table_schema,
@@ -570,6 +584,8 @@ export class FindActorsImplementations {
         //       : desc(group_by_agg_selections[order_by]),
         //   );
         // } else
+
+        // Adding the multiple sorting
         if (multiple_sort.length) {
           _db = _db.orderBy(
             ...multiple_sort
@@ -617,6 +633,7 @@ export class FindActorsImplementations {
               .filter(Boolean),
           );
         } else if (order_direction && order_by) {
+          // If only simple sorting
           let sort_field_schema = Utility.getSortSchemaAndField({
             table,
             table_schema,
@@ -652,7 +669,10 @@ export class FindActorsImplementations {
         if (limit) {
           _db = _db.limit(limit);
         }
+
+        // Groupings
         // group by main table if joins are present and check if table is hypertable or not
+        // If with Join
         if (joins?.length) {
           if (group_by?.fields?.length) {
             let grouped: Array<any> = [];
@@ -667,6 +687,7 @@ export class FindActorsImplementations {
             _db = _db.groupBy(table_schema.id);
           }
         } else if (group_by?.fields?.length) {
+          // If Grouping without Join
           let grouped: Array<any> = [];
           grouped = Object.keys(group_by_fields).map((group_by) =>
             sql.raw(group_by_fields[group_by]),
@@ -678,6 +699,7 @@ export class FindActorsImplementations {
         const prepared_query_key = sha1(_db.toSQL().sql + _db.toSQL().params);
         const db_results: any = await _db.prepare(prepared_query_key).execute();
 
+        // Transforming the results
         const result = joins.length
           ? this.transformer(
               db_results,
@@ -749,6 +771,7 @@ export class FindActorsImplementations {
     group_by,
     aliased_joined_entities,
   ) {
+    // get the concatenated main fields
     const main_fields_concatenated =
       _concatenate_fields
         .filter((f) => (f.aliased_entity || pluralize(f.entity)) === table)
@@ -757,6 +780,9 @@ export class FindActorsImplementations {
     return results.map((main_item) => {
       let cloned_item = { ...main_item };
       if (group_by.fields?.length) {
+        // if there's a grouping,
+        // the result is the grouped field inside the object value and with the entity as key
+        // assign it to the cloned item as an array of object
         cloned_item = {
           ...cloned_item[table],
           ...group_by.fields?.reduce((acc, field) => {
@@ -801,6 +827,8 @@ export class FindActorsImplementations {
               (f) => (f.aliased_entity || pluralize(f.entity)) === name,
             );
             let [item = {}] = cloned_item?.[name] ?? [];
+            // to add the concatenated fields to the item if it's not concatenated yet
+            // (most likely it's already concatenated, this is before handling the concatenated fields on the db)
             if (concatenated_related_fields) {
               item = {
                 ...item,
@@ -813,6 +841,7 @@ export class FindActorsImplementations {
               };
             }
 
+            // this is group the fields indicated on the pluck_group_object
             item = {
               ...item,
               ...(_pluck_group_object[name]?.length && {
