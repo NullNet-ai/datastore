@@ -8,6 +8,8 @@ import { Utility } from '../../../../utils/utility.service';
 import { sql } from 'drizzle-orm';
 import Bluebird from 'bluebird';
 const pluralize = require('pluralize');
+import sha1 from 'sha1';
+import * as cache from 'memory-cache';
 
 @Injectable()
 export class SearchSuggestionsActorsImplementations {
@@ -152,10 +154,6 @@ export class SearchSuggestionsActorsImplementations {
               let add_alias = false;
               let db_field_group = this.db;
               let db_field = this.db;
-              // Generate the subquery for the field group
-              db_field_group = db_field_group
-                .select({ count: sql.raw(`COUNT(*) OVER()`) })
-                .from(table_schema);
 
               let all_field_filters: Array<Record<string, any>> = [];
               let field_filter: Record<string, any> = {};
@@ -195,16 +193,6 @@ export class SearchSuggestionsActorsImplementations {
                 field_filter = _field_filter;
               }
 
-              const field_group_subquery = this.generateFieldSubquery(
-                db_field_group,
-                {
-                  ...filter_analyzer_params,
-                  // Pass the filter specific for the field and all default filters from portal
-                  advance_filters: all_field_filters,
-                  group_advance_filters: all_field_group_filters,
-                },
-              );
-
               // Concatenated expression for field
               const concatenated_field_exp =
                 concatenated_field_expressions?.[entity]?.[field]?.expression;
@@ -224,6 +212,51 @@ export class SearchSuggestionsActorsImplementations {
                 entity_field = concatenated_field_exp;
               }
 
+              // Handle grouping
+              const group_by_entity_field = concatenated_field_exp
+                ? concatenated_field_exp
+                : entity_field;
+
+              const {
+                operator,
+                field: filtered_field,
+                values,
+                entity: filtered_entity,
+                case_sensitive = false,
+                parse_as,
+                has_group_count = false,
+              } = field_filter || {};
+
+              let group_count_query = '';
+              if (has_group_count) {
+                // Generate the subquery for the field group
+                db_field_group = db_field_group
+                  .select({ count: sql.raw(`COUNT(*) OVER()`) })
+                  .from(table_schema);
+
+                const field_group_subquery = this.generateFieldSubquery(
+                  db_field_group,
+                  {
+                    ...filter_analyzer_params,
+                    // Pass the filter specific for the field and all default filters from portal
+                    advance_filters: all_field_filters,
+                    group_advance_filters: all_field_group_filters,
+                  },
+                );
+
+                group_count_query = `
+                '${field}_group', (
+                  SELECT COALESCE(
+                    JSON_OBJECT_AGG('count', count),
+                    JSON_BUILD_OBJECT('count', 0)
+                  )
+                  FROM (
+                    ${field_group_subquery}
+                    GROUP BY ${group_by_entity_field}
+                  ) AS ${field}_group
+                )`;
+              }
+
               // Generate the subquery for the field
               db_field = db_field
                 .select({
@@ -240,34 +273,6 @@ export class SearchSuggestionsActorsImplementations {
                 advance_filters: all_field_filters,
                 group_advance_filters: all_field_group_filters,
               });
-
-              // Handle grouping
-              let group_by_entity_field = entity_field;
-
-              group_by_entity_field = concatenated_field_exp
-                ? concatenated_field_exp
-                : group_by_entity_field;
-
-              const group_count_query = `
-                '${field}_group', (
-                  SELECT COALESCE(
-                    JSON_OBJECT_AGG('count', count),
-                    JSON_BUILD_OBJECT('count', 0)
-                  )
-                  FROM (
-                    ${field_group_subquery}
-                    GROUP BY ${group_by_entity_field}
-                  ) AS ${field}_group
-                )`;
-
-              const {
-                operator,
-                field: filtered_field,
-                values,
-                entity: filtered_entity,
-                case_sensitive = false,
-                parse_as,
-              } = field_filter || {};
 
               // Generate the filter specific for the field to exclude the other filters
               const field_filter_query = Utility.evaluateFilter({
@@ -313,7 +318,10 @@ export class SearchSuggestionsActorsImplementations {
                 field,
                 parse_as,
               );
-              return group_count_query + ', ' + field_query;
+              return (
+                `${group_count_query.length ? `${group_count_query}, ` : ''}` +
+                field_query
+              );
             },
           );
           return (
@@ -328,11 +336,28 @@ export class SearchSuggestionsActorsImplementations {
         '',
       );
 
-      const raw_query = sql.raw(
-        `SELECT JSON_BUILD_OBJECT(${json_build_object_query}) AS results`,
+      const sql_query_string = `SELECT JSON_BUILD_OBJECT(${json_build_object_query}) AS results`;
+
+      const query_sha = sha1(sql_query_string);
+      const existing_results = cache.get(query_sha);
+      if (existing_results) {
+        return Promise.resolve({
+          payload: {
+            success: true,
+            message: 'searchSuggestions Message',
+            count: 0,
+            data: [JSON.parse(existing_results)],
+          },
+        });
+      }
+      const raw_query = sql.raw(sql_query_string);
+      const { rows = [] } = await this.db.execute(raw_query);
+      const [{ results = {} } = {}] = rows;
+      cache.put(
+        query_sha,
+        JSON.stringify(results),
+        Utility.getTimeMs(process.env.SEARCH_SUGGESTION_CACHE_EXPIRY || '3s'),
       );
-      const { rows } = await this.db.execute(raw_query);
-      const [{ results }] = rows;
 
       return Promise.resolve({
         payload: {
