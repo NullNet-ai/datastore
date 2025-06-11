@@ -1256,7 +1256,7 @@ export class Utility {
             sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
           );
         }
-        return or(...values.map((value) => ne(schema_field, value)));
+        return and(...values.map((value) => ne(schema_field, value)));
       case EOperator.GREATER_THAN:
         return gt(schema_field, values[0]);
       case EOperator.GREATER_THAN_OR_EQUAL:
