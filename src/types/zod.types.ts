@@ -27,6 +27,8 @@ export const advanceFilterValidation = z.union([
       'is_between',
       'is_not_between',
       'like',
+      'not_like',
+      'has_no_value',
     ]),
     values: z.array(z.union([z.string(), z.number(), z.boolean()])), // Optional because some operators like 'is_null' or 'is_not_null' may not require a value
   }),
