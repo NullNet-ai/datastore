@@ -1306,6 +1306,14 @@ export class Utility {
           return notLike(schema_field, `%${values[0]}%`);
         }
         return notIlike(schema_field, `%${values[0]}%`);
+      case EOperator.HAS_NO_VALUE:
+        let is_empty_filter = eq(schema_field, '');
+        if (pluralize.isPlural(field)) {
+          is_empty_filter = sql.raw(
+            `ARRAY_LENGTH("${entity}"."${field}", 1) IS NULL OR ARRAY_LENGTH("${entity}"."${field}", 1) = 0`,
+          );
+        }
+        return or(is_empty_filter, isNull(schema_field));
       default:
         return null;
     }
