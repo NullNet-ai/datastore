@@ -58,6 +58,7 @@ export enum EOperator {
   OR = 'or',
   LIKE = 'like',
   NOT_LIKE = 'not_like',
+  HAS_NO_VALUE = 'has_no_value',
 }
 
 export enum EOrderDirection {
