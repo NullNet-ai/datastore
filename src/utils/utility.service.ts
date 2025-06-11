@@ -1281,7 +1281,7 @@ export class Utility {
             ...values.map((value) => notLike(schema_field, `%${value}%`)),
           );
         }
-        return or(
+        return and(
           ...values.map((value) => notIlike(schema_field, `%${value}%`)),
         );
       case EOperator.IS_BETWEEN:
