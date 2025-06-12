@@ -1257,7 +1257,7 @@ export class Utility {
             sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
           );
         }
-        return or(...values.map((value) => ne(schema_field, value)));
+        return and(...values.map((value) => ne(schema_field, value)));
       case EOperator.GREATER_THAN:
         return gt(schema_field, values[0]);
       case EOperator.GREATER_THAN_OR_EQUAL:
@@ -1282,7 +1282,7 @@ export class Utility {
             ...values.map((value) => notLike(schema_field, `%${value}%`)),
           );
         }
-        return or(
+        return and(
           ...values.map((value) => notIlike(schema_field, `%${value}%`)),
         );
       case EOperator.IS_BETWEEN:
@@ -1307,6 +1307,14 @@ export class Utility {
           return notLike(schema_field, `%${values[0]}%`);
         }
         return notIlike(schema_field, `%${values[0]}%`);
+      case EOperator.HAS_NO_VALUE:
+        let is_empty_filter = eq(schema_field, '');
+        if (pluralize.isPlural(field)) {
+          is_empty_filter = sql.raw(
+            `ARRAY_LENGTH("${entity}"."${field}", 1) IS NULL OR ARRAY_LENGTH("${entity}"."${field}", 1) = 0`,
+          );
+        }
+        return or(is_empty_filter, isNull(schema_field));
       default:
         return null;
     }
