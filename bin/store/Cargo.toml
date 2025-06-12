@@ -46,6 +46,7 @@ socketioxide = { version = "0.9.1", features = ["extensions"] }
 tower-http = { version = "0.5", features = ["cors"] }
 axum = "0.7"
 tower = "0.4"
+rpassword = "7.4.0"
 
 [build-dependencies]
 tonic-build = "0.12.3"

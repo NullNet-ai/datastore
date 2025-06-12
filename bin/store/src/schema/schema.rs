@@ -1,5 +1,165 @@
 use diesel::table;
 
+//permissions
+
+table! {
+    data_permissions(id) {
+        id -> Nullable<Text>,
+        entity_field_id -> Nullable<Text>,
+        inherited_permission_id -> Nullable<Text>,
+        account_organization_id -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+
+        permission_id -> Nullable<Text>,
+
+    }
+}
+
+table! {
+    role_permissions(id) {
+        id -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+
+        role_name -> Nullable<Text>,
+        permission_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    user_roles(id) {
+        id -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        role -> Nullable<Text>,
+        entity -> Nullable<Text>,
+        level -> Nullable<Int4>,
+
+
+    }
+}
+
+
+table! {
+    entities(id) {
+        id -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+
+        name -> Nullable<Text>,
+    }
+}
+
+table! {
+    fields(id) {
+        id -> Nullable<Text>,
+        label -> Nullable<Text>,
+        name -> Nullable<Text>,
+        r#type -> Nullable<Text>,
+        is_system_field -> Nullable<Bool>,
+        is_encryptable -> Nullable<Bool>,
+        allow_return -> Nullable<Bool>,
+        constraints -> Nullable<Jsonb>,
+        default -> Nullable<Text>,
+        reference_to -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
+table! {
+    entity_fields(id) {
+        id -> Nullable<Text>,
+        entity_id -> Nullable<Text>,
+        field_id -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        schema_version -> Nullable<Int4>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
+table! {
+    permissions(id) {
+        id -> Nullable<Text>,
+        record_id -> Nullable<Text>,
+        record_entity -> Nullable<Text>,
+        read -> Nullable<Bool>,
+        write -> Nullable<Bool>,
+        encrypt -> Nullable<Bool>,
+        decrypt -> Nullable<Bool>,
+        required -> Nullable<Bool>,
+        sensitive -> Nullable<Bool>,
+        archive -> Nullable<Bool>,
+        delete -> Nullable<Bool>,
+        version -> Nullable<Int4>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
+table! {
+    encryption_keys(id) {
+        id -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        entity -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
+table! {
+    sessions(sid) {
+        sid -> Text,
+        sess -> Jsonb,
+        expire -> Timestamp,
+    }
+}
+
+
+//application
+
 table! {
     addresses (id) {
         tombstone -> Nullable<Int4>,

@@ -79,6 +79,24 @@ async fn main() -> std::io::Result<()> {
     if generate_proto || generate_grpc || generate_table_enum {
         println!("Starting code generation...");
 
+        //check for command-line arguments
+        let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        if args[1] == "--init-db" {
+            let cleanup = args.len() > 2 && args[2] == "--cleanup";
+            match utils::run_sql_files::run_sql_files(cleanup) {
+                Ok(_) => {
+                    println!("Database initialization completed successfully!");
+                    return Ok(());
+                }
+                Err(e) => {
+                    eprintln!("Error initializing database: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+
         // Proto generation
         if generate_proto {
             println!("Generating proto files");
