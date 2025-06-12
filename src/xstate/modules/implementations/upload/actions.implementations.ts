@@ -15,6 +15,8 @@ export class UploadActionsImplementations {
   ) {
     this.actions.assignResponsibleAccount =
       this.verifyActionsImplementations.actions.assignResponsibleAccount;
+    this.actions.assignQueryDataPermissions =
+      this.verifyActionsImplementations.actions.assignQueryDataPermissions;
   }
   public readonly actions: typeof UploadMachine.prototype.actions & IActions = {
     uploadEntry: () => {
