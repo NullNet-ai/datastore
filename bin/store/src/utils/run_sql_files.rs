@@ -1,7 +1,7 @@
-use std::path::Path;
-use std::process::Command;
 use std::env;
 use std::io::{self, Write};
+use std::path::Path;
+use std::process::Command;
 
 pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
     // Get database connection info from environment variables
@@ -10,42 +10,46 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
     let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
     let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
-    
+
     // Get the project directory
-    let current_dir = env::current_dir()?
-        .to_string_lossy()
-        .to_string();
-    
+    let current_dir = env::current_dir()?.to_string_lossy().to_string();
+
     // Only run cleanup if the flag is set
     if cleanup {
         println!("Database cleanup requested...");
-        
+
         // Prompt for password
         print!("Enter password for database cleanup: ");
         io::stdout().flush()?;
-        
+
         // Read password securely
         let entered_password = rpassword::read_password()?;
-        
+
         // Define the expected password (you might want to store this in an environment variable)
-        let expected_password = env::var("CLEANUP_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
-        
+        let expected_password =
+            env::var("CLEANUP_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
+
         if entered_password == expected_password {
             println!("Password correct. Running database cleanup script...");
-            
+
             // Run cleanup.sql
             let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
             let cleanup_status = Command::new("psql")
                 .args([
-                    "-U", &user,
-                    "-h", &host,
-                    "-p", &port,
-                    "-d", &dbname,
-                    "-f", cleanup_path.to_str().unwrap(),
+                    "-U",
+                    &user,
+                    "-h",
+                    &host,
+                    "-p",
+                    &port,
+                    "-d",
+                    &dbname,
+                    "-f",
+                    cleanup_path.to_str().unwrap(),
                 ])
                 .env("PGPASSWORD", &password)
                 .status()?;
-            
+
             if !cleanup_status.success() {
                 return Err("Database cleanup failed".into());
             }
@@ -53,27 +57,32 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
             println!("Incorrect password. Skipping database cleanup.");
         }
     }
-    
+
     println!("Running database initialization script...");
-    
+
     // Run init.sql to initialize the database
     let init_path = Path::new(&current_dir).join("src/schema/init.sql");
     let init_status = Command::new("psql")
         .args([
-            "-U", &user,
-            "-h", &host,
-            "-p", &port,
-            "-d", &dbname,
-            "-f", init_path.to_str().unwrap(),
+            "-U",
+            &user,
+            "-h",
+            &host,
+            "-p",
+            &port,
+            "-d",
+            &dbname,
+            "-f",
+            init_path.to_str().unwrap(),
         ])
         .env("CLEANUP_PASSWORD", &password)
         .current_dir(&current_dir) // Set working directory for relative paths in init.sql
         .status()?;
-    
+
     if !init_status.success() {
         return Err("Database initialization failed".into());
     }
-    
+
     println!("Database initialization completed successfully!");
     Ok(())
 }

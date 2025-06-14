@@ -17,5 +17,4 @@ pub struct EntityModel {
     pub timestamp: Option<String>,
     pub tombstone: Option<i32>,
     pub name: Option<String>,
-
 }

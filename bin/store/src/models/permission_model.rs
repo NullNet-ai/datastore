@@ -7,36 +7,33 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = crate::schema::schema::permissions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-#[diesel(table_name = crate::schema::schema::permissions)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-#[serde(default)]
-pub struct PermissionModel { 
-    pub id: Option<String>, 
-    pub record_id: Option<String>, 
-    pub record_entity: Option<String>, 
+pub struct PermissionModel {
+    pub id: Option<String>,
+    pub record_id: Option<String>,
+    pub record_entity: Option<String>,
     #[serde(default = "default_read")]
-    pub read: Option<bool>, 
+    pub read: Option<bool>,
     #[serde(default = "default_write")]
-    pub write: Option<bool>, 
+    pub write: Option<bool>,
     #[serde(default = "default_encrypt")]
-    pub encrypt: Option<bool>, 
+    pub encrypt: Option<bool>,
     #[serde(default = "default_decrypt")]
-    pub decrypt: Option<bool>, 
+    pub decrypt: Option<bool>,
     #[serde(default = "default_required")]
-    pub required: Option<bool>, 
+    pub required: Option<bool>,
     #[serde(default = "default_sensitive")]
-    pub sensitive: Option<bool>, 
+    pub sensitive: Option<bool>,
     #[serde(default = "default_archive")]
-    pub archive: Option<bool>, 
+    pub archive: Option<bool>,
     #[serde(default = "default_delete")]
-    pub delete: Option<bool>, 
-    pub version: Option<i32>, 
-    pub created_by: Option<String>, 
-    pub updated_by: Option<String>, 
-    pub deleted_by: Option<String>, 
-    pub timestamp: Option<String>, 
+    pub delete: Option<bool>,
+    pub version: Option<i32>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
+    pub deleted_by: Option<String>,
+    pub timestamp: Option<String>,
     #[serde(default = "default_tombstone")]
-    pub tombstone: Option<i32>, 
+    pub tombstone: Option<i32>,
 }
 
 // Default function implementations

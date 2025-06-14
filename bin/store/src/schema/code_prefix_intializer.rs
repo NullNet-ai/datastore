@@ -24,6 +24,7 @@ impl CodePrefixInitializer {
                 prefix: "PA".to_string(),
                 counter: 0,
                 entity: "packets".to_string(),
+                digits_number: 1,
             },
         );
 

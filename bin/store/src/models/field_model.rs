@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use diesel::sql_types::Jsonb;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
@@ -12,12 +13,12 @@ pub struct FieldModel {
     pub id: Option<String>,
     pub label: Option<String>,
     pub name: Option<String>,
-    pub r#type: Option<String>,
+    pub field_type: Option<String>,
     pub is_system_field: Option<bool>,
     pub is_encryptable: Option<bool>,
     pub allow_return: Option<bool>,
     pub constraints: Option<JsonValue>,
-    pub default: Option<String>,
+    pub _default: Option<String>,
     pub reference_to: Option<String>,
     pub version: Option<i32>,
     pub created_by: Option<String>,

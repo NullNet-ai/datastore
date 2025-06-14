@@ -4,10 +4,14 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::schema::schema::organizations)]
+#[diesel(table_name = crate::schema::schema::accounts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationModel {
+pub struct AccountModel {
+    // System fields
+    pub id: Option<String>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -21,15 +25,12 @@ pub struct OrganizationModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
+    pub timestamp: Option<String>,
     pub tags: Option<Vec<String>>,
-    pub categories: Option<Vec<String>>,
-    pub code: Option<String>,
-    pub id: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub parent_organization_id: Option<String>,
-    pub name: Option<String>,
-    pub organization_level: Option<i32>,
-    pub root_organization_id: Option<String>,
-    pub path_level: Option<Vec<String>>,
+    // Specific fields
+    pub account_id: Option<String>,
+    pub account_secret: Option<String>,
+    pub account_status: Option<String>,
+    pub is_new_user: Option<bool>,
 }

@@ -9,4 +9,5 @@ pub struct CounterModel {
     pub default_code: i32,
     pub prefix: String,
     pub counter: i32,
+    pub digits_number: i32,
 }

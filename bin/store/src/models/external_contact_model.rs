@@ -4,10 +4,11 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::schema::schema::organizations)]
+#[diesel(table_name = crate::schema::schema::external_contacts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationModel {
+pub struct ExternalContactModel {
+    // System fields
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -27,9 +28,8 @@ pub struct OrganizationModel {
     pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub parent_organization_id: Option<String>,
-    pub name: Option<String>,
-    pub organization_level: Option<i32>,
-    pub root_organization_id: Option<String>,
-    pub path_level: Option<Vec<String>>,
+    // Specific fields
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub email: Option<String>,
 }

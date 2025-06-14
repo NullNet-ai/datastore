@@ -64,7 +64,6 @@ table! {
     }
 }
 
-
 table! {
     entities(id) {
         id -> Nullable<Text>,
@@ -85,12 +84,12 @@ table! {
         id -> Nullable<Text>,
         label -> Nullable<Text>,
         name -> Nullable<Text>,
-        r#type -> Nullable<Text>,
+        field_type -> Nullable<Text>,
         is_system_field -> Nullable<Bool>,
         is_encryptable -> Nullable<Bool>,
         allow_return -> Nullable<Bool>,
         constraints -> Nullable<Jsonb>,
-        default -> Nullable<Text>,
+        _default -> Nullable<Text>,
         reference_to -> Nullable<Text>,
         version -> Nullable<Int4>,
         created_by -> Nullable<Text>,
@@ -157,6 +156,302 @@ table! {
     }
 }
 
+//System tables
+
+table! {
+    external_contacts (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        first_name -> Nullable<Text>,
+        last_name -> Nullable<Text>,
+        email -> Nullable<Text>,
+    }
+}
+
+table! {
+    counters (entity) {
+        entity -> Text,
+        default_code -> Integer,
+        prefix -> Text,
+        counter -> Integer,
+        digits_number -> Integer,
+    }
+}
+
+table! {
+    crdt_messages (timestamp, group_id, row, column) {
+        database -> Nullable<Text>,
+        dataset -> Text,
+        group_id -> Text,
+        timestamp -> Text,
+        row -> Text,
+        column -> Text,
+        client_id -> Text,
+        value -> Text,
+        operation -> Text,
+        hypertable_timestamp -> Nullable<Text>,
+    }
+}
+
+table! {
+    crdt_merkles (group_id) {
+        group_id -> Text,
+        timestamp -> Text,
+        merkle -> Text,
+    }
+}
+
+table! {
+    sync_endpoints (id) {
+        id -> Text,
+        name -> Text,
+        url -> Text,
+        group_id -> Text,
+        username -> Text,
+        password -> Text,
+        status -> Text,
+    }
+}
+
+table! {
+    queues (id) {
+        id -> Text,
+        name -> Text,
+        size -> Int4,
+        count -> Int4,
+    }
+}
+
+table! {
+    queue_items (id) {
+        id -> Text,
+        order -> Int4,
+        queue_id -> Text,
+        value -> Text,
+    }
+}
+
+table! {
+    transactions (id) {
+        id -> Text,
+        timestamp -> Text,
+        status -> Text,
+        expiry -> BigInt,
+    }
+}
+
+table! {
+    organizations(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        parent_organization_id -> Nullable<Text>,
+        name -> Nullable<Text>,
+        organization_level -> Nullable<Int4>,
+        root_organization_id -> Nullable<Text>,
+        path_level -> Nullable<Array<Text>>,
+    }
+}
+
+table! {
+    organization_contacts(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        contact_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    organization_accounts(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        organization_contact_id -> Nullable<Text>,
+        account_id -> Nullable<Text>,
+        account_secret -> Nullable<Text>,
+        role_id -> Nullable<Text>,
+        contact_id -> Nullable<Text>,
+        device_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    account_organizations (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        contact_id -> Nullable<Text>,
+        email -> Nullable<Text>,
+        account_id -> Nullable<Text>,
+        role_id -> Nullable<Text>,
+        account_organization_status -> Nullable<Text>,
+        is_invited -> Nullable<Bool>,
+        device_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    account_profiles (id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        first_name -> Nullable<Text>,
+        last_name -> Nullable<Text>,
+        email -> Nullable<Text>,
+        account_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    accounts (id) {
+        id -> Nullable<Text>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+
+        account_id -> Nullable<Text>,
+        account_secret -> Nullable<Text>,
+        account_status -> Nullable<Text>,
+        is_new_user -> Nullable<Bool>,
+    }
+}
+
+table! {
+    organization_domains(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+
+        domain_name -> Nullable<Text>,
+    }
+}
 
 //application
 
@@ -833,7 +1128,7 @@ table! {
         is_connection_established -> Nullable<Bool>,
         system_id -> Nullable<Text>,
         device_version -> Nullable<Text>,
-        last_heartbeat -> Nullable<Text>, // Adjust if using Timestamp
+        last_heartbeat -> Nullable<Text>,
         is_monitoring_enabled -> Nullable<Bool>,
         is_remote_access_enabled -> Nullable<Bool>,
         ip_address -> Nullable<Inet>,
@@ -1001,162 +1296,6 @@ table! {
         timestamp -> Nullable<Timestamp>,
 
         name -> Nullable<Text>,
-    }
-}
-
-table! {
-    counters (entity) {
-        entity -> Text,
-        default_code -> Integer,
-        prefix -> Text,
-        counter -> Integer,
-    }
-}
-
-table! {
-    crdt_messages (timestamp, group_id, row, column) {
-        database -> Nullable<Text>,
-        dataset -> Text,
-        group_id -> Text,
-        timestamp -> Text,
-        row -> Text,
-        column -> Text,
-        client_id -> Text,
-        value -> Text,
-        operation -> Text,
-        hypertable_timestamp -> Nullable<Text>,
-    }
-}
-
-table! {
-    crdt_merkles (group_id) {
-        group_id -> Text,
-        timestamp -> Text,
-        merkle -> Text,
-    }
-}
-
-table! {
-    sync_endpoints (id) {
-        id -> Text,
-        name -> Text,
-        url -> Text,
-        group_id -> Text,
-        username -> Text,
-        password -> Text,
-        status -> Text,
-    }
-}
-
-// Add these table definitions to your schema.rs file
-
-table! {
-    queues (id) {
-        id -> Text,
-        name -> Text,
-        size -> Int4,
-        count -> Int4,
-    }
-}
-
-table! {
-    queue_items (id) {
-        id -> Text,
-        order -> Int4,
-        queue_id -> Text,
-        value -> Text,
-    }
-}
-
-// Add this table definition to your schema.rs file
-
-table! {
-    transactions (id) {
-        id -> Text,
-        timestamp -> Text,
-        status -> Text,
-        expiry -> BigInt,
-    }
-}
-
-table! {
-    organizations(id) {
-        tombstone -> Nullable<Int4>,
-        status -> Nullable<Text>,
-        previous_status -> Nullable<Text>,
-        version -> Nullable<Int4>,
-        created_date -> Nullable<Text>,
-        created_time -> Nullable<Text>,
-        updated_date -> Nullable<Text>,
-        updated_time -> Nullable<Text>,
-        organization_id -> Nullable<Text>,
-        created_by -> Nullable<Text>,
-        updated_by -> Nullable<Text>,
-        deleted_by -> Nullable<Text>,
-        requested_by -> Nullable<Text>,
-        tags -> Nullable<Array<Text>>,
-        categories -> Nullable<Array<Text>>,
-        code -> Nullable<Text>,
-        id -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
-
-        parent_organization_id -> Nullable<Text>,
-        name -> Nullable<Text>
-    }
-}
-
-table! {
-    organization_contacts(id) {
-        tombstone -> Nullable<Int4>,
-        status -> Nullable<Text>,
-        previous_status -> Nullable<Text>,
-        version -> Nullable<Int4>,
-        created_date -> Nullable<Text>,
-        created_time -> Nullable<Text>,
-        updated_date -> Nullable<Text>,
-        updated_time -> Nullable<Text>,
-        organization_id -> Nullable<Text>,
-        created_by -> Nullable<Text>,
-        updated_by -> Nullable<Text>,
-        deleted_by -> Nullable<Text>,
-        requested_by -> Nullable<Text>,
-        tags -> Nullable<Array<Text>>,
-        categories -> Nullable<Array<Text>>,
-        code -> Nullable<Text>,
-        id -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
-
-        contact_id -> Nullable<Text>,
-    }
-}
-
-table! {
-    organization_accounts(id) {
-        tombstone -> Nullable<Int4>,
-        status -> Nullable<Text>,
-        previous_status -> Nullable<Text>,
-        version -> Nullable<Int4>,
-        created_date -> Nullable<Text>,
-        created_time -> Nullable<Text>,
-        updated_date -> Nullable<Text>,
-        updated_time -> Nullable<Text>,
-        organization_id -> Nullable<Text>,
-        created_by -> Nullable<Text>,
-        updated_by -> Nullable<Text>,
-        deleted_by -> Nullable<Text>,
-        requested_by -> Nullable<Text>,
-        tags -> Nullable<Array<Text>>,
-        categories -> Nullable<Array<Text>>,
-        code -> Nullable<Text>,
-        id -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
-
-        organization_contact_id -> Nullable<Text>,
-        account_id -> Nullable<Text>,
-        account_secret -> Nullable<Text>,
-        role_id -> Nullable<Text>,
-        contact_id -> Nullable<Text>,
-        device_id -> Nullable<Text>,
     }
 }
 

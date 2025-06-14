@@ -479,6 +479,7 @@ pub async fn generate_code(
         counter: 1,
         prefix: prefix_param.to_string(),
         default_code: default_code_param,
+        digits_number: 1,
     };
 
     // Attempt the insert with conflict handling

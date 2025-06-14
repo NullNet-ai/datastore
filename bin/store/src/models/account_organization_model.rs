@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::schema::schema::organizations)]
+#[diesel(table_name = crate::schema::schema::account_organizations)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationModel {
+pub struct AccountOrganizationModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -27,9 +27,11 @@ pub struct OrganizationModel {
     pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
 
-    pub parent_organization_id: Option<String>,
-    pub name: Option<String>,
-    pub organization_level: Option<i32>,
-    pub root_organization_id: Option<String>,
-    pub path_level: Option<Vec<String>>,
+    pub contact_id: Option<String>,
+    pub email: Option<String>,
+    pub account_id: Option<String>,
+    pub role_id: Option<String>,
+    pub account_organization_status: Option<String>,
+    pub is_invited: Option<bool>,
+    pub device_id: Option<String>,
 }

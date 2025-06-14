@@ -15,6 +15,7 @@ mod generated;
 mod message_stream;
 mod middlewares;
 mod models;
+mod organizations;
 mod schema;
 mod shutdown_handler;
 mod structs;
@@ -25,6 +26,7 @@ mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
+use crate::organizations::organization_controller::OrganizationsController;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -81,21 +83,21 @@ async fn main() -> std::io::Result<()> {
 
         //check for command-line arguments
         let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
-        if args[1] == "--init-db" {
-            let cleanup = args.len() > 2 && args[2] == "--cleanup";
-            match utils::run_sql_files::run_sql_files(cleanup) {
-                Ok(_) => {
-                    println!("Database initialization completed successfully!");
-                    return Ok(());
-                }
-                Err(e) => {
-                    eprintln!("Error initializing database: {}", e);
-                    std::process::exit(1);
+        if args.len() > 1 {
+            if args[1] == "--init-db" {
+                let cleanup = args.len() > 2 && args[2] == "--cleanup";
+                match utils::run_sql_files::run_sql_files(cleanup) {
+                    Ok(_) => {
+                        println!("Database initialization completed successfully!");
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        eprintln!("Error initializing database: {}", e);
+                        std::process::exit(1);
+                    }
                 }
             }
         }
-    }
 
         // Proto generation
         if generate_proto {
@@ -221,6 +223,19 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .configure(sync_endpoints_controller::configure)
+            .service(
+                web::scope("/api/organizations")
+                    .route(
+                        "/register",
+                        web::post().to(OrganizationsController::register),
+                    )
+                    .route(
+                        "/register/{id}",
+                        web::put().to(OrganizationsController::reregister_existing_account),
+                    )
+                    .route("/auth", web::post().to(OrganizationsController::auth))
+                    .route("/logout", web::post().to(OrganizationsController::logout)),
+            )
             .service(
                 web::scope("/api/store")
                     .wrap(Authentication)

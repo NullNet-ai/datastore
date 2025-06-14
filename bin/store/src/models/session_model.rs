@@ -1,7 +1,7 @@
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use chrono::NaiveDateTime;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
