@@ -49,6 +49,8 @@ tower = "0.4"
 rpassword = "7.4.0"
 argon2 = "0.5.3"
 ulid = "1.2.1"
+sha2 = "0.10.9"
+hex = "0.4.3"
 
 [build-dependencies]
 tonic-build = "0.12.3"

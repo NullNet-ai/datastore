@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Register {
@@ -49,4 +50,19 @@ impl std::str::FromStr for AccountType {
             _ => Err(format!("Unknown AccountType: {}", s)),
         }
     }
+}
+
+impl fmt::Display for AccountType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AccountType::Contact => write!(f, "contact"),
+            AccountType::Device => write!(f, "device"),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub message: String,
+    pub token: Option<String>,
 }

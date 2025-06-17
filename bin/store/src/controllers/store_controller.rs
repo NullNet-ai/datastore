@@ -32,6 +32,15 @@ pub struct ApiError {
     pub message: String,
     pub status: u16,
 }
+
+impl From<Box<dyn std::error::Error>> for ApiError {
+    fn from(error: Box<dyn std::error::Error>) -> Self {
+        Self::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Internal server error: {}", error),
+        )
+    }
+}
 impl From<BlockingError> for ApiError {
     fn from(error: BlockingError) -> Self {
         ApiError {

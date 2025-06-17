@@ -1,12 +1,14 @@
+use crate::auth::auth_service;
+use crate::controllers::store_controller::ApiError;
 use crate::db;
 use crate::models::account_model::AccountModel;
+use crate::models::account_organization_model::AccountOrganizationModel;
 use crate::models::account_profile_model::AccountProfileModel;
 use crate::models::contact_email_model::ContactEmailModel;
 use crate::models::contact_model::ContactModel;
 use crate::models::counter_model::CounterModel;
 use crate::models::device_model::DeviceModel;
 use crate::models::organization_account_model::OrganizationAccountModel;
-use crate::models::organization_contact_model::OrganizationContactModel;
 use crate::models::organization_model::OrganizationModel;
 use crate::organizations::structs::AccountType;
 use crate::organizations::structs::Register;
@@ -14,6 +16,9 @@ use crate::schema::schema::accounts;
 use crate::schema::schema::counters;
 use crate::schema::schema::organizations;
 use crate::sync::sync_service;
+use crate::utils::utils;
+use actix::fut::future::result;
+use actix_web::http::StatusCode;
 use argon2::password_hash::{rand_core::OsRng, SaltString};
 use argon2::{Argon2, PasswordHasher};
 use chrono::NaiveDateTime;
@@ -22,17 +27,22 @@ use diesel::result::Error as DieselError;
 use diesel_async::RunQueryDsl;
 use ipnetwork::IpNetwork;
 use serde_json::json;
+use serde_json::{Map, Value};
 use std::env;
-use ulid::Ulid;
 use tokio_postgres::types::ToSql;
-use serde_json::{Value, Map};
-use crate::utils::utils;
-use crate::organizations::auth_service;
-use crate::controllers::store_controller::ApiError;
-use actix_web::http::StatusCode;
+use ulid::Ulid;
 
-
-pub fn get_defaults() -> (String, String, String, String, String, String, bool, String) {
+pub fn get_defaults() -> (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    bool,
+    String,
+    String,
+) {
     let default_organization_id = env::var("DEFAULT_ORGANIZATION_ID")
         .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string());
     let default_organization_name =
@@ -51,6 +61,8 @@ pub fn get_defaults() -> (String, String, String, String, String, String, bool, 
         == "true";
     let super_admin_id =
         env::var("SUPER_ADMIN_ID").unwrap_or_else(|_| "01JCSAG79KQ1WM0F9B47Q700P1".to_string());
+    let system_device_ulid =
+        env::var("SYSTEM_DEVICE_ULID").unwrap_or_else(|_| "01JT1R1B2XMDDB7WY3JC84DV55".to_string());
 
     (
         default_organization_id,
@@ -61,6 +73,7 @@ pub fn get_defaults() -> (String, String, String, String, String, String, bool, 
         default_device_secret,
         debug,
         super_admin_id,
+        system_device_ulid,
     )
 }
 
@@ -68,12 +81,12 @@ pub async fn register(
     params: &Register,
     is_request: Option<bool>,
     account_organization_id: Option<String>,
-) -> Result<String, ApiError> {
+) -> Result<Value, ApiError> {
     // Changed return type to use diesel::result::Error
     let mut conn = db::get_async_connection().await;
 
     let is_request = is_request.unwrap_or(false);
-    let (_, _, _, _, _, _, _, super_admin_id) = get_defaults();
+    let (_, _, _, _, _, _, _, super_admin_id, _) = get_defaults();
 
     let account_type = params.account_type.clone().unwrap_or(AccountType::Contact);
     let account_id = &params.account_id;
@@ -93,17 +106,16 @@ pub async fn register(
 
     let mut personal_organization_id: Option<String> = None;
 
-     let now = chrono::Utc::now();
-     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
-     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
-     
-     let _account_id = if is_request {
+    let now = chrono::Utc::now();
+    let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
+    let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
+
+    let _account_id = if is_request {
         Ulid::new().to_string()
-     } else {
-         super_admin_id
-     };     
-     let is_contact_account = account_type == AccountType::Contact;
- 
+    } else {
+        super_admin_id.clone()
+    };
+    let is_contact_account = account_type == AccountType::Contact;
 
     let existing_account = accounts::table
         .filter(
@@ -135,64 +147,342 @@ pub async fn register(
         .await
         .optional()?;
 
-        if existing_account.is_some() {
-            // Return a DieselError with a custom message
-            return Err(DieselError::DatabaseError(
-                diesel::result::DatabaseErrorKind::UniqueViolation,
-                Box::new("Account with the same email already exist.".to_string()),
-            ).into());
-        } else {
-            //create a personal organization
-            let personal_organization_id = create_new_organization(
-                "Personal Organization".to_string(),
-                vec!["Personal".to_string()],
-                None,
-                if organizations_counter.is_some() {
-                    match utils::generate_code("organizations").await {
-                        Ok(code) => code,
-                        Err(_) => None,
-                    }
+    if existing_account.is_some() {
+        // Return a DieselError with a custom message
+        return Err(DieselError::DatabaseError(
+            diesel::result::DatabaseErrorKind::UniqueViolation,
+            Box::new("Account with the same email already exist.".to_string()),
+        )
+        .into());
+    } else {
+        //create a personal organization
+        let personal_organization_id = create_new_organization(
+            "Personal Organization".to_string(),
+            vec!["Personal".to_string()],
+            None,
+            if organizations_counter.is_some() {
+                match utils::generate_code("organizations").await {
+                    Ok(code) => code,
+                    Err(_) => None,
+                }
+            } else {
+                None
+            },
+            responsible_account_organization_id.clone(),
+        )
+        .await?;
+
+        //now create an account
+
+        create_account(
+            _account_id.clone(),
+            account_id.to_string(),
+            account_secret.to_string(),
+            personal_organization_id,
+            is_new_user,
+            formatted_date.clone(),
+            formatted_time.clone(),
+            first_name.to_string(),
+            last_name.to_string(),
+            if !is_contact_account {
+                Some("Inactive".to_string())
+            } else {
+                None
+            },
+            if !is_contact_account {
+                Some("Draft".to_string())
+            } else {
+                None
+            },
+            responsible_account_organization_id.clone(),
+        )
+        .await?;
+    }
+
+    if is_contact_account && (!is_invited || !is_request) {
+        match async {
+                let user_id = if is_request { Ulid::new().to_string() } else { super_admin_id.clone() };
+
+                // Create team organization
+                let team_organization_id = create_new_organization(
+                    team_organization_name.clone().unwrap_or(&String::new()).to_string(),
+                    vec!["Team".to_string()],
+                    params.organization_id.clone(),
+                    if organizations_counter.is_some() {
+                        utils::generate_code("organizations").await?
+                    } else {
+                        None
+                    },
+                    responsible_account_organization_id.clone(),
+                ).await?;
+
+                // Create contact using ContactModel
+                let contact = ContactModel {
+                    id: Some(user_id.clone()),
+                    organization_id: Some(team_organization_id.clone()),
+                    first_name: Some(first_name.clone()),
+                    last_name: Some(last_name.clone()),
+                    categories: Some(contact_categories.clone().unwrap_or_else(|| vec!["Contact".to_string()])),
+                    account_id: Some(_account_id.clone()),
+                    code: if organizations_counter.is_some() {
+                        utils::generate_code("organizations").await?
+                    } else {
+                        None
+                    },
+                    tombstone: Some(0),
+                    status: Some("Active".to_string()),
+                    created_date: Some(formatted_date.clone()),
+                    created_time: Some(formatted_time.clone()),
+                    updated_date: Some(formatted_date.clone()),
+                    updated_time: Some(formatted_time.clone()),
+                    created_by: responsible_account_organization_id.clone(),
+                    ..Default::default()
+                };
+
+                // Convert model to JSON and insert into database
+                let contact_json = serde_json::to_value(&contact)
+                    .map_err(|e| ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to serialize contact: {}", e)
+                    ))?;
+
+                sync_service::insert(&"contacts".to_string(), contact_json).await?;
+
+                // Create Contact Email using ContactEmailModel
+                let contact_email = ContactEmailModel {
+                    id: Some(Ulid::new().to_string()),
+                    contact_id: Some(user_id.clone()),
+                    email: Some(account_id.clone()),
+                    is_primary: Some(true),
+                    organization_id: Some(team_organization_id.clone()),
+                    tombstone: Some(0),
+                    status: Some("Active".to_string()),
+                    created_date: Some(formatted_date.clone()),
+                    created_time: Some(formatted_time.clone()),
+                    updated_date: Some(formatted_date.clone()),
+                    updated_time: Some(formatted_time.clone()),
+                    created_by: responsible_account_organization_id.clone(),
+                    ..Default::default()
+                };
+
+                // Convert model to JSON and insert into database
+                let contact_email_json = serde_json::to_value(&contact_email)
+                    .map_err(|e| ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to serialize contact email: {}", e)
+                    ))?;
+
+                sync_service::insert(&"contact_emails".to_string(), contact_email_json).await?;
+
+                // Create Account Organization using AccountOrganizationModel
+                let account_organization = AccountOrganizationModel {
+                    id: Some(Ulid::new().to_string()),
+                    email: Some(account_id.clone()),
+                    categories: Some(account_organization_categories.clone().unwrap_or_else(|| vec!["Internal User".to_string()])),
+                    account_id: Some(_account_id.clone()),
+                    organization_id: Some(team_organization_id.clone()),
+                    contact_id: Some(user_id.clone()),
+                    account_organization_status: Some(account_organization_status.clone().unwrap_or_else(|| "Active".to_string())),
+                    role_id: Some(role_id.clone()),
+                    is_invited: Some(is_invited),
+                    code: if account_organizations_counter.is_some() {
+                        utils::generate_code("account_organizations").await?
+                    } else {
+                        None
+                    },
+                    tombstone: Some(0),
+                    status: Some("Active".to_string()),
+                    created_date: Some(formatted_date.clone()),
+                    created_time: Some(formatted_time.clone()),
+                    updated_date: Some(formatted_date.clone()),
+                    updated_time: Some(formatted_time.clone()),
+                    created_by: responsible_account_organization_id.clone(),
+                    ..Default::default()
+                };
+
+                // Convert model to JSON and insert into database
+                let account_organization_json = serde_json::to_value(&account_organization)
+                    .map_err(|e| ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to serialize account organization: {}", e)
+                    ))?;
+
+                sync_service::insert(&"account_organizations".to_string(), account_organization_json.clone()).await?;
+
+                log::info!(
+                    "Signed up Account ({}) {} with email: {} successfully linked to Team Organization {}",
+                    account_type,
+                    _account_id,
+                    account_id,
+                    team_organization_id
+                );
+
+                Ok::<_, ApiError>(json!({
+                    "organization_id": team_organization_id,
+                    "account_organization_id": account_organization.id.unwrap_or_default(),
+                    "account_id": _account_id,
+                    "email": account_id,
+                    "contact_id": user_id,
+                }))
+            }.await {
+                Ok(result) => Ok(result),
+                Err(error) => {
+                    log::error!(
+                        "Failed to sign up an account ({}) {} to team organization {}: {}",
+                        account_type,
+                        _account_id,
+                        params.organization_id.clone().unwrap_or_else(|| "unknown".to_string()),
+                        error
+                    );
+                    Ok(().into())
+                }
+            }
+    } else {
+        // Handle invited contact accounts
+        match async {
+            if is_invited && account_organization_id.is_empty() {
+                return Err(ApiError::new(
+                    StatusCode::BAD_REQUEST,
+                    "Account Organization ID is required if Account is invited".to_string(),
+                ));
+            }
+
+            let mut device_id: Option<String> = None;
+            let mut device_code: Option<String> = None;
+
+            // Create Device if not a contact account
+            if !is_contact_account {
+                let devices_counter = counters::table
+                    .filter(counters::entity.eq("devices"))
+                    .first::<CounterModel>(&mut conn)
+                    .await
+                    .optional()?;
+
+                let device_id_value = Ulid::new().to_string();
+                let code = if devices_counter.is_some() {
+                    utils::generate_code("devices").await?
                 } else {
                     None
-                },
-                responsible_account_organization_id.clone(),
-            ).await?;
+                };
 
-            //now create an account
+                // Create device using DeviceModel
+                let device = DeviceModel {
+                    id: Some(device_id_value.clone()),
+                    organization_id: params.organization_id.clone(),
+                    categories: device_categories.clone(),
+                    code: code.clone(),
+                    tombstone: Some(0),
+                    status: Some("Draft".to_string()),
+                    created_date: Some(formatted_date.clone()),
+                    created_time: Some(formatted_time.clone()),
+                    updated_date: Some(formatted_date.clone()),
+                    updated_time: Some(formatted_time.clone()),
+                    created_by: responsible_account_organization_id.clone(),
+                    ..Default::default()
+                };
 
-             create_account(
-                _account_id, 
-                account_id.to_string(), 
-                account_secret.to_string(), 
-                personal_organization_id, 
-                is_new_user, 
-                formatted_date, 
-                formatted_time, 
-                first_name.to_string(), 
-                last_name.to_string(), 
-                if !is_contact_account {
-                    Some("Inactive".to_string())
-                } else {
-                    None
-                }, 
-                if !is_contact_account {
-                    Some("Draft".to_string())
-                } else {
-                    None
-                }, 
-                responsible_account_organization_id.clone(), 
-            ).await?;
-        }
+                // Convert model to JSON and insert into database
+                let device_json = serde_json::to_value(&device)
+                    .map_err(|e| ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to serialize device: {}", e)
+                    ))?;
 
-        if (is_contact_account && (!is_invited || !is_request)) {
-            // Your existing code here
-        } else if (is_contact_account && is_invited) {
-            // Handle invited contact accounts
-        }
+                sync_service::insert(&"devices".to_string(), device_json).await?;
+                device_id = Some(device_id_value);
+                device_code = code;
+            }
 
-    Ok("".to_string()) // Changed to return Ok with the string
+            // Link the account and organization on account_organizations
+            let account_org_id = if account_organization_id.is_empty() {
+                Ulid::new().to_string()
+            } else {
+                account_organization_id.clone()
+            };
+
+            // Create AccountOrganizationModel
+            let mut account_organization = AccountOrganizationModel {
+                id: Some(account_org_id.clone()),
+                email: Some(account_id.clone()),
+                account_id: Some(_account_id.clone()),
+                organization_id: params.organization_id.clone(),
+                categories: account_organization_categories.clone(),
+                account_organization_status: account_organization_status.clone(),
+                is_invited: Some(is_invited),
+                status: Some("Active".to_string()),
+                tombstone: Some(0),
+                created_date: Some(formatted_date.clone()),
+                created_time: Some(formatted_time.clone()),
+                updated_date: Some(formatted_date.clone()),
+                updated_time: Some(formatted_time.clone()),
+                created_by: responsible_account_organization_id.clone(),
+                ..Default::default()
+            };
+
+            // Set additional fields for non-contact accounts
+            if !is_contact_account {
+                account_organization.device_id = device_id.clone();
+                account_organization.account_organization_status = Some("Inactive".to_string());
+                account_organization.status = Some("Draft".to_string());
+            }
+
+            // Convert model to JSON
+            let account_organization_json = serde_json::to_value(&account_organization)
+                .map_err(|e| ApiError::new(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to serialize account organization: {}", e)
+                ))?;
+
+            // Insert or update account organization
+            let created_account_organization = if account_organization_id.is_empty() {
+                sync_service::insert(&"account_organizations".to_string(), account_organization_json).await?
+            } else {
+                sync_service::update(&"account_organizations".to_string(), account_organization_json, &account_organization_id).await?
+            };
+
+            log::info!(
+                "Invited Account ({}) {} with email: {} successfully linked to Team Organization {}",
+                account_type,
+                _account_id,
+                account_id,
+                params.organization_id.clone().unwrap_or_else(|| "unknown".to_string())
+            );
+
+            // Create response JSON
+            let mut result = json!({
+                "organization_id": params.organization_id.clone().unwrap_or_default(),
+                "account_organization_id": account_org_id,
+                "account_id": _account_id,
+                "email": account_id
+            });
+
+            // Add device information if available
+            if let Some(dev_id) = device_id {
+                let mut obj = result.as_object().unwrap().clone();
+                obj.insert("device_id".to_string(), Value::String(dev_id));
+
+                if let Some(code) = device_code {
+                    obj.insert("device_code".to_string(), Value::String(code));
+                }
+
+                result = Value::Object(obj);
+            }
+
+            Ok(result)}.await{
+                Ok(result) => Ok(result),
+                Err(error) => {
+                    log::error!(
+                        "Failed to sign up an account ({}) {} to team organization {}: {}",
+                        account_type,
+                        _account_id,
+                        params.organization_id.clone().unwrap_or_else(|| "unknown".to_string()),
+                        error
+                    );
+                    Ok(().into())
+                }
+            }
+    }
 }
-
 
 pub async fn create_new_organization(
     organization_name: String,
@@ -204,39 +494,44 @@ pub async fn create_new_organization(
     let now = chrono::Utc::now();
     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
-    
+
     let id = organization_id.unwrap_or_else(|| Ulid::new().to_string());
-    
+
     // Create organization object
-    let mut organization = Map::new();
-    organization.insert("id".to_string(), Value::String(id.clone()));
-    organization.insert("name".to_string(), Value::String(organization_name.clone()));
-    organization.insert("categories".to_string(), Value::Array(
-        categories.iter().map(|c| Value::String(c.clone())).collect()
-    ));
-    organization.insert("organization_id".to_string(), Value::String(id.clone()));
-    organization.insert("parent_organization_id".to_string(), Value::Null);
-    organization.insert("tombstone".to_string(), Value::Number(serde_json::Number::from(0)));
-    organization.insert("status".to_string(), Value::String("Active".to_string()));
-    organization.insert("created_date".to_string(), Value::String(formatted_date.clone()));
-    organization.insert("created_time".to_string(), Value::String(formatted_time.clone()));
-    organization.insert("updated_date".to_string(), Value::String(formatted_date));
-    organization.insert("updated_time".to_string(), Value::String(formatted_time));
-    
-    if let Some(code_value) = code {
-        organization.insert("code".to_string(), Value::String(code_value));
-    }
-    
-    if let Some(responsible_id) = responsible_account_organization_id {
-        organization.insert("created_by".to_string(), Value::String(responsible_id));
-    }
-    
-    sync_service::insert(&"organizations".to_string(), Value::Object(organization)).await?;
-    
-    
+    let mut organization = OrganizationModel {
+        id: Some(id.clone()),
+        name: Some(organization_name.clone()),
+        categories: Some(categories.clone()),
+        organization_id: Some(id.clone()),
+        parent_organization_id: None,
+        tombstone: Some(0),
+        status: Some("Active".to_string()),
+        created_date: Some(formatted_date.clone()),
+        created_time: Some(formatted_time.clone()),
+        updated_date: Some(formatted_date),
+        updated_time: Some(formatted_time),
+        code: code, // This will be None if code is None
+        created_by: responsible_account_organization_id, // This will be None if responsible_id is None
+        // Set default values for other required fields
+        previous_status: None,
+        version: None,
+        updated_by: None,
+        deleted_by: None,
+        requested_by: None,
+        tags: None,
+        timestamp: None,
+        organization_level: None,
+        root_organization_id: None,
+        path_level: None,
+    };
+
+    // Convert the model to a JSON Value for the sync_service
+    let organization_value = serde_json::to_value(organization).unwrap();
+
+    sync_service::insert(&"organizations".to_string(), organization_value).await?;
+
     Ok(id)
 }
-
 
 pub async fn create_account(
     id: String,
@@ -252,7 +547,6 @@ pub async fn create_account(
     status: Option<String>,
     responsible_account_organization_id: Option<String>,
 ) -> Result<(), ApiError> {
-    
     // Hash the password
     let hashed_password = match auth_service::password_hash(&account_secret).await {
         Ok(hash) => hash,
@@ -260,8 +554,9 @@ pub async fn create_account(
             log::error!("Failed to hash password: {}", e);
             return Err(ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to hash password: {}", e)
-            ).into());
+                format!("Failed to hash password: {}", e),
+            )
+            .into());
         }
     };
     // Create account with personal organization using AccountModel
@@ -281,17 +576,18 @@ pub async fn create_account(
         created_by: responsible_account_organization_id.clone(),
         ..Default::default()
     };
-    
+
     // Convert model to JSON and insert into database
-    let account_json = serde_json::to_value(&account)
-    .map_err(|e| ApiError::new(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        format!("Failed to serialize account: {}", e)
-    ))?;
-    
+    let account_json = serde_json::to_value(&account).map_err(|e| {
+        ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to serialize account: {}", e),
+        )
+    })?;
+
     // Insert account into database
     sync_service::insert(&"accounts".to_string(), account_json).await?;
-    
+
     // Create account profile using AccountProfileModel
     let account_profile = AccountProfileModel {
         id: Some(Ulid::new().to_string()),
@@ -309,18 +605,194 @@ pub async fn create_account(
         created_by: responsible_account_organization_id,
         ..Default::default()
     };
-    
+
     // Convert model to JSON and insert into database
-    let profile_json = serde_json::to_value(&account_profile)
-    .map_err(|e| ApiError::new(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        format!("Failed to serialize account profile: {}", e)
-    ))?;
-    
+    let profile_json = serde_json::to_value(&account_profile).map_err(|e| {
+        ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to serialize account profile: {}", e),
+        )
+    })?;
+
     // Insert account profile into database
     sync_service::insert(&"account_profiles".to_string(), profile_json).await?;
-    
+
     log::info!("Created Account: {}, email: {}", id, account_id);
-    
+
+    Ok(())
+}
+
+pub async fn initialize(data: Option<Register>) -> Result<(), ApiError> {
+    let (
+        default_organization_id,
+        default_organization_name,
+        default_organization_admin_email,
+        default_organization_admin_password,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = get_defaults();
+
+    // Create default register data if not provided
+    let data = data.unwrap_or_else(|| Register {
+        organization_id: Some(default_organization_id.clone()),
+        organization_name: Some(default_organization_name.clone()),
+        account_id: default_organization_admin_email.clone(),
+        account_secret: default_organization_admin_password.clone(),
+        first_name: "Super".to_string(),
+        last_name: "Admin".to_string(),
+        account_type: Some(AccountType::Contact),
+        // Initialize other fields with None/default values
+        id: None,
+        name: None,
+        contact_id: None,
+        email: None,
+        password: None,
+        parent_organization_id: None,
+        code: None,
+        categories: None,
+        account_status: None,
+        is_new_user: None,
+        is_invited: None,
+        role_id: None,
+        account_organization_status: None,
+        account_organization_categories: None,
+        account_organization_id: None,
+        contact_categories: None,
+        device_categories: None,
+        responsible_account_organization_id: None,
+    });
+
+    // If default organization ID is not set, return early
+    if default_organization_id.is_empty() {
+        log::error!("Default organization ID is not set. Please configure DEFAULT_ORGANIZATION_ID environment variable.");
+        return Ok(());
+    }
+
+    // Use provided organization_id or default
+    let organization_id = data
+        .organization_id
+        .as_ref()
+        .unwrap_or(&default_organization_id);
+
+    let mut conn = db::get_async_connection().await;
+
+    // Check if organization already exists
+    let existing_organization = organizations::table
+        .filter(
+            organizations::id
+                .eq(organization_id)
+                .and(organizations::tombstone.eq(0)),
+        )
+        .first::<OrganizationModel>(&mut conn)
+        .await
+        .optional()?;
+
+    if existing_organization.is_some() {
+        if let Some(org) = &existing_organization {
+            log::info!(
+                "Organization {} already exists",
+                org.name.as_ref().unwrap_or(&"unknown".to_string())
+            );
+        }
+        return Ok(());
+    }
+
+    log::info!("Creating Organization: {}", organization_id);
+
+    // Register the organization and admin account
+    register(&data, None, None).await?;
+
+    Ok(())
+}
+
+pub async fn initialize_device() -> Result<(), ApiError> {
+    let (
+        default_organization_id,
+        _,
+        _,
+        _,
+        default_device_id,
+        default_device_secret,
+        _,
+        _,
+        system_device_ulid,
+    ) = get_defaults();
+
+    let now = chrono::Utc::now();
+    let formatted_date = now.format("%Y-%m-%d").to_string();
+    let formatted_time = now.format("%H:%M:%S").to_string();
+
+    // Create device using DeviceModel
+    let device = DeviceModel {
+        id: Some(system_device_ulid.clone()),
+        categories: Some(vec!["Device".to_string()]),
+        created_date: Some(formatted_date.clone()),
+        created_time: Some(formatted_time.clone()),
+        updated_date: Some(formatted_date.clone()),
+        updated_time: Some(formatted_time.clone()),
+        organization_id: Some(default_organization_id.clone()),
+        tombstone: Some(0),
+        status: Some("Active".to_string()),
+        ..Default::default()
+    };
+
+    // Convert model to JSON and insert into database
+    log::info!("Creating Device: {}", system_device_ulid);
+    let device_json = serde_json::to_value(&device).map_err(|e| {
+        ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to serialize device: {}", e),
+        )
+    })?;
+
+    sync_service::insert(&"devices".to_string(), device_json).await?;
+    log::info!("Created Device: {}", system_device_ulid);
+
+    // Create organization account for the device
+    let hashed_password = auth_service::password_hash(&default_device_secret)
+        .await
+        .map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to hash password: {}", e),
+            )
+        })?;
+
+    let organization_account = OrganizationAccountModel {
+        id: Some(system_device_ulid.clone()),
+        organization_id: Some(default_organization_id.clone()),
+        device_id: Some(system_device_ulid.clone()),
+        account_id: Some(default_device_id.clone()),
+        account_secret: Some(hashed_password),
+        tombstone: Some(0),
+        categories: Some(vec!["Device".to_string()]),
+        status: Some("Active".to_string()),
+        created_date: Some(formatted_date.clone()),
+        created_time: Some(formatted_time.clone()),
+        updated_date: Some(formatted_date.clone()),
+        updated_time: Some(formatted_time.clone()),
+        ..Default::default()
+    };
+
+    log::info!(
+        "Creating Organization Account for device: {}",
+        system_device_ulid
+    );
+    let organization_account_json = serde_json::to_value(&organization_account).map_err(|e| {
+        ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to serialize organization account: {}", e),
+        )
+    })?;
+
+    sync_service::insert(
+        &"organization_accounts".to_string(),
+        organization_account_json,
+    )
+    .await?;
+
     Ok(())
 }

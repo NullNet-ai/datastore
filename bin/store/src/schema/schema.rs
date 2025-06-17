@@ -1,4 +1,4 @@
-use diesel::table;
+use diesel::{allow_tables_to_appear_in_same_query, joinable, table};
 
 //permissions
 
@@ -453,6 +453,8 @@ table! {
     }
 }
 
+joinable!(account_organizations -> accounts (account_id));
+allow_tables_to_appear_in_same_query!(accounts, account_organizations);
 //application
 
 table! {
@@ -1324,6 +1326,7 @@ table! {
         middle_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
         date_of_birth -> Nullable<Text>,
+        account_id -> Nullable<Text>
     }
 }
 
@@ -1376,5 +1379,6 @@ table! {
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,
+        is_primary -> Nullable<Bool>
     }
 }

@@ -8,6 +8,7 @@ use std::env;
 use templates::grpc_controller::grpc_controller_generator;
 use templates::proto_generator;
 use templates::table_enum::table_enum_generator;
+mod auth;
 mod batch_sync;
 mod controllers;
 mod db;
@@ -32,6 +33,7 @@ use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
 use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
+use crate::organizations::organization_service;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
 use controllers::store_controller::{
@@ -218,6 +220,17 @@ async fn main() -> std::io::Result<()> {
             .await
             .expect("Socket.IO server failed");
     });
+    if let Err(e) = organization_service::initialize(None).await {
+        log::error!("Failed to initialize organization: {}", e);
+    } else {
+        log::info!("Organization initialized successfully");
+    }
+    
+    if let Err(e) = organization_service::initialize_device().await {
+        log::error!("Failed to initialize device: {}", e);
+    } else {
+        log::info!("Device initialized successfully");
+    }
 
     let server = HttpServer::new(move || {
         App::new()

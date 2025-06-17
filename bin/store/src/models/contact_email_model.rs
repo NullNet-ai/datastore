@@ -29,4 +29,5 @@ pub struct ContactEmailModel {
 
     pub contact_id: Option<String>,
     pub email: Option<String>,
+    pub is_primary: Option<bool>,
 }

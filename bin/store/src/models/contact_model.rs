@@ -31,4 +31,5 @@ pub struct ContactModel {
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
     pub date_of_birth: Option<String>,
+    pub account_id: Option<String>,
 }
