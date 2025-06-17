@@ -23,6 +23,7 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
+mod init;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::message_stream::pg_listener_service::PgListenerService;
@@ -220,16 +221,10 @@ async fn main() -> std::io::Result<()> {
             .await
             .expect("Socket.IO server failed");
     });
-    if let Err(e) = organization_service::initialize(None).await {
-        log::error!("Failed to initialize organization: {}", e);
+    if let Err(e) = init::initialize_services().await {
+        log::error!("Failed to initialize services: {}", e);
     } else {
-        log::info!("Organization initialized successfully");
-    }
-    
-    if let Err(e) = organization_service::initialize_device().await {
-        log::error!("Failed to initialize device: {}", e);
-    } else {
-        log::info!("Device initialized successfully");
+        log::info!("Services initialized successfully");
     }
 
     let server = HttpServer::new(move || {
