@@ -149,6 +149,362 @@ pub struct DeleteParams {
     #[prost(string, tag = "2")]
     pub table: ::prost::alloc::string::String,
 }
+/// ExternalContacts entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExternalContacts {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// Organizations entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Organizations {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "21")]
+    pub organization_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "22")]
+    pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "23")]
+    pub path_level: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+/// OrganizationContacts entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OrganizationContacts {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// OrganizationAccounts entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OrganizationAccounts {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// AccountOrganizations entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AccountOrganizations {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub account_organization_status: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
+    #[prost(string, optional, tag = "24")]
+    pub is_invited: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// AccountProfiles entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AccountProfiles {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "14")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// Accounts entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Accounts {
+    #[prost(string, optional, tag = "1")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "2")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "7")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "8")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "15")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "18")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "19")]
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub account_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub is_new_user: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Addresses entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -1617,150 +1973,6 @@ pub struct DeviceGroupSettings {
     #[prost(string, optional, tag = "19")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
 }
-/// Organizations entity definition
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Organizations {
-    #[prost(int32, optional, tag = "1")]
-    pub tombstone: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "2")]
-    pub status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "3")]
-    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "4")]
-    pub version: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "5")]
-    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "6")]
-    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "7")]
-    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "8")]
-    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "9")]
-    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "10")]
-    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "11")]
-    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "12")]
-    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "13")]
-    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "14")]
-    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "15")]
-    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "16")]
-    pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "17")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
-}
-/// OrganizationContacts entity definition
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct OrganizationContacts {
-    #[prost(int32, optional, tag = "1")]
-    pub tombstone: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "2")]
-    pub status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "3")]
-    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "4")]
-    pub version: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "5")]
-    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "6")]
-    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "7")]
-    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "8")]
-    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "9")]
-    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "10")]
-    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "11")]
-    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "12")]
-    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "13")]
-    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "14")]
-    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "15")]
-    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "16")]
-    pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "17")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
-}
-/// OrganizationAccounts entity definition
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct OrganizationAccounts {
-    #[prost(int32, optional, tag = "1")]
-    pub tombstone: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "2")]
-    pub status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "3")]
-    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "4")]
-    pub version: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "5")]
-    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "6")]
-    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "7")]
-    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "8")]
-    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "9")]
-    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "10")]
-    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "11")]
-    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "12")]
-    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "13")]
-    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "14")]
-    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "15")]
-    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "16")]
-    pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "17")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "22")]
-    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "24")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
-}
 /// Contacts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -1810,6 +2022,8 @@ pub struct Contacts {
     pub last_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
     pub date_of_birth: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ContactPhoneNumbers entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1902,6 +2116,1767 @@ pub struct ContactEmails {
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
     pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
+    pub is_primary: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// Create ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub external_contacts: ::core::option::Option<ExternalContacts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<ExternalContacts>,
+}
+/// Get ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetExternalContactsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<ExternalContacts>,
+}
+/// Update ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub external_contact: ::core::option::Option<ExternalContacts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<ExternalContacts>,
+}
+/// BatchUpdate ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_external_contacts_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateExternalContactsRequest`.
+pub mod batch_update_external_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::ExternalContacts>,
+    }
+}
+/// BatchUpdate ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<ExternalContacts>,
+}
+/// BatchDelete ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_external_contacts_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteExternalContactsRequest`.
+pub mod batch_delete_external_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<ExternalContacts>,
+}
+/// Delete ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<ExternalContacts>,
+}
+/// BatchInsert ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_external_contacts_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertExternalContactsRequest`.
+pub mod batch_insert_external_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub external_contacts: ::prost::alloc::vec::Vec<super::ExternalContacts>,
+    }
+}
+/// BatchInsert ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<ExternalContacts>,
+}
+/// Upsert ExternalContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertExternalContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_external_contacts_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertExternalContactsRequest`.
+pub mod upsert_external_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::ExternalContacts>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert ExternalContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertExternalContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<ExternalContacts>,
+}
+/// Create Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub organizations: ::core::option::Option<Organizations>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Organizations>,
+}
+/// Get Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrganizationsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<Organizations>,
+}
+/// Update Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub organization: ::core::option::Option<Organizations>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Organizations>,
+}
+/// BatchUpdate Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_organizations_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateOrganizationsRequest`.
+pub mod batch_update_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::Organizations>,
+    }
+}
+/// BatchUpdate Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Organizations>,
+}
+/// BatchDelete Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_organizations_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteOrganizationsRequest`.
+pub mod batch_delete_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Organizations>,
+}
+/// Delete Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Organizations>,
+}
+/// BatchInsert Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_organizations_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertOrganizationsRequest`.
+pub mod batch_insert_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub organizations: ::prost::alloc::vec::Vec<super::Organizations>,
+    }
+}
+/// BatchInsert Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Organizations>,
+}
+/// Upsert Organizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_organizations_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertOrganizationsRequest`.
+pub mod upsert_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::Organizations>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert Organizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Organizations>,
+}
+/// Create OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub organization_contacts: ::core::option::Option<OrganizationContacts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationContacts>,
+}
+/// Get OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrganizationContactsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<OrganizationContacts>,
+}
+/// Update OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub organization_contact: ::core::option::Option<OrganizationContacts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationContacts>,
+}
+/// BatchUpdate OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_organization_contacts_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateOrganizationContactsRequest`.
+pub mod batch_update_organization_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::OrganizationContacts>,
+    }
+}
+/// BatchUpdate OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<OrganizationContacts>,
+}
+/// BatchDelete OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_organization_contacts_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteOrganizationContactsRequest`.
+pub mod batch_delete_organization_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationContacts>,
+}
+/// Delete OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationContacts>,
+}
+/// BatchInsert OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_organization_contacts_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertOrganizationContactsRequest`.
+pub mod batch_insert_organization_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub organization_contacts: ::prost::alloc::vec::Vec<super::OrganizationContacts>,
+    }
+}
+/// BatchInsert OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<OrganizationContacts>,
+}
+/// Upsert OrganizationContacts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertOrganizationContactsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_organization_contacts_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertOrganizationContactsRequest`.
+pub mod upsert_organization_contacts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::OrganizationContacts>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert OrganizationContacts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertOrganizationContactsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<OrganizationContacts>,
+}
+/// Create OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub organization_accounts: ::core::option::Option<OrganizationAccounts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationAccounts>,
+}
+/// Get OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrganizationAccountsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<OrganizationAccounts>,
+}
+/// Update OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub organization_account: ::core::option::Option<OrganizationAccounts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationAccounts>,
+}
+/// BatchUpdate OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_organization_accounts_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateOrganizationAccountsRequest`.
+pub mod batch_update_organization_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::OrganizationAccounts>,
+    }
+}
+/// BatchUpdate OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<OrganizationAccounts>,
+}
+/// BatchDelete OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_organization_accounts_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteOrganizationAccountsRequest`.
+pub mod batch_delete_organization_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationAccounts>,
+}
+/// Delete OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<OrganizationAccounts>,
+}
+/// BatchInsert OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_organization_accounts_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertOrganizationAccountsRequest`.
+pub mod batch_insert_organization_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub organization_accounts: ::prost::alloc::vec::Vec<super::OrganizationAccounts>,
+    }
+}
+/// BatchInsert OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<OrganizationAccounts>,
+}
+/// Upsert OrganizationAccounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertOrganizationAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_organization_accounts_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertOrganizationAccountsRequest`.
+pub mod upsert_organization_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::OrganizationAccounts>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert OrganizationAccounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertOrganizationAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<OrganizationAccounts>,
+}
+/// Create AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub account_organizations: ::core::option::Option<AccountOrganizations>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountOrganizations>,
+}
+/// Get AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetAccountOrganizationsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<AccountOrganizations>,
+}
+/// Update AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub account_organization: ::core::option::Option<AccountOrganizations>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountOrganizations>,
+}
+/// BatchUpdate AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_account_organizations_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateAccountOrganizationsRequest`.
+pub mod batch_update_account_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::AccountOrganizations>,
+    }
+}
+/// BatchUpdate AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<AccountOrganizations>,
+}
+/// BatchDelete AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_account_organizations_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteAccountOrganizationsRequest`.
+pub mod batch_delete_account_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountOrganizations>,
+}
+/// Delete AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountOrganizations>,
+}
+/// BatchInsert AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<
+        batch_insert_account_organizations_request::BatchBody,
+    >,
+}
+/// Nested message and enum types in `BatchInsertAccountOrganizationsRequest`.
+pub mod batch_insert_account_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub account_organizations: ::prost::alloc::vec::Vec<super::AccountOrganizations>,
+    }
+}
+/// BatchInsert AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<AccountOrganizations>,
+}
+/// Upsert AccountOrganizations request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertAccountOrganizationsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_account_organizations_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertAccountOrganizationsRequest`.
+pub mod upsert_account_organizations_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::AccountOrganizations>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert AccountOrganizations response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertAccountOrganizationsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<AccountOrganizations>,
+}
+/// Create AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub account_profiles: ::core::option::Option<AccountProfiles>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountProfiles>,
+}
+/// Get AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetAccountProfilesRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<AccountProfiles>,
+}
+/// Update AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub account_profile: ::core::option::Option<AccountProfiles>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountProfiles>,
+}
+/// BatchUpdate AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_account_profiles_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateAccountProfilesRequest`.
+pub mod batch_update_account_profiles_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::AccountProfiles>,
+    }
+}
+/// BatchUpdate AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<AccountProfiles>,
+}
+/// BatchDelete AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_account_profiles_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteAccountProfilesRequest`.
+pub mod batch_delete_account_profiles_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountProfiles>,
+}
+/// Delete AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<AccountProfiles>,
+}
+/// BatchInsert AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_account_profiles_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertAccountProfilesRequest`.
+pub mod batch_insert_account_profiles_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub account_profiles: ::prost::alloc::vec::Vec<super::AccountProfiles>,
+    }
+}
+/// BatchInsert AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<AccountProfiles>,
+}
+/// Upsert AccountProfiles request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertAccountProfilesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_account_profiles_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertAccountProfilesRequest`.
+pub mod upsert_account_profiles_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::AccountProfiles>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert AccountProfiles response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertAccountProfilesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<AccountProfiles>,
+}
+/// Create Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub accounts: ::core::option::Option<Accounts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+    /// Entity prefix code
+    #[prost(string, tag = "4")]
+    pub entity_prefix: ::prost::alloc::string::String,
+}
+/// Create Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Accounts>,
+}
+/// Get Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetAccountsRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<Accounts>,
+}
+/// Update Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub account: ::core::option::Option<Accounts>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Accounts>,
+}
+/// BatchUpdate Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_update_accounts_request::BatchUpdateBody>,
+}
+/// Nested message and enum types in `BatchUpdateAccountsRequest`.
+pub mod batch_update_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::Accounts>,
+    }
+}
+/// BatchUpdate Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Accounts>,
+}
+/// BatchDelete Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_accounts_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteAccountsRequest`.
+pub mod batch_delete_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Accounts>,
+}
+/// Delete Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Accounts>,
+}
+/// BatchInsert Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_accounts_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertAccountsRequest`.
+pub mod batch_insert_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(string, tag = "1")]
+        pub entity_prefix: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub accounts: ::prost::alloc::vec::Vec<super::Accounts>,
+    }
+}
+/// BatchInsert Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Accounts>,
+}
+/// Upsert Accounts request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertAccountsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_accounts_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertAccountsRequest`.
+pub mod upsert_accounts_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::Accounts>,
+        #[prost(string, tag = "3")]
+        pub entity_prefix: ::prost::alloc::string::String,
+    }
+}
+/// Upsert Accounts response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertAccountsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Accounts>,
 }
 /// Create Addresses request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -8443,763 +10418,6 @@ pub struct UpsertDeviceGroupSettingsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<DeviceGroupSettings>,
 }
-/// Create Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub organizations: ::core::option::Option<Organizations>,
-    #[prost(message, optional, tag = "2")]
-    pub params: ::core::option::Option<CreateParams>,
-    #[prost(message, optional, tag = "3")]
-    pub query: ::core::option::Option<CreateQuery>,
-    /// Entity prefix code
-    #[prost(string, tag = "4")]
-    pub entity_prefix: ::prost::alloc::string::String,
-}
-/// Create Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(int32, tag = "2")]
-    pub count: i32,
-    #[prost(string, tag = "3")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<Organizations>,
-}
-/// Get Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetOrganizationsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
-}
-/// Get Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
-    pub data: ::core::option::Option<Organizations>,
-}
-/// Update Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub organization: ::core::option::Option<Organizations>,
-    #[prost(message, optional, tag = "2")]
-    pub params: ::core::option::Option<UpdateParams>,
-    #[prost(message, optional, tag = "3")]
-    pub query: ::core::option::Option<UpdateQuery>,
-}
-/// Update Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(int32, tag = "2")]
-    pub count: i32,
-    #[prost(string, tag = "3")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<Organizations>,
-}
-/// BatchUpdate Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchUpdateParams>,
-    #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<
-        batch_update_organizations_request::BatchUpdateBody,
-    >,
-}
-/// Nested message and enum types in `BatchUpdateOrganizationsRequest`.
-pub mod batch_update_organizations_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchUpdateBody {
-        #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
-        #[prost(message, optional, tag = "2")]
-        pub updates: ::core::option::Option<super::Organizations>,
-    }
-}
-/// BatchUpdate Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<Organizations>,
-}
-/// BatchDelete Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchDeleteParams>,
-    #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<
-        batch_delete_organizations_request::BatchDeleteBody,
-    >,
-}
-/// Nested message and enum types in `BatchDeleteOrganizationsRequest`.
-pub mod batch_delete_organizations_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchDeleteBody {
-        #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
-    }
-}
-/// BatchDelete Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<Organizations>,
-}
-/// Delete Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<DeleteParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<DeleteQuery>,
-}
-/// Delete Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<Organizations>,
-}
-/// BatchInsert Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchInsertParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<BatchInsertQuery>,
-    #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<batch_insert_organizations_request::BatchBody>,
-}
-/// Nested message and enum types in `BatchInsertOrganizationsRequest`.
-pub mod batch_insert_organizations_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchBody {
-        #[prost(string, tag = "1")]
-        pub entity_prefix: ::prost::alloc::string::String,
-        #[prost(message, repeated, tag = "2")]
-        pub organizations: ::prost::alloc::vec::Vec<super::Organizations>,
-    }
-}
-/// BatchInsert Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<Organizations>,
-}
-/// Upsert Organizations request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertOrganizationsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<UpsertParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<UpsertQuery>,
-    #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<upsert_organizations_request::UpsertBody>,
-}
-/// Nested message and enum types in `UpsertOrganizationsRequest`.
-pub mod upsert_organizations_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct UpsertBody {
-        #[prost(string, repeated, tag = "1")]
-        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-        #[prost(message, optional, tag = "2")]
-        pub data: ::core::option::Option<super::Organizations>,
-        #[prost(string, tag = "3")]
-        pub entity_prefix: ::prost::alloc::string::String,
-    }
-}
-/// Upsert Organizations response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertOrganizationsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<Organizations>,
-}
-/// Create OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub organization_contacts: ::core::option::Option<OrganizationContacts>,
-    #[prost(message, optional, tag = "2")]
-    pub params: ::core::option::Option<CreateParams>,
-    #[prost(message, optional, tag = "3")]
-    pub query: ::core::option::Option<CreateQuery>,
-    /// Entity prefix code
-    #[prost(string, tag = "4")]
-    pub entity_prefix: ::prost::alloc::string::String,
-}
-/// Create OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(int32, tag = "2")]
-    pub count: i32,
-    #[prost(string, tag = "3")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationContacts>,
-}
-/// Get OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetOrganizationContactsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
-}
-/// Get OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
-    pub data: ::core::option::Option<OrganizationContacts>,
-}
-/// Update OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub organization_contact: ::core::option::Option<OrganizationContacts>,
-    #[prost(message, optional, tag = "2")]
-    pub params: ::core::option::Option<UpdateParams>,
-    #[prost(message, optional, tag = "3")]
-    pub query: ::core::option::Option<UpdateQuery>,
-}
-/// Update OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(int32, tag = "2")]
-    pub count: i32,
-    #[prost(string, tag = "3")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationContacts>,
-}
-/// BatchUpdate OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchUpdateParams>,
-    #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<
-        batch_update_organization_contacts_request::BatchUpdateBody,
-    >,
-}
-/// Nested message and enum types in `BatchUpdateOrganizationContactsRequest`.
-pub mod batch_update_organization_contacts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchUpdateBody {
-        #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
-        #[prost(message, optional, tag = "2")]
-        pub updates: ::core::option::Option<super::OrganizationContacts>,
-    }
-}
-/// BatchUpdate OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<OrganizationContacts>,
-}
-/// BatchDelete OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchDeleteParams>,
-    #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<
-        batch_delete_organization_contacts_request::BatchDeleteBody,
-    >,
-}
-/// Nested message and enum types in `BatchDeleteOrganizationContactsRequest`.
-pub mod batch_delete_organization_contacts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchDeleteBody {
-        #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
-    }
-}
-/// BatchDelete OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationContacts>,
-}
-/// Delete OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<DeleteParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<DeleteQuery>,
-}
-/// Delete OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationContacts>,
-}
-/// BatchInsert OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchInsertParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<BatchInsertQuery>,
-    #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<
-        batch_insert_organization_contacts_request::BatchBody,
-    >,
-}
-/// Nested message and enum types in `BatchInsertOrganizationContactsRequest`.
-pub mod batch_insert_organization_contacts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchBody {
-        #[prost(string, tag = "1")]
-        pub entity_prefix: ::prost::alloc::string::String,
-        #[prost(message, repeated, tag = "2")]
-        pub organization_contacts: ::prost::alloc::vec::Vec<super::OrganizationContacts>,
-    }
-}
-/// BatchInsert OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<OrganizationContacts>,
-}
-/// Upsert OrganizationContacts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertOrganizationContactsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<UpsertParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<UpsertQuery>,
-    #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<upsert_organization_contacts_request::UpsertBody>,
-}
-/// Nested message and enum types in `UpsertOrganizationContactsRequest`.
-pub mod upsert_organization_contacts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct UpsertBody {
-        #[prost(string, repeated, tag = "1")]
-        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-        #[prost(message, optional, tag = "2")]
-        pub data: ::core::option::Option<super::OrganizationContacts>,
-        #[prost(string, tag = "3")]
-        pub entity_prefix: ::prost::alloc::string::String,
-    }
-}
-/// Upsert OrganizationContacts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertOrganizationContactsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<OrganizationContacts>,
-}
-/// Create OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub organization_accounts: ::core::option::Option<OrganizationAccounts>,
-    #[prost(message, optional, tag = "2")]
-    pub params: ::core::option::Option<CreateParams>,
-    #[prost(message, optional, tag = "3")]
-    pub query: ::core::option::Option<CreateQuery>,
-    /// Entity prefix code
-    #[prost(string, tag = "4")]
-    pub entity_prefix: ::prost::alloc::string::String,
-}
-/// Create OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(int32, tag = "2")]
-    pub count: i32,
-    #[prost(string, tag = "3")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationAccounts>,
-}
-/// Get OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetOrganizationAccountsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
-}
-/// Get OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "3")]
-    pub data: ::core::option::Option<OrganizationAccounts>,
-}
-/// Update OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub organization_account: ::core::option::Option<OrganizationAccounts>,
-    #[prost(message, optional, tag = "2")]
-    pub params: ::core::option::Option<UpdateParams>,
-    #[prost(message, optional, tag = "3")]
-    pub query: ::core::option::Option<UpdateQuery>,
-}
-/// Update OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(int32, tag = "2")]
-    pub count: i32,
-    #[prost(string, tag = "3")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationAccounts>,
-}
-/// BatchUpdate OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchUpdateParams>,
-    #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<
-        batch_update_organization_accounts_request::BatchUpdateBody,
-    >,
-}
-/// Nested message and enum types in `BatchUpdateOrganizationAccountsRequest`.
-pub mod batch_update_organization_accounts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchUpdateBody {
-        #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
-        #[prost(message, optional, tag = "2")]
-        pub updates: ::core::option::Option<super::OrganizationAccounts>,
-    }
-}
-/// BatchUpdate OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<OrganizationAccounts>,
-}
-/// BatchDelete OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchDeleteParams>,
-    #[prost(message, optional, tag = "2")]
-    pub body: ::core::option::Option<
-        batch_delete_organization_accounts_request::BatchDeleteBody,
-    >,
-}
-/// Nested message and enum types in `BatchDeleteOrganizationAccountsRequest`.
-pub mod batch_delete_organization_accounts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchDeleteBody {
-        #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
-    }
-}
-/// BatchDelete OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationAccounts>,
-}
-/// Delete OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<DeleteParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<DeleteQuery>,
-}
-/// Delete OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<OrganizationAccounts>,
-}
-/// BatchInsert OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<BatchInsertParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<BatchInsertQuery>,
-    #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<
-        batch_insert_organization_accounts_request::BatchBody,
-    >,
-}
-/// Nested message and enum types in `BatchInsertOrganizationAccountsRequest`.
-pub mod batch_insert_organization_accounts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct BatchBody {
-        #[prost(string, tag = "1")]
-        pub entity_prefix: ::prost::alloc::string::String,
-        #[prost(message, repeated, tag = "2")]
-        pub organization_accounts: ::prost::alloc::vec::Vec<super::OrganizationAccounts>,
-    }
-}
-/// BatchInsert OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<OrganizationAccounts>,
-}
-/// Upsert OrganizationAccounts request
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertOrganizationAccountsRequest {
-    #[prost(message, optional, tag = "1")]
-    pub params: ::core::option::Option<UpsertParams>,
-    #[prost(message, optional, tag = "2")]
-    pub query: ::core::option::Option<UpsertQuery>,
-    #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<upsert_organization_accounts_request::UpsertBody>,
-}
-/// Nested message and enum types in `UpsertOrganizationAccountsRequest`.
-pub mod upsert_organization_accounts_request {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[serde(default)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct UpsertBody {
-        #[prost(string, repeated, tag = "1")]
-        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-        #[prost(message, optional, tag = "2")]
-        pub data: ::core::option::Option<super::OrganizationAccounts>,
-        #[prost(string, tag = "3")]
-        pub entity_prefix: ::prost::alloc::string::String,
-    }
-}
-/// Upsert OrganizationAccounts response
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertOrganizationAccountsResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(string, tag = "2")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(int32, tag = "3")]
-    pub count: i32,
-    #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<OrganizationAccounts>,
-}
 /// Create Contacts request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -9964,6 +11182,454 @@ pub mod store_service_server {
     /// Generated trait containing gRPC methods that should be implemented for use with StoreServiceServer.
     #[async_trait]
     pub trait StoreService: std::marker::Send + std::marker::Sync + 'static {
+        /// Create a new ExternalContacts
+        async fn create_external_contacts(
+            &self,
+            request: tonic::Request<super::CreateExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Get a ExternalContacts by ID
+        async fn get_external_contacts(
+            &self,
+            request: tonic::Request<super::GetExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing ExternalContacts
+        async fn update_external_contacts(
+            &self,
+            request: tonic::Request<super::UpdateExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a ExternalContacts by ID
+        async fn delete_external_contacts(
+            &self,
+            request: tonic::Request<super::DeleteExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple ExternalContactss
+        async fn batch_insert_external_contacts(
+            &self,
+            request: tonic::Request<super::BatchInsertExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple ExternalContactss based on filters
+        async fn batch_update_external_contacts(
+            &self,
+            request: tonic::Request<super::BatchUpdateExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple ExternalContactss based on filters
+        async fn batch_delete_external_contacts(
+            &self,
+            request: tonic::Request<super::BatchDeleteExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a ExternalContacts (create if not exists, update if exists)
+        async fn upsert_external_contacts(
+            &self,
+            request: tonic::Request<super::UpsertExternalContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertExternalContactsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new Organizations
+        async fn create_organizations(
+            &self,
+            request: tonic::Request<super::CreateOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Get a Organizations by ID
+        async fn get_organizations(
+            &self,
+            request: tonic::Request<super::GetOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing Organizations
+        async fn update_organizations(
+            &self,
+            request: tonic::Request<super::UpdateOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a Organizations by ID
+        async fn delete_organizations(
+            &self,
+            request: tonic::Request<super::DeleteOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple Organizationss
+        async fn batch_insert_organizations(
+            &self,
+            request: tonic::Request<super::BatchInsertOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple Organizationss based on filters
+        async fn batch_update_organizations(
+            &self,
+            request: tonic::Request<super::BatchUpdateOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple Organizationss based on filters
+        async fn batch_delete_organizations(
+            &self,
+            request: tonic::Request<super::BatchDeleteOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a Organizations (create if not exists, update if exists)
+        async fn upsert_organizations(
+            &self,
+            request: tonic::Request<super::UpsertOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new OrganizationContacts
+        async fn create_organization_contacts(
+            &self,
+            request: tonic::Request<super::CreateOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Get a OrganizationContacts by ID
+        async fn get_organization_contacts(
+            &self,
+            request: tonic::Request<super::GetOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing OrganizationContacts
+        async fn update_organization_contacts(
+            &self,
+            request: tonic::Request<super::UpdateOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a OrganizationContacts by ID
+        async fn delete_organization_contacts(
+            &self,
+            request: tonic::Request<super::DeleteOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple OrganizationContactss
+        async fn batch_insert_organization_contacts(
+            &self,
+            request: tonic::Request<super::BatchInsertOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple OrganizationContactss based on filters
+        async fn batch_update_organization_contacts(
+            &self,
+            request: tonic::Request<super::BatchUpdateOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple OrganizationContactss based on filters
+        async fn batch_delete_organization_contacts(
+            &self,
+            request: tonic::Request<super::BatchDeleteOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a OrganizationContacts (create if not exists, update if exists)
+        async fn upsert_organization_contacts(
+            &self,
+            request: tonic::Request<super::UpsertOrganizationContactsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertOrganizationContactsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new OrganizationAccounts
+        async fn create_organization_accounts(
+            &self,
+            request: tonic::Request<super::CreateOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Get a OrganizationAccounts by ID
+        async fn get_organization_accounts(
+            &self,
+            request: tonic::Request<super::GetOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing OrganizationAccounts
+        async fn update_organization_accounts(
+            &self,
+            request: tonic::Request<super::UpdateOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a OrganizationAccounts by ID
+        async fn delete_organization_accounts(
+            &self,
+            request: tonic::Request<super::DeleteOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple OrganizationAccountss
+        async fn batch_insert_organization_accounts(
+            &self,
+            request: tonic::Request<super::BatchInsertOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple OrganizationAccountss based on filters
+        async fn batch_update_organization_accounts(
+            &self,
+            request: tonic::Request<super::BatchUpdateOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple OrganizationAccountss based on filters
+        async fn batch_delete_organization_accounts(
+            &self,
+            request: tonic::Request<super::BatchDeleteOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a OrganizationAccounts (create if not exists, update if exists)
+        async fn upsert_organization_accounts(
+            &self,
+            request: tonic::Request<super::UpsertOrganizationAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertOrganizationAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new AccountOrganizations
+        async fn create_account_organizations(
+            &self,
+            request: tonic::Request<super::CreateAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Get a AccountOrganizations by ID
+        async fn get_account_organizations(
+            &self,
+            request: tonic::Request<super::GetAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing AccountOrganizations
+        async fn update_account_organizations(
+            &self,
+            request: tonic::Request<super::UpdateAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a AccountOrganizations by ID
+        async fn delete_account_organizations(
+            &self,
+            request: tonic::Request<super::DeleteAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple AccountOrganizationss
+        async fn batch_insert_account_organizations(
+            &self,
+            request: tonic::Request<super::BatchInsertAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple AccountOrganizationss based on filters
+        async fn batch_update_account_organizations(
+            &self,
+            request: tonic::Request<super::BatchUpdateAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple AccountOrganizationss based on filters
+        async fn batch_delete_account_organizations(
+            &self,
+            request: tonic::Request<super::BatchDeleteAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a AccountOrganizations (create if not exists, update if exists)
+        async fn upsert_account_organizations(
+            &self,
+            request: tonic::Request<super::UpsertAccountOrganizationsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertAccountOrganizationsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new AccountProfiles
+        async fn create_account_profiles(
+            &self,
+            request: tonic::Request<super::CreateAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Get a AccountProfiles by ID
+        async fn get_account_profiles(
+            &self,
+            request: tonic::Request<super::GetAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing AccountProfiles
+        async fn update_account_profiles(
+            &self,
+            request: tonic::Request<super::UpdateAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Delete a AccountProfiles by ID
+        async fn delete_account_profiles(
+            &self,
+            request: tonic::Request<super::DeleteAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple AccountProfiless
+        async fn batch_insert_account_profiles(
+            &self,
+            request: tonic::Request<super::BatchInsertAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple AccountProfiless based on filters
+        async fn batch_update_account_profiles(
+            &self,
+            request: tonic::Request<super::BatchUpdateAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple AccountProfiless based on filters
+        async fn batch_delete_account_profiles(
+            &self,
+            request: tonic::Request<super::BatchDeleteAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a AccountProfiles (create if not exists, update if exists)
+        async fn upsert_account_profiles(
+            &self,
+            request: tonic::Request<super::UpsertAccountProfilesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertAccountProfilesResponse>,
+            tonic::Status,
+        >;
+        /// Create a new Accounts
+        async fn create_accounts(
+            &self,
+            request: tonic::Request<super::CreateAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Get a Accounts by ID
+        async fn get_accounts(
+            &self,
+            request: tonic::Request<super::GetAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing Accounts
+        async fn update_accounts(
+            &self,
+            request: tonic::Request<super::UpdateAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a Accounts by ID
+        async fn delete_accounts(
+            &self,
+            request: tonic::Request<super::DeleteAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple Accountss
+        async fn batch_insert_accounts(
+            &self,
+            request: tonic::Request<super::BatchInsertAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple Accountss based on filters
+        async fn batch_update_accounts(
+            &self,
+            request: tonic::Request<super::BatchUpdateAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple Accountss based on filters
+        async fn batch_delete_accounts(
+            &self,
+            request: tonic::Request<super::BatchDeleteAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteAccountsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a Accounts (create if not exists, update if exists)
+        async fn upsert_accounts(
+            &self,
+            request: tonic::Request<super::UpsertAccountsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertAccountsResponse>,
+            tonic::Status,
+        >;
         /// Create a new Addresses
         async fn create_addresses(
             &self,
@@ -11640,198 +13306,6 @@ pub mod store_service_server {
             tonic::Response<super::UpsertDeviceGroupSettingsResponse>,
             tonic::Status,
         >;
-        /// Create a new Organizations
-        async fn create_organizations(
-            &self,
-            request: tonic::Request<super::CreateOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Get a Organizations by ID
-        async fn get_organizations(
-            &self,
-            request: tonic::Request<super::GetOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Update an existing Organizations
-        async fn update_organizations(
-            &self,
-            request: tonic::Request<super::UpdateOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpdateOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Delete a Organizations by ID
-        async fn delete_organizations(
-            &self,
-            request: tonic::Request<super::DeleteOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Batch insert multiple Organizationss
-        async fn batch_insert_organizations(
-            &self,
-            request: tonic::Request<super::BatchInsertOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchInsertOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Batch update multiple Organizationss based on filters
-        async fn batch_update_organizations(
-            &self,
-            request: tonic::Request<super::BatchUpdateOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchUpdateOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Batch delete multiple Organizationss based on filters
-        async fn batch_delete_organizations(
-            &self,
-            request: tonic::Request<super::BatchDeleteOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchDeleteOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Upsert a Organizations (create if not exists, update if exists)
-        async fn upsert_organizations(
-            &self,
-            request: tonic::Request<super::UpsertOrganizationsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpsertOrganizationsResponse>,
-            tonic::Status,
-        >;
-        /// Create a new OrganizationContacts
-        async fn create_organization_contacts(
-            &self,
-            request: tonic::Request<super::CreateOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Get a OrganizationContacts by ID
-        async fn get_organization_contacts(
-            &self,
-            request: tonic::Request<super::GetOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Update an existing OrganizationContacts
-        async fn update_organization_contacts(
-            &self,
-            request: tonic::Request<super::UpdateOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpdateOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Delete a OrganizationContacts by ID
-        async fn delete_organization_contacts(
-            &self,
-            request: tonic::Request<super::DeleteOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Batch insert multiple OrganizationContactss
-        async fn batch_insert_organization_contacts(
-            &self,
-            request: tonic::Request<super::BatchInsertOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchInsertOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Batch update multiple OrganizationContactss based on filters
-        async fn batch_update_organization_contacts(
-            &self,
-            request: tonic::Request<super::BatchUpdateOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchUpdateOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Batch delete multiple OrganizationContactss based on filters
-        async fn batch_delete_organization_contacts(
-            &self,
-            request: tonic::Request<super::BatchDeleteOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchDeleteOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Upsert a OrganizationContacts (create if not exists, update if exists)
-        async fn upsert_organization_contacts(
-            &self,
-            request: tonic::Request<super::UpsertOrganizationContactsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpsertOrganizationContactsResponse>,
-            tonic::Status,
-        >;
-        /// Create a new OrganizationAccounts
-        async fn create_organization_accounts(
-            &self,
-            request: tonic::Request<super::CreateOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::CreateOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Get a OrganizationAccounts by ID
-        async fn get_organization_accounts(
-            &self,
-            request: tonic::Request<super::GetOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::GetOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Update an existing OrganizationAccounts
-        async fn update_organization_accounts(
-            &self,
-            request: tonic::Request<super::UpdateOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpdateOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Delete a OrganizationAccounts by ID
-        async fn delete_organization_accounts(
-            &self,
-            request: tonic::Request<super::DeleteOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::DeleteOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Batch insert multiple OrganizationAccountss
-        async fn batch_insert_organization_accounts(
-            &self,
-            request: tonic::Request<super::BatchInsertOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchInsertOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Batch update multiple OrganizationAccountss based on filters
-        async fn batch_update_organization_accounts(
-            &self,
-            request: tonic::Request<super::BatchUpdateOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchUpdateOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Batch delete multiple OrganizationAccountss based on filters
-        async fn batch_delete_organization_accounts(
-            &self,
-            request: tonic::Request<super::BatchDeleteOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::BatchDeleteOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
-        /// Upsert a OrganizationAccounts (create if not exists, update if exists)
-        async fn upsert_organization_accounts(
-            &self,
-            request: tonic::Request<super::UpsertOrganizationAccountsRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::UpsertOrganizationAccountsResponse>,
-            tonic::Status,
-        >;
         /// Create a new Contacts
         async fn create_contacts(
             &self,
@@ -12102,6 +13576,2811 @@ pub mod store_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
+                "/store.StoreService/CreateExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateExternalContactsRequest>
+                    for CreateExternalContactsSvc<T> {
+                        type Response = super::CreateExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateExternalContactsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetExternalContactsRequest>
+                    for GetExternalContactsSvc<T> {
+                        type Response = super::GetExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetExternalContactsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_external_contacts(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateExternalContactsRequest>
+                    for UpdateExternalContactsSvc<T> {
+                        type Response = super::UpdateExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateExternalContactsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteExternalContactsRequest>
+                    for DeleteExternalContactsSvc<T> {
+                        type Response = super::DeleteExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteExternalContactsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertExternalContactsRequest,
+                    > for BatchInsertExternalContactsSvc<T> {
+                        type Response = super::BatchInsertExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertExternalContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateExternalContactsRequest,
+                    > for BatchUpdateExternalContactsSvc<T> {
+                        type Response = super::BatchUpdateExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateExternalContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteExternalContactsRequest,
+                    > for BatchDeleteExternalContactsSvc<T> {
+                        type Response = super::BatchDeleteExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteExternalContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertExternalContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertExternalContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertExternalContactsRequest>
+                    for UpsertExternalContactsSvc<T> {
+                        type Response = super::UpsertExternalContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertExternalContactsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_external_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertExternalContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateOrganizationsRequest>
+                    for CreateOrganizationsSvc<T> {
+                        type Response = super::CreateOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateOrganizationsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_organizations(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetOrganizationsRequest>
+                    for GetOrganizationsSvc<T> {
+                        type Response = super::GetOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetOrganizationsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_organizations(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateOrganizationsRequest>
+                    for UpdateOrganizationsSvc<T> {
+                        type Response = super::UpdateOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateOrganizationsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_organizations(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteOrganizationsRequest>
+                    for DeleteOrganizationsSvc<T> {
+                        type Response = super::DeleteOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteOrganizationsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_organizations(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertOrganizationsRequest>
+                    for BatchInsertOrganizationsSvc<T> {
+                        type Response = super::BatchInsertOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateOrganizationsRequest>
+                    for BatchUpdateOrganizationsSvc<T> {
+                        type Response = super::BatchUpdateOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteOrganizationsRequest>
+                    for BatchDeleteOrganizationsSvc<T> {
+                        type Response = super::BatchDeleteOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertOrganizationsRequest>
+                    for UpsertOrganizationsSvc<T> {
+                        type Response = super::UpsertOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertOrganizationsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_organizations(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateOrganizationContactsRequest,
+                    > for CreateOrganizationContactsSvc<T> {
+                        type Response = super::CreateOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetOrganizationContactsRequest>
+                    for GetOrganizationContactsSvc<T> {
+                        type Response = super::GetOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateOrganizationContactsRequest,
+                    > for UpdateOrganizationContactsSvc<T> {
+                        type Response = super::UpdateOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteOrganizationContactsRequest,
+                    > for DeleteOrganizationContactsSvc<T> {
+                        type Response = super::DeleteOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertOrganizationContactsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertOrganizationContactsRequest,
+                    > for BatchInsertOrganizationContactsSvc<T> {
+                        type Response = super::BatchInsertOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateOrganizationContactsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateOrganizationContactsRequest,
+                    > for BatchUpdateOrganizationContactsSvc<T> {
+                        type Response = super::BatchUpdateOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteOrganizationContactsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteOrganizationContactsRequest,
+                    > for BatchDeleteOrganizationContactsSvc<T> {
+                        type Response = super::BatchDeleteOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertOrganizationContacts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertOrganizationContactsRequest,
+                    > for UpsertOrganizationContactsSvc<T> {
+                        type Response = super::UpsertOrganizationContactsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertOrganizationContactsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_organization_contacts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertOrganizationContactsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateOrganizationAccountsRequest,
+                    > for CreateOrganizationAccountsSvc<T> {
+                        type Response = super::CreateOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetOrganizationAccountsRequest>
+                    for GetOrganizationAccountsSvc<T> {
+                        type Response = super::GetOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateOrganizationAccountsRequest,
+                    > for UpdateOrganizationAccountsSvc<T> {
+                        type Response = super::UpdateOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteOrganizationAccountsRequest,
+                    > for DeleteOrganizationAccountsSvc<T> {
+                        type Response = super::DeleteOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertOrganizationAccountsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertOrganizationAccountsRequest,
+                    > for BatchInsertOrganizationAccountsSvc<T> {
+                        type Response = super::BatchInsertOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateOrganizationAccountsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateOrganizationAccountsRequest,
+                    > for BatchUpdateOrganizationAccountsSvc<T> {
+                        type Response = super::BatchUpdateOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteOrganizationAccountsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteOrganizationAccountsRequest,
+                    > for BatchDeleteOrganizationAccountsSvc<T> {
+                        type Response = super::BatchDeleteOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertOrganizationAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertOrganizationAccountsRequest,
+                    > for UpsertOrganizationAccountsSvc<T> {
+                        type Response = super::UpsertOrganizationAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertOrganizationAccountsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_organization_accounts(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertOrganizationAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateAccountOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::CreateAccountOrganizationsRequest,
+                    > for CreateAccountOrganizationsSvc<T> {
+                        type Response = super::CreateAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::CreateAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetAccountOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetAccountOrganizationsRequest>
+                    for GetAccountOrganizationsSvc<T> {
+                        type Response = super::GetAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::GetAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateAccountOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpdateAccountOrganizationsRequest,
+                    > for UpdateAccountOrganizationsSvc<T> {
+                        type Response = super::UpdateAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpdateAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteAccountOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::DeleteAccountOrganizationsRequest,
+                    > for DeleteAccountOrganizationsSvc<T> {
+                        type Response = super::DeleteAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::DeleteAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertAccountOrganizationsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertAccountOrganizationsRequest,
+                    > for BatchInsertAccountOrganizationsSvc<T> {
+                        type Response = super::BatchInsertAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateAccountOrganizationsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateAccountOrganizationsRequest,
+                    > for BatchUpdateAccountOrganizationsSvc<T> {
+                        type Response = super::BatchUpdateAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteAccountOrganizationsSvc<T: StoreService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteAccountOrganizationsRequest,
+                    > for BatchDeleteAccountOrganizationsSvc<T> {
+                        type Response = super::BatchDeleteAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertAccountOrganizations" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertAccountOrganizationsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::UpsertAccountOrganizationsRequest,
+                    > for UpsertAccountOrganizationsSvc<T> {
+                        type Response = super::UpsertAccountOrganizationsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertAccountOrganizationsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_account_organizations(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertAccountOrganizationsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateAccountProfilesRequest>
+                    for CreateAccountProfilesSvc<T> {
+                        type Response = super::CreateAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateAccountProfilesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetAccountProfilesRequest>
+                    for GetAccountProfilesSvc<T> {
+                        type Response = super::GetAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetAccountProfilesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_account_profiles(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateAccountProfilesRequest>
+                    for UpdateAccountProfilesSvc<T> {
+                        type Response = super::UpdateAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateAccountProfilesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteAccountProfilesRequest>
+                    for DeleteAccountProfilesSvc<T> {
+                        type Response = super::DeleteAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteAccountProfilesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertAccountProfilesRequest,
+                    > for BatchInsertAccountProfilesSvc<T> {
+                        type Response = super::BatchInsertAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertAccountProfilesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateAccountProfilesRequest,
+                    > for BatchUpdateAccountProfilesSvc<T> {
+                        type Response = super::BatchUpdateAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateAccountProfilesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteAccountProfilesRequest,
+                    > for BatchDeleteAccountProfilesSvc<T> {
+                        type Response = super::BatchDeleteAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteAccountProfilesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertAccountProfiles" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertAccountProfilesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertAccountProfilesRequest>
+                    for UpsertAccountProfilesSvc<T> {
+                        type Response = super::UpsertAccountProfilesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertAccountProfilesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_account_profiles(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertAccountProfilesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateAccountsRequest>
+                    for CreateAccountsSvc<T> {
+                        type Response = super::CreateAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_accounts(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetAccountsRequest>
+                    for GetAccountsSvc<T> {
+                        type Response = super::GetAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_accounts(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateAccountsRequest>
+                    for UpdateAccountsSvc<T> {
+                        type Response = super::UpdateAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_accounts(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteAccountsRequest>
+                    for DeleteAccountsSvc<T> {
+                        type Response = super::DeleteAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_accounts(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertAccountsRequest>
+                    for BatchInsertAccountsSvc<T> {
+                        type Response = super::BatchInsertAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_accounts(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateAccountsRequest>
+                    for BatchUpdateAccountsSvc<T> {
+                        type Response = super::BatchUpdateAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchUpdateAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_accounts(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteAccountsRequest>
+                    for BatchDeleteAccountsSvc<T> {
+                        type Response = super::BatchDeleteAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_accounts(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertAccounts" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertAccountsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertAccountsRequest>
+                    for UpsertAccountsSvc<T> {
+                        type Response = super::UpsertAccountsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertAccountsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_accounts(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertAccountsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateAddresses" => {
                     #[allow(non_camel_case_types)]
                     struct CreateAddressesSvc<T: StoreService>(pub Arc<T>);
@@ -22353,1231 +26632,6 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertDeviceGroupSettingsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/CreateOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct CreateOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::CreateOrganizationsRequest>
-                    for CreateOrganizationsSvc<T> {
-                        type Response = super::CreateOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::CreateOrganizationsRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::create_organizations(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = CreateOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/GetOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct GetOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::GetOrganizationsRequest>
-                    for GetOrganizationsSvc<T> {
-                        type Response = super::GetOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::GetOrganizationsRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::get_organizations(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = GetOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpdateOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpdateOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::UpdateOrganizationsRequest>
-                    for UpdateOrganizationsSvc<T> {
-                        type Response = super::UpdateOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::UpdateOrganizationsRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::update_organizations(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpdateOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/DeleteOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct DeleteOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::DeleteOrganizationsRequest>
-                    for DeleteOrganizationsSvc<T> {
-                        type Response = super::DeleteOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::DeleteOrganizationsRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::delete_organizations(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = DeleteOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchInsertOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchInsertOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::BatchInsertOrganizationsRequest>
-                    for BatchInsertOrganizationsSvc<T> {
-                        type Response = super::BatchInsertOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchInsertOrganizationsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_insert_organizations(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchInsertOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchUpdateOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchUpdateOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::BatchUpdateOrganizationsRequest>
-                    for BatchUpdateOrganizationsSvc<T> {
-                        type Response = super::BatchUpdateOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchUpdateOrganizationsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_update_organizations(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchUpdateOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchDeleteOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchDeleteOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::BatchDeleteOrganizationsRequest>
-                    for BatchDeleteOrganizationsSvc<T> {
-                        type Response = super::BatchDeleteOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchDeleteOrganizationsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_delete_organizations(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchDeleteOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpsertOrganizations" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpsertOrganizationsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::UpsertOrganizationsRequest>
-                    for UpsertOrganizationsSvc<T> {
-                        type Response = super::UpsertOrganizationsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::UpsertOrganizationsRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::upsert_organizations(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpsertOrganizationsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/CreateOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct CreateOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::CreateOrganizationContactsRequest,
-                    > for CreateOrganizationContactsSvc<T> {
-                        type Response = super::CreateOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::CreateOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::create_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = CreateOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/GetOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct GetOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::GetOrganizationContactsRequest>
-                    for GetOrganizationContactsSvc<T> {
-                        type Response = super::GetOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::GetOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::get_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = GetOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpdateOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpdateOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::UpdateOrganizationContactsRequest,
-                    > for UpdateOrganizationContactsSvc<T> {
-                        type Response = super::UpdateOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::UpdateOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::update_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpdateOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/DeleteOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct DeleteOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::DeleteOrganizationContactsRequest,
-                    > for DeleteOrganizationContactsSvc<T> {
-                        type Response = super::DeleteOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::DeleteOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::delete_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = DeleteOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchInsertOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchInsertOrganizationContactsSvc<T: StoreService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchInsertOrganizationContactsRequest,
-                    > for BatchInsertOrganizationContactsSvc<T> {
-                        type Response = super::BatchInsertOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchInsertOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_insert_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchInsertOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchUpdateOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchUpdateOrganizationContactsSvc<T: StoreService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchUpdateOrganizationContactsRequest,
-                    > for BatchUpdateOrganizationContactsSvc<T> {
-                        type Response = super::BatchUpdateOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchUpdateOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_update_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchUpdateOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchDeleteOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchDeleteOrganizationContactsSvc<T: StoreService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchDeleteOrganizationContactsRequest,
-                    > for BatchDeleteOrganizationContactsSvc<T> {
-                        type Response = super::BatchDeleteOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchDeleteOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_delete_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchDeleteOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpsertOrganizationContacts" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpsertOrganizationContactsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::UpsertOrganizationContactsRequest,
-                    > for UpsertOrganizationContactsSvc<T> {
-                        type Response = super::UpsertOrganizationContactsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::UpsertOrganizationContactsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::upsert_organization_contacts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpsertOrganizationContactsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/CreateOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct CreateOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::CreateOrganizationAccountsRequest,
-                    > for CreateOrganizationAccountsSvc<T> {
-                        type Response = super::CreateOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::CreateOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::create_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = CreateOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/GetOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct GetOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::GetOrganizationAccountsRequest>
-                    for GetOrganizationAccountsSvc<T> {
-                        type Response = super::GetOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::GetOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::get_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = GetOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpdateOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpdateOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::UpdateOrganizationAccountsRequest,
-                    > for UpdateOrganizationAccountsSvc<T> {
-                        type Response = super::UpdateOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::UpdateOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::update_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpdateOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/DeleteOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct DeleteOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::DeleteOrganizationAccountsRequest,
-                    > for DeleteOrganizationAccountsSvc<T> {
-                        type Response = super::DeleteOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::DeleteOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::delete_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = DeleteOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchInsertOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchInsertOrganizationAccountsSvc<T: StoreService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchInsertOrganizationAccountsRequest,
-                    > for BatchInsertOrganizationAccountsSvc<T> {
-                        type Response = super::BatchInsertOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchInsertOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_insert_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchInsertOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchUpdateOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchUpdateOrganizationAccountsSvc<T: StoreService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchUpdateOrganizationAccountsRequest,
-                    > for BatchUpdateOrganizationAccountsSvc<T> {
-                        type Response = super::BatchUpdateOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchUpdateOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_update_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchUpdateOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchDeleteOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchDeleteOrganizationAccountsSvc<T: StoreService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchDeleteOrganizationAccountsRequest,
-                    > for BatchDeleteOrganizationAccountsSvc<T> {
-                        type Response = super::BatchDeleteOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchDeleteOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_delete_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = BatchDeleteOrganizationAccountsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpsertOrganizationAccounts" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpsertOrganizationAccountsSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::UpsertOrganizationAccountsRequest,
-                    > for UpsertOrganizationAccountsSvc<T> {
-                        type Response = super::UpsertOrganizationAccountsResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::UpsertOrganizationAccountsRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::upsert_organization_accounts(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpsertOrganizationAccountsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

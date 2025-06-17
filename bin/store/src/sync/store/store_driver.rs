@@ -1,4 +1,5 @@
 use crate::models::crdt_message_model::CrdtMessageModel;
+use crate::schema::verify::field_type_in_table;
 use crate::structs::structs::ColumnValue;
 use crate::table_enum::Table;
 use diesel_async::AsyncPgConnection;
@@ -15,15 +16,66 @@ pub async fn apply(
     let dataset = &message.dataset;
     let hypertable_timestamp = &message.hypertable_timestamp;
 
+    let field_type_exists = field_type_in_table(&dataset, column);
+
+    let field_type = match field_type_exists {
+        Some(type_of_field) => type_of_field,
+        None => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Field '{}' doesn't exist in table '{}'", column, dataset),
+            )))
+        }
+    };
+
+
+    // let value = if message.value.trim().is_empty()
+    //     || message.value.trim() == "{}"
+    //     || message.value.trim() == "[]"
+    //     || message.value.trim() == "\"\""
+    // {
+    //     ColumnValue::None
+    // } else if is_plural_column(column) {
+    //     ColumnValue::Array(process_pg_array(&message.value)?)
+    // } else if column == "timestamp" {
+    //     // Parse timestamp
+    //     let timestamp = message.value.trim_matches('"').to_string();
+    //     let timestamp_str = if timestamp.contains('T')
+    //         && !timestamp.contains('Z')
+    //         && !timestamp.contains('+')
+    //         && !timestamp[10..].contains('-')
+    //     {
+    //         format!("{}+00:00", timestamp)
+    //     } else {
+    //         timestamp.to_string()
+    //     };
+
+    //     ColumnValue::Timestamp(
+    //         chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
+    //             log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
+    //             Box::new(e) as Box<dyn std::error::Error>
+    //         })?,
+    //     )
+    // } else {
+    //     if let Ok(int_value) = message.value.parse::<i32>() {
+    //         ColumnValue::Integer(int_value)
+    //     } else if let Ok(float_value) = message.value.parse::<f64>() {
+    //         ColumnValue::Float(float_value)
+    //     } else {
+    //         ColumnValue::String(message.value.clone())
+    //     }
+    // };
+
     let value = if message.value.trim().is_empty()
         || message.value.trim() == "{}"
         || message.value.trim() == "[]"
         || message.value.trim() == "\"\""
     {
         ColumnValue::None
-    } else if is_plural_column(column) {
+    } else if field_type.is_array || is_plural_column(column) {
+        // Handle array types - use field_type.is_array as primary check
         ColumnValue::Array(process_pg_array(&message.value)?)
-    } else if column == "timestamp" {
+    } else if field_type.field_type == "timestamp" || column == "timestamp" {
         // Parse timestamp
         let timestamp = message.value.trim_matches('"').to_string();
         let timestamp_str = if timestamp.contains('T')
@@ -42,7 +94,54 @@ pub async fn apply(
                 Box::new(e) as Box<dyn std::error::Error>
             })?,
         )
+    } else if field_type.field_type == "integer" {
+        // Handle integer type
+        if let Ok(int_value) = message.value.parse::<i32>() {
+            ColumnValue::Integer(int_value)
+        } else {
+            // If parsing fails, log warning and use string value
+            log::warn!(
+                "Failed to parse '{}' as integer, using as string",
+                message.value
+            );
+            ColumnValue::String(message.value.clone())
+        }
+    } else if field_type.field_type == "float" {
+        // Handle float type
+        if let Ok(float_value) = message.value.parse::<f64>() {
+            ColumnValue::Float(float_value)
+        } else {
+            // If parsing fails, log warning and use string value
+            log::warn!(
+                "Failed to parse '{}' as float, using as string",
+                message.value
+            );
+            ColumnValue::String(message.value.clone())
+        }
+    } else if field_type.field_type == "bool" {
+        // Handle boolean type
+        if let Ok(bool_value) = message.value.to_lowercase().parse::<bool>() {
+            ColumnValue::Boolean(bool_value)
+        } else {
+            log::warn!(
+                "Failed to parse '{}' as boolean, using as string",
+                message.value
+            );
+            ColumnValue::String(message.value.clone())
+        }
+    } else if field_type.is_json {
+        // For JSON fields, keep as string but validate it's valid JSON
+        if serde_json::from_str::<serde_json::Value>(&message.value).is_ok() {
+            ColumnValue::String(message.value.clone())
+        } else {
+            log::warn!(
+                "Invalid JSON value: {}, using as regular string",
+                message.value
+            );
+            ColumnValue::String(message.value.clone())
+        }
     } else {
+        // Default case - handle as string or try to parse as number
         if let Ok(int_value) = message.value.parse::<i32>() {
             ColumnValue::Integer(int_value)
         } else if let Ok(float_value) = message.value.parse::<f64>() {
@@ -70,6 +169,9 @@ pub async fn apply(
         }
         ColumnValue::Float(f) => {
             json_obj.insert(column.to_string(), json!(f));
+        }
+        ColumnValue::Boolean(b) => {
+            json_obj.insert(column.to_string(), json!(b));
         }
         ColumnValue::None => {
             // Handle None case - insert null value or skip insertion

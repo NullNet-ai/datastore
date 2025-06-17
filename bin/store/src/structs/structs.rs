@@ -145,6 +145,7 @@ pub enum ColumnValue {
     Integer(i32),
     Float(f64),
     Timestamp(chrono::DateTime<chrono::FixedOffset>),
+    Boolean(bool),
     None,
 }
 
@@ -281,15 +282,16 @@ impl ConcatenateField {
 
             // Check if all fields exist and are valid string types
             for f in &field.fields {
-                let field_type = verify::field_type_in_table(table_name, f).ok_or_else(|| {
-                    ErrorBadRequest(format!(
-                        "Field \"{}\" doesn't exist in the schema of {}",
-                        f, table_name
-                    ))
-                })?;
+                let field_type_info =
+                    verify::field_type_in_table(table_name, f).ok_or_else(|| {
+                        ErrorBadRequest(format!(
+                            "Field \"{}\" doesn't exist in the schema of {}",
+                            f, table_name
+                        ))
+                    })?;
 
                 let field_lower = f.to_lowercase();
-                if field_type != "Text"
+                if field_type_info.field_type != "text"
                     || field_lower.ends_with("date")
                     || field_lower.contains("id")
                 {

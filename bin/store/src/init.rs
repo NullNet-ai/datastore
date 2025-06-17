@@ -1,4 +1,10 @@
-use crate::{controllers::store_controller::ApiError, organizations::{organization_service, structs::{AccountType, Register}}};
+use crate::{
+    controllers::store_controller::ApiError,
+    organizations::{
+        organization_service,
+        structs::{AccountType, Register},
+    },
+};
 
 /// Initialize both organization and device in a single function
 pub async fn initialize_services() -> Result<(), ApiError> {
@@ -9,7 +15,7 @@ pub async fn initialize_services() -> Result<(), ApiError> {
     } else {
         log::info!("Organization initialized successfully");
     }
-    
+
     // Initialize device
     if let Err(e) = initialize_device().await {
         log::error!("Failed to initialize device: {}", e);
@@ -17,7 +23,7 @@ pub async fn initialize_services() -> Result<(), ApiError> {
     } else {
         log::info!("Device initialized successfully");
     }
-    
+
     Ok(())
 }
 
@@ -30,7 +36,7 @@ async fn initialize_organization() -> Result<(), ApiError> {
         .unwrap_or_else(|_| "global-organization".to_string());
     let default_organization_admin_password = std::env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD")
         .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
-    
+
     // Create default account setup
     let default_account_setup = Register {
         account_type: Some(AccountType::Contact),
@@ -60,7 +66,7 @@ async fn initialize_organization() -> Result<(), ApiError> {
         device_categories: None,
         responsible_account_organization_id: None,
     };
-    
+
     // Call the existing initialize function with our custom setup
     organization_service::initialize(Some(default_account_setup)).await
 }

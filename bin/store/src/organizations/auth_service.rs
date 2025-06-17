@@ -15,12 +15,12 @@ use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use std::env;
 use std::sync::Mutex;
-use regex::Regex;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -186,9 +186,9 @@ pub async fn root_auth(
 ) -> Result<LoginResponse, ApiError> {
     // Get database connection
     let mut conn = db::get_async_connection().await;
-    
+
     // Query to find the root account
-   
+
     // Build the SQL query to get account with profile and organization data
     let result = sql_query(
         "
@@ -241,26 +241,26 @@ pub async fn root_auth(
     .bind::<Text, _>(account_id)
     .get_result::<JsonResult>(&mut conn)
     .await;
-    
+
     // Process the result
     let account_organization = match result {
         Ok(json_result) => {
             // Parse the JSON string into a serde_json::Value
-            let value: serde_json::Value = serde_json::from_str(&json_result.json_result)
-                .map_err(|e| {
+            let value: serde_json::Value =
+                serde_json::from_str(&json_result.json_result).map_err(|e| {
                     ApiError::new(
                         StatusCode::INTERNAL_SERVER_ERROR,
                         format!("JSON parsing error: {}", e),
                     )
                 })?;
-            
+
             // Add empty contact and device objects
             let mut value_obj = value.as_object().unwrap().clone();
             value_obj.insert("contact".to_string(), json!({}));
             value_obj.insert("device".to_string(), json!({}));
-            
+
             serde_json::Value::Object(value_obj)
-        },
+        }
         Err(diesel::result::Error::NotFound) => {
             // Return an empty JSON object if no results found
             if let Some(debug) = std::env::var("DEBUG").ok() {
@@ -269,7 +269,7 @@ pub async fn root_auth(
                 }
             }
             json!({})
-        },
+        }
         Err(e) => {
             if let Some(debug) = std::env::var("DEBUG").ok() {
                 if debug == "true" {
@@ -282,7 +282,7 @@ pub async fn root_auth(
             ));
         }
     };
-    
+
     // Check if account exists
     if account_organization.is_object() && account_organization.get("account").is_none() {
         return Err(ApiError::new(
@@ -290,51 +290,49 @@ pub async fn root_auth(
             "Root Account not found",
         ));
     }
-    
+
     // Extract account data
     let account = account_organization["account"].clone();
-    
+
     // Check if password is provided
     if account_secret.is_empty() {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "Password is required",
-        ));
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "Password is required"));
     }
-    
+
     // Verify password
     let verified = auth_service::password_verify(
         account["account_secret"].as_str().unwrap_or_default(),
         account_secret,
-    ).await?;
-    
+    )
+    .await?;
+
     if !verified {
         return Ok(LoginResponse {
             message: "Invalid Root Credentials".to_string(),
             token: None,
         });
     }
-    
+
     // Create token value
     let mut account_org_clone = account_organization.clone();
     if let Some(obj) = account_org_clone.as_object_mut() {
         obj.remove("account");
     }
-    
+
     let token_value = json!({
         "account": account_org_clone,
         "previously_logged_in": previously_logged_in
     });
-    
+
     // Generate JWT token
     let new_token = sign(&token_value).await?;
-    
+
     // Cache the token
     let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
     let expiration_ms = time_string_to_ms(&jwt_expires_in);
     let mut cache = TOKEN_CACHE.lock().unwrap();
     cache.insert(new_token.clone(), token_value.to_string());
-    
+
     Ok(LoginResponse {
         message: "Authenticated".to_string(),
         token: Some(new_token),
@@ -348,50 +346,82 @@ pub fn clear_cache(token: &str) -> bool {
 
 pub fn time_string_to_ms(time_str: &str) -> Result<u64, Box<dyn std::error::Error>> {
     // Format: 1d 2h 30m 45s
-    if let Some(captures) = regex::Regex::new(r"^((?:\d+)d\s*)?((?:\d+)h\s*)?((?:\d+)m\s*)?((?:\d+)s\s*)?$").unwrap().captures(time_str) {
-        let days = captures.get(1)
-            .map_or(0, |m| m.as_str().trim_end_matches('d').trim().parse::<u64>().unwrap_or(0));
-        let hours = captures.get(2)
-            .map_or(0, |m| m.as_str().trim_end_matches('h').trim().parse::<u64>().unwrap_or(0));
-        let minutes = captures.get(3)
-            .map_or(0, |m| m.as_str().trim_end_matches('m').trim().parse::<u64>().unwrap_or(0));
-        let seconds = captures.get(4)
-            .map_or(0, |m| m.as_str().trim_end_matches('s').trim().parse::<u64>().unwrap_or(0));
+    if let Some(captures) =
+        regex::Regex::new(r"^((?:\d+)d\s*)?((?:\d+)h\s*)?((?:\d+)m\s*)?((?:\d+)s\s*)?$")
+            .unwrap()
+            .captures(time_str)
+    {
+        let days = captures.get(1).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('d')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+        let hours = captures.get(2).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('h')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+        let minutes = captures.get(3).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('m')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+        let seconds = captures.get(4).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('s')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
 
-        let total_ms = days * 24 * 60 * 60 * 1000 +
-                       hours * 60 * 60 * 1000 +
-                       minutes * 60 * 1000 +
-                       seconds * 1000;
+        let total_ms = days * 24 * 60 * 60 * 1000
+            + hours * 60 * 60 * 1000
+            + minutes * 60 * 1000
+            + seconds * 1000;
         return Ok(total_ms);
     }
-    
+
     // Format: HH:mm:ss
-    if let Some(captures) = regex::Regex::new(r"^(\d{1,2}):(\d{2}):(\d{2})$").unwrap().captures(time_str) {
-        let hours = captures.get(1)
+    if let Some(captures) = regex::Regex::new(r"^(\d{1,2}):(\d{2}):(\d{2})$")
+        .unwrap()
+        .captures(time_str)
+    {
+        let hours = captures
+            .get(1)
             .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
-        let minutes = captures.get(2)
+        let minutes = captures
+            .get(2)
             .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
-        let seconds = captures.get(3)
+        let seconds = captures
+            .get(3)
             .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
 
-        let total_ms = hours * 60 * 60 * 1000 +
-                       minutes * 60 * 1000 +
-                       seconds * 1000;
+        let total_ms = hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
         return Ok(total_ms);
     }
-    
+
     // Format: mm:ss
-    if let Some(captures) = regex::Regex::new(r"^(\d{1,2}):(\d{2})$").unwrap().captures(time_str) {
-        let minutes = captures.get(1)
+    if let Some(captures) = regex::Regex::new(r"^(\d{1,2}):(\d{2})$")
+        .unwrap()
+        .captures(time_str)
+    {
+        let minutes = captures
+            .get(1)
             .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
-        let seconds = captures.get(2)
+        let seconds = captures
+            .get(2)
             .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
 
-        let total_ms = minutes * 60 * 1000 +
-                       seconds * 1000;
+        let total_ms = minutes * 60 * 1000 + seconds * 1000;
         return Ok(total_ms);
     }
-    
+
     // If none of the formats match
     Err(Box::new(std::io::Error::new(
         std::io::ErrorKind::InvalidInput,
@@ -599,7 +629,7 @@ pub async fn get_account_with_profile_and_org(
     }
 }
 
- async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, ApiError> {
+async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, ApiError> {
     // Get database connection
     let mut conn = db::get_async_connection().await;
 
@@ -637,7 +667,10 @@ pub async fn get_account_with_profile_and_org(
                 serde_json::from_str(&json_result.json_result).map_err(|e| {
                     ApiError::new(
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("JSON parsing error in getting account with organization: {}", e),
+                        format!(
+                            "JSON parsing error in getting account with organization: {}",
+                            e
+                        ),
                     )
                 })?;
 
@@ -655,7 +688,10 @@ pub async fn get_account_with_profile_and_org(
             }
             Err(ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Database query error in getting account with organization: {}", e),
+                format!(
+                    "Database query error in getting account with organization: {}",
+                    e
+                ),
             ))
         }
     }
@@ -679,7 +715,7 @@ async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::er
 
     // Set token expiration using JWT_EXPIRES_IN
     let expiration_ms = time_string_to_ms(&jwt_expires_in).unwrap_or(24 * 60 * 60 * 1000); // Default to 24h
-let expiration = Utc::now() + Duration::milliseconds(expiration_ms as i64);
+    let expiration = Utc::now() + Duration::milliseconds(expiration_ms as i64);
     let now = Utc::now();
 
     // Create claims

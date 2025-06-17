@@ -255,6 +255,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "            counter: 1,")?;
     writeln!(file, "            prefix: prefix_param.to_string(),")?;
     writeln!(file, "            default_code: default_code_param,")?;
+    writeln!(file, "            digits_number: 1,")?;
     writeln!(file, "        }};")?;
     writeln!(file, "        ")?;
     writeln!(file, "        // Attempt the insert with conflict handling")?;
