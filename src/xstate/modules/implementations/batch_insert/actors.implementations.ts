@@ -133,7 +133,7 @@ export class BatchInsertActorsImplementations {
 
         return results_main_table;
       });
-      const message: ICounterMessage = { record_ids, table, prefix };
+      const message: ICounterMessage = { record_ids, table };
       this.pushService.sender(message);
 
       return Promise.resolve({

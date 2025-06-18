@@ -42,17 +42,7 @@ export class StoreGrpcService {
 
     const { organization_id = '' } = responsible_account;
     const { params, body } = request;
-    let { records, entity_prefix: prefix } = body;
-    if (!prefix) {
-      return Promise.reject({
-        payload: {
-          success: false,
-          message: 'entity_prefix is required [Temporary Fix]',
-          count: 0,
-          data: [],
-        },
-      });
-    }
+    let { records } = body;
 
     const { table } = params;
     if (!records || !Array.isArray(body.records)) {
@@ -133,7 +123,7 @@ export class StoreGrpcService {
       copyData(table, batch, table_columns),
     ); // use map to generate promises
     await Promise.all(promises);
-    const message: ICounterMessage = { record_ids, table, prefix };
+    const message: ICounterMessage = { record_ids, table };
     this.pushService.sender(message);
 
     const ret_fields = !!request.query.pluck

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import * as fs from 'fs';
 import {
+  AccountType,
   OrganizationsService,
   // AccountType,
 } from '@dna-platform/crdt-lww-postgres';
@@ -13,8 +14,9 @@ const {
   NODE_ENV = 'local',
   DEFAULT_ORGANIZATION_NAME = 'global-organization',
   DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
-  // DEFAULT_DEVICE_ID = 'system_device',
-  // DEFAULT_DEVICE_SECRET = 'ch@ng3m3Pl3@s3!!',
+  DEFAULT_DEVICE_ID = 'system_device',
+  DEFAULT_DEVICE_SECRET = 'ch@ng3m3Pl3@s3!!',
+  INITIALIZE_DEVICE= false
 } = process.env;
 const logger = new LoggerService(process.env.npm_package_name ?? 'unknown');
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
@@ -119,22 +121,26 @@ export async function initializers(app) {
 
   // default for super admin
   await organization.initialize();
-  //! Device Account Initialization (uncomment if needed)
-  // await organization.initialize({
-  //   account_type: AccountType.DEVICE,
-  //   organization_id: DEFAULT_ORGANIZATION_ID,
-  //   organization_name: DEFAULT_ORGANIZATION_NAME,
-  //   account_id: DEFAULT_DEVICE_ID,
-  //   account_secret: DEFAULT_DEVICE_SECRET,
-  //   first_name: '',
-  //   last_name: '',
-  //   is_new_user: true,
-  //   account_status: 'Active',
-  //   role_id: 'super_admin',
-  //   account_organization_status: 'Active',
-  //   account_organization_categories: ['Device'],
-  //   device_categories: ['Device'],
-  // });
+  // ! Device Account Initialization (uncomment if needed)
+
+  if(INITIALIZE_DEVICE){
+    await organization.initialize({
+      account_type: AccountType.DEVICE,
+      organization_id: DEFAULT_ORGANIZATION_ID,
+      organization_name: DEFAULT_ORGANIZATION_NAME,
+      account_id: DEFAULT_DEVICE_ID,
+      account_secret: DEFAULT_DEVICE_SECRET,
+      first_name: '',
+      last_name: '',
+      is_new_user: true,
+      account_status: 'Active',
+      role_id: 'super_admin',
+      account_organization_status: 'Active',
+      account_organization_categories: ['Device'],
+      device_categories: ['Device'],
+    });
+  }
+
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
   await initializer.generateSchema();
 }
