@@ -24,6 +24,16 @@ export class VerifyActionsImplementations {
     }),
     assignQueryDataPermissions: assign({
       data_permissions_query: ({ context }) => {
+        if (process.env.EXPERIMENTAL_PERMISSIONS !== 'true')
+          return {
+            requested_fields: [],
+            query: '',
+            account_organization_id: '',
+            schema: [],
+            valid_pass_keys_query: '',
+            record_valid_pass_keys_query: '',
+            role_permissions_query: '',
+          };
         const { controller_args, responsible_account } = context;
         const [_res, _req] = controller_args;
         const { params, body, method, url, query: req_query } = _req;

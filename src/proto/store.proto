@@ -130,7 +130,6 @@ message CreateRequest {
 
 message CreateBody{
     string record = 1;
-    string entity_prefix = 2;
 }
 
 
@@ -143,7 +142,6 @@ message BatchCreateRequest {
 
 message BatchCreateBody {
     string records = 1;
-    string entity_prefix = 2;
 }
 
 //BATCH UPDATE
@@ -192,6 +190,7 @@ message Query {
 message Params {
     string id = 1;
     string table= 2;
+    string type=3;
 }
 
 message LoginResponse {
