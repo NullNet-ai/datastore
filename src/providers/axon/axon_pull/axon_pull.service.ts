@@ -46,7 +46,7 @@ export class AxonPullService {
   }
 
   async onCodeGenerateMessage(messages: ICounterMessage) {
-    const { record_ids, table, prefix } = messages;
+    const { record_ids, table } = messages;
     this.batch++;
     each(record_ids, async (id: string) => {
       try {
@@ -54,9 +54,9 @@ export class AxonPullService {
           `@AXON-PULL:message Assigning code: ${id}, ${table} `,
         );
         const counter_schema = local_schema['counters'];
-        const code = await this.db
+        let code = await this.db
           .insert(counter_schema)
-          .values({ entity: table, counter: 1, prefix, default_code: 100000 })
+          .values({ entity: table, counter: 1 })
           .onConflictDoUpdate({
             target: [counter_schema.entity],
             set: {
@@ -67,11 +67,28 @@ export class AxonPullService {
             prefix: counter_schema.prefix,
             default_code: counter_schema.default_code,
             counter: counter_schema.counter,
+            digits_number: counter_schema.digits_number,
           })
-          .then(
-            ([{ prefix, default_code, counter }]) =>
-              prefix + (default_code + counter),
-          );
+          .prepare(`insert_counter_${table}`)
+          .execute();
+
+        function constructCode([
+                                 { prefix, default_code, counter, digits_number },
+                               ]) {
+          const getDigit = (num: number) => {
+            return num.toString().length;
+          };
+
+          if (digits_number) {
+            digits_number = digits_number - getDigit(counter);
+            const zero_digits =
+              digits_number > 0 ? '0'.repeat(digits_number) : '';
+            return prefix + (zero_digits + counter);
+          }
+          return prefix + (default_code + counter);
+        }
+
+        code = constructCode(code);
         const table_schema = local_schema[table];
         const temp_table_schema = local_schema[`temp_${table}`];
         await this.db
@@ -87,7 +104,7 @@ export class AxonPullService {
           `@AXON-PULL: Error in ${table} with ${id}  sending message to dead letter queue`,
           error.mesage,
         );
-        this.dead_letter_queue_sock.send({ id, table, prefix });
+        this.dead_letter_queue_sock.send({ id, table });
       }
     });
   }
