@@ -171,6 +171,12 @@ message CreateParams {
 
 message LoginRequest {
     LoginBody body = 1;
+    LoginParams params = 2;
+}
+
+message LoginParams{
+    string is_root= 1;
+    string t=2;
 }
 
 message LoginBody{
