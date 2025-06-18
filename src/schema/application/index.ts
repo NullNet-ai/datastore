@@ -12,6 +12,7 @@ export { table as grid_filters } from './grid_filters';
 export { table as communication_templates } from './communication_templates';
 export { table as locations } from './locations';
 // define the schema for the application
+export { table as devices } from "./devices";
 export { table as samples } from '../application/samples';
 export { table as connections } from '../application/connections'; //hypertable
 export { table as packets } from '../application/packets'; //hypertable
