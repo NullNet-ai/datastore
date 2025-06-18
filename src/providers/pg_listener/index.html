@@ -155,7 +155,7 @@
     }
 
     // Initialize socket connection with auth token
-    socket = io('http://localhost:5005', {
+    socket = io('http://localhost:5001', {
       transports: ['websocket'],
       auth: {
         token: token
@@ -180,7 +180,7 @@
     });
 
     // Listen for database change events
-    socket.on('live_map-01JBHKXHYSKPP247HZZWHA3JCT', (data) => {
+    socket.on('test-01JXK83GXQWJQ3RCCAJ8BJ05JG-01JBHKXHYSKPP247HZZWHA3JCT', (data) => {
       totalMessages++;
       const dataSize = JSON.stringify(data).length;
       totalDataBytes += dataSize;

@@ -2,7 +2,7 @@ import {
   pgTable,
   text,
   integer,
-  primaryKey,
+  // primaryKey,
   timestamp,
   AnyPgColumn,
   index,
@@ -35,7 +35,7 @@ const fields =
 
 
 const config = (table) => ({
-  pk: primaryKey({ columns: [table.id, table.timestamp] }),
+  // pk: primaryKey({ columns: [table.id, table.timestamp] }),
   ...getConfigDefaults.defaultIndexes('connections', table),
   ...Object.keys(fields).reduce((acc, field) => {
     const index_name = `connections_${field}_idx`;
@@ -51,7 +51,6 @@ export const table = pgTable(
   {
     ...system_fields,
     ...fields,
-    id: text('id'), // Primary key
     hypertable_timestamp: text('hypertable_timestamp'), // Hypertable timestamp
   },
   config,
