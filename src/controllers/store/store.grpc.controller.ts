@@ -235,8 +235,26 @@ export class GrpcController {
   async login(data, _metadata: any): Promise<any> {
     try {
       const { account_id, account_secret } = data.body.data;
-      const res = await this.authService.auth(account_id, account_secret);
-      return { token: res.token };
+      const {is_root= 'false', t=''}=data.params;
+
+      let result;
+
+      if (is_root === 'true') {
+        result = await this.authService
+          .rootAuth(account_id, account_secret, t as string)
+          .catch((err) => ({
+            message: err.message,
+            token: null,
+          }));
+      } else {
+        result = await this.authService
+          .auth(account_id, account_secret)
+          .catch((err) => ({
+            message: err.message,
+            token: null,
+          }));
+      }
+      return result;
     } catch (error: any) {
       // Handle unexpected server-side errors
       throw new RpcException({

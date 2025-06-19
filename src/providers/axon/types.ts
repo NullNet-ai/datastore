@@ -1,7 +1,6 @@
 export interface ICounterMessage {
   record_ids: string[];
   table: string;
-  prefix: string;
 }
 
 export interface IUpdateMessage {

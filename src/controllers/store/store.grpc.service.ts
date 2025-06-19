@@ -40,19 +40,12 @@ export class StoreGrpcService {
         );
       });
 
-    const { organization_id = '' } = responsible_account;
+    const {
+      organization_id = '',
+      is_root_account,
+    } = responsible_account;
     const { params, body } = request;
-    let { records, entity_prefix: prefix } = body;
-    if (!prefix) {
-      return Promise.reject({
-        payload: {
-          success: false,
-          message: 'entity_prefix is required [Temporary Fix]',
-          count: 0,
-          data: [],
-        },
-      });
-    }
+    let { records } = body;
 
     const { table } = params;
     if (!records || !Array.isArray(body.records)) {
@@ -93,7 +86,9 @@ export class StoreGrpcService {
     const created_time = Utility.convertTime12to24(date.toLocaleTimeString());
 
     records = await map(records, async (record: Record<string, any>) => {
-      record.organization_id = organization_id;
+      if (!record?.organization_id && !is_root_account) {
+        record.organization_id = organization_id;
+      }
 
       if (table_schema.hypertable_timestamp) {
         record.hypertable_timestamp = new Date(record.timestamp).toISOString();
@@ -133,7 +128,7 @@ export class StoreGrpcService {
       copyData(table, batch, table_columns),
     ); // use map to generate promises
     await Promise.all(promises);
-    const message: ICounterMessage = { record_ids, table, prefix };
+    const message: ICounterMessage = { record_ids, table };
     this.pushService.sender(message);
 
     const ret_fields = !!request.query.pluck
