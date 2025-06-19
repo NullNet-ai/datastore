@@ -47,6 +47,7 @@ import { SearchSuggestionsImplementationModule } from 'src/xstate/modules/implem
 import { PgFunctionImplementationModule } from '../../xstate/modules/implementations/pg_function/pg_function.implementation.module';
 import { PgListenerGetImplementationModule } from '../../xstate/modules/implementations/pg_listener_get/pg_listener_get.implementation.module';
 import { PgListenerDeleteImplementationModule } from '../../xstate/modules/implementations/pg_listener_delete/pg_listener_delete.implementation.module';
+import { UpsertImplementationModule } from '../../xstate/modules/implementations/upsert/upsert.implementation.module';
 
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
@@ -60,6 +61,7 @@ const machines_providers = machine_providers([
   machines.AggregationFilterMachine,
   machines.BatchInsertMachine,
   machines.BatchUpdateMachine,
+  machines.UpsertMachine,
   machines.SearchSuggestionsMachine,
 
   // Hypertable
@@ -111,6 +113,7 @@ const shared_machine_imports = [
   AggregationFilterImplementationModule,
   BatchInsertImplementationModule,
   BatchUpdateImplementationModule,
+  UpsertImplementationModule,
   SearchSuggestionsImplementationModule,
 
   //Hypertable
