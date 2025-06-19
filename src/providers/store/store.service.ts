@@ -62,6 +62,9 @@ export class StoreMutationDriver {
   @Machine('upload')
   async upload(_res: Response, _req: Request, _file: Express.Multer.File) {}
 
+  @Machine('upsert')
+  async upsert(_res: Response, _req: Request) {}
+
   @Machine('uploads')
   async uploads(
     _res: Response,

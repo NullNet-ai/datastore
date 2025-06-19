@@ -6,7 +6,7 @@ import {
   timestamp,
   AnyPgColumn,
   index,
-  inet,
+  inet, primaryKey,
   // unique,
 } from 'drizzle-orm/pg-core';
 import {
@@ -35,7 +35,7 @@ const fields =
 
 
 const config = (table) => ({
-  // pk: primaryKey({ columns: [table.id, table.timestamp] }),
+  pk: primaryKey({ columns: [table.id, table.timestamp] }),
   ...getConfigDefaults.defaultIndexes('connections', table),
   ...Object.keys(fields).reduce((acc, field) => {
     const index_name = `connections_${field}_idx`;
