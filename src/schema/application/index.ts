@@ -42,6 +42,7 @@ export { table as temp_device_remote_access_sessions } from '../application/temp
 export { table as tcp_connections } from '../application/tcp_connections';
 export { table as ip_infos } from './ip_infos';
 export { table as app_firewalls } from './app_firewalls';
+export { table as app_denied_ips } from './app_denied_ips';
 export { table as http_requests } from '../application/http_requests';
 export { table as http_responses } from '../application/http_responses';
 export { table as smtp_requests } from '../application/smtp_requests';
