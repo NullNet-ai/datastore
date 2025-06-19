@@ -1841,18 +1841,15 @@ export class Utility {
   }
   static parseBatchRequestBody(body: {
     records: string;
-    entity_prefix: string;
   }) {
-    let parsed_body: { records: Record<any, any>[]; entity_prefix: string } = {
+    let parsed_body: { records: Record<any, any>[] } = {
       records: [],
-      entity_prefix: '',
     };
     try {
       parsed_body.records = body?.records ? JSON.parse(body.records) : [];
-      parsed_body.entity_prefix = body.entity_prefix;
     } catch (error: any) {
       throw new Error(
-        'Invalid JSON body, make sure records and entity_prefix are provided',
+        'Invalid JSON body, make sure records are provided',
       );
     }
     return parsed_body;

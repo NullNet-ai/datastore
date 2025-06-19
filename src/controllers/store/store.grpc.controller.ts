@@ -105,7 +105,6 @@ export class GrpcController {
       const _res = new CustomResponse();
       data.body = {
         ...Utility.parseRequestBody(data.body.record),
-        entity_prefix: data.body.entity_prefix,
       };
       const _req = Utility.createRequestObject(data, metadata);
       await this.storeMutation.create(_res as any as Response, _req as Request);
@@ -214,7 +213,6 @@ export class GrpcController {
     try {
       const _res = new CustomResponse();
       data.body.data = JSON.parse(data.body.data);
-      data.body.data.entity_prefix = data.body.entity_prefix;
       const _req = Utility.createRequestObject(data, metadata);
       await this.storeMutation.upsert(_res as any as Response, _req as Request);
       await _res.waitForResponse();
