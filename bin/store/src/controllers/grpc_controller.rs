@@ -1,7 +1,7 @@
 use super::common_controller::{
     convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,
-    process_and_insert_record, process_and_update_record, process_record_for_insert,
-    process_record_for_update, process_records, sanitize_updates,
+    process_and_insert_record, process_and_update_record, process_record_for_update,
+    process_records, sanitize_updates,
 };
 use crate::db::create_connection;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
@@ -254,7 +254,7 @@ use crate::middlewares::interceptor_chain::InterceptorChain;
 use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
 use crate::structs::structs::Auth;
 use crate::structs::structs::RequestBody;
-use crate::sync::sync_service::{insert, update};
+use crate::sync::sync_service::update;
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use crate::{

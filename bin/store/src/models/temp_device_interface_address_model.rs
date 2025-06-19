@@ -1,7 +1,6 @@
 use diesel::prelude::*;
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,

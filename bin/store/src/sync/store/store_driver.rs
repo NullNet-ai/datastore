@@ -28,7 +28,6 @@ pub async fn apply(
         }
     };
 
-
     // let value = if message.value.trim().is_empty()
     //     || message.value.trim() == "{}"
     //     || message.value.trim() == "[]"

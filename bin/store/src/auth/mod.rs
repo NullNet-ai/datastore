@@ -1,5 +1,4 @@
 use sha2::{Digest, Sha256};
-use std::error::Error;
 pub mod auth_service;
 
 pub struct AuthService;

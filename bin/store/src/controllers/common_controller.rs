@@ -6,11 +6,11 @@ use crate::sync::sync_service::{insert, update};
 use crate::table_enum::{generate_code, Table};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
-use actix_web::{http, HttpResponse};
+use actix_web::http;
 use bytes::Bytes;
 use csv::WriterBuilder;
 use futures::{pin_mut, SinkExt};
-use serde_json::{json, Value};
+use serde_json::Value;
 use tokio_postgres::Client;
 use tonic::Status;
 
@@ -58,7 +58,7 @@ pub async fn execute_copy(
     );
 
     // Clone the client and data for parallel operations
-    let client_clone = client.clone();
+    let client_clone = client;
     let csv_data_clone = csv_data.clone();
 
     // Execute both copy operations in parallel
@@ -110,7 +110,7 @@ pub fn process_records(
     let hypertable_exists = field_exists_in_table(table_name, "hypertable_timestamp");
     let mut processed_records = Vec::new();
 
-    for mut record in records {
+    for record in records {
         // Run your custom processing logic
         let mut request_body = RequestBody { record };
         request_body.process_record("create", auth);

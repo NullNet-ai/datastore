@@ -7,7 +7,7 @@ pub mod background_sync;
 use serde_json::{json, Value};
 use std::collections::VecDeque;
 use std::sync::Arc;
-use tokio::sync::mpsc::{self, Sender, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 use tokio::sync::Mutex;
 
 // Define message types

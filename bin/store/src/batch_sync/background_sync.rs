@@ -1,6 +1,5 @@
 use crate::db;
 use crate::sync::sync_service;
-use crate::table_enum::Table;
 use dotenv::dotenv;
 use log;
 use serde_json::{json, Value};
@@ -118,7 +117,7 @@ impl BackgroundSyncService {
                 // Get the actual table name without temp_ prefix
                 let actual_table = table_name.replace("temp_", "");
 
-                for mut row in rows {
+                for row in rows {
                     let mut row_value = self.row_to_value(&row);
 
                     // Format the row (remove null, undefined, empty arrays, empty objects)

@@ -328,7 +328,7 @@ macro_rules! generate_batch_update_method {
                     let filters: Vec<Value> = body
                         .advance_filters
                         .into_iter()
-                        .map(|mut filter| {
+                        .map(|filter| {
                             let mut value = serde_json::to_value(filter).unwrap_or_default();
                             if let Value::Object(ref mut map) = value {
                                 if let Some(Value::String(s)) = map.get_mut("values") {
@@ -601,7 +601,7 @@ macro_rules! generate_batch_delete_method {
                     let filters: Vec<Value> = body
                         .advance_filters
                         .into_iter()
-                        .map(|mut filter| {
+                        .map(|filter| {
                             let mut value = serde_json::to_value(filter).unwrap_or_default();
                             if let Value::Object(ref mut map) = value {
                                 if let Some(Value::String(s)) = map.get_mut("values") {

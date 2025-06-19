@@ -24,12 +24,12 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
+mod initializers;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
-use crate::organizations::organization_service;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -42,7 +42,6 @@ use controllers::store_controller::{
     get_by_filter, update_record, upsert,
 };
 use env_logger::Env;
-use socketioxide::SocketIo;
 use std::process;
 use std::sync::Arc;
 use tokio::signal::unix::{signal, SignalKind};

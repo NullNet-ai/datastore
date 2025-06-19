@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use diesel::sql_types::Jsonb;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 

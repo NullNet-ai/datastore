@@ -1,4 +1,3 @@
-pub mod code_prefix_intializer;
 pub mod from_proto;
 pub mod hypertables;
 pub mod schema;

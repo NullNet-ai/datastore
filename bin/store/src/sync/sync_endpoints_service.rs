@@ -1,4 +1,3 @@
-use crate::db::DbPooledConnection;
 use crate::models::sync_endpoint_model::SyncEndpointModel;
 use crate::schema::schema::sync_endpoints;
 use diesel::prelude::*;

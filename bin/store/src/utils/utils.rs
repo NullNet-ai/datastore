@@ -12,7 +12,7 @@ use diesel_async::RunQueryDsl;
 use singularize::singularize;
 
 pub fn to_singular(table_name: &str) -> String {
-    let mut singular = singularize(table_name);
+    let singular = singularize(table_name);
     singular
 }
 

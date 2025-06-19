@@ -12,24 +12,19 @@ use crate::models::organization_account_model::OrganizationAccountModel;
 use crate::models::organization_model::OrganizationModel;
 use crate::organizations::structs::AccountType;
 use crate::organizations::structs::Register;
+use crate::schema::schema::account_organizations;
 use crate::schema::schema::accounts;
 use crate::schema::schema::counters;
 use crate::schema::schema::organizations;
 use crate::sync::sync_service;
 use crate::utils::utils;
-use actix::fut::future::result;
 use actix_web::http::StatusCode;
-use argon2::password_hash::{rand_core::OsRng, SaltString};
-use argon2::{Argon2, PasswordHasher};
-use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel_async::RunQueryDsl;
-use ipnetwork::IpNetwork;
 use serde_json::json;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::env;
-use tokio_postgres::types::ToSql;
 use ulid::Ulid;
 
 pub fn get_defaults() -> (
@@ -86,7 +81,7 @@ pub async fn register(
     let mut conn = db::get_async_connection().await;
 
     let is_request = is_request.unwrap_or(false);
-    let (_, _, _, _, _, _, _, super_admin_id, _) = get_defaults();
+    let (_, _, _, _, _, _, _, super_admin_id, system_device_ulid) = get_defaults();
 
     let account_type = params.account_type.clone().unwrap_or(AccountType::Contact);
     let account_id = &params.account_id;
@@ -104,18 +99,23 @@ pub async fn register(
     let device_categories = params.device_categories.clone();
     let responsible_account_organization_id = params.responsible_account_organization_id.clone();
 
-    let mut personal_organization_id: Option<String> = None;
+    let personal_organization_id: Option<String> = None;
 
     let now = chrono::Utc::now();
     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
 
-    let _account_id = if is_request {
+    let mut _account_id = if is_request {
         Ulid::new().to_string()
     } else {
-        super_admin_id.clone()
+        if account_type == AccountType::Contact {
+            super_admin_id.clone()
+        } else {
+            system_device_ulid.clone()
+        }
     };
     let is_contact_account = account_type == AccountType::Contact;
+    let mut team_organization_id: Option<String> = None;
 
     let existing_account = accounts::table
         .filter(
@@ -148,12 +148,62 @@ pub async fn register(
         .optional()?;
 
     if existing_account.is_some() {
-        // Return a DieselError with a custom message
-        return Err(DieselError::DatabaseError(
-            diesel::result::DatabaseErrorKind::UniqueViolation,
-            Box::new("Account with the same email already exist.".to_string()),
-        )
-        .into());
+        let existing_account = existing_account.unwrap();
+        if existing_account.id.is_none() {
+            return Err(ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Account exists but has no ID.",
+            )
+            .into());
+        }
+        _account_id = existing_account.id.unwrap().clone();
+
+        // Check if organization is already existing
+        let organization_id = params.organization_id.clone().unwrap_or_default();
+        let existing_team_org = organizations::table
+            .filter(
+                organizations::id
+                    .eq(&organization_id)
+                    .and(organizations::tombstone.eq(0)),
+            )
+            .first::<OrganizationModel>(&mut conn)
+            .await
+            .optional()?;
+
+        if let Some(existing_team_org) = existing_team_org {
+            // Check if assigned to an account_organization
+            let existing_account_org = account_organizations::table
+                .filter(
+                    account_organizations::organization_id
+                        .eq(&existing_team_org.id.clone().unwrap_or_default())
+                        .and(account_organizations::account_id.eq(_account_id.clone())),
+                )
+                .first::<AccountOrganizationModel>(&mut conn)
+                .await
+                .optional()?;
+
+            if let Some(existing_account_org) = existing_account_org {
+                // if yes, do not create anything
+                log::warn!(
+                    "Account {} already exists in organization {}, assigned to account_organization {}",
+                    account_id,
+                    existing_team_org.id.clone().unwrap_or_default(),
+                    existing_account_org.id.clone().unwrap_or_default()
+                );
+
+                return Ok(json!({
+                    "organization_id": team_organization_id,
+                    "account_organization_id": existing_account_org.id,
+                    "account_id": _account_id,
+                    "email": account_id,
+                    "contact_id": existing_account_org.contact_id,
+                    "device_id": existing_account_org.device_id,
+                }));
+            } else {
+                // assign to account_organization
+                team_organization_id = Some(existing_team_org.id.clone().unwrap_or_default());
+            }
+        }
     } else {
         //create a personal organization
         let personal_organization_id = create_new_organization(
@@ -199,23 +249,29 @@ pub async fn register(
         .await?;
     }
 
+    team_organization_id = Some(
+        create_new_organization(
+            team_organization_name
+                .clone()
+                .unwrap_or(&String::new())
+                .to_string(),
+            vec!["Team".to_string()],
+            params.organization_id.clone(),
+            if organizations_counter.is_some() {
+                utils::generate_code("organizations").await?
+            } else {
+                None
+            },
+            responsible_account_organization_id.clone(),
+        )
+        .await?,
+    );
+
     if is_contact_account && (!is_invited || !is_request) {
         match async {
                 let user_id = if is_request { Ulid::new().to_string() } else { super_admin_id.clone() };
 
-                // Create team organization
-                let team_organization_id = create_new_organization(
-                    team_organization_name.clone().unwrap_or(&String::new()).to_string(),
-                    vec!["Team".to_string()],
-                    params.organization_id.clone(),
-                    if organizations_counter.is_some() {
-                        utils::generate_code("organizations").await?
-                    } else {
-                        None
-                    },
-                    responsible_account_organization_id.clone(),
-                ).await?;
-
+                let team_organization_id= team_organization_id.unwrap();
                 // Create contact using ContactModel
                 let contact = ContactModel {
                     id: Some(user_id.clone()),
@@ -339,7 +395,8 @@ pub async fn register(
             }
     } else {
         // Handle invited contact accounts
-        match async {
+        match async 
+        {
             if is_invited && account_organization_id.is_empty() {
                 return Err(ApiError::new(
                     StatusCode::BAD_REQUEST,
@@ -347,7 +404,7 @@ pub async fn register(
                 ));
             }
 
-            let mut device_id: Option<String> = None;
+            let mut device_id: Option<String> = Some(_account_id.clone());
             let mut device_code: Option<String> = None;
 
             // Create Device if not a contact account
@@ -357,8 +414,8 @@ pub async fn register(
                     .first::<CounterModel>(&mut conn)
                     .await
                     .optional()?;
-
-                let device_id_value = Ulid::new().to_string();
+                    // Use new ULID if it's a request, otherwise use system_device_ulid
+                    let device_id_value = device_id.unwrap();
                 let code = if devices_counter.is_some() {
                     utils::generate_code("devices").await?
                 } else {
@@ -372,7 +429,7 @@ pub async fn register(
                     categories: device_categories.clone(),
                     code: code.clone(),
                     tombstone: Some(0),
-                    status: Some("Draft".to_string()),
+                    status: Some(if is_request { "Draft" } else { "Active" }.to_string()),
                     created_date: Some(formatted_date.clone()),
                     created_time: Some(formatted_time.clone()),
                     updated_date: Some(formatted_date.clone()),
@@ -401,30 +458,33 @@ pub async fn register(
             };
 
             // Create AccountOrganizationModel
-            let mut account_organization = AccountOrganizationModel {
+            let account_organization = AccountOrganizationModel {
                 id: Some(account_org_id.clone()),
                 email: Some(account_id.clone()),
                 account_id: Some(_account_id.clone()),
-                organization_id: params.organization_id.clone(),
+                organization_id: team_organization_id.clone(),
                 categories: account_organization_categories.clone(),
-                account_organization_status: account_organization_status.clone(),
                 is_invited: Some(is_invited),
-                status: Some("Active".to_string()),
                 tombstone: Some(0),
                 created_date: Some(formatted_date.clone()),
                 created_time: Some(formatted_time.clone()),
                 updated_date: Some(formatted_date.clone()),
                 updated_time: Some(formatted_time.clone()),
                 created_by: responsible_account_organization_id.clone(),
+                device_id: if !is_contact_account { device_id.clone() } else { None },
+                // Conditional fields for non-contact accounts
+                account_organization_status: if !is_contact_account && is_request {
+                    Some("Inactive".to_string())
+                } else {
+                    account_organization_status.clone()
+                },
+                status: if !is_contact_account && is_request {
+                    Some("Draft".to_string())
+                } else {
+                    Some("Active".to_string())
+                },
                 ..Default::default()
             };
-
-            // Set additional fields for non-contact accounts
-            if !is_contact_account {
-                account_organization.device_id = device_id.clone();
-                account_organization.account_organization_status = Some("Inactive".to_string());
-                account_organization.status = Some("Draft".to_string());
-            }
 
             // Convert model to JSON
             let account_organization_json = serde_json::to_value(&account_organization)
@@ -468,7 +528,8 @@ pub async fn register(
                 result = Value::Object(obj);
             }
 
-            Ok(result)}.await{
+            Ok(result)
+            }.await {
                 Ok(result) => Ok(result),
                 Err(error) => {
                     log::error!(
@@ -478,6 +539,7 @@ pub async fn register(
                         params.organization_id.clone().unwrap_or_else(|| "unknown".to_string()),
                         error
                     );
+                    // Return empty JSON value on error
                     Ok(().into())
                 }
             }
@@ -498,7 +560,7 @@ pub async fn create_new_organization(
     let id = organization_id.unwrap_or_else(|| Ulid::new().to_string());
 
     // Create organization object
-    let mut organization = OrganizationModel {
+    let organization = OrganizationModel {
         id: Some(id.clone()),
         name: Some(organization_name.clone()),
         categories: Some(categories.clone()),
@@ -670,38 +732,6 @@ pub async fn initialize(data: Option<Register>) -> Result<(), ApiError> {
         log::error!("Default organization ID is not set. Please configure DEFAULT_ORGANIZATION_ID environment variable.");
         return Ok(());
     }
-
-    // Use provided organization_id or default
-    let organization_id = data
-        .organization_id
-        .as_ref()
-        .unwrap_or(&default_organization_id);
-
-    let mut conn = db::get_async_connection().await;
-
-    // Check if organization already exists
-    let existing_organization = organizations::table
-        .filter(
-            organizations::id
-                .eq(organization_id)
-                .and(organizations::tombstone.eq(0)),
-        )
-        .first::<OrganizationModel>(&mut conn)
-        .await
-        .optional()?;
-
-    if existing_organization.is_some() {
-        if let Some(org) = &existing_organization {
-            log::info!(
-                "Organization {} already exists",
-                org.name.as_ref().unwrap_or(&"unknown".to_string())
-            );
-        }
-        return Ok(());
-    }
-
-    log::info!("Creating Organization: {}", organization_id);
-
     // Register the organization and admin account
     register(&data, None, None).await?;
 

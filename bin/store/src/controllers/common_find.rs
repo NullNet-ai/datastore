@@ -1,6 +1,4 @@
-use serde_json::Value;
 use std::collections::HashMap;
-use tokio_postgres::types::Field;
 
 use crate::{
     schema::verify::field_exists_in_table,
@@ -206,11 +204,11 @@ pub fn get_sort_field(
         sort_query = format!("\"{}\".\"{}\"", sort_entity, sort_field)
     }
 
-    if (is_case_sensitive) {
+    if is_case_sensitive {
         sort_query = format!("lower({})", sort_query);
     }
 
-    if (!entity_is_main_table) {
+    if !entity_is_main_table {
         if by_direction.to_lowercase() == "asc" {
             sort_query = format!("MIN({})", sort_query);
         } else {

@@ -1,15 +1,12 @@
 use crate::message_stream::token_bucket::TokenBucket;
-use actix_web::{web, Error, HttpRequest, HttpResponse};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use log::{error, info, warn};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use socketioxide::extract::{Data, SocketRef};
 use socketioxide::SocketIo;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
-use std::thread::current;
-use std::time::Duration;
 
 // JWT Claims structure
 #[derive(Debug, Serialize, Deserialize)]
@@ -342,7 +339,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                 } else {
                     0 // Default if bucket doesn't exist
                 };
-                let mut response;
+                let response;
 
                 if current_highwatermark == 0 {
                     response = serde_json::json!({

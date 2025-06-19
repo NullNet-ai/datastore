@@ -3,7 +3,7 @@ use crate::sync::merkles::merkle_service::MerkleService;
 use lazy_static::lazy_static;
 use merkle::MerkleTree;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, Once};
+use std::sync::{Arc, Once};
 use tokio::sync::RwLock;
 
 struct MerkleEntry {

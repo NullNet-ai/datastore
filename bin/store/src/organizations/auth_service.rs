@@ -5,19 +5,17 @@ use crate::models::account_model::AccountModel;
 use crate::organizations::structs::LoginResponse;
 use crate::schema::schema::accounts;
 use actix_web::http::StatusCode;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use diesel::sql_query;
-use diesel::sql_types::Nullable;
 use diesel::sql_types::Text;
 use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use once_cell::sync::Lazy;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use std::sync::Mutex;
@@ -150,6 +148,7 @@ pub async fn auth(
                     }
                 };
         };
+
 
         // Create token value with the signed in account
         let token_value = json!({
@@ -572,7 +571,14 @@ pub async fn get_account_with_profile_and_org(
             'organization_id', c.organization_id,
             'date_of_birth', c.date_of_birth
         ) ELSE NULL END,
-        'device', CASE WHEN d.id IS NOT NULL THEN row_to_json(d.*) ELSE NULL END,
+        'device', CASE WHEN d.id IS NOT NULL THEN json_build_object(
+    'id', d.id,
+    'code', d.code,
+    'categories', d.categories,
+    'status', d.status,
+    'organization_id', d.organization_id,
+    'timestamp', d.timestamp
+) ELSE NULL END,
         'organization', CASE WHEN o.id IS NOT NULL THEN json_build_object(
             'id', o.id,
             'name', o.name,
@@ -636,9 +642,10 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
     // Define a struct to hold the JSON result
     #[derive(QueryableByName, Debug)]
     struct JsonResult {
-        #[diesel(sql_type = diesel::sql_types::Text)]
-        json_result: String,
+        #[diesel(sql_type = diesel::sql_types::Json)]
+        json_result: serde_json::Value,
     }
+
 
     // Query the database using raw SQL that returns JSON
     let result = sql_query(
@@ -662,19 +669,8 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
 
     match result {
         Ok(json_result) => {
-            // Parse the JSON string into a serde_json::Value
-            let value: serde_json::Value =
-                serde_json::from_str(&json_result.json_result).map_err(|e| {
-                    ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!(
-                            "JSON parsing error in getting account with organization: {}",
-                            e
-                        ),
-                    )
-                })?;
-
-            Ok(value)
+            // The json_result.json_result is already a serde_json::Value, no need to parse
+            Ok(json_result.json_result)
         }
         Err(diesel::result::Error::NotFound) => {
             // Return an empty JSON object if no results found
@@ -701,36 +697,24 @@ async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::er
     let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "Ch@ng3m3Pl3@s3!!".to_string());
     let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
 
-    // Extract necessary values from token_value
-    let account = &token_value["account"];
-    let subject = account["id"].as_str().unwrap_or_default().to_string();
-    let organization_id = account["organization_id"]
-        .as_str()
-        .unwrap_or_default()
-        .to_string();
-    let account_id = account["account_id"]
-        .as_str()
-        .unwrap_or_default()
-        .to_string();
-
     // Set token expiration using JWT_EXPIRES_IN
     let expiration_ms = time_string_to_ms(&jwt_expires_in).unwrap_or(24 * 60 * 60 * 1000); // Default to 24h
     let expiration = Utc::now() + Duration::milliseconds(expiration_ms as i64);
     let now = Utc::now();
 
-    // Create claims
-    let claims = Claims {
-        sub: subject,
-        organization_id,
-        account_id,
-        exp: expiration.timestamp() as usize,
-        iat: now.timestamp() as usize,
-    };
+    // Create a mutable clone of the token_value to add exp and iat
+    let mut payload = token_value.clone();
 
-    // Encode the token
+    // Add exp and iat to the payload
+    if let Some(obj) = payload.as_object_mut() {
+        obj.insert("exp".to_string(), json!(expiration.timestamp() as usize));
+        obj.insert("iat".to_string(), json!(now.timestamp() as usize));
+    }
+
+    // Encode the token with the full payload
     let token = encode(
         &Header::new(Algorithm::HS256),
-        &claims,
+        &payload,
         &EncodingKey::from_secret(jwt_secret.as_bytes()),
     )?;
 

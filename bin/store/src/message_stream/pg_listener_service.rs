@@ -1,17 +1,14 @@
-use crate::db;
 use crate::message_stream::token_bucket::{Message, TokenBucket};
-use futures::future::poll_fn;
 use futures::stream;
 use futures::StreamExt; // Add this import for next() and for_each
 use futures::TryStreamExt; // Add this import for map_err
 use log::{error, info};
 use once_cell::sync::OnceCell;
 use std::sync::Arc;
-use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
-use tokio_postgres::{AsyncMessage, Client, Error, NoTls}; //
+use tokio_postgres::{Client, NoTls}; //
 
 static INSTANCE: OnceCell<Arc<PgListenerService>> = OnceCell::new();
 
@@ -205,11 +202,6 @@ impl PgListenerService {
             let result = client
                 .query("SELECT channel_name FROM postgres_channels", &[])
                 .await?;
-
-            println!(
-                "{:?}-----------------------------------------------",
-                result
-            );
 
             // Extract channel names from the result
             let mut channels = Vec::new();

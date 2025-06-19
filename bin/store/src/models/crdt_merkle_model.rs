@@ -2,7 +2,6 @@ use crate::schema::schema::crdt_merkles;
 use diesel::prelude::*;
 use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
 #[diesel(table_name = crdt_merkles)]

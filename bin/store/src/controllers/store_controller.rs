@@ -12,7 +12,6 @@ use crate::structs::structs::{
     RequestBody, UpsertRequestBody,
 };
 use crate::structs::structs::{Auth, GetByFilter};
-use crate::table_enum::generate_code;
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
@@ -635,7 +634,7 @@ pub async fn delete_record(
     )
     .await
     {
-        Ok(mut response) => {
+        Ok(response) => {
             // Parse the response as Value to modify it
             let mut response_value: serde_json::Value =
                 serde_json::from_str(&serde_json::to_string(&response).unwrap()).unwrap();
@@ -663,10 +662,10 @@ pub async fn delete_record(
 pub async fn get_by_filter(
     auth: HttpRequest,
     pool: web::Data<db::AsyncDbPool>,
-    path_params: web::Path<(String)>,
+    path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
-    let (table) = path_params.into_inner();
+    let table = path_params.into_inner();
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,

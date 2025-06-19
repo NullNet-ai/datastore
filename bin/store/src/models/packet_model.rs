@@ -1,7 +1,6 @@
 use diesel::prelude::*;
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     t == &T::default()

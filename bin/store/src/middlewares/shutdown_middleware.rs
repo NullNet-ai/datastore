@@ -5,7 +5,6 @@ use actix_web::http::StatusCode;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     http::header,
-    web::Bytes,
     Error, HttpResponse,
 };
 use futures::future::{ok, Ready};

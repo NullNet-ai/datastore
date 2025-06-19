@@ -5,7 +5,7 @@ use std::{
     sync::Arc,
     time::Instant,
 };
-use tokio::sync::{Mutex, Notify};
+use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
 pub struct BrokerService {

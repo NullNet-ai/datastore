@@ -1,6 +1,4 @@
-use crate::schema::verify::{field_exists_in_table, field_type_in_table};
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
-use actix_web::error::ErrorBadRequest;
 use chrono::Utc;
 use diesel::sql_types::Text;
 use diesel::AsExpression;
@@ -331,7 +329,7 @@ impl ConcatenateField {
 
                 // Build the concatenated SQL expression using the existing to_sql_expression method
                 let mut concatenated_field = field.to_sql_expression();
-                if (field.entity == table) {
+                if field.entity == table {
                     //remove joined_ prefix from concatenated_field
                     concatenated_field = concatenated_field.replace("joined_", "");
                 }

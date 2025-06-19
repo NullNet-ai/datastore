@@ -1,8 +1,6 @@
-use crate::db::DbPooledConnection;
 use crate::structs::structs::Clock;
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::sync::merkles::merkle_manager::MerkleManager;
-use crate::sync::merkles::merkle_service::MerkleService;
 use diesel_async::AsyncPgConnection;
 use hlc::Timestamp;
 use merkle::MerkleTree;

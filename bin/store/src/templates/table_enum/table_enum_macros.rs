@@ -38,7 +38,7 @@ macro_rules! generate_insert_record_match {
                 match $self {
                     $(
                         Table::$table => {
-                            let mut value: $model = serde_json::from_value($record)
+                            let value: $model = serde_json::from_value($record)
                                 .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 
                             // Set hypertable_timestamp if the model has a timestamp field
