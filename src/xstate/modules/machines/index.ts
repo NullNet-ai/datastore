@@ -37,3 +37,5 @@ export * from './pg_function/pg_function.machine';
 export * from './pg_listener_get/pg_listener_get.machine';
 
 export * from './pg_listener_delete/pg_listener_delete.machine';
+
+export * from './upsert/upsert.machine';

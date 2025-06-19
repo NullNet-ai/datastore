@@ -44,6 +44,12 @@ export class StoreController {
     public storeQuery: StoreQueryDriver,
     public storeMutation: StoreMutationDriver,
   ) {}
+
+  @Post('/upsert/:table')
+  async upsert(@Res() _res: Response, @Req() _req: Request) {
+    return this.storeMutation.upsert(_res, _req);
+  }
+
   @Post('/:table/count')
   async count(@Res() _res: Response, @Req() _req: Request) {
     return this.storeQuery.getCount(_res, _req);

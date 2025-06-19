@@ -132,7 +132,7 @@ export class CreateActorsImplementations {
             },
           });
         }
-        if (table_schema?.hypertable_timestamp) {
+        if (table_schema?.hypertable_timestamp && body.timestamp) {
           body.hypertable_timestamp = new Date(body.timestamp).toISOString();
         }
         body.timestamp = body?.timestamp

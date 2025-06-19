@@ -13,8 +13,19 @@ service StoreService {
     rpc BatchUpdate(BatchUpdateRequest) returns (Response);
     rpc BatchDelete(BatchDeleteRequest) returns (Response);
     rpc Login(LoginRequest) returns (LoginResponse);
+    rpc Upsert(UpsertRequest) returns (Response);
+}
+message UpsertRequest {
+    UpsertBody body = 1;
+    Params params = 2;
+    Query query = 3;
 }
 
+
+message UpsertBody {
+    string data = 1;
+    repeated string conflict_columns = 3;
+}
 message GetByIdRequest {
     Params params = 1;
     Query query = 2;

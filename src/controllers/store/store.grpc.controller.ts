@@ -105,7 +105,6 @@ export class GrpcController {
       const _res = new CustomResponse();
       data.body = {
         ...Utility.parseRequestBody(data.body.record),
-        entity_prefix: data.body.entity_prefix,
       };
       const _req = Utility.createRequestObject(data, metadata);
       await this.storeMutation.create(_res as any as Response, _req as Request);
@@ -208,6 +207,27 @@ export class GrpcController {
       });
     }
   }
+
+  @GrpcMethod('StoreService', 'Upsert')
+  async upsert(data, metadata: any): Promise<any> {
+    try {
+      const _res = new CustomResponse();
+      data.body.data = JSON.parse(data.body.data);
+      const _req = Utility.createRequestObject(data, metadata);
+      await this.storeMutation.upsert(_res as any as Response, _req as Request);
+      await _res.waitForResponse();
+      let response = _res.getBody();
+      response = Utility.processResponseObject(response);
+      return response;
+    } catch (error: any) {
+      // Handle unexpected server-side errors
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message,
+      });
+    }
+  }
+
 
   @GrpcMethod('StoreService', 'Login')
   async login(data, _metadata: any): Promise<any> {
