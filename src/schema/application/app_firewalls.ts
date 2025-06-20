@@ -1,4 +1,4 @@
-import { pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -12,7 +12,7 @@ export const table = pgTable(
   'app_firewalls',
   {
     ...system_fields,
-    id: uuid('id'), // Primary key ---
+    id: text('id'), // Primary key ---
     app_id: text('app_id').unique(),
     firewall: text('firewall'),
   },

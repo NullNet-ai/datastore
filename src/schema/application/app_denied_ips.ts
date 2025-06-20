@@ -1,4 +1,4 @@
-import { inet, pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import { inet, pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -12,7 +12,7 @@ export const table = pgTable(
   'app_denied_ips',
   {
     ...system_fields,
-    id: uuid('id'), // Primary key ---
+    id: text('id'), // Primary key ---
     app_id: text('app_id').unique(),
     ip: inet('ip'),
     deny_reasons: text('deny_reasons'),
