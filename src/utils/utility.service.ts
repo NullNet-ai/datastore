@@ -1948,7 +1948,6 @@ export class Utility {
         set: data,
       })
       .returning({ table_schema })
-      .prepare(`encrypted_insert_${table}`)
       .execute()
       .then(([{ table_schema }]) => table_schema);
   }
@@ -1989,9 +1988,7 @@ export class Utility {
           return acc;
         }, [])
         .join(',')}`;
-      const query = `PREPARE encrypted_update_raw_${table} AS UPDATE ${table} SET ${set_val} WHERE ${where.join(
-        '',
-      )}`;
+      const query = `UPDATE ${table} SET ${set_val} WHERE ${where.join('')}`;
       this.logger.debug(`Encrypting data: ${query}`);
       return db.execute(sql.raw(query)).then(() => {
         this.logger.debug('Encrypting data completed');
@@ -2007,7 +2004,6 @@ export class Utility {
       })
       .where(sql.raw(`${where.join(' ')}`))
       .returning(returning)
-      .prepare(`encrypted_update_${table}`)
       .execute()
       .then(([{ table_schema }]) => table_schema);
   }

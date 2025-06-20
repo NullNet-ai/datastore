@@ -32,7 +32,7 @@ export class UpdateActorsImplementations {
       let errors: { message: string; stack: string; status_code: number }[] =
         [];
       try {
-        const { context } = input;
+        const { context, event } = input;
         if (!context?.controller_args)
           return Promise.reject({
             payload: {
@@ -145,7 +145,7 @@ export class UpdateActorsImplementations {
           });
         }
 
-        body.updated_by = account_organization_id;
+        _body.updated_by = account_organization_id;
         const updated_data = Utility.updateParse({ schema, data: _body });
         const table_schema = local_schema[table];
         if (!table_schema) {
@@ -163,42 +163,25 @@ export class UpdateActorsImplementations {
         this.logger.debug(`Update request for ${table}: ${id}`);
 
         if (body.status) {
-          result = await Utility.encryptUpdate({
-            query: {
-              table_schema,
-            },
-            encrypted_fields: body.encrypted_fields,
-            table,
-            db: this.db,
-            data: {
-              ...updated_data,
-              previous_status: updated_data.status,
-            },
-            where: [`id = '${id}'`, 'AND', `tombstone = 0`],
-            returning: {
-              table_schema,
-            },
-            organization_id,
-          });
-          updated_data.previous_status = result?.previous_status;
-        } else {
-          result = await Utility.encryptUpdate({
-            query: {
-              table_schema,
-            },
-            encrypted_fields: body.encrypted_fields,
-            table,
-            db: this.db,
-            data: {
-              ...updated_data,
-            },
-            where: [`id = '${id}'`],
-            returning: {
-              table_schema,
-            },
-            organization_id,
-          });
+          const previous_data = event?.output?.payload?.data?.[0];
+          updated_data.previous_status = previous_data?.status;
         }
+        result = await Utility.encryptUpdate({
+          query: {
+            table_schema,
+          },
+          encrypted_fields: body.encrypted_fields,
+          table,
+          db: this.db,
+          data: {
+            ...updated_data,
+          },
+          where: [`id = '${id}'`, 'AND', `tombstone = 0`],
+          returning: {
+            table_schema,
+          },
+          organization_id,
+        });
 
         delete updated_data.id;
         updated_data.version = result?.version;
