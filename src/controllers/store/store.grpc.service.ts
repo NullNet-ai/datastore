@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { map } from 'bluebird';
 import * as local_schema from '../../schema';
 import { ulid } from 'ulid';
@@ -154,5 +154,42 @@ export class StoreGrpcService {
         data: ret_data,
       },
     });
+  }
+
+  async handleStandardAuth({
+                             cookie_token,
+                             authorization,
+                           }): Promise<boolean> {
+    if (!cookie_token && !authorization) {
+      throw new UnauthorizedException(
+        'Authorization is required. Please login to [POST]: /api/organizations/auth',
+      );
+    }
+    const _authorization = authorization ? authorization.split(' ')[1] : null;
+
+    const token = cookie_token ? cookie_token : _authorization;
+
+    if (cookie_token !== _authorization && !token) {
+      throw new UnauthorizedException(
+        'Invalid Authorization, Please login to [POST]: /api/organizations/auth.',
+      );
+    }
+
+    const session = await this.authService.verify(token).catch(() => null);
+
+    if (!session) {
+      throw new ForbiddenException(
+        `Invalid Authorization, Please login to [POST]: /api/organizations/auth.`,
+      );
+    }
+
+    if (session?.account?.is_root_account) {
+      throw new ForbiddenException(
+        `Invalid Authorization, using Root Account on a non-root request. Please login to [POST]: /api/organizations/auth.`,
+      );
+    }
+
+
+    return true;
   }
 }

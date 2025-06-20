@@ -48,6 +48,9 @@ import { PgFunctionImplementationModule } from '../../xstate/modules/implementat
 import { PgListenerGetImplementationModule } from '../../xstate/modules/implementations/pg_listener_get/pg_listener_get.implementation.module';
 import { PgListenerDeleteImplementationModule } from '../../xstate/modules/implementations/pg_listener_delete/pg_listener_delete.implementation.module';
 import { UpsertImplementationModule } from '../../xstate/modules/implementations/upsert/upsert.implementation.module';
+import {
+  OrganizationsModule,
+} from '@dna-platform/crdt-lww-postgres';
 
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
@@ -138,8 +141,6 @@ const shared_machine_imports = [
   PgListenerDeleteImplementationModule,
   //Backup
   // DatabaseBackupModule,
-
-  //Axon
 ];
 export const shared_imports = [
   XstateModule.register({
@@ -154,6 +155,7 @@ export const shared_imports = [
 ];
 @Module({
   imports: [
+    OrganizationsModule,
     ...shared_imports,
     MulterModule.registerAsync({
       useFactory: () => ({
