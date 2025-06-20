@@ -290,12 +290,12 @@ export class FindActorsImplementations {
         let group_by_entities: Array<string> = [];
         if (group_by?.fields?.length) {
           const { fields = [], has_count = false } = group_by;
-          const temp_pluck_object = {};
+          // const temp_pluck_object = {};
           // create the group by selections (including count and overall group count
           // and modify pluck objects accordingly
           // get the grouped fields to be used on groupBy
           group_by_selections = fields.reduce(
-            (acc, field, index) => {
+            (acc, field) => {
               let group_by_entity = table;
               const _field = field.split('.');
               let group_by_field = _field[0];
@@ -341,24 +341,24 @@ export class FindActorsImplementations {
                   message: `you can only group results by main valid fields. ['${group_field}'] is not a valid entity field, nor a concatenated field.`,
                 });
 
-              if (!temp_pluck_object?.[group_by_entity])
-                temp_pluck_object[group_by_entity] = ['id'];
+              // if (!temp_pluck_object?.[group_by_entity])
+              //   temp_pluck_object[group_by_entity] = ['id'];
 
-              if (!group_concatenated_field_exp)
-                temp_pluck_object[group_by_entity].push(group_by_field);
+              // if (!group_concatenated_field_exp)
+              //   temp_pluck_object[group_by_entity].push(group_by_field);
 
-              if (fields.length - 1 === index) {
-                pluck_object[group_by_entity] =
-                  temp_pluck_object[group_by_entity];
-                pluck_group_object[group_by_entity] = ['id'];
+              // if (fields.length - 1 === index) {
+              //   pluck_object[group_by_entity] =
+              //     temp_pluck_object[group_by_entity];
+              //   pluck_group_object[group_by_entity] = ['id'];
 
-                if (group_by_entity !== table) {
-                  pluck_object[table] = ['id'];
-                  parsed_concatenated_fields.expressions[table] = [];
-                  parsed_concatenated_fields.fields[table] = [];
-                  parsed_concatenated_fields.additional_fields[table] = [];
-                }
-              }
+              //   if (group_by_entity !== table) {
+              //     pluck_object[table] = ['id'];
+              //     parsed_concatenated_fields.expressions[table] = [];
+              //     parsed_concatenated_fields.fields[table] = [];
+              //     parsed_concatenated_fields.additional_fields[table] = [];
+              //   }
+              // }
               if (parsed_concatenated_fields.fields[group_by_entity]?.length) {
                 parsed_concatenated_fields.expressions[group_by_entity] = [];
                 parsed_concatenated_fields.fields[group_by_entity] = [];
@@ -471,38 +471,12 @@ export class FindActorsImplementations {
           //     message: `Grouping joint entity is not allowed. Please group it with ${table} main fields.`,
           //   });
 
-          // Modifying selections if results are being grouped
-          let count_selection = {};
-          if ((group_by_selections as Record<string, any>)?.count)
-            count_selection = {
-              count: (group_by_selections as Record<string, any>).count,
-              total_group_count: (group_by_selections as Record<string, any>)
-                .total_group_count,
-            };
-          const join_selections_with_group_by = {
-            ...Object.entries(group_by_selections).reduce(
-              (acc, [entity, fields]) => {
-                if (!Object.keys(fields as Record<string, any>).includes('id'))
-                  delete (join_selections as Record<string, any> | undefined)
-                    ?.id;
-                return {
-                  ...acc,
-                  ...count_selection,
-                  [entity]: {
-                    ...(fields as Record<string, any>),
-                    // ...join_selections,
-                  },
-                };
-              },
-              {},
-            ),
-          };
           _db = _db
             .select(
               Utility.decryptData(
                 {
                   ...(Object.keys(group_by_selections).length
-                    ? join_selections_with_group_by
+                    ? group_by_selections
                     : join_selections),
                 },
                 encrypted_fields,
@@ -822,23 +796,7 @@ export class FindActorsImplementations {
         })
         .reduce(
           (acc, name) => {
-            const concatenated_related_fields = _concatenate_fields.find(
-              (f) => (f.aliased_entity || pluralize(f.entity)) === name,
-            );
             let [item = {}] = cloned_item?.[name] ?? [];
-            // to add the concatenated fields to the item if it's not concatenated yet
-            // (most likely it's already concatenated, this is before handling the concatenated fields on the db)
-            if (concatenated_related_fields) {
-              item = {
-                ...item,
-                ...(!item[concatenated_related_fields.field_name] && {
-                  [concatenated_related_fields.field_name]:
-                    concatenated_related_fields.fields
-                      .map((field) => item?.[field] ?? '')
-                      .join(concatenated_related_fields?.separator ?? ''),
-                }),
-              };
-            }
 
             // this is group the fields indicated on the pluck_group_object
             item = {
