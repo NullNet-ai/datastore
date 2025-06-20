@@ -33,6 +33,7 @@ export class UpdateActionsImplementations {
           ]),
         ];
         _req.query.pluck = pluck_fields.join(',');
+        return [_res, _req, _file];
       },
     }),
   };
