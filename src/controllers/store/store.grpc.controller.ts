@@ -14,6 +14,7 @@ import {
   IBatchUpdateBody,
   IBatchUpdateMessage,
 } from '../../types/grpc_controller.types';
+import { OrganizationsService } from '@dna-platform/crdt-lww-postgres';
 
 @Controller()
 export class GrpcController {
@@ -23,6 +24,7 @@ export class GrpcController {
     private storeMutation: StoreMutationDriver,
     private storeService: StoreGrpcService,
     private authService: AuthService,
+    private organizationService: OrganizationsService
   ) {}
   @GrpcMethod('StoreService', 'GetById')
   async getById(data, metadata: any): Promise<{ message: string }> {
@@ -221,6 +223,41 @@ export class GrpcController {
       return response;
     } catch (error: any) {
       // Handle unexpected server-side errors
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: error.message,
+      });
+    }
+  }
+
+  @GrpcMethod('StoreService', 'Register')
+  async register(data, metadata: any): Promise<any> {
+    try {
+      // Assuming data.body contains the RegisterDto fields
+      const registerDto = data.body;
+      const is_request = data.is_request || false;
+      const cookie_token = metadata.get('cookie_token')[0];
+      const authorization = metadata.get('authorization')[0];
+
+      await this.storeService.handleStandardAuth({
+        cookie_token,
+        authorization,
+      });
+
+      // Call your registration logic (adjust as needed)
+      const result = await this.organizationService.register(registerDto, is_request);
+
+      // Return the result in the RegisterResponse shape
+      return {
+        organization_id: result.organization_id,
+        account_organization_id: result.account_organization_id,
+        account_id: result.account_id,
+        email: result.email,
+        contact_id: result.contact_id,
+        device_id: result.device_id,
+        device_code: result.device_code,
+      };
+    } catch (error: any) {
       throw new RpcException({
         code: status.INTERNAL,
         message: error.message,

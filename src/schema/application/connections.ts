@@ -17,6 +17,7 @@ import { table as devices } from './devices';
 
 const fields = 
   {
+    id: text('id'), // Primary key
     timestamp: timestamp('timestamp', { withTimezone: true }), // Connection Time
     interface_name: text('interface_name'), // Network Interface Name
 

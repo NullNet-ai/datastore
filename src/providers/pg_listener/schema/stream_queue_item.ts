@@ -1,7 +1,6 @@
 import {
   pgTable,
   primaryKey,
-  uuid,
   timestamp,
   jsonb,
   text,
@@ -15,7 +14,7 @@ const config = (table) => ({
 export const table = pgTable(
   'stream_queue_item',
   {
-    id: uuid('id'),
+    id: text('id'),
     queue_name: text('queue_name')
       .notNull()
       .references(() => stream_queue.name, { onDelete: 'cascade' }),
