@@ -1944,7 +1944,9 @@ export class Utility {
       .insert(query.table_schema)
       .values(data)
       .onConflictDoUpdate({
-        target: query.table_schema.id,
+        target: table_schema.hypertable_timestamp
+          ? [query.table_schema.id, query.table_schema.timestamp]
+          : query.table_schema.id,
         set: data,
       })
       .returning({ table_schema })
