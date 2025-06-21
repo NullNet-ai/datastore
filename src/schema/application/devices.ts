@@ -1,4 +1,4 @@
-import { pgTable, text, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, boolean} from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -14,7 +14,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id').primaryKey(),
-    device_uuid: text('device_uuid'),
+    device_uuid: text('device_uuid').unique(),
     is_traffic_monitoring_enabled: boolean('is_traffic_monitoring_enabled'),
     is_config_monitoring_enabled: boolean('is_config_monitoring_enabled'),
     is_telemetry_monitoring_enabled: boolean('is_telemetry_monitoring_enabled'),
