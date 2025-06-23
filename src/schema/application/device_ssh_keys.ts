@@ -19,7 +19,7 @@ const fields = {
 };
 
 const config = (table) => ({
-  pk: primaryKey({ columns: [table.id, table.timestamp] }),
+  pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('device_ssh_keys', table),
   ...Object.keys(fields).reduce((acc, field) => {
     const index_name = `device_ssh_keys_${field}_idx`;
