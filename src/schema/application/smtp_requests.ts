@@ -5,7 +5,7 @@ import {
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { primaryKey } from 'drizzle-orm/pg-core';
 const config = (table) => ({
-  pk: primaryKey({ columns: [table.id, table.timestamp] }),
+  pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('smtp_requests', table),
 });
 export const table = pgTable(
