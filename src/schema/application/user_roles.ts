@@ -1,4 +1,4 @@
-import { index, pgTable, text } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -9,6 +9,8 @@ const filename = path.basename(__filename).replace(fileRegex, '');
 const fields = {
   role: text(),
   entity: text(),
+  timestamp: timestamp('timestamp', { withTimezone: true }),
+
 };
 
 export const table = pgTable(

@@ -3,7 +3,7 @@ import {
   pgTable,
   text,
   primaryKey,
-  inet,
+  inet, timestamp,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -25,6 +25,7 @@ export const table = pgTable(
       () => device_configurations.id as AnyPgColumn,
     ),
     name: text('name'),
+    timestamp: timestamp('timestamp', { withTimezone: true }),
     device: text('device'),
     address: inet('address'), // unused
 

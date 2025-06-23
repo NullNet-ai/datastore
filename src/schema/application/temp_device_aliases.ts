@@ -2,7 +2,7 @@ import {
   AnyPgColumn,
   pgTable,
   text,
-  primaryKey,
+  primaryKey, timestamp,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -20,6 +20,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id'),
+    timestamp: timestamp('timestamp', { withTimezone: true }),
     device_configuration_id: text('device_configuration_id').references(
       () => device_configurations.id as AnyPgColumn,
     ),

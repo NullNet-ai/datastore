@@ -1,4 +1,4 @@
-import { AnyPgColumn, boolean, inet, pgTable, text } from 'drizzle-orm/pg-core';
+import { AnyPgColumn, boolean, inet, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -15,6 +15,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id').primaryKey(),
     model: text('model'),
+    timestamp: timestamp('timestamp', { withTimezone: true }),
     address_id: text('address_id').references(
       () => addresses.id as AnyPgColumn,
     ),

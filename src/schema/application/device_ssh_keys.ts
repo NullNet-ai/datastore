@@ -3,7 +3,7 @@ import {
   text,
   primaryKey,
   AnyPgColumn,
-  index,
+  index, timestamp,
 } from 'drizzle-orm/pg-core';
 import {
   system_fields,
@@ -35,6 +35,7 @@ export const table = pgTable(
   {
     ...system_fields,
     ...fields,
+    timestamp: timestamp('timestamp', { withTimezone: true }),
     id: text('id'),
   },
   config,

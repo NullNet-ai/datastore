@@ -3,7 +3,7 @@ import {
   pgTable,
   text,
   primaryKey,
-  index,
+  index, timestamp,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -21,6 +21,7 @@ const fields = {
   name: text('name'),
   value: text('value'),
   description: text('description'),
+  timestamp: timestamp('timestamp', { withTimezone: true }),
   device_alias_status: text('device_alias_status'),
 }
 

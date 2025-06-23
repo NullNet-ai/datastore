@@ -1,4 +1,4 @@
-import { pgTable, text } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -12,6 +12,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text("id").primaryKey(),
+    timestamp: timestamp('timestamp', { withTimezone: true }),
     resolution_type: text("resolution_type"),
   },
   config,

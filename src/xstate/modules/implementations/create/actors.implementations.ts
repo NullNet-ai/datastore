@@ -138,8 +138,8 @@ export class CreateActorsImplementations {
           body.timestamp = body?.timestamp ? new Date(body?.timestamp) : new Date();
         } else {
           body.timestamp = body?.timestamp
-            ? new Date(body?.timestamp).toISOString()
-            : new Date().toISOString();
+            ? new Date(body?.timestamp)
+            : new Date();
         }
 
         if (table_schema?.hypertable_timestamp && body.timestamp) {
@@ -212,6 +212,7 @@ export class CreateActorsImplementations {
           undefined as any,
           body,
         );
+        console.log(_body);
 
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);

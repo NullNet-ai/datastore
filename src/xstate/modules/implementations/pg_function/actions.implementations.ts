@@ -27,7 +27,7 @@ export class PgFunctionActionsImplementations {
       controller_args: ({ context }) => {
         const [_res, _req, _file] = context.controller_args;
         _req.params.table = 'postgres_channels';
-        _req.body['timestamp'] = new Date().toISOString();
+        _req.body['timestamp'] = new Date();
         delete _req.body['table_name'];
         return [_res, _req, _file];
       },

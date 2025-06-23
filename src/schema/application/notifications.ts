@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, integer, pgTable, text } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -11,6 +11,7 @@ const fields = {
   title: text(),
   description: text(),
   event_timestamp: text(),
+  timestamp: timestamp('timestamp', { withTimezone: true }),
   link: text().default(''),
   icon: text().default(''),
   source: text(),

@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, pgTable, text } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -19,6 +19,7 @@ const fields = {
   columns: jsonb("columns").default([]),
   groups: jsonb("groups").default([]),
   sorts: jsonb("sorts").default([]),
+  timestamp: timestamp('timestamp', { withTimezone: true }),
   default_sorts:jsonb("default_sorts").default([]),
   advance_filters: jsonb("advance_filters").default([]),
   group_advance_filters: jsonb("group_advance_filters").default([]),

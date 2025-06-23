@@ -4,7 +4,7 @@ import {
   text,
   primaryKey,
   integer,
-  inet,
+  inet, timestamp,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -26,6 +26,7 @@ export const table = pgTable(
       () => device_interfaces.id as AnyPgColumn,
     ),
     address: inet('address'),
+    timestamp: timestamp('timestamp', { withTimezone: true }),
     version: integer('version'),
   },
   config,
