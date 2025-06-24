@@ -194,7 +194,6 @@ export class Utility {
             created_time: formattedTime,
             updated_date: formattedDate,
             updated_time: formattedTime,
-            timestamp: date.toISOString(),
           }
         : {
             updated_date: formattedDate,
@@ -1393,7 +1392,6 @@ export class Utility {
       if (filter.field && filter.field.toLowerCase().includes('timestamp')) {
         if (typeof filter.values === 'string')
           filter.values = JSON.parse(filter.values);
-        filter.values = filter?.values?.map((val) => new Date(val));
       }
 
       if (filter.fields?.length && filter.field) {

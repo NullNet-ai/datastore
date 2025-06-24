@@ -209,7 +209,7 @@ export class InitializerService {
         const system_fields = {
           tombstone: 0,
           status: 'Active',
-          timestamp: date.toISOString(),
+          timestamp: date,
           created_date: formatted_date,
           created_time: formatted_time,
           updated_date: formatted_date,
