@@ -34,6 +34,7 @@ export class CreateActorsImplementations {
       let metadata: Record<string, any> = [];
       let errors: { message: string; stack: string; status_code: number }[] =
         [];
+      let error_table;
       try {
         const { context } = input;
         if (!context?.controller_args)
@@ -59,6 +60,7 @@ export class CreateActorsImplementations {
         const { params, body, query, headers } = _req;
         const { host, cookie } = headers;
         const { table } = params;
+        error_table = table;
         const { pluck = 'id', p, rp } = query;
         if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
@@ -248,7 +250,7 @@ export class CreateActorsImplementations {
         if (error.status !== 400 && error.status < 500) throw error;
         throw new BadRequestException({
           success: false,
-          message: `There was an error while creating the new record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
+          message: `There was an error while creating the new record in table ${error_table}. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
           count: 0,
           data: [],
           metadata,
