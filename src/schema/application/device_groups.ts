@@ -15,6 +15,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id').primaryKey(),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     device_id: text('device_id').references(() => devices.id as AnyPgColumn),
     device_group_setting_id: text('device_group_setting_id').references(
       () => device_group_settings.id as AnyPgColumn,

@@ -40,6 +40,7 @@ export const table = pgTable(
   {
     ...system_fields,
     ...fields,
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     id: text('id'),
   },
   config,

@@ -12,6 +12,7 @@ const fields = {
   event: text('event'),
   content: text('content'),
   subject: text('subject'),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
 };
 
 export const table = pgTable(

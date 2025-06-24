@@ -20,6 +20,7 @@ const fields = {
   ),
   name: text('name'),
   device: text('device'),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
 }
 
 const config = (table) => ({

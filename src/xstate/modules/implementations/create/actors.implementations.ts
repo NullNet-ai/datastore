@@ -206,6 +206,7 @@ export class CreateActorsImplementations {
           undefined as any,
           body,
         );
+        console.log(_body);
 
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);

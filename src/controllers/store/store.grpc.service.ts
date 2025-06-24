@@ -156,10 +156,10 @@ export class StoreGrpcService {
     });
   }
 
-  async handleStandardAuth({
-                             cookie_token,
-                             authorization,
-                           }): Promise<boolean> {
+  async handleStandardAuth(
+    { cookie_token,
+      authorization,
+    }): Promise<boolean> {
     if (!cookie_token && !authorization) {
       throw new UnauthorizedException(
         'Authorization is required. Please login to [POST]: /api/organizations/auth',

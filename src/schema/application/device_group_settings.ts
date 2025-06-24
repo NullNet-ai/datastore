@@ -13,6 +13,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id').primaryKey(),
     name: text('name'),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
   },
   config,
 );

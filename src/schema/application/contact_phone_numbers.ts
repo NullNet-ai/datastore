@@ -15,6 +15,7 @@ export const table = pgTable(
     contact_id: text('contact_id').references(
       () => (contacts as Record<string, any>).id,
     ),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     raw_phone_number: text('raw_phone_number'),
     iso_code: text('iso_code'),
     country_code: text('country_code'),

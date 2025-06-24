@@ -10,6 +10,7 @@ const filename = path.basename(__filename).replace(fileRegex, '');
 
 const fields = {
   location_name : text(),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
   address_id : text().references(
     () => (addresses as Record<string, any>).id,
   ),

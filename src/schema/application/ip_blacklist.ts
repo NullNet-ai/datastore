@@ -14,6 +14,8 @@ export const table = pgTable(
     ...system_fields,
     id: text('id'), // Primary key
     ip: inet('ip'),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
+
   },
   config,
 );

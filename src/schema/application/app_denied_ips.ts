@@ -14,6 +14,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id'), // Primary key ---
     app_id: text('app_id').unique(),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     ip: inet('ip'),
     deny_reasons: text('deny_reasons'),
   },

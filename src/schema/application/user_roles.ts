@@ -9,6 +9,8 @@ const filename = path.basename(__filename).replace(fileRegex, '');
 const fields = {
   role: text(),
   entity: text(),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
+
 };
 
 export const table = pgTable(

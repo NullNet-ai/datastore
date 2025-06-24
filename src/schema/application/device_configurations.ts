@@ -28,6 +28,7 @@ export const table = pgTable(
     digest: text('digest'),
     hostname: text('hostname'),
     raw_content: text('raw_content'),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     config_version: integer('config_version'),
   },
   config,

@@ -11,6 +11,7 @@ const fields = {
   title: text(),
   description: text(),
   event_timestamp: text(),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
   link: text().default(''),
   icon: text().default(''),
   source: text(),

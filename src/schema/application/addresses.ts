@@ -12,6 +12,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id').primaryKey(),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     address: text('address'),
     address_line_one: text('address_line_one'),
     address_line_two: text('address_line_two'),

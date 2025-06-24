@@ -13,6 +13,7 @@ const fields = {
   ),
   expiration_date: text(),
   expiration_time: text(),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
   account_organization_id: text('account_organization_id').references(
     () => (account_organizations as Record<string, any>).id,
   ),
