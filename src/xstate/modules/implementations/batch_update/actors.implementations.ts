@@ -58,7 +58,7 @@ export class BatchUpdateActorsImplementations {
       updates = {
         ...updates,
         id: '56ab2a2c-b498-43e0-884f-a61beb93e56e',
-        timestamp: table_schema.hypertable_timestamp ? new Date() : new Date().toISOString(),
+        timestamp: new Date(),
         updated_by: account_organization_id,
       };
       if (updates.tombstone && updates.tombstone === 1) {
