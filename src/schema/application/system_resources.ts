@@ -1,4 +1,4 @@
-import { bigint, integer, pgTable, text, timestamp, doublePrecision } from 'drizzle-orm/pg-core';
+import { bigint, integer, pgTable, text, doublePrecision } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -13,7 +13,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id'), // Primary key
-    timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
+    // timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
 
     // CPU
     num_cpus: integer('num_cpus'),
