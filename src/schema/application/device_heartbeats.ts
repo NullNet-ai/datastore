@@ -21,7 +21,6 @@ const filename = path.basename(__filename).replace(fileRegex, '');
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id, table.timestamp] }),
   ...getConfigDefaults.defaultIndexes('device_heartbeats', table),
-  // uniq_id: unique().on(table.id, table.timestamp),
 });
 
 export const table = pgTable(

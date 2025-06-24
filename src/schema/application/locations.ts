@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, pgTable, text } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -10,7 +10,7 @@ const filename = path.basename(__filename).replace(fileRegex, '');
 
 const fields = {
   location_name : text(),
-  timestamp: timestamp('timestamp', { withTimezone: true }),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
   address_id : text().references(
     () => (addresses as Record<string, any>).id,
   ),

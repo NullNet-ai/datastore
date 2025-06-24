@@ -3,7 +3,7 @@ import {
   pgTable,
   text,
   primaryKey,
-  integer, timestamp,
+  integer,
 } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
@@ -28,7 +28,7 @@ export const table = pgTable(
     digest: text('digest'),
     hostname: text('hostname'),
     raw_content: text('raw_content'),
-    timestamp: timestamp('timestamp', { withTimezone: true }),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     config_version: integer('config_version'),
   },
   config,

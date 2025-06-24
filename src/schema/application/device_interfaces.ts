@@ -4,7 +4,7 @@ import {
   text,
   primaryKey,
   index,
-  inet, timestamp,
+  inet,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -20,7 +20,7 @@ const fields = {
   ),
   name: text('name'),
   device: text('device'),
-  timestamp: timestamp('timestamp', { withTimezone: true }),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
 }
 
 const config = (table) => ({

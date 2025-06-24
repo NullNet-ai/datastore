@@ -1,4 +1,4 @@
-import { inet, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { inet, pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -14,7 +14,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id'), // Primary key
     ip: inet('ip'),
-    timestamp: timestamp('timestamp', { withTimezone: true }),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
 
   },
   config,

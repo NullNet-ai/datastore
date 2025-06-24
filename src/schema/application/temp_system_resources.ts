@@ -7,7 +7,6 @@ import { primaryKey } from 'drizzle-orm/pg-core';
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('temp_system_resources', table),
-  // uniq_id: unique().on(table.id, table.timestamp),
 });
 export const table = pgTable(
   'temp_system_resources',

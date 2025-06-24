@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -14,7 +14,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id'), // Primary key ---
     app_id: text('app_id').unique(),
-    timestamp: timestamp('timestamp', { withTimezone: true }),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     firewall: text('firewall'),
   },
   config,

@@ -4,7 +4,7 @@ import {
   text,
   primaryKey,
   boolean,
-  integer, timestamp,
+  integer,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -39,7 +39,7 @@ export const table = pgTable(
     destination_addr: text('destination_addr'),
     destination_type: text('destination_type'),
     destination_inversed: boolean('destination_inversed'),
-    timestamp: timestamp('timestamp', { withTimezone: true }),
+    // timestamp: timestamp('timestamp', { withTimezone: true }),
     
 
     description: text('description'),

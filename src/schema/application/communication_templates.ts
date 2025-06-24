@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, pgTable, text } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -12,7 +12,7 @@ const fields = {
   event: text('event'),
   content: text('content'),
   subject: text('subject'),
-  timestamp: timestamp('timestamp', { withTimezone: true }),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
 };
 
 export const table = pgTable(

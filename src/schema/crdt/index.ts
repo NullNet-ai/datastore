@@ -11,7 +11,7 @@ export {
   transactions,
   counters,
   organization_accounts,
-  devices,
+  // devices,
   // system application
   addresses,
   contact_emails,

@@ -5,7 +5,7 @@ import {
   primaryKey,
   boolean,
   integer,
-  index, timestamp,
+  index,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -35,7 +35,7 @@ const fields = {
   device_rule_status: text('device_rule_status'),
   interface: text('interface'),
   order: integer('order'),
-  timestamp: timestamp('timestamp', { withTimezone: true }),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
 
 }
 

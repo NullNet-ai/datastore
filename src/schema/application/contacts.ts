@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { index, pgTable, text } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -15,7 +15,7 @@ const fields = {
   date_of_birth: text('date_of_birth'),
   address_id: text('address_id').references(() => (addresses as any).id),
   account_id: text('account_id').references(() => (accounts as any).id),
-  timestamp: timestamp('timestamp', { withTimezone: true }),
+  // timestamp: timestamp('timestamp', { withTimezone: true }),
 };
 
 export const table = pgTable(

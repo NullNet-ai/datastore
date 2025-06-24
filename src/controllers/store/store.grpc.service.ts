@@ -165,7 +165,7 @@ export class StoreGrpcService {
         'Authorization is required. Please login to [POST]: /api/organizations/auth',
       );
     }
-    const _authorization = authorization ? authorization.split(' ')[1] : null;
+    const _authorization = authorization;
 
     const token = cookie_token ? cookie_token : _authorization;
 
@@ -183,6 +183,7 @@ export class StoreGrpcService {
       );
     }
 
+    console.log(session);
     if (session?.account?.is_root_account) {
       throw new ForbiddenException(
         `Invalid Authorization, using Root Account on a non-root request. Please login to [POST]: /api/organizations/auth.`,
