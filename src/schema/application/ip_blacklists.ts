@@ -6,10 +6,10 @@ import {
 import { primaryKey } from 'drizzle-orm/pg-core';
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
-  ...getConfigDefaults.defaultIndexes('temp_ip_blacklist', table),
+  ...getConfigDefaults.defaultIndexes('ip_blacklists', table),
 });
 export const table = pgTable(
-  'temp_ip_blacklist',
+  'ip_blacklists',
   {
     ...system_fields,
     id: text('id'), // Primary key
