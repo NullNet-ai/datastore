@@ -9,7 +9,6 @@ import { sql } from 'drizzle-orm';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
-  // uniq_id: unique().on(table.id, table.timestamp),
 });
 
 export const table = pgTable(

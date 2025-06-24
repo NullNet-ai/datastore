@@ -132,12 +132,13 @@ export class CreateActorsImplementations {
             },
           });
         }
-        if (table_schema?.hypertable_timestamp && body.timestamp) {
-          body.hypertable_timestamp = new Date(body.timestamp).toISOString();
+        if (table_schema?.hypertable_timestamp) {
+          body.timestamp = body?.timestamp ? new Date(body?.timestamp) : new Date();
+        } else {
+          body.timestamp = body?.timestamp
+            ? new Date(body?.timestamp).toISOString()
+            : new Date().toISOString();
         }
-        body.timestamp = body?.timestamp
-          ? new Date(body?.timestamp)
-          : new Date().toISOString();
         body.id = body.id === undefined ? ulid() : body.id;
 
         //get first three characters of the table name as prefix

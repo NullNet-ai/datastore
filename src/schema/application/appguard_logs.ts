@@ -5,9 +5,8 @@ import {
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { primaryKey } from 'drizzle-orm/pg-core';
 const config = (table) => ({
-  pk: primaryKey({ columns: [table.id, table.timestamp] }),
+  pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('appguard_logs', table),
-  // uniq_id: unique().on(table.id, table.timestamp),
 });
 export const table = pgTable(
   'appguard_logs',

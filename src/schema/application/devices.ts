@@ -24,7 +24,7 @@ export const table = pgTable(
     device_model: text("device_model"),
     device_os: text("device_os"),
 
-    is_device_online: boolean("is_device_online")
+    is_device_online: boolean("is_device_online"),
     // address_id: text('address_id').references(
     //   () => addresses.id as AnyPgColumn,
     // ),
