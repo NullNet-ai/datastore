@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -13,7 +13,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id'), // Primary key ---
-    timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
+    // timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
     ip: text('ip').unique(),
     country: text('country'),
     asn: text('asn'),

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -13,7 +13,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id'), // Primary key
-    timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
+    // timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
     level: text('level'),
     message: text('message'),
 
