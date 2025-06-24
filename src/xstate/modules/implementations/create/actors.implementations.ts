@@ -143,12 +143,13 @@ export class CreateActorsImplementations {
           //! TODO: refactor this, incrementing counter should be parallel to inserting record
           let exist = null;
           if (body.id) {
-            exist = await this.db
+            const result = await this.db
               .select({ id: local_schema[table].id })
               .from(local_schema[table])
               .where(eq(local_schema[table].id, body.id))
               .prepare(`existing_record_${table}`)
-              .execute()[0];
+              .execute();
+            exist = result?.[0];
           }
           if (!exist) {
             const counter_schema = local_schema['counters'];
