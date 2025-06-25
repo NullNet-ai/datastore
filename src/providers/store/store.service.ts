@@ -65,6 +65,10 @@ export class StoreMutationDriver {
   @Machine('upsert')
   async upsert(_res: Response, _req: Request) {}
 
+  @Machine('registerDevice')
+  async registerDevice(_res: Response, _req: Request) {}
+
+
   @Machine('uploads')
   async uploads(
     _res: Response,

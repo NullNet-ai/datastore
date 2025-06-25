@@ -1,3 +1,4 @@
+
 export * from './get/get.machine';
 
 export * from './find/find.machine';
@@ -39,3 +40,6 @@ export * from './pg_listener_get/pg_listener_get.machine';
 export * from './pg_listener_delete/pg_listener_delete.machine';
 
 export * from './upsert/upsert.machine';
+
+export * from './register_device/register_device.machine';
+  
