@@ -51,6 +51,9 @@ import { UpsertImplementationModule } from '../../xstate/modules/implementations
 import {
   OrganizationsModule,
 } from '@dna-platform/crdt-lww-postgres';
+import {
+  RegisterDeviceImplementationModule
+} from '../../xstate/modules/implementations/register_device/register_device.implementation.module';
 
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
 
@@ -66,6 +69,7 @@ const machines_providers = machine_providers([
   machines.BatchUpdateMachine,
   machines.UpsertMachine,
   machines.SearchSuggestionsMachine,
+  machines.RegisterDeviceMachine,
 
   // Hypertable
   machines.CreateHypertablesMachine,
@@ -117,6 +121,7 @@ const shared_machine_imports = [
   BatchInsertImplementationModule,
   BatchUpdateImplementationModule,
   UpsertImplementationModule,
+  RegisterDeviceImplementationModule,
   SearchSuggestionsImplementationModule,
 
   //Hypertable

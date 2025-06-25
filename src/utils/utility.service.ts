@@ -2591,6 +2591,44 @@ export class Utility {
     );
   }
 
+  public static async generateCode(db, entity: string) {
+    const counter_schema = schema['counters'];
+    return db
+      .insert(counter_schema)
+      .values({ entity, counter: 1 })
+      .onConflictDoUpdate({
+        target: [counter_schema.entity],
+        set: {
+          counter: sql`${counter_schema.counter} + 1`,
+        },
+      })
+      .returning({
+        prefix: counter_schema.prefix,
+        default_code: counter_schema.default_code,
+        counter: counter_schema.counter,
+        digits_number: counter_schema.digits_number,
+      })
+      .then(([entity_code]) => {
+        const { prefix, default_code, counter } = entity_code as Record<
+          string,
+          any
+        >;
+        let { digits_number } = entity_code as Record<string, any>;
+        const getDigit = (num: number) => {
+          return num.toString().length;
+        };
+
+        if (digits_number) {
+          digits_number = digits_number - getDigit(counter || 0);
+          const zero_digits =
+            digits_number > 0 ? '0'.repeat(digits_number) : '';
+          return prefix + (zero_digits + counter);
+        }
+        return prefix + (default_code + counter);
+      })
+      .catch(() => null);
+  }
+
   public static replacePlaceholders(query, values) {
     values.forEach((value, index) => {
       const placeholder = `\\$${index + 1}`;

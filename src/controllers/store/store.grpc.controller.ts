@@ -14,7 +14,6 @@ import {
   IBatchUpdateBody,
   IBatchUpdateMessage,
 } from '../../types/grpc_controller.types';
-import { OrganizationsService } from '@dna-platform/crdt-lww-postgres';
 
 @Controller()
 export class GrpcController {
@@ -24,7 +23,6 @@ export class GrpcController {
     private storeMutation: StoreMutationDriver,
     private storeService: StoreGrpcService,
     private authService: AuthService,
-    private organizationService: OrganizationsService
   ) {}
   @GrpcMethod('StoreService', 'GetById')
   async getById(data, metadata: any): Promise<{ message: string }> {
@@ -230,33 +228,21 @@ export class GrpcController {
     }
   }
 
-  @GrpcMethod('StoreService', 'Register')
-  async register(data, metadata: any): Promise<any> {
+  @GrpcMethod('StoreService', 'RegisterDevice')
+  async registerDevice(data, metadata: any): Promise<any> {
     try {
       // Assuming data.body contains the RegisterDto fields
-      const registerDto = data.body;
-      const is_request = data.is_request || false;
-      const cookie_token = metadata.get('cookie_token')[0];
-      const authorization = metadata.get('authorization')[0];
-
-      await this.storeService.handleStandardAuth({
-        cookie_token,
-        authorization,
-      });
+      data.body = data.body || {};
+      data.body.device=data.device;
+      const _res = new CustomResponse();
+      const _req = Utility.createRequestObject(data, metadata);
 
       // Call your registration logic (adjust as needed)
-      const result = await this.organizationService.register(registerDto, is_request);
-
-      // Return the result in the RegisterResponse shape
-      return {
-        organization_id: result.organization_id,
-        account_organization_id: result.account_organization_id,
-        account_id: result.account_id,
-        email: result.email,
-        contact_id: result.contact_id,
-        device_id: result.device_id,
-        device_code: result.device_code,
-      };
+      await this.storeMutation.registerDevice(_res as any as Response, _req as Request);
+      await _res.waitForResponse();
+      let response = _res.getBody();
+      response = Utility.processResponseObject(response);
+      return response;
     } catch (error: any) {
       throw new RpcException({
         code: status.INTERNAL,
@@ -271,7 +257,6 @@ export class GrpcController {
     try {
       const { account_id, account_secret } = data.body.data;
       const {is_root= 'false', t=''}=data.params;
-
       let result;
 
       if (is_root === 'true') {
