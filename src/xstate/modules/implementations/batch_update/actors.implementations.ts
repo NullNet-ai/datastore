@@ -50,7 +50,7 @@ export class BatchUpdateActorsImplementations {
         responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
-      const { table } = params;
+      const { table, type } = params;
       let { advance_filters, updates } = body;
       const table_schema = local_schema[table];
 
@@ -58,7 +58,7 @@ export class BatchUpdateActorsImplementations {
       updates = {
         ...updates,
         id: '56ab2a2c-b498-43e0-884f-a61beb93e56e',
-        timestamp: table_schema.hypertable_timestamp ? new Date() : new Date().toISOString(),
+        timestamp: new Date(),
         updated_by: account_organization_id,
       };
       if (updates.tombstone && updates.tombstone === 1) {
@@ -87,6 +87,7 @@ export class BatchUpdateActorsImplementations {
         advance_filters,
         organization_id,
         client_db: this.db,
+        request_type: type
       });
       const result = await _db
         .returning({

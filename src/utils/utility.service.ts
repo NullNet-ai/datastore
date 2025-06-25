@@ -1394,7 +1394,6 @@ export class Utility {
       if (filter.field && filter.field.toLowerCase().includes('timestamp')) {
         if (typeof filter.values === 'string')
           filter.values = JSON.parse(filter.values);
-        filter.values = filter?.values?.map((val) => new Date(val));
       }
 
       if (filter.fields?.length && filter.field) {
