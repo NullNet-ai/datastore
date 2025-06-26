@@ -13,6 +13,7 @@ import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false' } = process.env;
 @Injectable()
 export class UpdateActorsImplementations {
+  private table_exceptions = ['organizations'];
   private db;
   constructor(
     private readonly syncService: SyncService,
@@ -87,7 +88,11 @@ export class UpdateActorsImplementations {
             });
           }
         }
-        if (!body?.organization_id && !is_root_account) {
+        if (
+          !body?.organization_id &&
+          !is_root_account &&
+          !this.table_exceptions.includes(table)
+        ) {
           body.organization_id = organization_id;
         }
 
