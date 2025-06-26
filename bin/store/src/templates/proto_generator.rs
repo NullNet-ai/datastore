@@ -243,7 +243,6 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str(&format!("  {} {} = 1;\n", pascal_name, snake_name));
         proto.push_str("  CreateParams params = 2;\n");
         proto.push_str("  CreateQuery query = 3;\n");
-        proto.push_str("  string entity_prefix = 4; // Entity prefix code\n");
         proto.push_str("}\n\n");
 
         // Create response
@@ -342,9 +341,8 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str("  BatchInsertParams params = 1;\n");
         proto.push_str("  BatchInsertQuery query = 2;\n");
         proto.push_str("  message BatchBody {\n");
-        proto.push_str("    string entity_prefix = 1;\n");
         proto.push_str(&format!(
-            "    repeated {} {} = 2;\n",
+            "    repeated {} {} = 1;\n",
             pascal_name, snake_name
         ));
         proto.push_str("  }\n");
@@ -368,7 +366,6 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str("  message UpsertBody {\n");
         proto.push_str("    repeated string conflict_columns = 1;\n");
         proto.push_str(&format!("    {} data = 2;\n", pascal_name));
-        proto.push_str("    string entity_prefix = 3;\n");
         proto.push_str("  }\n");
         proto.push_str("  UpsertBody body = 3;\n");
         proto.push_str("}\n\n");

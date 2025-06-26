@@ -1,6 +1,6 @@
 use actix::Handler;
 use actix::{Actor, ActorContext, Addr, AsyncContext, Message, StreamHandler};
-use actix_web::{Error, HttpRequest, HttpResponse, web};
+use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

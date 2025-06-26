@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha256};
 pub mod auth_service;
+pub mod structs;
 
 pub struct AuthService;
 

@@ -12,20 +12,10 @@ use std::env;
 use std::future::Future;
 use std::pin::Pin;
 use tonic::{Request, Status};
+use crate::auth::structs::Claims;
+use crate::auth::auth_service::verify;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Account {
-    pub organization_id: String,
-    account_id: String,
-    organization_account_id: String,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    pub account: Account,
-    exp: usize,
-    iat: usize,
-}
 
 // Authentication middleware struct
 pub struct Authentication;
@@ -66,53 +56,87 @@ where
     forward_ready!(service);
 
     fn call(&self, auth: ServiceRequest) -> Self::Future {
-        // Extract the token from the Authorization header
-        let auth_header = auth
-            .headers()
-            .get(header::AUTHORIZATION)
-            .and_then(|h| h.to_str().ok());
+    // Extract the token from the Authorization header
+    let auth_header = auth
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|h| h.to_str().ok());
 
-        let token = extract_token(auth_header);
+    let token = extract_token(auth_header);
+    
+    // Check if this is a root request
+    let is_root_request = auth.path().contains("/root/");
 
-        match token {
-            Some(t) => match validate_token(&t) {
-                Ok(claims) => {
-                    let auth_data = Auth {
-                        organization_id: claims.account.organization_id.clone(),
-                        responsible_account: claims.account.organization_account_id.clone(),
+    match token {
+        Some(t) => match verify(&t) {
+            Ok(claims) => {
+                // Check if this is a root request but the account is not a root account
+                if is_root_request && !claims.account.is_root_account {
+                    let error_response = ApiResponse {
+                        success: false,
+                        message: "Access denied: Root access required".to_string(),
+                        count: 0,
+                        data: vec![],
                     };
 
-                    // Store the Auth object in request extensions
-                    auth.extensions_mut().insert(auth_data);
-
-                    let fut = self.service.call(auth);
-                    Box::pin(async move {
-                        let res = fut.await?;
-                        Ok(res)
-                    })
-                }
-                Err(_) => {
-                    let error_response = serde_json::json!({
-                        "success": false,
-                        "message": "Token verification failed: Invalid or expired token"
-                    });
-
-                    Box::pin(async move {
-                        let json_error = actix_web::HttpResponse::Unauthorized()
+                    return Box::pin(async move {
+                        let json_error = actix_web::HttpResponse::Forbidden()
                             .content_type("application/json")
                             .json(error_response);
-                        Err(actix_web::error::InternalError::from_response(
-                            "Unauthorized",
-                            json_error,
+                        Err(
+                            actix_web::error::InternalError::from_response("Forbidden", json_error)
+                                .into(),
                         )
-                        .into())
-                    })
+                    });
                 }
-            },
-            None => {
+                
+                // Check if this is not a root request but the account is a root account
+                if !is_root_request && claims.account.is_root_account {
+                    let error_response = ApiResponse {
+                        success: false,
+                        message: "Invalid Authorization: Using Root Account on a non-root request".to_string(),
+                        count: 0,
+                        data: vec![],
+                    };
+
+                    return Box::pin(async move {
+                        let json_error = actix_web::HttpResponse::Forbidden()
+                            .content_type("application/json")
+                            .json(error_response);
+                        Err(
+                            actix_web::error::InternalError::from_response("Forbidden", json_error)
+                                .into(),
+                        )
+                    });
+                }
+
+                 let auth_data = Auth {
+                    organization_id: claims.account.organization_id.clone(),
+                    responsible_account: claims.account.account_organization_id.clone(),
+                    role_level: claims.account.role_level,
+                    role_name: claims.account.role_name.clone(),
+                    is_root_account: claims.account.is_root_account,
+                };
+
+                // Store the Auth object in request extensions
+                auth.extensions_mut().insert(auth_data);
+
+                let fut = self.service.call(auth);
+                Box::pin(async move {
+                    let res = fut.await?;
+                    Ok(res)
+                })
+            }
+            Err(_) => {
+                let error_message = if is_root_request {
+                    "Root token verification failed: Invalid or expired token"
+                } else {
+                    "Token verification failed: Invalid or expired token"
+                };
+                
                 let error_response = ApiResponse {
                     success: false,
-                    message: "Token verification failed: Invalid or expired token".to_string(),
+                    message: error_message.to_string(),
                     count: 0,
                     data: vec![],
                 };
@@ -121,37 +145,40 @@ where
                     let json_error = actix_web::HttpResponse::Unauthorized()
                         .content_type("application/json")
                         .json(error_response);
-                    Err(
-                        actix_web::error::InternalError::from_response("Unauthorized", json_error)
-                            .into(),
+                    Err(actix_web::error::InternalError::from_response(
+                        "Unauthorized",
+                        json_error,
                     )
+                    .into())
                 })
             }
+        },
+        None => {
+            let error_message = if is_root_request {
+                "Root authorization required"
+            } else {
+                "Authorization required"
+            };
+            
+            let error_response = ApiResponse {
+                success: false,
+                message: error_message.to_string(),
+                count: 0,
+                data: vec![],
+            };
+
+            Box::pin(async move {
+                let json_error = actix_web::HttpResponse::Unauthorized()
+                    .content_type("application/json")
+                    .json(error_response);
+                Err(
+                    actix_web::error::InternalError::from_response("Unauthorized", json_error)
+                        .into(),
+                )
+            })
         }
     }
 }
-
-// Function to validate the token
-pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-    let jwt_secret = match env::var("JWT_SECRET") {
-        Ok(secret) => secret,
-        Err(_) => {
-            println!("JWT_SECRET environment variable not set");
-            return Err(jsonwebtoken::errors::Error::from(
-                jsonwebtoken::errors::ErrorKind::InvalidToken,
-            ));
-        }
-    };
-
-    // Verify the JWT token
-    let validation = Validation::new(Algorithm::HS256);
-    let token_data = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(jwt_secret.as_bytes()),
-        &validation,
-    )?;
-
-    Ok(token_data.claims)
 }
 
 // Extract token from various sources
@@ -182,13 +209,16 @@ impl Interceptor for GrpcAuthInterceptor {
         });
 
         match token {
-            Some(t) => match validate_token(&t) {
+            Some(t) => match verify(&t) {
                 Ok(claims) => {
                     // Create Auth object with both IDs
-                    let auth_data = Auth {
-                        organization_id: claims.account.organization_id,
-                        responsible_account: claims.account.organization_account_id,
-                    };
+                     let auth_data = Auth {
+                    organization_id: claims.account.organization_id.clone(),
+                    responsible_account: claims.account.account_organization_id.clone(),
+                    role_level: claims.account.role_level,
+                    role_name: claims.account.role_name.clone(),
+                    is_root_account: claims.account.is_root_account,
+                };
 
                     // Store the Auth object in request extensions
                     request.extensions_mut().insert(auth_data);

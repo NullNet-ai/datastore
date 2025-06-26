@@ -37,6 +37,7 @@ use crate::models::temp_packet_model::TempPacketModel;
 use crate::models::temp_wallguard_log_model::TempWallguardLogModel;
 use crate::models::wallguard_log_model::WallguardLogModel;
 use crate::schema::schema;
+use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
 use crate::{
     generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,

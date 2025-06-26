@@ -8,11 +8,11 @@ use crate::models::counter_model::CounterModel;
 use crate::models::organization_model::OrganizationModel;
 use crate::schema::schema;
 use actix_web::http::StatusCode;
-use diesel::associations::HasTable;
 use chrono::Utc;
+use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-use diesel_async::{RunQueryDsl, AsyncConnection};
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use std::env;
 use ulid::Ulid;
 
@@ -37,7 +37,8 @@ impl RootAccountInitializer {
         let root_account_id = "01JM3GTWCHR3CM2NP85C0Q2KN1".to_string();
         let personal_organization_id = "01JSN4XA2C3A7RHN3MNZZJGBR3".to_string();
         let account_id = "root".to_string();
-        let account_secret = env::var("ROOT_ACCOUNT_PASSWORD").unwrap_or_else(|_| "pl3@s3ch@ng3m3!!".to_string());
+        let account_secret =
+            env::var("ROOT_ACCOUNT_PASSWORD").unwrap_or_else(|_| "pl3@s3ch@ng3m3!!".to_string());
 
         let mut conn = db::get_async_connection().await;
 
@@ -79,9 +80,7 @@ impl RootAccountInitializer {
             let default_code = counter.default_code;
             let mut digits_number = counter.digits_number;
 
-            let get_digit = |num: i32| -> usize {
-                num.to_string().len()
-            };
+            let get_digit = |num: i32| -> usize { num.to_string().len() };
 
             if digits_number > 0 {
                 digits_number = digits_number - get_digit(root_count) as i32;
@@ -112,7 +111,8 @@ impl RootAccountInitializer {
         );
 
         // Hash the password
-        let hashed_password = match crate::auth::auth_service::password_hash(&account_secret).await {
+        let hashed_password = match crate::auth::auth_service::password_hash(&account_secret).await
+        {
             Ok(hash) => hash,
             Err(e) => {
                 return Err(ApiError::new(
@@ -197,64 +197,73 @@ impl RootAccountInitializer {
         }
 
         // Start a transaction
-        let result = conn.transaction::<_, ApiError, _>(|conn| Box::pin(async move {
-            // Insert personal organization
-            diesel::insert_into(schema::organizations::table)
-                .values(&personal_organization)
-                .execute(conn)
-                .await
-                .map_err(|e| {
-                    ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to insert personal organization: {}", e),
-                    )
-                })?;
-        
-            // Insert root account
-            diesel::insert_into(schema::accounts::table)
-                .values(&root_account)
-                .execute(conn)
-                .await
-                .map_err(|e| {
-                    ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to insert root account: {}", e),
-                    )
-                })?;
-        
-            // Insert root account profile
-            diesel::insert_into(schema::account_profiles::table)
-                .values(&root_account_profile)
-                .execute(conn)
-                .await
-                .map_err(|e| {
-                    ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to insert root account profile: {}", e),
-                    )
-                })?;
-        
-            // Insert root account organization
-            let result = diesel::insert_into(schema::account_organizations::table)
-                .values(&root_account_organization)
-                .returning((
-                    schema::account_organizations::id,
-                    schema::account_organizations::email,
-                    schema::account_organizations::categories,
-                    schema::account_organizations::status,
-                ))
-                .get_result::<(Option<String>, Option<String>, Option<Vec<String>>, Option<String>)>(conn)
-                .await
-                .map_err(|e| {
-                    ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to insert root account organization: {}", e),
-                    )
-                })?;
-        
-            log::debug!("Root Account created: {:?}", result);
-            Ok(())
-        })).await;
+        let result = conn
+            .transaction::<_, ApiError, _>(|conn| {
+                Box::pin(async move {
+                    // Insert personal organization
+                    diesel::insert_into(schema::organizations::table)
+                        .values(&personal_organization)
+                        .execute(conn)
+                        .await
+                        .map_err(|e| {
+                            ApiError::new(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                format!("Failed to insert personal organization: {}", e),
+                            )
+                        })?;
+
+                    // Insert root account
+                    diesel::insert_into(schema::accounts::table)
+                        .values(&root_account)
+                        .execute(conn)
+                        .await
+                        .map_err(|e| {
+                            ApiError::new(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                format!("Failed to insert root account: {}", e),
+                            )
+                        })?;
+
+                    // Insert root account profile
+                    diesel::insert_into(schema::account_profiles::table)
+                        .values(&root_account_profile)
+                        .execute(conn)
+                        .await
+                        .map_err(|e| {
+                            ApiError::new(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                format!("Failed to insert root account profile: {}", e),
+                            )
+                        })?;
+
+                    // Insert root account organization
+                    let result = diesel::insert_into(schema::account_organizations::table)
+                        .values(&root_account_organization)
+                        .returning((
+                            schema::account_organizations::id,
+                            schema::account_organizations::email,
+                            schema::account_organizations::categories,
+                            schema::account_organizations::status,
+                        ))
+                        .get_result::<(
+                            Option<String>,
+                            Option<String>,
+                            Option<Vec<String>>,
+                            Option<String>,
+                        )>(conn)
+                        .await
+                        .map_err(|e| {
+                            ApiError::new(
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                                format!("Failed to insert root account organization: {}", e),
+                            )
+                        })?;
+
+                    log::debug!("Root Account created: {:?}", result);
+                    Ok(())
+                })
+            })
+            .await;
 
         match result {
             Ok(_) => Ok(()),

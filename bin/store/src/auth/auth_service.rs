@@ -1,4 +1,4 @@
-use crate::organizations::auth_service::Claims;
+use crate::auth::structs::Claims;
 use actix_web::http::StatusCode;
 use argon2::password_hash::{rand_core::OsRng, SaltString};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -53,7 +53,7 @@ pub async fn password_verify(hash: &str, password: &str) -> Result<bool, ApiErro
     }
 }
 
-pub async fn verify(token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
+pub fn verify(token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
     // Check cache first
     let cached_token = {
         let cache = TOKEN_CACHE.lock().unwrap();

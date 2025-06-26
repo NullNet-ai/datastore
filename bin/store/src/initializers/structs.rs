@@ -2,6 +2,8 @@
 pub enum EInitializer {
     SYSTEM_CODE_CONFIG,
     ROOT_ACCOUNT_CONFIG,
+    GLOBAL_ORGANIZATION_CONFIG,
+    SYSTEM_DEVICE_CONFIG,
 }
 
 impl EInitializer {
@@ -9,13 +11,17 @@ impl EInitializer {
         match self {
             EInitializer::SYSTEM_CODE_CONFIG => "system_code_config",
             EInitializer::ROOT_ACCOUNT_CONFIG => "root_account_config",
+            EInitializer::GLOBAL_ORGANIZATION_CONFIG => "global_organization_config",
+            EInitializer::SYSTEM_DEVICE_CONFIG => "system_device_config",
         }
     }
-    
+
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "system_code_config" => Some(EInitializer::SYSTEM_CODE_CONFIG),
             "root_account_config" => Some(EInitializer::ROOT_ACCOUNT_CONFIG),
+            "global_organization_config" => Some(EInitializer::GLOBAL_ORGANIZATION_CONFIG),
+            "system_device_config" => Some(EInitializer::SYSTEM_DEVICE_CONFIG),
             _ => None,
         }
     }

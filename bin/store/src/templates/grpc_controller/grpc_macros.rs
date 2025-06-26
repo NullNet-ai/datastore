@@ -37,15 +37,8 @@ macro_rules! generate_create_method {
                         None => return Err(Status::invalid_argument("Record is required")),
                     };
 
-                    let entity_prefix = request.entity_prefix;
                     let mut record_value = serde_json::to_value(&record)
                         .map_err(|e| Status::internal(format!("Failed to convert record to JSON: {}", e)))?;
-
-                      // Add entity_prefix to the record
-                      if let Value::Object(ref mut map) = record_value {
-                        map.insert("entity_prefix".to_string(), Value::String(entity_prefix));
-                    }
-
 
 
                     let pluck_fields: Vec<String> = query
@@ -204,10 +197,8 @@ macro_rules! generate_batch_insert_method {
                         }
                     }
                    let records;
-                   let entity_prefix;
                      match request.body {
                         Some(batch_body) => {
-                            entity_prefix=batch_body.entity_prefix;
                             records=batch_body.$table}
                         None => return Err(Status::invalid_argument(format!("No {} provided", stringify!($table)))),
                     };
@@ -268,7 +259,7 @@ macro_rules! generate_batch_insert_method {
 
                         if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
                             if let Err(e) =
-crate::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clone(), id.to_string(), entity_prefix.clone(), auth_data.clone()).await
+crate::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clone(), id.to_string(), "".to_string(), auth_data.clone()).await
                             {
                                 log::error!("Code assignment error with id {id}: {e}");
                             }
@@ -458,7 +449,6 @@ macro_rules! generate_upsert_method {
                         &params.table,
                         body.conflict_columns,
                         data_value,
-                        body.entity_prefix,
                         pluck_fields,
                         &auth_data,
                     ).await {

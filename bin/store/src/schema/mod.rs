@@ -1,3 +1,4 @@
+pub mod database_setup;
 pub mod from_proto;
 pub mod hypertables;
 pub mod schema;

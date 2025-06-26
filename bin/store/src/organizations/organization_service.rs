@@ -245,6 +245,7 @@ pub async fn register(
                 None
             },
             responsible_account_organization_id.clone(),
+            Some(true),
         )
         .await?;
     }
@@ -395,7 +396,7 @@ pub async fn register(
             }
     } else {
         // Handle invited contact accounts
-        match async 
+        match async
         {
             if is_invited && account_organization_id.is_empty() {
                 return Err(ApiError::new(
@@ -608,8 +609,12 @@ pub async fn create_account(
     account_status: Option<String>,
     status: Option<String>,
     responsible_account_organization_id: Option<String>,
+   mut create_profile: Option<bool>
 ) -> Result<(), ApiError> {
     // Hash the password
+    if !create_profile.is_some() {
+        create_profile = Some(true);
+    }
     let hashed_password = match auth_service::password_hash(&account_secret).await {
         Ok(hash) => hash,
         Err(e) => {
@@ -651,6 +656,8 @@ pub async fn create_account(
     sync_service::insert(&"accounts".to_string(), account_json).await?;
 
     // Create account profile using AccountProfileModel
+
+    if create_profile.unwrap() == true {
     let account_profile = AccountProfileModel {
         id: Some(Ulid::new().to_string()),
         first_name: Some(first_name),
@@ -678,6 +685,7 @@ pub async fn create_account(
 
     // Insert account profile into database
     sync_service::insert(&"account_profiles".to_string(), profile_json).await?;
+}
 
     log::info!("Created Account: {}, email: {}", id, account_id);
 

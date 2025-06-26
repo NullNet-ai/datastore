@@ -169,7 +169,6 @@ pub async fn create_record(
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
-    //get entity_prefix from the request.record
 
     match process_and_insert_record(
         &table_name,
@@ -193,7 +192,6 @@ pub async fn create_record(
 
 #[derive(Deserialize)]
 pub struct BatchInsertBody {
-    entity_prefix: Option<String>,
     records: Vec<Value>,
 }
 
@@ -235,22 +233,6 @@ pub async fn batch_insert_records(
     let table_clone = table_name.clone();
     let batch_data = records.into_inner();
     let json_records = batch_data.records;
-    let entity_prefix_exists = batch_data.entity_prefix;
-    let entity_prefix;
-
-    match entity_prefix_exists {
-        Some(prefix) => {
-            entity_prefix = prefix;
-        }
-        None => {
-            return HttpResponse::BadRequest().json(ApiResponse {
-                success: false,
-                message: "Entity prefix is required".to_string(),
-                count: 0,
-                data: vec![],
-            })
-        }
-    }
 
     if json_records.is_empty() {
         return HttpResponse::BadRequest().json(ApiResponse {
@@ -318,7 +300,7 @@ pub async fn batch_insert_records(
             if let Err(e) = BatchSyncService::send_code_assignment_message(
                 table_clone.clone(),
                 id.to_string(),
-                entity_prefix.clone(),
+                "".to_string(),
                 auth_data.clone(),
             )
             .await
@@ -581,7 +563,6 @@ pub async fn upsert(
         &table_name,
         request_body.conflict_columns,
         request_body.data,
-        request_body.entity_prefix,
         pluck_fields,
         &auth_data,
     )

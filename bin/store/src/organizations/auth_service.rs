@@ -20,14 +20,6 @@ use std::collections::HashMap;
 use std::env;
 use std::sync::Mutex;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    pub sub: String,
-    pub organization_id: String,
-    pub account_id: String,
-    pub exp: usize,
-    pub iat: usize,
-}
 #[derive(QueryableByName, Debug)]
 struct JsonResult {
     #[diesel(sql_type = diesel::sql_types::Text)]
@@ -148,7 +140,6 @@ pub async fn auth(
                     }
                 };
         };
-
 
         // Create token value with the signed in account
         let token_value = json!({
@@ -645,7 +636,6 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
         #[diesel(sql_type = diesel::sql_types::Json)]
         json_result: serde_json::Value,
     }
-
 
     // Query the database using raw SQL that returns JSON
     let result = sql_query(

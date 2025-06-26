@@ -1,9 +1,11 @@
+use crate::controllers::store_controller::ApiError;
 use crate::db;
 use crate::models::counter_model::CounterModel;
 use crate::schema::schema;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -21,10 +23,21 @@ impl CodePrefixInitializer {
             "connections".to_string(),
             CounterModel {
                 default_code: 10000,
-                prefix: "PA".to_string(),
+                prefix: "CO".to_string(),
                 counter: 0,
-                entity: "packets".to_string(),
-                digits_number: 1,
+                entity: "connections".to_string(),
+                digits_number: 6,
+            },
+        );
+
+        prefixes.insert(
+            "devices".to_string(),
+            CounterModel {
+                default_code: 10000,
+                prefix: "DV".to_string(),
+                counter: 0,
+                entity: "devices".to_string(),
+                digits_number: 6,
             },
         );
 
@@ -53,31 +66,31 @@ impl CodePrefixInitializer {
 
     /// Inserts all prefix configurations into the counter table in the database
     /// If a record with the same entity already exists, it will be skipped
-    pub fn initialize_counter_table(&self) -> Result<(), DieselError> {
-        let mut conn = db::get_sync_connection();
+    pub async fn initialize(&self) -> Result<(), ApiError> {
+        let mut conn = db::get_async_connection().await;
 
-        // Start a transaction to ensure all inserts succeed or fail together
-        conn.transaction::<_, DieselError, _>(|conn| {
-            for (_, counter) in &self.prefixes {
-                // Insert with on_conflict_do_nothing - if the entity already exists, skip it
-                diesel::insert_into(schema::counters::dsl::counters::table())
-                    .values(counter)
-                    .on_conflict_do_nothing()
-                    .execute(conn)
-                    .map_err(|e| {
-                        log::error!(
-                            "Error inserting counter for entity {}: {}",
-                            counter.entity,
-                            e
-                        );
+        // Process each counter without using a transaction
+        for (_, counter) in &self.prefixes {
+            // Insert with on_conflict_do_nothing - if the entity already exists, skip it
+            diesel::insert_into(schema::counters::table)
+                .values(counter)
+                .on_conflict_do_nothing()
+                .execute(&mut conn)
+                .await
+                .map_err(|e| {
+                    log::error!(
+                        "Error inserting counter for entity {}: {}",
+                        counter.entity,
                         e
-                    })?;
+                    );
+                    // Convert DieselError to ApiError
+                    ApiError::from(e)
+                })?;
 
-                log::info!("Initialized counter for entity: {}", counter.entity);
-            }
+            log::info!("Initialized counter for entity: {}", counter.entity);
+        }
 
-            Ok(())
-        })
+        Ok(())
     }
 }
 

@@ -1,9 +1,9 @@
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
+use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
-use crate::organizations::auth_service::{root_auth, auth};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -124,7 +124,7 @@ impl OrganizationsController {
             })
         } else {
             // Regular authentication
-           auth(
+            auth(
                 &account_id,
                 &account_secret,
                 "", // Empty organization_id as it's not used in the auth function

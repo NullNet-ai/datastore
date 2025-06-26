@@ -8,7 +8,7 @@ BEGIN
   BEGIN
     IF jsonb_typeof(input) = 'string' THEN
       -- Get raw string from JSONB without quotes or escapes
-      decoded := decode(input #>> '{}', 'base64'); 
+      decoded := decode(input #>> '[]', 'base64'); 
     ELSE
       RETURN input;
     END IF;

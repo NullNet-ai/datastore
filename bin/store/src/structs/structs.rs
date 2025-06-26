@@ -26,7 +26,6 @@ pub struct RequestBody {
 pub struct UpsertRequestBody {
     pub data: Value,
     pub conflict_columns: Vec<String>,
-    pub entity_prefix: String,
 }
 
 #[derive(Deserialize)]
@@ -192,6 +191,9 @@ pub struct Endpoint {
 pub struct Auth {
     pub organization_id: String,
     pub responsible_account: String,
+    pub role_level: Option<u32>,
+    pub role_name: Option<String>,
+    pub is_root_account: bool,
 }
 
 // get by filter

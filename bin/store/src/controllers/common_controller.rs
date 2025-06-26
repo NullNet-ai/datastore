@@ -454,8 +454,6 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
         }
     }
 
-    println!("Processed record: {:?}", processed_record);
-
     // Convert back to Value
     let record_value = serde_json::from_value(processed_record)
         .map_err(|e| Status::internal(format!("Failed to process record: {}", e)))?;
@@ -469,36 +467,15 @@ pub async fn process_and_insert_record(
     pluck_fields: Option<Vec<String>>,
     auth: &Auth,
 ) -> ControllerResult {
-    // Process the record
-
-    let entity_prefix_exists = if let Some(record_obj) = record.as_object() {
-        record_obj.get("entity_prefix").and_then(|v| v.as_str())
-    } else {
-        None
-    };
-    let mut entity_prefix = "";
-    // Return error if entity_prefix is not provided
-    if entity_prefix_exists.is_none() {
-        return Err(ApiError::new(
-            http::StatusCode::BAD_REQUEST,
-            "entity_prefix is required".to_string(),
-        ));
-    } else {
-        entity_prefix = entity_prefix_exists.unwrap();
-    }
-
-    let code = generate_code(table_name, entity_prefix, 100000)
-        .await
-        .map_err(|e| {
-            ApiError::new(
-                http::StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Unable to generate code: {}", e),
-            )
-        })?;
+    let code = generate_code(table_name, "", 100000).await.map_err(|e| {
+        ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Unable to generate code: {}", e),
+        )
+    })?;
     //assign code in the record
     if let Value::Object(ref mut map) = record {
         map.insert("code".to_string(), Value::String(code));
-        map.remove("entity_prefix");
     } else {
         return Err(ApiError::new(
             http::StatusCode::BAD_REQUEST,
@@ -679,7 +656,6 @@ pub async fn perform_upsert(
     table_name: &str,
     conflict_columns: Vec<String>,
     mut data: serde_json::Value,
-    entity_prefix: String,
     pluck_fields: Option<Vec<String>>,
     auth: &Auth,
 ) -> Result<ApiResponse, ApiError> {
@@ -720,9 +696,6 @@ pub async fn perform_upsert(
 
     // Either insert or update based on existence
     if record_id.is_empty() {
-        if let Value::Object(ref mut map) = data {
-            map.insert("entity_prefix".to_string(), Value::String(entity_prefix));
-        }
         // If the record doesn't exist, perform an insert
         process_and_insert_record(table_name, data, pluck_fields, auth).await
     } else {

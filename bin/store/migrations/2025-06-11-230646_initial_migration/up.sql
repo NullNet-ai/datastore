@@ -318,28 +318,21 @@ CREATE TABLE "external_contacts" (
 --> statement-breakpoint
 CREATE TABLE "fields" (
 	"id" text PRIMARY KEY NOT NULL,
-	"categories" text[] DEFAULT ARRAY[]::TEXT[],
-	"code" text,
-	"tombstone" integer DEFAULT 0,
-	"status" text DEFAULT 'Active',
-	"previous_status" text,
-	"version" integer DEFAULT 1,
-	"created_date" text,
-	"created_time" text,
-	"updated_date" text,
-	"updated_time" text,
-	"organization_id" text DEFAULT (null),
-	"created_by" text DEFAULT (null),
-	"updated_by" text DEFAULT (null),
-	"deleted_by" text DEFAULT (null),
-	"requested_by" text DEFAULT (null),
-	"timestamp" text,
-	"tags" text[] DEFAULT ARRAY[]::TEXT[],
-	"image_url" varchar(300),
 	"label" text,
 	"name" text,
-	"type" text,
-	"assigned_to" text
+	"field_type" text,
+	"is_system_field" boolean DEFAULT false,
+	"is_encryptable" boolean NOT NULL,
+	"allow_return" boolean DEFAULT true,
+	"constraints" jsonb DEFAULT '[]',
+	"_default" text,
+	"reference_to" text,
+	"version" serial NOT NULL,
+	"created_by" text,
+	"updated_by" text,
+	"deleted_by" text,
+	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+	"tombstone" integer DEFAULT 0
 );
 --> statement-breakpoint
 CREATE TABLE "crdt_merkles" (
@@ -1428,7 +1421,7 @@ CREATE TABLE "resolutions" (
 --> statement-breakpoint
 CREATE TABLE "samples" (
 	"id" text PRIMARY KEY NOT NULL,
-	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"categories" jsonb DEFAULT '[]',
 	"code" text,
 	"tombstone" integer DEFAULT 0,
 	"status" text DEFAULT 'Active',
@@ -1438,17 +1431,17 @@ CREATE TABLE "samples" (
 	"created_time" text,
 	"updated_date" text,
 	"updated_time" text,
-	"organization_id" text DEFAULT (null),
-	"created_by" text DEFAULT (null),
-	"updated_by" text DEFAULT (null),
-	"deleted_by" text DEFAULT (null),
-	"requested_by" text DEFAULT (null),
-	"timestamp" text,
-	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"organization_id" text,
+	"created_by" text,
+	"updated_by" text,
+	"deleted_by" text,
+	"requested_by" text,
+	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+	"tags" jsonb DEFAULT '[]',
 	"image_url" varchar(300),
 	"name" text,
 	"sample_text" text,
-	"test_obj" jsonb DEFAULT '{}'::jsonb
+	"test_obj" jsonb DEFAULT '[]'
 );
 --> statement-breakpoint
 CREATE TABLE "smtp_requests" (
@@ -1906,7 +1899,7 @@ CREATE TABLE "temp_wallguard_logs" (
 --> statement-breakpoint
 CREATE TABLE "user_roles" (
 	"id" text PRIMARY KEY NOT NULL,
-	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"categories" jsonb DEFAULT '[]',
 	"code" text,
 	"tombstone" integer DEFAULT 0,
 	"status" text DEFAULT 'Active',
@@ -1916,16 +1909,18 @@ CREATE TABLE "user_roles" (
 	"created_time" text,
 	"updated_date" text,
 	"updated_time" text,
-	"organization_id" text DEFAULT (null),
-	"created_by" text DEFAULT (null),
-	"updated_by" text DEFAULT (null),
-	"deleted_by" text DEFAULT (null),
-	"requested_by" text DEFAULT (null),
-	"timestamp" text,
-	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"organization_id" text,
+	"created_by" text,
+	"updated_by" text,
+	"deleted_by" text,
+	"requested_by" text,
+	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+	"tags" jsonb DEFAULT '[]',
 	"image_url" varchar(300),
 	"role" text,
-	"entity" text
+	"entity" text,
+	"level" integer DEFAULT 1000,
+	CONSTRAINT "user_roles_role_unique" UNIQUE("role")
 );
 --> statement-breakpoint
 CREATE TABLE "wallguard_logs" (
@@ -2015,11 +2010,6 @@ ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_created_by_acc
 ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "fields" ADD CONSTRAINT "fields_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "fields" ADD CONSTRAINT "fields_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "fields" ADD CONSTRAINT "fields_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "fields" ADD CONSTRAINT "fields_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "fields" ADD CONSTRAINT "fields_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_accounts" ADD CONSTRAINT "organization_accounts_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_accounts" ADD CONSTRAINT "organization_accounts_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_accounts" ADD CONSTRAINT "organization_accounts_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -2517,21 +2507,20 @@ CREATE INDEX "external_contacts_requested_by_idx" ON "external_contacts" USING b
 CREATE INDEX "external_contacts_tags_idx" ON "external_contacts" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "external_contacts_image_url_idx" ON "external_contacts" USING btree ("image_url");--> statement-breakpoint
 CREATE INDEX "fields_id_idx" ON "fields" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "fields_categories_idx" ON "fields" USING btree ("categories");--> statement-breakpoint
-CREATE INDEX "fields_code_idx" ON "fields" USING btree ("code");--> statement-breakpoint
-CREATE INDEX "fields_tombstone_idx" ON "fields" USING btree ("tombstone");--> statement-breakpoint
-CREATE INDEX "fields_status_idx" ON "fields" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "fields_previous_status_idx" ON "fields" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "fields_label_idx" ON "fields" USING btree ("label");--> statement-breakpoint
+CREATE INDEX "fields_name_idx" ON "fields" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "fields_field_type_idx" ON "fields" USING btree ("field_type");--> statement-breakpoint
+CREATE INDEX "fields_is_system_field_idx" ON "fields" USING btree ("is_system_field");--> statement-breakpoint
+CREATE INDEX "fields_is_encryptable_idx" ON "fields" USING btree ("is_encryptable");--> statement-breakpoint
+CREATE INDEX "fields_allow_return_idx" ON "fields" USING btree ("allow_return");--> statement-breakpoint
+CREATE INDEX "fields_constraints_idx" ON "fields" USING btree ("constraints");--> statement-breakpoint
+CREATE INDEX "fields__default_idx" ON "fields" USING btree ("_default");--> statement-breakpoint
+CREATE INDEX "fields_reference_to_idx" ON "fields" USING btree ("reference_to");--> statement-breakpoint
 CREATE INDEX "fields_version_idx" ON "fields" USING btree ("version");--> statement-breakpoint
-CREATE INDEX "fields_created_date_idx" ON "fields" USING btree ("created_date");--> statement-breakpoint
-CREATE INDEX "fields_updated_date_idx" ON "fields" USING btree ("updated_date");--> statement-breakpoint
-CREATE INDEX "fields_organization_id_idx" ON "fields" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "fields_created_by_idx" ON "fields" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "fields_updated_by_idx" ON "fields" USING btree ("updated_by");--> statement-breakpoint
 CREATE INDEX "fields_deleted_by_idx" ON "fields" USING btree ("deleted_by");--> statement-breakpoint
-CREATE INDEX "fields_requested_by_idx" ON "fields" USING btree ("requested_by");--> statement-breakpoint
-CREATE INDEX "fields_tags_idx" ON "fields" USING btree ("tags");--> statement-breakpoint
-CREATE INDEX "fields_image_url_idx" ON "fields" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "fields_tombstone_idx" ON "fields" USING btree ("tombstone");--> statement-breakpoint
 CREATE INDEX "organization_accounts_id_idx" ON "organization_accounts" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "organization_accounts_categories_idx" ON "organization_accounts" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "organization_accounts_code_idx" ON "organization_accounts" USING btree ("code");--> statement-breakpoint
@@ -3430,8 +3419,6 @@ CREATE INDEX "temp_wallguard_logs_deleted_by_idx" ON "temp_wallguard_logs" USING
 CREATE INDEX "temp_wallguard_logs_requested_by_idx" ON "temp_wallguard_logs" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_wallguard_logs_tags_idx" ON "temp_wallguard_logs" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_wallguard_logs_image_url_idx" ON "temp_wallguard_logs" USING btree ("image_url");--> statement-breakpoint
-CREATE INDEX "user_roles_id_idx" ON "user_roles" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "user_roles_categories_idx" ON "user_roles" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "user_roles_code_idx" ON "user_roles" USING btree ("code");--> statement-breakpoint
 CREATE INDEX "user_roles_tombstone_idx" ON "user_roles" USING btree ("tombstone");--> statement-breakpoint
 CREATE INDEX "user_roles_status_idx" ON "user_roles" USING btree ("status");--> statement-breakpoint
@@ -3448,6 +3435,7 @@ CREATE INDEX "user_roles_tags_idx" ON "user_roles" USING btree ("tags");--> stat
 CREATE INDEX "user_roles_image_url_idx" ON "user_roles" USING btree ("image_url");--> statement-breakpoint
 CREATE INDEX "user_roles_role_idx" ON "user_roles" USING btree ("role");--> statement-breakpoint
 CREATE INDEX "user_roles_entity_idx" ON "user_roles" USING btree ("entity");--> statement-breakpoint
+CREATE INDEX "user_roles_level_idx" ON "user_roles" USING btree ("level");
 CREATE INDEX "wallguard_logs_id_idx" ON "wallguard_logs" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_categories_idx" ON "wallguard_logs" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_code_idx" ON "wallguard_logs" USING btree ("code");--> statement-breakpoint
@@ -3464,3 +3452,20 @@ CREATE INDEX "wallguard_logs_deleted_by_idx" ON "wallguard_logs" USING btree ("d
 CREATE INDEX "wallguard_logs_requested_by_idx" ON "wallguard_logs" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_tags_idx" ON "wallguard_logs" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_image_url_idx" ON "wallguard_logs" USING btree ("image_url");
+
+CREATE INDEX "samples_id_idx" ON "samples" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "samples_categories_idx" ON "samples" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "samples_code_idx" ON "samples" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "samples_tombstone_idx" ON "samples" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "samples_status_idx" ON "samples" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "samples_previous_status_idx" ON "samples" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "samples_version_idx" ON "samples" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "samples_created_date_idx" ON "samples" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "samples_updated_date_idx" ON "samples" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "samples_organization_id_idx" ON "samples" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "samples_created_by_idx" ON "samples" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "samples_updated_by_idx" ON "samples" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "samples_deleted_by_idx" ON "samples" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "samples_requested_by_idx" ON "samples" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "samples_tags_idx" ON "samples" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "samples_image_url_idx" ON "samples" USING btree ("image_url");--> statement-breakpoint

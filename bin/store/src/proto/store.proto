@@ -1107,7 +1107,6 @@ message CreateExternalContactsRequest {
   ExternalContacts external_contacts = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create ExternalContacts response
@@ -1199,8 +1198,7 @@ message BatchInsertExternalContactsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated ExternalContacts external_contacts = 2;
+    repeated ExternalContacts external_contacts = 1;
   }
   BatchBody body = 3;
 }
@@ -1220,7 +1218,6 @@ message UpsertExternalContactsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     ExternalContacts data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -1238,7 +1235,6 @@ message CreateOrganizationsRequest {
   Organizations organizations = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Organizations response
@@ -1330,8 +1326,7 @@ message BatchInsertOrganizationsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Organizations organizations = 2;
+    repeated Organizations organizations = 1;
   }
   BatchBody body = 3;
 }
@@ -1351,7 +1346,6 @@ message UpsertOrganizationsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Organizations data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -1369,7 +1363,6 @@ message CreateOrganizationContactsRequest {
   OrganizationContacts organization_contacts = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create OrganizationContacts response
@@ -1461,8 +1454,7 @@ message BatchInsertOrganizationContactsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated OrganizationContacts organization_contacts = 2;
+    repeated OrganizationContacts organization_contacts = 1;
   }
   BatchBody body = 3;
 }
@@ -1482,7 +1474,6 @@ message UpsertOrganizationContactsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     OrganizationContacts data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -1500,7 +1491,6 @@ message CreateOrganizationAccountsRequest {
   OrganizationAccounts organization_accounts = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create OrganizationAccounts response
@@ -1592,8 +1582,7 @@ message BatchInsertOrganizationAccountsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated OrganizationAccounts organization_accounts = 2;
+    repeated OrganizationAccounts organization_accounts = 1;
   }
   BatchBody body = 3;
 }
@@ -1613,7 +1602,6 @@ message UpsertOrganizationAccountsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     OrganizationAccounts data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -1631,7 +1619,6 @@ message CreateAccountOrganizationsRequest {
   AccountOrganizations account_organizations = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create AccountOrganizations response
@@ -1723,8 +1710,7 @@ message BatchInsertAccountOrganizationsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated AccountOrganizations account_organizations = 2;
+    repeated AccountOrganizations account_organizations = 1;
   }
   BatchBody body = 3;
 }
@@ -1744,7 +1730,6 @@ message UpsertAccountOrganizationsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     AccountOrganizations data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -1762,7 +1747,6 @@ message CreateAccountProfilesRequest {
   AccountProfiles account_profiles = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create AccountProfiles response
@@ -1854,8 +1838,7 @@ message BatchInsertAccountProfilesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated AccountProfiles account_profiles = 2;
+    repeated AccountProfiles account_profiles = 1;
   }
   BatchBody body = 3;
 }
@@ -1875,7 +1858,6 @@ message UpsertAccountProfilesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     AccountProfiles data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -1893,7 +1875,6 @@ message CreateAccountsRequest {
   Accounts accounts = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Accounts response
@@ -1985,8 +1966,7 @@ message BatchInsertAccountsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Accounts accounts = 2;
+    repeated Accounts accounts = 1;
   }
   BatchBody body = 3;
 }
@@ -2006,7 +1986,6 @@ message UpsertAccountsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Accounts data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2024,7 +2003,6 @@ message CreateAddressesRequest {
   Addresses addresses = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Addresses response
@@ -2116,8 +2094,7 @@ message BatchInsertAddressesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Addresses addresses = 2;
+    repeated Addresses addresses = 1;
   }
   BatchBody body = 3;
 }
@@ -2137,7 +2114,6 @@ message UpsertAddressesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Addresses data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2155,7 +2131,6 @@ message CreateAppFirewallsRequest {
   AppFirewalls app_firewalls = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create AppFirewalls response
@@ -2247,8 +2222,7 @@ message BatchInsertAppFirewallsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated AppFirewalls app_firewalls = 2;
+    repeated AppFirewalls app_firewalls = 1;
   }
   BatchBody body = 3;
 }
@@ -2268,7 +2242,6 @@ message UpsertAppFirewallsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     AppFirewalls data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2286,7 +2259,6 @@ message CreateAppguardLogsRequest {
   AppguardLogs appguard_logs = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create AppguardLogs response
@@ -2378,8 +2350,7 @@ message BatchInsertAppguardLogsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated AppguardLogs appguard_logs = 2;
+    repeated AppguardLogs appguard_logs = 1;
   }
   BatchBody body = 3;
 }
@@ -2399,7 +2370,6 @@ message UpsertAppguardLogsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     AppguardLogs data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2417,7 +2387,6 @@ message CreateTempAppguardLogsRequest {
   TempAppguardLogs temp_appguard_logs = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempAppguardLogs response
@@ -2509,8 +2478,7 @@ message BatchInsertTempAppguardLogsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempAppguardLogs temp_appguard_logs = 2;
+    repeated TempAppguardLogs temp_appguard_logs = 1;
   }
   BatchBody body = 3;
 }
@@ -2530,7 +2498,6 @@ message UpsertTempAppguardLogsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempAppguardLogs data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2548,7 +2515,6 @@ message CreateDeviceAliasesRequest {
   DeviceAliases device_aliases = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceAliases response
@@ -2640,8 +2606,7 @@ message BatchInsertDeviceAliasesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceAliases device_aliases = 2;
+    repeated DeviceAliases device_aliases = 1;
   }
   BatchBody body = 3;
 }
@@ -2661,7 +2626,6 @@ message UpsertDeviceAliasesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceAliases data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2679,7 +2643,6 @@ message CreateTempDeviceAliasesRequest {
   TempDeviceAliases temp_device_aliases = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempDeviceAliases response
@@ -2771,8 +2734,7 @@ message BatchInsertTempDeviceAliasesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempDeviceAliases temp_device_aliases = 2;
+    repeated TempDeviceAliases temp_device_aliases = 1;
   }
   BatchBody body = 3;
 }
@@ -2792,7 +2754,6 @@ message UpsertTempDeviceAliasesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempDeviceAliases data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2810,7 +2771,6 @@ message CreateDeviceConfigurationsRequest {
   DeviceConfigurations device_configurations = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceConfigurations response
@@ -2902,8 +2862,7 @@ message BatchInsertDeviceConfigurationsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceConfigurations device_configurations = 2;
+    repeated DeviceConfigurations device_configurations = 1;
   }
   BatchBody body = 3;
 }
@@ -2923,7 +2882,6 @@ message UpsertDeviceConfigurationsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceConfigurations data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -2941,7 +2899,6 @@ message CreateDeviceInterfaceAddressesRequest {
   DeviceInterfaceAddresses device_interface_addresses = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceInterfaceAddresses response
@@ -3033,8 +2990,7 @@ message BatchInsertDeviceInterfaceAddressesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceInterfaceAddresses device_interface_addresses = 2;
+    repeated DeviceInterfaceAddresses device_interface_addresses = 1;
   }
   BatchBody body = 3;
 }
@@ -3054,7 +3010,6 @@ message UpsertDeviceInterfaceAddressesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceInterfaceAddresses data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3072,7 +3027,6 @@ message CreateTempDeviceInterfaceAddressesRequest {
   TempDeviceInterfaceAddresses temp_device_interface_addresses = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempDeviceInterfaceAddresses response
@@ -3164,8 +3118,7 @@ message BatchInsertTempDeviceInterfaceAddressesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempDeviceInterfaceAddresses temp_device_interface_addresses = 2;
+    repeated TempDeviceInterfaceAddresses temp_device_interface_addresses = 1;
   }
   BatchBody body = 3;
 }
@@ -3185,7 +3138,6 @@ message UpsertTempDeviceInterfaceAddressesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempDeviceInterfaceAddresses data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3203,7 +3155,6 @@ message CreateDeviceInterfacesRequest {
   DeviceInterfaces device_interfaces = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceInterfaces response
@@ -3295,8 +3246,7 @@ message BatchInsertDeviceInterfacesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceInterfaces device_interfaces = 2;
+    repeated DeviceInterfaces device_interfaces = 1;
   }
   BatchBody body = 3;
 }
@@ -3316,7 +3266,6 @@ message UpsertDeviceInterfacesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceInterfaces data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3334,7 +3283,6 @@ message CreateTempDeviceInterfacesRequest {
   TempDeviceInterfaces temp_device_interfaces = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempDeviceInterfaces response
@@ -3426,8 +3374,7 @@ message BatchInsertTempDeviceInterfacesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempDeviceInterfaces temp_device_interfaces = 2;
+    repeated TempDeviceInterfaces temp_device_interfaces = 1;
   }
   BatchBody body = 3;
 }
@@ -3447,7 +3394,6 @@ message UpsertTempDeviceInterfacesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempDeviceInterfaces data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3465,7 +3411,6 @@ message CreateDeviceRemoteAccessSessionsRequest {
   DeviceRemoteAccessSessions device_remote_access_sessions = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceRemoteAccessSessions response
@@ -3557,8 +3502,7 @@ message BatchInsertDeviceRemoteAccessSessionsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceRemoteAccessSessions device_remote_access_sessions = 2;
+    repeated DeviceRemoteAccessSessions device_remote_access_sessions = 1;
   }
   BatchBody body = 3;
 }
@@ -3578,7 +3522,6 @@ message UpsertDeviceRemoteAccessSessionsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceRemoteAccessSessions data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3596,7 +3539,6 @@ message CreateTempDeviceRemoteAccessSessionsRequest {
   TempDeviceRemoteAccessSessions temp_device_remote_access_sessions = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempDeviceRemoteAccessSessions response
@@ -3688,8 +3630,7 @@ message BatchInsertTempDeviceRemoteAccessSessionsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempDeviceRemoteAccessSessions temp_device_remote_access_sessions = 2;
+    repeated TempDeviceRemoteAccessSessions temp_device_remote_access_sessions = 1;
   }
   BatchBody body = 3;
 }
@@ -3709,7 +3650,6 @@ message UpsertTempDeviceRemoteAccessSessionsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempDeviceRemoteAccessSessions data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3727,7 +3667,6 @@ message CreateDeviceRulesRequest {
   DeviceRules device_rules = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceRules response
@@ -3819,8 +3758,7 @@ message BatchInsertDeviceRulesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceRules device_rules = 2;
+    repeated DeviceRules device_rules = 1;
   }
   BatchBody body = 3;
 }
@@ -3840,7 +3778,6 @@ message UpsertDeviceRulesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceRules data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3858,7 +3795,6 @@ message CreateTempDeviceRulesRequest {
   TempDeviceRules temp_device_rules = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempDeviceRules response
@@ -3950,8 +3886,7 @@ message BatchInsertTempDeviceRulesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempDeviceRules temp_device_rules = 2;
+    repeated TempDeviceRules temp_device_rules = 1;
   }
   BatchBody body = 3;
 }
@@ -3971,7 +3906,6 @@ message UpsertTempDeviceRulesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempDeviceRules data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -3989,7 +3923,6 @@ message CreatePacketsRequest {
   Packets packets = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Packets response
@@ -4081,8 +4014,7 @@ message BatchInsertPacketsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Packets packets = 2;
+    repeated Packets packets = 1;
   }
   BatchBody body = 3;
 }
@@ -4102,7 +4034,6 @@ message UpsertPacketsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Packets data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4120,7 +4051,6 @@ message CreateTempPacketsRequest {
   TempPackets temp_packets = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempPackets response
@@ -4212,8 +4142,7 @@ message BatchInsertTempPacketsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempPackets temp_packets = 2;
+    repeated TempPackets temp_packets = 1;
   }
   BatchBody body = 3;
 }
@@ -4233,7 +4162,6 @@ message UpsertTempPacketsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempPackets data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4251,7 +4179,6 @@ message CreateConnectionsRequest {
   Connections connections = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Connections response
@@ -4343,8 +4270,7 @@ message BatchInsertConnectionsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Connections connections = 2;
+    repeated Connections connections = 1;
   }
   BatchBody body = 3;
 }
@@ -4364,7 +4290,6 @@ message UpsertConnectionsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Connections data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4382,7 +4307,6 @@ message CreateTempConnectionsRequest {
   TempConnections temp_connections = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempConnections response
@@ -4474,8 +4398,7 @@ message BatchInsertTempConnectionsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempConnections temp_connections = 2;
+    repeated TempConnections temp_connections = 1;
   }
   BatchBody body = 3;
 }
@@ -4495,7 +4418,6 @@ message UpsertTempConnectionsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempConnections data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4513,7 +4435,6 @@ message CreateDeviceSshKeysRequest {
   DeviceSshKeys device_ssh_keys = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceSshKeys response
@@ -4605,8 +4526,7 @@ message BatchInsertDeviceSshKeysRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceSshKeys device_ssh_keys = 2;
+    repeated DeviceSshKeys device_ssh_keys = 1;
   }
   BatchBody body = 3;
 }
@@ -4626,7 +4546,6 @@ message UpsertDeviceSshKeysRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceSshKeys data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4644,7 +4563,6 @@ message CreateDevicesRequest {
   Devices devices = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Devices response
@@ -4736,8 +4654,7 @@ message BatchInsertDevicesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Devices devices = 2;
+    repeated Devices devices = 1;
   }
   BatchBody body = 3;
 }
@@ -4757,7 +4674,6 @@ message UpsertDevicesRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Devices data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4775,7 +4691,6 @@ message CreateIpInfosRequest {
   IpInfos ip_infos = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create IpInfos response
@@ -4867,8 +4782,7 @@ message BatchInsertIpInfosRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated IpInfos ip_infos = 2;
+    repeated IpInfos ip_infos = 1;
   }
   BatchBody body = 3;
 }
@@ -4888,7 +4802,6 @@ message UpsertIpInfosRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     IpInfos data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -4906,7 +4819,6 @@ message CreateResolutionsRequest {
   Resolutions resolutions = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Resolutions response
@@ -4998,8 +4910,7 @@ message BatchInsertResolutionsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Resolutions resolutions = 2;
+    repeated Resolutions resolutions = 1;
   }
   BatchBody body = 3;
 }
@@ -5019,7 +4930,6 @@ message UpsertResolutionsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Resolutions data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -5037,7 +4947,6 @@ message CreateWallguardLogsRequest {
   WallguardLogs wallguard_logs = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create WallguardLogs response
@@ -5129,8 +5038,7 @@ message BatchInsertWallguardLogsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated WallguardLogs wallguard_logs = 2;
+    repeated WallguardLogs wallguard_logs = 1;
   }
   BatchBody body = 3;
 }
@@ -5150,7 +5058,6 @@ message UpsertWallguardLogsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     WallguardLogs data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -5168,7 +5075,6 @@ message CreateTempWallguardLogsRequest {
   TempWallguardLogs temp_wallguard_logs = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create TempWallguardLogs response
@@ -5260,8 +5166,7 @@ message BatchInsertTempWallguardLogsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated TempWallguardLogs temp_wallguard_logs = 2;
+    repeated TempWallguardLogs temp_wallguard_logs = 1;
   }
   BatchBody body = 3;
 }
@@ -5281,7 +5186,6 @@ message UpsertTempWallguardLogsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     TempWallguardLogs data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -5299,7 +5203,6 @@ message CreateDeviceGroupSettingsRequest {
   DeviceGroupSettings device_group_settings = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create DeviceGroupSettings response
@@ -5391,8 +5294,7 @@ message BatchInsertDeviceGroupSettingsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated DeviceGroupSettings device_group_settings = 2;
+    repeated DeviceGroupSettings device_group_settings = 1;
   }
   BatchBody body = 3;
 }
@@ -5412,7 +5314,6 @@ message UpsertDeviceGroupSettingsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     DeviceGroupSettings data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -5430,7 +5331,6 @@ message CreateContactsRequest {
   Contacts contacts = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create Contacts response
@@ -5522,8 +5422,7 @@ message BatchInsertContactsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated Contacts contacts = 2;
+    repeated Contacts contacts = 1;
   }
   BatchBody body = 3;
 }
@@ -5543,7 +5442,6 @@ message UpsertContactsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     Contacts data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -5561,7 +5459,6 @@ message CreateContactPhoneNumbersRequest {
   ContactPhoneNumbers contact_phone_numbers = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create ContactPhoneNumbers response
@@ -5653,8 +5550,7 @@ message BatchInsertContactPhoneNumbersRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated ContactPhoneNumbers contact_phone_numbers = 2;
+    repeated ContactPhoneNumbers contact_phone_numbers = 1;
   }
   BatchBody body = 3;
 }
@@ -5674,7 +5570,6 @@ message UpsertContactPhoneNumbersRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     ContactPhoneNumbers data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }
@@ -5692,7 +5587,6 @@ message CreateContactEmailsRequest {
   ContactEmails contact_emails = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
-  string entity_prefix = 4; // Entity prefix code
 }
 
 // Create ContactEmails response
@@ -5784,8 +5678,7 @@ message BatchInsertContactEmailsRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    string entity_prefix = 1;
-    repeated ContactEmails contact_emails = 2;
+    repeated ContactEmails contact_emails = 1;
   }
   BatchBody body = 3;
 }
@@ -5805,7 +5698,6 @@ message UpsertContactEmailsRequest {
   message UpsertBody {
     repeated string conflict_columns = 1;
     ContactEmails data = 2;
-    string entity_prefix = 3;
   }
   UpsertBody body = 3;
 }

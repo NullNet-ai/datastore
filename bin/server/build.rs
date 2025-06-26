@@ -1,14 +1,20 @@
-use std::process::Command;
 use std::env;
+use std::process::Command;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Database migrations
     if let Ok(database_url) = env::var("DATABASE_URL") {
         println!("cargo:warning=Running database migrations...");
-        
+
         // Install diesel_cli if not already installed
         let diesel_result = Command::new("cargo")
-            .args(&["install", "diesel_cli", "--no-default-features", "--features", "postgres"])
+            .args(&[
+                "install",
+                "diesel_cli",
+                "--no-default-features",
+                "--features",
+                "postgres",
+            ])
             .status();
 
         if let Ok(status) = diesel_result {

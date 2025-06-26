@@ -4,7 +4,7 @@ DECLARE
     record_id TEXT;
     encryption_key_id TEXT;
     organization_id TEXT := '01JBHKXHYSKPP247HZZWHA3JCT';
-    record_email TEXT := 'admin@dnamicro.com';
+    record_email TEXT := 'superadmin@dnamicro.com';
     pgp_sym_key TEXT := 'dummy_secret_key';
     record_limit INT := 10000;
 BEGIN

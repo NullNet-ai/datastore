@@ -13,23 +13,24 @@ mod batch_sync;
 mod controllers;
 mod db;
 mod generated;
-mod init;
+mod initializers;
 mod message_stream;
 mod middlewares;
 mod models;
 mod organizations;
 mod schema;
+mod permissions;
 mod shutdown_handler;
 mod structs;
 mod sync;
 mod table_enum;
 mod templates;
-mod initializers;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
+use crate::schema::database_setup::DatabaseSetupFlags;
 use crate::sync::controllers::sync_endpoints_controller;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -67,6 +68,7 @@ fn run_build_script() -> std::io::Result<()> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     let generate_proto =
         env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string()) == "true";
     let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
@@ -75,31 +77,35 @@ async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
-    let merkle_manager = MerkleManager::instance();
-    println!(
-        "{} {} {}",
-        generate_proto, generate_grpc, generate_table_enum
-    );
-    if generate_proto || generate_grpc || generate_table_enum {
-        println!("Starting code generation...");
+    let args: Vec<String> = env::args().collect();
 
-        //check for command-line arguments
-        let args: Vec<String> = env::args().collect();
-        if args.len() > 1 {
-            if args[1] == "--init-db" {
-                let cleanup = args.len() > 2 && args[2] == "--cleanup";
-                match utils::run_sql_files::run_sql_files(cleanup) {
-                    Ok(_) => {
-                        println!("Database initialization completed successfully!");
-                        return Ok(());
-                    }
-                    Err(e) => {
-                        eprintln!("Error initializing database: {}", e);
-                        std::process::exit(1);
-                    }
-                }
+    // Set boolean flags based on command-line arguments
+    let cleanup = args.contains(&"--cleanup".to_string());
+    let init_db = args.contains(&"--init-db".to_string());
+    if cleanup {
+        println!("Running cleanup operation only...");
+        match schema::database_setup::setup_database(DatabaseSetupFlags {
+            run_cleanup: true,
+            run_migrations: true,
+            initialize_services: false,
+            run_init_sql: false,
+        })
+        .await
+        {
+            Ok(_) => {
+                println!("Database cleanup completed successfully!");
+            }
+            Err(e) => {
+                eprintln!("Error during database cleanup: {}", e);
             }
         }
+    }
+
+    let merkle_manager = MerkleManager::instance();
+    TransactionService::initialize().await;
+
+    if generate_proto || generate_grpc || generate_table_enum {
+        println!("Starting code generation...");
 
         // Proto generation
         if generate_proto {
@@ -166,21 +172,14 @@ async fn main() -> std::io::Result<()> {
     // Save to database every 5 minutes (300000 milliseconds)
     let _save_handle = merkle_manager.start_periodic_save(300000);
 
-    dotenv().ok();
     let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
     let grpc_port = env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string());
     let grpc_url = env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
     let pool = db::establish_async_pool();
     println!("Database connected successfully.");
-    TransactionService::initialize().await;
 
     let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
-    tokio::spawn(async move {
-        match GrpcController::init(&grpc_addr).await {
-            Ok(_) => println!("gRPC server started successfully"),
-            Err(e) => eprintln!("Failed to start gRPC server: {}", e),
-        }
-    });
+
     // init batch sync
     if let Err(e) = BatchSyncService::init().await {
         log::error!("Failed to initialize queue: {}", e);
@@ -193,6 +192,32 @@ async fn main() -> std::io::Result<()> {
     } else {
         println!("Queue initialized successfully");
     }
+
+    if init_db {
+        println!("Running cleanup operation only...");
+        match schema::database_setup::setup_database(DatabaseSetupFlags {
+            run_cleanup: false,
+            run_migrations: false,
+            initialize_services: true,
+            run_init_sql: true,
+        })
+        .await
+        {
+            Ok(_) => {
+                println!("Database cleanup completed successfully!");
+            }
+            Err(e) => {
+                eprintln!("Error during database cleanup: {}", e);
+            }
+        }
+    }
+
+    tokio::spawn(async move {
+        match GrpcController::init(&grpc_addr).await {
+            Ok(_) => println!("gRPC server started successfully"),
+            Err(e) => eprintln!("Failed to start gRPC server: {}", e),
+        }
+    });
 
     let server_url = format!("0.0.0.0:{}", port);
     println!("Server is running on {}", server_url);
@@ -220,11 +245,6 @@ async fn main() -> std::io::Result<()> {
             .await
             .expect("Socket.IO server failed");
     });
-    if let Err(e) = init::initialize_services().await {
-        log::error!("Failed to initialize services: {}", e);
-    } else {
-        log::info!("Services initialized successfully");
-    }
 
     let server = HttpServer::new(move || {
         App::new()
