@@ -55,5 +55,4 @@ export { table as resolutions } from '../application/resolutions'; // new entity
 export { table as device_ssh_keys } from '../application/device_ssh_keys';
 export { table as system_resources } from './system_resources';
 export { table as temp_system_resources } from './temp_system_resources';
-export { table as device_credentials } from "./device_credentials";
 // export { table as data_permissions } from '../application/data_permissions';
