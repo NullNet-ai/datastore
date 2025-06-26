@@ -15,7 +15,6 @@ const { SYNC_ENABLED = 'false' } = process.env;
 
 @Injectable()
 export class CreateActorsImplementations {
-  private table_exceptions = ['organizations'];
   private db;
   constructor(
     private readonly syncService: SyncService,
@@ -61,11 +60,7 @@ export class CreateActorsImplementations {
         const { host, cookie } = headers;
         const { table } = params;
         const { pluck = 'id', p, rp } = query;
-        if (
-          !body?.organization_id &&
-          !is_root_account &&
-          !this.table_exceptions.includes(table)
-        ) {
+        if (!body?.organization_id && !is_root_account) {
           body.organization_id = organization_id;
         }
         body.created_by = account_organization_id;

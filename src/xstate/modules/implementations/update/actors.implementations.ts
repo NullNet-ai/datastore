@@ -13,7 +13,7 @@ import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false' } = process.env;
 @Injectable()
 export class UpdateActorsImplementations {
-  private table_exceptions = ['organizations'];
+  private table_exceptions = ['organizations', 'account_organizations'];
   private db;
   constructor(
     private readonly syncService: SyncService,
