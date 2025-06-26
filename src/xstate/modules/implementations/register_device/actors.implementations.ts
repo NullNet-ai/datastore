@@ -169,7 +169,7 @@ export class RegisterDeviceActorsImplementations {
           }),
           tombstone: 0,
           status: 'Active',
-          device_id: created_account_and_device_id,
+          device_id,
           categories: account_organization_categories,
           created_date: formatted_date,
           created_time: formatted_time,
