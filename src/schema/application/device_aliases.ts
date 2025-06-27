@@ -2,8 +2,6 @@ import {
   AnyPgColumn,
   pgTable,
   text,
-  primaryKey,
-  index,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -25,17 +23,7 @@ const fields = {
   device_alias_status: text('device_alias_status'),
 }
 
-const config = (table) => ({
-  pk: primaryKey({ columns: [table.id] }),
-  ...getConfigDefaults.defaultIndexes(table_name, table),
-  ...Object.keys(fields).reduce((acc, field) => {
-    const index_name = `${table_name}_${field}_idx`;
-    return {
-      ...acc,
-      [index_name]: index(index_name).on(table[field]),
-    };
-  }, {}),
-});
+const config = getConfigDefaults.byIndex(table_name);
 
 export const table = pgTable(
   table_name,

@@ -104,6 +104,15 @@ export async function initializers(app) {
       digits_number: 6,
     },
   });
+    await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'device_configurations',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'DC',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
   await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
     entity: 'device_remote_access_sessions',
     system_code_config: {
