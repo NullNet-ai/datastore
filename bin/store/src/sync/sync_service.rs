@@ -32,11 +32,11 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
             Box::pin(async move {
                 let messages = create_messages(&mut tx, &row, table, operation)
                     .await
-                       .map_err(|e| {
+                    .map_err(|e| {
                         log::error!("Failed to create messages: {}", e);
                         DieselError::DatabaseError(
                             diesel::result::DatabaseErrorKind::Unknown,
-                            Box::new(format!("Failed to create messages: {}", e))
+                            Box::new(format!("Failed to create messages: {}", e)),
                         )
                     })?;
 
@@ -48,7 +48,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
                     log::error!("Failed to send messages: {}", e);
                     return Err(DieselError::DatabaseError(
                         diesel::result::DatabaseErrorKind::Unknown,
-                        Box::new(format!("Failed to send messages: {}", e))
+                        Box::new(format!("Failed to send messages: {}", e)),
                     ));
                 }
 
@@ -81,14 +81,13 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
             Box::pin(async move {
                 let messages = create_messages(&mut tx, &modified_row, table, operation)
                     .await
-                      .map_err(|e| {
+                    .map_err(|e| {
                         log::error!("Failed to create messages: {}", e);
                         DieselError::DatabaseError(
                             diesel::result::DatabaseErrorKind::Unknown,
-                            Box::new(format!("Failed to create messages: {}", e))
+                            Box::new(format!("Failed to create messages: {}", e)),
                         )
                     })?;
-
 
                 if messages.is_empty() {
                     log::warn!("create_messages returned empty vector");
@@ -98,7 +97,7 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
                     log::error!("Failed to send messages: {}", e);
                     return Err(DieselError::DatabaseError(
                         diesel::result::DatabaseErrorKind::Unknown,
-                        Box::new(format!("Failed to send messages: {}", e))
+                        Box::new(format!("Failed to send messages: {}", e)),
                     ));
                 }
 

@@ -20,7 +20,9 @@ pub async fn initialize(
         }
         EInitializer::GLOBAL_ORGANIZATION_CONFIG => {
             // Initialize global organization
-            get_global_organization_initializer().initialize(params).await
+            get_global_organization_initializer()
+                .initialize(params)
+                .await
         }
         EInitializer::SYSTEM_DEVICE_CONFIG => {
             // Initialize system device
@@ -41,7 +43,7 @@ pub async fn initialize_all(params: Option<InitializerParams>) -> Result<(), Api
         .unwrap_or_else(|_| "false".to_string())
         .to_lowercase()
         == "true";
-    
+
     if initialize_device {
         initialize(EInitializer::SYSTEM_DEVICE_CONFIG, params.clone()).await?;
     }

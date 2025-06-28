@@ -1,11 +1,12 @@
 use crate::batch_sync::BatchSyncService;
 use crate::controllers::common_controller::{
-    convert_json_to_csv, execute_copy, process_and_insert_record, process_and_update_record,
-    process_records,
+    convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
+    process_and_update_record, process_records,
 };
 use crate::controllers::common_find::{filter_analyzer, get_sort_field};
 use crate::db;
 use crate::db::create_connection;
+use crate::permissions::permission_decorator::PermissionExtractor;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{
     ApiResponse, BatchUpdateBody, ConcatenateField, ParsedConcatenatedFields, QueryParams,
@@ -144,6 +145,7 @@ pub async fn update_record(
 }
 
 pub async fn create_record(
+    permissions: PermissionExtractor,
     auth: HttpRequest,
     pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
@@ -151,6 +153,7 @@ pub async fn create_record(
     query: web::Query<QueryParams>,
 ) -> impl Responder {
     let extensions = auth.extensions();
+    println!("{:?}", permissions);
     let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
@@ -189,6 +192,58 @@ pub async fn create_record(
         ),
     }
 }
+
+// ... existing code ...
+
+// Add this function to the store_controller.rs file
+
+pub async fn get_by_id(
+    auth: HttpRequest,
+    pool: web::Data<db::AsyncDbPool>,
+    path_params: web::Path<(String, String)>,
+    query: web::Query<QueryParams>,
+) -> impl Responder {
+    let (table_name, record_id) = path_params.into_inner();
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    // Parse pluck fields from query parameters
+    let pluck_fields: Vec<String> = if query.pluck.is_empty() {
+        vec!["id".to_string()]
+    } else {
+        query
+            .pluck
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect()
+    };
+
+    // Use the common function to get the record by ID
+    match process_and_get_record_by_id(&table_name, &record_id, Some(pluck_fields)).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap()).json(
+            ApiResponse {
+                success: false,
+                message: error.message,
+                count: 0,
+                data: vec![],
+            },
+        ),
+    }
+}
+
+// ... existing code ...
 
 #[derive(Deserialize)]
 pub struct BatchInsertBody {

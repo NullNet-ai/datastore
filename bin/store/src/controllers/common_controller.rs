@@ -649,8 +649,57 @@ pub async fn process_and_update_record(
     })
 }
 
+//getById
+
+// Add this function after the perform_upsert function
+
+pub async fn process_and_get_record_by_id(
+    table_name: &str,
+    id: &str,
+    pluck_fields: Option<Vec<String>>,
+) -> ControllerResult {
+    let table = Table::from_str(table_name).ok_or_else(|| {
+        ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Unknown table: {}", table_name),
+        )
+    })?;
+
+    // Create database connection
+    let mut conn = db::get_async_connection().await;
+
+    // Get record by ID
+    let record = table.get_by_id(&mut conn, id).await.map_err(|e| {
+        ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to get record: {}", e),
+        )
+    })?;
+
+    // Check if record exists
+    match record {
+        Some(record_value) => {
+            // Apply pluck fields if provided
+            let plucked_record: serde_json::Value = match pluck_fields {
+                Some(fields) => table.pluck_fields(&record_value, fields),
+                None => record_value,
+            };
+
+            Ok(ApiResponse {
+                success: true,
+                message: format!("Record found in '{}'", table_name),
+                count: 1,
+                data: vec![plucked_record],
+            })
+        }
+        None => Err(ApiError::new(
+            http::StatusCode::NOT_FOUND,
+            format!("Record with ID '{}' not found in '{}'", id, table_name),
+        )),
+    }
+}
+
 //Common upsert
-// ... existing code ...
 
 pub async fn perform_upsert(
     table_name: &str,

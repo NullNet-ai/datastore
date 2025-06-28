@@ -1,6 +1,11 @@
 use crate::utils::constructor_service;
 
-pub fn get_permissions_query(tables: &[String], main_fields: Option<&[String]>, role_level: i32, account_organization_id: &String) -> String {
+pub fn get_permissions_query(
+    tables: &[String],
+    main_fields: Option<&[String]>,
+    sensitivity_level: u32,
+    account_organization_id: &String,
+) -> String {
     let query = format!(
         " 
          SELECT 
@@ -42,11 +47,11 @@ pub fn get_permissions_query(tables: &[String], main_fields: Option<&[String]>, 
          LEFT JOIN user_roles as ur ON account_organizations.role_id = ur.id 
          WHERE (( ur.level >= {}) OR data_permissions.account_organization_id = '{}') 
          {}",
-        role_level,
+        sensitivity_level,
         account_organization_id,
         constructor_service::construct_permission_select_where_clause(tables, main_fields)
     );
-    
+
     query
 }
 
@@ -60,7 +65,7 @@ pub fn get_valid_pass_keys_query(organization_id: &str, table: &str, pgp_sym_key
         pgp_sym_key,
         table
     );
-    
+
     query
 }
 
@@ -198,7 +203,7 @@ pub fn get_record_valid_pass_keys_query(table: &str, role_id: &str) -> String {
         role_id,
         table
     );
-    
+
     query
 }
 
@@ -225,6 +230,6 @@ pub fn get_role_permissions_query(role_id: &str) -> String {
          ",
         role_id
     );
-    
+
     query
 }

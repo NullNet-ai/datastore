@@ -1,4 +1,3 @@
-
 use crate::initializers::init::initialize;
 use crate::initializers::structs::{EInitializer, InitializerParams};
 use std::env;
@@ -113,22 +112,15 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
 
     // Step 3: Initialize organization and device if requested
     if flags.initialize_services {
-        
         // First initialization with GLOBAL_ORGANIZATION_CONFIG
-        if let Err(e) = initialize(
-            EInitializer::GLOBAL_ORGANIZATION_CONFIG,
-            None
-        ).await {
+        if let Err(e) = initialize(EInitializer::GLOBAL_ORGANIZATION_CONFIG, None).await {
             println!("Failed to initialize global organization: {}", e);
         } else {
             log::info!("Global organization initialized successfully");
         };
-        
+
         // Second initialization with ROOT_ACCOUNT_CONFIG
-        if let Err(e) = initialize(
-            EInitializer::SYSTEM_DEVICE_CONFIG,
-            None
-        ).await {
+        if let Err(e) = initialize(EInitializer::SYSTEM_DEVICE_CONFIG, None).await {
             println!("Failed to initialize root account: {}", e);
         } else {
             log::info!("Root account initialized successfully");

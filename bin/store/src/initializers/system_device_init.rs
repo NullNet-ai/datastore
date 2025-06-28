@@ -1,5 +1,8 @@
 use crate::controllers::store_controller::ApiError;
-use crate::organizations::{organization_service, structs::{AccountType, Register}};
+use crate::organizations::{
+    organization_service,
+    structs::{AccountType, Register},
+};
 
 pub struct SystemDeviceInitializer;
 
@@ -8,7 +11,10 @@ impl SystemDeviceInitializer {
         SystemDeviceInitializer
     }
 
-    pub async fn initialize(&self, _params: Option<crate::initializers::structs::InitializerParams>) -> Result<(), ApiError> {
+    pub async fn initialize(
+        &self,
+        _params: Option<crate::initializers::structs::InitializerParams>,
+    ) -> Result<(), ApiError> {
         // Get environment variables
         let default_organization_id = std::env::var("DEFAULT_ORGANIZATION_ID")
             .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string());
@@ -16,8 +22,8 @@ impl SystemDeviceInitializer {
             .unwrap_or_else(|_| "global-organization".to_string());
         let default_device_id =
             std::env::var("DEFAULT_DEVICE_ID").unwrap_or_else(|_| "system_device".to_string());
-        let default_device_secret =
-            std::env::var("DEFAULT_DEVICE_SECRET").unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
+        let default_device_secret = std::env::var("DEFAULT_DEVICE_SECRET")
+            .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
 
         let default_device_setup = Register {
             account_type: Some(AccountType::Device),

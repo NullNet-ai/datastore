@@ -394,8 +394,56 @@ macro_rules! generate_get_method {
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    // Implementation for Get method
-                    todo!()
+                    // Get authentication data from request extensions
+                    let _auth_data = match request.extensions().get::<Auth>() {
+                        Some(data) => data.clone(), // Clone the auth data
+                        None => {
+                            return Err(tonic::Status::internal(
+                                "Authentication information not available",
+                            ));
+                        }
+                    };
+
+                    // Extract request parameters
+                    let request = request.into_inner();
+                    let id = request.id;
+
+                    // Check if ID is provided
+                    if id.is_empty() {
+                        return Err(Status::invalid_argument("ID is required"));
+                    }
+
+                    // Get the table name based on the macro parameter
+                    let table_name = stringify!($table).to_string();
+
+                    // Process and get record by ID
+                    match process_and_get_record_by_id(&table_name, &id, None).await {
+                        Ok(response) => {
+                            // Check if we have data
+                            if response.data.is_empty() {
+                                return Err(Status::not_found(
+                                    format!("Record with ID '{}' not found in '{}'", id, table_name)
+                                ));
+                            }
+
+                            // Convert the first item to the specific type
+                            let typed_data: [<$table:camel>] = serde_json::from_value(response.data[0].clone())
+                                .map_err(|e| Status::internal(format!("Failed to convert response data: {}", e)))?;
+
+                            // Create the gRPC response
+                            let grpc_response = [<Get $table:camel Response>] {
+                                success: response.success,
+                                message: response.message,
+                                data: Some(typed_data),
+                            };
+
+                            Ok(Response::new(grpc_response))
+                        },
+                        Err(error) => {
+                            // Map API error to gRPC status
+                            Err(Status::internal(error.message))
+                        }
+                    }
                 })
             }
         }

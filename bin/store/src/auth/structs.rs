@@ -1,11 +1,10 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginResponse {
     pub message: String,
     pub token: Option<String>,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Account {
@@ -22,7 +21,7 @@ pub struct Account {
     pub role_level: Option<u32>,
 
     #[serde(default)]
-    pub is_root_account:bool,
+    pub is_root_account: bool,
 
     #[serde(default)]
     pub profile: Option<serde_json::Value>,
@@ -37,15 +36,26 @@ pub struct Account {
     pub device: Option<serde_json::Value>, // Unknown shape
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub account: Account,
     pub sessionID: String,
-    pub role_level: i32,
     pub role_name: String,
+    pub sensitivity_level: u32,
     #[serde(default)]
     pub previously_logged_in: Option<String>,
     exp: usize,
     iat: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct User {
+    pub role_id: String,
+    // Add other user fields as needed
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Session {
+    pub user: User,
+    pub session_id: String,
 }

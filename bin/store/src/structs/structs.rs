@@ -8,12 +8,23 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use uuid::Uuid as uuid_crate;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ApiResponse {
     pub success: bool,
     pub message: String,
     pub count: i32,
     pub data: Vec<Value>,
+}
+
+impl std::fmt::Display for ApiResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}: {}",
+            if self.success { "Success" } else { "Error" },
+            self.message
+        )
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -191,8 +202,8 @@ pub struct Endpoint {
 pub struct Auth {
     pub organization_id: String,
     pub responsible_account: String,
-    pub role_level: Option<u32>,
-    pub role_name: Option<String>,
+    pub sensitivity_level: u32,
+    pub role_name: String,
     pub is_root_account: bool,
 }
 

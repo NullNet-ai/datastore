@@ -1,5 +1,8 @@
 use crate::controllers::store_controller::ApiError;
-use crate::organizations::{organization_service, structs::{AccountType, Register}};
+use crate::organizations::{
+    organization_service,
+    structs::{AccountType, Register},
+};
 
 pub struct GlobalOrganizationInitializer;
 
@@ -8,14 +11,18 @@ impl GlobalOrganizationInitializer {
         GlobalOrganizationInitializer
     }
 
-    pub async fn initialize(&self, _params: Option<crate::initializers::structs::InitializerParams>) -> Result<(), ApiError> {
+    pub async fn initialize(
+        &self,
+        _params: Option<crate::initializers::structs::InitializerParams>,
+    ) -> Result<(), ApiError> {
         // Get environment variables
         let default_organization_id = std::env::var("DEFAULT_ORGANIZATION_ID")
             .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string());
         let default_organization_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
             .unwrap_or_else(|_| "global-organization".to_string());
-        let default_organization_admin_password = std::env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD")
-            .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
+        let default_organization_admin_password =
+            std::env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD")
+                .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
 
         // Create default account setup
         let default_account_setup = Register {

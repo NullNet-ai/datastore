@@ -609,7 +609,7 @@ pub async fn create_account(
     account_status: Option<String>,
     status: Option<String>,
     responsible_account_organization_id: Option<String>,
-   mut create_profile: Option<bool>
+    mut create_profile: Option<bool>,
 ) -> Result<(), ApiError> {
     // Hash the password
     if !create_profile.is_some() {
@@ -658,34 +658,34 @@ pub async fn create_account(
     // Create account profile using AccountProfileModel
 
     if create_profile.unwrap() == true {
-    let account_profile = AccountProfileModel {
-        id: Some(Ulid::new().to_string()),
-        first_name: Some(first_name),
-        last_name: Some(last_name),
-        email: Some(account_id.clone()),
-        account_id: Some(id.clone()),
-        organization_id: Some(personal_organization_id),
-        tombstone: Some(0),
-        status: Some("Active".to_string()),
-        created_date: Some(formatted_date.clone()),
-        created_time: Some(formatted_time.clone()),
-        updated_date: Some(formatted_date),
-        updated_time: Some(formatted_time),
-        created_by: responsible_account_organization_id,
-        ..Default::default()
-    };
+        let account_profile = AccountProfileModel {
+            id: Some(Ulid::new().to_string()),
+            first_name: Some(first_name),
+            last_name: Some(last_name),
+            email: Some(account_id.clone()),
+            account_id: Some(id.clone()),
+            organization_id: Some(personal_organization_id),
+            tombstone: Some(0),
+            status: Some("Active".to_string()),
+            created_date: Some(formatted_date.clone()),
+            created_time: Some(formatted_time.clone()),
+            updated_date: Some(formatted_date),
+            updated_time: Some(formatted_time),
+            created_by: responsible_account_organization_id,
+            ..Default::default()
+        };
 
-    // Convert model to JSON and insert into database
-    let profile_json = serde_json::to_value(&account_profile).map_err(|e| {
-        ApiError::new(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to serialize account profile: {}", e),
-        )
-    })?;
+        // Convert model to JSON and insert into database
+        let profile_json = serde_json::to_value(&account_profile).map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to serialize account profile: {}", e),
+            )
+        })?;
 
-    // Insert account profile into database
-    sync_service::insert(&"account_profiles".to_string(), profile_json).await?;
-}
+        // Insert account profile into database
+        sync_service::insert(&"account_profiles".to_string(), profile_json).await?;
+    }
 
     log::info!("Created Account: {}, email: {}", id, account_id);
 

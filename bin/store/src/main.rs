@@ -18,8 +18,8 @@ mod message_stream;
 mod middlewares;
 mod models;
 mod organizations;
-mod schema;
 mod permissions;
+mod schema;
 mod shutdown_handler;
 mod structs;
 mod sync;
@@ -27,6 +27,7 @@ mod table_enum;
 mod templates;
 mod utils;
 use crate::batch_sync::BatchSyncService;
+use crate::controllers::store_controller::get_by_id;
 use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
@@ -265,13 +266,14 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/api/store")
-                    .wrap(Authentication)
                     .wrap(ShutdownGuard)
+                    .wrap(Authentication)
                     .route("/{table}", web::post().to(create_record))
                     .route("/upsert/{table}", web::post().to(upsert))
                     .route("/batch/{table}", web::patch().to(batch_update_records))
                     .route("/batch/{table}", web::delete().to(batch_delete_records))
                     .route("/{table}/filter", web::post().to(get_by_filter))
+                    .route("/{table}/{id}", web::get().to(get_by_id))
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records)),
