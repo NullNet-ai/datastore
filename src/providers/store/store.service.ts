@@ -38,6 +38,7 @@ const {
   REDIS_CACHE_PORT = '6379',
   REDIS_CACHE_ENDPOINT = 'localhost',
   PORTAL_REDIS_CACHE_INDEX = '1',
+  DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 @Injectable()
 export class StoreMutationDriver {
@@ -268,6 +269,106 @@ export class InitializerService {
           .catch(() => null);
 
         this.logger.debug(`Root Account created: ${JSON.stringify(result)}`);
+        break;
+      case EInitializer.ENTITY_DATA:
+        const init_data = _params as Array<Record<string, any>>;
+        if (!entity)
+          throw new BadRequestException(
+            '[Data Initialization]: Indicate entity for data initialization',
+          );
+
+        const table_schema = schema[entity];
+        if (!table_schema)
+          throw new BadRequestException(
+            '[Data Initialization]: Invalid entity for Data Initialization',
+          );
+        if (!init_data?.length)
+          throw new BadRequestException(
+            '[Data Initialization]: Initial data is required for Data Initialization',
+          );
+
+        const invalid_fields = [
+          ...new Set(
+            init_data
+              .map((data) => {
+                const fields = Object.keys(data);
+                if (!fields.includes('id'))
+                  throw new BadRequestException(
+                    '[Data Initialization]: ID is required on initial data.',
+                  );
+                return fields.filter(
+                  (field) => !Object.keys(table_schema).includes(field),
+                );
+              })
+              .flat(),
+          ),
+        ];
+
+        if (invalid_fields?.length)
+          throw new BadRequestException(
+            `[Data Initialization]: Invalid fields [${invalid_fields}] on initial data for entity ${entity}`,
+          );
+
+        await mapSeries(init_data, async (data) => {
+          const { id, organization_id = DEFAULT_ORGANIZATION_ID } = data;
+
+          const is_existing = await this.db
+            .select({ id: table_schema.id })
+            .from(table_schema)
+            .where(
+              and(
+                eq(table_schema.tombstone, 0),
+                eq(table_schema.id, id),
+                eq(table_schema.organization_id, organization_id),
+              ),
+            )
+            .then(([result]) => result);
+
+          if (is_existing) {
+            this.logger.warn(
+              `[Data Initialization]: Record ${id} of ${entity} already exists.`,
+            );
+          } else {
+            const date = new Date();
+            const formattedDate = date
+              .toLocaleDateString(locale, date_options)
+              .replace(/-/g, '/');
+            const formattedTime = Utility.convertTime12to24(
+              date.toLocaleTimeString(locale, {
+                timeZone: timezone,
+              }),
+            );
+            const formatted_data = {
+              status: 'Active',
+              ...data,
+              organization_id,
+              tombstone: 0,
+              created_date: formattedDate,
+              created_time: formattedTime,
+              updated_date: formattedDate,
+              updated_time: formattedTime,
+            };
+
+            const result = await this.db
+              .insert(table_schema)
+              .values(formatted_data)
+              .returning()
+              .then(([result]) => {
+                this.logger.log(
+                  `[Data Initialization]: Record [${result?.id}] for entity ${entity} inserted successfully`,
+                );
+                return result?.id;
+              })
+              .catch((err) => {
+                this.logger.error(
+                  `[Data Initialization]: Error inserting data for entity ${entity} with ID [${id}]: ${err.message}`,
+                );
+                return null;
+              });
+
+            return result;
+          }
+        });
         break;
       default:
         throw new Error('Invalid initializer type');

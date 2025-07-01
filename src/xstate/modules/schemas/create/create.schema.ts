@@ -44,6 +44,7 @@ export interface IGuards extends IRootGuards {
 export enum EInitializer {
   SYSTEM_CODE_CONFIG = 'system_code_config',
   ROOT_ACCOUNT_CONFIG = 'root_account_config',
+  ENTITY_DATA = 'entity_data',
 }
 
 export interface IinitializerParams {
@@ -57,5 +58,8 @@ export interface IinitializerParams {
   root_account_config?: {
     project_name?: string;
   };
+  entity_data?: Array<{
+    [key: string]: any;
+  }>;
   [key: string]: any;
 }

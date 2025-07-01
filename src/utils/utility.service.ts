@@ -2594,9 +2594,9 @@ export class Utility {
 
   public static replacePlaceholders(query, values) {
     values.forEach((value, index) => {
-      const placeholder = `\\$${index + 1}`;
+      const placeholder = `\$${index + 1}`;
       const formatted_value = typeof value === 'string' ? `'${value}'` : value;
-      query = query.replace(new RegExp(placeholder, 'g'), formatted_value);
+      query = query.replace(placeholder, formatted_value);
     });
     return query;
   }
