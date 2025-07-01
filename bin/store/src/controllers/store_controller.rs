@@ -146,14 +146,13 @@ pub async fn update_record(
 
 pub async fn create_record(
     permissions: PermissionExtractor,
-    auth: HttpRequest,
+    request: HttpRequest,
     pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
-    request: web::Json<RequestBody>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
-    let extensions = auth.extensions();
-    println!("{:?}", permissions);
+    let extensions = request.extensions();
+    // println!("{:?}", permissions);
     let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
@@ -175,7 +174,7 @@ pub async fn create_record(
 
     match process_and_insert_record(
         &table_name,
-        request.record.clone(),
+        permissions.request_body,
         Some(pluck_fields),
         &auth_data,
     )

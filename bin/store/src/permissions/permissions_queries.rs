@@ -2,7 +2,7 @@ use crate::utils::constructor_service;
 
 pub fn get_permissions_query(
     tables: &[String],
-    main_fields: Option<&[String]>,
+    main_fields: &[String],
     sensitivity_level: u32,
     account_organization_id: &String,
 ) -> String {

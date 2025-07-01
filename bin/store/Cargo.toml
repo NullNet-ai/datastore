@@ -51,6 +51,8 @@ argon2 = "0.5.3"
 ulid = "1.2.1"
 sha2 = "0.10.9"
 hex = "0.4.3"
+futures-util = "0.3.31"
+redis = { version = "0.23.0", features = ["tokio-comp"] }
 
 [build-dependencies]
 tonic-build = "0.12.3"

@@ -10,6 +10,7 @@ use templates::proto_generator;
 use templates::table_enum::table_enum_generator;
 mod auth;
 mod batch_sync;
+mod cache;
 mod controllers;
 mod db;
 mod generated;
@@ -27,6 +28,8 @@ mod table_enum;
 mod templates;
 mod utils;
 use crate::batch_sync::BatchSyncService;
+use crate::cache::cache_factory::CacheType;
+use crate::cache::{CacheConfig, cache}; // Add the cache function import
 use crate::controllers::store_controller::get_by_id;
 use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
@@ -46,6 +49,7 @@ use controllers::store_controller::{
 use env_logger::Env;
 use std::process;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::signal::unix::{signal, SignalKind};
 
 fn run_build_script() -> std::io::Result<()> {
@@ -78,7 +82,24 @@ async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
+    let cache_type_str = env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
+    let cache_type = CacheType::from_str(&cache_type_str).unwrap_or(CacheType::InMemory);
+    let redis_connection = env::var("REDIS_CONNECTION").ok();
+    let ttl = env::var("CACHE_TTL")
+        .ok()
+        .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
+        .map(Duration::from_secs);
     let args: Vec<String> = env::args().collect();
+
+    CacheConfig::init(cache_type, redis_connection, ttl);
+    log::info!(
+        "Initialized cache with type: {:?}, TTL: {:?}",
+        cache_type,
+        ttl
+    );
+
+    let _= cache.cache_type();
+    
 
     // Set boolean flags based on command-line arguments
     let cleanup = args.contains(&"--cleanup".to_string());
