@@ -11,8 +11,9 @@ import {
   InitializerService,
   StoreQueryDriver,
 } from '../../providers/store/store.service';
-import { LoggerService } from '@dna-platform/common';
+import { LoggerService, HelperService } from '@dna-platform/common';
 import { ConfigModule } from '@nestjs/config';
+import { AppService } from '../../providers/app/app.service';
 @Module({
   imports: [
     GlobalModule,
@@ -37,6 +38,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController],
-  providers: [InitializerService],
+  providers: [InitializerService, AppService, HelperService],
 })
 export class AppModule {}
