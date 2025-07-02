@@ -469,7 +469,7 @@ export class InitializerService {
 
       const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
       const hash_set_cmd = `HSET ${hash_key} ${entries}`;
-      const success = Utility.execCommand(
+      const { success } = Utility.execCommand(
         redis_cli_connection_cmd + ' ' + hash_set_cmd,
       );
       if (success && DEBUG === 'true')

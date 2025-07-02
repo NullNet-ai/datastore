@@ -6,11 +6,16 @@ import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { VerifyActorsImplementations } from '../verify';
 import { Utility } from '../../../../utils/utility.service';
 import { sql } from 'drizzle-orm';
-import Bluebird from 'bluebird';
 const pluralize = require('pluralize');
 import sha1 from 'sha1';
-import * as cache from 'memory-cache';
+import { ELikeMatchPattern } from '../../schemas/find/find.schema';
 
+const {
+  REDIS_CACHE_PORT = '6379',
+  REDIS_CACHE_ENDPOINT = 'localhost',
+  PORTAL_REDIS_CACHE_INDEX = '1',
+  SEARCH_SUGGESTION_CACHE_EXPIRY = '30s',
+} = process.env;
 @Injectable()
 export class SearchSuggestionsActorsImplementations {
   private db;
@@ -66,6 +71,21 @@ export class SearchSuggestionsActorsImplementations {
           },
         });
       const { table_schema } = Utility.checkTable(table);
+
+      const stringified_body = JSON.stringify(_req.body);
+      const query_sha = sha1(stringified_body);
+      const existing_results = this.getFromCache(query_sha);
+      if (existing_results) {
+        return Promise.resolve({
+          payload: {
+            success: true,
+            message: 'searchSuggestions Message',
+            count: 0,
+            data: [existing_results],
+          },
+        });
+      }
+
       let aliased_joined_entities: Array<Record<string, any>> = [];
       joins.forEach(({ field_relation, type }) => {
         let to_entity = field_relation.to.entity;
@@ -144,12 +164,10 @@ export class SearchSuggestionsActorsImplementations {
         concatenate_fields,
         concatenated_field_expressions,
       };
-      const json_build_object_query = await Bluebird.reduce(
-        Object.keys(filtered_fields),
-        async (acc, entity) => {
-          const field_object_agg = await Bluebird.map(
-            await filtered_fields[entity],
-            async (field: string) => {
+      const json_build_object_query = Object.keys(filtered_fields).reduce(
+        (acc, entity) => {
+          const field_object_agg = filtered_fields[entity].map(
+            (field: string) => {
               let entity_field = `${entity}.${field}`;
               let add_alias = false;
               let db_field_group = this.db;
@@ -225,6 +243,7 @@ export class SearchSuggestionsActorsImplementations {
                 case_sensitive = false,
                 parse_as,
                 has_group_count = false,
+                match_pattern = ELikeMatchPattern.STARTS_WITH,
               } = field_filter || {};
 
               let group_count_query = '';
@@ -290,6 +309,7 @@ export class SearchSuggestionsActorsImplementations {
                 date_format,
                 concatenated_field_expressions,
                 dz_filter_queue: [],
+                match_pattern,
               });
 
               // Query for field with all the subquery and filters applied
@@ -338,26 +358,10 @@ export class SearchSuggestionsActorsImplementations {
 
       const sql_query_string = `SELECT JSON_BUILD_OBJECT(${json_build_object_query}) AS results`;
 
-      const query_sha = sha1(sql_query_string);
-      const existing_results = cache.get(query_sha);
-      if (existing_results) {
-        return Promise.resolve({
-          payload: {
-            success: true,
-            message: 'searchSuggestions Message',
-            count: 0,
-            data: [JSON.parse(existing_results)],
-          },
-        });
-      }
       const raw_query = sql.raw(sql_query_string);
       const { rows = [] } = await this.db.execute(raw_query);
       const [{ results = {} } = {}] = rows;
-      cache.put(
-        query_sha,
-        JSON.stringify(results),
-        Utility.getTimeMs(process.env.SEARCH_SUGGESTION_CACHE_EXPIRY || '3s'),
-      );
+      this.saveToCache(query_sha, JSON.stringify(results));
 
       return Promise.resolve({
         payload: {
@@ -378,7 +382,14 @@ export class SearchSuggestionsActorsImplementations {
     search_term,
   }) {
     const formatted_filters = filters.map((filter) => {
-      const { type, entity, field, values, is_search = false } = filter;
+      const {
+        type,
+        entity,
+        field,
+        values,
+        is_search = false,
+        match_pattern = ELikeMatchPattern.STARTS_WITH,
+      } = filter;
       let filtered_entity = entity;
       const is_aliased = aliased_joined_entities?.find(
         ({ alias }) => alias === filtered_entity,
@@ -397,6 +408,7 @@ export class SearchSuggestionsActorsImplementations {
         };
       return {
         ...filter,
+        match_pattern,
         entity: filtered_entity,
       };
     });
@@ -507,5 +519,28 @@ export class SearchSuggestionsActorsImplementations {
         parse_as === 'text' ? '::TEXT' : ''
       } ilike ${value}`
     );
+  }
+
+  private saveToCache(key: string, value: any) {
+    const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
+
+    const set_cmd = `SET ${key} ${value}`;
+    Utility.execCommand(redis_cli_connection_cmd + ' ' + set_cmd);
+
+    const set_expiration_key_cmd = `PEXPIRE ${key} ${+Utility.getTimeMs(
+      SEARCH_SUGGESTION_CACHE_EXPIRY || '30s',
+    )}`;
+    Utility.execCommand(
+      redis_cli_connection_cmd + ' ' + set_expiration_key_cmd,
+    );
+  }
+
+  private getFromCache(key: string) {
+    const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
+    const set_cmd = `GET ${key}`;
+    const { result } = Utility.execCommand(
+      redis_cli_connection_cmd + ' ' + set_cmd,
+    );
+    return JSON.parse(result || 'null');
   }
 }
