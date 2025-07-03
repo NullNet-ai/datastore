@@ -329,6 +329,16 @@ export class InitializerService {
               `[Data Initialization]: Record ${id} of ${entity} already exists.`,
             );
           } else {
+            const [code_counter = null] = await this.db
+              .select()
+              .from(schema['counters'])
+              .where(
+                eq(
+                  (schema?.['counters'] as Record<string, any>)?.entity,
+                  entity,
+                ),
+              );
+            
             const date = new Date();
             const formattedDate = date
               .toLocaleDateString(locale, date_options)
@@ -341,6 +351,7 @@ export class InitializerService {
             const formatted_data = {
               status: 'Active',
               ...data,
+              ...(code_counter && { code: await this.generateCode(entity) }),
               organization_id,
               tombstone: 0,
               created_date: formattedDate,
@@ -510,6 +521,45 @@ export class InitializerService {
     // TODO: create permissions
     // TODO: create data_permissions
     // TODO: use the src/schema/init.sql file to create the default data permissions
+  }
+
+  private async generateCode(entity: string) {
+    const db = this.drizzleService.getClient();
+    const counter_schema = schema['counters'];
+    return db
+      .insert(counter_schema)
+      .values({ entity, counter: 1 })
+      .onConflictDoUpdate({
+        target: [counter_schema.entity],
+        set: {
+          counter: sql`${counter_schema.counter} + 1`,
+        },
+      })
+      .returning({
+        prefix: counter_schema.prefix,
+        default_code: counter_schema.default_code,
+        counter: counter_schema.counter,
+        digits_number: counter_schema.digits_number,
+      })
+      .then(([entity_code]) => {
+        const { prefix, default_code, counter } = entity_code as Record<
+          string,
+          any
+        >;
+        let { digits_number } = entity_code as Record<string, any>;
+        const getDigit = (num: number) => {
+          return num.toString().length;
+        };
+
+        if (digits_number) {
+          digits_number = digits_number - getDigit(counter || 0);
+          const zero_digits =
+            digits_number > 0 ? '0'.repeat(digits_number) : '';
+          return prefix + (zero_digits + counter);
+        }
+        return prefix + (default_code + counter);
+      })
+      .catch(() => null);
   }
 }
 
