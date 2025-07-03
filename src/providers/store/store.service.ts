@@ -329,16 +329,6 @@ export class InitializerService {
               `[Data Initialization]: Record ${id} of ${entity} already exists.`,
             );
           } else {
-            const [code_counter = null] = await this.db
-              .select()
-              .from(schema['counters'])
-              .where(
-                eq(
-                  (schema?.['counters'] as Record<string, any>)?.entity,
-                  entity,
-                ),
-              );
-            
             const date = new Date();
             const formattedDate = date
               .toLocaleDateString(locale, date_options)
@@ -351,7 +341,7 @@ export class InitializerService {
             const formatted_data = {
               status: 'Active',
               ...data,
-              ...(code_counter && { code: await this.generateCode(entity) }),
+              code: await this.generateCode(entity),
               organization_id,
               tombstone: 0,
               created_date: formattedDate,
