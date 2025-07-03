@@ -295,6 +295,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/store")
                     .wrap(ShutdownGuard)
                     .wrap(Authentication)
+                    .wrap(SessionMiddleware)
                     .route("/{table}", web::post().to(create_record))
                     .route("/upsert/{table}", web::post().to(upsert))
                     .route("/batch/{table}", web::patch().to(batch_update_records))

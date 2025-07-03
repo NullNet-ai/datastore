@@ -576,16 +576,7 @@ pub async fn create_new_organization(
         code: code, // This will be None if code is None
         created_by: responsible_account_organization_id, // This will be None if responsible_id is None
         // Set default values for other required fields
-        previous_status: None,
-        version: None,
-        updated_by: None,
-        deleted_by: None,
-        requested_by: None,
-        tags: None,
-        timestamp: None,
-        organization_level: None,
-        root_organization_id: None,
-        path_level: None,
+        ..Default::default()
     };
 
     // Convert the model to a JSON Value for the sync_service

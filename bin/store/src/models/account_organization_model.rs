@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::schema::common_defaults::default_sensitivity_level;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -26,6 +27,8 @@ pub struct AccountOrganizationModel {
     pub code: Option<String>,
     pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
+    #[serde(default = "default_sensitivity_level")]
+    pub sensitivity_level: Option<i32>,
 
     pub contact_id: Option<String>,
     pub email: Option<String>,

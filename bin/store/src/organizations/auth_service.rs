@@ -41,7 +41,9 @@ static TOKEN_CACHE: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| Mutex::n
 pub async fn auth(
     account_id: &str,
     account_secret: &str,
+    session_id: String,
     organization_id: &str,
+
 ) -> Result<LoginResponse, ApiError> {
     // Get database connection
     let mut conn = db::get_async_connection().await;
@@ -110,7 +112,7 @@ pub async fn auth(
         }
 
         // Get the signed in account with all related data
-        let signed_in_account;
+        let mut signed_in_account;
 
         if account_organization_id.is_some() {
             let account_organization_id = account_organization_id.unwrap();
@@ -142,9 +144,15 @@ pub async fn auth(
                 };
         };
 
+        //insert session_id as sessionID in the signed_in_account
+        signed_in_account["sessionID"] = json!(session_id);
+
         // Create token value with the signed in account
         let token_value = json!({
             "account": signed_in_account,
+            "sessionID":session_id,
+            "sensitivity_level":account.sensitivity_level,
+            "role_name":"".to_string(),
             "signed_in_account": signed_in_account
         });
 
@@ -173,6 +181,7 @@ pub async fn auth(
 pub async fn root_auth(
     account_id: &str,
     account_secret: &str,
+    session_id: String,
     previously_logged_in: Option<&str>,
 ) -> Result<LoginResponse, ApiError> {
     // Get database connection
@@ -181,7 +190,7 @@ pub async fn root_auth(
     // Query to find the root account
 
     // Build the SQL query to get account with profile and organization data
-    let result = sql_query(
+     let result = sql_query(
         "
         SELECT json_build_object(
             'is_root_account', true,
@@ -216,12 +225,15 @@ pub async fn root_auth(
             'organization_id', ao.organization_id,
             'account_organization_id', ao.id,
             'account_status', ao.account_organization_status,
-            'role_id', ao.role_id
+            'role_id', ao.role_id,
+            'role_name', ur.role,
+            'sensitivity_level', ur.level
         ) as json_result
         FROM account_organizations ao
         LEFT JOIN accounts a ON a.id = ao.account_id
         LEFT JOIN account_profiles ap ON ap.account_id = a.id
         LEFT JOIN organizations o ON o.id = ao.organization_id
+        LEFT JOIN user_roles ur ON ur.id = ao.role_id
         WHERE ao.tombstone = 0
         AND ao.email = $1
         AND ao.status = 'Active'
@@ -284,6 +296,7 @@ pub async fn root_auth(
 
     // Extract account data
     let account = account_organization["account"].clone();
+    let sensitivity_level = account_organization["sensitivity_level"].clone();
 
     // Check if password is provided
     if account_secret.is_empty() {
@@ -310,8 +323,13 @@ pub async fn root_auth(
         obj.remove("account");
     }
 
+    //insert sessionID in the account_org_clone
+
     let token_value = json!({
         "account": account_org_clone,
+        "sessionID": session_id,
+        "sensitivity_level": sensitivity_level,
+        "role_name":"".to_string(),
         "previously_logged_in": previously_logged_in
     });
 

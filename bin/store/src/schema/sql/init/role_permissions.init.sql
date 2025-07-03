@@ -36,9 +36,13 @@ BEGIN
         BEGIN
             -- loop fields
             FOREACH field IN ARRAY fields LOOP
-                INSERT INTO fields (id, label, name, field_type, created_by, is_encryptable, is_system_field, _default, reference_to, constraints) 
-                SELECT field.id, field.label, field.name, field.field_type, field.created_by, field.is_encryptable, field.is_system_field, field._default, field.reference_to, field.constraints
+                INSERT INTO fields (id, label, name, field_type, created_by,  _default, reference_to, constraints) 
+                SELECT field.id, field.label, field.name, field.field_type, field.created_by, field._default, field.reference_to, field.constraints
                 WHERE NOT EXISTS (SELECT 1 FROM fields WHERE id = field.id);
+
+                INSERT INTO system_config_fields (field_id, is_system_field, is_encryptable, created_by)
+                SELECT field.id, field.is_system_field, field.is_encryptable, field.created_by
+                WHERE NOT EXISTS (SELECT 1 FROM system_config_fields WHERE field_id = field.id);
 
                 DECLARE
                     entity_field_record_id TEXT := uuid_generate_v4()::TEXT;

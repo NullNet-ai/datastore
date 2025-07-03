@@ -9,7 +9,7 @@ CREATE TYPE field_type AS (
   created_by TEXT,
   is_encryptable BOOLEAN,
   is_system_field BOOLEAN,
-  allow_return BOOLEAN,
+  is_allowed_to_return BOOLEAN,
   _default TEXT,
   reference_to TEXT,
   constraints JSONB

@@ -16,6 +16,8 @@ table! {
         tombstone -> Nullable<Int4>,
 
         permission_id -> Nullable<Text>,
+        record_id -> Nullable<Text>,
+        record_entity -> Nullable<Text>,
 
     }
 }
@@ -58,7 +60,7 @@ table! {
 
         role -> Nullable<Text>,
         entity -> Nullable<Text>,
-        level -> Nullable<Int4>,
+        sensitivity_level -> Nullable<Int4>,
 
 
     }
@@ -85,9 +87,6 @@ table! {
         label -> Nullable<Text>,
         name -> Nullable<Text>,
         field_type -> Nullable<Text>,
-        is_system_field -> Nullable<Bool>,
-        is_encryptable -> Nullable<Bool>,
-        allow_return -> Nullable<Bool>,
         constraints -> Nullable<Jsonb>,
         _default -> Nullable<Text>,
         reference_to -> Nullable<Text>,
@@ -97,6 +96,7 @@ table! {
         deleted_by -> Nullable<Text>,
         timestamp -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
+        sensitivity_level -> Nullable<Int4>,
     }
 }
 
@@ -112,14 +112,14 @@ table! {
         deleted_by -> Nullable<Text>,
         timestamp -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
+        sensitivity_level -> Nullable<Int4>,
+        is_encryptable -> Nullable<Bool>,
     }
 }
 
 table! {
     permissions(id) {
         id -> Nullable<Text>,
-        record_id -> Nullable<Text>,
-        record_entity -> Nullable<Text>,
         read -> Nullable<Bool>,
         write -> Nullable<Bool>,
         encrypt -> Nullable<Bool>,
@@ -178,6 +178,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
@@ -277,6 +278,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         parent_organization_id -> Nullable<Text>,
         name -> Nullable<Text>,
@@ -306,6 +308,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         contact_id -> Nullable<Text>,
     }
@@ -331,6 +334,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         organization_contact_id -> Nullable<Text>,
         account_id -> Nullable<Text>,
@@ -361,6 +365,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,
@@ -392,6 +397,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
@@ -420,6 +426,7 @@ table! {
         requested_by -> Nullable<Text>,
         timestamp -> Nullable<Text>,
         tags -> Nullable<Array<Text>>,
+        sensitivity_level -> Nullable<Int4>,
 
         account_id -> Nullable<Text>,
         account_secret -> Nullable<Text>,
@@ -448,6 +455,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         domain_name -> Nullable<Text>,
     }
@@ -476,6 +484,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         address -> Nullable<Text>,
@@ -515,6 +524,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         app_id -> Nullable<Text>,
@@ -541,6 +551,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         level -> Nullable<Text>,
@@ -567,6 +578,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         level -> Nullable<Text>,
@@ -593,6 +605,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         #[sql_name = "type"]
@@ -623,6 +636,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         #[sql_name = "type"]
@@ -653,6 +667,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -682,6 +697,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_interface_id -> Nullable<Text>,
@@ -708,6 +724,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_interface_id -> Nullable<Text>,
@@ -734,6 +751,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -761,6 +779,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -788,6 +807,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -817,6 +837,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -846,6 +867,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -888,6 +910,7 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+         sensitivity_level -> Nullable<Int4>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -929,6 +952,7 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
+         sensitivity_level -> Nullable<Int4>,
 
 
         id -> Nullable<Text>,
@@ -975,10 +999,10 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-
-
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
+
         hypertable_timestamp -> Nullable<Text>,
         interface_name -> Nullable<Text>,
         device_id -> Nullable<Uuid>,
@@ -1021,10 +1045,10 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-
-
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
+
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
         total_packet -> Nullable<Int4>,
@@ -1057,10 +1081,11 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-
-
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
+
+
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
         total_packet -> Nullable<Int4>,
@@ -1093,9 +1118,11 @@ table! {
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-
-        id -> Nullable<Text>,
+           id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
+
+       
         public_key -> Nullable<Text>,
         private_key -> Nullable<Text>,
         passphrase -> Nullable<Text>,
@@ -1123,6 +1150,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         model -> Nullable<Text>,
         address_id -> Nullable<Text>,
@@ -1159,6 +1187,7 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
 
         country -> Nullable<Text>,
         asn -> Nullable<Text>,
@@ -1191,6 +1220,7 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
 
         channel_name -> Nullable<Text>,
         function -> Nullable<Text>,
@@ -1217,6 +1247,7 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
 
         resolution_type -> Nullable<Text>
     }
@@ -1242,6 +1273,7 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
 
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -1269,6 +1301,7 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
 
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -1296,6 +1329,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         name -> Nullable<Text>,
     }
@@ -1321,6 +1355,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         first_name -> Nullable<Text>,
         middle_name -> Nullable<Text>,
@@ -1350,6 +1385,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         contact_id -> Nullable<Text>,
         phone_number_raw -> Nullable<Text>,
@@ -1376,6 +1412,7 @@ table! {
         code -> Nullable<Text>,
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Int4>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,

@@ -10,11 +10,17 @@ DECLARE
     roles TEXT[] := ARRAY['root','Super Admin', 'DB Admin', 'Guest', 'Admin', 'Member'];
     record_limit INT := array_length(roles, 1);
     _permission_id TEXT;
+    _role_permission_id TEXT;
     lpermissions BOOLEAN[];
     role_level INTEGER := 1000;
     re TEXT;
+    account_organization_record_id TEXT;
 BEGIN
     --RAISE NOTICE 'name = %', name;
+    -- Get the account organization ID
+    SELECT id INTO account_organization_record_id 
+    FROM account_organizations 
+    WHERE email = record_email;
     FOR i IN 1..record_limit LOOP
         record_id := TRIM(REGEXP_REPLACE(LOWER(roles[i]), '\s+', '_', 'g'));
         _permission_id := uuid_generate_v4()::TEXT;
@@ -28,6 +34,7 @@ BEGIN
         
         FOREACH re IN ARRAY record_emails LOOP
             BEGIN
+                _role_permission_id := uuid_generate_v4()::TEXT;
                 --RAISE NOTICE 'record_id = %', record_id;
                 encryption_key_id := encode(digest(organization_id || '_' || name || '_' || pgp_sym_key, 'sha1'), 'hex');
                 --RAISE NOTICE 'encryption_key_id: %', encryption_key_id;
@@ -62,24 +69,25 @@ BEGIN
                     role_level = 500;
                 END IF;
             
-                INSERT INTO user_roles (id, role, entity, status, organization_id, level) VALUES (
+                 
+
+                INSERT INTO user_roles (id, role, entity, status, organization_id, sensitivity_level, created_by) VALUES (
                     record_id,
                     roles[i],
                     'Contact',
                     'Active', 
                     organization_id,
-                    role_level
-                ) ON CONFLICT (role) DO UPDATE SET level = role_level;
+                    role_level,
+                    account_organization_record_id
+                ) ON CONFLICT (role) DO NOTHING;
 
                 INSERT INTO permissions (id, read, write, encrypt, decrypt, required, sensitive, archive, delete, created_by) 
-                    SELECT _permission_id, lpermissions[1], lpermissions[2], lpermissions[3], lpermissions[4], lpermissions[5], lpermissions[6], lpermissions[7], lpermissions[8], re
-                    WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = _permission_id);
+                SELECT _permission_id, lpermissions[1], lpermissions[2], lpermissions[3], lpermissions[4], lpermissions[5], lpermissions[6], lpermissions[7], lpermissions[8], re
+                WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = _permission_id);
 
-                INSERT INTO role_permissions (id, role_name, permission_id) VALUES (
-                    uuid_generate_v4()::TEXT,
-                    roles[i],
-                    _permission_id
-                ) ON CONFLICT (role_name) DO NOTHING;
+                INSERT INTO role_permissions (id, role_id, permission_id, created_by)
+                SELECT _role_permission_id, record_id, _permission_id, re
+                WHERE NOT EXISTS (SELECT 1 FROM role_permissions WHERE id = _role_permission_id);
 
                 WITH data_perm AS (
                     SELECT dp.id
@@ -88,9 +96,8 @@ BEGIN
                     LEFT JOIN user_roles as ur ON account_organizations.role_id = ur.id
                     WHERE ur.role = roles[i]
                 )
-
                 UPDATE data_permissions 
-                SET inherited_permission_id = _permission_id
+                SET role_permission_id = _role_permission_id
                 FROM data_perm
                 WHERE data_permissions.id = data_perm.id;
             END;

@@ -2,6 +2,7 @@ use diesel::prelude::*;
 use diesel::{Insertable, Queryable};
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
+use crate::schema::common_defaults::default_sensitivity_level;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -27,9 +28,10 @@ pub struct DeviceModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-
     pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
+    #[serde(default = "default_sensitivity_level")]
+    pub sensitivity_level: Option<i32>,
 
     pub model: Option<String>,
     pub address_id: Option<String>,

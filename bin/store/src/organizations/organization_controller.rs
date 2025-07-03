@@ -1,6 +1,7 @@
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
+use crate::auth::structs::Session;
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
@@ -65,6 +66,21 @@ impl OrganizationsController {
 
     pub async fn auth(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
         let query_string = req.query_string();
+          let session_option = req
+                        .extensions()
+                        .get::<crate::auth::structs::Session>()
+                        .cloned();
+          let session = match session_option {
+    Some(session) => session,
+    None => return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
+        success: false,
+        message: "Session doesn't exist in the login request".to_string(),
+        count: 0,
+        data: vec![],
+    }),
+};
+
+        
         let query_params: Vec<(String, String)> = query_string
             .split('&')
             .filter(|s| !s.is_empty())
@@ -110,6 +126,7 @@ impl OrganizationsController {
             root_auth(
                 &account_id,
                 &account_secret,
+                session.session_id.clone(),
                 if !t.is_empty() { Some(&t) } else { None },
             )
             .await
@@ -122,6 +139,7 @@ impl OrganizationsController {
             auth(
                 &account_id,
                 &account_secret,
+                session.session_id.clone(),
                 "", // Empty organization_id as it's not used in the auth function
             )
             .await
@@ -135,22 +153,12 @@ impl OrganizationsController {
         // Handle the authentication result
         match result {
             Ok(login_response) => {
-                if let Some(token) = login_response.token {
-                    // Get the session from request extensions
-                    let maybe_session = req
-                        .extensions()
-                        .get::<crate::auth::structs::Session>()
-                        .cloned();
-
-                    if let Some(session) = maybe_session {
+                if let Some(token) = login_response.token {                  
                         let updated = crate::auth::structs::Session {
                             token: token.clone(),
                             ..session
                         };
-
-                        // Step 2: Mutate AFTER previous borrow is done
                         req.extensions_mut().insert(updated);
-                    }
 
                     // Set cookie and return token
                     HttpResponse::Ok()

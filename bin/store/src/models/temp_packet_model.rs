@@ -2,6 +2,7 @@ use diesel::prelude::*;
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::schema::common_defaults::default_sensitivity_level;
 
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     t == &T::default()
@@ -29,9 +30,11 @@ pub struct TempPacketModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-
     pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
+    #[serde(default = "default_sensitivity_level")]
+    pub sensitivity_level: Option<i32>,
+
     pub hypertable_timestamp: Option<String>,
     pub interface_name: Option<String>,
     pub device_id: Option<Uuid>,

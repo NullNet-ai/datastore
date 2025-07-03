@@ -6,7 +6,7 @@ RETURNS TRIGGER AS $$
         result TEXT;
         row RECORD;
         account_organization_record_id TEXT;
-        role_permission_id TEXT;
+        _role_permission_id TEXT;
         user_role_name TEXT;
         _permission_id TEXT;
         -- guest permissions ( default )
@@ -46,14 +46,15 @@ RETURNS TRIGGER AS $$
             SELECT _permission_id, read, write, encrypt, decrypt, required, sensitive, archive, delete, row.created_by
             WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE id = _permission_id);
 
-            SELECT permission_id INTO role_permission_id 
+            SELECT role_permissions.id INTO _role_permission_id 
             FROM role_permissions 
-            WHERE role_name = user_role_name;
+            LEFT JOIN user_roles ON role_permissions.role_id = user_roles.id
+            WHERE user_roles.role = user_role_name;
 
             -- Check if arr_permissions has elements before accessing
             IF account_organization_record_id IS NOT NULL THEN
-                INSERT INTO data_permissions (id, entity_field_id, permission_id, account_organization_id, created_by, inherited_permission_id) 
-                SELECT uuid_generate_v4()::text, row.entity_field_id, _permission_id, account_organization_record_id, row.created_by, role_permission_id
+                INSERT INTO data_permissions (id, entity_field_id, permission_id, account_organization_id, created_by, role_permission_id) 
+                SELECT uuid_generate_v4()::text, row.entity_field_id, _permission_id, account_organization_record_id, row.created_by, _role_permission_id
                 WHERE NOT EXISTS (SELECT 1 FROM data_permissions WHERE entity_field_id = row.entity_field_id);
             END IF;
 

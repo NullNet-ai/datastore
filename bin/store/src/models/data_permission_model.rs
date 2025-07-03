@@ -19,4 +19,6 @@ pub struct DataPermissionModel {
     pub timestamp: Option<String>,
     pub tombstone: Option<i32>,
     pub permission_id: Option<String>,
+     pub record_id: Option<String>,
+    pub record_entity: Option<String>,
 }

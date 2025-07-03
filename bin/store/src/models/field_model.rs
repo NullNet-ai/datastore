@@ -1,6 +1,7 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use crate::schema::common_defaults::default_sensitivity_level;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -13,9 +14,6 @@ pub struct FieldModel {
     pub label: Option<String>,
     pub name: Option<String>,
     pub field_type: Option<String>,
-    pub is_system_field: Option<bool>,
-    pub is_encryptable: Option<bool>,
-    pub allow_return: Option<bool>,
     pub constraints: Option<JsonValue>,
     pub _default: Option<String>,
     pub reference_to: Option<String>,
@@ -25,4 +23,6 @@ pub struct FieldModel {
     pub deleted_by: Option<String>,
     pub timestamp: Option<String>,
     pub tombstone: Option<i32>,
+    #[serde(default = "default_sensitivity_level")]
+    pub sensitivity_level: Option<i32>,
 }

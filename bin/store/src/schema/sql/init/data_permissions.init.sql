@@ -12,7 +12,7 @@ DECLARE
         ROW('Id_id_text', 'Id', 'id', 'text', record_email, false, true, false,'','',to_jsonb(ARRAY['primaryKey']))::field_type,
         ROW('EntityFieldId_entity_id_text', 'Entity Field Id', 'entity_field_id', 'text', record_email, false, true, false,'','entity_fields',to_jsonb(ARRAY['notNull']))::field_type,
         ROW('PermissionId_permission_id_text', 'Permission Id', 'permission_id', 'text', record_email, false, true, false,'','permissions',to_jsonb(ARRAY['notNull']))::field_type,
-        ROW('InheritedPermissionId_permission_id_text', 'Inherited Permission Id', 'inherited_permission_id', 'text', record_email, false, true, false,'','permissions',to_jsonb(ARRAY['']))::field_type,
+        ROW('InheritedPermissionId_permission_id_text', 'Inherited Permission Id', 'role_permission_id', 'text', record_email, false, true, false,'','permissions',to_jsonb(ARRAY['']))::field_type,
         ROW('AccountOrganizationId_account_organization_id_text', 'Account Organization Id', 'account_organization_id', 'text',record_email, false, true, false,'','account_organizations',to_jsonb(ARRAY['notNull']))::field_type,
         ROW('Version_version_serial', 'Version', 'version', 'serial', record_email, false, true, false,'','',to_jsonb(ARRAY['']))::field_type,
         ROW('CreatedBy_created_by_text', 'Created By', 'created_by', 'text', record_email, false, true, false,'','',to_jsonb(ARRAY['']))::field_type,
@@ -37,9 +37,13 @@ BEGIN
         BEGIN
             -- loop fields
             FOREACH field IN ARRAY fields LOOP
-                INSERT INTO fields (id, label, name, field_type, created_by, is_encryptable, is_system_field, _default, reference_to, constraints) 
-                SELECT field.id, field.label, field.name, field.field_type, field.created_by, field.is_encryptable, field.is_system_field, field._default, field.reference_to, field.constraints
+                INSERT INTO fields (id, label, name, field_type, created_by,  _default, reference_to, constraints) 
+                SELECT field.id, field.label, field.name, field.field_type, field.created_by, field._default, field.reference_to, field.constraints
                 WHERE NOT EXISTS (SELECT 1 FROM fields WHERE id = field.id);
+
+                INSERT INTO system_config_fields (field_id, is_system_field, is_encryptable, created_by)
+                SELECT field.id, field.is_system_field, field.is_encryptable, field.created_by
+                WHERE NOT EXISTS (SELECT 1 FROM system_config_fields WHERE field_id = field.id);
 
                 DECLARE
                     entity_field_record_id TEXT := uuid_generate_v4()::TEXT;

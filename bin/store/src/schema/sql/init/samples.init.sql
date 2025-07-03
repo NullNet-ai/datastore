@@ -8,7 +8,7 @@ DECLARE
     fields field_type[] := ARRAY[
         -- system fields
         ROW('Id_id_text', 'Id', 'id', 'text', record_email, false, true, false,'','',to_jsonb(ARRAY['primaryKey']))::field_type,
-        ROW('Categories_categories_jsonb', 'Categories', 'categories', 'jsonb', record_email, false, true, false,'[]','',to_jsonb(ARRAY['']))::field_type,
+         ROW('Categories_categories_text_array', 'Categories', 'categories', 'text[]', record_email, false, true, false,'ARRAY[]::TEXT[]','',to_jsonb(ARRAY['']))::field_type,
         ROW('Code_code_text', 'Code', 'code', 'text', record_email, false, true, false,'','',to_jsonb(ARRAY['']))::field_type,
         ROW('Tombstone_tombstone_integer', 'Tombstone', 'tombstone', 'integer', record_email, false, true, false,'0','',to_jsonb(ARRAY['']))::field_type,
         ROW('Status_status_text', 'Status', 'status', 'text', record_email, false, true, false,'Active','',to_jsonb(ARRAY['']))::field_type,
@@ -48,9 +48,13 @@ BEGIN
         BEGIN
             -- loop fields
             FOREACH field IN ARRAY fields LOOP
-                INSERT INTO fields (id, label, name, field_type, created_by, is_encryptable, is_system_field, _default, reference_to, constraints) 
-                SELECT field.id, field.label, field.name, field.field_type, field.created_by, field.is_encryptable, field.is_system_field, field._default, field.reference_to, field.constraints
+                INSERT INTO fields (id, label, name, field_type, created_by,  _default, reference_to, constraints) 
+                SELECT field.id, field.label, field.name, field.field_type, field.created_by, field._default, field.reference_to, field.constraints
                 WHERE NOT EXISTS (SELECT 1 FROM fields WHERE id = field.id);
+
+                INSERT INTO system_config_fields (field_id, is_system_field, is_encryptable, created_by)
+                SELECT field.id, field.is_system_field, field.is_encryptable, field.created_by
+                WHERE NOT EXISTS (SELECT 1 FROM system_config_fields WHERE field_id = field.id);
 
                 DECLARE
                     entity_field_record_id TEXT := uuid_generate_v4()::TEXT;
