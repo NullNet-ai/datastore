@@ -6,7 +6,6 @@ table! {
     data_permissions(id) {
         id -> Nullable<Text>,
         entity_field_id -> Nullable<Text>,
-        inherited_permission_id -> Nullable<Text>,
         account_organization_id -> Nullable<Text>,
         version -> Nullable<Int4>,
         created_by -> Nullable<Text>,
@@ -1122,7 +1121,7 @@ table! {
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
 
-       
+
         public_key -> Nullable<Text>,
         private_key -> Nullable<Text>,
         passphrase -> Nullable<Text>,

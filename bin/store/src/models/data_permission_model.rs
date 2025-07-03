@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 pub struct DataPermissionModel {
     pub id: Option<String>,
     pub entity_field_id: Option<String>,
-    pub inherited_permission_id: Option<String>,
     pub account_organization_id: Option<String>,
     pub version: Option<i32>,
     pub created_by: Option<String>,
@@ -19,6 +18,6 @@ pub struct DataPermissionModel {
     pub timestamp: Option<String>,
     pub tombstone: Option<i32>,
     pub permission_id: Option<String>,
-     pub record_id: Option<String>,
+    pub record_id: Option<String>,
     pub record_entity: Option<String>,
 }

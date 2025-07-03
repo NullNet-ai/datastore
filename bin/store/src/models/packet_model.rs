@@ -1,7 +1,7 @@
+use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
-use crate::schema::common_defaults::default_sensitivity_level;
 
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     t == &T::default()
@@ -29,7 +29,7 @@ pub struct PacketModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-       #[serde(default = "default_sensitivity_level")]
+    #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
 
     pub id: Option<String>,

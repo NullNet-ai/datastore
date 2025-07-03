@@ -114,7 +114,7 @@ where
             }
 
             // Extract session ID from header or cookie or generate a new one
-            println!("{:?}",req.headers());
+            println!("{:?}", req.headers());
             let session_id = req
                 .headers()
                 .get(&session_header)
@@ -163,7 +163,6 @@ where
 
             // Store session in request extensions
             req.extensions_mut().insert(session.clone());
-
 
             // Call the next service
             let mut res = service.call(req).await?;

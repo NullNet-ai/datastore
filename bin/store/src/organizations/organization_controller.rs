@@ -66,21 +66,22 @@ impl OrganizationsController {
 
     pub async fn auth(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
         let query_string = req.query_string();
-          let session_option = req
-                        .extensions()
-                        .get::<crate::auth::structs::Session>()
-                        .cloned();
-          let session = match session_option {
-    Some(session) => session,
-    None => return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
-        success: false,
-        message: "Session doesn't exist in the login request".to_string(),
-        count: 0,
-        data: vec![],
-    }),
-};
+        let session_option = req
+            .extensions()
+            .get::<crate::auth::structs::Session>()
+            .cloned();
+        let session = match session_option {
+            Some(session) => session,
+            None => {
+                return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
+                    success: false,
+                    message: "Session doesn't exist in the login request".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
 
-        
         let query_params: Vec<(String, String)> = query_string
             .split('&')
             .filter(|s| !s.is_empty())
@@ -149,16 +150,15 @@ impl OrganizationsController {
             })
         };
 
-
         // Handle the authentication result
         match result {
             Ok(login_response) => {
-                if let Some(token) = login_response.token {                  
-                        let updated = crate::auth::structs::Session {
-                            token: token.clone(),
-                            ..session
-                        };
-                        req.extensions_mut().insert(updated);
+                if let Some(token) = login_response.token {
+                    let updated = crate::auth::structs::Session {
+                        token: token.clone(),
+                        ..session
+                    };
+                    req.extensions_mut().insert(updated);
 
                     // Set cookie and return token
                     HttpResponse::Ok()

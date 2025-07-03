@@ -1,4 +1,5 @@
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
+use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
 use diesel::sql_types::Text;
 use diesel::AsExpression;
@@ -14,6 +15,12 @@ pub struct ApiResponse {
     pub message: String,
     pub count: i32,
     pub data: Vec<Value>,
+}
+
+impl ResponseError for ApiResponse {
+    fn error_response(&self) -> HttpResponse {
+        HttpResponse::BadRequest().json(self) // Or Unauthorized, depending on context
+    }
 }
 
 impl std::fmt::Display for ApiResponse {

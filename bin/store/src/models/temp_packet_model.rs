@@ -1,8 +1,8 @@
+use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::schema::common_defaults::default_sensitivity_level;
 
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     t == &T::default()

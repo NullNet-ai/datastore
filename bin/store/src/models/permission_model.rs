@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[serde(default)]
 pub struct PermissionModel {
     pub id: Option<String>,
-   
+
     #[serde(default = "default_read")]
     pub read: Option<bool>,
     #[serde(default = "default_write")]

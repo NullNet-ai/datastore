@@ -9,8 +9,9 @@ use crate::permissions::permissions_queries::{
 use crate::permissions::structs::{DataPermissions, SchemaItem};
 use crate::structs::structs::{ApiResponse, Auth};
 use crate::utils::request_type_handler::{RequestType, RequestTypeHandler};
-use actix_web::error::ErrorUnauthorized;
+use actix_web::error::{ErrorBadRequest, ErrorUnauthorized};
 use actix_web::web::BytesMut;
+use actix_web::ResponseError;
 use actix_web::{dev::Payload, Error, FromRequest, HttpMessage, HttpRequest};
 use futures::FutureExt;
 use futures_util::future::LocalBoxFuture;
@@ -27,29 +28,14 @@ pub struct PermissionExtractor {
 }
 
 impl FromRequest for PermissionExtractor {
-    type Error = Error;
+    type Error = Box<dyn ResponseError>;
     type Future = LocalBoxFuture<'static, Result<Self, Self::Error>>;
 
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         // Extract everything you need outside the async block
         let auth = req.extensions().get::<Auth>().cloned();
-
-        // Extract and clone Session and session_data outside the async block
         let session = req.extensions().get::<Session>().cloned();
         let session_data = req.extensions().get::<HashMap<String, Value>>().cloned();
-
-        // Early return if session is None
-        if session.is_none() {
-            return Box::pin(async {
-                Err(ErrorUnauthorized(ApiResponse {
-                    success: false,
-                    message: "Session not found".into(),
-                    count: 0,
-                    data: vec![],
-                }))
-            });
-        }
-
         let user_role_id = session
             .as_ref()
             .map(|s| s.user.role_id.clone())
@@ -85,10 +71,25 @@ impl FromRequest for PermissionExtractor {
         let mut payload = std::mem::replace(payload, Payload::None);
 
         let fut = async move {
+            if session.is_none() {
+                return Err(Box::new(ApiResponse {
+                    success: false,
+                    message: "Session not found".into(),
+                    count: 0,
+                    data: vec![],
+                }) as Box<dyn ResponseError>);
+            }
             // Read body
             let mut body = BytesMut::new();
             while let Some(chunk) = payload.next().await {
-                let chunk = chunk?;
+                let chunk = chunk.map_err(|e| {
+                    Box::new(ApiResponse {
+                        success: false,
+                        message: format!("Failed to read request body: {}", e),
+                        count: 0,
+                        data: vec![],
+                    }) as Box<dyn ResponseError>
+                })?;
                 body.extend_from_slice(&chunk);
             }
 
@@ -215,7 +216,7 @@ impl FromRequest for PermissionExtractor {
                 // Use the session and session_data that were cloned outside the async block
                 let session_unwrapped = session.unwrap(); // Safe because we checked above
 
-                let _ = get_cached_permissions(
+                let permissions_result = get_cached_permissions(
                     request_type,
                     PermissionsContext {
                         permissions_query: data_permissions.clone(),
@@ -233,7 +234,15 @@ impl FromRequest for PermissionExtractor {
                         session_data,
                     },
                 )
-                .await?;
+                .await
+                .map_err(|e| {
+                    Box::new(ApiResponse {
+                        success: false,
+                        message: format!("Permission error: {}", e),
+                        count: 0,
+                        data: vec![],
+                    }) as Box<dyn ResponseError>
+                })?;
 
                 Ok(PermissionExtractor {
                     data_permissions,
@@ -241,20 +250,26 @@ impl FromRequest for PermissionExtractor {
                     request_type,
                 })
             } else {
-                Err(ErrorUnauthorized(ApiResponse {
+                return Err(Box::new(ApiResponse {
                     success: false,
                     message: "Authentication required".into(),
                     count: 0,
                     data: vec![],
-                }))
+                }) as Box<dyn ResponseError>);
             }
         };
-
-        fut.boxed_local()
+        fut.map(|r| r).boxed_local()
     }
 }
 
-// ... existing code ...
+fn api_error<T: Into<String>>(msg: T) -> Box<dyn ResponseError> {
+    Box::new(ApiResponse {
+        success: false,
+        message: msg.into(),
+        count: 0,
+        data: vec![],
+    })
+}
 
 impl PermissionExtractor {
     pub fn accumulate_write_information(

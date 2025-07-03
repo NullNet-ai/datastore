@@ -1,8 +1,8 @@
+use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use diesel::{Insertable, Queryable};
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
-use crate::schema::common_defaults::default_sensitivity_level;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,

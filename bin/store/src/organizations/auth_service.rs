@@ -43,7 +43,6 @@ pub async fn auth(
     account_secret: &str,
     session_id: String,
     organization_id: &str,
-
 ) -> Result<LoginResponse, ApiError> {
     // Get database connection
     let mut conn = db::get_async_connection().await;
@@ -190,7 +189,7 @@ pub async fn root_auth(
     // Query to find the root account
 
     // Build the SQL query to get account with profile and organization data
-     let result = sql_query(
+    let result = sql_query(
         "
         SELECT json_build_object(
             'is_root_account', true,
