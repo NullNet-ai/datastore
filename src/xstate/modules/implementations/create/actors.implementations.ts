@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { IResponse, ZodValidationException } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
 import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
@@ -242,6 +242,16 @@ export class CreateActorsImplementations {
           status_code: error.status_code,
         });
         if (error.status !== 400 && error.status < 500) throw error;
+        if (error instanceof ZodValidationException) {
+          throw new BadRequestException({
+            success: false,
+            message: `There was an error while creating the new record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
+            count: 0,
+            data: [],
+            metadata,
+            errors: error.getZodErrors(),
+          });
+        }
         throw new BadRequestException({
           success: false,
           message: `There was an error while creating the new record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
