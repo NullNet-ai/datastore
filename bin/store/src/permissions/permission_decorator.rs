@@ -1,5 +1,11 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use crate::auth::structs::Session;
-use crate::permissions::permissions_queries::{get_permissions_query, get_role_permissions_query};
+use crate::permissions::permission_utils::{get_cached_permissions, PermissionsContext};
+use crate::permissions::permissions_queries::{
+    get_permissions_query, get_role_permissions_query, PermissionQueryParams,
+};
 use crate::permissions::structs::{DataPermissions, SchemaItem};
 use crate::structs::structs::{ApiResponse, Auth};
 use crate::utils::request_type_handler::{RequestType, RequestTypeHandler};
@@ -27,7 +33,23 @@ impl FromRequest for PermissionExtractor {
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
         // Extract everything you need outside the async block
         let auth = req.extensions().get::<Auth>().cloned();
+
+        // Extract and clone Session and session_data outside the async block
         let session = req.extensions().get::<Session>().cloned();
+        let session_data = req.extensions().get::<HashMap<String, Value>>().cloned();
+
+        // Early return if session is None
+        if session.is_none() {
+            return Box::pin(async {
+                Err(ErrorUnauthorized(ApiResponse {
+                    success: false,
+                    message: "Session not found".into(),
+                    count: 0,
+                    data: vec![],
+                }))
+            });
+        }
+
         let user_role_id = session
             .as_ref()
             .map(|s| s.user.role_id.clone())
@@ -39,14 +61,25 @@ impl FromRequest for PermissionExtractor {
             .to_string();
         let id = req.match_info().get("id").map(|s| s.to_string());
         let method = req.method().clone();
-        let query_string = req.query_string().to_string();
+        let host = req.connection_info().host().to_string();
+        let headers = req.headers().clone(); // Clone headers if needed
+        let metadata: HashMap<String, serde_json::Value> = HashMap::new();
+        let query_params = req
+            .query_string()
+            .split('&')
+            .filter(|s| !s.is_empty())
+            .filter_map(|pair| {
+                let mut parts = pair.splitn(2, '=');
+                match (parts.next(), parts.next()) {
+                    (Some(key), Some(value)) => Some((key.to_string(), value.to_string())),
+                    _ => None,
+                }
+            })
+            .collect::<HashMap<String, String>>();
         let path = req.path().to_string();
+        let uri = req.uri().clone();
         let experimental_permissions =
             std::env::var("EXPERIMENTAL_PERMISSIONS").unwrap_or_else(|_| "false".into()) == "true";
-
-        println!("{:?}", req);
-        println!("{:?}---------------------------------method", method);
-        println!("{:?}---------------------------------path", path);
 
         // move payload safely
         let mut payload = std::mem::replace(payload, Payload::None);
@@ -77,13 +110,12 @@ impl FromRequest for PermissionExtractor {
 
             if let Some(a) = auth {
                 // Build permission logic...
+                let mut requested_fields: Vec<String> = Vec::new();
+                let mut main_fields: Vec<String> = Vec::new();
+                let mut tables: Vec<String> = Vec::new();
 
                 match request_type {
-                    RequestType::Read => {
-                        data_permissions.account_organization_id = a.responsible_account.clone();
-                        data_permissions.role_permissions_query =
-                            get_role_permissions_query(&user_role_id);
-
+                    RequestType::Write => {
                         // Create params object for accumulate_write_information
                         let params_obj = serde_json::json!({
                             "params": {
@@ -103,50 +135,32 @@ impl FromRequest for PermissionExtractor {
                         );
 
                         // Extract requested_fields
-                        let requested_fields = result["requested_fields"]
+                        requested_fields = result["requested_fields"]
                             .as_array()
                             .unwrap_or(&Vec::new())
                             .iter()
                             .map(|v| v.as_str().unwrap_or_default().to_string())
                             .collect::<Vec<String>>();
 
-                        let main_fields = result["main_fields"]
+                        main_fields = result["main_fields"]
                             .as_array()
                             .unwrap_or(&Vec::new())
                             .iter()
                             .map(|v| v.as_str().unwrap_or_default().to_string())
                             .collect::<Vec<String>>();
 
-                        let tables = result["tables"]
+                        tables = result["tables"]
                             .as_array()
                             .unwrap_or(&Vec::new())
                             .iter()
                             .map(|v| v.as_str().unwrap_or_default().to_string())
                             .collect::<Vec<String>>();
-
-                        data_permissions.query = get_permissions_query(
-                            &tables,
-                            &main_fields,
-                            a.sensitivity_level,
-                            &a.responsible_account,
-                        );
 
                         // Update data_permissions requested_fields
-                        data_permissions.requested_fields = requested_fields;
                     }
-                    RequestType::Write => {
-                        data_permissions.account_organization_id = a.responsible_account.clone();
-                        data_permissions.role_permissions_query =
-                            get_role_permissions_query(&user_role_id);
-                        data_permissions.query = get_permissions_query(
-                            &[table.clone()],
-                            &Vec::new(),
-                            a.sensitivity_level,
-                            &a.responsible_account,
-                        );
-
+                    RequestType::Read => {
                         let mut schema = vec![];
-                        let main_fields = body_json
+                        main_fields = body_json
                             .as_object()
                             .map(|m| m.keys().cloned().collect::<Vec<String>>())
                             .unwrap_or_default();
@@ -169,6 +183,57 @@ impl FromRequest for PermissionExtractor {
                     }
                     _ => {}
                 }
+                data_permissions.account_organization_id = a.responsible_account.clone();
+                data_permissions.role_permissions_query_params =
+                    PermissionQueryParams::RolePermissions {
+                        role_id: user_role_id.clone(),
+                    };
+                data_permissions.data_permissions_query_params =
+                    PermissionQueryParams::DataPermissions {
+                        tables: tables.clone(),
+                        main_fields: main_fields.clone(),
+                        sensitivity_level: a.sensitivity_level,
+                        account_organization_id: a.responsible_account.clone(),
+                    };
+
+                data_permissions.valid_pass_keys_query_params =
+                    PermissionQueryParams::ValidPassKeys {
+                        organization_id: a.organization_id.clone(),
+                        table: table.clone(),
+                        pgp_sym_key: std::env::var("PGP_SYM_KEY").unwrap_or_default(),
+                    };
+
+                data_permissions.group_by_field_record_permissions_params =
+                    PermissionQueryParams::GroupByFieldRecordPermissions {
+                        table: table.clone(),
+                        role_id: user_role_id.clone(),
+                    };
+
+                // Update data_permissions requested_fields
+                data_permissions.requested_fields = requested_fields;
+
+                // Use the session and session_data that were cloned outside the async block
+                let session_unwrapped = session.unwrap(); // Safe because we checked above
+
+                let _ = get_cached_permissions(
+                    request_type,
+                    PermissionsContext {
+                        permissions_query: data_permissions.clone(),
+                        host,
+                        headers,
+                        table,
+                        account_organization_id: a.responsible_account,
+                        body: body_json.clone(),
+                        metadata,
+                        account_id: a.account_id,
+                        query: query_params,
+                        method,
+                        uri,
+                        session: session_unwrapped,
+                        session_data,
+                    },
+                )
+                .await?;
 
                 Ok(PermissionExtractor {
                     data_permissions,

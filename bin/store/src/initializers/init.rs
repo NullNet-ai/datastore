@@ -1,4 +1,5 @@
 use crate::controllers::store_controller::ApiError;
+use crate::initializers::background_services_init::get_background_services_initializer;
 use crate::initializers::code_prefix_init::get_code_prefix_initializer;
 use crate::initializers::global_organization_init::get_global_organization_initializer;
 use crate::initializers::root_account_init::get_root_account_initializer;
@@ -28,6 +29,12 @@ pub async fn initialize(
             // Initialize system device
             get_system_device_initializer().initialize(params).await
         }
+        EInitializer::BACKGROUND_SERVICES_CONFIG => {
+            // Initialize background services
+            get_background_services_initializer()
+                .initialize(params)
+                .await
+        }
     }
 }
 
@@ -49,7 +56,10 @@ pub async fn initialize_all(params: Option<InitializerParams>) -> Result<(), Api
     }
 
     // Then initialize root account
-    initialize(EInitializer::ROOT_ACCOUNT_CONFIG, params).await?;
+    initialize(EInitializer::ROOT_ACCOUNT_CONFIG, params.clone()).await?;
+
+    // Finally initialize background services
+    initialize(EInitializer::BACKGROUND_SERVICES_CONFIG, params).await?;
 
     Ok(())
 }

@@ -1,5 +1,5 @@
 use crate::auth::auth_service::verify;
-use crate::auth::structs::Claims;
+use crate::auth::structs::{Claims, Origin, Session};
 use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
@@ -118,11 +118,57 @@ where
                             responsible_account: claims.account.account_organization_id.clone(),
                             sensitivity_level: claims.sensitivity_level,
                             role_name: claims.role_name.clone(),
+                            account_organization_id: claims.account.organization_id.clone(),
+                            role_id: claims.account.role_id.clone(),
                             is_root_account: claims.account.is_root_account,
+                            account_id: claims.account.account_id.clone(),
                         };
 
                         // Store the Auth object in request extensions
                         auth.extensions_mut().insert(auth_data);
+
+                        // Early return if EXPERIMENTAL_PERMISSIONS is not enabled
+                        if env::var("EXPERIMENTAL_PERMISSIONS")
+                            .unwrap_or_else(|_| "false".to_string())
+                            != "true"
+                        {
+                            let fut = self.service.call(auth);
+                            return Box::pin(async move {
+                                let res = fut.await?;
+                                Ok(res)
+                            });
+                        }
+
+                        if let Some(session) = auth.extensions().get::<Session>().cloned() {
+                            // Create a modified session
+                            let mut updated_session = session;
+
+                            // Update the session fields
+                            updated_session.token = t.clone();
+
+                            // Create and store origin information
+                            let host = auth.connection_info().host().to_string();
+                            let url = auth.uri().to_string();
+                            let user_agent = auth
+                                .headers()
+                                .get(header::USER_AGENT)
+                                .and_then(|h| h.to_str().ok())
+                                .map(|s| s.to_string());
+
+                            updated_session.origin = Some(Origin {
+                                user_agent,
+                                host,
+                                url,
+                            });
+
+                            // Update user information in session
+                            updated_session.user.role_id = claims.account.role_id.clone();
+                            updated_session.user.is_root_user = claims.account.is_root_account;
+                            updated_session.user.account_id = claims.account.account_id.clone();
+
+                            // Replace the session in extensions
+                            auth.extensions_mut().insert(updated_session);
+                        }
 
                         let fut = self.service.call(auth);
                         Box::pin(async move {
@@ -236,7 +282,10 @@ impl Interceptor for GrpcAuthInterceptor {
                         responsible_account: claims.account.account_organization_id.clone(),
                         sensitivity_level: claims.sensitivity_level,
                         role_name: claims.role_name.clone(),
+                        account_organization_id: claims.account.organization_id.clone(),
+                        role_id: claims.account.role_id.clone(),
                         is_root_account: claims.account.is_root_account,
+                        account_id: claims.account.account_id.clone(),
                     };
 
                     // Store the Auth object in request extensions

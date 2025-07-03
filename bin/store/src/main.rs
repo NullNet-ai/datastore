@@ -29,9 +29,12 @@ mod templates;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
-use crate::cache::{CacheConfig, cache}; // Add the cache function import
+use crate::cache::{cache, CacheConfig}; // Add the cache function import
 use crate::controllers::store_controller::get_by_id;
+use crate::initializers::init::initialize;
+use crate::initializers::structs::EInitializer;
 use crate::message_stream::pg_listener_service::PgListenerService;
+use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
 use crate::schema::database_setup::DatabaseSetupFlags;
@@ -98,8 +101,7 @@ async fn main() -> std::io::Result<()> {
         ttl
     );
 
-    let _= cache.cache_type();
-    
+    let _ = cache.cache_type();
 
     // Set boolean flags based on command-line arguments
     let cleanup = args.contains(&"--cleanup".to_string());
@@ -122,8 +124,12 @@ async fn main() -> std::io::Result<()> {
             }
         }
     }
+    if let Err(e) = initialize(EInitializer::BACKGROUND_SERVICES_CONFIG, None).await {
+        log::error!("Failed to initialize background services: {}", e);
+    } else {
+        log::info!("Background services initialized successfully");
+    }
 
-    let merkle_manager = MerkleManager::instance();
     TransactionService::initialize().await;
 
     if generate_proto || generate_grpc || generate_table_enum {
@@ -182,25 +188,13 @@ async fn main() -> std::io::Result<()> {
         log::info!("PgListenerService initialized successfully");
     }
 
-    // }
-    merkle_manager.load_trees_from_db().await;
-
     // Initialize the message sender
     let sender = create_message_channel();
     let arc_sender = Arc::new(sender);
     SENDER.set(arc_sender).expect("Failed to initialize sender");
 
-    // Start periodic save task (optional)
-    // Save to database every 5 minutes (300000 milliseconds)
-    let _save_handle = merkle_manager.start_periodic_save(300000);
-
-    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
-    let grpc_port = env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string());
-    let grpc_url = env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
     let pool = db::establish_async_pool();
     println!("Database connected successfully.");
-
-    let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
 
     // init batch sync
     if let Err(e) = BatchSyncService::init().await {
@@ -234,12 +228,21 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    //GRPC config
+
+    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
+    let grpc_port = env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string());
+    let grpc_url = env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
+
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
             Ok(_) => println!("gRPC server started successfully"),
             Err(e) => eprintln!("Failed to start gRPC server: {}", e),
         }
     });
+
+    //HTTPS config
 
     let server_url = format!("0.0.0.0:{}", port);
     println!("Server is running on {}", server_url);
@@ -248,6 +251,8 @@ async fn main() -> std::io::Result<()> {
             log::error!("Error starting background sync: {}", e);
         }
     });
+
+    //Socket server config
 
     let socketio_server = tokio::spawn(async move {
         use axum::Router;
@@ -274,6 +279,7 @@ async fn main() -> std::io::Result<()> {
             .configure(sync_endpoints_controller::configure)
             .service(
                 web::scope("/api/organizations")
+                    .wrap(SessionMiddleware)
                     .route(
                         "/register",
                         web::post().to(OrganizationsController::register),

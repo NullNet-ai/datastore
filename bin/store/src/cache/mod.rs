@@ -10,5 +10,5 @@ pub mod cache_singleton;
 
 // Public re-exports
 pub use cache_config::CacheConfig;
-pub use cache_factory::{CacheType};
-pub use cache_singleton::CACHE as cache; 
+pub use cache_factory::CacheType;
+pub use cache_singleton::CACHE as cache;

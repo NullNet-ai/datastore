@@ -4,6 +4,7 @@ pub enum EInitializer {
     ROOT_ACCOUNT_CONFIG,
     GLOBAL_ORGANIZATION_CONFIG,
     SYSTEM_DEVICE_CONFIG,
+    BACKGROUND_SERVICES_CONFIG,
 }
 
 impl EInitializer {
@@ -13,6 +14,7 @@ impl EInitializer {
             EInitializer::ROOT_ACCOUNT_CONFIG => "root_account_config",
             EInitializer::GLOBAL_ORGANIZATION_CONFIG => "global_organization_config",
             EInitializer::SYSTEM_DEVICE_CONFIG => "system_device_config",
+            EInitializer::BACKGROUND_SERVICES_CONFIG => "background_services_config",
         }
     }
 
@@ -22,6 +24,7 @@ impl EInitializer {
             "root_account_config" => Some(EInitializer::ROOT_ACCOUNT_CONFIG),
             "global_organization_config" => Some(EInitializer::GLOBAL_ORGANIZATION_CONFIG),
             "system_device_config" => Some(EInitializer::SYSTEM_DEVICE_CONFIG),
+            "background_services_config" => Some(EInitializer::BACKGROUND_SERVICES_CONFIG),
             _ => None,
         }
     }

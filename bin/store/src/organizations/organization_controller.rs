@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
+use actix_web::HttpMessage;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -26,15 +27,12 @@ impl OrganizationsController {
     }
 
     pub async fn register(data: web::Json<Register>) -> impl Responder {
-        // Check if data is valid
         if data.0.account_id.is_empty() || data.0.account_secret.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid Input"}));
         }
 
-        // Set is_request to true as in the TypeScript example
         let is_request = Some(true);
 
-        // Call the organization service register function
         match register(&data.0, is_request, None).await {
             Ok(result) => HttpResponse::Ok().json(result),
             Err(e) => {
@@ -48,12 +46,10 @@ impl OrganizationsController {
         data: web::Json<Register>,
         id: web::Path<String>,
     ) -> impl Responder {
-        // Check if data is valid
         if data.0.account_id.is_empty() || data.0.account_secret.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid Input"}));
         }
 
-        // Set is_request to true as in the TypeScript example
         let is_request = Some(true);
         let param = id.to_string();
 
@@ -68,7 +64,6 @@ impl OrganizationsController {
     }
 
     pub async fn auth(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
-        // Implementation remains the same, just remove the &self parameter
         let query_string = req.query_string();
         let query_params: Vec<(String, String)> = query_string
             .split('&')
@@ -136,10 +131,27 @@ impl OrganizationsController {
             })
         };
 
+
         // Handle the authentication result
         match result {
             Ok(login_response) => {
                 if let Some(token) = login_response.token {
+                    // Get the session from request extensions
+                    let maybe_session = req
+                        .extensions()
+                        .get::<crate::auth::structs::Session>()
+                        .cloned();
+
+                    if let Some(session) = maybe_session {
+                        let updated = crate::auth::structs::Session {
+                            token: token.clone(),
+                            ..session
+                        };
+
+                        // Step 2: Mutate AFTER previous borrow is done
+                        req.extensions_mut().insert(updated);
+                    }
+
                     // Set cookie and return token
                     HttpResponse::Ok()
                         .cookie(

@@ -1,7 +1,8 @@
-use std::sync::{Arc, Mutex};
+use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
-use once_cell::sync::Lazy;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use super::cache_config::CacheConfig;
 use super::cache_factory::{CacheManager, CacheType};
@@ -10,9 +11,8 @@ use super::cache_factory::{CacheManager, CacheType};
 type JsonCacheManager = CacheManager<String, Value>;
 
 // Create a thread-safe singleton cache instance
-static JSON_CACHE: Lazy<Arc<Mutex<JsonCacheManager>>> = Lazy::new(|| {
-    Arc::new(Mutex::new(CacheConfig::global().create_cache_manager()))
-});
+static JSON_CACHE: Lazy<Arc<Mutex<JsonCacheManager>>> =
+    Lazy::new(|| Arc::new(Mutex::new(CacheConfig::global().create_cache_manager())));
 
 /// A thread-safe wrapper around CacheManager that provides direct method access
 pub struct Cache {
@@ -35,6 +35,14 @@ impl Cache {
     /// Insert a value into the cache
     pub fn insert(&self, key: String, value: Value) {
         self.inner.lock().unwrap().insert(key, value);
+    }
+
+    /// Insert a value into the cache with a TTL
+    /// For in-memory cache, this just calls the regular insert method
+    pub fn insert_with_ttl(&self, key: String, value: Value, ttl: Duration) {
+        // For in-memory cache, just use regular insert
+        // For Redis, we would use the Redis-specific insert_with_ttl
+        self.insert(key, value);
     }
 
     pub fn get(&self, key: &str) -> Option<Value> {

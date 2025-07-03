@@ -195,3 +195,88 @@ pub async fn generate_code(entity: &str) -> Result<Option<String>, DieselError> 
 
     Ok(Some(code))
 }
+
+pub fn time_string_to_ms(time_str: &str) -> Result<u64, Box<dyn std::error::Error>> {
+    // Format: 1d 2h 30m 45s
+    if let Some(captures) =
+        regex::Regex::new(r"^((?:\d+)d\s*)?((?:\d+)h\s*)?((?:\d+)m\s*)?((?:\d+)s\s*)?$")
+            .unwrap()
+            .captures(time_str)
+    {
+        let days = captures.get(1).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('d')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+        let hours = captures.get(2).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('h')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+        let minutes = captures.get(3).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('m')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+        let seconds = captures.get(4).map_or(0, |m| {
+            m.as_str()
+                .trim_end_matches('s')
+                .trim()
+                .parse::<u64>()
+                .unwrap_or(0)
+        });
+
+        let total_ms = days * 24 * 60 * 60 * 1000
+            + hours * 60 * 60 * 1000
+            + minutes * 60 * 1000
+            + seconds * 1000;
+        return Ok(total_ms);
+    }
+
+    // Format: HH:mm:ss
+    if let Some(captures) = regex::Regex::new(r"^(\d{1,2}):(\d{2}):(\d{2})$")
+        .unwrap()
+        .captures(time_str)
+    {
+        let hours = captures
+            .get(1)
+            .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
+        let minutes = captures
+            .get(2)
+            .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
+        let seconds = captures
+            .get(3)
+            .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
+
+        let total_ms = hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
+        return Ok(total_ms);
+    }
+
+    // Format: mm:ss
+    if let Some(captures) = regex::Regex::new(r"^(\d{1,2}):(\d{2})$")
+        .unwrap()
+        .captures(time_str)
+    {
+        let minutes = captures
+            .get(1)
+            .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
+        let seconds = captures
+            .get(2)
+            .map_or(0, |m| m.as_str().parse::<u64>().unwrap_or(0));
+
+        let total_ms = minutes * 60 * 1000 + seconds * 1000;
+        return Ok(total_ms);
+    }
+
+    // If none of the formats match
+    Err(Box::new(std::io::Error::new(
+        std::io::ErrorKind::InvalidInput,
+        "Invalid time format",
+    )))
+}

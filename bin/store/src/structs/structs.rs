@@ -204,7 +204,10 @@ pub struct Auth {
     pub responsible_account: String,
     pub sensitivity_level: u32,
     pub role_name: String,
+    pub account_organization_id: String,
+    pub role_id: String,
     pub is_root_account: bool,
+    pub account_id: String,
 }
 
 // get by filter

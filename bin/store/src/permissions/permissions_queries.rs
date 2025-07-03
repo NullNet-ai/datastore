@@ -1,4 +1,54 @@
 use crate::utils::constructor_service;
+use diesel::prelude::*;
+use diesel::sql_types::*;
+use diesel::QueryableByName;
+use diesel_async::RunQueryDsl;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
+
+#[derive(QueryableByName, Debug, Serialize, Deserialize)]
+pub struct PermissionQueryResult {
+    #[diesel(sql_type = Nullable<Text>)]
+    pub permission_id: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub entity_field_id: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub account_organization_id: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub id: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub inherited_permission_id: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub record_id: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub record_entity: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub role: Option<String>,
+    #[diesel(sql_type = Nullable<Integer>)]
+    pub level: Option<i32>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub entity: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub field: Option<String>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub is_encryptable: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub sensitive: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub read: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub write: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub encrypt: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub decrypt: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub required: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub archive: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub delete: Option<bool>,
+}
 
 pub fn get_permissions_query(
     tables: &[String],
@@ -55,6 +105,12 @@ pub fn get_permissions_query(
     query
 }
 
+#[derive(QueryableByName, Debug, Serialize, Deserialize)]
+pub struct ValidPassKeyResult {
+    #[diesel(sql_type = Text)]
+    pub id: String,
+}
+
 pub fn get_valid_pass_keys_query(organization_id: &str, table: &str, pgp_sym_key: &str) -> String {
     let query = format!(
         " 
@@ -69,7 +125,35 @@ pub fn get_valid_pass_keys_query(organization_id: &str, table: &str, pgp_sym_key
     query
 }
 
-pub fn get_record_valid_pass_keys_query(table: &str, role_id: &str) -> String {
+#[derive(QueryableByName, Debug, Serialize, Deserialize)]
+pub struct GroupByFieldRecordPermissionsResult {
+    #[diesel(sql_type = Nullable<Text>)]
+    pub role: Option<String>,
+    #[diesel(sql_type = Text)]
+    pub entity: String,
+    #[diesel(sql_type = BigInt)]
+    pub total_fields: i64,
+    #[diesel(sql_type = BigInt)]
+    pub total_fields_with_write: i64,
+    #[diesel(sql_type = Bool)]
+    pub sensitive: bool,
+    #[diesel(sql_type = Bool)]
+    pub read: bool,
+    #[diesel(sql_type = Bool)]
+    pub write: bool,
+    #[diesel(sql_type = Bool)]
+    pub encrypt: bool,
+    #[diesel(sql_type = Bool)]
+    pub decrypt: bool,
+    #[diesel(sql_type = Bool)]
+    pub required: bool,
+    #[diesel(sql_type = Bool)]
+    pub archive: bool,
+    #[diesel(sql_type = Bool)]
+    pub delete: bool,
+}
+
+pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> String {
     let query = format!(
         " 
            SELECT 
@@ -206,6 +290,31 @@ pub fn get_record_valid_pass_keys_query(table: &str, role_id: &str) -> String {
 
     query
 }
+#[derive(QueryableByName, Debug, Serialize, Deserialize)]
+pub struct RolePermissionResult {
+    #[diesel(sql_type = Nullable<Text>)]
+    pub pid: Option<String>,
+    #[diesel(sql_type = Nullable<Text>)]
+    pub role: Option<String>,
+    #[diesel(sql_type = Nullable<Integer>)]
+    pub level: Option<i32>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub sensitive: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub read: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub write: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub encrypt: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub decrypt: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub required: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub archive: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub delete: Option<bool>,
+}
 
 pub fn get_role_permissions_query(role_id: &str) -> String {
     let query = format!(
@@ -232,4 +341,128 @@ pub fn get_role_permissions_query(role_id: &str) -> String {
     );
 
     query
+}
+
+/// Enum representing the different types of permission queries
+pub enum PermissionQueryType {
+    Permissions,
+    ValidPassKeys,
+    GroupByFieldRecordPermissions,
+    RolePermissions,
+}
+
+/// Execute a permission query based on the query type and parameters
+pub async fn execute_permission_query<'a, C>(
+    conn: &mut C,
+    query_type: PermissionQueryType,
+    params: PermissionQueryParams,
+) -> Result<PermissionQueryOutput, Box<dyn Error>>
+where
+    C: diesel_async::AsyncConnection<Backend = diesel::pg::Pg> + 'a,
+{
+    match query_type {
+        PermissionQueryType::Permissions => {
+            if let PermissionQueryParams::DataPermissions {
+                tables,
+                main_fields,
+                sensitivity_level,
+                account_organization_id,
+            } = params
+            {
+                let query = get_permissions_query(
+                    &tables,
+                    &main_fields,
+                    sensitivity_level,
+                    &account_organization_id,
+                );
+                let results = diesel::dsl::sql_query(query)
+                    .load::<PermissionQueryResult>(conn)
+                    .await?;
+                Ok(PermissionQueryOutput::Permissions(results))
+            } else {
+                Err("Invalid parameters for Permissions query".into())
+            }
+        }
+        PermissionQueryType::ValidPassKeys => {
+            if let PermissionQueryParams::ValidPassKeys {
+                organization_id,
+                table,
+                pgp_sym_key,
+            } = params
+            {
+                let query = get_valid_pass_keys_query(&organization_id, &table, &pgp_sym_key);
+                let results = diesel::dsl::sql_query(query)
+                    .load::<ValidPassKeyResult>(conn)
+                    .await?;
+                Ok(PermissionQueryOutput::ValidPassKeys(results))
+            } else {
+                Err("Invalid parameters for ValidPassKeys query".into())
+            }
+        }
+        PermissionQueryType::GroupByFieldRecordPermissions => {
+            if let PermissionQueryParams::GroupByFieldRecordPermissions { table, role_id } = params
+            {
+                let query = get_group_by_field_record_permissions(&table, &role_id);
+                let results = diesel::dsl::sql_query(query)
+                    .load::<GroupByFieldRecordPermissionsResult>(conn)
+                    .await?;
+                Ok(PermissionQueryOutput::GroupByFieldRecordPermission(results))
+            } else {
+                Err("Invalid parameters for GroupByFieldRecordPermission query".into())
+            }
+        }
+        PermissionQueryType::RolePermissions => {
+            if let PermissionQueryParams::RolePermissions { role_id } = params {
+                let query = get_role_permissions_query(&role_id);
+                let results = diesel::dsl::sql_query(query)
+                    .load::<RolePermissionResult>(conn)
+                    .await?;
+                Ok(PermissionQueryOutput::RolePermissions(results))
+            } else {
+                Err("Invalid parameters for RolePermissions query".into())
+            }
+        }
+    }
+}
+
+/// Parameters for different permission queries
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum PermissionQueryParams {
+    DataPermissions {
+        tables: Vec<String>,
+        main_fields: Vec<String>,
+        sensitivity_level: u32,
+        account_organization_id: String,
+    },
+    ValidPassKeys {
+        organization_id: String,
+        table: String,
+        pgp_sym_key: String,
+    },
+    GroupByFieldRecordPermissions {
+        table: String,
+        role_id: String,
+    },
+    RolePermissions {
+        role_id: String,
+    },
+}
+
+impl Default for PermissionQueryParams {
+    fn default() -> Self {
+        Self::DataPermissions {
+            tables: Vec::new(),
+            main_fields: Vec::new(),
+            sensitivity_level: 0,
+            account_organization_id: String::new(),
+        }
+    }
+}
+
+/// Output types for different permission queries
+pub enum PermissionQueryOutput {
+    Permissions(Vec<PermissionQueryResult>),
+    ValidPassKeys(Vec<ValidPassKeyResult>),
+    GroupByFieldRecordPermission(Vec<GroupByFieldRecordPermissionsResult>),
+    RolePermissions(Vec<RolePermissionResult>),
 }
