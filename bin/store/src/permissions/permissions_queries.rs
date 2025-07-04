@@ -17,7 +17,7 @@ pub struct PermissionQueryResult {
     #[diesel(sql_type = Nullable<Text>)]
     pub id: Option<String>,
     #[diesel(sql_type = Nullable<Text>)]
-    pub inherited_permission_id: Option<String>,
+    pub role_permission_id: Option<String>,
     #[diesel(sql_type = Nullable<Text>)]
     pub record_id: Option<String>,
     #[diesel(sql_type = Nullable<Text>)]
@@ -25,13 +25,19 @@ pub struct PermissionQueryResult {
     #[diesel(sql_type = Nullable<Text>)]
     pub role: Option<String>,
     #[diesel(sql_type = Nullable<Integer>)]
-    pub level: Option<i32>,
+    pub sensitivity_level: Option<i32>,
     #[diesel(sql_type = Nullable<Text>)]
     pub entity: Option<String>,
     #[diesel(sql_type = Nullable<Text>)]
     pub field: Option<String>,
     #[diesel(sql_type = Nullable<Bool>)]
     pub is_encryptable: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub is_system_field: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub is_searchable: Option<bool>,
+    #[diesel(sql_type = Nullable<Bool>)]
+    pub is_allowed_to_return: Option<bool>,
     #[diesel(sql_type = Nullable<Bool>)]
     pub sensitive: Option<bool>,
     #[diesel(sql_type = Nullable<Bool>)]
@@ -63,14 +69,18 @@ pub fn get_permissions_query(
          data_permissions.entity_field_id as entity_field_id, 
          data_permissions.account_organization_id as account_organization_id, 
          data_permissions.id as id, 
-         data_permissions.inherited_permission_id as inherited_permission_id, 
-         p.record_id as record_id, 
-         p.record_entity as record_entity, 
+         data_permissions.role_permission_id as role_permission_id, 
+         record_permissions.record_id as record_id, 
+         record_permissions.record_entity as record_entity, 
          ur.role as role, 
-         ur.level as level, 
+         ur.sensitivity_level as sensitivity_level, 
          entities.name as entity, 
          fields.name as field, 
-         fields.is_encryptable as is_encryptable, 
+         CASE WHEN entity_fields.is_encryptable = TRUE THEN 
+         entity_fields.is_encryptable ELSE scf.is_encryptable END as is_encryptable, 
+         scf.is_system_field as is_system_field, 
+         scf.is_searchable as is_searchable, 
+         scf.is_allowed_to_return as is_allowed_to_return, 
          CASE WHEN ip.sensitive IS NOT NULL THEN ip.sensitive 
                  ELSE p.sensitive END as sensitive, 
          CASE WHEN ip.read IS NOT NULL THEN ip.read 
@@ -92,10 +102,14 @@ pub fn get_permissions_query(
          LEFT JOIN fields ON entity_fields.field_id = fields.id 
          LEFT JOIN entities ON entity_fields.entity_id = entities.id 
          LEFT JOIN permissions as p ON data_permissions.permission_id = p.id 
-         LEFT JOIN permissions as ip ON data_permissions.inherited_permission_id = ip.id 
+         LEFT JOIN role_permissions ON data_permissions.role_permission_id = role_permissions.id 
+         LEFT JOIN permissions as ip ON role_permissions.permission_id = ip.id 
+         LEFT JOIN record_permissions ON data_permissions.record_permission_id = record_permissions.id 
+         LEFT JOIN permissions as rp ON record_permissions.permission_id = rp.id 
          LEFT JOIN account_organizations ON account_organizations.id = data_permissions.account_organization_id 
          LEFT JOIN user_roles as ur ON account_organizations.role_id = ur.id 
-         WHERE (( ur.level >= {}) OR data_permissions.account_organization_id = '{}') 
+         LEFT JOIN system_config_fields as scf ON fields.id = scf.field_id 
+         WHERE (( ur.sensitivity_level >= {}) OR data_permissions.account_organization_id = '{}') 
          {}",
         sensitivity_level,
         account_organization_id,
@@ -163,7 +177,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
            COUNT(*) FILTER ( 
              WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.write 
                        ELSE p.write 
                    END 
@@ -173,7 +187,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.sensitive 
                        ELSE p.sensitive 
                    END 
@@ -186,7 +200,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.read 
                        ELSE p.read 
                    END 
@@ -199,7 +213,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.write 
                        ELSE p.write 
                    END 
@@ -212,7 +226,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.encrypt 
                        ELSE p.encrypt 
                    END 
@@ -225,7 +239,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.decrypt 
                        ELSE p.decrypt 
                    END 
@@ -238,7 +252,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.required 
                        ELSE p.required 
                    END 
@@ -251,7 +265,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.archive 
                        ELSE p.archive 
                    END 
@@ -264,7 +278,7 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
              WHEN COUNT(*) FILTER ( 
                  WHERE ( 
                    CASE 
-                     WHEN data_permissions.inherited_permission_id IS NOT NULL 
+                     WHEN data_permissions.role_permission_id IS NOT NULL 
                        THEN ip.delete 
                        ELSE p.delete 
                    END 
@@ -278,7 +292,8 @@ pub fn get_group_by_field_record_permissions(table: &str, role_id: &str) -> Stri
            LEFT JOIN fields ON entity_fields.field_id = fields.id 
            LEFT JOIN entities ON entity_fields.entity_id = entities.id 
            LEFT JOIN permissions as p ON data_permissions.permission_id = p.id 
-           LEFT JOIN permissions as ip ON data_permissions.inherited_permission_id = ip.id 
+           LEFT JOIN role_permissions ON data_permissions.role_permission_id = role_permissions.id 
+           LEFT JOIN permissions as ip ON role_permissions.permission_id = ip.id 
            LEFT JOIN account_organizations ON account_organizations.id = data_permissions.account_organization_id 
            LEFT JOIN user_roles as ur ON account_organizations.role_id = ur.id 
            WHERE ur.id = '{}' AND entities.name = '{}' 
@@ -297,7 +312,7 @@ pub struct RolePermissionResult {
     #[diesel(sql_type = Nullable<Text>)]
     pub role: Option<String>,
     #[diesel(sql_type = Nullable<Integer>)]
-    pub level: Option<i32>,
+    pub sensitivity_level: Option<i32>,
     #[diesel(sql_type = Nullable<Bool>)]
     pub sensitive: Option<bool>,
     #[diesel(sql_type = Nullable<Bool>)]
@@ -321,8 +336,8 @@ pub fn get_role_permissions_query(role_id: &str) -> String {
         " 
          SELECT 
            p.id as pid,  
-           role_permissions.role_name as role, 
-           user_roles.level as level, 
+           user_roles.role as role, 
+           user_roles.sensitivity_level as sensitivity_level, 
            p.sensitive as sensitive, 
            p.read as read, 
            p.write as write, 
@@ -334,7 +349,7 @@ pub fn get_role_permissions_query(role_id: &str) -> String {
          FROM role_permissions 
          LEFT JOIN permissions as p on role_permissions.permission_id = p.id 
          LEFT JOIN data_permissions on role_permissions.permission_id = data_permissions.permission_id 
-         LEFT JOIN user_roles on role_permissions.role_name = user_roles.role 
+         LEFT JOIN user_roles on role_permissions.role_id = user_roles.id 
          WHERE user_roles.id = '{}' 
          ",
         role_id
