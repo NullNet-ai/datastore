@@ -113,6 +113,8 @@ CREATE TABLE "crdt_messages" (
 	"hypertable_timestamp" text,
 	CONSTRAINT "crdt_messages_timestamp_group_id_row_column_pk" PRIMARY KEY("timestamp","group_id","row","column")
 );
+
+
 --> statement-breakpoint
 CREATE TABLE "organization_files" (
 	"id" text PRIMARY KEY NOT NULL,

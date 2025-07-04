@@ -3,6 +3,21 @@ use diesel::{allow_tables_to_appear_in_same_query, joinable, table};
 //permissions
 
 table! {
+    system_config_fields(field_id) {
+        field_id -> Nullable<Text>,
+        is_searchable -> Nullable<Bool>,
+        is_system_field -> Nullable<Bool>,
+        is_encryptable -> Nullable<Bool>,
+        is_allowed_to_return -> Nullable<Bool>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
+table! {
     data_permissions(id) {
         id -> Nullable<Text>,
         entity_field_id -> Nullable<Text>,
@@ -24,17 +39,43 @@ table! {
 table! {
     role_permissions(id) {
         id -> Nullable<Text>,
-        version -> Nullable<Int4>,
+        role_id -> Nullable<Text>,
+        permission_id -> Nullable<Text>,
         created_by -> Nullable<Text>,
         updated_by -> Nullable<Text>,
         deleted_by -> Nullable<Text>,
-        timestamp -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         tombstone -> Nullable<Int4>,
-
-        role_name -> Nullable<Text>,
-        permission_id -> Nullable<Text>,
     }
 }
+table! {
+    record_permissions(id) {
+        id -> Nullable<Text>,
+        record_id -> Nullable<Text>,
+        record_entity -> Nullable<Text>,
+        permission_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
+table! {
+    table_indexes(id) {
+        id -> Nullable<Text>,
+        entity_id -> Nullable<Text>,
+        secondary_index -> Nullable<Text>,
+        compound_index -> Nullable<Jsonb>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tombstone -> Nullable<Int4>,
+    }
+}
+
 
 table! {
     user_roles(id) {

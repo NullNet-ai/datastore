@@ -8,7 +8,7 @@ DECLARE
     fields field_type[] := ARRAY[
         -- system fields
         ROW('Id_id_text', 'Id', 'id', 'text', record_email, false, true, false,'','',to_jsonb(ARRAY['primaryKey']))::field_type,
-         ROW('Categories_categories_text_array', 'Categories', 'categories', 'text[]', record_email, false, true, false,'ARRAY[]::TEXT[]','',to_jsonb(ARRAY['']))::field_type,
+        ROW('Categories_categories_jsonb', 'Categories', 'categories', 'text[]', record_email, false, true, false,'{}','',to_jsonb(ARRAY['']))::field_type,
         ROW('Code_code_text', 'Code', 'code', 'text', record_email, false, true, false,'','',to_jsonb(ARRAY['']))::field_type,
         ROW('Tombstone_tombstone_integer', 'Tombstone', 'tombstone', 'integer', record_email, false, true, false,'0','',to_jsonb(ARRAY['']))::field_type,
         ROW('Status_status_text', 'Status', 'status', 'text', record_email, false, true, false,'Active','',to_jsonb(ARRAY['']))::field_type,

@@ -30,11 +30,11 @@ BEGIN
             record_email
         ) ON CONFLICT (id) DO NOTHING;
 
-           INSERT INTO samples (id, name, sample_text, categories, status, organization_id) VALUES (
+         INSERT INTO samples (id, name, sample_text, categories, status, organization_id) VALUES (
             record_id,
             name || i,
             'sample_text ' || i,
-            ARRAY['category' || i, 'subcategory' || i]::TEXT[],
+            ARRAY['category' || i, 'subcategory' || i],
             CASE WHEN i % 2 = 0 THEN 'Active' ELSE 'InActive' END,
             organization_id
         );

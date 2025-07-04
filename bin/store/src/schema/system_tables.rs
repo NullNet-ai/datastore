@@ -1,7 +1,7 @@
 // Define an array of system table names
 // These tables are considered system tables and may have special handling
 
-pub const SYSTEM_TABLES: [&str; 18] = [
+pub const SYSTEM_TABLES: [&str; 22] = [
     "crdt_messages",
     "crdt_merkles",
     "sync_endpoints",
@@ -20,6 +20,10 @@ pub const SYSTEM_TABLES: [&str; 18] = [
     "user_roles",
     "role_permissions",
     "organization_domains",
+    "system_config_fields",
+    "record_permissions",
+    "role_permission",
+    "table_indexes",
 ];
 
 // Function to check if a table is a system table

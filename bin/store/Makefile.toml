@@ -1,3 +1,11 @@
+#run it using `cargo make watch`
+
 [tasks.watch]
 command = "watchexec"
 args = ["-e", "rs", "-r", "cargo run"]
+
+
+#run using cargo make clean-setup
+[tasks.clean-setup]
+command = "cargo"
+args = ["r", "--", "--cleanup", "--init-db"]

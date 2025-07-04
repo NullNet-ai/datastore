@@ -521,6 +521,18 @@ CREATE TABLE "sessions" (
 	"expire" timestamp NOT NULL
 );
 
+CREATE TABLE "table_indexes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"entity_id" text NOT NULL,
+	"secondary_index" text,
+	"compound_index" jsonb DEFAULT '[]',
+	"created_by" text,
+	"updated_by" text,
+	"deleted_by" text,
+	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+	"tombstone" integer DEFAULT 0
+);
+
 --> statement-breakpoint
 CREATE TABLE "samples" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -547,6 +559,7 @@ CREATE TABLE "samples" (
 	"sample_text" text,
 	"test_obj" jsonb DEFAULT '[]'
 );
+ALTER TABLE "table_indexes" ADD CONSTRAINT "table_indexes_entity_id_entities_id_fk" FOREIGN KEY ("entity_id") REFERENCES "public"."entities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1002,3 +1015,11 @@ CREATE INDEX "system_config_fields_created_by_idx" ON "system_config_fields" USI
 CREATE INDEX "system_config_fields_updated_by_idx" ON "system_config_fields" USING btree ("updated_by");--> statement-breakpoint
 CREATE INDEX "system_config_fields_deleted_by_idx" ON "system_config_fields" USING btree ("deleted_by");--> statement-breakpoint
 CREATE INDEX "system_config_fields_tombstone_idx" ON "system_config_fields" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "table_indexes_id_idx" ON "table_indexes" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "table_indexes_entity_id_idx" ON "table_indexes" USING btree ("entity_id");--> statement-breakpoint
+CREATE INDEX "table_indexes_secondary_index_idx" ON "table_indexes" USING btree ("secondary_index");--> statement-breakpoint
+CREATE INDEX "table_indexes_compound_index_idx" ON "table_indexes" USING btree ("compound_index");--> statement-breakpoint
+CREATE INDEX "table_indexes_created_by_idx" ON "table_indexes" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "table_indexes_updated_by_idx" ON "table_indexes" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "table_indexes_deleted_by_idx" ON "table_indexes" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "table_indexes_tombstone_idx" ON "table_indexes" USING btree ("tombstone");--> statement-breakpoint
