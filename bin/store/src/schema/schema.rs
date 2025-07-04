@@ -76,7 +76,6 @@ table! {
     }
 }
 
-
 table! {
     user_roles(id) {
         id -> Nullable<Text>,

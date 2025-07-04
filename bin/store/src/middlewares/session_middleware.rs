@@ -114,7 +114,6 @@ where
             }
 
             // Extract session ID from header or cookie or generate a new one
-            println!("{:?}", req.headers());
             let session_id = req
                 .headers()
                 .get(&session_header)
@@ -226,6 +225,7 @@ fn create_new_session(session_id: &str, cookie_max_age: &str, token: String) -> 
         origin: None,
         token,
         cookie,
+        ..Default::default()
     }
 }
 

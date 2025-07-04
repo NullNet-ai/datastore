@@ -74,7 +74,7 @@ impl FromRequest for PermissionExtractor {
             if session.is_none() {
                 return Err(Box::new(ApiResponse {
                     success: false,
-                    message: "Session not found".into(),
+                    message: "Session not found, please log in".into(),
                     count: 0,
                     data: vec![],
                 }) as Box<dyn ResponseError>);
@@ -210,11 +210,16 @@ impl FromRequest for PermissionExtractor {
                         role_id: user_role_id.clone(),
                     };
 
-                // Update data_permissions requested_fields
                 data_permissions.requested_fields = requested_fields;
 
-                // Use the session and session_data that were cloned outside the async block
-                let session_unwrapped = session.unwrap(); // Safe because we checked above
+                let session_unwrapped = session.unwrap();
+
+                println!("{:?}---------------------------host", host);
+                println!("{:?}---------------------------uri", uri);
+                println!("{:?}---------------------------headers", headers.get("user-agent"));
+                println!("{:?}---------------------------session", session_unwrapped);
+
+
 
                 let permissions_result = get_cached_permissions(
                     request_type,

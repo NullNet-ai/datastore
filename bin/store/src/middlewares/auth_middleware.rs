@@ -65,6 +65,7 @@ where
         let token = extract_token(auth_header);
 
         // Check if this is a root request
+
         let is_root_request = auth.path().contains("/root/");
 
         match token {
@@ -124,7 +125,6 @@ where
                             account_id: claims.account.account_id.clone(),
                         };
 
-                        println!("check check");
                         // Store the Auth object in request extensions
                         auth.extensions_mut().insert(auth_data);
 
@@ -139,7 +139,6 @@ where
                                 Ok(res)
                             });
                         }
-                        println!("after check check1");
                         let maybe_session = auth.extensions().get::<Session>().cloned();
                         if let Some(session) = maybe_session {
                             let mut updated_session = session;
@@ -166,11 +165,8 @@ where
                             updated_session.user.is_root_user = claims.account.is_root_account;
                             updated_session.user.account_id = claims.account.account_id.clone();
 
-                            // ✅ Step 2: Now safe to mutably borrow
                             auth.extensions_mut().insert(updated_session);
                         }
-
-                        println!("after check check4");
 
                         let fut = self.service.call(auth);
                         Box::pin(async move {

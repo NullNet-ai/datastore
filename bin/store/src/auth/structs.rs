@@ -73,10 +73,28 @@ pub struct Cookie {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SessionPermissionCache {
+    pub error: Option<Value>,
+    pub cache_key: String,
+    pub cached: Option<SessionPermissionCacheData>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SessionPermissionCacheData {
+    pub data: Option<Vec<Value>>,
+    pub account_organization_id: Option<String>,
+    pub cache: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Session {
     pub user: User,
     pub session_id: String,
     pub origin: Option<Origin>,
     pub token: String,
     pub cookie: Cookie,
+    pub field_permissions: Option<SessionPermissionCache>,
+    pub role_permissions: Option<SessionPermissionCache>,
+    pub record_permissions: Option<SessionPermissionCache>,
+    pub valid_pass_keys: Option<SessionPermissionCache>,
 }
