@@ -361,7 +361,8 @@ export class SearchSuggestionsActorsImplementations {
       const raw_query = sql.raw(sql_query_string);
       const { rows = [] } = await this.db.execute(raw_query);
       const [{ results = {} } = {}] = rows;
-      this.saveToCache(query_sha, JSON.stringify(results));
+      const raw_string_result = JSON.stringify(results).replace(/"/g, '\\"');
+      this.saveToCache(query_sha, raw_string_result);
 
       return Promise.resolve({
         payload: {
