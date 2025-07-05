@@ -1280,7 +1280,7 @@ export class Utility {
         return or(...values.map((value) => ilike(schema_field, `%${value}%`)));
       case EOperator.NOT_CONTAINS:
         if (case_sensitive) {
-          return or(
+          return and(
             ...values.map((value) => notLike(schema_field, `%${value}%`)),
           );
         }
