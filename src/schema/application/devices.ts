@@ -20,8 +20,9 @@ export const table = pgTable(
     is_telemetry_monitoring_enabled: boolean('is_telemetry_monitoring_enabled'),
     is_device_authorized: boolean('is_device_authorized'),
 
+    device_name: text("device_name"),
     device_category: text("device_category"),
-    device_model: text("device_model"),
+    device_type: text("device_type"),
     device_os: text("device_os"),
 
     is_device_online: boolean("is_device_online"),
