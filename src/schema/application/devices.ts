@@ -14,18 +14,18 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id').primaryKey(),
-    device_uuid: text('device_uuid').unique(),
-    is_traffic_monitoring_enabled: boolean('is_traffic_monitoring_enabled'),
-    is_config_monitoring_enabled: boolean('is_config_monitoring_enabled'),
-    is_telemetry_monitoring_enabled: boolean('is_telemetry_monitoring_enabled'),
-    is_device_authorized: boolean('is_device_authorized'),
+    is_traffic_monitoring_enabled: boolean('is_traffic_monitoring_enabled').default(false),
+    is_config_monitoring_enabled: boolean('is_config_monitoring_enabled').default(false),
+    is_telemetry_monitoring_enabled: boolean('is_telemetry_monitoring_enabled').default(false),
+    is_device_authorized: boolean('is_device_authorized').default(false),
+    
+    device_uuid: text('device_uuid').unique().default(""),
+    device_name: text("device_name").default(""),
+    device_category: text("device_category").default(""),
+    device_type: text("device_type").default(""),
+    device_os: text("device_os").default(""),
 
-    device_name: text("device_name"),
-    device_category: text("device_category"),
-    device_type: text("device_type"),
-    device_os: text("device_os"),
-
-    is_device_online: boolean("is_device_online"),
+    is_device_online: boolean("is_device_online").default(false),
     // address_id: text('address_id').references(
     //   () => addresses.id as AnyPgColumn,
     // ),
