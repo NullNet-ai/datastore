@@ -11,6 +11,7 @@ import {
   InitializerService,
   StoreQueryDriver,
 } from '../../providers/store/store.service';
+import { TimelineService } from '../../providers/timeline/timeline.service';
 import { LoggerService, HelperService } from '@dna-platform/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppService } from '../../providers/app/app.service';
@@ -38,6 +39,6 @@ import { AppService } from '../../providers/app/app.service';
     }),
   ],
   controllers: [AppController],
-  providers: [InitializerService, AppService, HelperService],
+  providers: [InitializerService, AppService, HelperService, TimelineService],
 })
 export class AppModule {}

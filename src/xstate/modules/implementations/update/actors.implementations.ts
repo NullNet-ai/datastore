@@ -7,7 +7,7 @@ import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import pick from 'lodash.pick';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
 import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false' } = process.env;
@@ -171,6 +171,8 @@ export class UpdateActorsImplementations {
           const previous_data = event?.output?.payload?.data?.[0];
           updated_data.previous_status = previous_data?.status;
         }
+
+        await this.setRequestContext(_req);
         result = await Utility.encryptUpdate({
           query: {
             table_schema,
@@ -237,4 +239,17 @@ export class UpdateActorsImplementations {
       }
     }),
   };
+
+  private async setRequestContext(request) {
+    const { cookie, authorization, ..._headers } = request.headers;
+    const raw_query = `SET my.request_context = '${JSON.stringify({
+      headers: _headers,
+      url: request.url,
+      route: request.route?.path,
+      method: request.method,
+      status_code: request.statusCode,
+      status_message: request.statusMessage,
+    })}'`;
+    await this.db.execute(sql.raw(raw_query));
+  }
 }

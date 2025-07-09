@@ -6,6 +6,7 @@ import {
   StoreController,
   TokenController,
   RootStoreController,
+  PgListenerController,
 } from './store.controller';
 import {
   LoggerService,
@@ -19,6 +20,7 @@ import {
   StoreMutationDriver,
   CustomCreateService,
   RootStoreService,
+  PgListenerDriver,
 } from '../../providers/store/store.service';
 import { GetImplementationModule } from '../../xstate/modules/implementations/get/get.implementation.module';
 import { FindImplementationModule } from '../../xstate/modules/implementations/find/find.implementation.module';
@@ -43,6 +45,9 @@ import { StoreGrpcService } from './store.grpc.service';
 import { BatchUpdateImplementationModule } from '../../xstate/modules/implementations/batch_update/batch_update.implementation.module';
 import { SearchSuggestionsImplementationModule } from 'src/xstate/modules/implementations/search_suggestions/search_suggestions.implementation.module';
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
+import { PgFunctionImplementationModule } from '../../xstate/modules/implementations/pg_function/pg_function.implementation.module';
+import { PgListenerGetImplementationModule } from '../../xstate/modules/implementations/pg_listener_get/pg_listener_get.implementation.module';
+import { PgListenerDeleteImplementationModule } from '../../xstate/modules/implementations/pg_listener_delete/pg_listener_delete.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -70,6 +75,10 @@ const machines_providers = machine_providers([
   machines.TransactionsMachine,
   // Count
   machines.CountMachine,
+  // PgListener
+  machines.PgFunctionMachine,
+  machines.PgListenerGetMachine,
+  machines.PgListenerDeleteMachine,
 ]);
 const additional_providers: Provider[] = [
   LoggerService,
@@ -86,6 +95,7 @@ const additional_controllers = [
   GrpcController,
   CustomCreateController,
   RootStoreController,
+  PgListenerController,
   // TransactionController,
 ];
 
@@ -117,6 +127,11 @@ const shared_machine_imports = [
   // Count
   CountImplementationModule,
 
+  //PgListener
+  PgFunctionImplementationModule,
+  PgListenerGetImplementationModule,
+  PgListenerDeleteImplementationModule,
+
   //Backup
   // DatabaseBackupModule,
 
@@ -146,6 +161,7 @@ export const shared_imports = [
   providers: [
     ...additional_providers,
     StoreMutationDriver,
+    PgListenerDriver,
     {
       useClass: StoreQueryDriver,
       provide: QueryDriverInterface,

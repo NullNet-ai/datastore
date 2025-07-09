@@ -31,6 +31,9 @@ import * as schema from '../../schema';
 import { desc, sql, eq, and, isNotNull } from 'drizzle-orm';
 import * as cache from 'memory-cache';
 import * as argon2 from 'argon2';
+import omit from 'lodash.omit';
+import { TimelineService } from '../timeline/timeline.service';
+
 const pluralize = require('pluralize');
 const {
   DEBUG = 'false',
@@ -108,6 +111,7 @@ export class InitializerService {
     private drizzleService: DrizzleService,
     private logger: LoggerService,
     private authService: AuthService,
+    private timelineService: TimelineService,
   ) {
     this.db = this.drizzleService.getClient();
   }
@@ -550,6 +554,35 @@ export class InitializerService {
         return prefix + (default_code + counter);
       })
       .catch(() => null);
+  }
+
+  async timelineTableConfig({
+    include_crdt_tables = [],
+    exclude_app_tables = [],
+  }: {
+    include_crdt_tables?: string[];
+    exclude_app_tables?: string[];
+  } = {}) {
+    const with_timeline_app_tables = omit(app_schema, exclude_app_tables);
+    const tables = [
+      ...Object.keys(with_timeline_app_tables),
+      ...include_crdt_tables,
+    ];
+    const install_extension = `DO $$
+        BEGIN
+            CREATE EXTENSION IF NOT EXISTS hstore;
+        END;
+        $$;
+      `;
+    await this.db.execute(sql.raw(install_extension));
+
+    tables.map(async (table) => {
+      if (!schema[table])
+        throw new BadRequestException(
+          `[Timeline]: Table ${table} does not exist in schema`,
+        );
+      await this.timelineService.createTimelinePgTriggerFunction(table);
+    });
   }
 }
 
@@ -1134,4 +1167,16 @@ export class RootStoreService {
       ],
     };
   }
+}
+
+@Injectable()
+export class PgListenerDriver {
+  @Machine('pgFunction')
+  async pgListener(_res: Response, _req: Request) {}
+
+  @Machine('pgListenerGet')
+  async getListener(_res: Response, _req: Request) {}
+
+  @Machine('pgListenerDelete')
+  async deleteListener(_res: Response, _req: Request) {}
 }
