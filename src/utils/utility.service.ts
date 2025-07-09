@@ -1241,10 +1241,11 @@ export class Utility {
       ];
     }
 
+    const is_array_field = pluralize.isPlural(field);
     switch (operator) {
       case EOperator.EQUAL:
         // exact value for an array field
-        if (pluralize.isPlural(field)) {
+        if (is_array_field) {
           return eq(
             schema_field,
             sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
@@ -1252,7 +1253,7 @@ export class Utility {
         }
         return or(...values.map((value) => eq(schema_field, value)));
       case EOperator.NOT_EQUAL:
-        if (pluralize.isPlural(field)) {
+        if (is_array_field) {
           return ne(
             schema_field,
             sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
@@ -1279,7 +1280,7 @@ export class Utility {
         return or(...values.map((value) => ilike(schema_field, `%${value}%`)));
       case EOperator.NOT_CONTAINS:
         if (case_sensitive) {
-          return or(
+          return and(
             ...values.map((value) => notLike(schema_field, `%${value}%`)),
           );
         }
@@ -1300,9 +1301,15 @@ export class Utility {
         return or(...dz_filter_queue);
       case EOperator.LIKE:
         let like_value_pattern = `%${values[0]}%`;
-        if (match_pattern === ELikeMatchPattern.STARTS_WITH) {
+        if (
+          match_pattern === ELikeMatchPattern.STARTS_WITH &&
+          !is_array_field
+        ) {
           like_value_pattern = `${values[0]}%`;
-        } else if (match_pattern === ELikeMatchPattern.ENDS_WITH) {
+        } else if (
+          match_pattern === ELikeMatchPattern.ENDS_WITH &&
+          !is_array_field
+        ) {
           like_value_pattern = `%${values[0]}`;
         }
         if (case_sensitive) {
@@ -1311,9 +1318,15 @@ export class Utility {
         return ilike(schema_field, like_value_pattern);
       case EOperator.NOT_LIKE:
         let not_like_value_pattern = `%${values[0]}%`;
-        if (match_pattern === ELikeMatchPattern.STARTS_WITH) {
+        if (
+          match_pattern === ELikeMatchPattern.STARTS_WITH &&
+          !is_array_field
+        ) {
           not_like_value_pattern = `${values[0]}%`;
-        } else if (match_pattern === ELikeMatchPattern.ENDS_WITH) {
+        } else if (
+          match_pattern === ELikeMatchPattern.ENDS_WITH &&
+          !is_array_field
+        ) {
           not_like_value_pattern = `%${values[0]}`;
         }
         if (case_sensitive) {
