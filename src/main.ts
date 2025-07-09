@@ -9,12 +9,15 @@ import { join } from 'path';
 import { BatchSyncModule } from './batch_sync/batch_sync.module';
 import { GrpcModule } from './grpc.module';
 import { cleanupTemporaryFiles, initializers } from './init';
+import express from 'express';
+
 const {
   PORT = '3060',
   DB_FILE_DIR = '',
   DEBUG = 'false',
   NODE_ENV = 'local',
   GRPC_PORT = '6000',
+  PAYLOAD_SIZE_LIMIT = '50mb',
 } = process.env;
 fs.mkdirSync(DB_FILE_DIR, { recursive: true });
 fs.mkdirSync('./tmp', { recursive: true });
@@ -30,6 +33,9 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useLogger(logger);
+
+  app.use(express.json({ limit: PAYLOAD_SIZE_LIMIT }));
+  app.use(express.urlencoded({ extended: true, limit: PAYLOAD_SIZE_LIMIT }));
 
   await app.listen(+(PORT || '5001')).then(() => {
     logger.log(
