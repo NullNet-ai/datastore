@@ -312,6 +312,8 @@ export class SearchSuggestionsActorsImplementations {
                 match_pattern,
               });
 
+              const values_flat=values.join(',').replace(/'/g, '"');
+
               // Query for field with all the subquery and filters applied
               const db_field_obj_agg = this.db
                 .select({
@@ -321,7 +323,14 @@ export class SearchSuggestionsActorsImplementations {
                 })
                 .from(
                   sql.raw(
-                    `(${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}) AS ${field}`,
+                    `(${field_subquery} GROUP BY ${group_by_entity_field} ORDER BY
+                        CASE
+                        WHEN ${group_by_entity_field} = '${values_flat}' THEN 1
+                        WHEN ${group_by_entity_field} ILIKE '${values_flat}%' THEN 2
+                        ELSE 3
+                        END
+                        OFFSET ${offset} LIMIT ${limit}
+                        ) AS ${field}`,
                   ),
                 )
                 .where(field_filter_query);
@@ -359,6 +368,8 @@ export class SearchSuggestionsActorsImplementations {
       const sql_query_string = `SELECT JSON_BUILD_OBJECT(${json_build_object_query}) AS results`;
 
       const raw_query = sql.raw(sql_query_string);
+      console.log(sql_query_string);
+
       const { rows = [] } = await this.db.execute(raw_query);
       const [{ results = {} } = {}] = rows;
       const raw_string_result = JSON.stringify(results).replace(/"/g, '\\"');

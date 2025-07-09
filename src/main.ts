@@ -11,7 +11,7 @@ import { GrpcModule } from './grpc.module';
 import { cleanupTemporaryFiles, initializers } from './init';
 const {
   PORT = '3060',
-  DB_FILE_DIR = '',
+  DB_FILE_DIR = './db',
   DEBUG = 'false',
   NODE_ENV = 'local',
   GRPC_PORT = '6000',
