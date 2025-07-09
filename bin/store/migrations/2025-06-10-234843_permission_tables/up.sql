@@ -552,12 +552,9 @@ CREATE TABLE "samples" (
 	"deleted_by" text,
 	"requested_by" text,
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
-	"tags" jsonb DEFAULT '[]',
-	"image_url" varchar(300),
 	"sensitivity_level" integer DEFAULT 1000,
 	"name" text,
 	"sample_text" text,
-	"test_obj" jsonb DEFAULT '[]'
 );
 ALTER TABLE "table_indexes" ADD CONSTRAINT "table_indexes_entity_id_entities_id_fk" FOREIGN KEY ("entity_id") REFERENCES "public"."entities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

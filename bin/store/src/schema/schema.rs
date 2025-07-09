@@ -543,7 +543,30 @@ table! {
         city -> Nullable<Text>,
     }
 }
-
+table! {
+    samples (id) {
+        id -> Nullable<Text>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        tombstone -> Nullable<Integer>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Integer>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        sensitivity_level -> Nullable<Integer>,
+        name -> Nullable<Text>,
+        sample_text -> Nullable<Text>,
+    }
+}
 table! {
     app_firewalls (id) {
         tombstone -> Nullable<Int4>,

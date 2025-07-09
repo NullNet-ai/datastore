@@ -55,4 +55,5 @@ pub mod temp_wallguard_log_model;
 pub mod transaction_model;
 pub mod user_role_model;
 pub mod wallguard_log_model;
+pub mod sample_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

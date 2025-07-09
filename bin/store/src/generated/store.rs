@@ -190,11 +190,13 @@ pub struct ExternalContacts {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
     pub email: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Organizations entity definition
@@ -238,15 +240,17 @@ pub struct Organizations {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "21")]
+    #[prost(int32, optional, tag = "22")]
     pub organization_level: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "22")]
+    #[prost(string, optional, tag = "23")]
     pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "23")]
+    #[prost(string, repeated, tag = "24")]
     pub path_level: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// OrganizationContacts entity definition
@@ -290,7 +294,9 @@ pub struct OrganizationContacts {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// OrganizationAccounts entity definition
@@ -334,17 +340,19 @@ pub struct OrganizationAccounts {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AccountOrganizations entity definition
@@ -388,21 +396,23 @@ pub struct AccountOrganizations {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub account_organization_status: ::core::option::Option<
         ::prost::alloc::string::String,
     >,
-    #[prost(string, optional, tag = "24")]
-    pub is_invited: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
+    pub is_invited: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AccountProfiles entity definition
@@ -446,13 +456,15 @@ pub struct AccountProfiles {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub account_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Accounts entity definition
@@ -496,13 +508,15 @@ pub struct Accounts {
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "18")]
     pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub account_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub account_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub is_new_user: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Addresses entity definition
@@ -544,38 +558,86 @@ pub struct Addresses {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub address: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub address_line_one: ::core::option::Option<::prost::alloc::string::String>,
+    pub address: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub address_line_two: ::core::option::Option<::prost::alloc::string::String>,
+    pub address_line_one: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub latitude: ::core::option::Option<::prost::alloc::string::String>,
+    pub address_line_two: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub longitude: ::core::option::Option<::prost::alloc::string::String>,
+    pub latitude: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub place_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub longitude: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub street_number: ::core::option::Option<::prost::alloc::string::String>,
+    pub place_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub street: ::core::option::Option<::prost::alloc::string::String>,
+    pub street_number: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub region: ::core::option::Option<::prost::alloc::string::String>,
+    pub street: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub region_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub region: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub country_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub region_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub postal_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub country_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
-    pub country: ::core::option::Option<::prost::alloc::string::String>,
+    pub postal_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "32")]
-    pub state: ::core::option::Option<::prost::alloc::string::String>,
+    pub country: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "33")]
+    pub state: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "34")]
     pub city: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// Samples entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Samples {
+    #[prost(string, optional, tag = "1")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "2")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "7")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "8")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "15")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "16")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "19")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "20")]
+    pub sample_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AppFirewalls entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -616,11 +678,13 @@ pub struct AppFirewalls {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub app_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
+    pub app_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub firewall: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AppguardLogs entity definition
@@ -662,11 +726,13 @@ pub struct AppguardLogs {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempAppguardLogs entity definition
@@ -708,11 +774,13 @@ pub struct TempAppguardLogs {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceAliases entity definition
@@ -754,17 +822,19 @@ pub struct DeviceAliases {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub device_alias_status: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceAliases entity definition
@@ -806,17 +876,19 @@ pub struct TempDeviceAliases {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub device_alias_status: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceConfigurations entity definition
@@ -858,17 +930,19 @@ pub struct DeviceConfigurations {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub digest: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub hostname: ::core::option::Option<::prost::alloc::string::String>,
+    pub digest: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub hostname: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub raw_content: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "23")]
+    #[prost(int32, optional, tag = "24")]
     pub config_version: ::core::option::Option<i32>,
 }
 /// DeviceInterfaceAddresses entity definition
@@ -910,11 +984,13 @@ pub struct DeviceInterfaceAddresses {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
+    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub address: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceInterfaceAddresses entity definition
@@ -956,11 +1032,13 @@ pub struct TempDeviceInterfaceAddresses {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
+    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub address: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceInterfaces entity definition
@@ -1002,13 +1080,15 @@ pub struct DeviceInterfaces {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
     pub device: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceInterfaces entity definition
@@ -1050,13 +1130,15 @@ pub struct TempDeviceInterfaces {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
     pub device: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceRemoteAccessSessions entity definition
@@ -1098,17 +1180,19 @@ pub struct DeviceRemoteAccessSessions {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceRemoteAccessSessions entity definition
@@ -1150,17 +1234,19 @@ pub struct TempDeviceRemoteAccessSessions {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceRules entity definition
@@ -1202,41 +1288,43 @@ pub struct DeviceRules {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub policy: ::core::option::Option<::prost::alloc::string::String>,
+    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    pub policy: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
+    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "32")]
     pub interface: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "32")]
+    #[prost(int32, optional, tag = "33")]
     pub order: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "33")]
-    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "34")]
-    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "35")]
+    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "36")]
     pub source_inversed: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceRules entity definition
@@ -1278,41 +1366,43 @@ pub struct TempDeviceRules {
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "17")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "18")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub policy: ::core::option::Option<::prost::alloc::string::String>,
+    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    pub policy: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
+    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "32")]
     pub interface: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "32")]
+    #[prost(int32, optional, tag = "33")]
     pub order: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "33")]
-    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "34")]
-    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "35")]
+    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "36")]
     pub source_inversed: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Packets entity definition
@@ -1352,51 +1442,53 @@ pub struct Packets {
     pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "16")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "17")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "17")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "18")]
-    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "19")]
-    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
-    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
+    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub protocol: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "26")]
+    #[prost(int32, optional, tag = "27")]
     pub total_length: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "27")]
-    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
     pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "29")]
-    pub source_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "30")]
-    pub destination_port: ::core::option::Option<i32>,
+    pub source_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "31")]
+    pub destination_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "32")]
     pub tcp_header_length: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "32")]
-    pub tcp_sequence_number: ::core::option::Option<i64>,
     #[prost(int64, optional, tag = "33")]
+    pub tcp_sequence_number: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "34")]
     pub tcp_acknowledgment_number: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "34")]
-    pub tcp_data_offset: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "35")]
-    pub tcp_flags: ::core::option::Option<i32>,
+    pub tcp_data_offset: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "36")]
-    pub tcp_window_size: ::core::option::Option<i32>,
+    pub tcp_flags: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "37")]
-    pub tcp_urgent_pointer: ::core::option::Option<i32>,
+    pub tcp_window_size: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "38")]
-    pub icmp_type: ::core::option::Option<i32>,
+    pub tcp_urgent_pointer: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "39")]
+    pub icmp_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "40")]
     pub icmp_code: ::core::option::Option<i32>,
 }
 /// TempPackets entity definition
@@ -1440,47 +1532,49 @@ pub struct TempPackets {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
+    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub protocol: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "26")]
+    #[prost(int32, optional, tag = "27")]
     pub total_length: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "27")]
-    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
     pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "29")]
-    pub source_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "30")]
-    pub destination_port: ::core::option::Option<i32>,
+    pub source_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "31")]
+    pub destination_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "32")]
     pub tcp_header_length: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "32")]
-    pub tcp_sequence_number: ::core::option::Option<i64>,
     #[prost(int64, optional, tag = "33")]
+    pub tcp_sequence_number: ::core::option::Option<i64>,
+    #[prost(int64, optional, tag = "34")]
     pub tcp_acknowledgment_number: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "34")]
-    pub tcp_data_offset: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "35")]
-    pub tcp_flags: ::core::option::Option<i32>,
+    pub tcp_data_offset: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "36")]
-    pub tcp_window_size: ::core::option::Option<i32>,
+    pub tcp_flags: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "37")]
-    pub tcp_urgent_pointer: ::core::option::Option<i32>,
+    pub tcp_window_size: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "38")]
-    pub icmp_type: ::core::option::Option<i32>,
+    pub tcp_urgent_pointer: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "39")]
+    pub icmp_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "40")]
     pub icmp_code: ::core::option::Option<i32>,
 }
 /// Connections entity definition
@@ -1524,27 +1618,29 @@ pub struct Connections {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "21")]
-    pub total_packet: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "22")]
+    pub total_packet: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "23")]
     pub total_byte: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "23")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
     pub remote_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "28")]
-    pub source_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "29")]
+    pub source_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "30")]
     pub destination_port: ::core::option::Option<i32>,
 }
 /// TempConnections entity definition
@@ -1588,27 +1684,29 @@ pub struct TempConnections {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "21")]
-    pub total_packet: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "22")]
+    pub total_packet: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "23")]
     pub total_byte: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "23")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
     pub remote_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "28")]
-    pub source_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "29")]
+    pub source_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "30")]
     pub destination_port: ::core::option::Option<i32>,
 }
 /// DeviceSshKeys entity definition
@@ -1652,13 +1750,15 @@ pub struct DeviceSshKeys {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub public_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub private_key: ::core::option::Option<::prost::alloc::string::String>,
+    pub public_key: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub passphrase: ::core::option::Option<::prost::alloc::string::String>,
+    pub private_key: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub passphrase: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Devices entity definition
@@ -1702,31 +1802,33 @@ pub struct Devices {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub model: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub address_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub model: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub instance_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub address_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub instance_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub is_connection_established: ::core::option::Option<
         ::prost::alloc::string::String,
     >,
-    #[prost(string, optional, tag = "23")]
-    pub system_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub device_version: ::core::option::Option<::prost::alloc::string::String>,
+    pub system_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub last_heartbeat: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_version: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub is_monitoring_enabled: ::core::option::Option<::prost::alloc::string::String>,
+    pub last_heartbeat: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub is_remote_access_enabled: ::core::option::Option<::prost::alloc::string::String>,
+    pub is_monitoring_enabled: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub ip_address: ::core::option::Option<::prost::alloc::string::String>,
+    pub is_remote_access_enabled: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub device_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub ip_address: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
+    pub device_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "31")]
     pub device_gui_protocol: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// IpInfos entity definition
@@ -1770,23 +1872,25 @@ pub struct IpInfos {
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub country: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub asn: ::core::option::Option<::prost::alloc::string::String>,
+    pub country: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub org: ::core::option::Option<::prost::alloc::string::String>,
+    pub asn: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub continent_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub org: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub city: ::core::option::Option<::prost::alloc::string::String>,
+    pub continent_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub region: ::core::option::Option<::prost::alloc::string::String>,
+    pub city: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub postal: ::core::option::Option<::prost::alloc::string::String>,
+    pub region: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub timezone: ::core::option::Option<::prost::alloc::string::String>,
+    pub postal: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
+    pub timezone: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
     pub blacklist: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Resolutions entity definition
@@ -1830,7 +1934,9 @@ pub struct Resolutions {
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
     pub resolution_type: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// WallguardLogs entity definition
@@ -1874,11 +1980,13 @@ pub struct WallguardLogs {
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempWallguardLogs entity definition
@@ -1922,11 +2030,13 @@ pub struct TempWallguardLogs {
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceGroupSettings entity definition
@@ -1970,7 +2080,9 @@ pub struct DeviceGroupSettings {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Contacts entity definition
@@ -2014,15 +2126,17 @@ pub struct Contacts {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub middle_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub middle_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub date_of_birth: ::core::option::Option<::prost::alloc::string::String>,
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub date_of_birth: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub account_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ContactPhoneNumbers entity definition
@@ -2066,9 +2180,11 @@ pub struct ContactPhoneNumbers {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "21")]
     pub phone_number_raw: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ContactEmails entity definition
@@ -2112,11 +2228,13 @@ pub struct ContactEmails {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
     pub is_primary: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Create ExternalContacts request
@@ -4068,6 +4186,246 @@ pub struct UpsertAddressesResponse {
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Addresses>,
+}
+/// Create Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub samples: ::core::option::Option<Samples>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+}
+/// Create Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Samples>,
+}
+/// Get Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSamplesRequest {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+}
+/// Get Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<Samples>,
+}
+/// Update Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub sample: ::core::option::Option<Samples>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Samples>,
+}
+/// BatchUpdate Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_update_samples_request::BatchUpdateBody>,
+}
+/// Nested message and enum types in `BatchUpdateSamplesRequest`.
+pub mod batch_update_samples_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::Samples>,
+    }
+}
+/// BatchUpdate Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Samples>,
+}
+/// BatchDelete Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_samples_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteSamplesRequest`.
+pub mod batch_delete_samples_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+    }
+}
+/// BatchDelete Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Samples>,
+}
+/// Delete Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<Samples>,
+}
+/// BatchInsert Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_samples_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertSamplesRequest`.
+pub mod batch_insert_samples_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(message, repeated, tag = "1")]
+        pub samples: ::prost::alloc::vec::Vec<super::Samples>,
+    }
+}
+/// BatchInsert Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Samples>,
+}
+/// Upsert Samples request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertSamplesRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_samples_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertSamplesRequest`.
+pub mod upsert_samples_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::Samples>,
+    }
+}
+/// Upsert Samples response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertSamplesResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<Samples>,
 }
 /// Create AppFirewalls request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -11442,6 +11800,70 @@ pub mod store_service_server {
             tonic::Response<super::UpsertAddressesResponse>,
             tonic::Status,
         >;
+        /// Create a new Samples
+        async fn create_samples(
+            &self,
+            request: tonic::Request<super::CreateSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Get a Samples by ID
+        async fn get_samples(
+            &self,
+            request: tonic::Request<super::GetSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing Samples
+        async fn update_samples(
+            &self,
+            request: tonic::Request<super::UpdateSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Delete a Samples by ID
+        async fn delete_samples(
+            &self,
+            request: tonic::Request<super::DeleteSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple Sampless
+        async fn batch_insert_samples(
+            &self,
+            request: tonic::Request<super::BatchInsertSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple Sampless based on filters
+        async fn batch_update_samples(
+            &self,
+            request: tonic::Request<super::BatchUpdateSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple Sampless based on filters
+        async fn batch_delete_samples(
+            &self,
+            request: tonic::Request<super::BatchDeleteSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteSamplesResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a Samples (create if not exists, update if exists)
+        async fn upsert_samples(
+            &self,
+            request: tonic::Request<super::UpsertSamplesRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertSamplesResponse>,
+            tonic::Status,
+        >;
         /// Create a new AppFirewalls
         async fn create_app_firewalls(
             &self,
@@ -16477,6 +16899,369 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertAddressesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateSamplesRequest>
+                    for CreateSamplesSvc<T> {
+                        type Response = super::CreateSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_samples(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetSamplesRequest>
+                    for GetSamplesSvc<T> {
+                        type Response = super::GetSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_samples(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateSamplesRequest>
+                    for UpdateSamplesSvc<T> {
+                        type Response = super::UpdateSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_samples(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteSamplesRequest>
+                    for DeleteSamplesSvc<T> {
+                        type Response = super::DeleteSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_samples(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertSamplesRequest>
+                    for BatchInsertSamplesSvc<T> {
+                        type Response = super::BatchInsertSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_samples(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateSamplesRequest>
+                    for BatchUpdateSamplesSvc<T> {
+                        type Response = super::BatchUpdateSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchUpdateSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_samples(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteSamplesRequest>
+                    for BatchDeleteSamplesSvc<T> {
+                        type Response = super::BatchDeleteSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_samples(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteSamplesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertSamples" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertSamplesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertSamplesRequest>
+                    for UpsertSamplesSvc<T> {
+                        type Response = super::UpsertSamplesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertSamplesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_samples(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertSamplesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
