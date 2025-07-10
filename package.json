@@ -1,6 +1,6 @@
 {
   "name": "datastore",
-  "version": "1.0.77",
+  "version": "1.0.78",
   "description": "API boilerplate for datastore",
   "author": "DNA Micro",
   "license": "MIT",
@@ -81,6 +81,7 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.8.2",
     "sha1": "^1.1.1",
+    "short-unique-id": "^5.3.2",
     "split2": "^4.2.0",
     "typed-html": "^3.0.1",
     "uglify-js": "^3.19.3",

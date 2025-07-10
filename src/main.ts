@@ -13,7 +13,7 @@ import express from 'express';
 
 const {
   PORT = '3060',
-  DB_FILE_DIR = '',
+  DB_FILE_DIR = 'sql',
   DEBUG = 'false',
   NODE_ENV = 'local',
   GRPC_PORT = '6000',
