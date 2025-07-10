@@ -178,16 +178,19 @@ export class TimelineService {
       await this.db
         .insert(postgres_channels)
         .values(pg_channel_body)
-        .onConflictDoUpdate({
-          target: postgres_channels.channel_name,
-          set: {
-            function: pg_channel_body.function,
-            timestamp: pg_channel_body.timestamp,
-          },
+        .then(() => {
+          this.logger.log(
+            `[Timeline]: Successfully inserted channel ${channel} into postgres_channels.`,
+          );
+        })
+        .catch((err) => {
+          if (err.code === '23505') {
+            this.logger.warn(
+              `[Timeline]: Channel ${channel} already exists, skipping insert.`,
+            );
+            return;
+          }
         });
-      this.logger.log(
-        `[Timeline]: Successfully created timeline trigger function for ${table}.`,
-      );
     } catch (error: any) {
       this.logger.error(`[Timeline]: ${error.message}`);
     }
