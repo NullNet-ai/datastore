@@ -39,7 +39,7 @@ use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
 use crate::schema::database_setup::DatabaseSetupFlags;
 use crate::sync::controllers::sync_endpoints_controller;
-use crate::sync::merkles::merkle_manager::MerkleManager;
+// use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
 use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
