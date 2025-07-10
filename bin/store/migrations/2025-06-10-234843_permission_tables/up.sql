@@ -387,7 +387,7 @@ CREATE TABLE "fields" (
 	"updated_by" text,
 	"deleted_by" text,
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
-	"tombstone" integer DEFAULT 0,
+	"tombstone" integer DEFAULT 0
 );
 --> statement-breakpoint
 CREATE TABLE "entity_fields" (
@@ -554,7 +554,7 @@ CREATE TABLE "samples" (
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
 	"sensitivity_level" integer DEFAULT 1000,
 	"name" text,
-	"sample_text" text,
+	"sample_text" text
 );
 ALTER TABLE "table_indexes" ADD CONSTRAINT "table_indexes_entity_id_entities_id_fk" FOREIGN KEY ("entity_id") REFERENCES "public"."entities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -984,9 +984,7 @@ CREATE INDEX "samples_created_by_idx" ON "samples" USING btree ("created_by");--
 CREATE INDEX "samples_updated_by_idx" ON "samples" USING btree ("updated_by");--> statement-breakpoint
 CREATE INDEX "samples_deleted_by_idx" ON "samples" USING btree ("deleted_by");--> statement-breakpoint
 CREATE INDEX "samples_requested_by_idx" ON "samples" USING btree ("requested_by");--> statement-breakpoint
-CREATE INDEX "samples_tags_idx" ON "samples" USING btree ("tags");--> statement-breakpoint
-CREATE INDEX "samples_image_url_idx" ON "samples" USING btree ("image_url");--> statement-breakpoint
-CREATE INDEX "samples_sensitivity_level_idx" ON "samples" USING btree ("sensitivity_level");
+CREATE INDEX "samples_sensitivity_level_idx" ON "samples" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "devices_id_idx" ON "devices" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "devices_categories_idx" ON "devices" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "devices_code_idx" ON "devices" USING btree ("code");--> statement-breakpoint
