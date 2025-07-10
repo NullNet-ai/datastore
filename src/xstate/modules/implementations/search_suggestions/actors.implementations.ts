@@ -164,12 +164,13 @@ export class SearchSuggestionsActorsImplementations {
         concatenate_fields,
         concatenated_field_expressions,
       };
+      const union_clauses: Array<string> = [];
+      let main_entity;
       const json_build_object_query = Object.keys(filtered_fields).reduce(
         (acc, entity) => {
           const field_object_agg = filtered_fields[entity].map(
             (field: string) => {
               let entity_field = `${entity}.${field}`;
-              let add_alias = false;
               let db_field_group = this.db;
               let db_field = this.db;
 
@@ -216,7 +217,6 @@ export class SearchSuggestionsActorsImplementations {
                 concatenated_field_expressions?.[entity]?.[field]?.expression;
 
               if (field.endsWith('_date')) {
-                add_alias = true;
                 entity_field = Utility.formatDate({
                   table: entity,
                   field,
@@ -226,7 +226,6 @@ export class SearchSuggestionsActorsImplementations {
                   encrypted_fields,
                 }) as any;
               } else if (concatenated_field_exp) {
-                add_alias = true;
                 entity_field = concatenated_field_exp;
               }
 
@@ -250,7 +249,12 @@ export class SearchSuggestionsActorsImplementations {
               if (has_group_count) {
                 // Generate the subquery for the field group
                 db_field_group = db_field_group
-                  .select({ count: sql.raw(`COUNT(*) OVER()`) })
+                  .select({
+                    key: sql.raw(`'${field}_group' AS key`),
+                    value: sql.raw(`'count' AS value`),
+                    cnt: sql.raw(`COUNT(*) AS cnt`),
+                    match_score: sql.raw(`0 AS match_score`)
+                  })
                   .from(table_schema);
 
                 const field_group_subquery = this.generateFieldSubquery(
@@ -263,26 +267,33 @@ export class SearchSuggestionsActorsImplementations {
                   },
                 );
 
+                if(has_group_count){
+                  union_clauses.push(`${field}_group`);
+                }
+
                 group_count_query = `
-                '${field}_group', (
-                  SELECT COALESCE(
-                    JSON_OBJECT_AGG('count', count),
-                    JSON_BUILD_OBJECT('count', 0)
-                  )
-                  FROM (
+                ${field}_group AS (
                     ${field_group_subquery}
-                    GROUP BY ${group_by_entity_field}
-                  ) AS ${field}_group
                 )`;
               }
+
+
+              const values_flat = values.join(',').replace(/'/g, '"');
 
               // Generate the subquery for the field
               db_field = db_field
                 .select({
-                  [entity]: sql.raw(
-                    `${entity_field}${add_alias ? ` AS ${field}` : ''}`,
-                  ),
-                  count: sql.raw(`COUNT(*)`),
+                  key: sql.raw(`'${field}' AS key`),
+                  value: sql.raw(`${entity_field} AS value`),
+                  cnt: sql.raw(`COUNT(*) AS cnt`),
+                  match_score: sql.raw(`
+                  CASE
+                  WHEN ${entity_field} = '${values_flat}' THEN 3
+                  WHEN ${entity_field} ILIKE '${values_flat}%' THEN 2
+                  WHEN ${entity_field} ILIKE '%${values_flat}%' THEN 1
+                  ELSE 0
+                  END AS match_score
+                  `),
                 })
                 .from(table_schema);
 
@@ -294,6 +305,7 @@ export class SearchSuggestionsActorsImplementations {
               });
 
               // Generate the filter specific for the field to exclude the other filters
+              // @ts-ignore
               const field_filter_query = Utility.evaluateFilter({
                 operator,
                 table_schema,
@@ -311,64 +323,94 @@ export class SearchSuggestionsActorsImplementations {
                 dz_filter_queue: [],
                 match_pattern,
               });
-
-              const values_flat=values.join(',').replace(/'/g, '"');
+              union_clauses.push(`${field}_values`)
+              const field_query = `
+              ${field}_values AS (
+              ${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}
+              )
+              `;
+              // const statusValuesCteSQL = field_query.toString();
+              // console.log("statusValuesCte SQL:", statusValuesCteSQL);
 
               // Query for field with all the subquery and filters applied
-              const db_field_obj_agg = this.db
-                .select({
-                  jsonObjectAgg: sql.raw(
-                    `JSON_OBJECT_AGG(COALESCE(${field}::TEXT, 'null'), count)`,
-                  ),
-                })
-                .from(
-                  sql.raw(
-                    `(${field_subquery} GROUP BY ${group_by_entity_field} ORDER BY
-                        CASE
-                        WHEN ${group_by_entity_field} = '${values_flat}' THEN 1
-                        WHEN ${group_by_entity_field} ILIKE '${values_flat}%' THEN 2
-                        ELSE 3
-                        END
-                        OFFSET ${offset} LIMIT ${limit}
-                        ) AS ${field}`,
-                  ),
-                )
-                .where(field_filter_query);
+              // const db_field_obj_agg = this.db
+              //   .select({
+              //     dummy: sql.raw('1')  // Minimal select to keep the query valid
+              //   })
+              //   .from(
+              //     sql.raw(
+              //       `(${statusValuesCte} GROUP BY ${group_by_entity_field}
+              //           OFFSET ${offset} LIMIT ${limit}
+              //           )`,
+              //     ),
+              //   )
+                // .where(field_filter_query);
+
+              // console.log(db_field_obj_agg.toSQL());
+
               // Assigning query to field and replacing all filter value placeholder
-              let field_query = `
-                '${field}', (${Utility.replacePlaceholders(
-                db_field_obj_agg.toSQL().sql,
-                db_field_obj_agg.toSQL().params,
-              )})`;
+              // let field_query = `
+              //   '${field}', (${Utility.replacePlaceholders(
+              //   db_field_obj_agg.toSQL().sql,
+              //   db_field_obj_agg.toSQL().params,
+              // )})`;
 
               // Modify the raw query filter to use the field alias instead of the entity field
-              field_query = this.modifyQueryFilterString(
-                field_query,
-                field,
-                parse_as,
-              );
+              // field_query = this.modifyQueryFilterString(
+              //   field_query,
+              //   field,
+              //   parse_as,
+              // );
+              main_entity=entity;
               return (
                 `${group_count_query.length ? `${group_count_query}, ` : ''}` +
                 field_query
               );
             },
           );
+
           return (
             acc +
-            `${
-              acc ? ', ' : ''
-            }'${entity}', (SELECT JSON_BUILD_OBJECT(${field_object_agg.join(
-              ', ',
-            )}))`
+            `${acc === '' ? 'WITH ' : ', '}${field_object_agg.join(', ')}`
           );
         },
         '',
       );
 
-      const sql_query_string = `SELECT JSON_BUILD_OBJECT(${json_build_object_query}) AS results`;
+      //generate union clauses for all the fields
+      const union_clause=this.buildUnionClause(union_clauses);
+
+      const key_score_clause=`
+      key_scores AS (
+      SELECT
+      key,
+      MAX(match_score) AS best_score,
+      SUM(CASE WHEN match_score = 3 THEN cnt ELSE 0 END) AS exact_count,
+      SUM(CASE WHEN match_score = 2 THEN cnt ELSE 0 END) AS prefix_count,
+      SUM(CASE WHEN match_score = 1 THEN cnt ELSE 0 END) AS partial_count,
+      JSON_OBJECT_AGG(value, cnt) AS value_json
+    FROM all_values
+    GROUP BY key
+      )
+      `
+
+      const union_key_score_clause = union_clause+ key_score_clause;
+
+      const sql_query_string = `
+      ${json_build_object_query.toString()},
+      ${union_key_score_clause}
+      SELECT JSON_BUILD_OBJECT( '${main_entity}', (
+      SELECT JSON_OBJECT_AGG(
+      key, value_json
+      ORDER BY best_score DESC, exact_count DESC, prefix_count DESC, partial_count DESC, key
+    )
+    FROM key_scores
+    WHERE value_json IS NOT NULL)
+      ) AS results`;
+
+      console.log(sql_query_string);
 
       const raw_query = sql.raw(sql_query_string);
-      console.log(sql_query_string);
 
       const { rows = [] } = await this.db.execute(raw_query);
       const [{ results = {} } = {}] = rows;
@@ -386,6 +428,16 @@ export class SearchSuggestionsActorsImplementations {
     }),
   };
 
+  private buildUnionClause = (union_strings: string[]) => {
+    if (!union_strings.length) return '';
+
+    // Create UNION ALL query with all value tables
+    const union_clauses = union_strings.map(table_name =>
+      `SELECT * FROM ${table_name}`
+    ).join('\n  UNION ALL\n  ');
+
+    return `all_values AS (\n  ${union_clauses}\n),`;
+  };
   private formatFilters({
     filters,
     aliased_joined_entities,
@@ -521,17 +573,17 @@ export class SearchSuggestionsActorsImplementations {
     return Utility.replacePlaceholders(db.toSQL().sql, db.toSQL().params);
   }
 
-  private modifyQueryFilterString(query: string, field, parse_as: string) {
-    const query_agg = query.split(` AS ${field} where `);
-    let [filtered_field = '', value] = query_agg[1]?.split(' ilike ') || [];
-    filtered_field = field;
-    return (
-      query_agg[0] +
-      ` AS ${field} where ${filtered_field}${
-        parse_as === 'text' ? '::TEXT' : ''
-      } ilike ${value}`
-    );
-  }
+  // private modifyQueryFilterString(query: string, field, parse_as: string) {
+  //   const query_agg = query.split(` AS ${field} where `);
+  //   let [filtered_field = '', value] = query_agg[1]?.split(' ilike ') || [];
+  //   filtered_field = field;
+  //   return (
+  //     query_agg[0] +
+  //     ` AS ${field} where ${filtered_field}${
+  //       parse_as === 'text' ? '::TEXT' : ''
+  //     } ilike ${value}`
+  //   );
+  // }
 
   private saveToCache(key: string, value: any) {
     const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
