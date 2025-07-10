@@ -76,10 +76,10 @@ export async function initializers(app) {
   await initializer.generateSchema();
 
   // ! This is a sample for the timeline tables configuration
-  await initializer.timelineTableConfig({
-    include_crdt_tables: ['contacts'],
-    exclude_app_tables: ['postgres_channels'],
-  });
+  // await initializer.timelineTableConfig({
+  //   include_crdt_tables: ['contacts'],
+  //   exclude_app_tables: ['postgres_channels'],
+  // });
 }
 
 export async function cleanupTemporaryFiles() {
