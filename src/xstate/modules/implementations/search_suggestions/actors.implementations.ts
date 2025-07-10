@@ -9,6 +9,7 @@ import { sql } from 'drizzle-orm';
 const pluralize = require('pluralize');
 import sha1 from 'sha1';
 import { ELikeMatchPattern } from '../../schemas/find/find.schema';
+import ShortUniqueId from 'short-unique-id';
 
 const {
   REDIS_CACHE_PORT = '6379',
@@ -43,6 +44,7 @@ export class SearchSuggestionsActorsImplementations {
             data: [],
           },
         });
+      const uid=new ShortUniqueId({ length: 10 });
       const { controller_args, responsible_account } = context;
       const [_res, _req] = controller_args;
       const { organization_id = '' } = responsible_account;
@@ -266,13 +268,13 @@ export class SearchSuggestionsActorsImplementations {
                     group_advance_filters: all_field_group_filters,
                   },
                 );
-
+                let unique_id=uid.rnd()
                 if(has_group_count){
-                  union_clauses.push(`${field}_group`);
+                  union_clauses.push(`${field}_group_${unique_id}`);
                 }
 
                 group_count_query = `
-                ${field}_group AS (
+                ${field}_group_${unique_id} AS (
                     ${field_group_subquery}
                 )`;
               }
@@ -284,16 +286,16 @@ export class SearchSuggestionsActorsImplementations {
               db_field = db_field
                 .select({
                   key: sql.raw(`'${field}' AS key`),
-                  value: sql.raw(`${entity_field} AS value`),
+                  value: sql.raw(`${entity_field}${parse_as === 'text' ? '::text' : ''} AS value`),
                   cnt: sql.raw(`COUNT(*) AS cnt`),
                   match_score: sql.raw(`
-                  CASE
-                  WHEN ${entity_field} = '${values_flat}' THEN 3
-                  WHEN ${entity_field} ILIKE '${values_flat}%' THEN 2
-                  WHEN ${entity_field} ILIKE '%${values_flat}%' THEN 1
-                  ELSE 0
-                  END AS match_score
-                  `),
+    CASE
+      WHEN ${entity_field}${parse_as === 'text' ? '::text' : ''} = '${values_flat}' THEN 3
+      WHEN ${entity_field}${parse_as === 'text' ? '::text' : ''} ILIKE '${values_flat}%' THEN 2
+      WHEN ${entity_field}${parse_as === 'text' ? '::text' : ''} ILIKE '%${values_flat}%' THEN 1
+      ELSE 0
+    END AS match_score
+  `),
                 })
                 .from(table_schema);
 
@@ -323,9 +325,10 @@ export class SearchSuggestionsActorsImplementations {
                 dz_filter_queue: [],
                 match_pattern,
               });
-              union_clauses.push(`${field}_values`)
+              let unique_id=uid.rnd();
+              union_clauses.push(`${field}_values_${unique_id}`);
               const field_query = `
-              ${field}_values AS (
+              ${field}_values_${unique_id} AS (
               ${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}
               )
               `;
