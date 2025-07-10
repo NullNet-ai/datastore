@@ -20,6 +20,7 @@ CREATE TABLE "allowed_fields" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"label" text,
 	"name" text,
 	"type" text,
@@ -51,6 +52,7 @@ CREATE TABLE "class_types" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"type" text,
 	"company" text,
 	"entity" text,
@@ -197,6 +199,7 @@ CREATE TABLE "app_firewalls" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"app_id" text,
 	"firewall" text,
 	CONSTRAINT "app_firewalls_id_timestamp_app_id_pk" PRIMARY KEY("id","timestamp","app_id"),
@@ -223,6 +226,7 @@ CREATE TABLE "appguard_logs" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"level" text,
 	"message" text,
 	CONSTRAINT "appguard_logs_id_timestamp_pk" PRIMARY KEY("id","timestamp")
@@ -248,6 +252,7 @@ CREATE TABLE "communication_templates" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"name" text,
 	"communication_template_status" text,
 	"event" text,
@@ -275,6 +280,7 @@ CREATE TABLE "connections" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"interface_name" text,
 	"total_packet" integer,
 	"total_byte" integer,
@@ -320,6 +326,7 @@ CREATE TABLE "device_aliases" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_configuration_id" text,
 	"type" text,
 	"name" text,
@@ -349,6 +356,7 @@ CREATE TABLE "device_configurations" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_id" text,
 	"digest" text,
 	"hostname" text,
@@ -377,6 +385,7 @@ CREATE TABLE "device_group_settings" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"name" text
 );
 --> statement-breakpoint
@@ -449,6 +458,7 @@ CREATE TABLE "device_interface_addresses" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_interface_id" text,
 	"address" "inet",
 	CONSTRAINT "device_interface_addresses_id_pk" PRIMARY KEY("id")
@@ -474,6 +484,7 @@ CREATE TABLE "device_interfaces" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_configuration_id" text,
 	"name" text,
 	"device" text,
@@ -501,6 +512,7 @@ CREATE TABLE "device_remote_access_sessions" (
 	"timestamp" timestamp with time zone DEFAULT now(),
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_id" text,
 	"remote_access_type" text,
 	"remote_access_session" text,
@@ -529,6 +541,7 @@ CREATE TABLE "device_rules" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_configuration_id" text,
 	"disabled" boolean,
 	"type" text,
@@ -569,6 +582,7 @@ CREATE TABLE "device_ssh_keys" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"public_key" text,
 	"private_key" text,
 	"passphrase" text,
@@ -828,6 +842,7 @@ CREATE TABLE "ip_infos" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"ip" text,
 	"country" text,
 	"asn" text,
@@ -947,6 +962,7 @@ CREATE TABLE "packets" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"interface_name" text,
 	"total_length" integer,
 	"device_id" text,
@@ -992,6 +1008,7 @@ CREATE TABLE "postgres_channels" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"channel_name" text,
 	"function" text,
 	CONSTRAINT "postgres_channels_channel_name_unique" UNIQUE("channel_name")
@@ -1017,6 +1034,7 @@ CREATE TABLE "resolutions" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"resolution_type" text
 );
 --> statement-breakpoint
@@ -1158,6 +1176,7 @@ CREATE TABLE "temp_appguard_logs" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"level" text,
 	"message" text,
 	CONSTRAINT "temp_appguard_logs_id_timestamp_pk" PRIMARY KEY("id","timestamp")
@@ -1183,6 +1202,7 @@ CREATE TABLE "temp_connections" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"hypertable_timestamp" text,
 	"interface_name" text,
 	"total_packet" integer,
@@ -1217,6 +1237,7 @@ CREATE TABLE "temp_device_aliases" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_configuration_id" text,
 	"type" text,
 	"name" text,
@@ -1246,6 +1267,7 @@ CREATE TABLE "temp_device_interface_addresses" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_interface_id" text,
 	"address" "inet",
 	CONSTRAINT "temp_device_interface_addresses_id_pk" PRIMARY KEY("id")
@@ -1271,6 +1293,7 @@ CREATE TABLE "temp_device_interfaces" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_configuration_id" text,
 	"name" text,
 	"device" text,
@@ -1298,6 +1321,7 @@ CREATE TABLE "temp_device_remote_access_sessions" (
 	"timestamp" timestamp with time zone DEFAULT now(),
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_id" text,
 	"remote_access_type" text,
 	"remote_access_session" text,
@@ -1326,6 +1350,7 @@ CREATE TABLE "temp_device_rules" (
 	"timestamp" text,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"device_configuration_id" text,
 	"disabled" boolean,
 	"type" text,
@@ -1390,6 +1415,7 @@ CREATE TABLE "temp_packets" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"hypertable_timestamp" text,
 	"interface_name" text,
 	"total_length" integer,
@@ -1468,6 +1494,7 @@ CREATE TABLE "temp_wallguard_logs" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"level" text,
 	"message" text,
 	CONSTRAINT "temp_wallguard_logs_id_timestamp_pk" PRIMARY KEY("id","timestamp")
@@ -1494,6 +1521,7 @@ CREATE TABLE "wallguard_logs" (
 	"timestamp" timestamp with time zone,
 	"tags" text[] DEFAULT ARRAY[]::TEXT[],
 	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
 	"level" text,
 	"message" text,
 	CONSTRAINT "wallguard_logs_id_timestamp_pk" PRIMARY KEY("id","timestamp")
@@ -1773,6 +1801,7 @@ CREATE INDEX "allowed_fields_deleted_by_idx" ON "allowed_fields" USING btree ("d
 CREATE INDEX "allowed_fields_requested_by_idx" ON "allowed_fields" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "allowed_fields_tags_idx" ON "allowed_fields" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "allowed_fields_image_url_idx" ON "allowed_fields" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "allowed_fields_sensitivity_level_idx" ON "allowed_fields" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "class_types_id_idx" ON "class_types" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "class_types_categories_idx" ON "class_types" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "class_types_code_idx" ON "class_types" USING btree ("code");--> statement-breakpoint
@@ -1789,6 +1818,7 @@ CREATE INDEX "class_types_deleted_by_idx" ON "class_types" USING btree ("deleted
 CREATE INDEX "class_types_requested_by_idx" ON "class_types" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "class_types_tags_idx" ON "class_types" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "class_types_image_url_idx" ON "class_types" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "class_types_sensitivity_level_idx" ON "class_types" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "organization_files_id_idx" ON "organization_files" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "organization_files_categories_idx" ON "organization_files" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "organization_files_code_idx" ON "organization_files" USING btree ("code");--> statement-breakpoint
@@ -1821,6 +1851,7 @@ CREATE INDEX "app_firewalls_deleted_by_idx" ON "app_firewalls" USING btree ("del
 CREATE INDEX "app_firewalls_requested_by_idx" ON "app_firewalls" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "app_firewalls_tags_idx" ON "app_firewalls" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "app_firewalls_image_url_idx" ON "app_firewalls" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "app_firewalls_sensitivity_level_idx" ON "app_firewalls" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "appguard_logs_id_idx" ON "appguard_logs" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "appguard_logs_categories_idx" ON "appguard_logs" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "appguard_logs_code_idx" ON "appguard_logs" USING btree ("code");--> statement-breakpoint
@@ -1837,6 +1868,7 @@ CREATE INDEX "appguard_logs_deleted_by_idx" ON "appguard_logs" USING btree ("del
 CREATE INDEX "appguard_logs_requested_by_idx" ON "appguard_logs" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "appguard_logs_tags_idx" ON "appguard_logs" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "appguard_logs_image_url_idx" ON "appguard_logs" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "appguard_logs_sensitivity_level_idx" ON "appguard_logs" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "communication_templates_id_idx" ON "communication_templates" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "communication_templates_categories_idx" ON "communication_templates" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "communication_templates_code_idx" ON "communication_templates" USING btree ("code");--> statement-breakpoint
@@ -1874,6 +1906,7 @@ CREATE INDEX "connections_deleted_by_idx" ON "connections" USING btree ("deleted
 CREATE INDEX "connections_requested_by_idx" ON "connections" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "connections_tags_idx" ON "connections" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "connections_image_url_idx" ON "connections" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "connections_sensitivity_level_idx" ON "connections" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "connections_timestamp_idx" ON "connections" USING btree ("timestamp");--> statement-breakpoint
 CREATE INDEX "connections_interface_name_idx" ON "connections" USING btree ("interface_name");--> statement-breakpoint
 CREATE INDEX "connections_total_packet_idx" ON "connections" USING btree ("total_packet");--> statement-breakpoint
@@ -1901,6 +1934,7 @@ CREATE INDEX "device_aliases_deleted_by_idx" ON "device_aliases" USING btree ("d
 CREATE INDEX "device_aliases_requested_by_idx" ON "device_aliases" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_aliases_tags_idx" ON "device_aliases" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_aliases_image_url_idx" ON "device_aliases" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_aliases_sensitivity_level_idx" ON "device_aliases" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_aliases_device_configuration_id_idx" ON "device_aliases" USING btree ("device_configuration_id");--> statement-breakpoint
 CREATE INDEX "device_aliases_type_idx" ON "device_aliases" USING btree ("type");--> statement-breakpoint
 CREATE INDEX "device_aliases_name_idx" ON "device_aliases" USING btree ("name");--> statement-breakpoint
@@ -1923,6 +1957,7 @@ CREATE INDEX "device_configurations_deleted_by_idx" ON "device_configurations" U
 CREATE INDEX "device_configurations_requested_by_idx" ON "device_configurations" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_configurations_tags_idx" ON "device_configurations" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_configurations_image_url_idx" ON "device_configurations" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_configurations_sensitivity_level_idx" ON "device_configurations" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_group_settings_id_idx" ON "device_group_settings" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "device_group_settings_categories_idx" ON "device_group_settings" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "device_group_settings_code_idx" ON "device_group_settings" USING btree ("code");--> statement-breakpoint
@@ -1939,6 +1974,7 @@ CREATE INDEX "device_group_settings_deleted_by_idx" ON "device_group_settings" U
 CREATE INDEX "device_group_settings_requested_by_idx" ON "device_group_settings" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_group_settings_tags_idx" ON "device_group_settings" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_group_settings_image_url_idx" ON "device_group_settings" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_group_settings_sensitivity_level_idx" ON "device_group_settings" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_groups_id_idx" ON "device_groups" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "device_groups_categories_idx" ON "device_groups" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "device_groups_code_idx" ON "device_groups" USING btree ("code");--> statement-breakpoint
@@ -1987,6 +2023,7 @@ CREATE INDEX "device_interface_addresses_deleted_by_idx" ON "device_interface_ad
 CREATE INDEX "device_interface_addresses_requested_by_idx" ON "device_interface_addresses" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_interface_addresses_tags_idx" ON "device_interface_addresses" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_interface_addresses_image_url_idx" ON "device_interface_addresses" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_interface_addresses_sensitivity_level_idx" ON "device_interface_addresses" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_interface_addresses_device_interface_id_idx" ON "device_interface_addresses" USING btree ("device_interface_id");--> statement-breakpoint
 CREATE INDEX "device_interface_addresses_address_idx" ON "device_interface_addresses" USING btree ("address");--> statement-breakpoint
 CREATE INDEX "device_interfaces_id_idx" ON "device_interfaces" USING btree ("id");--> statement-breakpoint
@@ -2005,6 +2042,7 @@ CREATE INDEX "device_interfaces_deleted_by_idx" ON "device_interfaces" USING btr
 CREATE INDEX "device_interfaces_requested_by_idx" ON "device_interfaces" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_interfaces_tags_idx" ON "device_interfaces" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_interfaces_image_url_idx" ON "device_interfaces" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_interfaces_sensitivity_level_idx" ON "device_interfaces" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_interfaces_device_configuration_id_idx" ON "device_interfaces" USING btree ("device_configuration_id");--> statement-breakpoint
 CREATE INDEX "device_interfaces_name_idx" ON "device_interfaces" USING btree ("name");--> statement-breakpoint
 CREATE INDEX "device_interfaces_device_idx" ON "device_interfaces" USING btree ("device");--> statement-breakpoint
@@ -2024,6 +2062,7 @@ CREATE INDEX "device_remote_access_sessions_deleted_by_idx" ON "device_remote_ac
 CREATE INDEX "device_remote_access_sessions_requested_by_idx" ON "device_remote_access_sessions" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_remote_access_sessions_tags_idx" ON "device_remote_access_sessions" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_remote_access_sessions_image_url_idx" ON "device_remote_access_sessions" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_remote_access_sessions_sensitivity_level_idx" ON "device_remote_access_sessions" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_rules_id_idx" ON "device_rules" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "device_rules_categories_idx" ON "device_rules" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "device_rules_code_idx" ON "device_rules" USING btree ("code");--> statement-breakpoint
@@ -2040,6 +2079,7 @@ CREATE INDEX "device_rules_deleted_by_idx" ON "device_rules" USING btree ("delet
 CREATE INDEX "device_rules_requested_by_idx" ON "device_rules" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_rules_tags_idx" ON "device_rules" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_rules_image_url_idx" ON "device_rules" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_rules_sensitivity_level_idx" ON "device_rules" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_rules_device_configuration_id_idx" ON "device_rules" USING btree ("device_configuration_id");--> statement-breakpoint
 CREATE INDEX "device_rules_disabled_idx" ON "device_rules" USING btree ("disabled");--> statement-breakpoint
 CREATE INDEX "device_rules_type_idx" ON "device_rules" USING btree ("type");--> statement-breakpoint
@@ -2070,6 +2110,7 @@ CREATE INDEX "device_ssh_keys_deleted_by_idx" ON "device_ssh_keys" USING btree (
 CREATE INDEX "device_ssh_keys_requested_by_idx" ON "device_ssh_keys" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "device_ssh_keys_tags_idx" ON "device_ssh_keys" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "device_ssh_keys_image_url_idx" ON "device_ssh_keys" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "device_ssh_keys_sensitivity_level_idx" ON "device_ssh_keys" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "device_ssh_keys_public_key_idx" ON "device_ssh_keys" USING btree ("public_key");--> statement-breakpoint
 CREATE INDEX "device_ssh_keys_private_key_idx" ON "device_ssh_keys" USING btree ("private_key");--> statement-breakpoint
 CREATE INDEX "device_ssh_keys_passphrase_idx" ON "device_ssh_keys" USING btree ("passphrase");--> statement-breakpoint
@@ -2222,6 +2263,7 @@ CREATE INDEX "ip_infos_deleted_by_idx" ON "ip_infos" USING btree ("deleted_by");
 CREATE INDEX "ip_infos_requested_by_idx" ON "ip_infos" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "ip_infos_tags_idx" ON "ip_infos" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "ip_infos_image_url_idx" ON "ip_infos" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "ip_infos_sensitivity_level_idx" ON "ip_infos" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "locations_id_idx" ON "locations" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "locations_categories_idx" ON "locations" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "locations_code_idx" ON "locations" USING btree ("code");--> statement-breakpoint
@@ -2283,6 +2325,7 @@ CREATE INDEX "packets_deleted_by_idx" ON "packets" USING btree ("deleted_by");--
 CREATE INDEX "packets_requested_by_idx" ON "packets" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "packets_tags_idx" ON "packets" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "packets_image_url_idx" ON "packets" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "packets_sensitivity_level_idx" ON "packets" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "packets_timestamp_idx" ON "packets" USING btree ("timestamp");--> statement-breakpoint
 CREATE INDEX "packets_interface_name_idx" ON "packets" USING btree ("interface_name");--> statement-breakpoint
 CREATE INDEX "packets_total_length_idx" ON "packets" USING btree ("total_length");--> statement-breakpoint
@@ -2310,6 +2353,7 @@ CREATE INDEX "postgres_channels_deleted_by_idx" ON "postgres_channels" USING btr
 CREATE INDEX "postgres_channels_requested_by_idx" ON "postgres_channels" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "postgres_channels_tags_idx" ON "postgres_channels" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "postgres_channels_image_url_idx" ON "postgres_channels" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "postgres_channels_sensitivity_level_idx" ON "postgres_channels" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "resolutions_id_idx" ON "resolutions" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "resolutions_categories_idx" ON "resolutions" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "resolutions_code_idx" ON "resolutions" USING btree ("code");--> statement-breakpoint
@@ -2326,6 +2370,7 @@ CREATE INDEX "resolutions_deleted_by_idx" ON "resolutions" USING btree ("deleted
 CREATE INDEX "resolutions_requested_by_idx" ON "resolutions" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "resolutions_tags_idx" ON "resolutions" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "resolutions_image_url_idx" ON "resolutions" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "resolutions_sensitivity_level_idx" ON "resolutions" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "smtp_requests_id_idx" ON "smtp_requests" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "smtp_requests_categories_idx" ON "smtp_requests" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "smtp_requests_code_idx" ON "smtp_requests" USING btree ("code");--> statement-breakpoint
@@ -2406,6 +2451,7 @@ CREATE INDEX "temp_appguard_logs_deleted_by_idx" ON "temp_appguard_logs" USING b
 CREATE INDEX "temp_appguard_logs_requested_by_idx" ON "temp_appguard_logs" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_appguard_logs_tags_idx" ON "temp_appguard_logs" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_appguard_logs_image_url_idx" ON "temp_appguard_logs" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_appguard_logs_sensitivity_level_idx" ON "temp_appguard_logs" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_connections_id_idx" ON "temp_connections" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_connections_categories_idx" ON "temp_connections" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_connections_code_idx" ON "temp_connections" USING btree ("code");--> statement-breakpoint
@@ -2422,6 +2468,7 @@ CREATE INDEX "temp_connections_deleted_by_idx" ON "temp_connections" USING btree
 CREATE INDEX "temp_connections_requested_by_idx" ON "temp_connections" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_connections_tags_idx" ON "temp_connections" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_connections_image_url_idx" ON "temp_connections" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_connections_sensitivity_level_idx" ON "temp_connections" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_device_aliases_id_idx" ON "temp_device_aliases" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_device_aliases_categories_idx" ON "temp_device_aliases" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_device_aliases_code_idx" ON "temp_device_aliases" USING btree ("code");--> statement-breakpoint
@@ -2438,6 +2485,7 @@ CREATE INDEX "temp_device_aliases_deleted_by_idx" ON "temp_device_aliases" USING
 CREATE INDEX "temp_device_aliases_requested_by_idx" ON "temp_device_aliases" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_device_aliases_tags_idx" ON "temp_device_aliases" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_device_aliases_image_url_idx" ON "temp_device_aliases" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_device_aliases_sensitivity_level_idx" ON "temp_device_aliases" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_device_interface_addresses_id_idx" ON "temp_device_interface_addresses" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_device_interface_addresses_categories_idx" ON "temp_device_interface_addresses" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_device_interface_addresses_code_idx" ON "temp_device_interface_addresses" USING btree ("code");--> statement-breakpoint
@@ -2454,6 +2502,7 @@ CREATE INDEX "temp_device_interface_addresses_deleted_by_idx" ON "temp_device_in
 CREATE INDEX "temp_device_interface_addresses_requested_by_idx" ON "temp_device_interface_addresses" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_device_interface_addresses_tags_idx" ON "temp_device_interface_addresses" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_device_interface_addresses_image_url_idx" ON "temp_device_interface_addresses" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_device_interface_addresses_sensitivity_level_idx" ON "temp_device_interface_addresses" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_device_interfaces_id_idx" ON "temp_device_interfaces" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_device_interfaces_categories_idx" ON "temp_device_interfaces" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_device_interfaces_code_idx" ON "temp_device_interfaces" USING btree ("code");--> statement-breakpoint
@@ -2470,6 +2519,7 @@ CREATE INDEX "temp_device_interfaces_deleted_by_idx" ON "temp_device_interfaces"
 CREATE INDEX "temp_device_interfaces_requested_by_idx" ON "temp_device_interfaces" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_device_interfaces_tags_idx" ON "temp_device_interfaces" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_device_interfaces_image_url_idx" ON "temp_device_interfaces" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_device_interfaces_sensitivity_level_idx" ON "temp_device_interfaces" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_device_remote_access_sessions_id_idx" ON "temp_device_remote_access_sessions" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_device_remote_access_sessions_categories_idx" ON "temp_device_remote_access_sessions" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_device_remote_access_sessions_code_idx" ON "temp_device_remote_access_sessions" USING btree ("code");--> statement-breakpoint
@@ -2486,6 +2536,7 @@ CREATE INDEX "temp_device_remote_access_sessions_deleted_by_idx" ON "temp_device
 CREATE INDEX "temp_device_remote_access_sessions_requested_by_idx" ON "temp_device_remote_access_sessions" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_device_remote_access_sessions_tags_idx" ON "temp_device_remote_access_sessions" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_device_remote_access_sessions_image_url_idx" ON "temp_device_remote_access_sessions" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_device_remote_access_sessions_sensitivity_level_idx" ON "temp_device_remote_access_sessions" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_device_rules_id_idx" ON "temp_device_rules" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_device_rules_categories_idx" ON "temp_device_rules" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_device_rules_code_idx" ON "temp_device_rules" USING btree ("code");--> statement-breakpoint
@@ -2502,6 +2553,7 @@ CREATE INDEX "temp_device_rules_deleted_by_idx" ON "temp_device_rules" USING btr
 CREATE INDEX "temp_device_rules_requested_by_idx" ON "temp_device_rules" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_device_rules_tags_idx" ON "temp_device_rules" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_device_rules_image_url_idx" ON "temp_device_rules" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_device_rules_sensitivity_level_idx" ON "temp_device_rules" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_ip_blacklist_id_idx" ON "temp_ip_blacklist" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_ip_blacklist_categories_idx" ON "temp_ip_blacklist" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_ip_blacklist_code_idx" ON "temp_ip_blacklist" USING btree ("code");--> statement-breakpoint
@@ -2534,6 +2586,7 @@ CREATE INDEX "temp_packets_deleted_by_idx" ON "temp_packets" USING btree ("delet
 CREATE INDEX "temp_packets_requested_by_idx" ON "temp_packets" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_packets_tags_idx" ON "temp_packets" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_packets_image_url_idx" ON "temp_packets" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_packets_sensitivity_level_idx" ON "temp_packets" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "temp_system_resources_id_idx" ON "temp_system_resources" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "temp_system_resources_categories_idx" ON "temp_system_resources" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "temp_system_resources_code_idx" ON "temp_system_resources" USING btree ("code");--> statement-breakpoint
@@ -2566,6 +2619,7 @@ CREATE INDEX "temp_wallguard_logs_deleted_by_idx" ON "temp_wallguard_logs" USING
 CREATE INDEX "temp_wallguard_logs_requested_by_idx" ON "temp_wallguard_logs" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "temp_wallguard_logs_tags_idx" ON "temp_wallguard_logs" USING btree ("tags");--> statement-breakpoint
 CREATE INDEX "temp_wallguard_logs_image_url_idx" ON "temp_wallguard_logs" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "temp_wallguard_logs_sensitivity_level_idx" ON "temp_wallguard_logs" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_id_idx" ON "wallguard_logs" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_categories_idx" ON "wallguard_logs" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_code_idx" ON "wallguard_logs" USING btree ("code");--> statement-breakpoint
@@ -2581,4 +2635,5 @@ CREATE INDEX "wallguard_logs_updated_by_idx" ON "wallguard_logs" USING btree ("u
 CREATE INDEX "wallguard_logs_deleted_by_idx" ON "wallguard_logs" USING btree ("deleted_by");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_requested_by_idx" ON "wallguard_logs" USING btree ("requested_by");--> statement-breakpoint
 CREATE INDEX "wallguard_logs_tags_idx" ON "wallguard_logs" USING btree ("tags");--> statement-breakpoint
-CREATE INDEX "wallguard_logs_image_url_idx" ON "wallguard_logs" USING btree ("image_url");
+CREATE INDEX "wallguard_logs_image_url_idx" ON "wallguard_logs" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "wallguard_logs_sensitivity_level_idx" ON "wallguard_logs" USING btree ("sensitivity_level");

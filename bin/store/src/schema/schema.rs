@@ -135,7 +135,6 @@ table! {
         deleted_by -> Nullable<Text>,
         timestamp -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
-        sensitivity_level -> Nullable<Int4>,
     }
 }
 

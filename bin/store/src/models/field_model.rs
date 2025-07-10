@@ -23,6 +23,4 @@ pub struct FieldModel {
     pub deleted_by: Option<String>,
     pub timestamp: Option<String>,
     pub tombstone: Option<i32>,
-    #[serde(default = "default_sensitivity_level")]
-    pub sensitivity_level: Option<i32>,
 }
