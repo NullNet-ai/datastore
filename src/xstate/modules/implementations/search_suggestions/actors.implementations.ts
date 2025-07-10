@@ -10,21 +10,20 @@ const pluralize = require('pluralize');
 import sha1 from 'sha1';
 import { ELikeMatchPattern } from '../../schemas/find/find.schema';
 import ShortUniqueId from 'short-unique-id';
+import { RedisClientProvider } from '../../../../db/redis_client.provider';
 
-const {
-  REDIS_CACHE_PORT = '6379',
-  REDIS_CACHE_ENDPOINT = 'localhost',
-  PORTAL_REDIS_CACHE_INDEX = '1',
-  SEARCH_SUGGESTION_CACHE_EXPIRY = '30s',
-} = process.env;
+const { SEARCH_SUGGESTION_CACHE_EXPIRY = '30s' } = process.env;
 @Injectable()
 export class SearchSuggestionsActorsImplementations {
   private db;
+  private redisClient;
   constructor(
     private readonly drizzleService: DrizzleService,
     private readonly verifyActorImplementations: VerifyActorsImplementations,
+    private readonly redisClientProvider: RedisClientProvider,
   ) {
     this.db = this.drizzleService.getClient();
+    this.redisClient = this.redisClientProvider.getClient();
     this.actors.verify = this.verifyActorImplementations.actors.verify;
   }
   public readonly actors: IActors = {
@@ -76,7 +75,7 @@ export class SearchSuggestionsActorsImplementations {
 
       const stringified_body = JSON.stringify(_req.body);
       const query_sha = sha1(stringified_body);
-      const existing_results = this.getFromCache(query_sha);
+      const existing_results = await this.getFromCacheThroughClient(query_sha);
       if (existing_results) {
         return Promise.resolve({
           payload: {
@@ -423,8 +422,7 @@ export class SearchSuggestionsActorsImplementations {
 
       const { rows = [] } = await this.db.execute(raw_query);
       const [{ results = {} } = {}] = rows;
-      const raw_string_result = JSON.stringify(results).replace(/"/g, '\\"');
-      this.saveToCache(query_sha, raw_string_result);
+      await this.saveToCacheThroughClient(query_sha, results);
 
       return Promise.resolve({
         payload: {
@@ -594,26 +592,25 @@ export class SearchSuggestionsActorsImplementations {
   //   );
   // }
 
-  private saveToCache(key: string, value: any) {
-    const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
-
-    const set_cmd = `SET ${key} ${value}`;
-    Utility.execCommand(redis_cli_connection_cmd + ' ' + set_cmd);
-
-    const set_expiration_key_cmd = `PEXPIRE ${key} ${+Utility.getTimeMs(
-      SEARCH_SUGGESTION_CACHE_EXPIRY || '30s',
-    )}`;
-    Utility.execCommand(
-      redis_cli_connection_cmd + ' ' + set_expiration_key_cmd,
-    );
+  private async saveToCacheThroughClient(key: string, value: any) {
+    try {
+      const raw_string = JSON.stringify(value);
+      await this.redisClient.set(key, raw_string);
+      await this.redisClient.pexpire(
+        key,
+        +Utility.getTimeMs(SEARCH_SUGGESTION_CACHE_EXPIRY || '30s'),
+      );
+    } catch (error) {
+      console.error('[Redis][Unavailable]:', error.message || error);
+    }
   }
 
-  private getFromCache(key: string) {
-    const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
-    const set_cmd = `GET ${key}`;
-    const { result } = Utility.execCommand(
-      redis_cli_connection_cmd + ' ' + set_cmd,
-    );
-    return JSON.parse(result || 'null');
+  private async getFromCacheThroughClient(key: string) {
+    try {
+      const raw_result = await this.redisClient.get(key);
+      return JSON.parse(raw_result?.trim() || 'null');
+    } catch (error) {
+      console.error('[Redis][Unavailable]:', error.message || error);
+    }
   }
 }
