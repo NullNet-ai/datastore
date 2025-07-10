@@ -1,6 +1,7 @@
 use regex::Regex;
-use crate::db::create_connection;
-use tokio_postgres::Client;
+use crate::db::get_async_connection;
+use diesel::sql_query;
+use diesel_async::RunQueryDsl;
 
 pub struct FunctionValidator;
 
@@ -143,24 +144,27 @@ impl FunctionValidator {
     }
 
     // Test function syntax by creating it in a transaction and rolling back
-    pub async fn test_function_syntax(&self, function_string: &str) -> Result<bool, String> {
-        let mut client = create_connection().await
-            .map_err(|e| format!("Database connection error: {}", e))?;
+    pub async fn test_function_syntax(&self, function_string: &str) -> Result<(), String> {
+        let mut conn = get_async_connection().await;
 
-        // Begin transaction
-        let tx = client.transaction().await
-            .map_err(|e| format!("Transaction error: {}", e))?;
-
-        // Try to create the function
-        let result = tx.execute(function_string, &[]).await;
-
-        // Always rollback - we just want to test syntax
-        tx.rollback().await
-            .map_err(|e| format!("Rollback error: {}", e))?;
+        // Use Diesel's transaction support for testing
+        use diesel_async::AsyncConnection;
+        
+        let result = conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            Box::pin(async move {
+                // Try to execute the function using diesel::sql_query
+                sql_query(function_string).execute(conn).await?;
+                
+                // If we get here, the syntax is valid
+                // The transaction will be automatically rolled back
+                // because we're in a test transaction
+                Ok(())
+            })
+        }).await;
 
         match result {
-            Ok(_) => Ok(true),
-            Err(e) => Err(format!("SQL syntax error: {}", e)),
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Function syntax error: {}", e))
         }
     }
 

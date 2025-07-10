@@ -1,9 +1,11 @@
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use crate::structs::structs::ApiResponse;
-use crate::db::create_connection;
+use crate::db::get_async_connection;
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
 use regex::Regex;
+use diesel::sql_query;
+use diesel_async::RunQueryDsl;
 use super::function_validators::FunctionValidator;
 
 #[derive(Deserialize)]
@@ -46,12 +48,11 @@ impl PgFunctionService {
 
         println!("🦒 PgFunctionService -> function_name: {}", function_name);
 
-        // Create database connection
-        let client = create_connection().await
-            .map_err(|e| format!("Database connection error: {}", e))?;
+        // Create database connection using Diesel async pool
+        let mut conn = get_async_connection().await;
 
-        // Execute the function creation
-        match client.execute(function_string, &[]).await {
+        // Execute the function creation using diesel::sql_query
+        match sql_query(function_string).execute(&mut conn).await {
             Ok(_) => {
                 println!("✅ Function created successfully");
             }
@@ -79,7 +80,7 @@ impl PgFunctionService {
             channel_name, channel_name, table_name, channel_name
         );
 
-        match client.execute(&trigger_sql, &[]).await {
+        match sql_query(&trigger_sql).execute(&mut conn).await {
             Ok(_) => {
                 println!("🚳 PgFunctionService -> trigger created successfully");
             }
