@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.1.1
 
+### Author
+Kashan
+
 ### Added
 - Added `sensitivity_level` column to the application tables table in migration `2025-06-11-230646_initial_migration`
   - Column definition: `"sensitivity_level" integer DEFAULT 1000`
