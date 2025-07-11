@@ -453,34 +453,19 @@ pub struct RelationEndpoint {
 }
 
 //advance filters
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")] 
 pub enum FilterCriteria {
     #[serde(rename = "criteria")]
     Criteria {
         field: String,
         operator: FilterOperator,
         values: Vec<serde_json::Value>,
-        r#type: FilterType,
-        entity: String,
     },
     #[serde(rename = "operator")]
     LogicalOperator { operator: LogicalOperator },
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub enum FilterType {
-    Criteria,
-    Operator,
-}
-impl ToString for FilterType {
-    fn to_string(&self) -> String {
-        match self {
-            FilterType::Criteria => "AND".to_string(),
-            FilterType::Operator => "OR".to_string(),
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]

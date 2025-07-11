@@ -27,6 +27,7 @@ mod sync;
 mod table_enum;
 mod templates;
 mod utils;
+mod providers;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
 use crate::cache::{cache, CacheConfig}; // Add the cache function import
@@ -245,7 +246,7 @@ async fn main() -> std::io::Result<()> {
     //HTTPS config
 
     let server_url = format!("0.0.0.0:{}", port);
-    println!("Server is running on {}", server_url);
+    println!("Store is running on {}", server_url);
     tokio::spawn(async {
         if let Err(e) = bg_sync().await {
             log::error!("Error starting background sync: {}", e);
