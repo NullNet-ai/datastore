@@ -1,5 +1,5 @@
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use crate::structs::structs::ApiResponse;
+use actix_web::{web, HttpRequest, HttpResponse, HttpMessage, Responder};
+use crate::structs::structs::{ApiResponse, Auth};
 use crate::db::get_async_connection;
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
@@ -7,16 +7,17 @@ use regex::Regex;
 use diesel::sql_query;
 use diesel_async::RunQueryDsl;
 use super::function_validators::FunctionValidator;
+use std::collections::HashMap;
 
 #[derive(Deserialize)]
-struct CreateFunctionRequest {
+pub struct CreateFunctionRequest {
     #[serde(rename = "function")]
     function_string: String,
     table_name: String,
 }
 
 #[derive(Deserialize)]
-struct TestFunctionRequest {
+pub struct TestFunctionRequest {
     #[serde(rename = "function")]
     function_string: String,
 }
@@ -24,7 +25,7 @@ struct TestFunctionRequest {
 struct PgFunctionService;
 
 impl PgFunctionService {
-    async fn create_pg_function(&self, request: CreateFunctionRequest) -> Result<ApiResponse, String> {
+    async fn create_pg_function(&self, request: CreateFunctionRequest, create_trigger: bool) -> Result<ApiResponse, String> {
         let function_string = &request.function_string;
         let table_name = &request.table_name;
 
@@ -32,8 +33,8 @@ impl PgFunctionService {
             return Err("No function string found".to_string());
         }
 
-        if table_name.is_empty() {
-            return Err("No table name found, it is used to create trigger".to_string());
+        if table_name.is_empty() && create_trigger {
+            return Err("No table name found, it is required to create trigger".to_string());
         }
 
         // Use the comprehensive validator to validate the function
@@ -41,6 +42,7 @@ impl PgFunctionService {
         
         // Perform all validation checks before creating the function
         validator.validate_function(function_string).await?;
+        validator.validate_channel_function_format(function_string);
         
         // Extract function name and channel name for trigger creation
         let function_name = validator.extract_function_name(function_string)?;
@@ -63,7 +65,26 @@ impl PgFunctionService {
             }
         }
 
-        // Create trigger if it doesn't exist
+        // Create trigger if requested
+        if create_trigger {
+            self.create_trigger(&channel_name, table_name).await?;
+        }
+
+        let message = if create_trigger {
+            "pgFunction and trigger created successfully".to_string()
+        } else {
+            "pgFunction created successfully (trigger skipped)".to_string()
+        };
+
+        Ok(ApiResponse {
+            success: true,
+            message,
+            count: 0,
+            data: vec![],
+        })
+    }
+
+    async fn create_trigger(&self, channel_name: &str, table_name: &str) -> Result<(), String> {
         let trigger_sql = format!(
             r#"DO $$ 
             BEGIN 
@@ -80,23 +101,17 @@ impl PgFunctionService {
             channel_name, channel_name, table_name, channel_name
         );
 
+        let mut conn = get_async_connection().await;
         match sql_query(&trigger_sql).execute(&mut conn).await {
             Ok(_) => {
-                println!("🚳 PgFunctionService -> trigger created successfully");
+                Ok(())
             }
             Err(e) => {
                 let error_msg = format!("Error creating trigger: {}", e);
-                println!("🚜 PgFunctionService -> trigger error: {}", error_msg);
-                return Err(error_msg);
+                log::debug!("🚜 PgFunctionService -> trigger error: {}", error_msg);
+                Err(error_msg)
             }
         }
-
-        Ok(ApiResponse {
-            success: true,
-            message: "pgFunction created successfully".to_string(),
-            count: 0,
-            data: vec![],
-        })
     }
 
     async fn get_listener(&self, _req: &HttpRequest) -> Result<ApiResponse, String> {
@@ -154,10 +169,28 @@ impl PgFunctionService {
 pub async fn create_pg_function(
     req: HttpRequest,
     body: web::Json<CreateFunctionRequest>,
+    query: web::Query<HashMap<String, String>>,
 ) -> impl Responder {
     let service = PgFunctionService;
     
-    match service.create_pg_function(body.into_inner()).await {
+    // Extract trigger query parameter, default to true
+    let create_trigger = query.get("trigger")
+        .map(|v| v.parse::<bool>().unwrap_or(true))
+        .unwrap_or(true);
+    let auth_data = match req.extensions().get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    
+    match service.create_pg_function(body.into_inner(), create_trigger).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::BadRequest().json(ApiResponse {
             success: false,

@@ -2,6 +2,8 @@ use regex::Regex;
 use crate::db::get_async_connection;
 use diesel::sql_query;
 use diesel_async::RunQueryDsl;
+use diesel_async::AsyncConnection;
+
 
 pub struct FunctionValidator;
 
@@ -92,7 +94,7 @@ impl FunctionValidator {
         }
 
         if !self.validate_json_args(&json_args)? {
-            return Err("JSON args must include 'type' and 'channel'".to_string());
+            return Err("json_build_object must include 'type' as channel".to_string());
         }
 
         Ok(())
@@ -147,9 +149,7 @@ impl FunctionValidator {
     pub async fn test_function_syntax(&self, function_string: &str) -> Result<(), String> {
         let mut conn = get_async_connection().await;
 
-        // Use Diesel's transaction support for testing
-        use diesel_async::AsyncConnection;
-        
+        // Use Diesel's transaction support for testing        
         let result = conn.transaction::<_, diesel::result::Error, _>(|conn| {
             Box::pin(async move {
                 // Try to execute the function using diesel::sql_query
@@ -195,9 +195,6 @@ impl FunctionValidator {
         if self.has_dangerous_commands(function_string) {
             return Err("Function contains dangerous SQL commands like DROP, DELETE, etc. Please contact the system administrator for assistance.".to_string());
         }
-
-        // Channel function format validation
-        self.validate_channel_function_format(function_string)?;
 
         // Test actual SQL syntax
         self.test_function_syntax(function_string).await?;
