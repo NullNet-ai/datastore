@@ -33,6 +33,7 @@ export { table as dead_letter_queue } from '../application/dead_letter_queue';
 export { table as wallguard_logs } from '../application/wallguard_logs';
 export { table as temp_wallguard_logs } from '../application/temp_wallguard_logs';
 export { table as appguard_logs } from '../application/appguard_logs';
+export { table as appguard_configs } from '../application/appguard_configs';
 export { table as temp_appguard_logs } from '../application/temp_appguard_logs';
 export { table as device_interface_addresses } from '../application/device_interface_addresses';
 export { table as temp_device_interface_addresses } from '../application/temp_device_interface_addresses';
