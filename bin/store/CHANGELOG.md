@@ -11,23 +11,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Kashan
 
 ### Added
-- Added PostgreSQL function controller with comprehensive validation system
+- Added comprehensive PostgreSQL function management system
   - Created `PgFunctionService` for managing PostgreSQL function operations
   - Implemented `FunctionValidator` with security and syntax validation
   - Added endpoint `POST /api/listener/function` for creating PostgreSQL functions with triggers
+  - Added endpoint `GET /api/listener/{function_name}` for retrieving function and trigger information
+  - Added endpoint `DELETE /api/listener/{function_name}` for removing functions and triggers
   - Added endpoint `POST /api/listener/test` for testing function syntax without creation
   - Comprehensive validation including balanced parentheses/quotes, dangerous command detection, and database syntax testing
+
+### Enhanced
+- **Function Creation**: Enhanced to extract channel names from function strings and store them properly in `postgres_channels` table
+- **Function Retrieval**: Implemented querying of PostgreSQL system tables (`pg_proc`, `information_schema.triggers`) to retrieve function definitions and trigger information
+- **Function Deletion**: Added transactional deletion ensuring atomicity across multiple operations (database record deletion, function dropping, trigger dropping)
+- **Error Handling**: Comprehensive error handling with detailed success/error messages for all operations
 
 ### Technical Details
 - **New Files**: 
   - `/src/controllers/pg_functions/function_validators.rs` - Validation logic
   - Updated `/src/controllers/pg_functions/pg_listener_controller.rs` - Controller implementation
-- **Features**:
+- **Database Operations**:
   - Function string validation with regex-based extraction
-  - Channel name consistency validation
+  - Channel name consistency validation and extraction
   - Transaction-based syntax testing with rollback
+  - Transactional deletion with automatic rollback on failure
   - Security checks for dangerous SQL commands
   - Raw PostgreSQL connection usage for dynamic DDL operations
+- **API Endpoints**:
+  - `POST /api/listener/function` - Create function with trigger
+  - `GET /api/listener/{function_name}` - Retrieve function and trigger details
+  - `DELETE /api/listener/{function_name}?table_name={table_name}` - Delete function and trigger
+  - `POST /api/listener/test` - Test function syntax
+- **Data Models**: Added `FunctionRow` and `TriggerRow` structs for PostgreSQL system table queries
 
 ## 0.1.3
 
