@@ -28,18 +28,45 @@ impl FunctionValidator {
     }
 
     pub fn has_balanced_parentheses(&self, function_string: &str) -> bool {
+        self.check_parentheses_balance(function_string).is_ok()
+    }
+
+    pub fn check_parentheses_balance(&self, function_string: &str) -> Result<(), String> {
         let mut count = 0;
-        for char in function_string.chars() {
+        let mut open_positions = Vec::new();
+        
+        for (index, char) in function_string.char_indices() {
             match char {
-                '(' => count += 1,
-                ')' => count -= 1,
+                '(' => {
+                    count += 1;
+                    open_positions.push(index);
+                },
+                ')' => {
+                    count -= 1;
+                    if count < 0 {
+                        return Err(format!(
+                            "Unmatched closing parenthesis ')' at position {} (character {})", 
+                            index, index + 1
+                        ));
+                    }
+                    open_positions.pop();
+                },
                 _ => {}
             }
-            if count < 0 {
-                return false;
-            }
         }
-        count == 0
+        
+        if count > 0 {
+            let unmatched_positions: Vec<String> = open_positions
+                .iter()
+                .map(|pos| format!("{} (character {})", pos, pos + 1))
+                .collect();
+            return Err(format!(
+                "Unmatched opening parenthesis '(' at position(s): {}", 
+                unmatched_positions.join(", ")
+            ));
+        }
+        
+        Ok(())
     }
 
     pub fn has_balanced_quotes(&self, function_string: &str) -> bool {
@@ -183,8 +210,8 @@ impl FunctionValidator {
             return Err("Missing LANGUAGE declaration".to_string());
         }
 
-        if !self.has_balanced_parentheses(function_string) {
-            return Err("Unbalanced parentheses".to_string());
+        if let Err(error) = self.check_parentheses_balance(function_string) {
+            return Err(error);
         }
 
         if !self.has_balanced_quotes(function_string) {

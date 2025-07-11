@@ -45,6 +45,9 @@ use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
+use controllers::pg_functions::pg_listener_controller::{
+    create_pg_function, test_pg_function_syntax, pg_listener_get, pg_listener_delete,
+};
 use controllers::store_controller::{
     batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
     get_by_filter, update_record, upsert,
@@ -305,6 +308,15 @@ async fn main() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records)),
+            )
+            .service(
+                web::scope("/api/listener")
+                    .wrap(Authentication)
+                    .wrap(SessionMiddleware)
+                    .route("", web::get().to(pg_listener_get))
+                    .route("/function", web::post().to(create_pg_function))
+                    .route("/test", web::post().to(test_pg_function_syntax))
+                    .route("/{function_name}", web::delete().to(pg_listener_delete)),
             )
     })
     .disable_signals()
