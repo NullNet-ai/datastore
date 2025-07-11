@@ -983,6 +983,31 @@ message IpInfos {
   optional string blacklist = 28;
 }
 
+// PostgresChannels entity definition
+message PostgresChannels {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  repeated string tags = 14;
+  repeated string categories = 15;
+  optional string code = 16;
+  optional string timestamp = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string channel_name = 20;
+  optional string function = 21;
+}
+
 // Resolutions entity definition
 message Resolutions {
   optional int32 tombstone = 1;
@@ -5002,6 +5027,134 @@ message UpsertIpInfosResponse {
   repeated IpInfos data = 4;
 }
 
+// Create PostgresChannels request
+message CreatePostgresChannelsRequest {
+  PostgresChannels postgres_channels = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create PostgresChannels response
+message CreatePostgresChannelsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  PostgresChannels data = 4;
+}
+
+// Get PostgresChannels request
+message GetPostgresChannelsRequest {
+  string id = 1;
+}
+
+// Get PostgresChannels response
+message GetPostgresChannelsResponse {
+  bool success = 1;
+  string message = 2;
+  PostgresChannels data = 3;
+}
+
+// Update PostgresChannels request
+message UpdatePostgresChannelsRequest {
+  PostgresChannels postgres_channel = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update PostgresChannels response
+message UpdatePostgresChannelsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  PostgresChannels data = 4;
+}
+
+// BatchUpdate PostgresChannels request
+message BatchUpdatePostgresChannelsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  PostgresChannels updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate PostgresChannels response
+message BatchUpdatePostgresChannelsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated PostgresChannels data = 4;
+}
+
+// BatchDelete PostgresChannels request
+message BatchDeletePostgresChannelsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete PostgresChannels response
+message BatchDeletePostgresChannelsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  PostgresChannels data = 4;
+}
+
+// Delete PostgresChannels request
+message DeletePostgresChannelsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete PostgresChannels response
+message DeletePostgresChannelsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  PostgresChannels data = 4;
+}
+
+// BatchInsert PostgresChannels request
+message BatchInsertPostgresChannelsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated PostgresChannels postgres_channels = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert PostgresChannels response
+message BatchInsertPostgresChannelsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated PostgresChannels data = 4;
+}
+
+// Upsert PostgresChannels request
+message UpsertPostgresChannelsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    PostgresChannels data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert PostgresChannels response
+message UpsertPostgresChannelsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated PostgresChannels data = 4;
+}
+
 // Create Resolutions request
 message CreateResolutionsRequest {
   Resolutions resolutions = 1;
@@ -6619,6 +6772,30 @@ service StoreService {
 
   // Upsert a IpInfos (create if not exists, update if exists)
   rpc UpsertIpInfos(UpsertIpInfosRequest) returns (UpsertIpInfosResponse);
+
+  // Create a new PostgresChannels
+  rpc CreatePostgresChannels(CreatePostgresChannelsRequest) returns (CreatePostgresChannelsResponse);
+
+  // Get a PostgresChannels by ID
+  rpc GetPostgresChannels(GetPostgresChannelsRequest) returns (GetPostgresChannelsResponse);
+
+  // Update an existing PostgresChannels
+  rpc UpdatePostgresChannels(UpdatePostgresChannelsRequest) returns (UpdatePostgresChannelsResponse);
+
+  // Delete a PostgresChannels by ID
+  rpc DeletePostgresChannels(DeletePostgresChannelsRequest) returns (DeletePostgresChannelsResponse);
+
+  // Batch insert multiple PostgresChannelss
+  rpc BatchInsertPostgresChannels(BatchInsertPostgresChannelsRequest) returns (BatchInsertPostgresChannelsResponse);
+
+  // Batch update multiple PostgresChannelss based on filters
+  rpc BatchUpdatePostgresChannels(BatchUpdatePostgresChannelsRequest) returns (BatchUpdatePostgresChannelsResponse);
+
+  // Batch delete multiple PostgresChannelss based on filters
+  rpc BatchDeletePostgresChannels(BatchDeletePostgresChannelsRequest) returns (BatchDeletePostgresChannelsResponse);
+
+  // Upsert a PostgresChannels (create if not exists, update if exists)
+  rpc UpsertPostgresChannels(UpsertPostgresChannelsRequest) returns (UpsertPostgresChannelsResponse);
 
   // Create a new Resolutions
   rpc CreateResolutions(CreateResolutionsRequest) returns (CreateResolutionsResponse);

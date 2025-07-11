@@ -192,7 +192,6 @@ pub async fn create_record(
     }
 }
 
-// ... existing code ...
 
 // Add this function to the store_controller.rs file
 

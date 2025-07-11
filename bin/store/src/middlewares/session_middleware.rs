@@ -237,7 +237,7 @@ pub async fn save_session(session: &Session) -> Result<(), diesel::result::Error
     let expiry_ms = match time_string_to_ms(&session_expires) {
         Ok(ms) => ms,
         Err(err) => {
-            log::error!("Error converting session expiry time '{}' to milliseconds in session middleware: {}", session_expires, err);
+            log::warn!("Error converting session expiry time '{}' to milliseconds in session middleware: {}", session_expires, err);
             86400000 // Default to 1 day (86400000 ms) on error
         }
     };

@@ -532,7 +532,7 @@ pub fn diesel_type_to_proto(diesel_type: &str) -> &'static str {
         t if t.contains("Text") => "string",
         t if t.contains("Varchar") => "string",
         t if t.contains("Timestamp") => "string",
-        t if t.contains("Array") => "string", // For arrays of basic types
+        t if t.contains("Array") => "string",
         t if t.contains("Inet") => "string",
         _ => "string", // Default fallback
     }
