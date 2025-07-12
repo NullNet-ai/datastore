@@ -19,7 +19,7 @@ export const table = pgTable(
     is_telemetry_monitoring_enabled: boolean('is_telemetry_monitoring_enabled').default(false),
     is_device_authorized: boolean('is_device_authorized').default(false),
     
-    device_uuid: text('device_uuid').unique().default(""),
+    device_uuid: text('device_uuid').default(""),
     device_name: text("device_name").default(""),
     device_category: text("device_category").default(""),
     device_type: text("device_type").default(""),
