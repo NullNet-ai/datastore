@@ -1,4 +1,4 @@
-use crate::structs::structs::{GetByFilter, FilterCriteria, LogicalOperator, FilterOperator};
+use crate::structs::structs::{GetByFilter, FilterCriteria, LogicalOperator, FilterOperator, Join};
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -10,6 +10,7 @@ enum Token {
 pub struct SQLConstructor {
     request_body: GetByFilter,
     table: String,
+    organization_id: Option<String>,
 }
 
 impl SQLConstructor {
@@ -17,31 +18,41 @@ impl SQLConstructor {
         Self {
             request_body,
             table,
+            organization_id: None,
         }
     }
+    
+    pub fn with_organization_id(mut self, organization_id: String) -> Self {
+        self.organization_id = Some(organization_id);
+        self
+    }
 
-    pub fn construct(&self) -> String {
+    pub fn construct(&self) -> Result<String, String> {
         let mut sql = String::from("SELECT ");
 
         // TODO: group by selections
+            // TODO: concantenated fields
         sql.push_str(&self.construct_selections());
 
         sql.push_str(" FROM ");
         sql.push_str(&self.table);
         // TODO: set join selections
+            // TODO: concantenated fields
         sql.push_str(&self.construct_joins());
         // TODO: set Where Clauses
-        sql.push_str(&self.construct_where_clauses());
+            // TODO: concantenated fields
+        sql.push_str(&self.construct_where_clauses()?);
         // TODO: set Group By
+            // TODO: concantenated fields
         sql.push_str(&self.construct_group_by());
         // TODO: set Order By
+            // TODO: concantenated fields
         sql.push_str(&self.construct_order_by());
-        // TODO: set Offset
         sql.push_str(&self.construct_offset());
-        // TODO: set Limit
         sql.push_str(&self.construct_limit());
+        println!("{:?}", sql);
 
-        sql
+        Ok(sql)
     }
 
     fn get_field(table: &str, field: &str) -> String {
@@ -65,21 +76,45 @@ impl SQLConstructor {
         if self.request_body.joins.is_empty() {
             String::from("")
         } else {
-            // TODO: implement join construction for Vec<Join>
-            String::from("")
-        }
-    }
-    fn construct_where_clauses(&self) -> String {
-        if !self.request_body.advance_filters.is_empty() {
-            let expression = self.build_infix_expression(&self.request_body.advance_filters);
-            if expression.is_empty() {
+            let mut join_clauses = Vec::new();
+            
+            for join in &self.request_body.joins {
+                match join.r#type.as_str() {
+                    "left" => {
+                        let join_clause = self.build_left_join_lateral(join);
+                        join_clauses.push(join_clause);
+                    }
+                    "self" => {
+                        // Handle self joins if needed
+                        // TODO: Implement self join logic
+                    }
+                    _ => {
+                        // Unsupported join type, skip or log warning
+                        log::warn!("Unsupported join type: {}", join.r#type);
+                    }
+                }
+            }
+            
+            if join_clauses.is_empty() {
                 String::from("")
             } else {
-                format!(" WHERE {}", expression)
+                format!(" {}", join_clauses.join(" "))
             }
-        } else {
-            String::from("")
         }
+    }
+    fn construct_where_clauses(&self) -> Result<String, String> {
+        let mut base_where = format!(" WHERE (tombstone = 0 AND organization_id = '{}')", 
+            self.organization_id.as_ref().ok_or("Organization ID is required")?);
+
+        if !self.request_body.advance_filters.is_empty() {
+            let expression = self.build_infix_expression(&self.request_body.advance_filters)?;
+            if !expression.is_empty() {
+                base_where.push_str(" AND ");
+                base_where.push_str(&expression);
+            }
+        }
+        
+        Ok(base_where)
     }
     
     /// Builds an infix expression with proper order of operations using infix notation
@@ -98,31 +133,35 @@ impl SQLConstructor {
      /// - Filter arrays follow the pattern: [criteria, operator, criteria, operator, ...]
      /// - AND operations are grouped together naturally
      /// - OR operations split the expression into separate groups with parentheses when needed
-    fn build_infix_expression(&self, filters: &[FilterCriteria]) -> String {
-        if filters.is_empty() {
-            return String::new();
-        }
-        
-        // Handle single criteria case
+    fn build_infix_expression(&self, filters: &[FilterCriteria]) -> Result<String, String> {
+         if filters.is_empty() {
+             return Ok(String::new());
+         }
+         
+         // Ensure first filter is always a criteria
+         if !matches!(filters[0], FilterCriteria::Criteria { .. }) {
+             return Err("Invalid filter sequence: first filter must be a criteria, not an operator".to_string());
+         }
+         
+         // Handle single criteria case
         if filters.len() == 1 {
             if let FilterCriteria::Criteria { field, entity, operator, values } = &filters[0] {
                 let field_name = Self::get_field(entity, field);
-                return self.format_condition(&field_name, operator, values);
+                return Ok(self.format_condition(&field_name, operator, values));
             }
-            return String::new();
+            return Err("Invalid filter: single filter must be a criteria".to_string());
         }
         
         // Parse the filter array into tokens
-        let tokens = self.parse_filter_tokens(filters);
+        let tokens = self.parse_filter_tokens(filters)?;
         if tokens.is_empty() {
-            return String::new();
+            return Err("Failed to parse filter tokens: invalid filter sequence".to_string());
         }
         
         // Build expression with proper precedence (AND > OR)
-        self.build_expression_with_precedence(&tokens)
+        Ok(self.build_expression_with_precedence(&tokens))
     }
-    
-    fn parse_filter_tokens(&self, filters: &[FilterCriteria]) -> Vec<Token> {
+    fn parse_filter_tokens(&self, filters: &[FilterCriteria]) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
         let mut i = 0;
         
@@ -146,12 +185,11 @@ impl SQLConstructor {
         
         // Validate token sequence (should be: condition, operator, condition, operator, ...)
         if !self.is_valid_token_sequence(&tokens) {
-            return Vec::new();
+            return Err("Invalid filter sequence: filters must follow the pattern [criteria, operator, criteria, operator, ...] and start/end with criteria".to_string());
         }
         
-        tokens
+        Ok(tokens)
     }
-    
     fn is_valid_token_sequence(&self, tokens: &[Token]) -> bool {
         if tokens.is_empty() {
             return false;
@@ -174,7 +212,43 @@ impl SQLConstructor {
         // Must end with a condition (even number of tokens)
         tokens.len() % 2 == 1
     }
-    
+
+    fn build_left_join_lateral(&self, join: &Join) -> String {
+        let to_entity = &join.field_relation.to.entity;
+        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or("");
+        let to_field = &join.field_relation.to.field;
+        let from_entity = &join.field_relation.from.entity;
+        let from_field = &join.field_relation.from.field;
+        
+        // Build the lateral subquery alias
+        let lateral_alias = format!("joined_{}", to_alias);
+        
+        // Use organization_id from the constructor if available, otherwise use a placeholder
+        let organization_id = match &self.organization_id {
+            Some(id) => format!("'{}'", id),
+            None => "".to_string(),
+        };
+        
+        // Build dynamic field selection based on pluck_object
+        let selected_fields = if let Some(fields) = self.request_body.pluck_object.get(to_alias) {
+            fields.iter()
+                .map(|field| format!("\"{}\".\"{}\"" , lateral_alias, field))
+                .collect::<Vec<_>>()
+                .join(", ")
+        } else {
+            // Default fallback fields if no pluck_object configuration found
+            format!("\"{}\".\"id\"", lateral_alias)
+        };
+        
+        format!(
+            "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE (\"{}\".tombstone = 0 AND \"{}\".organization_id IS NOT NULL AND \"{}\".organization_id = {}) AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+            selected_fields,
+            to_entity, lateral_alias,
+            lateral_alias, lateral_alias, lateral_alias, organization_id,
+            self.table, from_field, lateral_alias, to_field,
+            to_alias
+        )
+    }
     fn build_expression_with_precedence(&self, tokens: &[Token]) -> String {
         if tokens.is_empty() {
             return String::new();
@@ -210,7 +284,6 @@ impl SQLConstructor {
             or_expressions.join(" OR ")
         }
     }
-    
     fn split_by_or(&self, tokens: &[Token]) -> Vec<Vec<Token>> {
         let mut groups = Vec::new();
         let mut current_group = Vec::new();
@@ -233,7 +306,6 @@ impl SQLConstructor {
         
         groups
     }
-    
     fn build_and_expression(&self, tokens: &[Token]) -> String {
         let conditions: Vec<String> = tokens
             .iter()
@@ -248,7 +320,6 @@ impl SQLConstructor {
         
         conditions.join(" AND ")
     }
-    
     fn format_condition(&self, field_name: &str, operator: &FilterOperator, values: &[serde_json::Value]) -> String {
         let values_str = values.iter()
             .map(|v| match v {

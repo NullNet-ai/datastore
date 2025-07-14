@@ -700,10 +700,19 @@ pub async fn get_by_filter(
     path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
-    // Need discussion for this one
-    // let extensions = auth.extensions().get::<Auth>();
     let parameters = request_body.into_inner();
     let table = path_params.into_inner();
+    
+    // Extract organization_id from auth context
+    let extensions = auth.extensions();
+    let organization_id = match extensions.get::<Auth>() {
+        Some(auth_data) => Some(auth_data.organization_id.clone()),
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            None
+        }
+    };
+    
     let validation = Validation::new(&parameters, &table);
     let ApiResponse {
         success,
@@ -719,7 +728,24 @@ pub async fn get_by_filter(
             data,
         });
     }
-    let query = SQLConstructor::new(parameters, table.clone()).construct();
+    
+    // Create SQLConstructor with organization_id if available
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone());
+    if let Some(org_id) = organization_id {
+        sql_constructor = sql_constructor.with_organization_id(org_id);
+    }
+    
+    let query = match sql_constructor.construct() {
+        Ok(sql) => sql,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid filter configuration: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
 
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;

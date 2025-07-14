@@ -468,7 +468,7 @@ pub enum FilterCriteria {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
+#[serde(rename_all = "lowercase")]
 pub enum LogicalOperator {
     And,
     Or,
@@ -476,8 +476,8 @@ pub enum LogicalOperator {
 impl ToString for LogicalOperator {
     fn to_string(&self) -> String {
         match self {
-            LogicalOperator::And => "AND".to_string(),
-            LogicalOperator::Or => "OR".to_string(),
+            LogicalOperator::And => "and".to_string(),
+            LogicalOperator::Or => "or".to_string(),
         }
     }
 }
@@ -512,10 +512,6 @@ pub enum FilterOperator {
     IsEmpty,
     #[serde(rename = "is_not_empty")]
     IsNotEmpty,
-    #[serde(rename = "and")]
-    And,
-    #[serde(rename = "or")]
-    Or,
     #[serde(rename = "like")]
     Like,
 }
