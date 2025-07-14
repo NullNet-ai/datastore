@@ -14,9 +14,8 @@ use crate::providers::find::{
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{
     ApiResponse, BatchUpdateBody, ConcatenateField, ParsedConcatenatedFields, QueryParams,
-    RequestBody, UpsertRequestBody,
+    RequestBody, UpsertRequestBody, Auth, GetByFilter
 };
-use crate::structs::structs::{Auth, GetByFilter};
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
@@ -732,10 +731,10 @@ pub async fn get_by_filter(
     
     // Wrap your original query with row_to_json
     // This is slower approach
-    // TODO: create a Query Result builder for each schema
-    let json_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    // TODO: create a better way of handling dynamic queries
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
-    let results = match diesel::dsl::sql_query(&json_query)
+    let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
         .await
     {
