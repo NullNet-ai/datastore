@@ -1,5 +1,4 @@
 use once_cell::sync::Lazy;
-use serde::{de::DeserializeOwned, Serialize};
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

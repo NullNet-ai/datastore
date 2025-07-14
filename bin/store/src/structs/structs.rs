@@ -454,18 +454,18 @@ pub struct RelationEndpoint {
 
 //advance filters
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")] 
+#[serde(tag = "type")]
 pub enum FilterCriteria {
     #[serde(rename = "criteria")]
     Criteria {
         field: String,
+        entity: String,
         operator: FilterOperator,
         values: Vec<serde_json::Value>,
     },
     #[serde(rename = "operator")]
     LogicalOperator { operator: LogicalOperator },
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]

@@ -2,10 +2,8 @@ use crate::controllers::store_controller::ApiError;
 use crate::db;
 use crate::models::counter_model::CounterModel;
 use crate::schema::schema;
-use diesel::associations::HasTable;
 use diesel::prelude::*;
-use diesel::result::Error as DieselError;
-use diesel_async::{AsyncConnection, RunQueryDsl};
+use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

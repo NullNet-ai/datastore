@@ -1,7 +1,6 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::sync::Arc;
 use std::time::Duration;
 
 use super::cache_interface::CacheInterface;

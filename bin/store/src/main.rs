@@ -20,6 +20,7 @@ mod middlewares;
 mod models;
 mod organizations;
 mod permissions;
+mod providers;
 mod schema;
 mod shutdown_handler;
 mod structs;
@@ -27,7 +28,6 @@ mod sync;
 mod table_enum;
 mod templates;
 mod utils;
-mod providers;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
 use crate::cache::{cache, CacheConfig}; // Add the cache function import

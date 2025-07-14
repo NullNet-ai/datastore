@@ -37,7 +37,7 @@ macro_rules! generate_create_method {
                         None => return Err(Status::invalid_argument("Record is required")),
                     };
 
-                    let mut record_value = serde_json::to_value(&record)
+                    let record_value = serde_json::to_value(&record)
                         .map_err(|e| Status::internal(format!("Failed to convert record to JSON: {}", e)))?;
 
 
@@ -128,7 +128,7 @@ macro_rules! generate_update_method {
                         }
                     };
 
-                    let pluck_fields: Vec<String> = query
+                    let _pluck_fields: Vec<String> = query
                         .pluck
                         .split(',')
                         .map(|s| s.trim().to_string())
@@ -186,10 +186,10 @@ macro_rules! generate_batch_insert_method {
                     let table_name = params.table;
                     let temp_table= format!("temp_{}", table_name);
                     match table_exists(&temp_table) {
-                        Ok(table) => {
+                        Ok(_table) => {
                             // Table exists, proceed with your logic using the table
                         },
-                        Err(error) => {
+                        Err(_error) => {
                             return Err(Status::internal(format!(
                                 "Table '{}' does not exist",
                                 temp_table

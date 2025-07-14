@@ -39,6 +39,7 @@ pub mod queue_model;
 pub mod record_permission_model;
 pub mod resolution_model;
 pub mod role_permission_model;
+pub mod sample_model;
 pub mod session_model;
 pub mod sync_endpoint_model;
 pub mod system_config_field_model;
@@ -55,5 +56,4 @@ pub mod temp_wallguard_log_model;
 pub mod transaction_model;
 pub mod user_role_model;
 pub mod wallguard_log_model;
-pub mod sample_model;
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

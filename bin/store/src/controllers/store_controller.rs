@@ -3,39 +3,29 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::controllers::common_find::{filter_analyzer, get_sort_field};
 use crate::db;
 use crate::db::create_connection;
 use crate::permissions::permission_decorator::PermissionExtractor;
-use crate::permissions::permissions_queries::PermissionQueryResult;
-use crate::providers::find::{
-    DynamicResult, QueryResult, SQLConstructor, Validation
-};
-use crate::schema::verify::field_exists_in_table;
+use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
 use crate::structs::structs::{
-    ApiResponse, BatchUpdateBody, ConcatenateField, ParsedConcatenatedFields, QueryParams,
-    RequestBody, UpsertRequestBody, Auth, GetByFilter
+    ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use actix_web::{HttpMessage, HttpRequest};
-use diesel::query_builder::BuildQueryResult;
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
 // use std::collections::HashMap;
-use std::fmt;
 use diesel::prelude::*;
+use std::fmt;
 // use diesel::sql_types::*;
 // use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
-use diesel::sql_query;
-use diesel::sql_types::*;
 
 use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
-use super::common_find::create_selections;
 
 #[derive(Serialize)]
 pub struct ApiError {
@@ -715,20 +705,25 @@ pub async fn get_by_filter(
     let parameters = request_body.into_inner();
     let table = path_params.into_inner();
     let validation = Validation::new(&parameters, &table);
-    let ApiResponse { success, message, count, data } = validation.exec();
+    let ApiResponse {
+        success,
+        message,
+        count,
+        data,
+    } = validation.exec();
     if !success {
         return HttpResponse::BadRequest().json(ApiResponse {
             success,
             message,
             count,
-            data
+            data,
         });
     }
-    let query = SQLConstructor::new(&parameters, &table).construct();
+    let query = SQLConstructor::new(parameters, table.clone()).construct();
 
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
-    
+
     // Wrap your original query with row_to_json
     // This is slower approach
     // TODO: create a better way of handling dynamic queries
@@ -753,17 +748,18 @@ pub async fn get_by_filter(
     let data: Vec<serde_json::Value> = results
         .into_iter()
         .filter_map(|result| {
-            result.row_to_json
+            result
+                .row_to_json
                 .and_then(|json_str| serde_json::from_str(&json_str).ok())
         })
         .collect();
 
-        HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: format!("Filter operation completed for table: {}", &table),
-            count: data.len() as i32,
-            data,
-        })
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: format!("Filter operation completed for table: {} Query: {}", &table, &final_query),
+        count: data.len() as i32,
+        data,
+    })
 
     // let table = path_params.into_inner();
     // let extensions = auth.extensions();
@@ -797,7 +793,6 @@ pub async fn get_by_filter(
     //     group_by,
     //     distinct_by,
     // } = request_body.into_inner();
-
 
     // if !group_advance_filters.is_empty() && !advance_filters.is_empty() {
     //     return HttpResponse::BadRequest().json(ApiResponse {

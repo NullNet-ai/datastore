@@ -1,8 +1,8 @@
-pub mod validations;
-pub mod sql_constructor;
 pub mod queries;
+pub mod sql_constructor;
+pub mod validations;
 
-pub use validations::Validation;
-pub use sql_constructor::SQLConstructor;
-pub use queries::QueryResult;
 pub use queries::DynamicResult;
+pub use queries::QueryResult;
+pub use sql_constructor::SQLConstructor;
+pub use validations::Validation;

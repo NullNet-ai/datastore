@@ -12,6 +12,14 @@ Eriberto
 ### Added
 - Implemented lifetime parameters ('a) and mutability for Validation and SQLConstructor structs to ensure proper memory management and data modification capabilities
 - Added temporary slower approach, creating DynamicQueryResult struct to handle dynamic query results
+- Added separate construct for the following:
+  - selections
+  - joins
+  - where clauses
+  - order by
+  - group by
+  - offset
+  - limit
   
 ### Changed
 - Revise get_by_filter validations to make it more restrictive and are separate as a module

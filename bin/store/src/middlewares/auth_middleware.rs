@@ -1,5 +1,5 @@
 use crate::auth::auth_service::verify;
-use crate::auth::structs::{Claims, Origin, Session};
+use crate::auth::structs::{Origin, Session};
 use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
@@ -8,8 +8,6 @@ use actix_web::{
     Error,
 };
 use futures::future::{ok, Ready};
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use serde::{Deserialize, Serialize};
 use std::env;
 use std::future::Future;
 use std::pin::Pin;

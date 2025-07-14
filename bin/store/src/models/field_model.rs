@@ -1,4 +1,3 @@
-use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;

@@ -1,5 +1,5 @@
 use super::cache_interface::CacheInterface;
-use redis::{Client, Commands, RedisResult};
+use redis::{Client, Commands};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -66,7 +66,7 @@ where
         let key_str = serde_json::to_string(&key).unwrap();
         let value_str = serde_json::to_string(&value).unwrap();
 
-        con.set_ex(key_str, value_str, ttl.as_secs() as usize)?;
+        con.set_ex::<_, _, ()>(key_str, value_str, ttl.as_secs() as usize)?;
         Ok(())
     }
 }

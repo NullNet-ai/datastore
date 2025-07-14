@@ -1,18 +1,14 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::auth::structs::Session;
 use crate::permissions::permission_utils::{get_cached_permissions, PermissionsContext};
-use crate::permissions::permissions_queries::{
-    get_permissions_query, get_role_permissions_query, PermissionQueryParams,
-};
+use crate::permissions::permissions_queries::PermissionQueryParams;
 use crate::permissions::structs::{DataPermissions, SchemaItem};
 use crate::structs::structs::{ApiResponse, Auth};
 use crate::utils::request_type_handler::{RequestType, RequestTypeHandler};
-use actix_web::error::{ErrorBadRequest, ErrorUnauthorized};
 use actix_web::web::BytesMut;
 use actix_web::ResponseError;
-use actix_web::{dev::Payload, Error, FromRequest, HttpMessage, HttpRequest};
+use actix_web::{dev::Payload, FromRequest, HttpMessage, HttpRequest};
 use futures::FutureExt;
 use futures_util::future::LocalBoxFuture;
 use futures_util::stream::StreamExt;
@@ -216,12 +212,13 @@ impl FromRequest for PermissionExtractor {
 
                 println!("{:?}---------------------------host", host);
                 println!("{:?}---------------------------uri", uri);
-                println!("{:?}---------------------------headers", headers.get("user-agent"));
+                println!(
+                    "{:?}---------------------------headers",
+                    headers.get("user-agent")
+                );
                 println!("{:?}---------------------------session", session_unwrapped);
 
-
-
-                let permissions_result = get_cached_permissions(
+                let _permissions_result = get_cached_permissions(
                     request_type,
                     PermissionsContext {
                         permissions_query: data_permissions.clone(),

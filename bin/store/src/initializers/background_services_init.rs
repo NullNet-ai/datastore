@@ -1,8 +1,6 @@
 use crate::controllers::store_controller::ApiError;
-use crate::message_stream::message_broker::BrokerService;
 use crate::middlewares::session_middleware;
 use crate::sync::merkles::merkle_manager::MerkleManager;
-use std::sync::Arc;
 use tokio::time::{interval, Duration};
 
 pub struct BackgroundServicesInitializer;
