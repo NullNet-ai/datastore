@@ -425,6 +425,8 @@ fn default_pluck_vec() -> Vec<String> {
 pub struct Join {
     pub r#type: String, // use r#type because `type` is a Rust keyword
     pub field_relation: FieldRelation,
+    #[serde(default)]
+    pub nested: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

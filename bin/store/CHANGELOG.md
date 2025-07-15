@@ -20,6 +20,7 @@ Eriberto
   - group by
   - offset
   - limit
+- Added join selections
   
 ### Changed
 - Revise get_by_filter validations to make it more restrictive and are separate as a module

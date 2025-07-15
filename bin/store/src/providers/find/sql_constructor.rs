@@ -50,7 +50,7 @@ impl SQLConstructor {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
-        println!("{:?}", sql);
+        dbg!(&sql);
 
         Ok(sql)
     }
@@ -59,19 +59,90 @@ impl SQLConstructor {
         format!("{}.{}", table, field)
     }
     fn construct_selections(&self) -> String {
-        let mut selections = String::from("");
+        let mut selections = Vec::new();
+        
+        // Add join selections from pluck_object if joins are present
+        if !self.request_body.joins.is_empty() && !self.request_body.pluck_object.is_empty() {
+            let join_selections = self.construct_join_selections();
+            selections.extend(join_selections);
+        }
         // set pluck as selections
-        if !self.request_body.pluck.is_empty() {
-            for (i, field) in self.request_body.pluck.iter().enumerate() {
-                if i > 0 {
-                    selections.push_str(", ");
-                }
-                selections.push_str(&Self::get_field(&self.table, field));
+        else if !self.request_body.pluck.is_empty() {
+            for field in &self.request_body.pluck {
+                selections.push(Self::get_field(&self.table, field));
             }
         }
+
+        
+        
         // TODO: set concatenated fields
-        selections
+        if selections.is_empty() {
+            "*".to_string()
+        } else {
+            selections.join(", ")
+        }
     }
+    
+    fn construct_join_selections(&self) -> Vec<String> {
+        let mut join_selections = Vec::new();
+        
+        // Only construct selections if joins are present
+        if self.request_body.joins.is_empty() {
+            return join_selections;
+        }
+        
+        // Get organization_id for WHERE clause
+        let organization_id = self.organization_id.as_ref()
+            .map(|id| format!("'{}'", id))
+            .unwrap_or_else(|| "NULL".to_string());
+        
+        // Iterate through each alias in pluck_object
+        for (alias, fields) in &self.request_body.pluck_object {
+            // Find the corresponding join to get table information
+            if let Some(join) = self.find_join_by_alias(alias) {
+                let target_table = &join.field_relation.to.entity;
+                let join_condition = self.build_join_condition_for_alias(alias, join);
+                
+                // Build JSONB_BUILD_OBJECT field pairs
+                let field_pairs: Vec<String> = fields.iter()
+                    .map(|field| format!("'{}', \"{}\".\"{}\"" , field, alias, field))
+                    .collect();
+                
+                let selection = format!(
+                    "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE (\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {}) AND {}), '[]') AS \"{}\"",
+                    field_pairs.join(", "),
+                    target_table,
+                    alias,
+                    alias,
+                    alias,
+                    alias,
+                    organization_id,
+                    join_condition,
+                    alias
+                );
+                
+                join_selections.push(selection);
+            } else {
+                fields.iter().for_each(|field| {
+                    join_selections.push(format!("\"{}\".\"{}\"", alias, field));
+                });
+            }
+        }
+        
+        join_selections
+    }
+    
+    fn find_join_by_alias(&self, alias: &str) -> Option<&Join> {
+        self.request_body.joins.iter()
+            .find(|join| join.field_relation.to.alias.as_deref() == Some(alias))
+    }
+    
+    fn build_join_condition_for_alias(&self, alias: &str, join: &Join) -> String {
+        let from_field = &join.field_relation.from.field;
+        let to_field = &join.field_relation.to.field;
+        format!("\"{}\".\"{}\" = \"{}\".\"{}\"" , self.table, from_field, alias, to_field)
+    }
+    
     fn construct_joins(&self) -> String {
         if self.request_body.joins.is_empty() {
             String::from("")
@@ -219,6 +290,7 @@ impl SQLConstructor {
         let to_field = &join.field_relation.to.field;
         let from_entity = &join.field_relation.from.entity;
         let from_field = &join.field_relation.from.field;
+        // TODO: Add nested join logic after jean fix the issue from Typescript datastore
         
         // Build the lateral subquery alias
         let lateral_alias = format!("joined_{}", to_alias);
