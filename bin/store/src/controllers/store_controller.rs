@@ -781,7 +781,7 @@ pub async fn get_by_filter(
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
-        message: format!("Filter operation completed for table: {} Query: {}", &table, &final_query),
+        message: format!("Filter operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
     })

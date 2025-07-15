@@ -1,4 +1,4 @@
-use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, Join, LogicalOperator}};
+use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, Join, LogicalOperator, SortOption}};
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -27,7 +27,7 @@ impl SQLConstructor {
         self
     }
 
-    pub fn construct(&self) -> Result<String, String> {
+    pub fn construct(&mut self) -> Result<String, String> {
         let mut sql = String::from("SELECT ");
         // TODO: suggestions for adding correct parameters
         // TODO: group by selections
@@ -95,7 +95,7 @@ impl SQLConstructor {
         }
 
         if selections.is_empty() {
-            "*".to_string()
+          "id".to_string()
         } else {
             selections.join(", ")
         }
@@ -234,16 +234,35 @@ impl SQLConstructor {
             }
         }
     }
-    fn construct_where_clauses(&self) -> Result<String, String> {
-        // add default constraints here
-        let mut base_where = format!(" WHERE (tombstone = 0 AND organization_id = '{}')", 
-            self.organization_id.as_ref().ok_or("Organization ID is required")?);
+    /// Constructs the standard WHERE clause pattern used across queries
+    fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
+        let organization_id = match &self.organization_id {
+            Some(id) => format!("'{}'", id),
+            None => return Err("Organization ID is required".to_string()),
+        };
+        
+        Ok(format!(
+            "({}.tombstone = 0 AND {}.organization_id IS NOT NULL AND {}.organization_id = {})",
+            table_alias, table_alias, table_alias, organization_id
+        ))
+    }
 
+    fn construct_where_clauses(&self) -> Result<String, String> {
+        // Use the reusable standard WHERE clause pattern
+        let mut base_where = format!(" WHERE {}", self.build_system_where_clause(&self.table)?);
+
+        // Prioritize advance_filters over group_advance_filters
         if !self.request_body.advance_filters.is_empty() {
             let expression = self.build_infix_expression(&self.request_body.advance_filters)?;
             if !expression.is_empty() {
                 base_where.push_str(" AND ");
                 base_where.push_str(&expression);
+            }
+        } else if !self.request_body.group_advance_filters.is_empty() {
+            let group_expression = self.build_group_advance_filters_expression(&self.request_body.group_advance_filters)?;
+            if !group_expression.is_empty() {
+                base_where.push_str(" AND ");
+                base_where.push_str(&group_expression);
             }
         }
         
@@ -358,12 +377,6 @@ impl SQLConstructor {
         // Build the lateral subquery alias
         let lateral_alias = format!("joined_{}", to_alias);
         
-        // Use organization_id from the constructor if available, otherwise use a placeholder
-        let organization_id = match &self.organization_id {
-            Some(id) => format!("'{}'", id),
-            None => "".to_string(),
-        };
-        
         // Build dynamic field selection based on pluck_object
         let selected_fields = if let Some(fields) = self.request_body.pluck_object.get(to_alias) {
             fields.iter()
@@ -375,11 +388,14 @@ impl SQLConstructor {
             format!("\"{}\".\"id\"", lateral_alias)
         };
         
+        let standard_where = self.build_system_where_clause(&lateral_alias)
+            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
+        
         format!(
-            "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE (\"{}\".tombstone = 0 AND \"{}\".organization_id IS NOT NULL AND \"{}\".organization_id = {}) AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+            "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
             selected_fields,
             to_entity, lateral_alias,
-            lateral_alias, lateral_alias, lateral_alias, organization_id,
+            standard_where,
             self.table, from_field, lateral_alias, to_field,
             to_alias
         )
@@ -508,7 +524,86 @@ impl SQLConstructor {
             FilterOperator::Like => format!("{} LIKE {}", field_name, values_str[0]),
         }
     }
-    fn construct_order_by(&self) -> String {
+    
+    /// Helper method to extract operator from GroupAdvanceFilter enum
+    fn get_group_operator<'a>(&self, group_filter: &'a GroupAdvanceFilter) -> &'a LogicalOperator {
+        match group_filter {
+            GroupAdvanceFilter::Criteria { operator, .. } => operator,
+            GroupAdvanceFilter::Operator { operator, .. } => operator,
+        }
+    }
+    
+    /// Helper method to extract filters from GroupAdvanceFilter enum
+    fn get_group_filters<'a>(&self, group_filter: &'a GroupAdvanceFilter) -> &'a Vec<FilterCriteria> {
+        match group_filter {
+            GroupAdvanceFilter::Criteria { filters, .. } => filters,
+            GroupAdvanceFilter::Operator { filters, .. } => filters,
+        }
+    }
+    
+    /// Builds SQL expression for group advance filters
+    /// Handles GroupAdvanceFilter enum which can be either "criteria" or "operator" type
+    /// Each group can contain multiple FilterCriteria that are processed as a unit
+    /// For "operator" type groups, filters can be empty array
+    fn build_group_advance_filters_expression(&self, group_filters: &[GroupAdvanceFilter]) -> Result<String, String> {
+        if group_filters.is_empty() {
+            return Ok(String::new());
+        }
+        
+        if group_filters.len() == 1 {
+            // Single group case - just process the filters within the group
+            let group_filter = &group_filters[0];
+            let filters = self.get_group_filters(group_filter);
+            if !filters.is_empty() {
+                let group_expression = self.build_infix_expression(filters)?;
+                if !group_expression.is_empty() {
+                    return Ok(format!("({})", group_expression));
+                }
+            }
+            return Ok(String::new());
+        }
+        
+        // Multiple groups case - build infix expression with group operators
+        let mut tokens = Vec::new();
+        
+        for (i, group_filter) in group_filters.iter().enumerate() {
+            let filters = self.get_group_filters(group_filter);
+            let operator = self.get_group_operator(group_filter);
+            
+            // Process the filters within this group (skip if empty for operator type)
+            if !filters.is_empty() {
+                let group_expression = self.build_infix_expression(filters)?;
+                if !group_expression.is_empty() {
+                    // Wrap each group in parentheses for proper precedence
+                    tokens.push(Token::Condition(format!("({})", group_expression)));
+                }
+            }
+            
+            // Add operator token if not the last group
+            if i < group_filters.len() - 1 {
+                match operator {
+                    LogicalOperator::And => tokens.push(Token::And),
+                    LogicalOperator::Or => tokens.push(Token::Or),
+                }
+            }
+        }
+        
+        if tokens.is_empty() {
+            return Ok(String::new());
+        }
+        
+        // Use the same infix expression building logic as advance filters
+        Ok(self.build_expression_with_precedence(&tokens))
+    }
+    
+    fn construct_order_by(&mut self) -> String {
+        if !self.request_body.order_by.is_empty() && self.request_body.multiple_sort.is_empty() {
+            self.request_body.multiple_sort.push(SortOption {
+                by_field: self.request_body.order_by.clone(),
+                by_direction: self.request_body.order_direction.clone(),
+                is_case_sensitive_sorting: self.request_body.is_case_sensitive_sorting,
+            });
+        }
         // Check if multiple_sort is available and not empty
         if !self.request_body.multiple_sort.is_empty() {
             let sort_clauses: Vec<String> = self.request_body.multiple_sort
@@ -524,10 +619,10 @@ impl SQLConstructor {
                     let field_expression = Self::get_field(table_alias, field_name, &self.request_body.date_format);
                     
                     // Handle case sensitivity
-                    let final_field = if !sort_option.is_case_sensitive_sorting {
-                        format!("LOWER({})", field_expression)
-                    } else {
+                    let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
                         field_expression
+                    } else {
+                        format!("LOWER({})", field_expression)
                     };
                     
                     format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
@@ -537,9 +632,7 @@ impl SQLConstructor {
             format!(" ORDER BY {}", sort_clauses.join(", "))
         }
         // Fallback to single field sorting if multiple_sort is empty
-        else if !self.request_body.order_by.is_empty() {
-            format!(" ORDER BY {} {}", Self::get_field(&self.table, "id", &self.request_body.date_format), self.request_body.order_direction)
-        } else {
+        else {
             String::from("")
         }
     }
@@ -569,7 +662,7 @@ impl SQLConstructor {
         if self.request_body.limit > 0 {
             format!(" LIMIT {}", self.request_body.limit)
         } else {
-            String::from("")
+            String::from("LIMIT 10")
         }
     }
 }

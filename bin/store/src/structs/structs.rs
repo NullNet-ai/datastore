@@ -236,7 +236,7 @@ pub struct GetByFilter {
     pub pluck_object: HashMap<String, Vec<String>>,
 
      #[serde(default)]
-    pub pluck_group_object: HashMap<String, Vec<String>>,  // Add this line
+    pub pluck_group_object: HashMap<String, Vec<String>>,
 
     #[serde(default)]
     pub advance_filters: Vec<FilterCriteria>,
@@ -265,6 +265,9 @@ pub struct GetByFilter {
     #[serde(default = "default_order_direction")]
     pub order_direction: String,
 
+    #[serde(default)]
+    pub is_case_sensitive_sorting: Option<bool>,
+
     #[serde(default = "default_offset")]
     pub offset: usize,
 
@@ -280,6 +283,7 @@ pub struct ConcatenateField {
     pub field_name: String,
     pub separator: String,
     pub entity: String,
+    pub aliased_entity: String,
 }
 #[allow(warnings)]
 impl ConcatenateField {
@@ -396,13 +400,8 @@ impl ConcatenateField {
 pub struct SortOption {
     pub by_field: String,
     pub by_direction: String,
-    #[serde(default = "default_case_sensitive_bool")]  // Change function name
-    pub is_case_sensitive_sorting: bool,  // Change from String to bool
-}
-
-// Add this new function
-fn default_case_sensitive_bool() -> bool {
-    false
+    #[serde(default)]
+    pub is_case_sensitive_sorting: Option<bool>,
 }
 
 fn default_date_format() -> String {
@@ -429,6 +428,10 @@ fn default_pluck_vec() -> Vec<String> {
     vec!["id".to_string()]
 }
 
+fn default_group_operator() -> LogicalOperator {
+    LogicalOperator::Or
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Join {
     pub r#type: String, // use r#type because `type` is a Rust keyword
@@ -437,12 +440,7 @@ pub struct Join {
     pub nested: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GroupAdvanceFilter {
-    pub operator: FilterOperator,
-    pub filters: Vec<FilterCriteria>,
-    pub r#type: String,
-}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldRelation {
@@ -490,6 +488,23 @@ impl ToString for LogicalOperator {
             LogicalOperator::Or => "or".to_string(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum GroupAdvanceFilter {
+    #[serde(rename = "criteria")]
+    Criteria {
+        #[serde(default = "default_group_operator")]
+        operator: LogicalOperator,
+        filters: Vec<FilterCriteria>,
+    },
+    #[serde(rename = "operator")]
+    Operator {
+        operator: LogicalOperator,
+        #[serde(default)]
+        filters: Vec<FilterCriteria>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
