@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 0.1.5
+## 0.1.6
 
 ### Author
 Eriberto
@@ -31,6 +31,47 @@ Eriberto
 ### Fixed
 - fix Structs for Advance Filter > type "Criteria" or "Operator"
 - ignore all valid warnings for unfinished features
+
+
+## 0.1.5
+
+### Author
+Kashan
+
+### Added
+- Added automatic periodic channel refresh functionality to `PgListenerService`
+  - Implemented 30-second interval refresh cycle for PostgreSQL channels
+  - Added background task that automatically discovers new channels from `postgres_channels` table
+  - Enhanced channel management with smart refresh logic that respects service state (running/paused)
+
+### Enhanced
+- **Channel Discovery**: Channels are now automatically refreshed every 30 seconds without requiring service restart
+- **Resource Efficiency**: Periodic refresh only runs when service is active and not paused
+- **Error Resilience**: Individual refresh failures don't stop the refresh cycle, with comprehensive error logging
+
+### Technical Details
+- **New Functionality**: 
+  - Added `tokio::time::interval` import for periodic task scheduling
+  - Implemented background task in `PgListenerService::new()` method
+  - Smart first-tick skip to avoid immediate refresh after startup
+  - Enhanced CRDT sync service with `sync_status` field management for connections table
+  - Added automatic `sync_status` field insertion for insert and update operations
+  - Implemented PostgreSQL trigger support with conditional execution based on `sync_status` values
+- **Performance**: 
+  - Non-blocking periodic refresh that doesn't interfere with notification processing
+  - Conditional refresh based on service state to minimize unnecessary database queries
+- **Reliability**: 
+  - Automatic synchronization with database changes
+  - Robust error handling with detailed logging
+  - Enhanced error handling in message service with proper logging and error propagation
+- **CRDT Synchronization**:
+  - Modified `sync_service.rs` to automatically add `sync_status` field to connections table records
+  - Insert operations: `sync_status` set to "complete" and positioned as last field
+  - Update operations: `sync_status` set to "consumed" and positioned as first field
+  - Enhanced `message_service.rs` with proper error handling for HLC timestamp generation
+  - Added support for PostgreSQL triggers with `AFTER INSERT OR UPDATE` and conditional execution
+  - Trigger conditions: `WHEN (NEW.sync_status = 'complete')` for targeted execution
+
 ---
 
 ## 0.1.4

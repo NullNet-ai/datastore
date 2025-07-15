@@ -47,7 +47,7 @@ use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
 use controllers::grpc_controller::GrpcController;
 use controllers::pg_functions::pg_listener_controller::{
-    create_pg_function, test_pg_function_syntax, pg_listener_get, pg_listener_delete,
+    create_pg_function, pg_listener_delete, pg_listener_get, test_pg_function_syntax,
 };
 use controllers::store_controller::{
     batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,

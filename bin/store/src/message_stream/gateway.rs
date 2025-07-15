@@ -1,3 +1,4 @@
+use crate::auth::structs::Claims;
 use crate::message_stream::token_bucket::TokenBucket;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use log::{info, warn};
@@ -14,13 +15,6 @@ struct Account {
     organization_id: String,
     account_id: String,
     organization_account_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    account: Account,
-    exp: usize,
-    iat: usize,
 }
 
 // Client data structure for socket extensions

@@ -1,9 +1,10 @@
+use serde_json::Value;
 use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{Mutex, Notify};
 
 #[derive(Debug, Clone)]
 #[allow(warnings)]
-pub struct Message(pub String);
+pub struct Message(pub Value);
 
 #[derive(Debug)]
 pub struct TokenBucket {

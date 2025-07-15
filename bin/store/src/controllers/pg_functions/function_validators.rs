@@ -1,9 +1,8 @@
-use regex::Regex;
 use crate::db::get_async_connection;
 use diesel::sql_query;
-use diesel_async::RunQueryDsl;
 use diesel_async::AsyncConnection;
-
+use diesel_async::RunQueryDsl;
+use regex::Regex;
 
 pub struct FunctionValidator;
 #[allow(warnings)]
@@ -34,38 +33,39 @@ impl FunctionValidator {
     pub fn check_parentheses_balance(&self, function_string: &str) -> Result<(), String> {
         let mut count = 0;
         let mut open_positions = Vec::new();
-        
+
         for (index, char) in function_string.char_indices() {
             match char {
                 '(' => {
                     count += 1;
                     open_positions.push(index);
-                },
+                }
                 ')' => {
                     count -= 1;
                     if count < 0 {
                         return Err(format!(
-                            "Unmatched closing parenthesis ')' at position {} (character {})", 
-                            index, index + 1
+                            "Unmatched closing parenthesis ')' at position {} (character {})",
+                            index,
+                            index + 1
                         ));
                     }
                     open_positions.pop();
-                },
+                }
                 _ => {}
             }
         }
-        
+
         if count > 0 {
             let unmatched_positions: Vec<String> = open_positions
                 .iter()
                 .map(|pos| format!("{} (character {})", pos, pos + 1))
                 .collect();
             return Err(format!(
-                "Unmatched opening parenthesis '(' at position(s): {}", 
+                "Unmatched opening parenthesis '(' at position(s): {}",
                 unmatched_positions.join(", ")
             ));
         }
-        
+
         Ok(())
     }
 
@@ -176,22 +176,24 @@ impl FunctionValidator {
     pub async fn test_function_syntax(&self, function_string: &str) -> Result<(), String> {
         let mut conn = get_async_connection().await;
 
-        // Use Diesel's transaction support for testing        
-        let result = conn.transaction::<_, diesel::result::Error, _>(|conn| {
-            Box::pin(async move {
-                // Try to execute the function using diesel::sql_query
-                sql_query(function_string).execute(conn).await?;
-                
-                // If we get here, the syntax is valid
-                // The transaction will be automatically rolled back
-                // because we're in a test transaction
-                Ok(())
+        // Use Diesel's transaction support for testing
+        let result = conn
+            .transaction::<_, diesel::result::Error, _>(|conn| {
+                Box::pin(async move {
+                    // Try to execute the function using diesel::sql_query
+                    sql_query(function_string).execute(conn).await?;
+
+                    // If we get here, the syntax is valid
+                    // The transaction will be automatically rolled back
+                    // because we're in a test transaction
+                    Ok(())
+                })
             })
-        }).await;
+            .await;
 
         match result {
             Ok(_) => Ok(()),
-            Err(e) => Err(format!("Function syntax error: {}", e))
+            Err(e) => Err(format!("Function syntax error: {}", e)),
         }
     }
 
