@@ -190,6 +190,7 @@ impl SQLConstructor {
         }
     }
     fn construct_where_clauses(&self) -> Result<String, String> {
+        // add default constraints here
         let mut base_where = format!(" WHERE (tombstone = 0 AND organization_id = '{}')", 
             self.organization_id.as_ref().ok_or("Organization ID is required")?);
 
