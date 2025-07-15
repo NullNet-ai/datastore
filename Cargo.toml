@@ -2,8 +2,11 @@
 members = [
     "libs/hlc",
     "libs/merkle",
-    "bin/main"
-, "bin/store", "bin/server"]
+    "bin/main",
+    "bin/store",
+    "bin/server",
+    "mcp-proto-generator"
+]
 resolver = '2'
 
 
