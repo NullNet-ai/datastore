@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 /// Generic interface for cache implementations
+#[allow(warnings)]
 pub trait CacheInterface<K, V>: Send + Sync
 where
     K: Eq + Hash + Clone + Debug + Send + Sync,

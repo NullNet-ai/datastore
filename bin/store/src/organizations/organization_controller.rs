@@ -184,7 +184,7 @@ impl OrganizationsController {
         }
     }
 
-    pub async fn logout(req: HttpRequest, token_header: Option<String>) -> impl Responder {
+    pub async fn logout(_req: HttpRequest, _token_header: Option<String>) -> impl Responder {
         // Empty implementation
         HttpResponse::Ok().finish()
     }

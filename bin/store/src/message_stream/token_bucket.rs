@@ -2,6 +2,7 @@ use std::{collections::VecDeque, sync::Arc};
 use tokio::sync::{Mutex, Notify};
 
 #[derive(Debug, Clone)]
+#[allow(warnings)]
 pub struct Message(pub String);
 
 #[derive(Debug)]
@@ -12,7 +13,7 @@ pub struct TokenBucket {
     pub buffer: Mutex<VecDeque<Message>>,
     notify_drain: Arc<Notify>,
 }
-
+#[allow(warnings)]
 impl TokenBucket {
     pub fn new(name: &str, capacity: usize) -> Arc<Self> {
         Arc::new(Self {

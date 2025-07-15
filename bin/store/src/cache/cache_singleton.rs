@@ -17,7 +17,7 @@ static JSON_CACHE: Lazy<Arc<Mutex<JsonCacheManager>>> =
 pub struct Cache {
     inner: Arc<Mutex<JsonCacheManager>>,
 }
-
+#[allow(warnings)]
 impl Cache {
     /// Get the global cache instance
     pub fn global() -> Self {
@@ -38,7 +38,7 @@ impl Cache {
 
     /// Insert a value into the cache with a TTL
     /// For in-memory cache, this just calls the regular insert method
-    pub fn insert_with_ttl(&self, key: String, value: Value, ttl: Duration) {
+    pub fn insert_with_ttl(&self, key: String, value: Value, _ttl: Duration) {
         // For in-memory cache, just use regular insert
         // For Redis, we would use the Redis-specific insert_with_ttl
         self.insert(key, value);

@@ -2,7 +2,7 @@ use crate::controllers::store_controller::ApiError;
 use crate::db;
 use crate::models::counter_model::CounterModel;
 use crate::schema::schema;
-use diesel::prelude::*;
+// use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use std::collections::HashMap;
 pub struct CodePrefixInitializer {
     pub prefixes: HashMap<String, CounterModel>,
 }
-
+#[allow(warnings)]
 impl CodePrefixInitializer {
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
@@ -53,7 +53,7 @@ impl CodePrefixInitializer {
 
         CodePrefixInitializer { prefixes }
     }
-
+    
     pub fn get_config(&self, table_name: &str) -> Option<&CounterModel> {
         self.prefixes.get(table_name)
     }

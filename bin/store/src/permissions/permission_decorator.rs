@@ -22,7 +22,7 @@ pub struct PermissionExtractor {
     pub request_body: serde_json::Value,
     pub request_type: RequestType,
 }
-
+#[allow(warnings)]
 impl FromRequest for PermissionExtractor {
     type Error = Box<dyn ResponseError>;
     type Future = LocalBoxFuture<'static, Result<Self, Self::Error>>;
@@ -178,7 +178,7 @@ impl FromRequest for PermissionExtractor {
 
                         data_permissions.schema = schema;
                     }
-                    _ => {}
+                    // _ => {}
                 }
                 data_permissions.account_organization_id = a.responsible_account.clone();
                 data_permissions.role_permissions_query_params =
@@ -263,7 +263,7 @@ impl FromRequest for PermissionExtractor {
         fut.map(|r| r).boxed_local()
     }
 }
-
+#[allow(warnings)]
 fn api_error<T: Into<String>>(msg: T) -> Box<dyn ResponseError> {
     Box::new(ApiResponse {
         success: false,
@@ -272,7 +272,7 @@ fn api_error<T: Into<String>>(msg: T) -> Box<dyn ResponseError> {
         data: vec![],
     })
 }
-
+#[allow(warnings)]
 impl PermissionExtractor {
     pub fn accumulate_write_information(
         data_permissions: &mut DataPermissions,

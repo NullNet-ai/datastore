@@ -125,7 +125,7 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
     tables
 }
 
-pub fn token_data_extractor(token: &str) -> String {
+pub fn _token_data_extractor(_token: &str) -> String {
     todo!()
 }
 

@@ -1,3 +1,4 @@
+#[allow(warnings)]
 #[macro_export]
 macro_rules! generate_hypertable_timestamp_match {
     ($self:expr, $conn:expr, $id:expr, $($table:ident),*) => {
@@ -25,7 +26,7 @@ macro_rules! generate_hypertable_timestamp_match {
         }
     }
 }
-
+#[allow(warnings)]
 #[macro_export]
 macro_rules! generate_insert_record_match {
     ($self:expr, $auth:expr, $conn:expr, $record:expr, $request:expr, $($table:ident, $model:ty),*) => {
@@ -67,6 +68,7 @@ macro_rules! generate_insert_record_match {
     }
 }
 
+#[allow(warnings)]
 #[macro_export]
 macro_rules! generate_get_by_id_match {
     ($self:expr, $conn:expr, $id:expr, $($table:ident, $model:ty),*) => {
@@ -97,6 +99,7 @@ macro_rules! generate_get_by_id_match {
     }
 }
 
+#[allow(warnings)]
 #[macro_export]
 macro_rules! generate_upsert_record_match {
     ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
@@ -159,6 +162,8 @@ macro_rules! generate_upsert_record_match {
     }
 }
 #[macro_export]
+#[allow(warnings)]
+#[allow(unreachable_patterns)]
 macro_rules! generate_upsert_record_with_timestamp_match {
     ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
         paste::paste! {

@@ -21,7 +21,7 @@ impl RootAccountInitializer {
     }
 
     pub async fn initialize(&self, params: Option<InitializerParams>) -> Result<(), ApiError> {
-        let entity = if let Some(params) = &params {
+        if let Some(params) = &params {
             params.entity.clone()
         } else {
             return Err(ApiError::new(

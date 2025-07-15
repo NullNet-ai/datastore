@@ -19,7 +19,7 @@ lazy_static! {
     static ref INSTANCE: Arc<MerkleManager> = Arc::new(MerkleManager::new_internal());
     static ref INIT: Once = Once::new();
 }
-
+#[allow(warnings)]
 impl MerkleManager {
     fn new_internal() -> Self {
         let trees = HashMap::new();
@@ -71,7 +71,7 @@ impl MerkleManager {
         }
     }
     // Helper function to load initial trees
-
+    #[allow(warnings)]
     pub fn initialize(&mut self) {
         if !self.initialized {
             // Perform any one-time initialization here
@@ -95,6 +95,7 @@ impl MerkleManager {
     }
 
     // Get a timestamp by group ID
+    
     pub async fn get_timestamp(&self, group_id: &str) -> Option<String> {
         let trees = self.trees.read().await;
         trees.get(group_id).map(|entry| entry.timestamp.clone())

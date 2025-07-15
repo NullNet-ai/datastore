@@ -26,6 +26,7 @@ pub struct CodeAssignmentMessage {
 }
 // Define a message structure
 #[derive(Debug, Clone)]
+#[allow(warnings)]
 pub struct SyncMessage {
     pub table: String,
     pub record: Value,
@@ -46,7 +47,7 @@ pub struct BatchSyncService {
     update_queue: Arc<Mutex<VecDeque<SyncMessage>>>,
     code_assignment_queue: Arc<Mutex<VecDeque<CodeAssignmentMessage>>>,
 }
-
+#[allow(warnings)]
 impl BatchSyncService {
     // Initialize the queue service
     pub async fn init() -> Result<(), String> {
@@ -80,6 +81,8 @@ impl BatchSyncService {
         Ok(())
     }
 
+    // TODO: Kindly revisit this
+    
     // Get the global insert sender
     pub fn get_insert_sender() -> Option<Arc<UnboundedSender<SyncMessage>>> {
         unsafe { INSERT_SENDER.clone() }
@@ -383,7 +386,7 @@ impl BatchSyncService {
         match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data)
             .await
         {
-            Ok(response) => true,
+            Ok(_response) => true,
             Err(error) => {
                 log::error!("Error processing code assignment message: {}", error);
                 return false;

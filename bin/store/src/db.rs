@@ -10,7 +10,9 @@ use std::sync::OnceLock;
 use tokio_postgres::{Client, NoTls};
 
 // -- Sync Types --
+#[allow(warnings)]
 pub type DbPool = Pool<ConnectionManager<PgConnection>>;
+#[allow(warnings)]
 pub type DbPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 // -- Async Types --
@@ -31,8 +33,9 @@ pub fn establish_async_pool() -> AsyncDbPool {
 }
 
 // -- Sync Pool --
+#[allow(warnings)]
 static SYNC_POOL: OnceLock<DbPool> = OnceLock::new();
-
+#[allow(warnings)]
 pub fn establish_sync_pool() -> DbPool {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -46,14 +49,14 @@ pub fn establish_sync_pool() -> DbPool {
         .build(manager)
         .expect("Failed to create sync pool")
 }
-
+#[allow(warnings)]
 pub fn get_sync_pool() -> &'static DbPool {
     SYNC_POOL.get_or_init(establish_sync_pool)
 }
 pub fn get_async_pool() -> &'static AsyncDbPool {
     &ASYNC_POOL
 }
-
+#[allow(warnings)]
 pub fn get_sync_connection() -> DbPooledConnection {
     get_sync_pool().get().unwrap_or_else(|e| {
         log::error!("Failed to get sync connection: {}", e);

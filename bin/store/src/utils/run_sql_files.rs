@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 
+#[allow(warnings)]
 pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
     // Get database connection info from environment variables
     let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());

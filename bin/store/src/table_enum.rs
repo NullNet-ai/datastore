@@ -92,7 +92,7 @@ pub enum Table {
     ContactEmails,
     // Add other tables here
 }
-
+#[allow(warnings)]
 impl Table {
     pub fn from_str(name: &str) -> Option<Self> {
         match name {
@@ -172,7 +172,7 @@ impl Table {
             TempWallguardLogs
         )
     }
-
+    #[allow(warnings)]
     pub async fn insert_record(
         &self,
         conn: &mut AsyncPgConnection,

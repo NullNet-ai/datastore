@@ -24,6 +24,7 @@ use crate::{
 pub struct SessionMiddleware;
 
 // Configuration holder used internally
+#[allow(warnings)]
 struct SessionConfig {
     cookie_name: String,
     cookie_max_age: String,
@@ -259,6 +260,7 @@ pub async fn save_session(session: &Session) -> Result<(), diesel::result::Error
 }
 
 // Helper function to get session from request
+#[allow(warnings)]
 pub fn get_session(req: &ServiceRequest) -> Option<Session> {
     req.extensions().get::<Session>().cloned()
 }

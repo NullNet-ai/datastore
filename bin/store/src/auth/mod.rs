@@ -3,7 +3,7 @@ pub mod auth_service;
 pub mod structs;
 
 pub struct AuthService;
-
+#[allow(warnings)]
 impl AuthService {
     pub fn new() -> Self {
         Self {}

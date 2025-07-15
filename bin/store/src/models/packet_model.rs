@@ -2,7 +2,7 @@ use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
-
+#[allow(warnings)]
 fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     t == &T::default()
 }

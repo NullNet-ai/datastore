@@ -550,7 +550,7 @@ macro_rules! generate_delete_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
-                    let query = request
+                    let _query = request
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
 

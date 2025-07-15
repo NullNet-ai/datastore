@@ -48,8 +48,7 @@ impl CacheFactory {
             }
             CacheType::Redis => {
                 let connection = redis_connection.unwrap_or_else(|| {
-                    panic!("No Redis connection string provided, using default");
-                    "redis://127.0.0.1/".to_string()
+                    panic!("No Redis connection string provided, using default redis://127.0.0.1/");
                 });
 
                 log::info!("Attempting to connect to Redis at {}", connection);
@@ -79,6 +78,7 @@ where
     current_type: CacheType,
 }
 
+#[allow(warnings)]
 impl<K, V> CacheManager<K, V>
 where
     K: Eq + Hash + Clone + Debug + Send + Sync + Serialize + 'static,

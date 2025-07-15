@@ -17,7 +17,7 @@ where
     default_ttl: Option<Duration>,
     _marker: PhantomData<(K, V)>,
 }
-
+#[allow(warnings)]
 impl<K, V> RedisCache<K, V>
 where
     K: Eq + Hash + Clone + Debug + Send + Sync + Serialize,

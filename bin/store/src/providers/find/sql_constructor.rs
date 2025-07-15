@@ -1,4 +1,4 @@
-use crate::{db, structs::structs::{FilterCriteria, FilterOperator, GetByFilter, Join, LogicalOperator}};
+use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, Join, LogicalOperator}};
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -47,6 +47,7 @@ impl SQLConstructor {
             // TODO: concantenated fields
         sql.push_str(&self.construct_group_by());
         // TODO: set Order By
+        // TODO: multiple sort
             // TODO: concantenated fields
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
@@ -56,16 +57,17 @@ impl SQLConstructor {
     }
 
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
-        Self::date_format_wrapper(table, field, Some(format_str))
-    }
-    fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
+        // TODO: apply permissions
+        // TODO: apply concantenated fields
         if field.contains("_date") {
-            let format = format_str.unwrap_or("mm/dd/YYYY");
-            // TODO: set concatenated fields
-            format!("Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')", table, field, format)
+            Self::date_format_wrapper(table, field, Some(format_str))
         } else {
             format!("\"{}\".\"{}\"", table, field)
         }
+    }
+    fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
+        let format = format_str.unwrap_or("mm/dd/YYYY");
+        format!("Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')", table, field, format)
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
@@ -85,7 +87,7 @@ impl SQLConstructor {
             }
         }
         // set pluck group object as selections
-        if (!self.request_body.pluck_group_object.is_empty()) {
+        if !self.request_body.pluck_group_object.is_empty() {
             let pluck_group_object = self.construct_pluck_group_object();
             if !pluck_group_object.is_empty() {
                 selections.push(pluck_group_object);
@@ -348,7 +350,8 @@ impl SQLConstructor {
         let to_entity = &join.field_relation.to.entity;
         let to_alias = join.field_relation.to.alias.as_deref().unwrap_or("");
         let to_field = &join.field_relation.to.field;
-        let from_entity = &join.field_relation.from.entity;
+        // TODO: revisit this
+        // let from_entity = &join.field_relation.from.entity;
         let from_field = &join.field_relation.from.field;
         // TODO: Add nested join logic after jean fix the issue from Typescript datastore
         
@@ -503,11 +506,38 @@ impl SQLConstructor {
             FilterOperator::IsEmpty => format!("{} = ''", field_name),
             FilterOperator::IsNotEmpty => format!("{} != ''", field_name),
             FilterOperator::Like => format!("{} LIKE {}", field_name, values_str[0]),
-            _ => format!("{} = {}", field_name, values_str[0]) // Default fallback
         }
     }
     fn construct_order_by(&self) -> String {
-        if !self.request_body.order_by.is_empty() {
+        // Check if multiple_sort is available and not empty
+        if !self.request_body.multiple_sort.is_empty() {
+            let sort_clauses: Vec<String> = self.request_body.multiple_sort
+                .iter()
+                .map(|sort_option| {
+                    let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
+                    let (table_alias, field_name) = if field_parts.len() == 2 {
+                        (field_parts[0], field_parts[1])
+                    } else {
+                        (self.table.as_str(), sort_option.by_field.as_str())
+                    };
+                    
+                    let field_expression = Self::get_field(table_alias, field_name, &self.request_body.date_format);
+                    
+                    // Handle case sensitivity
+                    let final_field = if !sort_option.is_case_sensitive_sorting {
+                        format!("LOWER({})", field_expression)
+                    } else {
+                        field_expression
+                    };
+                    
+                    format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
+                })
+                .collect();
+            
+            format!(" ORDER BY {}", sort_clauses.join(", "))
+        }
+        // Fallback to single field sorting if multiple_sort is empty
+        else if !self.request_body.order_by.is_empty() {
             format!(" ORDER BY {} {}", Self::get_field(&self.table, "id", &self.request_body.date_format), self.request_body.order_direction)
         } else {
             String::from("")

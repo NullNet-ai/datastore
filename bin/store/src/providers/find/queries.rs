@@ -1,13 +1,6 @@
-use diesel::prelude::*;
 use diesel::sql_types::*;
 use diesel::QueryableByName;
-use serde::{Deserialize, Serialize};
-
-#[derive(QueryableByName, Debug, Serialize, Deserialize)]
-pub struct QueryResult {
-    #[diesel(sql_type = Nullable<Text>)]
-    pub id: Option<String>,
-}
+use serde::{Serialize};
 
 #[derive(QueryableByName, Debug, Serialize)]
 pub struct DynamicResult {

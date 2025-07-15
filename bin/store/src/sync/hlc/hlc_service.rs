@@ -6,7 +6,7 @@ use hlc::Timestamp;
 use merkle::MerkleTree;
 use std::env;
 use uuid::Uuid;
-
+#[allow(warnings)]
 pub struct HlcService {
     pub timestamp: Timestamp,
     pub group_id: String,
@@ -82,7 +82,7 @@ impl HlcService {
     }
 
     pub async fn get_clock(
-        tx: &mut AsyncPgConnection,
+        _tx: &mut AsyncPgConnection,
     ) -> Result<Clock, Box<dyn std::error::Error>> {
         let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
         let merkle_manager = MerkleManager::instance();

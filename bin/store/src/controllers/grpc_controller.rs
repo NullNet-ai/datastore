@@ -637,13 +637,14 @@ impl StoreService for GrpcController {
 }
 
 // You can add HTTP endpoints to configure or check gRPC status
+#[allow(warnings)]
 pub async fn grpc_status() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
         "status": "running",
         "message": "gRPC server is operational"
     }))
 }
-
+#[allow(warnings)]
 // Function to configure and register HTTP routes related to gRPC
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/api/grpc/status").route(web::get().to(grpc_status)));

@@ -71,11 +71,11 @@ pub fn get_defaults() -> (
         system_device_ulid,
     )
 }
-
+#[allow(warnings)]
 pub async fn register(
     params: &Register,
     is_request: Option<bool>,
-    account_organization_id: Option<String>,
+    _account_organization_id: Option<String>,
 ) -> Result<Value, ApiError> {
     // Changed return type to use diesel::result::Error
     let mut conn = db::get_async_connection().await;
@@ -99,7 +99,7 @@ pub async fn register(
     let device_categories = params.device_categories.clone();
     let responsible_account_organization_id = params.responsible_account_organization_id.clone();
 
-    let personal_organization_id: Option<String> = None;
+    let _personal_organization_id: Option<String> = None;
 
     let now = chrono::Utc::now();
     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
@@ -134,7 +134,7 @@ pub async fn register(
         .await
         .optional()?;
 
-    let contacts_counter = counters::table
+    let _contacts_counter = counters::table
         .filter(counters::entity.eq("contacts"))
         .first::<CounterModel>(&mut conn)
         .await
@@ -495,7 +495,7 @@ pub async fn register(
                 ))?;
 
             // Insert or update account organization
-            let created_account_organization = if account_organization_id.is_empty() {
+            let _created_account_organization = if account_organization_id.is_empty() {
                 sync_service::insert(&"account_organizations".to_string(), account_organization_json).await?
             } else {
                 sync_service::update(&"account_organizations".to_string(), account_organization_json, &account_organization_id).await?
@@ -736,7 +736,7 @@ pub async fn initialize(data: Option<Register>) -> Result<(), ApiError> {
 
     Ok(())
 }
-
+#[allow(warnings)]
 pub async fn initialize_device() -> Result<(), ApiError> {
     let (
         default_organization_id,

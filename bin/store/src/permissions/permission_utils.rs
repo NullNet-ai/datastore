@@ -71,11 +71,11 @@ pub async fn get_cached_permissions(
         host,
         headers,
         table,
-        account_organization_id,
-        body,
-        metadata,
+        account_organization_id: _account_organization_id,
+        body: _body,
+        metadata: _metadata,
         account_id,
-        query,
+        query:_query,
         uri,
         method,
         session,
@@ -361,7 +361,7 @@ async fn get_from_cache_or_execute<T: serde::de::DeserializeOwned + serde::Seria
 
     // Try to get from cache first
     if let Some(cached_data) = cache.get(&cache_key) {
-        if let Some(data_array) = cached_data["data"].as_array() {
+        if let Some(_data_array) = cached_data["data"].as_array() {
             let results: Vec<T> =
                 serde_json::from_value(cached_data["data"].clone()).unwrap_or_default();
             return Ok(results);

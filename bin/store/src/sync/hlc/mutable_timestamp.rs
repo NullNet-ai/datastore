@@ -4,7 +4,7 @@ use hlc::Timestamp;
 pub struct MutableTimestamp {
     inner: Timestamp,
 }
-
+#[allow(warnings)]
 impl MutableTimestamp {
     pub fn new(physical: u64, logical: u64, node_id: String) -> Self {
         Self {

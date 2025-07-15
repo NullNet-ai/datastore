@@ -17,6 +17,7 @@ use tonic::Status;
 use super::store_controller::ApiError;
 
 #[derive(Debug)]
+#[allow(warnings)]
 pub enum AppError {
     DbConnection(String),
     CopyCommand(String),
