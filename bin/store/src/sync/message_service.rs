@@ -33,7 +33,7 @@ pub async fn create_messages(
 
     let mut messages: Vec<CrdtMessageModel> = Vec::new();
 
-     if dataset == "connections" && operation == "Update" {
+    if dataset == "connections" && operation == "Update" {
         let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
             log::error!("Failed to generate HLC timestamp: {:?}", e);
             DieselError::DatabaseError(
@@ -41,7 +41,7 @@ pub async fn create_messages(
                 Box::new(format!("HLC timestamp generation failed: {}", e)),
             )
         })?;
-        
+
         messages.push(CrdtMessageModel {
             database: None,
             dataset: dataset.to_string(),
@@ -83,7 +83,7 @@ pub async fn create_messages(
         });
     }
 
-      if dataset == "connections" && operation == "Insert" {
+    if dataset == "connections" && operation == "Insert" {
         let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
             log::error!("Failed to generate HLC timestamp: {:?}", e);
             DieselError::DatabaseError(
@@ -91,7 +91,7 @@ pub async fn create_messages(
                 Box::new(format!("HLC timestamp generation failed: {}", e)),
             )
         })?;
-        
+
         messages.push(CrdtMessageModel {
             database: None,
             dataset: dataset.to_string(),

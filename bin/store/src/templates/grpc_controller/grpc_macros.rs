@@ -320,18 +320,21 @@ macro_rules! generate_batch_update_method {
                         .advance_filters
                         .into_iter()
                         .map(|filter| {
-                            let mut value = serde_json::to_value(filter).unwrap_or_default();
-                            if let Value::Object(ref mut map) = value {
-                                if let Some(Value::String(s)) = map.get_mut("values") {
-                                    if let Ok(parsed) = serde_json::from_str::<Value>(s) {
-                                        if parsed.is_array() {
-                                            *map.get_mut("values").unwrap() = parsed;
-                                        }
-                                    }
-                                }
-                            }
-                            value
-                        })
+    let mut value = serde_json::to_value(filter).unwrap_or_default();
+    if let Value::Object(ref mut map) = value {
+        if let Some(Value::String(s)) = map.get_mut("values") {
+            if let Ok(parsed) = serde_json::from_str::<Value>(s) {
+                if parsed.is_array() {
+                    // Safe approach: use the mutable reference we already have
+                    if let Some(values_field) = map.get_mut("values") {
+                        *values_field = parsed;
+                    }
+                }
+            }
+        }
+    }
+    value
+})
                         .collect();
 
                     let updates_map = match serde_json::to_value(&updates) {
@@ -564,8 +567,11 @@ macro_rules! generate_delete_method {
                     match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete", &auth_data).await {
                         Ok(response) => {
                             // Convert response to Value to modify message
-                            let mut response_value: serde_json::Value = serde_json::from_str(&serde_json::to_string(&response).unwrap())
-                                .map_err(|e| Status::internal(format!("Failed to parse response: {}", e)))?;
+                            // let mut response_value: serde_json::Value = serde_json::from_str(&serde_json::to_string(&response).unwrap())
+                            //     .map_err(|e| Status::internal(format!("Failed to parse response: {}", e)))?;
+
+                            let mut response_value: serde_json::Value = serde_json::to_value(&response)
+                                .map_err(|e| Status::internal(format!("Failed to convert response to JSON: {}", e)))?;
 
                             if let Some(obj) = response_value.as_object_mut() {
                                 obj["message"] = serde_json::Value::String(
@@ -637,22 +643,24 @@ macro_rules! generate_batch_delete_method {
                     let updates = delete_updates.record;
 
                     let filters: Vec<Value> = body
-                        .advance_filters
-                        .into_iter()
-                        .map(|filter| {
-                            let mut value = serde_json::to_value(filter).unwrap_or_default();
-                            if let Value::Object(ref mut map) = value {
-                                if let Some(Value::String(s)) = map.get_mut("values") {
-                                    if let Ok(parsed) = serde_json::from_str::<Value>(s) {
-                                        if parsed.is_array() {
-                                            *map.get_mut("values").unwrap() = parsed;
-                                        }
-                                    }
+                    .advance_filters
+                    .into_iter()
+                    .map(|filter| {
+                        let mut value = serde_json::to_value(filter).unwrap_or_default();
+                        if let Value::Object(ref mut map) = value {
+                        if let Some(Value::String(s)) = map.get_mut("values") {
+                        if let Ok(parsed) = serde_json::from_str::<Value>(s) {
+                            if parsed.is_array() {
+                                if let Some(values_field) = map.get_mut("values") {
+                                    *values_field = parsed;
                                 }
                             }
-                            value
-                        })
-                        .collect();
+                        }
+                    }
+        }
+        value
+    })
+    .collect();
 
                     let updates_map = match serde_json::to_value(&updates) {
                         Ok(Value::Object(map)) => map,

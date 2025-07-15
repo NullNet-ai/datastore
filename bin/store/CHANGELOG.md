@@ -71,6 +71,7 @@ Kashan
   - Enhanced `message_service.rs` with proper error handling for HLC timestamp generation
   - Added support for PostgreSQL triggers with `AFTER INSERT OR UPDATE` and conditional execution
   - Trigger conditions: `WHEN (NEW.sync_status = 'complete')` for targeted execution
+- **Code Safety**: Removed unsafe unwraps from the code
 
 ---
 

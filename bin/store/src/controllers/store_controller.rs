@@ -133,14 +133,16 @@ pub async fn update_record(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap()).json(
-            ApiResponse {
+        Err(error) => {
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
                 message: error.message,
                 count: 0,
                 data: vec![],
-            },
-        ),
+            })
+        }
     }
 }
 
@@ -181,14 +183,16 @@ pub async fn create_record(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap()).json(
-            ApiResponse {
+        Err(error) => {
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
                 message: error.message,
                 count: 0,
                 data: vec![],
-            },
-        ),
+            })
+        }
     }
 }
 
@@ -229,14 +233,16 @@ pub async fn get_by_id(
     // Use the common function to get the record by ID
     match process_and_get_record_by_id(&table_name, &record_id, Some(pluck_fields)).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap()).json(
-            ApiResponse {
+        Err(error) => {
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
                 message: error.message,
                 count: 0,
                 data: vec![],
-            },
-        ),
+            })
+        }
     }
 }
 
@@ -621,14 +627,16 @@ pub async fn upsert(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap()).json(
-            ApiResponse {
+        Err(error) => {
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
                 message: error.message,
                 count: 0,
                 data: vec![],
-            },
-        ),
+            })
+        }
     }
 }
 
@@ -669,8 +677,19 @@ pub async fn delete_record(
     {
         Ok(response) => {
             // Parse the response as Value to modify it
-            let mut response_value: serde_json::Value =
-                serde_json::from_str(&serde_json::to_string(&response).unwrap()).unwrap();
+            // let mut response_value: serde_json::Value =
+            //     serde_json::from_str(&serde_json::to_string(&response).unwrap()).unwrap();
+
+            let mut response_value: serde_json::Value = serde_json::to_value(&response)
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to convert response: {}", e);
+                    serde_json::json!({
+                        "success": false,
+                        "message": "Failed to process response, while updating, in process and update record",
+                        "count": 0,
+                        "data": []
+                    })
+                });
             if let Some(obj) = response_value.as_object_mut() {
                 obj["message"] = serde_json::Value::String(format!(
                     "Record with ID '{}' deleted successfully from '{}'",
@@ -679,14 +698,16 @@ pub async fn delete_record(
             }
             HttpResponse::Ok().json(response_value)
         }
-        Err(error) => HttpResponse::build(http::StatusCode::from_u16(error.status).unwrap()).json(
-            ApiResponse {
+        Err(error) => {
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
                 message: error.message,
                 count: 0,
                 data: vec![],
-            },
-        ),
+            })
+        }
     }
 }
 

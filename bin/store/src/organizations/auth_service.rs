@@ -49,7 +49,7 @@ pub async fn auth(
     let account_json = get_account_with_org(account_id).await?;
     // If no accounts found in the first query, try the fallback query
     let (account, account_organization_id) = if !account_json.is_object()
-        || account_json.as_object().unwrap().is_empty()
+        || account_json.as_object().map_or(true, |obj| obj.is_empty())
     {
         // Fallback query directly to accounts table
         log::debug!("No accounts found in account_organizations, trying direct accounts query");
@@ -112,9 +112,7 @@ pub async fn auth(
         // Get the signed in account with all related data
         let mut signed_in_account;
 
-        if account_organization_id.is_some() {
-            let account_organization_id = account_organization_id.unwrap();
-
+        if let Some(account_organization_id) = account_organization_id {
             // Create your filters array based on your requirements
             let filters = vec!["ao.tombstone = 0", "ao.status = 'Active'"];
 
@@ -159,8 +157,13 @@ pub async fn auth(
 
         // Cache the token
         let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-        let _expiration_ms = time_string_to_ms(&jwt_expires_in);
-        let mut cache = TOKEN_CACHE.lock().unwrap();
+        let expiration_ms = time_string_to_ms(&jwt_expires_in);
+        let mut cache = TOKEN_CACHE.lock().map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to acquire token cache lock: {}", e),
+            )
+        })?;
         cache.insert(new_token.clone(), token_value.to_string());
 
         return Ok(LoginResponse {
@@ -256,7 +259,15 @@ pub async fn root_auth(
                 })?;
 
             // Add empty contact and device objects
-            let mut value_obj = value.as_object().unwrap().clone();
+            let mut value_obj = match value.as_object() {
+                Some(obj) => obj.clone(),
+                None => {
+                    return Err(ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Invalid JSON object format",
+                    ));
+                }
+            };
             value_obj.insert("contact".to_string(), json!({}));
             value_obj.insert("device".to_string(), json!({}));
 
@@ -285,7 +296,17 @@ pub async fn root_auth(
     };
 
     // Check if account exists
-    if account_organization.is_object() && account_organization.get("account").is_none() {
+    let account_obj = match account_organization.as_object() {
+        Some(obj) => obj,
+        None => {
+            return Err(ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid account data format",
+            ));
+        }
+    };
+
+    if account_obj.get("account").is_none() {
         return Err(ApiError::new(
             StatusCode::NOT_FOUND,
             "Root Account not found",
@@ -347,7 +368,10 @@ pub async fn root_auth(
 }
 #[allow(warnings)]
 pub fn clear_cache(token: &str) -> bool {
-    let mut cache = TOKEN_CACHE.lock().unwrap();
+    let mut cache = match TOKEN_CACHE.lock() {
+        Ok(cache) => cache,
+        Err(_) => return false,
+    };
     cache.remove(token).is_some()
 }
 
@@ -645,7 +669,9 @@ async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::er
 #[allow(warnings)]
 pub async fn invalidate_token(token: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Remove token from cache
-    let mut cache = TOKEN_CACHE.lock().unwrap();
+    let mut cache = TOKEN_CACHE
+        .lock()
+        .map_err(|e| format!("Failed to acquire token cache lock: {}", e))?;
     cache.remove(token);
 
     Ok(())

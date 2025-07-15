@@ -299,12 +299,15 @@ impl BackgroundSyncService {
     fn format(&self, data: &mut Value) {
         if let Some(obj) = data.as_object_mut() {
             // Collect keys to remove to avoid borrowing issues
+            //remove empty objects arrays and values
             let keys_to_remove: Vec<String> = obj
                 .iter()
                 .filter_map(|(key, value)| {
                     if value.is_null()
-                        || (value.is_array() && value.as_array().unwrap().is_empty())
-                        || (value.is_object() && value.as_object().unwrap().is_empty())
+                        || (value.is_array()
+                            && value.as_array().map_or(false, |arr| arr.is_empty()))
+                        || (value.is_object()
+                            && value.as_object().map_or(false, |obj| obj.is_empty()))
                     {
                         Some(key.clone())
                     } else {
