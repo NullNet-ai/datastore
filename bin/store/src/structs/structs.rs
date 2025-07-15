@@ -395,7 +395,7 @@ pub struct SortOption {
 }
 
 fn default_date_format() -> String {
-    "YYYY-MM-DD".to_string()
+    "mm/dd/YYYY".to_string()
 }
 
 fn default_limit() -> usize {

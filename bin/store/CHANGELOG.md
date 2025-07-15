@@ -21,6 +21,8 @@ Eriberto
   - offset
   - limit
 - Added join selections
+- Added concatenation selections
+- Added date format wrapper
   
 ### Changed
 - Revise get_by_filter validations to make it more restrictive and are separate as a module

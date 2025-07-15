@@ -1,4 +1,4 @@
-use crate::structs::structs::{GetByFilter, FilterCriteria, LogicalOperator, FilterOperator, Join};
+use crate::{db, structs::structs::{FilterCriteria, FilterOperator, GetByFilter, Join, LogicalOperator}};
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -52,31 +52,36 @@ impl SQLConstructor {
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
         dbg!(&sql);
-
         Ok(sql)
     }
 
-    fn get_field(table: &str, field: &str) -> String {
-        format!("{}.{}", table, field)
+    fn get_field(table: &str, field: &str, format_str: &str) -> String {
+        Self::date_format_wrapper(table, field, Some(format_str))
+    }
+    fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
+        if field.contains("_date") {
+            let format = format_str.unwrap_or("mm/dd/YYYY");
+            // TODO: set concatenated fields
+            format!("Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')", table, field, format)
+        } else {
+            format!("\"{}\".\"{}\"", table, field)
+        }
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
         
         // Add join selections from pluck_object if joins are present
-        if !self.request_body.joins.is_empty() && !self.request_body.pluck_object.is_empty() {
+        if !self.request_body.joins.is_empty() && !self.request_body.pluck_object.is_empty() && self.request_body.pluck_object.iter().any(|(_, fields)| !fields.is_empty()) {
             let join_selections = self.construct_join_selections();
             selections.extend(join_selections);
         }
         // set pluck as selections
         else if !self.request_body.pluck.is_empty() {
             for field in &self.request_body.pluck {
-                selections.push(Self::get_field(&self.table, field));
+                selections.push(Self::get_field(&self.table, field, &self.request_body.date_format));
             }
         }
 
-        
-        
-        // TODO: set concatenated fields
         if selections.is_empty() {
             "*".to_string()
         } else {
@@ -106,13 +111,13 @@ impl SQLConstructor {
                 
                 // Build JSONB_BUILD_OBJECT field pairs
                 let mut field_pairs: Vec<String> = fields.iter()
-                    .map(|field| format!("'{}', \"{}\".\"{}\"" , field, alias, field))
+                    .map(|field| format!("'{}', {}", field, Self::get_field(alias, field, &self.request_body.date_format)))
                     .collect();
 
                 if !self.request_body.concatenate_fields.is_empty() {
                     self.request_body.concatenate_fields.iter().for_each(|field| {
                         let concatenated_expression = field.fields.iter()
-                              .map(|f| format!("COALESCE(\"{}\".\"{}\", '')", field.entity, f))
+                              .map(|f| Self::get_field(&field.entity, f, &self.request_body.date_format))
                               .collect::<Vec<_>>()
                               .join(&format!(" || '{}' || ", field.separator));
                         field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
@@ -228,7 +233,7 @@ impl SQLConstructor {
          // Handle single criteria case
         if filters.len() == 1 {
             if let FilterCriteria::Criteria { field, entity, operator, values } = &filters[0] {
-                let field_name = Self::get_field(entity, field);
+                let field_name = Self::get_field(entity, field, &self.request_body.date_format);
                 return Ok(self.format_condition(&field_name, operator, values));
             }
             return Err("Invalid filter: single filter must be a criteria".to_string());
@@ -250,7 +255,7 @@ impl SQLConstructor {
         while i < filters.len() {
             match &filters[i] {
                 FilterCriteria::Criteria { field, entity, operator, values } => {
-                    let field_name = Self::get_field(entity, field);
+                    let field_name = Self::get_field(entity, field, &self.request_body.date_format);
                     let condition = self.format_condition(&field_name, operator, values);
                     tokens.push(Token::Condition(condition));
                     i += 1;
@@ -459,7 +464,7 @@ impl SQLConstructor {
     }
     fn construct_order_by(&self) -> String {
         if !self.request_body.order_by.is_empty() {
-            format!(" ORDER BY {} {}", Self::get_field(&self.table, "id"), self.request_body.order_direction)
+            format!(" ORDER BY {} {}", Self::get_field(&self.table, "id", &self.request_body.date_format), self.request_body.order_direction)
         } else {
             String::from("")
         }
@@ -467,7 +472,7 @@ impl SQLConstructor {
     fn construct_group_by(&self) -> String {
         if !self.request_body.group_by.is_empty() {
             if let Some(first_key) = self.request_body.group_by.keys().next() {
-                format!(" GROUP BY {}", Self::get_field(&self.table, first_key))
+                format!(" GROUP BY {}", Self::get_field(&self.table, first_key, &self.request_body.date_format))
             } else {
                 String::from("")
             }
