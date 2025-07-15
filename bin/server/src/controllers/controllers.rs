@@ -246,9 +246,29 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
     let mut new_messages: Vec<CrdtMessage> = vec![];
     if let Some(merkle) = req_client_merkle.clone() {
         if !merkle.trim().is_empty() && merkle.trim() != "{}" {
-            let client_merkle = req_client_merkle.unwrap();
+             let client_merkle = match req_client_merkle {
+            Some(merkle) => merkle,
+            None => {
+                log::error!("Client merkle is None despite previous check");
+                let response = serde_json::json!({
+                    "status": "error",
+                    "message": "Invalid client merkle data"
+                });
+                return actix_web::HttpResponse::BadRequest().json(response);
+            }
+        };
 
-            let parsed_client_merkle = MerkleTree::deserialize(&client_merkle).unwrap();
+              let parsed_client_merkle = match MerkleTree::deserialize(&client_merkle) {
+            Ok(tree) => tree,
+            Err(err) => {
+                log::error!("Failed to deserialize client merkle tree: {:?}", err);
+                let response = serde_json::json!({
+                    "status": "error",
+                    "message": "Failed to parse client merkle tree"
+                });
+                return actix_web::HttpResponse::BadRequest().json(response);
+            }
+        };
             let diff_time = trie.find_differences(&parsed_client_merkle);
 
             // ! check later manually if first index has the smallest timestamp
