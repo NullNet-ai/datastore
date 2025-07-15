@@ -37,7 +37,7 @@ pub async fn initialize(
         }
     }
 }
-
+#[allow(warnings)]
 pub async fn initialize_all(params: Option<InitializerParams>) -> Result<(), ApiError> {
     // Initialize code prefix first
     initialize(EInitializer::SYSTEM_CODE_CONFIG, params.clone()).await?;

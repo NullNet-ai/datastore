@@ -38,6 +38,7 @@ pub struct Account {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct Claims {
     pub account: Account,
     pub sessionID: String,
@@ -65,6 +66,7 @@ pub struct Origin {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[allow(non_snake_case)]
 pub struct Cookie {
     pub path: String,
     pub expires: String, // Using String for ISO date format

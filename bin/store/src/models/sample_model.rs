@@ -29,5 +29,3 @@ pub struct SampleModel {
     pub name: Option<String>,
     pub sample_text: Option<String>,
 }
-
-    

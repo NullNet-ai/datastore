@@ -2,8 +2,10 @@
 members = [
     "libs/hlc",
     "libs/merkle",
-    "bin/main"
-, "bin/store", "bin/server"]
-resolver = '2'
+    "bin/main",
+    "bin/store",
+    "bin/server"
+]
+resolver = "2"
 
 

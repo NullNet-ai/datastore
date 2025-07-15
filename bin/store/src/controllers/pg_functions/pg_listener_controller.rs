@@ -3,8 +3,8 @@ use crate::controllers::common_controller::process_and_insert_record;
 use crate::structs::structs::{ApiResponse, Auth};
 use crate::db::get_async_connection;
 use serde_json::{json, Value};
-use serde::{Deserialize, Serialize};
-use regex::Regex;
+use serde::{Deserialize};
+// use regex::Regex;
 use diesel::sql_query;
 use diesel_async::RunQueryDsl;
 use super::function_validators::FunctionValidator;
@@ -383,12 +383,11 @@ pub async fn create_pg_function(
 /// Test PostgreSQL function syntax endpoint
 /// POST /api/listener/test
 pub async fn test_pg_function_syntax(
-    req: HttpRequest,
-    body: web::Json<TestFunctionRequest>,
+    _body: web::Json<TestFunctionRequest>,
 ) -> impl Responder {
     let service = PgFunctionService;
     
-    match service.test_function_syntax(body.into_inner()).await {
+    match service.test_function_syntax(_body.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::BadRequest().json(ApiResponse {
             success: false,

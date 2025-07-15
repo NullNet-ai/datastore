@@ -14,9 +14,7 @@ use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
 use serde_json::json;
-use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use std::sync::Mutex;
@@ -28,6 +26,7 @@ struct JsonResult {
 }
 
 #[derive(Debug, QueryableByName, Queryable)]
+#[allow(warnings)]
 pub struct AccountWithOrg {
     #[diesel(sql_type = diesel::sql_types::Integer)]
     pub account_organization_id: i32,
@@ -42,7 +41,7 @@ pub async fn auth(
     account_id: &str,
     account_secret: &str,
     session_id: String,
-    organization_id: &str,
+    _organization_id: &str,
 ) -> Result<LoginResponse, ApiError> {
     // Get database connection
     let mut conn = db::get_async_connection().await;
@@ -160,7 +159,7 @@ pub async fn auth(
 
         // Cache the token
         let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-        let expiration_ms = time_string_to_ms(&jwt_expires_in);
+        let _expiration_ms = time_string_to_ms(&jwt_expires_in);
         let mut cache = TOKEN_CACHE.lock().unwrap();
         cache.insert(new_token.clone(), token_value.to_string());
 
@@ -337,7 +336,7 @@ pub async fn root_auth(
 
     // Cache the token
     let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-    let expiration_ms = time_string_to_ms(&jwt_expires_in);
+    let _expiration_ms = time_string_to_ms(&jwt_expires_in);
     let mut cache = TOKEN_CACHE.lock().unwrap();
     cache.insert(new_token.clone(), token_value.to_string());
 
@@ -346,7 +345,7 @@ pub async fn root_auth(
         token: Some(new_token),
     })
 }
-
+#[allow(warnings)]
 pub fn clear_cache(token: &str) -> bool {
     let mut cache = TOKEN_CACHE.lock().unwrap();
     cache.remove(token).is_some()
@@ -643,7 +642,7 @@ async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::er
 
     Ok(token)
 }
-
+#[allow(warnings)]
 pub async fn invalidate_token(token: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Remove token from cache
     let mut cache = TOKEN_CACHE.lock().unwrap();

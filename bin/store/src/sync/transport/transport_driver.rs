@@ -1,4 +1,4 @@
-use futures::stream::{self, Stream, StreamExt};
+use futures::stream::{self, Stream};
 use reqwest::{Client, ClientBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -35,7 +35,7 @@ pub struct PostOpts {
 }
 
 pub struct HttpTransportDriver;
-
+#[allow(warnings)]
 impl HttpTransportDriver {
     pub fn new() -> Self {
         HttpTransportDriver {}

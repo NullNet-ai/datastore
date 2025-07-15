@@ -32,6 +32,7 @@ pub struct ClientData {
 
 // Organization client data structure
 #[derive(Debug, Clone)]
+#[allow(warnings)]
 pub struct OrganizationClients {
     pub client_ids: Vec<String>,
     pub channels: Vec<String>,
@@ -65,7 +66,7 @@ fn register_client(organization_id: String, client_id: String) {
         client_id, organization_id
     );
 }
-
+#[allow(warnings)]
 pub fn register_token_bucket(channel_name: &str, capacity: usize) -> Arc<TokenBucket> {
     let mut buckets = TOKEN_BUCKETS.lock().unwrap();
 
@@ -85,7 +86,7 @@ pub fn get_token_bucket(channel_name: &str) -> Option<Arc<TokenBucket>> {
     let buckets = TOKEN_BUCKETS.lock().unwrap();
     buckets.get(channel_name).cloned()
 }
-
+#[allow(warnings)]
 // Remove a TokenBucket from the global registry
 pub fn unregister_token_bucket(channel_name: &str) -> bool {
     let mut buckets = TOKEN_BUCKETS.lock().unwrap();
@@ -97,13 +98,13 @@ pub fn unregister_token_bucket(channel_name: &str) -> bool {
 
     removed
 }
-
+#[allow(warnings)]
 // Get all TokenBucket IDs
 pub fn get_all_token_bucket_ids() -> Vec<String> {
     let buckets = TOKEN_BUCKETS.lock().unwrap();
     buckets.keys().cloned().collect()
 }
-
+#[allow(warnings)]
 // Get count of registered TokenBuckets
 pub fn get_token_bucket_count() -> usize {
     let buckets = TOKEN_BUCKETS.lock().unwrap();
@@ -128,7 +129,7 @@ fn remove_client(organization_id: &str, client_id: &str) {
         client_id, organization_id
     );
 }
-
+#[allow(warnings)]
 // Add channel to organization
 fn add_channel_to_organization(organization_id: &str, channel: &str) {
     let mut clients = AUTHENTICATED_CLIENTS.lock().unwrap();
@@ -139,13 +140,13 @@ fn add_channel_to_organization(organization_id: &str, channel: &str) {
         }
     }
 }
-
+#[allow(warnings)]
 // Get organization clients data
 pub fn get_organization_clients(organization_id: &str) -> Option<OrganizationClients> {
     let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
     clients.get(organization_id).cloned()
 }
-
+#[allow(warnings)]
 // Get all client IDs for an organization
 pub fn get_organization_client_ids(organization_id: &str) -> Vec<String> {
     let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
@@ -154,7 +155,7 @@ pub fn get_organization_client_ids(organization_id: &str) -> Vec<String> {
     }
     Vec::new()
 }
-
+#[allow(warnings)]
 // Get all channels for an organization
 pub fn get_organization_channels(organization_id: &str) -> Vec<String> {
     let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
@@ -163,7 +164,7 @@ pub fn get_organization_channels(organization_id: &str) -> Vec<String> {
     }
     Vec::new()
 }
-
+#[allow(warnings)]
 // Send notification using socketioxide's broadcast functionality
 pub fn broadcast_to_organization(
     io: &SocketIo,
@@ -175,7 +176,7 @@ pub fn broadcast_to_organization(
         .emit("notification", notification)
         .ok();
 }
-
+#[allow(warnings)]
 // Send notification to specific channel in organization
 pub fn broadcast_to_channel(
     io: &SocketIo,

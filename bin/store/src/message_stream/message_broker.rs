@@ -13,7 +13,7 @@ pub struct BrokerService {
     pub active_pipes: Mutex<HashMap<String, Arc<TokenBucket>>>,
     pub backpressured_pipes: Mutex<HashSet<String>>,
 }
-
+#[allow(warnings)]
 impl BrokerService {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {

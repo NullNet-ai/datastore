@@ -6,7 +6,7 @@ use diesel_async::AsyncConnection;
 
 
 pub struct FunctionValidator;
-
+#[allow(warnings)]
 impl FunctionValidator {
     pub fn new() -> Self {
         Self

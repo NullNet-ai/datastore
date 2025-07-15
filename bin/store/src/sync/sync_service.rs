@@ -196,6 +196,7 @@ async fn apply_messages(
     Ok(())
 }
 
+#[allow(warnings)]
 pub async fn iterate_queue<'a>(endpoints: Vec<PostOpts>) -> impl Stream<Item = Vec<Value>> + 'a {
     async_stream::stream! {
         let sync_timer_ms = 1000;

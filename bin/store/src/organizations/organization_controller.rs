@@ -1,7 +1,7 @@
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
-use crate::auth::structs::Session;
+// use crate::auth::structs::Session;
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
@@ -23,9 +23,9 @@ pub struct AuthData {
 pub struct OrganizationsController;
 
 impl OrganizationsController {
-    pub fn new() -> Self {
-        Self
-    }
+    // pub fn new() -> Self {
+    //     Self
+    // }
 
     pub async fn register(data: web::Json<Register>) -> impl Responder {
         if data.0.account_id.is_empty() || data.0.account_secret.is_empty() {
@@ -184,7 +184,7 @@ impl OrganizationsController {
         }
     }
 
-    pub async fn logout(req: HttpRequest, token_header: Option<String>) -> impl Responder {
+    pub async fn logout(_req: HttpRequest, _token_header: Option<String>) -> impl Responder {
         // Empty implementation
         HttpResponse::Ok().finish()
     }

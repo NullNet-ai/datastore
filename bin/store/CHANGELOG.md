@@ -5,6 +5,34 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## 0.1.5
+
+### Author
+Eriberto
+### Added
+- Implemented lifetime parameters ('a) and mutability for Validation and SQLConstructor structs to ensure proper memory management and data modification capabilities
+- Added temporary slower approach, creating DynamicQueryResult struct to handle dynamic query results
+- Added separate construct for the following:
+  - selections
+  - joins
+  - where clauses
+  - order by
+  - group by
+  - offset
+  - limit
+- Added join selections
+- Added concatenation selections
+- Added date format wrapper
+- Added pluck group object as a string - and group by id will be set automatically due to aggregation.
+  
+### Changed
+- Revise get_by_filter validations to make it more restrictive and are separate as a module
+### Fixed
+- fix Structs for Advance Filter > type "Criteria" or "Operator"
+- ignore all valid warnings for unfinished features
+---
+
 ## 0.1.4
 
 ### Author
@@ -44,10 +72,12 @@ Kashan
   - `POST /api/listener/test` - Test function syntax
 - **Data Models**: Added `FunctionRow` and `TriggerRow` structs for PostgreSQL system table queries
 
+---
+
 ## 0.1.3
 
 ### Author
-Chaosumaru
+Eriberto
 
 ### Fixed
 - Fixed PostgreSQL connection issues in containerized environments

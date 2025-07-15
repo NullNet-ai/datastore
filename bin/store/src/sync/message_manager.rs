@@ -22,6 +22,7 @@ pub fn get_queue_size() -> usize {
     QUEUE_SIZE.load(Ordering::SeqCst)
 }
 
+#[allow(warnings)]
 pub fn set_queue_size(size: usize) {
     QUEUE_SIZE.store(size, Ordering::SeqCst);
 }

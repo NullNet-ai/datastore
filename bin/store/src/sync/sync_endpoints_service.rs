@@ -7,6 +7,7 @@ use diesel_async::RunQueryDsl;
 
 use super::transport::transport_driver::PostOpts;
 
+#[allow(warnings)]
 pub async fn get_all_sync_endpoints(
     conn: &mut AsyncPgConnection,
 ) -> Result<Vec<SyncEndpointModel>, DieselError> {

@@ -3,16 +3,13 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::controllers::common_find::{filter_analyzer, get_sort_field};
 use crate::db;
 use crate::db::create_connection;
 use crate::permissions::permission_decorator::PermissionExtractor;
-use crate::schema::verify::field_exists_in_table;
+use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
 use crate::structs::structs::{
-    ApiResponse, BatchUpdateBody, ConcatenateField, ParsedConcatenatedFields, QueryParams,
-    RequestBody, UpsertRequestBody,
+    ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody, UpsertRequestBody,
 };
-use crate::structs::structs::{Auth, GetByFilter};
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
@@ -21,11 +18,14 @@ use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashMap;
+// use std::collections::HashMap;
+// use diesel::prelude::*;
 use std::fmt;
+// use diesel::sql_types::*;
+// use diesel::QueryableByName;
+use diesel_async::RunQueryDsl;
 
 use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
-use super::common_find::create_selections;
 
 #[derive(Serialize)]
 pub struct ApiError {
@@ -93,7 +93,7 @@ impl From<serde_json::Error> for ApiError {
 
 pub async fn update_record(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     path_params: web::Path<(String, String)>,
     request: web::Json<RequestBody>,
     query: web::Query<QueryParams>,
@@ -147,7 +147,7 @@ pub async fn update_record(
 pub async fn create_record(
     permissions: PermissionExtractor,
     request: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
@@ -197,13 +197,13 @@ pub async fn create_record(
 
 pub async fn get_by_id(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     path_params: web::Path<(String, String)>,
     query: web::Query<QueryParams>,
 ) -> impl Responder {
     let (table_name, record_id) = path_params.into_inner();
     let extensions = auth.extensions();
-    let auth_data = match extensions.get::<Auth>() {
+    match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
             log::warn!("Auth data not found in request extensions");
@@ -269,7 +269,7 @@ pub async fn batch_insert_records(
     };
     let temp_table = format!("temp_{}", table_name);
     match table_exists(&temp_table) {
-        Ok(table) => {
+        Ok(_table) => {
             // Table exists, proceed with your logic using the table
         }
         Err(error) => {
@@ -334,7 +334,7 @@ pub async fn batch_insert_records(
 
     let column_refs: Vec<&str> = columns.iter().map(|s| s.as_str()).collect();
 
-    let records = match execute_copy(&client, &table_name, &column_refs, csv_data).await {
+    match execute_copy(&client, &table_name, &column_refs, csv_data).await {
         Ok(_) => processed_records.clone(),
         Err(e) => {
             return HttpResponse::InternalServerError().json(ApiResponse {
@@ -379,7 +379,7 @@ pub async fn batch_insert_records(
 
 pub async fn batch_update_records(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
     request: web::Json<BatchUpdateBody>,
 ) -> impl Responder {
@@ -523,7 +523,7 @@ pub async fn batch_update_records(
 
 pub async fn batch_delete_records(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     table: web::Path<String>,
     request: web::Json<BatchUpdateBody>,
 ) -> impl Responder {
@@ -577,7 +577,7 @@ pub async fn batch_delete_records(
 
 pub async fn upsert(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     table_name: web::Path<String>,
     request_body: web::Json<UpsertRequestBody>,
     query: web::Query<QueryParams>,
@@ -635,7 +635,7 @@ pub async fn upsert(
 
 pub async fn delete_record(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     path_params: web::Path<(String, String)>,
 ) -> impl Responder {
     let (table_name, record_id) = path_params.into_inner();
@@ -653,7 +653,7 @@ pub async fn delete_record(
         }
     };
 
-    let organization_id = &auth_data.organization_id;
+    let _organization_id = &auth_data.organization_id;
 
     // Create delete updates (setting tombstone and status)
     let delete_updates = serde_json::json!({});
@@ -695,274 +695,94 @@ pub async fn delete_record(
 
 pub async fn get_by_filter(
     auth: HttpRequest,
-    pool: web::Data<db::AsyncDbPool>,
+    _pool: web::Data<db::AsyncDbPool>,
     path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
+    let parameters = request_body.into_inner();
     let table = path_params.into_inner();
+    
+    // Extract organization_id from auth context
     let extensions = auth.extensions();
-    let auth_data = match extensions.get::<Auth>() {
-        Some(data) => data,
+    let organization_id = match extensions.get::<Auth>() {
+        Some(auth_data) => Some(auth_data.organization_id.clone()),
         None => {
             log::warn!("Auth data not found in request extensions");
-            return HttpResponse::InternalServerError().json(ApiResponse {
+            None
+        }
+    };
+    
+    let validation = Validation::new(&parameters, &table);
+    let ApiResponse {
+        success,
+        message,
+        count,
+        data,
+    } = validation.exec();
+    if !success {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success,
+            message,
+            count,
+            data,
+        });
+    }
+    
+    // Create SQLConstructor with organization_id if available
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone());
+    if let Some(org_id) = organization_id {
+        sql_constructor = sql_constructor.with_organization_id(org_id);
+    }
+    
+    let query = match sql_constructor.construct() {
+        Ok(sql) => sql,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,
-                message: "Authentication information not available".to_string(),
+                message: format!("Invalid filter configuration: {}", e),
                 count: 0,
                 data: vec![],
             });
         }
     };
 
-    let organization_id = &auth_data.organization_id;
-    let GetByFilter {
-        pluck,
-        mut pluck_object,
-        concatenate_fields,
-        multiple_sort,
-        date_format,
-        offset,
-        limit,
-        advance_filters,
-        group_advance_filters,
-        joins,
-        order_by,
-        order_direction,
-        group_by,
-        distinct_by,
-    } = request_body.into_inner();
+    // Get a connection from the pool
+    let mut conn = db::get_async_connection().await;
 
-    if !group_advance_filters.is_empty() && !advance_filters.is_empty() {
-        return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message:
-                "Both advance_filters and group_advance_filters cannot be provided at the same time"
-                    .to_string(),
-            count: 0,
-            data: vec![],
-        });
-    }
+    // Wrap your original query with row_to_json
+    // This is slower approach by flixible
+    // TODO: create a better way of handling dynamic queries
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
-    if group_advance_filters.len() > 1 {
-        return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message:
-                "Group advance filters must be more than 1. Use the [advance_filters] instead."
-                    .to_string(),
-            count: 0,
-            data: vec![],
-        });
-    }
-
-    let has_group_by = !group_by.is_empty()
-        || group_by
-            .get("fields")
-            .map_or(false, |fields| !fields.is_empty());
-
-    if has_group_by && distinct_by.is_some() {
-        return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: "You can only use one of the [group_by] or [distinct_by].".to_string(),
-            count: 0,
-            data: vec![],
-        });
-    }
-
-    let mut aliased_fields: HashMap<String, String> = HashMap::new();
-
-    for join in &joins {
-        let field_relation = &join.field_relation;
-        let to = &field_relation.to;
-        if let Some(alias) = &to.alias {
-            aliased_fields.insert(alias.clone(), to.entity.clone());
-        }
-    }
-
-    let ParsedConcatenatedFields {
-        fields,
-        expressions,
-    } = ConcatenateField::parse_concatenate_fields(&concatenate_fields, table.clone());
-
-    for (entity, fields) in &pluck_object {
-        if !fields.contains(&"id".to_string()) {
-            return HttpResponse::BadRequest().json(ApiResponse {
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: "pluck_object must have \"id\" for every entity".to_string(),
+                message: format!("Query execution error: {}", e),
                 count: 0,
                 data: vec![],
             });
         }
-    }
+    };
 
-    //validate if fields passed in multiple sort exists or not
-    for sort_option in &multiple_sort {
-        let by_field = &sort_option.by_field;
+    // Parse JSON strings to serde_json::Value
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| {
+            result
+                .row_to_json
+                .and_then(|json_str| serde_json::from_str(&json_str).ok())
+        })
+        .collect();
 
-        // Check if by_field is separated by a dot
-        if !by_field.contains('.') {
-            return HttpResponse::BadRequest().json(ApiResponse {
-                success: false,
-                message: format!("Field {} must be in format entity.field", by_field),
-                count: 0,
-                data: vec![],
-            });
-        }
-
-        // Split by_field into entity and field
-        let parts: Vec<&str> = by_field.split('.').collect();
-        let entity = parts[0];
-        let field = parts[1];
-
-        // Find non-aliased entity
-        let non_aliased_entity = joins
-            .iter()
-            .filter_map(|join| {
-                if let Some(alias) = &join.field_relation.to.alias {
-                    if alias == entity {
-                        Some(join.field_relation.to.entity.clone())
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .next()
-            .unwrap_or_else(|| entity.to_string());
-
-        // Check if field exists in schema or concatenated fields
-        let field_exists_in_schema = field_exists_in_table(&non_aliased_entity, field);
-        let field_exists_in_concat = fields
-            .get(entity)
-            .map(|entity_fields| entity_fields.iter().any(|f| f == field))
-            .unwrap_or(false);
-
-        if !field_exists_in_schema && !field_exists_in_concat {
-            let message = if non_aliased_entity == entity {
-                format!(
-                    "Field {} does not exist in {}, or in concatenated fields",
-                    field, entity
-                )
-            } else {
-                format!(
-                    "Field {} does not exist in {} which is alias of {}",
-                    field, entity, non_aliased_entity
-                )
-            };
-
-            return HttpResponse::BadRequest().json(ApiResponse {
-                success: false,
-                message,
-                count: 0,
-                data: vec![],
-            });
-        }
-
-        // Add fields to pluck_object if joins exist
-        if !joins.is_empty() {
-            // Find if this field is part of a concatenation
-            let concat = concatenate_fields.iter().find(|concat_entity| {
-                concat_entity.field_name == field && concat_entity.entity == entity
-            });
-
-            // Initialize entity entry in pluck_object if it doesn't exist
-            // and add either the single field or all concatenated fields
-            if let Some(entry) = pluck_object.get_mut(&entity.to_string()) {
-                // Add the field or concatenated fields to the existing entry
-                if let Some(concat_fields) = concat {
-                    // Add all fields from the concatenation
-                    for concat_field in &concat_fields.fields {
-                        if !entry.contains(&concat_field.to_string()) {
-                            entry.push(concat_field.to_string());
-                        }
-                    }
-                } else {
-                    // Add just the single field if not already present
-                    if !entry.contains(&field.to_string()) {
-                        entry.push(field.to_string());
-                    }
-                }
-            } else {
-                // Create a new entry with either the single field or all concatenated fields
-                let mut fields = Vec::new();
-                if let Some(concat_fields) = concat {
-                    // Add all fields from the concatenation
-                    fields.extend(concat_fields.fields.iter().map(|f| f.to_string()));
-                } else {
-                    // Add just the single field
-                    fields.push(field.to_string());
-                }
-                pluck_object.insert(entity.to_string(), fields);
-            }
-        }
-    }
-
-    let selections = create_selections(
-        table.clone(),
-        pluck_object.clone(),
-        &joins,
-        date_format,
-        &ParsedConcatenatedFields {
-            fields: fields.clone(),
-            expressions: expressions.clone(),
-        },
-    );
-
-    //filter analyzer
-
-    let filter_analyzer = filter_analyzer(
-        table.clone(),
-        advance_filters,
-        pluck_object.clone(),
-        organization_id.to_string(),
-        &joins,
-        ParsedConcatenatedFields {
-            fields: fields.clone(),
-            expressions: expressions.clone(),
-        },
-        group_advance_filters,
-        aliased_fields.clone(),
-        selections.clone(),
-    );
-    if filter_analyzer.is_err() {
-        return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: filter_analyzer.err().unwrap(),
-            count: 0,
-            data: vec![],
-        });
-    }
-    let filter_analyzer = filter_analyzer.unwrap();
-    println!("{:#?}", filter_analyzer);
-
-    multiple_sort.iter().for_each(|sort_option| {
-        let by_field = &sort_option.by_field;
-        let by_direction = &sort_option.by_direction;
-        let is_case_sensitive_sorting = sort_option.is_case_sensitive_sorting.clone();
-        let multiple_sort_query = get_sort_field(
-            by_field.to_string(),
-            aliased_fields.clone(),
-            ParsedConcatenatedFields {
-                fields: fields.clone(),
-                expressions: expressions.clone(),
-            },
-            by_direction.to_string(),
-            Some(is_case_sensitive_sorting),
-            table.clone(),
-        );
-        println!("{:#?}", multiple_sort_query);
-    });
-
-    //print selections here
-    println!("{:#?}", selections);
-
-    //validate multiple sort
-
-    // Create delete updates (setting tombstone and status)
     HttpResponse::Ok().json(ApiResponse {
         success: true,
-        message: format!("Filter operation completed for table: {}", table),
-        count: 0,     // Update this with actual count if needed
-        data: vec![], // Update this with actual data if needed
+        message: format!("Filter operation completed for table: {} Query: {}", &table, &final_query),
+        count: data.len() as i32,
+        data,
     })
 }

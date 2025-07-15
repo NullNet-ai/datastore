@@ -8,13 +8,10 @@ use crate::permissions::permissions_queries::{
 };
 use crate::permissions::structs::DataPermissions;
 use crate::utils::request_type_handler::RequestType;
-use actix_web::dev::Extensions;
 use actix_web::http::header::HeaderMap;
-use actix_web::{HttpMessage, HttpRequest};
 use serde_json::Value;
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::time::Duration;
 
 pub struct PermissionsContext {
@@ -74,11 +71,11 @@ pub async fn get_cached_permissions(
         host,
         headers,
         table,
-        account_organization_id,
-        body,
-        metadata,
+        account_organization_id: _account_organization_id,
+        body: _body,
+        metadata: _metadata,
         account_id,
-        query,
+        query:_query,
         uri,
         method,
         session,
@@ -120,7 +117,7 @@ pub async fn get_cached_permissions(
     // Use the query_params from DataPermissions
     let field_permissions_params = data_permissions_query_params;
 
-      let field_permissions_results: Vec<PermissionQueryResult> = get_from_cache_or_execute(
+    let field_permissions_results: Vec<PermissionQueryResult> = get_from_cache_or_execute(
         &session,
         "field_permissions",
         &field_permissions_cache_key,
@@ -229,7 +226,7 @@ pub async fn get_cached_permissions(
     // Use the record_valid_pass_keys_query_params from DataPermissions
     let record_permissions_params = group_by_field_record_permissions_params;
 
-     let record_permissions_results: Vec<GroupByFieldRecordPermissionsResult> =
+    let record_permissions_results: Vec<GroupByFieldRecordPermissionsResult> =
         get_from_cache_or_execute(
             &session,
             "record_permissions",
@@ -275,7 +272,7 @@ pub async fn get_cached_permissions(
     // Use the valid_pass_keys_query_params from DataPermissions
     let valid_pass_keys_params = valid_pass_keys_query_params;
 
-       let valid_pass_keys_results: Vec<ValidPassKeyResult> = get_from_cache_or_execute(
+    let valid_pass_keys_results: Vec<ValidPassKeyResult> = get_from_cache_or_execute(
         &session,
         "valid_pass_keys",
         &valid_pass_keys_cache_key,
@@ -330,87 +327,111 @@ pub async fn get_cached_permissions(
     Ok((error, combined_permissions))
 }
 
+// Helper function to get data from cache or execute query
+async fn get_from_cache_or_execute<T: serde::de::DeserializeOwned + serde::Serialize>(
+    session: &Session,
+    type_key: &str,
+    fallback_cache_key: &str,
+    query_type: PermissionQueryType,
+    params: PermissionQueryParams,
+    account_organization_id: &str,
+    expiry_ms: u64,
+) -> Result<Vec<T>, Box<dyn std::error::Error>> {
+    // Try to get cache key from session first
+    let cache_key = match type_key {
+        "field_permissions" => session
+            .field_permissions
+            .as_ref()
+            .map(|p| p.cache_key.clone()),
+        "role_permissions" => session
+            .role_permissions
+            .as_ref()
+            .map(|p| p.cache_key.clone()),
+        "record_permissions" => session
+            .record_permissions
+            .as_ref()
+            .map(|p| p.cache_key.clone()),
+        "valid_pass_keys" => session
+            .valid_pass_keys
+            .as_ref()
+            .map(|p| p.cache_key.clone()),
+        _ => None,
+    }
+    .unwrap_or_else(|| fallback_cache_key.to_string());
 
-    // Helper function to get data from cache or execute query
-    async fn get_from_cache_or_execute<T: serde::de::DeserializeOwned + serde::Serialize>(
-        session: &Session,
-        type_key: &str,
-        fallback_cache_key: &str,
-        query_type: PermissionQueryType,
-        params: PermissionQueryParams,
-        account_organization_id: &str,
-        expiry_ms: u64,
-    ) -> Result<Vec<T>, Box<dyn std::error::Error>> {
-        // Try to get cache key from session first
-        let cache_key = match type_key {
-            "field_permissions" => session.field_permissions.as_ref().map(|p| p.cache_key.clone()),
-            "role_permissions" => session.role_permissions.as_ref().map(|p| p.cache_key.clone()),
-            "record_permissions" => session.record_permissions.as_ref().map(|p| p.cache_key.clone()),
-            "valid_pass_keys" => session.valid_pass_keys.as_ref().map(|p| p.cache_key.clone()),
-            _ => None,
-        }.unwrap_or_else(|| fallback_cache_key.to_string());
-        
-        // Try to get from cache first
-        if let Some(cached_data) = cache.get(&cache_key) {
-            if let Some(data_array) = cached_data["data"].as_array() {
+    // Try to get from cache first
+    if let Some(cached_data) = cache.get(&cache_key) {
+        if let Some(_data_array) = cached_data["data"].as_array() {
+            let results: Vec<T> =
+                serde_json::from_value(cached_data["data"].clone()).unwrap_or_default();
+            return Ok(results);
+        }
+    }
+
+    // Try to get from session
+    let session_data = match type_key {
+        "field_permissions" => session
+            .field_permissions
+            .as_ref()
+            .and_then(|p| p.cached.clone()),
+        "role_permissions" => session
+            .role_permissions
+            .as_ref()
+            .and_then(|p| p.cached.clone()),
+        "record_permissions" => session
+            .record_permissions
+            .as_ref()
+            .and_then(|p| p.cached.clone()),
+        "valid_pass_keys" => session
+            .valid_pass_keys
+            .as_ref()
+            .and_then(|p| p.cached.clone()),
+        _ => None,
+    };
+
+    if let Some(session_cache_data) = session_data {
+        if session_cache_data.cache.unwrap_or(false) {
+            if let Some(data) = session_cache_data.data {
                 let results: Vec<T> =
-                    serde_json::from_value(cached_data["data"].clone()).unwrap_or_default();
+                    serde_json::from_value(serde_json::to_value(data).unwrap_or_default())
+                        .unwrap_or_default();
                 return Ok(results);
             }
         }
-
-        // Try to get from session
-        let session_data = match type_key {
-            "field_permissions" => session.field_permissions.as_ref().and_then(|p| p.cached.clone()),
-            "role_permissions" => session.role_permissions.as_ref().and_then(|p| p.cached.clone()),
-            "record_permissions" => session.record_permissions.as_ref().and_then(|p| p.cached.clone()),
-            "valid_pass_keys" => session.valid_pass_keys.as_ref().and_then(|p| p.cached.clone()),
-            _ => None,
-        };
-        
-        if let Some(session_cache_data) = session_data {
-            if session_cache_data.cache.unwrap_or(false) {
-                if let Some(data) = session_cache_data.data {
-                    let results: Vec<T> = serde_json::from_value(serde_json::to_value(data).unwrap_or_default()).unwrap_or_default();
-                    return Ok(results);
-                }
-            }
-        }
-
-        // If not in cache or session, execute the query
-        let mut conn = db::get_async_connection().await;
-        let output = execute_permission_query(&mut conn, query_type, params).await?;
-
-        // Extract the results based on the output type
-        let results = match output {
-            PermissionQueryOutput::Permissions(data) => {
-                serde_json::to_value(data).unwrap_or_default()
-            }
-            PermissionQueryOutput::ValidPassKeys(data) => {
-                serde_json::to_value(data).unwrap_or_default()
-            }
-            PermissionQueryOutput::GroupByFieldRecordPermission(data) => {
-                serde_json::to_value(data).unwrap_or_default()
-            }
-            PermissionQueryOutput::RolePermissions(data) => {
-                serde_json::to_value(data).unwrap_or_default()
-            }
-        };
-
-        // Store in cache
-        let response = serde_json::json!({
-            "data": results,
-            "account_organization_id": account_organization_id,
-            "cache": false,
-        });
-
-        cache.insert_with_ttl(
-            cache_key,
-            response.clone(),
-            Duration::from_millis(expiry_ms),
-        );
-
-        // Convert back to the expected type
-        let typed_results: Vec<T> = serde_json::from_value(results).unwrap_or_default();
-        Ok(typed_results)
     }
+
+    // If not in cache or session, execute the query
+    let mut conn = db::get_async_connection().await;
+    let output = execute_permission_query(&mut conn, query_type, params).await?;
+
+    // Extract the results based on the output type
+    let results = match output {
+        PermissionQueryOutput::Permissions(data) => serde_json::to_value(data).unwrap_or_default(),
+        PermissionQueryOutput::ValidPassKeys(data) => {
+            serde_json::to_value(data).unwrap_or_default()
+        }
+        PermissionQueryOutput::GroupByFieldRecordPermission(data) => {
+            serde_json::to_value(data).unwrap_or_default()
+        }
+        PermissionQueryOutput::RolePermissions(data) => {
+            serde_json::to_value(data).unwrap_or_default()
+        }
+    };
+
+    // Store in cache
+    let response = serde_json::json!({
+        "data": results,
+        "account_organization_id": account_organization_id,
+        "cache": false,
+    });
+
+    cache.insert_with_ttl(
+        cache_key,
+        response.clone(),
+        Duration::from_millis(expiry_ms),
+    );
+
+    // Convert back to the expected type
+    let typed_results: Vec<T> = serde_json::from_value(results).unwrap_or_default();
+    Ok(typed_results)
+}

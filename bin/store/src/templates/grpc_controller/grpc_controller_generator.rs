@@ -6,7 +6,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::process;
 use std::process::Command;
-
+#[allow(warnings)]
 pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Result<()> {
     println!("Generating gRPC controller from proto file: {}", proto_path);
 
@@ -17,7 +17,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     let service_regex = Regex::new(r"service\s+(\w+)\s*\{([\s\S]*?)\}").unwrap();
     let rpc_regex =
         Regex::new(r"rpc\s+(\w+)\s*\(\s*(\w+)\s*\)\s*returns\s*\(\s*(\w+)\s*\)").unwrap();
-
+    
     let mut service_name = String::new();
     let mut rpc_methods = Vec::new();
     let schema_path = "src/schema/schema.rs";
@@ -244,7 +244,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     println!("Successfully generated gRPC controller at: {}", output_path);
     Ok(())
 }
-
+#[allow(warnings)]
 fn to_snake_case(name: &str) -> String {
     let mut snake = String::new();
     for (i, c) in name.chars().enumerate() {

@@ -47,7 +47,7 @@ pub async fn save_data_before_shutdown() -> Result<(), String> {
     log::info!("All data saved successfully, ready for shutdown");
     Ok(())
 }
-
+#[allow(warnings)]
 pub async fn setup_shutdown_handler(server_handle: ServerHandle) {
     tokio::spawn(async move {
         let mut sigint = signal(SignalKind::interrupt()).expect("Failed to set up SIGINT handler");

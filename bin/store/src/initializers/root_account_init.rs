@@ -1,6 +1,6 @@
 use crate::controllers::store_controller::ApiError;
 use crate::db;
-use crate::initializers::structs::{EInitializer, InitializerParams};
+use crate::initializers::structs::InitializerParams;
 use crate::models::account_model::AccountModel;
 use crate::models::account_organization_model::AccountOrganizationModel;
 use crate::models::account_profile_model::AccountProfileModel;
@@ -9,12 +9,9 @@ use crate::models::organization_model::OrganizationModel;
 use crate::schema::schema;
 use actix_web::http::StatusCode;
 use chrono::Utc;
-use diesel::associations::HasTable;
 use diesel::prelude::*;
-use diesel::result::Error as DieselError;
 use diesel_async::{AsyncConnection, RunQueryDsl};
 use std::env;
-use ulid::Ulid;
 
 pub struct RootAccountInitializer;
 
@@ -24,7 +21,7 @@ impl RootAccountInitializer {
     }
 
     pub async fn initialize(&self, params: Option<InitializerParams>) -> Result<(), ApiError> {
-        let entity = if let Some(params) = &params {
+        if let Some(params) = &params {
             params.entity.clone()
         } else {
             return Err(ApiError::new(

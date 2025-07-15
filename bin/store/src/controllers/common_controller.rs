@@ -17,6 +17,7 @@ use tonic::Status;
 use super::store_controller::ApiError;
 
 #[derive(Debug)]
+#[allow(warnings)]
 pub enum AppError {
     DbConnection(String),
     CopyCommand(String),
@@ -704,7 +705,7 @@ pub async fn process_and_get_record_by_id(
 pub async fn perform_upsert(
     table_name: &str,
     conflict_columns: Vec<String>,
-    mut data: serde_json::Value,
+    data: serde_json::Value,
     pluck_fields: Option<Vec<String>>,
     auth: &Auth,
 ) -> Result<ApiResponse, ApiError> {

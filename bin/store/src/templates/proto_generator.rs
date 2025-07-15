@@ -458,7 +458,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
 
     proto
 }
-
+#[allow(warnings)]
 pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     // Get all proto files in the directory
     let mut proto_files = Vec::new();

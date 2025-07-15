@@ -1,5 +1,5 @@
 use crate::initializers::init::initialize;
-use crate::initializers::structs::{EInitializer, InitializerParams};
+use crate::initializers::structs::EInitializer;
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;

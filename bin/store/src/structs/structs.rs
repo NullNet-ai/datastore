@@ -206,6 +206,7 @@ pub struct Endpoint {
 }
 
 #[derive(Clone, Debug)]
+#[allow(warnings)]
 pub struct Auth {
     pub organization_id: String,
     pub responsible_account: String,
@@ -219,6 +220,8 @@ pub struct Auth {
 
 // get by filter
 #[derive(Clone, Debug)]
+#[allow(warnings)]
+
 pub struct ParsedConcatenatedFields {
     pub fields: HashMap<String, Vec<String>>,
     pub expressions: HashMap<String, Vec<String>>,
@@ -231,6 +234,9 @@ pub struct GetByFilter {
 
     #[serde(default)]
     pub pluck_object: HashMap<String, Vec<String>>,
+
+     #[serde(default)]
+    pub pluck_group_object: HashMap<String, Vec<String>>,  // Add this line
 
     #[serde(default)]
     pub advance_filters: Vec<FilterCriteria>,
@@ -253,10 +259,10 @@ pub struct GetByFilter {
     #[serde(default = "default_date_format")]
     pub date_format: String,
 
-    #[serde(default = "default_date_format")]
+    #[serde(default = "default_order_by")]
     pub order_by: String,
 
-    #[serde(default = "default_date_format")]
+    #[serde(default = "default_order_direction")]
     pub order_direction: String,
 
     #[serde(default = "default_offset")]
@@ -275,7 +281,7 @@ pub struct ConcatenateField {
     pub separator: String,
     pub entity: String,
 }
-
+#[allow(warnings)]
 impl ConcatenateField {
     /// Generates the SQL expression for this concatenate field.
     pub fn to_sql_expression(&self) -> String {
@@ -390,31 +396,33 @@ impl ConcatenateField {
 pub struct SortOption {
     pub by_field: String,
     pub by_direction: String,
-    #[serde(default = "default_case_sensitive")]
-    pub is_case_sensitive_sorting: String,
+    #[serde(default = "default_case_sensitive_bool")]  // Change function name
+    pub is_case_sensitive_sorting: bool,  // Change from String to bool
+}
+
+// Add this new function
+fn default_case_sensitive_bool() -> bool {
+    false
 }
 
 fn default_date_format() -> String {
-    "YYYY-MM-DD".to_string()
+    "mm/dd/YYYY".to_string()
 }
 
 fn default_limit() -> usize {
     10
 }
 
-fn default_order_driection() -> String {
+fn default_order_direction() -> String {
     "asc".to_string()
 }
+
 fn default_order_by() -> String {
     "id".to_string()
 }
 
 fn default_offset() -> usize {
     0
-}
-
-fn default_case_sensitive() -> String {
-    "false".to_string()
 }
 
 fn default_pluck_vec() -> Vec<String> {
@@ -425,6 +433,8 @@ fn default_pluck_vec() -> Vec<String> {
 pub struct Join {
     pub r#type: String, // use r#type because `type` is a Rust keyword
     pub field_relation: FieldRelation,
+    #[serde(default)]
+    pub nested: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -453,37 +463,22 @@ pub struct RelationEndpoint {
 }
 
 //advance filters
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum FilterCriteria {
     #[serde(rename = "criteria")]
     Criteria {
         field: String,
+        entity: String,
         operator: FilterOperator,
         values: Vec<serde_json::Value>,
-        r#type: FilterType,
-        entity: String,
     },
     #[serde(rename = "operator")]
     LogicalOperator { operator: LogicalOperator },
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub enum FilterType {
-    Criteria,
-    Operator,
-}
-impl ToString for FilterType {
-    fn to_string(&self) -> String {
-        match self {
-            FilterType::Criteria => "AND".to_string(),
-            FilterType::Operator => "OR".to_string(),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
+#[serde(rename_all = "lowercase")]
 pub enum LogicalOperator {
     And,
     Or,
@@ -491,8 +486,8 @@ pub enum LogicalOperator {
 impl ToString for LogicalOperator {
     fn to_string(&self) -> String {
         match self {
-            LogicalOperator::And => "AND".to_string(),
-            LogicalOperator::Or => "OR".to_string(),
+            LogicalOperator::And => "and".to_string(),
+            LogicalOperator::Or => "or".to_string(),
         }
     }
 }
@@ -527,10 +522,6 @@ pub enum FilterOperator {
     IsEmpty,
     #[serde(rename = "is_not_empty")]
     IsNotEmpty,
-    #[serde(rename = "and")]
-    And,
-    #[serde(rename = "or")]
-    Or,
     #[serde(rename = "like")]
     Like,
 }

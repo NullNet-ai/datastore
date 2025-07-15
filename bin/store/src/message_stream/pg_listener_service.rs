@@ -1,6 +1,6 @@
 use crate::message_stream::token_bucket::{Message, TokenBucket};
 use futures::stream;
-use futures::StreamExt; // Add this import for next() and for_each
+// use futures::StreamExt; // Add this import for next() and for_each
 use futures::TryStreamExt; // Add this import for map_err
 use log::{error, info};
 use once_cell::sync::OnceCell;
@@ -11,7 +11,7 @@ use tokio::time::{sleep, Duration};
 use tokio_postgres::{Client, NoTls}; //
 
 static INSTANCE: OnceCell<Arc<PgListenerService>> = OnceCell::new();
-
+#[allow(warnings)]
 pub struct PgListenerService {
     client: Mutex<Option<Client>>,
     main_stream: Arc<TokenBucket>,
@@ -21,7 +21,7 @@ pub struct PgListenerService {
     is_paused: Mutex<bool>,
     connection_string: Mutex<String>,
 }
-
+#[allow(warnings)]
 impl PgListenerService {
     pub fn instance() -> Arc<Self> {
         INSTANCE
@@ -102,7 +102,7 @@ impl PgListenerService {
 
         service
     }
-
+    
     /// Get the main stream token bucket
     pub fn get_main_stream(&self) -> Arc<TokenBucket> {
         self.main_stream.clone()

@@ -20,6 +20,7 @@ mod middlewares;
 mod models;
 mod organizations;
 mod permissions;
+mod providers;
 mod schema;
 mod shutdown_handler;
 mod structs;
@@ -248,7 +249,7 @@ async fn main() -> std::io::Result<()> {
     //HTTPS config
 
     let server_url = format!("0.0.0.0:{}", port);
-    println!("Server is running on {}", server_url);
+    println!("Store is running on {}", server_url);
     tokio::spawn(async {
         if let Err(e) = bg_sync().await {
             log::error!("Error starting background sync: {}", e);
@@ -257,11 +258,11 @@ async fn main() -> std::io::Result<()> {
 
     //Socket server config
 
-    let socketio_server = tokio::spawn(async move {
+    tokio::spawn(async move {
         use axum::Router;
 
         // Use your gateway function that includes all the handlers
-        let (layer, io) = create_socket_io();
+        let (layer, _io) = create_socket_io();
 
         let app = Router::new().layer(layer);
 

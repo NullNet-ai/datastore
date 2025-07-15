@@ -20,6 +20,16 @@ store:
 	@echo "Starting store..."
 	@cd bin/store && cargo run
 
+# Run the store clean setup
+store-clean-setup:
+	@echo "Starting store clean setup..."
+	@cd bin/store && cargo make clean-setup
+
+# Run the store in watch mode
+store-watch:
+	@echo "Starting store in watch mode..."
+	@cd bin/store && cargo watch -x run
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."

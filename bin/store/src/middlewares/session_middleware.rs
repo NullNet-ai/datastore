@@ -3,8 +3,7 @@ use std::{future::Future, pin::Pin, rc::Rc};
 use actix_web::{
     cookie::{Cookie as ActixCookie, SameSite},
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    http::{header, StatusCode},
-    Error, HttpMessage, HttpResponse,
+    Error, HttpMessage,
 };
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
@@ -17,8 +16,7 @@ use crate::db;
 use crate::models::session_model::SessionModel;
 use crate::schema::schema::sessions;
 use crate::{
-    auth::structs::{Origin, Session, User},
-    structs::structs::ApiResponse,
+    auth::structs::{Session, User},
     utils::utils::time_string_to_ms,
 };
 
@@ -26,6 +24,7 @@ use crate::{
 pub struct SessionMiddleware;
 
 // Configuration holder used internally
+#[allow(warnings)]
 struct SessionConfig {
     cookie_name: String,
     cookie_max_age: String,
@@ -261,6 +260,7 @@ pub async fn save_session(session: &Session) -> Result<(), diesel::result::Error
 }
 
 // Helper function to get session from request
+#[allow(warnings)]
 pub fn get_session(req: &ServiceRequest) -> Option<Session> {
     req.extensions().get::<Session>().cloned()
 }

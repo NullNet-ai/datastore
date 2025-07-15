@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(warnings)]
 pub enum EInitializer {
     SYSTEM_CODE_CONFIG,
     ROOT_ACCOUNT_CONFIG,
@@ -6,7 +7,7 @@ pub enum EInitializer {
     SYSTEM_DEVICE_CONFIG,
     BACKGROUND_SERVICES_CONFIG,
 }
-
+#[allow(warnings)]
 impl EInitializer {
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -31,6 +32,7 @@ impl EInitializer {
 }
 
 #[derive(Debug, Clone, Default)]
+#[allow(warnings)]
 pub struct InitializerParams {
     pub entity: String,
     pub system_code_config: Option<SystemCodeConfig>,
@@ -38,6 +40,7 @@ pub struct InitializerParams {
 }
 
 #[derive(Debug, Clone, Default)]
+#[allow(warnings)]
 pub struct SystemCodeConfig {
     pub default_code: Option<u32>,
     pub prefix: String,
@@ -46,6 +49,7 @@ pub struct SystemCodeConfig {
 }
 
 #[derive(Debug, Clone, Default)]
+#[allow(warnings)]
 pub struct RootAccountConfig {
     pub project_name: Option<String>,
 }
