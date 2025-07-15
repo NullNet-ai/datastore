@@ -232,6 +232,9 @@ pub struct GetByFilter {
     #[serde(default)]
     pub pluck_object: HashMap<String, Vec<String>>,
 
+     #[serde(default)]
+    pub pluck_group_object: HashMap<String, Vec<String>>,  // Add this line
+
     #[serde(default)]
     pub advance_filters: Vec<FilterCriteria>,
 

@@ -73,12 +73,22 @@ impl SQLConstructor {
         // Add join selections from pluck_object if joins are present
         if !self.request_body.joins.is_empty() && !self.request_body.pluck_object.is_empty() && self.request_body.pluck_object.iter().any(|(_, fields)| !fields.is_empty()) {
             let join_selections = self.construct_join_selections();
-            selections.extend(join_selections);
+            if !join_selections.is_empty() {
+                selections.extend(join_selections);
+            }
         }
         // set pluck as selections
         else if !self.request_body.pluck.is_empty() {
-            for field in &self.request_body.pluck {
-                selections.push(Self::get_field(&self.table, field, &self.request_body.date_format));
+            let pluck = self.construct_pluck();
+            if !pluck.is_empty() {
+                selections.push(pluck);
+            }
+        }
+        // set pluck group object as selections
+        if (!self.request_body.pluck_group_object.is_empty()) {
+            let pluck_group_object = self.construct_pluck_group_object();
+            if !pluck_group_object.is_empty() {
+                selections.push(pluck_group_object);
             }
         }
 
@@ -88,7 +98,40 @@ impl SQLConstructor {
             selections.join(", ")
         }
     }
-    
+
+    fn construct_pluck(&self) -> String {
+        let mut pluck = String::new();
+        for field in &self.request_body.pluck {
+            pluck.push_str(&Self::get_field(&self.table, field, &self.request_body.date_format));
+            pluck.push_str(", ");
+        }
+        pluck.trim_end_matches(", ").to_string()
+    }
+    fn construct_pluck_group_object(&self) -> String {
+        let mut selections = Vec::new();
+        // Check if pluck_group_object exists and is not empty
+        // Iterate over each key-value pair in pluck_group_object
+        for (table_alias, fields) in &self.request_body.pluck_group_object {
+            // For each field in the fields vector, create a JSONB_AGG statement
+            for field in fields {
+                let selection = format!(
+                    "JSONB_AGG(\"{}\".\"{}\") AS \"{}_{}\"",
+                    table_alias,
+                    field,
+                    table_alias,
+                    field
+                );
+                selections.push(selection);
+            }
+        }
+        
+        // Join all selections with commas, or return empty string if no selections
+        if selections.is_empty() {
+            String::new()
+        } else {
+            selections.join(", ")
+        }
+    }
     fn construct_join_selections(&self) -> Vec<String> {
         let mut join_selections = Vec::new();
         
@@ -471,11 +514,15 @@ impl SQLConstructor {
         }
     }
     fn construct_group_by(&self) -> String {
-        if !self.request_body.group_by.is_empty() {
-            if let Some(first_key) = self.request_body.group_by.keys().next() {
-                format!(" GROUP BY {}", Self::get_field(&self.table, first_key, &self.request_body.date_format))
+        if !self.request_body.pluck_group_object.is_empty() {
+            if !self.request_body.group_by.is_empty() {
+                if let Some(first_key) = self.request_body.group_by.keys().next() {
+                    format!(" GROUP BY {}", Self::get_field(&self.table, first_key, &self.request_body.date_format))
+                } else {
+                    String::from("")
+                }
             } else {
-                String::from("")
+                format!(" GROUP BY {}", Self::get_field(&self.table, "id", &self.request_body.date_format))
             }
         } else {
             String::from("")

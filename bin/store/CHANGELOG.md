@@ -23,6 +23,7 @@ Eriberto
 - Added join selections
 - Added concatenation selections
 - Added date format wrapper
+- Added pluck group object as a string - and group by id will be set automatically due to aggregation.
   
 ### Changed
 - Revise get_by_filter validations to make it more restrictive and are separate as a module
