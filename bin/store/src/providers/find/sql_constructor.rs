@@ -29,9 +29,10 @@ impl SQLConstructor {
 
     pub fn construct(&self) -> Result<String, String> {
         let mut sql = String::from("SELECT ");
-
+        // TODO: suggestions for adding correct parameters
         // TODO: group by selections
             // TODO: concantenated fields
+            // TODO: pluck_group_object need to fix by jean
         sql.push_str(&self.construct_selections());
 
         sql.push_str(" FROM ");
@@ -104,9 +105,19 @@ impl SQLConstructor {
                 let join_condition = self.build_join_condition_for_alias(alias, join);
                 
                 // Build JSONB_BUILD_OBJECT field pairs
-                let field_pairs: Vec<String> = fields.iter()
+                let mut field_pairs: Vec<String> = fields.iter()
                     .map(|field| format!("'{}', \"{}\".\"{}\"" , field, alias, field))
                     .collect();
+
+                if !self.request_body.concatenate_fields.is_empty() {
+                    self.request_body.concatenate_fields.iter().for_each(|field| {
+                        let concatenated_expression = field.fields.iter()
+                              .map(|f| format!("COALESCE(\"{}\".\"{}\", '')", field.entity, f))
+                              .collect::<Vec<_>>()
+                              .join(&format!(" || '{}' || ", field.separator));
+                        field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
+                    });
+                }
                 
                 let selection = format!(
                     "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE (\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {}) AND {}), '[]') AS \"{}\"",
