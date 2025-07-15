@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "proto-generator": {
+      "command": "/Users/kashanalikhalid/Trae/crdt-workspace/target/release/mcp-proto-generator",
+      "args": []
+    }
+  }
+}
