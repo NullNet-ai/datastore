@@ -193,7 +193,12 @@ async fn apply_messages(
     });
 
     for (msg, existing_msg) in existing_messages {
-        if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp < msg.timestamp {
+        let should_apply = match &existing_msg {
+            None => true,
+            Some(existing) => existing.timestamp < msg.timestamp,
+        };
+
+        if should_apply {
             apply(&mut tx, &msg).await?;
         }
 

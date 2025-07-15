@@ -144,16 +144,19 @@ impl Table {
 
     pub fn pluck_fields(&self, record_value: &Value, pluck_fields: Vec<String>) -> Value {
         if !pluck_fields.is_empty() && record_value.is_object() {
-            let obj = record_value.as_object().unwrap();
-            let mut filtered = Map::new();
+            if let Some(obj) = record_value.as_object() {
+                let mut filtered = Map::new();
 
-            for field in pluck_fields {
-                if let Some(val) = obj.get(&field) {
-                    filtered.insert(field, val.clone());
+                for field in pluck_fields {
+                    if let Some(val) = obj.get(&field) {
+                        filtered.insert(field, val.clone());
+                    }
                 }
-            }
 
-            Value::Object(filtered)
+                Value::Object(filtered)
+            } else {
+                record_value.clone() // fallback: return original value
+            }
         } else {
             record_value.clone() // fallback: return original value
         }

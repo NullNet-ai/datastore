@@ -147,16 +147,14 @@ pub async fn register(
         .await
         .optional()?;
 
-    if existing_account.is_some() {
-        let existing_account = existing_account.unwrap();
-        if existing_account.id.is_none() {
-            return Err(ApiError::new(
+    if let Some(existing_account) = existing_account {
+        let account_id_value = existing_account.id.ok_or_else(|| {
+            ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Account exists but has no ID.",
             )
-            .into());
-        }
-        _account_id = existing_account.id.unwrap().clone();
+        })?;
+        _account_id = account_id_value.clone();
 
         // Check if organization is already existing
         let organization_id = params.organization_id.clone().unwrap_or_default();
@@ -272,7 +270,12 @@ pub async fn register(
         match async {
                 let user_id = if is_request { Ulid::new().to_string() } else { super_admin_id.clone() };
 
-                let team_organization_id= team_organization_id.unwrap();
+                let team_organization_id = team_organization_id.ok_or_else(|| {
+                    ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Team organization ID is required but not available.",
+                    )
+                })?;
                 // Create contact using ContactModel
                 let contact = ContactModel {
                     id: Some(user_id.clone()),
@@ -416,7 +419,12 @@ pub async fn register(
                     .await
                     .optional()?;
                     // Use new ULID if it's a request, otherwise use system_device_ulid
-                    let device_id_value = device_id.unwrap();
+                    let device_id_value = device_id.ok_or_else(|| {
+                        ApiError::new(
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Device ID is required but not available.",
+                        )
+                    })?;
                 let code = if devices_counter.is_some() {
                     utils::generate_code("devices").await?
                 } else {
@@ -519,14 +527,21 @@ pub async fn register(
 
             // Add device information if available
             if let Some(dev_id) = device_id {
-                let mut obj = result.as_object().unwrap().clone();
-                obj.insert("device_id".to_string(), Value::String(dev_id));
+                if let Some(obj) = result.as_object() {
+                    let mut obj = obj.clone();
+                    obj.insert("device_id".to_string(), Value::String(dev_id));
 
-                if let Some(code) = device_code {
-                    obj.insert("device_code".to_string(), Value::String(code));
+                    if let Some(code) = device_code {
+                        obj.insert("device_code".to_string(), Value::String(code));
+                    }
+
+                    result = Value::Object(obj);
+                } else {
+                    return Err(ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Expected JSON object but got different type when adding device information",
+                    ));
                 }
-
-                result = Value::Object(obj);
             }
 
             Ok(result)
@@ -580,7 +595,12 @@ pub async fn create_new_organization(
     };
 
     // Convert the model to a JSON Value for the sync_service
-    let organization_value = serde_json::to_value(organization).unwrap();
+    let organization_value = serde_json::to_value(organization).map_err(|e| {
+        DieselError::DatabaseError(
+            diesel::result::DatabaseErrorKind::SerializationFailure,
+            Box::new(format!("Failed to serialize organization: {}", e)),
+        )
+    })?;
 
     sync_service::insert(&"organizations".to_string(), organization_value).await?;
 
@@ -648,7 +668,7 @@ pub async fn create_account(
 
     // Create account profile using AccountProfileModel
 
-    if create_profile.unwrap() == true {
+    if create_profile.unwrap_or(true) {
         let account_profile = AccountProfileModel {
             id: Some(Ulid::new().to_string()),
             first_name: Some(first_name),

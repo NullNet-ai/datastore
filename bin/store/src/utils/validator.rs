@@ -21,13 +21,12 @@ pub fn error_check_permission(account_id: &str, role: Option<&str>) -> Option<Ap
         });
     }
 
-    if std::env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true" {
-        debug!(
+    if let Some(role_value) = role {
+        log::debug!(
             "As a Role {} ({}) has the necessary permissions to access this resource.",
-            role.unwrap(),
+            role_value,
             account_id
         );
     }
-
     None
 }

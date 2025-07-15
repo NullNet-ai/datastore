@@ -279,7 +279,13 @@ impl HttpTransportDriver {
     // }
 
     pub async fn post(&self, data: Value, opts: &PostOpts) -> Result<Value, Box<dyn Error>> {
-        log::debug!("Posting to {}", serde_json::to_string_pretty(opts).unwrap());
+        log::debug!(
+            "Posting to {}",
+            serde_json::to_string_pretty(opts).unwrap_or_else(|e| {
+                log::warn!("Failed to serialize PostOpts for logging: {}", e);
+                "<serialization failed>".to_string()
+            })
+        );
 
         let sync_endpoint = &opts.url;
         let username = &opts.username;
