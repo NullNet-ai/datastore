@@ -252,7 +252,7 @@ export class FindActorsImplementations {
           ) {
             pluck_object[sorted_entity] = [
               ...new Set([
-                ...pluck_object?.[sorted_entity],
+                ...(pluck_object?.[sorted_entity] || []),
                 ...(concat ? concat.fields : [field]),
               ]),
             ];
