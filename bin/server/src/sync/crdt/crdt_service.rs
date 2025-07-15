@@ -137,7 +137,10 @@ pub fn deserialize_value(value: &str) -> Result<serde_json::Value, String> {
         return Err("Empty value string".to_string());
     }
 
-    let type_char = value.chars().next().unwrap();
+    let type_char = match value.chars().next() {
+        Some(ch) => ch,
+        None => return Err("Invalid value format: no characters found".to_string()),
+    };
 
     match type_char {
         '0' => Ok(serde_json::Value::Null),
