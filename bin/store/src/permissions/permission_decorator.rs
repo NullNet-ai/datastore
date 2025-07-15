@@ -214,12 +214,10 @@ impl FromRequest for PermissionExtractor {
 
                 let session_unwrapped = session.unwrap();
 
-                println!("{:?}---------------------------host", host);
-                println!("{:?}---------------------------uri", uri);
-                println!("{:?}---------------------------headers", headers.get("user-agent"));
-                println!("{:?}---------------------------session", session_unwrapped);
-
-
+                // println!("{:?}---------------------------host", host);
+                // println!("{:?}---------------------------uri", uri);
+                // println!("{:?}---------------------------headers", headers.get("user-agent"));
+                // println!("{:?}---------------------------session", session_unwrapped);
 
                 let permissions_result = get_cached_permissions(
                     request_type,

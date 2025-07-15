@@ -23,7 +23,7 @@ use tokio::time::sleep;
 
 use super::transport::transport_driver::PostOpts;
 
-pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
+pub async fn insert(table: &String, mut row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
     let mut conn = db::get_async_connection().await;
 
@@ -74,6 +74,25 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
     let mut modified_row = row.clone();
     if let Some(obj) = modified_row.as_object_mut() {
         obj.insert("id".to_string(), Value::String(id.clone()));
+    }
+
+    if table == "connections" {
+        if let Some(obj) = modified_row.as_object_mut() {
+            // Create a new map with sync_status first
+            let mut new_obj = serde_json::Map::new();
+            new_obj.insert(
+                "sync_status".to_string(),
+                Value::String("consumed".to_string()),
+            );
+
+            // Add all existing fields after sync_status
+            for (key, value) in obj.iter() {
+                new_obj.insert(key.clone(), value.clone());
+            }
+
+            // Replace the original object
+            *obj = new_obj;
+        }
     }
 
     let messages: Vec<CrdtMessageModel> = conn

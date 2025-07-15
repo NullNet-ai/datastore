@@ -7,7 +7,7 @@ use once_cell::sync::OnceCell;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
-use tokio::time::{sleep, Duration};
+use tokio::time::{interval, sleep, Duration};
 use tokio_postgres::{Client, NoTls}; //
 
 static INSTANCE: OnceCell<Arc<PgListenerService>> = OnceCell::new();
@@ -95,6 +95,26 @@ impl PgListenerService {
                     info!("Stream drained, resuming channels");
                     if let Err(e) = service_clone.resume_all_channels().await {
                         error!("Failed to resume channels after drain: {}", e);
+                    }
+                }
+            }
+        });
+
+        // Set up periodic channel refresh (every 30 seconds)
+        let service_clone = service.clone();
+        tokio::spawn(async move {
+            let mut refresh_interval = interval(Duration::from_secs(30));
+            // Skip the first tick to avoid immediate refresh after startup
+            refresh_interval.tick().await;
+
+            loop {
+                refresh_interval.tick().await;
+
+                // Only refresh if the service is running and not paused
+                if *service_clone.is_running.lock().await && !service_clone.is_paused().await {
+                    info!("Performing periodic channel refresh...");
+                    if let Err(e) = service_clone.refresh_channels().await {
+                        error!("Failed to refresh channels during periodic refresh: {}", e);
                     }
                 }
             }
@@ -266,8 +286,14 @@ impl PgListenerService {
     /// Process a PostgreSQL notification through the token bucket
     async fn process_notification(&self, notification: tokio_postgres::Notification) {
         // Create a message from the notification payload
-        let message = Message(notification.payload().to_string());
-
+        let message = match serde_json::from_str::<serde_json::Value>(notification.payload()) {
+            Ok(parsed_json) => Message(parsed_json),
+            Err(e) => {
+                log::error!("Failed to parse notification payload as JSON: {}", e);
+                // Fallback to string if parsing fails
+                Message(notification.payload().into())
+            }
+        };
         // Send the message to the token bucket
         self.main_stream.receive_message(message).await;
 

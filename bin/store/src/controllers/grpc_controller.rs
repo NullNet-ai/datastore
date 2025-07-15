@@ -1,25 +1,286 @@
+use super::common_controller::{
+    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,
+    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
+    process_record_for_insert, process_record_for_update, process_records, sanitize_updates,
+};
 use crate::db::create_connection;
-use actix_web::{HttpResponse, Responder, web};
-use std::pin::Pin;
-use std::net::SocketAddr;
+use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
+use crate::generated::store::{
+    AccountOrganizations, AccountProfiles, Accounts, Addresses, AppFirewalls, AppguardLogs,
+    BatchDeleteAccountOrganizationsRequest, BatchDeleteAccountOrganizationsResponse,
+    BatchDeleteAccountProfilesRequest, BatchDeleteAccountProfilesResponse,
+    BatchDeleteAccountsRequest, BatchDeleteAccountsResponse, BatchDeleteAddressesRequest,
+    BatchDeleteAddressesResponse, BatchDeleteAppFirewallsRequest, BatchDeleteAppFirewallsResponse,
+    BatchDeleteAppguardLogsRequest, BatchDeleteAppguardLogsResponse, BatchDeleteConnectionsRequest,
+    BatchDeleteConnectionsResponse, BatchDeleteContactEmailsRequest,
+    BatchDeleteContactEmailsResponse, BatchDeleteContactPhoneNumbersRequest,
+    BatchDeleteContactPhoneNumbersResponse, BatchDeleteContactsRequest,
+    BatchDeleteContactsResponse, BatchDeleteDeviceAliasesRequest, BatchDeleteDeviceAliasesResponse,
+    BatchDeleteDeviceConfigurationsRequest, BatchDeleteDeviceConfigurationsResponse,
+    BatchDeleteDeviceGroupSettingsRequest, BatchDeleteDeviceGroupSettingsResponse,
+    BatchDeleteDeviceInterfaceAddressesRequest, BatchDeleteDeviceInterfaceAddressesResponse,
+    BatchDeleteDeviceInterfacesRequest, BatchDeleteDeviceInterfacesResponse,
+    BatchDeleteDeviceRemoteAccessSessionsRequest, BatchDeleteDeviceRemoteAccessSessionsResponse,
+    BatchDeleteDeviceRulesRequest, BatchDeleteDeviceRulesResponse, BatchDeleteDeviceSshKeysRequest,
+    BatchDeleteDeviceSshKeysResponse, BatchDeleteDevicesRequest, BatchDeleteDevicesResponse,
+    BatchDeleteExternalContactsRequest, BatchDeleteExternalContactsResponse,
+    BatchDeleteIpInfosRequest, BatchDeleteIpInfosResponse, BatchDeleteOrganizationAccountsRequest,
+    BatchDeleteOrganizationAccountsResponse, BatchDeleteOrganizationContactsRequest,
+    BatchDeleteOrganizationContactsResponse, BatchDeleteOrganizationsRequest,
+    BatchDeleteOrganizationsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse,
+    BatchDeletePostgresChannelsRequest, BatchDeletePostgresChannelsResponse,
+    BatchDeleteResolutionsRequest, BatchDeleteResolutionsResponse, BatchDeleteSamplesRequest,
+    BatchDeleteSamplesResponse, BatchDeleteTempAppguardLogsRequest,
+    BatchDeleteTempAppguardLogsResponse, BatchDeleteTempConnectionsRequest,
+    BatchDeleteTempConnectionsResponse, BatchDeleteTempDeviceAliasesRequest,
+    BatchDeleteTempDeviceAliasesResponse, BatchDeleteTempDeviceInterfaceAddressesRequest,
+    BatchDeleteTempDeviceInterfaceAddressesResponse, BatchDeleteTempDeviceInterfacesRequest,
+    BatchDeleteTempDeviceInterfacesResponse, BatchDeleteTempDeviceRemoteAccessSessionsRequest,
+    BatchDeleteTempDeviceRemoteAccessSessionsResponse, BatchDeleteTempDeviceRulesRequest,
+    BatchDeleteTempDeviceRulesResponse, BatchDeleteTempPacketsRequest,
+    BatchDeleteTempPacketsResponse, BatchDeleteTempWallguardLogsRequest,
+    BatchDeleteTempWallguardLogsResponse, BatchDeleteWallguardLogsRequest,
+    BatchDeleteWallguardLogsResponse, BatchInsertAccountOrganizationsRequest,
+    BatchInsertAccountOrganizationsResponse, BatchInsertAccountProfilesRequest,
+    BatchInsertAccountProfilesResponse, BatchInsertAccountsRequest, BatchInsertAccountsResponse,
+    BatchInsertAddressesRequest, BatchInsertAddressesResponse, BatchInsertAppFirewallsRequest,
+    BatchInsertAppFirewallsResponse, BatchInsertAppguardLogsRequest,
+    BatchInsertAppguardLogsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse,
+    BatchInsertContactEmailsRequest, BatchInsertContactEmailsResponse,
+    BatchInsertContactPhoneNumbersRequest, BatchInsertContactPhoneNumbersResponse,
+    BatchInsertContactsRequest, BatchInsertContactsResponse, BatchInsertDeviceAliasesRequest,
+    BatchInsertDeviceAliasesResponse, BatchInsertDeviceConfigurationsRequest,
+    BatchInsertDeviceConfigurationsResponse, BatchInsertDeviceGroupSettingsRequest,
+    BatchInsertDeviceGroupSettingsResponse, BatchInsertDeviceInterfaceAddressesRequest,
+    BatchInsertDeviceInterfaceAddressesResponse, BatchInsertDeviceInterfacesRequest,
+    BatchInsertDeviceInterfacesResponse, BatchInsertDeviceRemoteAccessSessionsRequest,
+    BatchInsertDeviceRemoteAccessSessionsResponse, BatchInsertDeviceRulesRequest,
+    BatchInsertDeviceRulesResponse, BatchInsertDeviceSshKeysRequest,
+    BatchInsertDeviceSshKeysResponse, BatchInsertDevicesRequest, BatchInsertDevicesResponse,
+    BatchInsertExternalContactsRequest, BatchInsertExternalContactsResponse,
+    BatchInsertIpInfosRequest, BatchInsertIpInfosResponse, BatchInsertOrganizationAccountsRequest,
+    BatchInsertOrganizationAccountsResponse, BatchInsertOrganizationContactsRequest,
+    BatchInsertOrganizationContactsResponse, BatchInsertOrganizationsRequest,
+    BatchInsertOrganizationsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse,
+    BatchInsertPostgresChannelsRequest, BatchInsertPostgresChannelsResponse,
+    BatchInsertResolutionsRequest, BatchInsertResolutionsResponse, BatchInsertSamplesRequest,
+    BatchInsertSamplesResponse, BatchInsertTempAppguardLogsRequest,
+    BatchInsertTempAppguardLogsResponse, BatchInsertTempConnectionsRequest,
+    BatchInsertTempConnectionsResponse, BatchInsertTempDeviceAliasesRequest,
+    BatchInsertTempDeviceAliasesResponse, BatchInsertTempDeviceInterfaceAddressesRequest,
+    BatchInsertTempDeviceInterfaceAddressesResponse, BatchInsertTempDeviceInterfacesRequest,
+    BatchInsertTempDeviceInterfacesResponse, BatchInsertTempDeviceRemoteAccessSessionsRequest,
+    BatchInsertTempDeviceRemoteAccessSessionsResponse, BatchInsertTempDeviceRulesRequest,
+    BatchInsertTempDeviceRulesResponse, BatchInsertTempPacketsRequest,
+    BatchInsertTempPacketsResponse, BatchInsertTempWallguardLogsRequest,
+    BatchInsertTempWallguardLogsResponse, BatchInsertWallguardLogsRequest,
+    BatchInsertWallguardLogsResponse, BatchUpdateAccountOrganizationsRequest,
+    BatchUpdateAccountOrganizationsResponse, BatchUpdateAccountProfilesRequest,
+    BatchUpdateAccountProfilesResponse, BatchUpdateAccountsRequest, BatchUpdateAccountsResponse,
+    BatchUpdateAddressesRequest, BatchUpdateAddressesResponse, BatchUpdateAppFirewallsRequest,
+    BatchUpdateAppFirewallsResponse, BatchUpdateAppguardLogsRequest,
+    BatchUpdateAppguardLogsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse,
+    BatchUpdateContactEmailsRequest, BatchUpdateContactEmailsResponse,
+    BatchUpdateContactPhoneNumbersRequest, BatchUpdateContactPhoneNumbersResponse,
+    BatchUpdateContactsRequest, BatchUpdateContactsResponse, BatchUpdateDeviceAliasesRequest,
+    BatchUpdateDeviceAliasesResponse, BatchUpdateDeviceConfigurationsRequest,
+    BatchUpdateDeviceConfigurationsResponse, BatchUpdateDeviceGroupSettingsRequest,
+    BatchUpdateDeviceGroupSettingsResponse, BatchUpdateDeviceInterfaceAddressesRequest,
+    BatchUpdateDeviceInterfaceAddressesResponse, BatchUpdateDeviceInterfacesRequest,
+    BatchUpdateDeviceInterfacesResponse, BatchUpdateDeviceRemoteAccessSessionsRequest,
+    BatchUpdateDeviceRemoteAccessSessionsResponse, BatchUpdateDeviceRulesRequest,
+    BatchUpdateDeviceRulesResponse, BatchUpdateDeviceSshKeysRequest,
+    BatchUpdateDeviceSshKeysResponse, BatchUpdateDevicesRequest, BatchUpdateDevicesResponse,
+    BatchUpdateExternalContactsRequest, BatchUpdateExternalContactsResponse,
+    BatchUpdateIpInfosRequest, BatchUpdateIpInfosResponse, BatchUpdateOrganizationAccountsRequest,
+    BatchUpdateOrganizationAccountsResponse, BatchUpdateOrganizationContactsRequest,
+    BatchUpdateOrganizationContactsResponse, BatchUpdateOrganizationsRequest,
+    BatchUpdateOrganizationsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse,
+    BatchUpdatePostgresChannelsRequest, BatchUpdatePostgresChannelsResponse,
+    BatchUpdateResolutionsRequest, BatchUpdateResolutionsResponse, BatchUpdateSamplesRequest,
+    BatchUpdateSamplesResponse, BatchUpdateTempAppguardLogsRequest,
+    BatchUpdateTempAppguardLogsResponse, BatchUpdateTempConnectionsRequest,
+    BatchUpdateTempConnectionsResponse, BatchUpdateTempDeviceAliasesRequest,
+    BatchUpdateTempDeviceAliasesResponse, BatchUpdateTempDeviceInterfaceAddressesRequest,
+    BatchUpdateTempDeviceInterfaceAddressesResponse, BatchUpdateTempDeviceInterfacesRequest,
+    BatchUpdateTempDeviceInterfacesResponse, BatchUpdateTempDeviceRemoteAccessSessionsRequest,
+    BatchUpdateTempDeviceRemoteAccessSessionsResponse, BatchUpdateTempDeviceRulesRequest,
+    BatchUpdateTempDeviceRulesResponse, BatchUpdateTempPacketsRequest,
+    BatchUpdateTempPacketsResponse, BatchUpdateTempWallguardLogsRequest,
+    BatchUpdateTempWallguardLogsResponse, BatchUpdateWallguardLogsRequest,
+    BatchUpdateWallguardLogsResponse, Connections, ContactEmails, ContactPhoneNumbers, Contacts,
+    CreateAccountOrganizationsRequest, CreateAccountOrganizationsResponse,
+    CreateAccountProfilesRequest, CreateAccountProfilesResponse, CreateAccountsRequest,
+    CreateAccountsResponse, CreateAddressesRequest, CreateAddressesResponse,
+    CreateAppFirewallsRequest, CreateAppFirewallsResponse, CreateAppguardLogsRequest,
+    CreateAppguardLogsResponse, CreateConnectionsRequest, CreateConnectionsResponse,
+    CreateContactEmailsRequest, CreateContactEmailsResponse, CreateContactPhoneNumbersRequest,
+    CreateContactPhoneNumbersResponse, CreateContactsRequest, CreateContactsResponse,
+    CreateDeviceAliasesRequest, CreateDeviceAliasesResponse, CreateDeviceConfigurationsRequest,
+    CreateDeviceConfigurationsResponse, CreateDeviceGroupSettingsRequest,
+    CreateDeviceGroupSettingsResponse, CreateDeviceInterfaceAddressesRequest,
+    CreateDeviceInterfaceAddressesResponse, CreateDeviceInterfacesRequest,
+    CreateDeviceInterfacesResponse, CreateDeviceRemoteAccessSessionsRequest,
+    CreateDeviceRemoteAccessSessionsResponse, CreateDeviceRulesRequest, CreateDeviceRulesResponse,
+    CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, CreateDevicesRequest,
+    CreateDevicesResponse, CreateExternalContactsRequest, CreateExternalContactsResponse,
+    CreateIpInfosRequest, CreateIpInfosResponse, CreateOrganizationAccountsRequest,
+    CreateOrganizationAccountsResponse, CreateOrganizationContactsRequest,
+    CreateOrganizationContactsResponse, CreateOrganizationsRequest, CreateOrganizationsResponse,
+    CreatePacketsRequest, CreatePacketsResponse, CreatePostgresChannelsRequest,
+    CreatePostgresChannelsResponse, CreateResolutionsRequest, CreateResolutionsResponse,
+    CreateSamplesRequest, CreateSamplesResponse, CreateTempAppguardLogsRequest,
+    CreateTempAppguardLogsResponse, CreateTempConnectionsRequest, CreateTempConnectionsResponse,
+    CreateTempDeviceAliasesRequest, CreateTempDeviceAliasesResponse,
+    CreateTempDeviceInterfaceAddressesRequest, CreateTempDeviceInterfaceAddressesResponse,
+    CreateTempDeviceInterfacesRequest, CreateTempDeviceInterfacesResponse,
+    CreateTempDeviceRemoteAccessSessionsRequest, CreateTempDeviceRemoteAccessSessionsResponse,
+    CreateTempDeviceRulesRequest, CreateTempDeviceRulesResponse, CreateTempPacketsRequest,
+    CreateTempPacketsResponse, CreateTempWallguardLogsRequest, CreateTempWallguardLogsResponse,
+    CreateWallguardLogsRequest, CreateWallguardLogsResponse, DeleteAccountOrganizationsRequest,
+    DeleteAccountOrganizationsResponse, DeleteAccountProfilesRequest,
+    DeleteAccountProfilesResponse, DeleteAccountsRequest, DeleteAccountsResponse,
+    DeleteAddressesRequest, DeleteAddressesResponse, DeleteAppFirewallsRequest,
+    DeleteAppFirewallsResponse, DeleteAppguardLogsRequest, DeleteAppguardLogsResponse,
+    DeleteConnectionsRequest, DeleteConnectionsResponse, DeleteContactEmailsRequest,
+    DeleteContactEmailsResponse, DeleteContactPhoneNumbersRequest,
+    DeleteContactPhoneNumbersResponse, DeleteContactsRequest, DeleteContactsResponse,
+    DeleteDeviceAliasesRequest, DeleteDeviceAliasesResponse, DeleteDeviceConfigurationsRequest,
+    DeleteDeviceConfigurationsResponse, DeleteDeviceGroupSettingsRequest,
+    DeleteDeviceGroupSettingsResponse, DeleteDeviceInterfaceAddressesRequest,
+    DeleteDeviceInterfaceAddressesResponse, DeleteDeviceInterfacesRequest,
+    DeleteDeviceInterfacesResponse, DeleteDeviceRemoteAccessSessionsRequest,
+    DeleteDeviceRemoteAccessSessionsResponse, DeleteDeviceRulesRequest, DeleteDeviceRulesResponse,
+    DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, DeleteDevicesRequest,
+    DeleteDevicesResponse, DeleteExternalContactsRequest, DeleteExternalContactsResponse,
+    DeleteIpInfosRequest, DeleteIpInfosResponse, DeleteOrganizationAccountsRequest,
+    DeleteOrganizationAccountsResponse, DeleteOrganizationContactsRequest,
+    DeleteOrganizationContactsResponse, DeleteOrganizationsRequest, DeleteOrganizationsResponse,
+    DeletePacketsRequest, DeletePacketsResponse, DeletePostgresChannelsRequest,
+    DeletePostgresChannelsResponse, DeleteResolutionsRequest, DeleteResolutionsResponse,
+    DeleteSamplesRequest, DeleteSamplesResponse, DeleteTempAppguardLogsRequest,
+    DeleteTempAppguardLogsResponse, DeleteTempConnectionsRequest, DeleteTempConnectionsResponse,
+    DeleteTempDeviceAliasesRequest, DeleteTempDeviceAliasesResponse,
+    DeleteTempDeviceInterfaceAddressesRequest, DeleteTempDeviceInterfaceAddressesResponse,
+    DeleteTempDeviceInterfacesRequest, DeleteTempDeviceInterfacesResponse,
+    DeleteTempDeviceRemoteAccessSessionsRequest, DeleteTempDeviceRemoteAccessSessionsResponse,
+    DeleteTempDeviceRulesRequest, DeleteTempDeviceRulesResponse, DeleteTempPacketsRequest,
+    DeleteTempPacketsResponse, DeleteTempWallguardLogsRequest, DeleteTempWallguardLogsResponse,
+    DeleteWallguardLogsRequest, DeleteWallguardLogsResponse, DeviceAliases, DeviceConfigurations,
+    DeviceGroupSettings, DeviceInterfaceAddresses, DeviceInterfaces, DeviceRemoteAccessSessions,
+    DeviceRules, DeviceSshKeys, Devices, ExternalContacts, GetAccountOrganizationsRequest,
+    GetAccountOrganizationsResponse, GetAccountProfilesRequest, GetAccountProfilesResponse,
+    GetAccountsRequest, GetAccountsResponse, GetAddressesRequest, GetAddressesResponse,
+    GetAppFirewallsRequest, GetAppFirewallsResponse, GetAppguardLogsRequest,
+    GetAppguardLogsResponse, GetConnectionsRequest, GetConnectionsResponse,
+    GetContactEmailsRequest, GetContactEmailsResponse, GetContactPhoneNumbersRequest,
+    GetContactPhoneNumbersResponse, GetContactsRequest, GetContactsResponse,
+    GetDeviceAliasesRequest, GetDeviceAliasesResponse, GetDeviceConfigurationsRequest,
+    GetDeviceConfigurationsResponse, GetDeviceGroupSettingsRequest, GetDeviceGroupSettingsResponse,
+    GetDeviceInterfaceAddressesRequest, GetDeviceInterfaceAddressesResponse,
+    GetDeviceInterfacesRequest, GetDeviceInterfacesResponse, GetDeviceRemoteAccessSessionsRequest,
+    GetDeviceRemoteAccessSessionsResponse, GetDeviceRulesRequest, GetDeviceRulesResponse,
+    GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, GetDevicesRequest, GetDevicesResponse,
+    GetExternalContactsRequest, GetExternalContactsResponse, GetIpInfosRequest, GetIpInfosResponse,
+    GetOrganizationAccountsRequest, GetOrganizationAccountsResponse,
+    GetOrganizationContactsRequest, GetOrganizationContactsResponse, GetOrganizationsRequest,
+    GetOrganizationsResponse, GetPacketsRequest, GetPacketsResponse, GetPostgresChannelsRequest,
+    GetPostgresChannelsResponse, GetResolutionsRequest, GetResolutionsResponse, GetSamplesRequest,
+    GetSamplesResponse, GetTempAppguardLogsRequest, GetTempAppguardLogsResponse,
+    GetTempConnectionsRequest, GetTempConnectionsResponse, GetTempDeviceAliasesRequest,
+    GetTempDeviceAliasesResponse, GetTempDeviceInterfaceAddressesRequest,
+    GetTempDeviceInterfaceAddressesResponse, GetTempDeviceInterfacesRequest,
+    GetTempDeviceInterfacesResponse, GetTempDeviceRemoteAccessSessionsRequest,
+    GetTempDeviceRemoteAccessSessionsResponse, GetTempDeviceRulesRequest,
+    GetTempDeviceRulesResponse, GetTempPacketsRequest, GetTempPacketsResponse,
+    GetTempWallguardLogsRequest, GetTempWallguardLogsResponse, GetWallguardLogsRequest,
+    GetWallguardLogsResponse, IpInfos, OrganizationAccounts, OrganizationContacts, Organizations,
+    Packets, PostgresChannels, Resolutions, Samples, TempAppguardLogs, TempConnections,
+    TempDeviceAliases, TempDeviceInterfaceAddresses, TempDeviceInterfaces,
+    TempDeviceRemoteAccessSessions, TempDeviceRules, TempPackets, TempWallguardLogs,
+    UpdateAccountOrganizationsRequest, UpdateAccountOrganizationsResponse,
+    UpdateAccountProfilesRequest, UpdateAccountProfilesResponse, UpdateAccountsRequest,
+    UpdateAccountsResponse, UpdateAddressesRequest, UpdateAddressesResponse,
+    UpdateAppFirewallsRequest, UpdateAppFirewallsResponse, UpdateAppguardLogsRequest,
+    UpdateAppguardLogsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse,
+    UpdateContactEmailsRequest, UpdateContactEmailsResponse, UpdateContactPhoneNumbersRequest,
+    UpdateContactPhoneNumbersResponse, UpdateContactsRequest, UpdateContactsResponse,
+    UpdateDeviceAliasesRequest, UpdateDeviceAliasesResponse, UpdateDeviceConfigurationsRequest,
+    UpdateDeviceConfigurationsResponse, UpdateDeviceGroupSettingsRequest,
+    UpdateDeviceGroupSettingsResponse, UpdateDeviceInterfaceAddressesRequest,
+    UpdateDeviceInterfaceAddressesResponse, UpdateDeviceInterfacesRequest,
+    UpdateDeviceInterfacesResponse, UpdateDeviceRemoteAccessSessionsRequest,
+    UpdateDeviceRemoteAccessSessionsResponse, UpdateDeviceRulesRequest, UpdateDeviceRulesResponse,
+    UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, UpdateDevicesRequest,
+    UpdateDevicesResponse, UpdateExternalContactsRequest, UpdateExternalContactsResponse,
+    UpdateIpInfosRequest, UpdateIpInfosResponse, UpdateOrganizationAccountsRequest,
+    UpdateOrganizationAccountsResponse, UpdateOrganizationContactsRequest,
+    UpdateOrganizationContactsResponse, UpdateOrganizationsRequest, UpdateOrganizationsResponse,
+    UpdatePacketsRequest, UpdatePacketsResponse, UpdatePostgresChannelsRequest,
+    UpdatePostgresChannelsResponse, UpdateResolutionsRequest, UpdateResolutionsResponse,
+    UpdateSamplesRequest, UpdateSamplesResponse, UpdateTempAppguardLogsRequest,
+    UpdateTempAppguardLogsResponse, UpdateTempConnectionsRequest, UpdateTempConnectionsResponse,
+    UpdateTempDeviceAliasesRequest, UpdateTempDeviceAliasesResponse,
+    UpdateTempDeviceInterfaceAddressesRequest, UpdateTempDeviceInterfaceAddressesResponse,
+    UpdateTempDeviceInterfacesRequest, UpdateTempDeviceInterfacesResponse,
+    UpdateTempDeviceRemoteAccessSessionsRequest, UpdateTempDeviceRemoteAccessSessionsResponse,
+    UpdateTempDeviceRulesRequest, UpdateTempDeviceRulesResponse, UpdateTempPacketsRequest,
+    UpdateTempPacketsResponse, UpdateTempWallguardLogsRequest, UpdateTempWallguardLogsResponse,
+    UpdateWallguardLogsRequest, UpdateWallguardLogsResponse, UpsertAccountOrganizationsRequest,
+    UpsertAccountOrganizationsResponse, UpsertAccountProfilesRequest,
+    UpsertAccountProfilesResponse, UpsertAccountsRequest, UpsertAccountsResponse,
+    UpsertAddressesRequest, UpsertAddressesResponse, UpsertAppFirewallsRequest,
+    UpsertAppFirewallsResponse, UpsertAppguardLogsRequest, UpsertAppguardLogsResponse,
+    UpsertConnectionsRequest, UpsertConnectionsResponse, UpsertContactEmailsRequest,
+    UpsertContactEmailsResponse, UpsertContactPhoneNumbersRequest,
+    UpsertContactPhoneNumbersResponse, UpsertContactsRequest, UpsertContactsResponse,
+    UpsertDeviceAliasesRequest, UpsertDeviceAliasesResponse, UpsertDeviceConfigurationsRequest,
+    UpsertDeviceConfigurationsResponse, UpsertDeviceGroupSettingsRequest,
+    UpsertDeviceGroupSettingsResponse, UpsertDeviceInterfaceAddressesRequest,
+    UpsertDeviceInterfaceAddressesResponse, UpsertDeviceInterfacesRequest,
+    UpsertDeviceInterfacesResponse, UpsertDeviceRemoteAccessSessionsRequest,
+    UpsertDeviceRemoteAccessSessionsResponse, UpsertDeviceRulesRequest, UpsertDeviceRulesResponse,
+    UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse, UpsertDevicesRequest,
+    UpsertDevicesResponse, UpsertExternalContactsRequest, UpsertExternalContactsResponse,
+    UpsertIpInfosRequest, UpsertIpInfosResponse, UpsertOrganizationAccountsRequest,
+    UpsertOrganizationAccountsResponse, UpsertOrganizationContactsRequest,
+    UpsertOrganizationContactsResponse, UpsertOrganizationsRequest, UpsertOrganizationsResponse,
+    UpsertPacketsRequest, UpsertPacketsResponse, UpsertPostgresChannelsRequest,
+    UpsertPostgresChannelsResponse, UpsertResolutionsRequest, UpsertResolutionsResponse,
+    UpsertSamplesRequest, UpsertSamplesResponse, UpsertTempAppguardLogsRequest,
+    UpsertTempAppguardLogsResponse, UpsertTempConnectionsRequest, UpsertTempConnectionsResponse,
+    UpsertTempDeviceAliasesRequest, UpsertTempDeviceAliasesResponse,
+    UpsertTempDeviceInterfaceAddressesRequest, UpsertTempDeviceInterfaceAddressesResponse,
+    UpsertTempDeviceInterfacesRequest, UpsertTempDeviceInterfacesResponse,
+    UpsertTempDeviceRemoteAccessSessionsRequest, UpsertTempDeviceRemoteAccessSessionsResponse,
+    UpsertTempDeviceRulesRequest, UpsertTempDeviceRulesResponse, UpsertTempPacketsRequest,
+    UpsertTempPacketsResponse, UpsertTempWallguardLogsRequest, UpsertTempWallguardLogsResponse,
+    UpsertWallguardLogsRequest, UpsertWallguardLogsResponse, WallguardLogs,
+};
+use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
+use crate::middlewares::interceptor_chain::InterceptorChain;
+use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
+use crate::structs::structs::Auth;
+use crate::structs::structs::RequestBody;
+use crate::sync::sync_service::{insert, update};
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
-use crate::sync::sync_service::{insert, update};
-use crate::structs::structs::Auth;
+use crate::{
+    generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method,
+    generate_create_method, generate_delete_method, generate_get_method, generate_update_method,
+    generate_upsert_method,
+};
+use actix_web::{web, HttpResponse, Responder};
 use serde_json::Value;
-use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
-use crate::middlewares::interceptor_chain::InterceptorChain;
-use crate::structs::structs::RequestBody;
-use tonic::{Request, Response, Status, transport::Server};
-use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
-use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id};
-use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
-use crate::{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method};
-use crate::generated::store::{ExternalContacts, CreateExternalContactsRequest, CreateExternalContactsResponse, GetExternalContactsRequest, GetExternalContactsResponse, UpdateExternalContactsRequest, UpdateExternalContactsResponse, DeleteExternalContactsRequest, DeleteExternalContactsResponse, BatchInsertExternalContactsRequest, BatchInsertExternalContactsResponse, BatchUpdateExternalContactsRequest, BatchUpdateExternalContactsResponse, BatchDeleteExternalContactsRequest, BatchDeleteExternalContactsResponse, UpsertExternalContactsRequest, UpsertExternalContactsResponse, Organizations, CreateOrganizationsRequest, CreateOrganizationsResponse, GetOrganizationsRequest, GetOrganizationsResponse, UpdateOrganizationsRequest, UpdateOrganizationsResponse, DeleteOrganizationsRequest, DeleteOrganizationsResponse, BatchInsertOrganizationsRequest, BatchInsertOrganizationsResponse, BatchUpdateOrganizationsRequest, BatchUpdateOrganizationsResponse, BatchDeleteOrganizationsRequest, BatchDeleteOrganizationsResponse, UpsertOrganizationsRequest, UpsertOrganizationsResponse, OrganizationContacts, CreateOrganizationContactsRequest, CreateOrganizationContactsResponse, GetOrganizationContactsRequest, GetOrganizationContactsResponse, UpdateOrganizationContactsRequest, UpdateOrganizationContactsResponse, DeleteOrganizationContactsRequest, DeleteOrganizationContactsResponse, BatchInsertOrganizationContactsRequest, BatchInsertOrganizationContactsResponse, BatchUpdateOrganizationContactsRequest, BatchUpdateOrganizationContactsResponse, BatchDeleteOrganizationContactsRequest, BatchDeleteOrganizationContactsResponse, UpsertOrganizationContactsRequest, UpsertOrganizationContactsResponse, OrganizationAccounts, CreateOrganizationAccountsRequest, CreateOrganizationAccountsResponse, GetOrganizationAccountsRequest, GetOrganizationAccountsResponse, UpdateOrganizationAccountsRequest, UpdateOrganizationAccountsResponse, DeleteOrganizationAccountsRequest, DeleteOrganizationAccountsResponse, BatchInsertOrganizationAccountsRequest, BatchInsertOrganizationAccountsResponse, BatchUpdateOrganizationAccountsRequest, BatchUpdateOrganizationAccountsResponse, BatchDeleteOrganizationAccountsRequest, BatchDeleteOrganizationAccountsResponse, UpsertOrganizationAccountsRequest, UpsertOrganizationAccountsResponse, AccountOrganizations, CreateAccountOrganizationsRequest, CreateAccountOrganizationsResponse, GetAccountOrganizationsRequest, GetAccountOrganizationsResponse, UpdateAccountOrganizationsRequest, UpdateAccountOrganizationsResponse, DeleteAccountOrganizationsRequest, DeleteAccountOrganizationsResponse, BatchInsertAccountOrganizationsRequest, BatchInsertAccountOrganizationsResponse, BatchUpdateAccountOrganizationsRequest, BatchUpdateAccountOrganizationsResponse, BatchDeleteAccountOrganizationsRequest, BatchDeleteAccountOrganizationsResponse, UpsertAccountOrganizationsRequest, UpsertAccountOrganizationsResponse, AccountProfiles, CreateAccountProfilesRequest, CreateAccountProfilesResponse, GetAccountProfilesRequest, GetAccountProfilesResponse, UpdateAccountProfilesRequest, UpdateAccountProfilesResponse, DeleteAccountProfilesRequest, DeleteAccountProfilesResponse, BatchInsertAccountProfilesRequest, BatchInsertAccountProfilesResponse, BatchUpdateAccountProfilesRequest, BatchUpdateAccountProfilesResponse, BatchDeleteAccountProfilesRequest, BatchDeleteAccountProfilesResponse, UpsertAccountProfilesRequest, UpsertAccountProfilesResponse, Accounts, CreateAccountsRequest, CreateAccountsResponse, GetAccountsRequest, GetAccountsResponse, UpdateAccountsRequest, UpdateAccountsResponse, DeleteAccountsRequest, DeleteAccountsResponse, BatchInsertAccountsRequest, BatchInsertAccountsResponse, BatchUpdateAccountsRequest, BatchUpdateAccountsResponse, BatchDeleteAccountsRequest, BatchDeleteAccountsResponse, UpsertAccountsRequest, UpsertAccountsResponse, Addresses, CreateAddressesRequest, CreateAddressesResponse, GetAddressesRequest, GetAddressesResponse, UpdateAddressesRequest, UpdateAddressesResponse, DeleteAddressesRequest, DeleteAddressesResponse, BatchInsertAddressesRequest, BatchInsertAddressesResponse, BatchUpdateAddressesRequest, BatchUpdateAddressesResponse, BatchDeleteAddressesRequest, BatchDeleteAddressesResponse, UpsertAddressesRequest, UpsertAddressesResponse, Samples, CreateSamplesRequest, CreateSamplesResponse, GetSamplesRequest, GetSamplesResponse, UpdateSamplesRequest, UpdateSamplesResponse, DeleteSamplesRequest, DeleteSamplesResponse, BatchInsertSamplesRequest, BatchInsertSamplesResponse, BatchUpdateSamplesRequest, BatchUpdateSamplesResponse, BatchDeleteSamplesRequest, BatchDeleteSamplesResponse, UpsertSamplesRequest, UpsertSamplesResponse, AppFirewalls, CreateAppFirewallsRequest, CreateAppFirewallsResponse, GetAppFirewallsRequest, GetAppFirewallsResponse, UpdateAppFirewallsRequest, UpdateAppFirewallsResponse, DeleteAppFirewallsRequest, DeleteAppFirewallsResponse, BatchInsertAppFirewallsRequest, BatchInsertAppFirewallsResponse, BatchUpdateAppFirewallsRequest, BatchUpdateAppFirewallsResponse, BatchDeleteAppFirewallsRequest, BatchDeleteAppFirewallsResponse, UpsertAppFirewallsRequest, UpsertAppFirewallsResponse, AppguardLogs, CreateAppguardLogsRequest, CreateAppguardLogsResponse, GetAppguardLogsRequest, GetAppguardLogsResponse, UpdateAppguardLogsRequest, UpdateAppguardLogsResponse, DeleteAppguardLogsRequest, DeleteAppguardLogsResponse, BatchInsertAppguardLogsRequest, BatchInsertAppguardLogsResponse, BatchUpdateAppguardLogsRequest, BatchUpdateAppguardLogsResponse, BatchDeleteAppguardLogsRequest, BatchDeleteAppguardLogsResponse, UpsertAppguardLogsRequest, UpsertAppguardLogsResponse, TempAppguardLogs, CreateTempAppguardLogsRequest, CreateTempAppguardLogsResponse, GetTempAppguardLogsRequest, GetTempAppguardLogsResponse, UpdateTempAppguardLogsRequest, UpdateTempAppguardLogsResponse, DeleteTempAppguardLogsRequest, DeleteTempAppguardLogsResponse, BatchInsertTempAppguardLogsRequest, BatchInsertTempAppguardLogsResponse, BatchUpdateTempAppguardLogsRequest, BatchUpdateTempAppguardLogsResponse, BatchDeleteTempAppguardLogsRequest, BatchDeleteTempAppguardLogsResponse, UpsertTempAppguardLogsRequest, UpsertTempAppguardLogsResponse, DeviceAliases, CreateDeviceAliasesRequest, CreateDeviceAliasesResponse, GetDeviceAliasesRequest, GetDeviceAliasesResponse, UpdateDeviceAliasesRequest, UpdateDeviceAliasesResponse, DeleteDeviceAliasesRequest, DeleteDeviceAliasesResponse, BatchInsertDeviceAliasesRequest, BatchInsertDeviceAliasesResponse, BatchUpdateDeviceAliasesRequest, BatchUpdateDeviceAliasesResponse, BatchDeleteDeviceAliasesRequest, BatchDeleteDeviceAliasesResponse, UpsertDeviceAliasesRequest, UpsertDeviceAliasesResponse, TempDeviceAliases, CreateTempDeviceAliasesRequest, CreateTempDeviceAliasesResponse, GetTempDeviceAliasesRequest, GetTempDeviceAliasesResponse, UpdateTempDeviceAliasesRequest, UpdateTempDeviceAliasesResponse, DeleteTempDeviceAliasesRequest, DeleteTempDeviceAliasesResponse, BatchInsertTempDeviceAliasesRequest, BatchInsertTempDeviceAliasesResponse, BatchUpdateTempDeviceAliasesRequest, BatchUpdateTempDeviceAliasesResponse, BatchDeleteTempDeviceAliasesRequest, BatchDeleteTempDeviceAliasesResponse, UpsertTempDeviceAliasesRequest, UpsertTempDeviceAliasesResponse, DeviceConfigurations, CreateDeviceConfigurationsRequest, CreateDeviceConfigurationsResponse, GetDeviceConfigurationsRequest, GetDeviceConfigurationsResponse, UpdateDeviceConfigurationsRequest, UpdateDeviceConfigurationsResponse, DeleteDeviceConfigurationsRequest, DeleteDeviceConfigurationsResponse, BatchInsertDeviceConfigurationsRequest, BatchInsertDeviceConfigurationsResponse, BatchUpdateDeviceConfigurationsRequest, BatchUpdateDeviceConfigurationsResponse, BatchDeleteDeviceConfigurationsRequest, BatchDeleteDeviceConfigurationsResponse, UpsertDeviceConfigurationsRequest, UpsertDeviceConfigurationsResponse, DeviceInterfaceAddresses, CreateDeviceInterfaceAddressesRequest, CreateDeviceInterfaceAddressesResponse, GetDeviceInterfaceAddressesRequest, GetDeviceInterfaceAddressesResponse, UpdateDeviceInterfaceAddressesRequest, UpdateDeviceInterfaceAddressesResponse, DeleteDeviceInterfaceAddressesRequest, DeleteDeviceInterfaceAddressesResponse, BatchInsertDeviceInterfaceAddressesRequest, BatchInsertDeviceInterfaceAddressesResponse, BatchUpdateDeviceInterfaceAddressesRequest, BatchUpdateDeviceInterfaceAddressesResponse, BatchDeleteDeviceInterfaceAddressesRequest, BatchDeleteDeviceInterfaceAddressesResponse, UpsertDeviceInterfaceAddressesRequest, UpsertDeviceInterfaceAddressesResponse, TempDeviceInterfaceAddresses, CreateTempDeviceInterfaceAddressesRequest, CreateTempDeviceInterfaceAddressesResponse, GetTempDeviceInterfaceAddressesRequest, GetTempDeviceInterfaceAddressesResponse, UpdateTempDeviceInterfaceAddressesRequest, UpdateTempDeviceInterfaceAddressesResponse, DeleteTempDeviceInterfaceAddressesRequest, DeleteTempDeviceInterfaceAddressesResponse, BatchInsertTempDeviceInterfaceAddressesRequest, BatchInsertTempDeviceInterfaceAddressesResponse, BatchUpdateTempDeviceInterfaceAddressesRequest, BatchUpdateTempDeviceInterfaceAddressesResponse, BatchDeleteTempDeviceInterfaceAddressesRequest, BatchDeleteTempDeviceInterfaceAddressesResponse, UpsertTempDeviceInterfaceAddressesRequest, UpsertTempDeviceInterfaceAddressesResponse, DeviceInterfaces, CreateDeviceInterfacesRequest, CreateDeviceInterfacesResponse, GetDeviceInterfacesRequest, GetDeviceInterfacesResponse, UpdateDeviceInterfacesRequest, UpdateDeviceInterfacesResponse, DeleteDeviceInterfacesRequest, DeleteDeviceInterfacesResponse, BatchInsertDeviceInterfacesRequest, BatchInsertDeviceInterfacesResponse, BatchUpdateDeviceInterfacesRequest, BatchUpdateDeviceInterfacesResponse, BatchDeleteDeviceInterfacesRequest, BatchDeleteDeviceInterfacesResponse, UpsertDeviceInterfacesRequest, UpsertDeviceInterfacesResponse, TempDeviceInterfaces, CreateTempDeviceInterfacesRequest, CreateTempDeviceInterfacesResponse, GetTempDeviceInterfacesRequest, GetTempDeviceInterfacesResponse, UpdateTempDeviceInterfacesRequest, UpdateTempDeviceInterfacesResponse, DeleteTempDeviceInterfacesRequest, DeleteTempDeviceInterfacesResponse, BatchInsertTempDeviceInterfacesRequest, BatchInsertTempDeviceInterfacesResponse, BatchUpdateTempDeviceInterfacesRequest, BatchUpdateTempDeviceInterfacesResponse, BatchDeleteTempDeviceInterfacesRequest, BatchDeleteTempDeviceInterfacesResponse, UpsertTempDeviceInterfacesRequest, UpsertTempDeviceInterfacesResponse, DeviceRemoteAccessSessions, CreateDeviceRemoteAccessSessionsRequest, CreateDeviceRemoteAccessSessionsResponse, GetDeviceRemoteAccessSessionsRequest, GetDeviceRemoteAccessSessionsResponse, UpdateDeviceRemoteAccessSessionsRequest, UpdateDeviceRemoteAccessSessionsResponse, DeleteDeviceRemoteAccessSessionsRequest, DeleteDeviceRemoteAccessSessionsResponse, BatchInsertDeviceRemoteAccessSessionsRequest, BatchInsertDeviceRemoteAccessSessionsResponse, BatchUpdateDeviceRemoteAccessSessionsRequest, BatchUpdateDeviceRemoteAccessSessionsResponse, BatchDeleteDeviceRemoteAccessSessionsRequest, BatchDeleteDeviceRemoteAccessSessionsResponse, UpsertDeviceRemoteAccessSessionsRequest, UpsertDeviceRemoteAccessSessionsResponse, TempDeviceRemoteAccessSessions, CreateTempDeviceRemoteAccessSessionsRequest, CreateTempDeviceRemoteAccessSessionsResponse, GetTempDeviceRemoteAccessSessionsRequest, GetTempDeviceRemoteAccessSessionsResponse, UpdateTempDeviceRemoteAccessSessionsRequest, UpdateTempDeviceRemoteAccessSessionsResponse, DeleteTempDeviceRemoteAccessSessionsRequest, DeleteTempDeviceRemoteAccessSessionsResponse, BatchInsertTempDeviceRemoteAccessSessionsRequest, BatchInsertTempDeviceRemoteAccessSessionsResponse, BatchUpdateTempDeviceRemoteAccessSessionsRequest, BatchUpdateTempDeviceRemoteAccessSessionsResponse, BatchDeleteTempDeviceRemoteAccessSessionsRequest, BatchDeleteTempDeviceRemoteAccessSessionsResponse, UpsertTempDeviceRemoteAccessSessionsRequest, UpsertTempDeviceRemoteAccessSessionsResponse, DeviceRules, CreateDeviceRulesRequest, CreateDeviceRulesResponse, GetDeviceRulesRequest, GetDeviceRulesResponse, UpdateDeviceRulesRequest, UpdateDeviceRulesResponse, DeleteDeviceRulesRequest, DeleteDeviceRulesResponse, BatchInsertDeviceRulesRequest, BatchInsertDeviceRulesResponse, BatchUpdateDeviceRulesRequest, BatchUpdateDeviceRulesResponse, BatchDeleteDeviceRulesRequest, BatchDeleteDeviceRulesResponse, UpsertDeviceRulesRequest, UpsertDeviceRulesResponse, TempDeviceRules, CreateTempDeviceRulesRequest, CreateTempDeviceRulesResponse, GetTempDeviceRulesRequest, GetTempDeviceRulesResponse, UpdateTempDeviceRulesRequest, UpdateTempDeviceRulesResponse, DeleteTempDeviceRulesRequest, DeleteTempDeviceRulesResponse, BatchInsertTempDeviceRulesRequest, BatchInsertTempDeviceRulesResponse, BatchUpdateTempDeviceRulesRequest, BatchUpdateTempDeviceRulesResponse, BatchDeleteTempDeviceRulesRequest, BatchDeleteTempDeviceRulesResponse, UpsertTempDeviceRulesRequest, UpsertTempDeviceRulesResponse, Packets, CreatePacketsRequest, CreatePacketsResponse, GetPacketsRequest, GetPacketsResponse, UpdatePacketsRequest, UpdatePacketsResponse, DeletePacketsRequest, DeletePacketsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse, UpsertPacketsRequest, UpsertPacketsResponse, TempPackets, CreateTempPacketsRequest, CreateTempPacketsResponse, GetTempPacketsRequest, GetTempPacketsResponse, UpdateTempPacketsRequest, UpdateTempPacketsResponse, DeleteTempPacketsRequest, DeleteTempPacketsResponse, BatchInsertTempPacketsRequest, BatchInsertTempPacketsResponse, BatchUpdateTempPacketsRequest, BatchUpdateTempPacketsResponse, BatchDeleteTempPacketsRequest, BatchDeleteTempPacketsResponse, UpsertTempPacketsRequest, UpsertTempPacketsResponse, Connections, CreateConnectionsRequest, CreateConnectionsResponse, GetConnectionsRequest, GetConnectionsResponse, UpdateConnectionsRequest, UpdateConnectionsResponse, DeleteConnectionsRequest, DeleteConnectionsResponse, BatchInsertConnectionsRequest, BatchInsertConnectionsResponse, BatchUpdateConnectionsRequest, BatchUpdateConnectionsResponse, BatchDeleteConnectionsRequest, BatchDeleteConnectionsResponse, UpsertConnectionsRequest, UpsertConnectionsResponse, TempConnections, CreateTempConnectionsRequest, CreateTempConnectionsResponse, GetTempConnectionsRequest, GetTempConnectionsResponse, UpdateTempConnectionsRequest, UpdateTempConnectionsResponse, DeleteTempConnectionsRequest, DeleteTempConnectionsResponse, BatchInsertTempConnectionsRequest, BatchInsertTempConnectionsResponse, BatchUpdateTempConnectionsRequest, BatchUpdateTempConnectionsResponse, BatchDeleteTempConnectionsRequest, BatchDeleteTempConnectionsResponse, UpsertTempConnectionsRequest, UpsertTempConnectionsResponse, DeviceSshKeys, CreateDeviceSshKeysRequest, CreateDeviceSshKeysResponse, GetDeviceSshKeysRequest, GetDeviceSshKeysResponse, UpdateDeviceSshKeysRequest, UpdateDeviceSshKeysResponse, DeleteDeviceSshKeysRequest, DeleteDeviceSshKeysResponse, BatchInsertDeviceSshKeysRequest, BatchInsertDeviceSshKeysResponse, BatchUpdateDeviceSshKeysRequest, BatchUpdateDeviceSshKeysResponse, BatchDeleteDeviceSshKeysRequest, BatchDeleteDeviceSshKeysResponse, UpsertDeviceSshKeysRequest, UpsertDeviceSshKeysResponse, Devices, CreateDevicesRequest, CreateDevicesResponse, GetDevicesRequest, GetDevicesResponse, UpdateDevicesRequest, UpdateDevicesResponse, DeleteDevicesRequest, DeleteDevicesResponse, BatchInsertDevicesRequest, BatchInsertDevicesResponse, BatchUpdateDevicesRequest, BatchUpdateDevicesResponse, BatchDeleteDevicesRequest, BatchDeleteDevicesResponse, UpsertDevicesRequest, UpsertDevicesResponse, IpInfos, CreateIpInfosRequest, CreateIpInfosResponse, GetIpInfosRequest, GetIpInfosResponse, UpdateIpInfosRequest, UpdateIpInfosResponse, DeleteIpInfosRequest, DeleteIpInfosResponse, BatchInsertIpInfosRequest, BatchInsertIpInfosResponse, BatchUpdateIpInfosRequest, BatchUpdateIpInfosResponse, BatchDeleteIpInfosRequest, BatchDeleteIpInfosResponse, UpsertIpInfosRequest, UpsertIpInfosResponse, PostgresChannels, CreatePostgresChannelsRequest, CreatePostgresChannelsResponse, GetPostgresChannelsRequest, GetPostgresChannelsResponse, UpdatePostgresChannelsRequest, UpdatePostgresChannelsResponse, DeletePostgresChannelsRequest, DeletePostgresChannelsResponse, BatchInsertPostgresChannelsRequest, BatchInsertPostgresChannelsResponse, BatchUpdatePostgresChannelsRequest, BatchUpdatePostgresChannelsResponse, BatchDeletePostgresChannelsRequest, BatchDeletePostgresChannelsResponse, UpsertPostgresChannelsRequest, UpsertPostgresChannelsResponse, Resolutions, CreateResolutionsRequest, CreateResolutionsResponse, GetResolutionsRequest, GetResolutionsResponse, UpdateResolutionsRequest, UpdateResolutionsResponse, DeleteResolutionsRequest, DeleteResolutionsResponse, BatchInsertResolutionsRequest, BatchInsertResolutionsResponse, BatchUpdateResolutionsRequest, BatchUpdateResolutionsResponse, BatchDeleteResolutionsRequest, BatchDeleteResolutionsResponse, UpsertResolutionsRequest, UpsertResolutionsResponse, WallguardLogs, CreateWallguardLogsRequest, CreateWallguardLogsResponse, GetWallguardLogsRequest, GetWallguardLogsResponse, UpdateWallguardLogsRequest, UpdateWallguardLogsResponse, DeleteWallguardLogsRequest, DeleteWallguardLogsResponse, BatchInsertWallguardLogsRequest, BatchInsertWallguardLogsResponse, BatchUpdateWallguardLogsRequest, BatchUpdateWallguardLogsResponse, BatchDeleteWallguardLogsRequest, BatchDeleteWallguardLogsResponse, UpsertWallguardLogsRequest, UpsertWallguardLogsResponse, TempWallguardLogs, CreateTempWallguardLogsRequest, CreateTempWallguardLogsResponse, GetTempWallguardLogsRequest, GetTempWallguardLogsResponse, UpdateTempWallguardLogsRequest, UpdateTempWallguardLogsResponse, DeleteTempWallguardLogsRequest, DeleteTempWallguardLogsResponse, BatchInsertTempWallguardLogsRequest, BatchInsertTempWallguardLogsResponse, BatchUpdateTempWallguardLogsRequest, BatchUpdateTempWallguardLogsResponse, BatchDeleteTempWallguardLogsRequest, BatchDeleteTempWallguardLogsResponse, UpsertTempWallguardLogsRequest, UpsertTempWallguardLogsResponse, DeviceGroupSettings, CreateDeviceGroupSettingsRequest, CreateDeviceGroupSettingsResponse, GetDeviceGroupSettingsRequest, GetDeviceGroupSettingsResponse, UpdateDeviceGroupSettingsRequest, UpdateDeviceGroupSettingsResponse, DeleteDeviceGroupSettingsRequest, DeleteDeviceGroupSettingsResponse, BatchInsertDeviceGroupSettingsRequest, BatchInsertDeviceGroupSettingsResponse, BatchUpdateDeviceGroupSettingsRequest, BatchUpdateDeviceGroupSettingsResponse, BatchDeleteDeviceGroupSettingsRequest, BatchDeleteDeviceGroupSettingsResponse, UpsertDeviceGroupSettingsRequest, UpsertDeviceGroupSettingsResponse, Contacts, CreateContactsRequest, CreateContactsResponse, GetContactsRequest, GetContactsResponse, UpdateContactsRequest, UpdateContactsResponse, DeleteContactsRequest, DeleteContactsResponse, BatchInsertContactsRequest, BatchInsertContactsResponse, BatchUpdateContactsRequest, BatchUpdateContactsResponse, BatchDeleteContactsRequest, BatchDeleteContactsResponse, UpsertContactsRequest, UpsertContactsResponse, ContactPhoneNumbers, CreateContactPhoneNumbersRequest, CreateContactPhoneNumbersResponse, GetContactPhoneNumbersRequest, GetContactPhoneNumbersResponse, UpdateContactPhoneNumbersRequest, UpdateContactPhoneNumbersResponse, DeleteContactPhoneNumbersRequest, DeleteContactPhoneNumbersResponse, BatchInsertContactPhoneNumbersRequest, BatchInsertContactPhoneNumbersResponse, BatchUpdateContactPhoneNumbersRequest, BatchUpdateContactPhoneNumbersResponse, BatchDeleteContactPhoneNumbersRequest, BatchDeleteContactPhoneNumbersResponse, UpsertContactPhoneNumbersRequest, UpsertContactPhoneNumbersResponse, ContactEmails, CreateContactEmailsRequest, CreateContactEmailsResponse, GetContactEmailsRequest, GetContactEmailsResponse, UpdateContactEmailsRequest, UpdateContactEmailsResponse, DeleteContactEmailsRequest, DeleteContactEmailsResponse, BatchInsertContactEmailsRequest, BatchInsertContactEmailsResponse, BatchUpdateContactEmailsRequest, BatchUpdateContactEmailsResponse, BatchDeleteContactEmailsRequest, BatchDeleteContactEmailsResponse, UpsertContactEmailsRequest, UpsertContactEmailsResponse};
+use std::net::SocketAddr;
+use std::pin::Pin;
+use tonic::{transport::Server, Request, Response, Status};
 pub struct GrpcController {}
 
 impl GrpcController {
-    pub fn new() -> Self { GrpcController {} }
+    pub fn new() -> Self {
+        GrpcController {}
+    }
 
     pub async fn init(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
         let addr: SocketAddr = addr.parse()?;
@@ -30,12 +291,12 @@ impl GrpcController {
         let shutdown_interceptor = GrpcShutdownInterceptor;
         let interceptor_chain = InterceptorChain::new(shutdown_interceptor, auth_interceptor);
         Server::builder()
-                .add_service(StoreServiceServer::with_interceptor(
-                    grpc_controller,
-                    interceptor_chain
-                ))
-                .serve(addr)
-                .await?;
+            .add_service(StoreServiceServer::with_interceptor(
+                grpc_controller,
+                interceptor_chain,
+            ))
+            .serve(addr)
+            .await?;
         Ok(())
     }
 }
@@ -188,7 +449,10 @@ impl StoreService for GrpcController {
     generate_upsert_method!(device_interface_addresses);
     // CRUD methods for temp_device_interface_addresses
     generate_create_method!(temp_device_interface_addresses);
-    generate_update_method!(temp_device_interface_addresses, temp_device_interface_address);
+    generate_update_method!(
+        temp_device_interface_addresses,
+        temp_device_interface_address
+    );
     generate_batch_insert_method!(temp_device_interface_addresses);
     generate_batch_update_method!(temp_device_interface_addresses);
     generate_get_method!(temp_device_interface_addresses);
@@ -224,7 +488,10 @@ impl StoreService for GrpcController {
     generate_upsert_method!(device_remote_access_sessions);
     // CRUD methods for temp_device_remote_access_sessions
     generate_create_method!(temp_device_remote_access_sessions);
-    generate_update_method!(temp_device_remote_access_sessions, temp_device_remote_access_session);
+    generate_update_method!(
+        temp_device_remote_access_sessions,
+        temp_device_remote_access_session
+    );
     generate_batch_insert_method!(temp_device_remote_access_sessions);
     generate_batch_update_method!(temp_device_remote_access_sessions);
     generate_get_method!(temp_device_remote_access_sessions);

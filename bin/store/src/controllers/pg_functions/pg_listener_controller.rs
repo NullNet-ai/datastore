@@ -1,16 +1,16 @@
-use actix_web::{web, HttpRequest, HttpResponse, HttpMessage, Responder};
-use crate::controllers::common_controller::process_and_insert_record;
-use crate::structs::structs::{ApiResponse, Auth};
-use crate::db::get_async_connection;
-use serde_json::{json, Value};
-use serde::{Deserialize, Serialize};
-use regex::Regex;
-use diesel::sql_query;
-use diesel_async::RunQueryDsl;
 use super::function_validators::FunctionValidator;
-use std::collections::HashMap;
+use crate::controllers::common_controller::process_and_insert_record;
+use crate::db::get_async_connection;
+use crate::structs::structs::{ApiResponse, Auth};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use diesel::sql_query;
 use diesel::sql_types::Text;
 use diesel::QueryableByName;
+use diesel_async::RunQueryDsl;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use std::collections::HashMap;
 
 #[derive(QueryableByName, Debug)]
 struct FunctionRow {
@@ -42,7 +42,11 @@ pub struct TestFunctionRequest {
 struct PgFunctionService;
 
 impl PgFunctionService {
-    async fn create_pg_function(&self, request: CreateFunctionRequest, create_trigger: bool) -> Result<ApiResponse, String> {
+    async fn create_pg_function(
+        &self,
+        request: CreateFunctionRequest,
+        create_trigger: bool,
+    ) -> Result<ApiResponse, String> {
         let function_string = &request.function_string;
         let table_name = &request.table_name;
 
@@ -56,11 +60,11 @@ impl PgFunctionService {
 
         // Use the comprehensive validator to validate the function
         let validator = FunctionValidator::new();
-        
+
         // Perform all validation checks before creating the function
         validator.validate_function(function_string).await?;
         validator.validate_channel_function_format(function_string)?;
-        
+
         // Extract function name and channel name for trigger creation
         let function_name = validator.extract_function_name(function_string)?;
         let channel_name = validator.extract_channel_name(function_string)?;
@@ -104,24 +108,24 @@ impl PgFunctionService {
     async fn create_trigger(&self, channel_name: &str, table_name: &str) -> Result<(), String> {
         let trigger_sql = format!(
             r#"DO $$ 
-            BEGIN 
-              IF NOT EXISTS ( 
-                SELECT 1 FROM pg_trigger WHERE tgname = '{}_trigger' 
-              ) THEN 
-                CREATE TRIGGER {}_trigger 
-                AFTER INSERT ON {} 
-                FOR EACH ROW EXECUTE FUNCTION {}(); 
-              END IF; 
-            END; 
-            $$;"#,
+    BEGIN 
+      IF NOT EXISTS ( 
+        SELECT 1 FROM pg_trigger WHERE tgname = '{}_trigger' 
+      ) THEN 
+        CREATE TRIGGER {}_trigger 
+        AFTER INSERT OR UPDATE ON {} 
+        FOR EACH ROW 
+        WHEN (NEW.sync_status = 'complete') 
+        EXECUTE FUNCTION {}(); 
+      END IF; 
+    END; 
+    $$;"#,
             channel_name, channel_name, table_name, channel_name
         );
 
         let mut conn = get_async_connection().await;
         match sql_query(&trigger_sql).execute(&mut conn).await {
-            Ok(_) => {
-                Ok(())
-            }
+            Ok(_) => Ok(()),
             Err(e) => {
                 let error_msg = format!("Error creating trigger: {}", e);
                 log::debug!("🚜 PgFunctionService -> trigger error: {}", error_msg);
@@ -132,7 +136,7 @@ impl PgFunctionService {
 
     async fn get_listener(&self, _req: &HttpRequest) -> Result<ApiResponse, String> {
         let mut conn = get_async_connection().await;
-        
+
         // Query for functions
         let function_query = r#"
             SELECT p.proname AS name 
@@ -143,7 +147,7 @@ impl PgFunctionService {
               AND p.prorettype = 'trigger'::regtype 
             ORDER BY p.proname;
         "#;
-        
+
         // Query for triggers
         let trigger_query = r#"
             SELECT 
@@ -157,15 +161,18 @@ impl PgFunctionService {
               AND tg.tgname NOT LIKE 'pg_%' 
             ORDER BY tg.tgname;
         "#;
-        
+
         // Execute function query
-        let function_results = match sql_query(function_query).load::<FunctionRow>(&mut conn).await {
+        let function_results = match sql_query(function_query)
+            .load::<FunctionRow>(&mut conn)
+            .await
+        {
             Ok(results) => results,
             Err(e) => {
                 return Err(format!("Failed to query functions: {}", e));
             }
         };
-        
+
         // Execute trigger query
         let trigger_results = match sql_query(trigger_query).load::<TriggerRow>(&mut conn).await {
             Ok(results) => results,
@@ -173,21 +180,24 @@ impl PgFunctionService {
                 return Err(format!("Failed to query triggers: {}", e));
             }
         };
-        
+
         // Convert results to JSON
         let functions: Vec<String> = function_results.into_iter().map(|row| row.name).collect();
-        let triggers: Vec<Value> = trigger_results.into_iter().map(|row| {
-            json!({
-                "name": row.name,
-                "table_name": row.table_name
+        let triggers: Vec<Value> = trigger_results
+            .into_iter()
+            .map(|row| {
+                json!({
+                    "name": row.name,
+                    "table_name": row.table_name
+                })
             })
-        }).collect();
-        
+            .collect();
+
         let result = json!({
             "functions": functions,
             "triggers": triggers
         });
-        
+
         Ok(ApiResponse {
             success: true,
             message: "pgListenerGet Message".to_string(),
@@ -196,11 +206,17 @@ impl PgFunctionService {
         })
     }
 
-    async fn delete_listener(&self, req: &HttpRequest, function_name: &str) -> Result<ApiResponse, String> {
+    async fn delete_listener(
+        &self,
+        req: &HttpRequest,
+        function_name: &str,
+    ) -> Result<ApiResponse, String> {
         // Extract table_name from query parameters
         let query_string = req.query_string();
-        let table_name = if let Some(table_param) = query_string.split('&')
-            .find(|param| param.starts_with("table_name=")) {
+        let table_name = if let Some(table_param) = query_string
+            .split('&')
+            .find(|param| param.starts_with("table_name="))
+        {
             table_param.split('=').nth(1).unwrap_or("")
         } else {
             return Err("table_name query parameter is required".to_string());
@@ -211,9 +227,10 @@ impl PgFunctionService {
         }
 
         let mut conn = get_async_connection().await;
-        
+
         // Use transaction to ensure all operations succeed or fail together
-        let result = conn.build_transaction()
+        let result = conn
+            .build_transaction()
             .run::<_, diesel::result::Error, _>(|conn| {
                 Box::pin(async move {
                     // Delete from postgres_channels table
@@ -222,14 +239,12 @@ impl PgFunctionService {
                         function_name
                     );
                     sql_query(&delete_query).execute(conn).await?;
-                    
+
                     // Drop the function using CASCADE
-                    let drop_function_query = format!(
-                        "DROP FUNCTION IF EXISTS {} CASCADE",
-                        function_name
-                    );
+                    let drop_function_query =
+                        format!("DROP FUNCTION IF EXISTS {} CASCADE", function_name);
                     sql_query(&drop_function_query).execute(conn).await?;
-                    
+
                     // Drop the trigger
                     let trigger_name = format!("{}_trigger", function_name);
                     let drop_trigger_query = format!(
@@ -237,30 +252,30 @@ impl PgFunctionService {
                         trigger_name, table_name
                     );
                     sql_query(&drop_trigger_query).execute(conn).await?;
-                    
+
                     Ok(())
                 })
-            }).await;
-        
+            })
+            .await;
+
         match result {
-            Ok(_) => {
-                Ok(ApiResponse {
-                    success: true,
-                    message: format!(
-                        "Successfully deleted pgListener components for {}: {} and trigger {}_trigger",
-                        table_name, function_name, function_name
-                    ),
-                    count: 0,
-                    data: vec![],
-                })
-            },
-            Err(error) => {
-                Err(format!("Error deleting pgListener: {}", error))
-            }
+            Ok(_) => Ok(ApiResponse {
+                success: true,
+                message: format!(
+                    "Successfully deleted pgListener components for {}: {} and trigger {}_trigger",
+                    table_name, function_name, function_name
+                ),
+                count: 0,
+                data: vec![],
+            }),
+            Err(error) => Err(format!("Error deleting pgListener: {}", error)),
         }
     }
 
-    async fn test_function_syntax(&self, request: TestFunctionRequest) -> Result<ApiResponse, String> {
+    async fn test_function_syntax(
+        &self,
+        request: TestFunctionRequest,
+    ) -> Result<ApiResponse, String> {
         let function_string = &request.function_string;
 
         if function_string.is_empty() {
@@ -269,25 +284,21 @@ impl PgFunctionService {
 
         // Use the validator to test function syntax without creating it
         let validator = FunctionValidator::new();
-        
+
         // Perform comprehensive validation including syntax testing
         match validator.validate_function(function_string).await {
-            Ok(_) => {
-                Ok(ApiResponse {
-                    success: true,
-                    message: "Function syntax is valid and would execute successfully".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
-            }
-            Err(error) => {
-                Ok(ApiResponse {
-                    success: false,
-                    message: format!("Function validation failed: {}", error),
-                    count: 0,
-                    data: vec![],
-                })
-            }
+            Ok(_) => Ok(ApiResponse {
+                success: true,
+                message: "Function syntax is valid and would execute successfully".to_string(),
+                count: 0,
+                data: vec![],
+            }),
+            Err(error) => Ok(ApiResponse {
+                success: false,
+                message: format!("Function validation failed: {}", error),
+                count: 0,
+                data: vec![],
+            }),
         }
     }
 }
@@ -298,9 +309,10 @@ pub async fn create_pg_function(
     query: web::Query<HashMap<String, String>>,
 ) -> impl Responder {
     let service = PgFunctionService;
-    
+
     // Extract trigger query parameter, default to true
-    let create_trigger = query.get("trigger")
+    let create_trigger = query
+        .get("trigger")
         .map(|v| v.parse::<bool>().unwrap_or(true))
         .unwrap_or(true);
     let auth_data = match req.extensions().get::<Auth>() {
@@ -315,11 +327,14 @@ pub async fn create_pg_function(
             });
         }
     };
-    
+
     let body_data = body.into_inner();
-    
+
     // First, try to create the PG function
-    match service.create_pg_function(body_data.clone(), create_trigger).await {
+    match service
+        .create_pg_function(body_data.clone(), create_trigger)
+        .await
+    {
         Ok(response) => {
             // Extract channel_name from function string using validator
             let validator = FunctionValidator::new();
@@ -334,25 +349,29 @@ pub async fn create_pg_function(
                     });
                 }
             };
-            
+
             // If PG function creation is successful, then process and insert record
             let record: Value = json!({
                 "channel_name": channel_name,
                 "function": body_data.function_string,
             });
-            
+
             match process_and_insert_record("postgres_channels", record, None, &auth_data).await {
                 Ok(_) => {
                     // Both PG function creation and record insertion successful
                     HttpResponse::Ok().json(response)
-                },
+                }
                 Err(insert_error) => {
                     // Check if it's a duplicate key constraint violation
-                    if insert_error.message.contains("duplicate key value violates unique constraint") {
+                    if insert_error
+                        .message
+                        .contains("duplicate key value violates unique constraint")
+                    {
                         // Function and trigger already exist in database, treat as success
                         HttpResponse::Ok().json(ApiResponse {
                             success: true,
-                            message: "Function and trigger already exist in the database".to_string(),
+                            message: "Function and trigger already exist in the database"
+                                .to_string(),
                             count: 0,
                             data: vec![],
                         })
@@ -360,14 +379,17 @@ pub async fn create_pg_function(
                         // Other insertion errors should still be treated as failures
                         HttpResponse::InternalServerError().json(ApiResponse {
                             success: false,
-                            message: format!("PostgreSQL function created but failed to insert record: {}", insert_error.message),
+                            message: format!(
+                                "PostgreSQL function created but failed to insert record: {}",
+                                insert_error.message
+                            ),
                             count: 0,
                             data: vec![],
                         })
                     }
                 }
             }
-        },
+        }
         Err(error) => {
             // If PG function creation fails, return error without processing record
             HttpResponse::BadRequest().json(ApiResponse {
@@ -387,7 +409,7 @@ pub async fn test_pg_function_syntax(
     body: web::Json<TestFunctionRequest>,
 ) -> impl Responder {
     let service = PgFunctionService;
-    
+
     match service.test_function_syntax(body.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::BadRequest().json(ApiResponse {
@@ -401,11 +423,9 @@ pub async fn test_pg_function_syntax(
 
 /// Get listener endpoint
 /// GET /api/listener/
-pub async fn pg_listener_get(
-    req: HttpRequest,
-) -> impl Responder {
+pub async fn pg_listener_get(req: HttpRequest) -> impl Responder {
     let service = PgFunctionService;
-    
+
     match service.get_listener(&req).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::InternalServerError().json(ApiResponse {
@@ -419,13 +439,10 @@ pub async fn pg_listener_get(
 
 /// Delete listener endpoint
 /// DELETE /api/listener/{function_name}
-pub async fn pg_listener_delete(
-    req: HttpRequest,
-    path: web::Path<String>,
-) -> impl Responder {
+pub async fn pg_listener_delete(req: HttpRequest, path: web::Path<String>) -> impl Responder {
     let function_name = path.into_inner();
     let service = PgFunctionService;
-    
+
     match service.delete_listener(&req, &function_name).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::InternalServerError().json(ApiResponse {

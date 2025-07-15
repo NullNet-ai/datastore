@@ -30,6 +30,7 @@ pub struct ConnectionModel {
     pub timestamp: Option<chrono::NaiveDateTime>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
 
     pub interface_name: Option<String>,
     pub hypertable_timestamp: Option<String>,

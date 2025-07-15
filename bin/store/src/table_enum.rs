@@ -1,45 +1,50 @@
-use crate::{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_with_timestamp_match};
-use crate::models::external_contact_model::ExternalContactModel;
-use crate::models::organization_model::OrganizationModel;
-use crate::models::organization_contact_model::OrganizationContactModel;
-use crate::models::organization_account_model::OrganizationAccountModel;
+use crate::db;
+use crate::models::account_model::AccountModel;
 use crate::models::account_organization_model::AccountOrganizationModel;
 use crate::models::account_profile_model::AccountProfileModel;
-use crate::models::account_model::AccountModel;
 use crate::models::address_model::AddressModel;
-use crate::models::sample_model::SampleModel;
 use crate::models::app_firewall_model::AppFirewallModel;
 use crate::models::appguard_log_model::AppguardLogModel;
-use crate::models::temp_appguard_log_model::TempAppguardLogModel;
-use crate::models::device_alias_model::DeviceAliasModel;
-use crate::models::temp_device_alias_model::TempDeviceAliasModel;
-use crate::models::device_configuration_model::DeviceConfigurationModel;
-use crate::models::device_interface_address_model::DeviceInterfaceAddressModel;
-use crate::models::temp_device_interface_address_model::TempDeviceInterfaceAddressModel;
-use crate::models::device_interface_model::DeviceInterfaceModel;
-use crate::models::temp_device_interface_model::TempDeviceInterfaceModel;
-use crate::models::device_remote_access_session_model::DeviceRemoteAccessSessionModel;
-use crate::models::temp_device_remote_access_session_model::TempDeviceRemoteAccessSessionModel;
-use crate::models::device_rule_model::DeviceRuleModel;
-use crate::models::temp_device_rule_model::TempDeviceRuleModel;
-use crate::models::packet_model::PacketModel;
-use crate::models::temp_packet_model::TempPacketModel;
 use crate::models::connection_model::ConnectionModel;
-use crate::models::temp_connection_model::TempConnectionModel;
-use crate::models::device_ssh_key_model::DeviceSshKeyModel;
-use crate::models::device_model::DeviceModel;
-use crate::models::ip_info_model::IpInfoModel;
-use crate::models::postgres_channel_model::PostgresChannelModel;
-use crate::models::resolution_model::ResolutionModel;
-use crate::models::wallguard_log_model::WallguardLogModel;
-use crate::models::temp_wallguard_log_model::TempWallguardLogModel;
-use crate::models::device_group_setting_model::DeviceGroupSettingModel;
+use crate::models::contact_email_model::ContactEmailModel;
 use crate::models::contact_model::ContactModel;
 use crate::models::contact_phone_number_model::ContactPhoneNumberModel;
-use crate::models::contact_email_model::ContactEmailModel;
+use crate::models::counter_model::CounterModel;
+use crate::models::device_alias_model::DeviceAliasModel;
+use crate::models::device_configuration_model::DeviceConfigurationModel;
+use crate::models::device_group_setting_model::DeviceGroupSettingModel;
+use crate::models::device_interface_address_model::DeviceInterfaceAddressModel;
+use crate::models::device_interface_model::DeviceInterfaceModel;
+use crate::models::device_model::DeviceModel;
+use crate::models::device_remote_access_session_model::DeviceRemoteAccessSessionModel;
+use crate::models::device_rule_model::DeviceRuleModel;
+use crate::models::device_ssh_key_model::DeviceSshKeyModel;
+use crate::models::external_contact_model::ExternalContactModel;
+use crate::models::ip_info_model::IpInfoModel;
+use crate::models::organization_account_model::OrganizationAccountModel;
+use crate::models::organization_contact_model::OrganizationContactModel;
+use crate::models::organization_model::OrganizationModel;
+use crate::models::packet_model::PacketModel;
+use crate::models::postgres_channel_model::PostgresChannelModel;
+use crate::models::resolution_model::ResolutionModel;
+use crate::models::sample_model::SampleModel;
+use crate::models::temp_appguard_log_model::TempAppguardLogModel;
+use crate::models::temp_connection_model::TempConnectionModel;
+use crate::models::temp_device_alias_model::TempDeviceAliasModel;
+use crate::models::temp_device_interface_address_model::TempDeviceInterfaceAddressModel;
+use crate::models::temp_device_interface_model::TempDeviceInterfaceModel;
+use crate::models::temp_device_remote_access_session_model::TempDeviceRemoteAccessSessionModel;
+use crate::models::temp_device_rule_model::TempDeviceRuleModel;
+use crate::models::temp_packet_model::TempPacketModel;
+use crate::models::temp_wallguard_log_model::TempWallguardLogModel;
+use crate::models::wallguard_log_model::WallguardLogModel;
 use crate::schema::schema;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
+use crate::{
+    generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,
+    generate_upsert_record_match, generate_upsert_record_with_timestamp_match,
+};
 use actix_web::web;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
@@ -47,8 +52,6 @@ use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::{Map, Value};
-use crate::db;
-use crate::models::counter_model::CounterModel;
 
 #[derive(Debug)]
 pub enum Table {
@@ -161,7 +164,17 @@ impl Table {
         conn: &mut AsyncPgConnection,
         id: &str,
     ) -> Result<Option<String>, DieselError> {
-        generate_hypertable_timestamp_match!(self, conn, id, Packets, TempPackets, Connections, TempConnections, WallguardLogs, TempWallguardLogs)
+        generate_hypertable_timestamp_match!(
+            self,
+            conn,
+            id,
+            Packets,
+            TempPackets,
+            Connections,
+            TempConnections,
+            WallguardLogs,
+            TempWallguardLogs
+        )
     }
 
     pub async fn insert_record(
@@ -177,7 +190,82 @@ impl Table {
             conn,
             record,
             request,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts,
+            ExternalContactModel,
+            Organizations,
+            OrganizationModel,
+            OrganizationContacts,
+            OrganizationContactModel,
+            OrganizationAccounts,
+            OrganizationAccountModel,
+            AccountOrganizations,
+            AccountOrganizationModel,
+            AccountProfiles,
+            AccountProfileModel,
+            Accounts,
+            AccountModel,
+            Addresses,
+            AddressModel,
+            Samples,
+            SampleModel,
+            AppFirewalls,
+            AppFirewallModel,
+            AppguardLogs,
+            AppguardLogModel,
+            TempAppguardLogs,
+            TempAppguardLogModel,
+            DeviceAliases,
+            DeviceAliasModel,
+            TempDeviceAliases,
+            TempDeviceAliasModel,
+            DeviceConfigurations,
+            DeviceConfigurationModel,
+            DeviceInterfaceAddresses,
+            DeviceInterfaceAddressModel,
+            TempDeviceInterfaceAddresses,
+            TempDeviceInterfaceAddressModel,
+            DeviceInterfaces,
+            DeviceInterfaceModel,
+            TempDeviceInterfaces,
+            TempDeviceInterfaceModel,
+            DeviceRemoteAccessSessions,
+            DeviceRemoteAccessSessionModel,
+            TempDeviceRemoteAccessSessions,
+            TempDeviceRemoteAccessSessionModel,
+            DeviceRules,
+            DeviceRuleModel,
+            TempDeviceRules,
+            TempDeviceRuleModel,
+            Packets,
+            PacketModel,
+            TempPackets,
+            TempPacketModel,
+            Connections,
+            ConnectionModel,
+            TempConnections,
+            TempConnectionModel,
+            DeviceSshKeys,
+            DeviceSshKeyModel,
+            Devices,
+            DeviceModel,
+            IpInfos,
+            IpInfoModel,
+            PostgresChannels,
+            PostgresChannelModel,
+            Resolutions,
+            ResolutionModel,
+            WallguardLogs,
+            WallguardLogModel,
+            TempWallguardLogs,
+            TempWallguardLogModel,
+            DeviceGroupSettings,
+            DeviceGroupSettingModel,
+            Contacts,
+            ContactModel,
+            ContactPhoneNumbers,
+            ContactPhoneNumberModel,
+            ContactEmails,
+            ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -190,7 +278,82 @@ impl Table {
             self,
             conn,
             id,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts,
+            ExternalContactModel,
+            Organizations,
+            OrganizationModel,
+            OrganizationContacts,
+            OrganizationContactModel,
+            OrganizationAccounts,
+            OrganizationAccountModel,
+            AccountOrganizations,
+            AccountOrganizationModel,
+            AccountProfiles,
+            AccountProfileModel,
+            Accounts,
+            AccountModel,
+            Addresses,
+            AddressModel,
+            Samples,
+            SampleModel,
+            AppFirewalls,
+            AppFirewallModel,
+            AppguardLogs,
+            AppguardLogModel,
+            TempAppguardLogs,
+            TempAppguardLogModel,
+            DeviceAliases,
+            DeviceAliasModel,
+            TempDeviceAliases,
+            TempDeviceAliasModel,
+            DeviceConfigurations,
+            DeviceConfigurationModel,
+            DeviceInterfaceAddresses,
+            DeviceInterfaceAddressModel,
+            TempDeviceInterfaceAddresses,
+            TempDeviceInterfaceAddressModel,
+            DeviceInterfaces,
+            DeviceInterfaceModel,
+            TempDeviceInterfaces,
+            TempDeviceInterfaceModel,
+            DeviceRemoteAccessSessions,
+            DeviceRemoteAccessSessionModel,
+            TempDeviceRemoteAccessSessions,
+            TempDeviceRemoteAccessSessionModel,
+            DeviceRules,
+            DeviceRuleModel,
+            TempDeviceRules,
+            TempDeviceRuleModel,
+            Packets,
+            PacketModel,
+            TempPackets,
+            TempPacketModel,
+            Connections,
+            ConnectionModel,
+            TempConnections,
+            TempConnectionModel,
+            DeviceSshKeys,
+            DeviceSshKeyModel,
+            Devices,
+            DeviceModel,
+            IpInfos,
+            IpInfoModel,
+            PostgresChannels,
+            PostgresChannelModel,
+            Resolutions,
+            ResolutionModel,
+            WallguardLogs,
+            WallguardLogModel,
+            TempWallguardLogs,
+            TempWallguardLogModel,
+            DeviceGroupSettings,
+            DeviceGroupSettingModel,
+            Contacts,
+            ContactModel,
+            ContactPhoneNumbers,
+            ContactPhoneNumberModel,
+            ContactEmails,
+            ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -203,7 +366,82 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts,
+            ExternalContactModel,
+            Organizations,
+            OrganizationModel,
+            OrganizationContacts,
+            OrganizationContactModel,
+            OrganizationAccounts,
+            OrganizationAccountModel,
+            AccountOrganizations,
+            AccountOrganizationModel,
+            AccountProfiles,
+            AccountProfileModel,
+            Accounts,
+            AccountModel,
+            Addresses,
+            AddressModel,
+            Samples,
+            SampleModel,
+            AppFirewalls,
+            AppFirewallModel,
+            AppguardLogs,
+            AppguardLogModel,
+            TempAppguardLogs,
+            TempAppguardLogModel,
+            DeviceAliases,
+            DeviceAliasModel,
+            TempDeviceAliases,
+            TempDeviceAliasModel,
+            DeviceConfigurations,
+            DeviceConfigurationModel,
+            DeviceInterfaceAddresses,
+            DeviceInterfaceAddressModel,
+            TempDeviceInterfaceAddresses,
+            TempDeviceInterfaceAddressModel,
+            DeviceInterfaces,
+            DeviceInterfaceModel,
+            TempDeviceInterfaces,
+            TempDeviceInterfaceModel,
+            DeviceRemoteAccessSessions,
+            DeviceRemoteAccessSessionModel,
+            TempDeviceRemoteAccessSessions,
+            TempDeviceRemoteAccessSessionModel,
+            DeviceRules,
+            DeviceRuleModel,
+            TempDeviceRules,
+            TempDeviceRuleModel,
+            Packets,
+            PacketModel,
+            TempPackets,
+            TempPacketModel,
+            Connections,
+            ConnectionModel,
+            TempConnections,
+            TempConnectionModel,
+            DeviceSshKeys,
+            DeviceSshKeyModel,
+            Devices,
+            DeviceModel,
+            IpInfos,
+            IpInfoModel,
+            PostgresChannels,
+            PostgresChannelModel,
+            Resolutions,
+            ResolutionModel,
+            WallguardLogs,
+            WallguardLogModel,
+            TempWallguardLogs,
+            TempWallguardLogModel,
+            DeviceGroupSettings,
+            DeviceGroupSettingModel,
+            Contacts,
+            ContactModel,
+            ContactPhoneNumbers,
+            ContactPhoneNumberModel,
+            ContactEmails,
+            ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -216,46 +454,121 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts,
+            ExternalContactModel,
+            Organizations,
+            OrganizationModel,
+            OrganizationContacts,
+            OrganizationContactModel,
+            OrganizationAccounts,
+            OrganizationAccountModel,
+            AccountOrganizations,
+            AccountOrganizationModel,
+            AccountProfiles,
+            AccountProfileModel,
+            Accounts,
+            AccountModel,
+            Addresses,
+            AddressModel,
+            Samples,
+            SampleModel,
+            AppFirewalls,
+            AppFirewallModel,
+            AppguardLogs,
+            AppguardLogModel,
+            TempAppguardLogs,
+            TempAppguardLogModel,
+            DeviceAliases,
+            DeviceAliasModel,
+            TempDeviceAliases,
+            TempDeviceAliasModel,
+            DeviceConfigurations,
+            DeviceConfigurationModel,
+            DeviceInterfaceAddresses,
+            DeviceInterfaceAddressModel,
+            TempDeviceInterfaceAddresses,
+            TempDeviceInterfaceAddressModel,
+            DeviceInterfaces,
+            DeviceInterfaceModel,
+            TempDeviceInterfaces,
+            TempDeviceInterfaceModel,
+            DeviceRemoteAccessSessions,
+            DeviceRemoteAccessSessionModel,
+            TempDeviceRemoteAccessSessions,
+            TempDeviceRemoteAccessSessionModel,
+            DeviceRules,
+            DeviceRuleModel,
+            TempDeviceRules,
+            TempDeviceRuleModel,
+            Packets,
+            PacketModel,
+            TempPackets,
+            TempPacketModel,
+            Connections,
+            ConnectionModel,
+            TempConnections,
+            TempConnectionModel,
+            DeviceSshKeys,
+            DeviceSshKeyModel,
+            Devices,
+            DeviceModel,
+            IpInfos,
+            IpInfoModel,
+            PostgresChannels,
+            PostgresChannelModel,
+            Resolutions,
+            ResolutionModel,
+            WallguardLogs,
+            WallguardLogModel,
+            TempWallguardLogs,
+            TempWallguardLogModel,
+            DeviceGroupSettings,
+            DeviceGroupSettingModel,
+            Contacts,
+            ContactModel,
+            ContactPhoneNumbers,
+            ContactPhoneNumberModel,
+            ContactEmails,
+            ContactEmailModel // Add other tables and their models here as needed
         )
     }
 }
-    pub async fn generate_code(
-        table: &str,
-        prefix_param: &str,
-        default_code_param: i32,
-    ) -> Result<String, DieselError> {
+pub async fn generate_code(
+    table: &str,
+    prefix_param: &str,
+    default_code_param: i32,
+) -> Result<String, DieselError> {
+    let mut conn = db::get_async_connection().await;
 
-        let mut conn = db::get_async_connection().await;
+    let new_counter = CounterModel {
+        entity: table.to_string(),
+        counter: 1,
+        prefix: prefix_param.to_string(),
+        default_code: default_code_param,
+        digits_number: 1,
+    };
 
-        let new_counter = CounterModel {
-            entity: table.to_string(),
-            counter: 1,
-            prefix: prefix_param.to_string(),
-            default_code: default_code_param,
-            digits_number: 1,
-        };
-        
-        // Attempt the insert with conflict handling
-        let result = diesel::insert_into(schema::counters::dsl::counters::table())
+    // Attempt the insert with conflict handling
+    let result = diesel::insert_into(schema::counters::dsl::counters::table())
         .values(&new_counter)
-            .on_conflict(schema::counters::entity)
-            .do_update()
-            .set(schema::counters::counter.eq(schema::counters::counter + 1))
-            .returning((schema::counters::prefix, schema::counters::default_code, schema::counters::counter))
-            .get_result::<(String, i32, i32)>(&mut conn).await
-            .map_err(|e| {
-                log::error!("Error generating code: {}", e);
-                e
-            })?;
-        
-        // Format the code
-        let (prefix_val, default_code_val, counter_val) = result;
-        let code = format!(
-            "{}{}",
-            prefix_val,
-            default_code_val + counter_val
-        );
-        
-        Ok(code)
-    }
+        .on_conflict(schema::counters::entity)
+        .do_update()
+        .set(schema::counters::counter.eq(schema::counters::counter + 1))
+        .returning((
+            schema::counters::prefix,
+            schema::counters::default_code,
+            schema::counters::counter,
+        ))
+        .get_result::<(String, i32, i32)>(&mut conn)
+        .await
+        .map_err(|e| {
+            log::error!("Error generating code: {}", e);
+            e
+        })?;
+
+    // Format the code
+    let (prefix_val, default_code_val, counter_val) = result;
+    let code = format!("{}{}", prefix_val, default_code_val + counter_val);
+
+    Ok(code)
+}
