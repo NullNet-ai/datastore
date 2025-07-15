@@ -639,7 +639,7 @@ export class Utility {
                 }
                   ${
                     nested
-                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."id" = "${prev_join_to_entity}"."${from.field}"`
+                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."${to.field}" = "${prev_join_to_entity}"."${from.field}"`
                       : ''
                   }
                   WHERE (${default_filter_clause}${additional_where_and_clause})
@@ -916,7 +916,7 @@ export class Utility {
                 : schema[nested_from.entity];
 
               nested_additional_filter = [
-                eq(aliased_to_entity.id, parent_entity[from.field]),
+                eq(aliased_to_entity[to.field], parent_entity[from.field]),
               ];
             }
             sub_query = sub_query
