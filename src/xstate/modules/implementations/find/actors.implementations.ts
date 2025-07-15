@@ -496,17 +496,6 @@ export class FindActorsImplementations {
               total_group_count: (group_by_selections as Record<string, any>)
                 .total_group_count,
             };
-          const has_plucked_not_grouped_fields = Object.keys(
-            selections ?? {},
-          ).some((key) => !group_by_selections?.[table]?.[key]);
-          if (
-            Object.keys(group_by_selections).length &&
-            has_plucked_not_grouped_fields
-          )
-            throw new BadRequestException({
-              success: false,
-              message: `You can only select fields that are in the group_by fields.`,
-            });
           // Modifying selections if being grouped
           const selections_with_group_by = {
             ...count_selection,
