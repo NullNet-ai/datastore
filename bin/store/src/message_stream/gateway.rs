@@ -318,14 +318,29 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
             // Client is guaranteed to be authenticated at this point
             let channel_name = data.get("channel_name").and_then(|c| c.as_str());
-            let highwatermark = data.get("highwatermark");
+            let highwatermark = data.get("highWaterMark").or_else(|| data.get("highwatermark"));
 
             if let (Some(channel), Some(mark)) = (channel_name, highwatermark) {
                 // Add channel to organization's channels
                 //get the channel with the channel_name
                 let bucket = get_token_bucket(channel);
                 if let Some(bucket) = bucket {
-                    bucket.set_tokens(mark.as_u64().unwrap() as usize).await;
+                    let new_watermark = mark.as_u64().unwrap() as usize;
+                    let current_watermark = bucket.get_high_watermark().await;                    
+                    // Handle watermark changes properly for both increases and decreases
+                    if new_watermark > current_watermark {
+                        // Increasing watermark: add the difference to available capacity
+                        let difference = new_watermark - current_watermark;
+                        
+                        // Update capacity first, then add the difference to available tokens
+                        bucket.set_tokens(new_watermark).await;
+                        bucket.add_tokens(difference).await;
+                    } else if new_watermark < current_watermark {
+                        // Decreasing watermark: set_tokens will clamp current tokens to new capacity
+                        // This automatically reduces available tokens if they exceed the new limit
+                        bucket.set_tokens(new_watermark).await;
+                    }
+                    // If new_watermark == current_watermark, no action needed
                 }
 
                 info!(
@@ -343,7 +358,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                 let response = serde_json::json!({
                     "status": "error",
                     "event": "updateHighWaterMark",
-                    "message": "Missing channel_name or highwatermark"
+                    "message": "Missing channel_name or highWaterMark"
                 });
                 socket.emit("updateHighWaterMark", response).ok();
             }
@@ -354,6 +369,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         "getCurrentHighWaterMark",
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
             let channel_name = data.get("channel_name").and_then(|c| c.as_str());
+            println!("{:?}", channel_name);
 
             if let Some(channel) = channel_name {
                 // Retrieve the current high water mark for this channel from token bucket
@@ -375,9 +391,11 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                         "status": "ok",
                         "event": "getCurrentHighWaterMark",
                         "channel": channel,
-                        "highwatermark": current_highwatermark
+                        "currentHighWaterMark": current_highwatermark
                     });
                 }
+
+                println!("{:?}", response);
 
                 socket.emit("currentHighWaterMark", response).ok();
             } else {

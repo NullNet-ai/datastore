@@ -9,26 +9,7 @@ use serde_json::Value;
 use std::sync::Arc;
 use uuid::Uuid;
 
-// Stream queue item structure for backward compatibility
-#[derive(Debug, Clone)]
-pub struct StreamQueueItem {
-    pub id: String,
-    pub queue_name: String,
-    pub timestamp: String,
-    pub content: Value,
-}
 
-// Convert from model to legacy struct
-impl From<StreamQueueItemModel> for StreamQueueItem {
-    fn from(model: StreamQueueItemModel) -> Self {
-        Self {
-            id: model.id,
-            queue_name: model.queue_name,
-            timestamp: model.timestamp.map(|t| t.to_rfc3339()).unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
-            content: model.content,
-        }
-    }
-}
 
 pub struct StreamQueueService;
 
@@ -117,7 +98,7 @@ impl StreamQueueService {
         &self,
         queue_name: &str,
         content: Value,
-    ) -> Result<StreamQueueItem, DieselError> {
+    ) -> Result<StreamQueueItemModel, DieselError> {
         let mut conn = db::get_async_connection().await;
         
         // Normalize the JSON content to ensure all numbers are stored as regular integers
@@ -134,7 +115,7 @@ impl StreamQueueService {
             .get_result::<StreamQueueItemModel>(&mut conn)
             .await?;
         
-        Ok(StreamQueueItem::from(item_model))
+        Ok(item_model)
     }
 
     // Helper function to normalize JSON numbers to prevent BigInt issues
@@ -186,7 +167,7 @@ impl StreamQueueService {
         &self,
         queue_name: &str,
         limit: i32,
-    ) -> Result<Vec<StreamQueueItem>, DieselError> {
+    ) -> Result<Vec<StreamQueueItemModel>, DieselError> {
         let mut conn = db::get_async_connection().await;
         
         let results = stream_queue_items::table
@@ -196,12 +177,7 @@ impl StreamQueueService {
             .load::<StreamQueueItemModel>(&mut conn)
             .await?;
         
-        let items = results
-            .into_iter()
-            .map(StreamQueueItem::from)
-            .collect();
-        
-        Ok(items)
+        Ok(results)
     }
 
     pub async fn clear_queue(&self, queue_name: &str) -> Result<(), DieselError> {

@@ -85,6 +85,12 @@ impl TokenBucket {
         }
     }
 
+    pub async fn add_tokens(&self, amount: usize) {
+        let capacity = self.capacity.lock().await;
+        let mut tokens = self.tokens.lock().await;
+        *tokens = std::cmp::min(*tokens + amount, *capacity);
+    }
+
     pub async fn drain(&self) {
         self.notify_drain.notify_waiters();
     }
