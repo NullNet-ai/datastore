@@ -43,11 +43,30 @@ Kashan
   - Implemented 30-second interval refresh cycle for PostgreSQL channels
   - Added background task that automatically discovers new channels from `postgres_channels` table
   - Enhanced channel management with smart refresh logic that respects service state (running/paused)
+- **Message Streaming System**: Implemented comprehensive real-time message streaming architecture
+  - Created `MessageStreamingService` for managing message routing and channel operations
+  - Implemented `TokenBucket` system for rate limiting and backpressure management
+  - Added `StreamQueueService` for persistent message queuing during backpressure scenarios
+  - Created Socket.IO gateway with JWT authentication and organization-based client management
+  - Added real-time dashboard for monitoring token buckets and message flow
+- **Token Bucket Management**: 
+  - Implemented configurable token bucket system with customizable capacity and refill rates
+  - Added automatic token bucket creation for channels when messages arrive for authenticated organizations
+  - Integrated token bucket monitoring with real-time dashboard updates
+- **Message Queue System**:
+  - Created persistent queue system for handling backpressured messages
+  - Implemented automatic queue processing when token buckets have available capacity
+  - Added database-backed message storage with JSON normalization
 
 ### Enhanced
 - **Channel Discovery**: Channels are now automatically refreshed every 30 seconds without requiring service restart
 - **Resource Efficiency**: Periodic refresh only runs when service is active and not paused
 - **Error Resilience**: Individual refresh failures don't stop the refresh cycle, with comprehensive error logging
+- **Real-time Communication**: 
+  - Organization-based client authentication and management
+  - Automatic channel creation based on message flow and authenticated clients
+  - WebSocket-based real-time message broadcasting
+  - JWT token validation for secure client connections
 
 ### Technical Details
 - **New Functionality**: 
@@ -57,13 +76,31 @@ Kashan
   - Enhanced CRDT sync service with `sync_status` field management for connections table
   - Added automatic `sync_status` field insertion for insert and update operations
   - Implemented PostgreSQL trigger support with conditional execution based on `sync_status` values
+- **Message Streaming Architecture**:
+  - Created `/src/message_stream/streaming_service.rs` - Core message routing and channel management
+  - Created `/src/message_stream/token_bucket.rs` - Rate limiting and backpressure control
+  - Created `/src/message_stream/stream_queue_service.rs` - Persistent message queuing
+  - Created `/src/message_stream/gateway.rs` - Socket.IO gateway with JWT authentication
+  - Created `/src/message_stream/message_broker.rs` - Message broker for coordinating token buckets
+  - Added real-time dashboard at `/message_stream/index.html` for monitoring
+- **Database Integration**:
+  - Added `stream_queues` and `stream_queue_items` tables for persistent message storage
+  - Implemented automatic message routing based on PostgreSQL notifications
+  - Enhanced message processing with organization-based filtering
+- **Authentication & Security**:
+  - JWT-based client authentication with organization extraction
+  - Secure token validation and client session management
+  - Organization-based message filtering and access control
 - **Performance**: 
   - Non-blocking periodic refresh that doesn't interfere with notification processing
   - Conditional refresh based on service state to minimize unnecessary database queries
+  - Efficient token bucket management with configurable rates
+  - Automatic channel cleanup and resource management
 - **Reliability**: 
   - Automatic synchronization with database changes
   - Robust error handling with detailed logging
   - Enhanced error handling in message service with proper logging and error propagation
+  - Graceful handling of backpressure scenarios with persistent queuing
 - **CRDT Synchronization**:
   - Modified `sync_service.rs` to automatically add `sync_status` field to connections table records
   - Insert operations: `sync_status` set to "complete" and positioned as last field
@@ -72,6 +109,11 @@ Kashan
   - Added support for PostgreSQL triggers with `AFTER INSERT OR UPDATE` and conditional execution
   - Trigger conditions: `WHEN (NEW.sync_status = 'complete')` for targeted execution
 - **Code Safety**: Removed unsafe unwraps from the code
+
+### Fixed
+- Removed infinite loop test data senders that were causing performance issues
+- Updated message flow to only create channels for organizations with authenticated clients
+- Simplified client connection flow by removing manual channel subscription requirements
 
 ---
 
