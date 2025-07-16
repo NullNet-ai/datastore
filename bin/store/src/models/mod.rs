@@ -41,6 +41,8 @@ pub mod resolution_model;
 pub mod role_permission_model;
 pub mod sample_model;
 pub mod session_model;
+pub mod stream_queue_model;
+pub mod stream_queue_item_model;
 pub mod sync_endpoint_model;
 pub mod system_config_field_model;
 pub mod table_index_model;

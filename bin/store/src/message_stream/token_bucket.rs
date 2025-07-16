@@ -44,9 +44,10 @@ impl TokenBucket {
         if msg.is_some() {
             let mut tokens = self.tokens.lock().await;
             *tokens += 1;
-            let capacity = self.capacity.lock().await;
-            if *tokens == *capacity {
-                drop(capacity); // Release the lock before calling drain
+            // Only trigger drain when buffer becomes empty, not when tokens reach capacity
+            if buffer.is_empty() {
+                drop(buffer); // Release the lock before calling drain
+                drop(tokens);
                 self.drain().await;
             }
         }
@@ -80,10 +81,7 @@ impl TokenBucket {
         let mut tokens = self.tokens.lock().await;
         if *tokens < *capacity {
             *tokens += 1;
-            if *tokens == *capacity {
-                drop(capacity); // Release the lock before calling drain
-                self.drain().await;
-            }
+            // Don't trigger drain here - only when buffer becomes empty
         }
     }
 

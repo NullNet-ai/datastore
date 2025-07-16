@@ -156,8 +156,8 @@ pub async fn auth(
         let new_token = sign(&token_value).await?;
 
         // Cache the token
-        let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-        let expiration_ms = time_string_to_ms(&jwt_expires_in);
+        // let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
+        // let expiration_ms = time_string_to_ms(&jwt_expires_in);
         let mut cache = TOKEN_CACHE.lock().map_err(|e| {
             ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -356,9 +356,14 @@ pub async fn root_auth(
     let new_token = sign(&token_value).await?;
 
     // Cache the token
-    let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-    let _expiration_ms = time_string_to_ms(&jwt_expires_in);
-    let mut cache = TOKEN_CACHE.lock().unwrap();
+    // let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
+    // let expiration_ms = time_string_to_ms(&jwt_expires_in);
+    let mut cache = TOKEN_CACHE.lock().map_err(|e| {
+        ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to acquire token cache lock: {}", e),
+        )
+    })?;
     cache.insert(new_token.clone(), token_value.to_string());
 
     Ok(LoginResponse {

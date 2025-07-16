@@ -233,11 +233,15 @@ impl BrokerService {
         });
     }
 
-    pub async fn route_from_main_pipe(
+    pub async fn route_from_main_pipe<F, Fut>(
         &self,
         main_pipe: &Arc<TokenBucket>,
         get_target_pipe: impl Fn(&Message) -> String,
-    ) {
+        create_pipe_if_missing: F,
+    ) where
+        F: Fn(&str, &Message) -> Fut,
+        Fut: std::future::Future<Output = Option<Arc<TokenBucket>>>,
+    {
         loop {
             let msg_opt = {
                 let mut buffer = main_pipe.buffer.lock().await;
@@ -248,7 +252,19 @@ impl BrokerService {
                 let target_name = get_target_pipe(&msg);
 
                 // Get the target pipe from active_pipes
-                let target_pipe = self.get_pipe(&target_name).await;
+                let mut target_pipe = self.get_pipe(&target_name).await;
+
+                // If pipe doesn't exist, try to create it
+                if target_pipe.is_none() {
+                    if let Some(new_pipe) = create_pipe_if_missing(&target_name, &msg).await {
+                        // Register the new pipe by directly adding to active_pipes
+                        {
+                            let mut pipes = self.active_pipes.lock().await;
+                            pipes.insert(target_name.clone(), new_pipe.clone());
+                        }
+                        target_pipe = Some(new_pipe);
+                    }
+                }
 
                 if let Some(pipe) = target_pipe {
                     if pipe.get_tokens_remaining().await > 0 {
@@ -259,7 +275,7 @@ impl BrokerService {
                         self.buffer_message(&target_name, msg).await;
                     }
                 } else {
-                    println!("Pipe {} not found.", target_name);
+                    println!("Pipe {} not found and could not be created.", target_name);
                     // Increment tokens for the main pipe since we're not using this message
                     main_pipe.increment_tokens().await;
                 }
@@ -270,16 +286,20 @@ impl BrokerService {
         }
     }
 
-    pub fn spawn_main_pipe_routing_task(
+    pub fn spawn_main_pipe_routing_task<F, Fut>(
         self: &Arc<Self>,
         main_pipe: Arc<TokenBucket>,
         get_target_pipe: impl Fn(&Message) -> String + Send + 'static,
-    ) {
+        create_pipe_if_missing: F,
+    ) where
+        F: Fn(&str, &Message) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = Option<Arc<TokenBucket>>> + Send,
+    {
         let this = Arc::clone(self);
         let main_pipe_clone = Arc::clone(&main_pipe);
 
         tokio::spawn(async move {
-            this.route_from_main_pipe(&main_pipe_clone, get_target_pipe)
+            this.route_from_main_pipe(&main_pipe_clone, get_target_pipe, create_pipe_if_missing)
                 .await;
         });
     }

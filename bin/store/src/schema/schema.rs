@@ -288,6 +288,24 @@ table! {
 }
 
 table! {
+    stream_queue (id) {
+        id -> Text,
+        name -> Text,
+        created_at -> Nullable<Timestamptz>,
+        last_accessed -> Nullable<Timestamptz>,
+    }
+}
+
+table! {
+    stream_queue_items (id) {
+        id -> Text,
+        queue_name -> Text,
+        content -> Jsonb,
+        timestamp -> Nullable<Timestamptz>,
+    }
+}
+
+table! {
     transactions (id) {
         id -> Text,
         timestamp -> Text,
@@ -500,7 +518,9 @@ table! {
 }
 
 joinable!(account_organizations -> accounts (account_id));
+joinable!(stream_queue_items -> stream_queue (queue_name));
 allow_tables_to_appear_in_same_query!(accounts, account_organizations);
+allow_tables_to_appear_in_same_query!(stream_queue, stream_queue_items);
 //application
 
 table! {
