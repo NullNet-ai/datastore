@@ -1,7 +1,6 @@
 use crate::db;
-use crate::models::stream_queue_model::{StreamQueueModel, NewStreamQueue};
 use crate::models::stream_queue_item_model::{StreamQueueItemModel, NewStreamQueueItem};
-use crate::schema::schema::{stream_queue, stream_queue_items};
+use crate::schema::schema::stream_queue_items;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel_async::RunQueryDsl;
