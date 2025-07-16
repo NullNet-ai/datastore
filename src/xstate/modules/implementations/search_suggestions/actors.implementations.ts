@@ -8,11 +8,13 @@ import { Utility } from '../../../../utils/utility.service';
 import { sql } from 'drizzle-orm';
 const pluralize = require('pluralize');
 import sha1 from 'sha1';
-import { ELikeMatchPattern } from '../../schemas/find/find.schema';
 import ShortUniqueId from 'short-unique-id';
 import { RedisClientProvider } from '../../../../db/redis_client.provider';
 
-const { SEARCH_SUGGESTION_CACHE_EXPIRY = '30s' } = process.env;
+const {
+  SEARCH_SUGGESTION_CACHE_EXPIRY = '30s',
+  DEFAULT_SEARCH_PATTERN = 'contains',
+} = process.env;
 @Injectable()
 export class SearchSuggestionsActorsImplementations {
   private db;
@@ -249,7 +251,7 @@ export class SearchSuggestionsActorsImplementations {
                   case_sensitive = false,
                   parse_as,
                   has_group_count = false,
-                  match_pattern = ELikeMatchPattern.STARTS_WITH,
+                  match_pattern = DEFAULT_SEARCH_PATTERN,
                 } = field_filter || {};
 
                 let group_count_query = '';
@@ -484,7 +486,7 @@ export class SearchSuggestionsActorsImplementations {
         field,
         values,
         is_search = false,
-        match_pattern = ELikeMatchPattern.STARTS_WITH,
+        match_pattern = DEFAULT_SEARCH_PATTERN,
       } = filter;
       let filtered_entity = entity;
       const is_aliased = aliased_joined_entities?.find(
