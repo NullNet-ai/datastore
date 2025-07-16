@@ -1,13 +1,13 @@
 # MCP Proto Generator
 
-A standalone Model Context Protocol (MCP) server that generates Protocol Buffer (.proto) files from Diesel schema content (SQL DDL). This allows Claude to generate protobuf definitions directly from database schemas.
+A standalone Model Context Protocol (MCP) server that generates Protocol Buffer (.proto) files from Diesel schema content. This allows Claude to generate protobuf definitions directly from Diesel table! macro definitions.
 
 ## Features
 
 - **Standalone MCP Server**: Works independently of any existing project
-- **SQL to Proto Conversion**: Converts SQL DDL statements to Protocol Buffer definitions
+- **Diesel to Proto Conversion**: Converts Diesel table! macro definitions to Protocol Buffer definitions
 - **CRUD Operations**: Generates complete CRUD request/response messages
-- **Type Mapping**: Intelligent mapping from SQL types to protobuf types
+- **Type Mapping**: Intelligent mapping from Diesel types to protobuf types
 - **Claude Integration**: Direct integration with Claude Desktop
 
 ## Installation
@@ -55,21 +55,25 @@ Once configured, you can use the following commands in Claude:
 ```
 Generate a proto file from this Diesel schema:
 
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
-    name VARCHAR(100),
-    created_at TIMESTAMP DEFAULT NOW(),
-    is_active BOOLEAN DEFAULT TRUE
-);
+table! {
+    users (id) {
+        id -> Integer,
+        email -> Text,
+        name -> Nullable<Text>,
+        created_at -> Timestamp,
+        is_active -> Bool,
+    }
+}
 
-CREATE TABLE posts (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    title VARCHAR(255) NOT NULL,
-    content TEXT,
-    published_at TIMESTAMP
-);
+table! {
+    posts (id) {
+        id -> Integer,
+        user_id -> Integer,
+        title -> Text,
+        content -> Nullable<Text>,
+        published_at -> Nullable<Timestamp>,
+    }
+}
 ```
 
 ### Custom Package Name
@@ -80,24 +84,26 @@ Generate a proto file with package name "blog" from this schema:
 [your schema here]
 ```
 
-## Supported SQL Types
+## Supported Diesel Types
 
-The MCP server maps SQL types to protobuf types as follows:
+The MCP server maps Diesel types to protobuf types as follows:
 
-| SQL Type | Protobuf Type |
-|----------|---------------|
-| INT, INTEGER, SERIAL | int32 |
-| BIGINT, BIGSERIAL | int64 |
-| SMALLINT | int32 |
-| FLOAT | float |
-| DOUBLE, DECIMAL, NUMERIC | double |
-| BOOLEAN, BOOL | bool |
-| TEXT, VARCHAR, CHAR | string |
-| UUID | string |
-| TIMESTAMP | Timestamp |
-| DATE, TIME | string |
-| JSON, JSONB | string |
-| BYTEA | bytes |
+| Diesel Type | Protobuf Type |
+|-------------|---------------|
+| Integer | int32 |
+| BigInt | int64 |
+| SmallInt | int32 |
+| Float | float |
+| Double, Numeric | double |
+| Bool | bool |
+| Text, VarChar, Char | string |
+| Uuid | string |
+| Timestamp, Timestamptz | Timestamp |
+| Date, Time, Timetz | string |
+| Json, Jsonb | string |
+| Binary, Bytea | bytes |
+| Nullable<Type> | optional Type |
+| Array<Type> | repeated Type |
 
 ## Generated Proto Structure
 
@@ -128,12 +134,20 @@ For a `users` table, the generator creates:
 - Restart Claude Desktop after configuration changes
 
 ### Schema Parsing Issues
-- Ensure your SQL DDL is valid
-- The parser expects standard `CREATE TABLE` statements
-- Complex constraints and triggers may not be fully parsed
+- Ensure your Diesel schema is valid
+- The parser expects standard `table!` macro definitions
+- Make sure column definitions follow the format: `column_name -> Type,`
 
 ### Permission Issues
 - Ensure the binary has execute permissions: `chmod +x target/release/mcp-proto-generator`
+
+## Example Usage
+
+You can test the MCP server with the provided example schema:
+
+```bash
+cat example_schema.rs | ./target/release/mcp-proto-generator
+```
 
 ## Development
 

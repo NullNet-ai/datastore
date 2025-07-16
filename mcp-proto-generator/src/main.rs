@@ -30,22 +30,26 @@ impl MCPServer {
         }
     }
 
-    fn handle_request(&self, request: Value) -> Value {
+    fn handle_request(&self, request: Value) -> Option<Value> {
         let method = request["method"].as_str().unwrap_or("");
         let id = request["id"].clone();
 
         match method {
-            "initialize" => self.handle_initialize(id),
-            "tools/list" => self.handle_tools_list(id),
-            "tools/call" => self.handle_tools_call(id, &request["params"]),
-            _ => json!({
+            "initialize" => Some(self.handle_initialize(id)),
+            "tools/list" => Some(self.handle_tools_list(id)),
+            "tools/call" => Some(self.handle_tools_call(id, &request["params"])),
+            "notifications/initialized" => {
+                // This is a notification, no response needed
+                None
+            },
+            _ => Some(json!({
                 "jsonrpc": "2.0",
                 "id": id,
                 "error": {
                     "code": -32601,
                     "message": "Method not found"
                 }
-            })
+            }))
         }
     }
 
@@ -74,13 +78,13 @@ impl MCPServer {
                 "tools": [
                     {
                         "name": "generate_proto_from_schema",
-                        "description": "Generate Protocol Buffer (.proto) files from Diesel schema content (SQL DDL)",
+                        "description": "Generate Protocol Buffer (.proto) files from Diesel schema content",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
                                 "schema_content": {
                                     "type": "string",
-                                    "description": "The Diesel schema content (SQL DDL statements)"
+                                    "description": "The Diesel schema content (table! macro definitions)"
                                 },
                                 "package_name": {
                                     "type": "string",
@@ -141,7 +145,7 @@ impl MCPServer {
                         "content": [
                             {
                                 "type": "text",
-                                "text": format!("Successfully generated proto file:\n\n```protobuf\n{}\n```", proto_content)
+                                "text": proto_content
                             }
                         ]
                     }
@@ -171,15 +175,15 @@ impl MCPServer {
     fn parse_tables(&self, schema: &str) -> Result<Vec<Table>, String> {
         let mut tables = Vec::new();
         
-        // Regex to match CREATE TABLE statements
-        let table_regex = Regex::new(r"(?i)CREATE\s+TABLE\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^;]+)\)")
+        // Regex to match Diesel table! macro definitions
+        let table_regex = Regex::new(r"table!\s*\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{([^}]+)\}\s*\}")
             .map_err(|e| format!("Regex error: {}", e))?;
         
         for cap in table_regex.captures_iter(schema) {
             let table_name = cap[1].to_string();
             let columns_str = &cap[2];
             
-            let fields = self.parse_columns(columns_str)?;
+            let fields = self.parse_diesel_columns(columns_str)?;
             
             tables.push(Table {
                 name: table_name,
@@ -190,31 +194,46 @@ impl MCPServer {
         Ok(tables)
     }
 
-    fn parse_columns(&self, columns_str: &str) -> Result<Vec<Field>, String> {
+    fn parse_diesel_columns(&self, columns_str: &str) -> Result<Vec<Field>, String> {
         let mut fields = Vec::new();
         
-        // Split by commas, but be careful about nested parentheses
+        // Split by commas and parse Diesel column definitions
         let lines: Vec<&str> = columns_str.split(',').collect();
         
         for line in lines {
             let line = line.trim();
-            if line.is_empty() || line.starts_with("CONSTRAINT") || line.starts_with("PRIMARY KEY") || line.starts_with("FOREIGN KEY") {
+            if line.is_empty() {
                 continue;
             }
             
-            // Parse column definition
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() < 2 {
+            // Parse Diesel column definition: column_name -> Type,
+            // Example: id -> Integer,
+            // Example: name -> Nullable<Text>,
+            let parts: Vec<&str> = line.split("->").collect();
+            if parts.len() != 2 {
                 continue;
             }
             
-            let column_name = parts[0].to_string();
-            let column_type = parts[1].to_string();
+            let column_name = parts[0].trim().to_string();
+            let column_type = parts[1].trim().trim_end_matches(',').to_string();
             
-            let is_optional = line.contains("NULL") && !line.contains("NOT NULL");
-            let is_array = column_type.contains("[]") || column_type.contains("ARRAY");
+            let is_optional = column_type.starts_with("Nullable<");
+            let is_array = column_type.contains("Array<");
             
-            let proto_type = self.sql_type_to_proto_type(&column_type);
+            // Extract the inner type if it's wrapped in Nullable<> or Array<>
+            let inner_type = if is_optional {
+                column_type.strip_prefix("Nullable<")
+                    .and_then(|s| s.strip_suffix(">"))
+                    .unwrap_or(&column_type)
+            } else if is_array {
+                column_type.strip_prefix("Array<")
+                    .and_then(|s| s.strip_suffix(">"))
+                    .unwrap_or(&column_type)
+            } else {
+                &column_type
+            };
+            
+            let proto_type = self.diesel_type_to_proto_type(inner_type);
             
             fields.push(Field {
                 name: column_name,
@@ -227,28 +246,28 @@ impl MCPServer {
         Ok(fields)
     }
 
-    fn sql_type_to_proto_type(&self, sql_type: &str) -> String {
-        let t = sql_type.to_uppercase();
-        match t.as_str() {
-            t if t.contains("INT") => "int32".to_string(),
-            t if t.contains("BIGINT") => "int64".to_string(),
-            t if t.contains("SMALLINT") => "int32".to_string(),
-            t if t.contains("SERIAL") => "int32".to_string(),
-            t if t.contains("BIGSERIAL") => "int64".to_string(),
-            t if t.contains("FLOAT") => "float".to_string(),
-            t if t.contains("DOUBLE") => "double".to_string(),
-            t if t.contains("DECIMAL") => "double".to_string(),
-            t if t.contains("NUMERIC") => "double".to_string(),
-            t if t.contains("BOOL") => "bool".to_string(),
-            t if t.contains("TEXT") => "string".to_string(),
-            t if t.contains("VARCHAR") => "string".to_string(),
-            t if t.contains("CHAR") => "string".to_string(),
-            t if t.contains("UUID") => "string".to_string(),
-            t if t.contains("TIMESTAMP") => "Timestamp".to_string(),
-            t if t.contains("DATE") => "string".to_string(),
-            t if t.contains("TIME") => "string".to_string(),
-            t if t.contains("JSON") => "string".to_string(),
-            t if t.contains("BYTEA") => "bytes".to_string(),
+    fn diesel_type_to_proto_type(&self, diesel_type: &str) -> String {
+        match diesel_type {
+            "Integer" => "int32".to_string(),
+            "BigInt" => "int64".to_string(),
+            "SmallInt" => "int32".to_string(),
+            "Float" => "float".to_string(),
+            "Double" => "double".to_string(),
+            "Numeric" => "double".to_string(),
+            "Bool" => "bool".to_string(),
+            "Text" => "string".to_string(),
+            "VarChar" => "string".to_string(),
+            "Char" => "string".to_string(),
+            "Uuid" => "string".to_string(),
+            "Timestamp" => "Timestamp".to_string(),
+            "Timestamptz" => "Timestamp".to_string(),
+            "Date" => "string".to_string(),
+            "Time" => "string".to_string(),
+            "Timetz" => "string".to_string(),
+            "Json" => "string".to_string(),
+            "Jsonb" => "string".to_string(),
+            "Binary" => "bytes".to_string(),
+            "Bytea" => "bytes".to_string(),
             _ => "string".to_string(),
         }
     }
@@ -479,10 +498,12 @@ fn main() -> io::Result<()> {
 
         match serde_json::from_str::<Value>(&line) {
             Ok(request) => {
-                let response = server.handle_request(request);
-                let response_str = serde_json::to_string(&response).unwrap();
-                writeln!(stdout, "{}", response_str)?;
-                stdout.flush()?;
+                if let Some(response) = server.handle_request(request) {
+                    let response_str = serde_json::to_string(&response).unwrap();
+                    writeln!(stdout, "{}", response_str)?;
+                    stdout.flush()?;
+                }
+                // If None is returned (notification), no response is sent
             }
             Err(e) => {
                 let error_response = json!({

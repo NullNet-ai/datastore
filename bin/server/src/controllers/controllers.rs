@@ -133,7 +133,7 @@ pub async fn get_chunk(
                 match serde_json::from_str::<serde_json::Value>(&msg.message) {
                     Ok(parsed_json) => {
                         // Create a new object with parsed message
-                        let mut result = serde_json::json!({
+                        let result = serde_json::json!({
                             "record_id": msg.record_id,
                             "client_id": msg.client_id,
                             "message": parsed_json

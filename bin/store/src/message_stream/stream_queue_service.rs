@@ -18,81 +18,6 @@ impl StreamQueueService {
         Arc::new(Self)
     }
 
-    pub async fn queue_exists(&self, queue_name: &str) -> Result<bool, DieselError> {
-        let mut conn = db::get_async_connection().await;
-        
-        let result = stream_queue::table
-            .filter(stream_queue::name.eq(queue_name))
-            .first::<StreamQueueModel>(&mut conn)
-            .await;
-            
-        match result {
-            Ok(_) => Ok(true),
-            Err(DieselError::NotFound) => Ok(false),
-            Err(e) => Err(e),
-        }
-    }
-
-    pub async fn get_queue_by_name(&self, queue_name: &str) -> Result<Option<StreamQueueModel>, DieselError> {
-        let mut conn = db::get_async_connection().await;
-        
-        let result = stream_queue::table
-            .filter(stream_queue::name.eq(queue_name))
-            .first::<StreamQueueModel>(&mut conn)
-            .await;
-            
-        match result {
-            Ok(queue) => Ok(Some(queue)),
-            Err(DieselError::NotFound) => Ok(None),
-            Err(e) => Err(e),
-        }
-    }
-
-    pub async fn create_queue(&self, queue_name: &str) -> Result<StreamQueueModel, DieselError> {
-        let mut conn = db::get_async_connection().await;
-        
-        let new_queue = NewStreamQueue::new(
-            Uuid::new_v4().to_string(),
-            queue_name.to_string(),
-        );
-        
-        let queue = diesel::insert_into(stream_queue::table)
-            .values(&new_queue)
-            .get_result::<StreamQueueModel>(&mut conn)
-            .await?;
-            
-        Ok(queue)
-    }
-
-    pub async fn get_or_create_queue(&self, queue_name: &str) -> Result<StreamQueueModel, DieselError> {
-        match self.get_queue_by_name(queue_name).await? {
-            Some(queue) => {
-                // Update last_accessed timestamp
-                let updated_queue = diesel::update(stream_queue::table.filter(stream_queue::id.eq(&queue.id)))
-                    .set(stream_queue::last_accessed.eq(Some(chrono::Utc::now())))
-                    .get_result::<StreamQueueModel>(&mut db::get_async_connection().await)
-                    .await?;
-                Ok(updated_queue)
-            },
-            None => self.create_queue(queue_name).await,
-        }
-    }
-
-    pub async fn delete_queue_by_name(&self, queue_name: &str) -> Result<(), DieselError> {
-        let mut conn = db::get_async_connection().await;
-        
-        // First delete all items for this queue
-        diesel::delete(stream_queue_items::table.filter(stream_queue_items::queue_name.eq(queue_name)))
-            .execute(&mut conn)
-            .await.ok(); // Ignore errors if no items exist
-        
-        // Delete the queue itself
-        diesel::delete(stream_queue::table.filter(stream_queue::name.eq(queue_name)))
-            .execute(&mut conn)
-            .await?;
-        
-        Ok(())
-    }
 
     pub async fn insert_to_queue(
         &self,
@@ -180,25 +105,5 @@ impl StreamQueueService {
         Ok(results)
     }
 
-    pub async fn clear_queue(&self, queue_name: &str) -> Result<(), DieselError> {
-        let mut conn = db::get_async_connection().await;
-        
-        diesel::delete(stream_queue_items::table.filter(stream_queue_items::queue_name.eq(queue_name)))
-            .execute(&mut conn)
-            .await?;
-        
-        Ok(())
-    }
 
-    pub async fn get_queue_size(&self, queue_name: &str) -> Result<i64, DieselError> {
-        let mut conn = db::get_async_connection().await;
-        
-        let count = stream_queue_items::table
-            .filter(stream_queue_items::queue_name.eq(queue_name))
-            .count()
-            .get_result::<i64>(&mut conn)
-            .await?;
-        
-        Ok(count)
-    }
 }

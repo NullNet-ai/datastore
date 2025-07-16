@@ -15,6 +15,7 @@ pub struct MessageStreamingService {
     broker: Arc<BrokerService>,
     socket_io: SocketIo,
     channel_pipes: Arc<Mutex<HashMap<String, Arc<TokenBucket>>>>,
+    #[allow(dead_code)]
     queue_service: Arc<StreamQueueService>,
 }
 
