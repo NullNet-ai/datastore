@@ -9,6 +9,21 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use uuid::Uuid as uuid_crate;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MatchPattern {
+    /// Exact match - value as provided
+    Exact,
+    /// Prefix match - value%
+    Prefix,
+    /// Suffix match - %value
+    Suffix,
+    /// Contains match - %value%
+    Contains,
+    /// Custom pattern - use value as-is (allows manual % and _ placement)
+    Custom,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ApiResponse {
     pub success: bool,
@@ -432,6 +447,14 @@ fn default_group_operator() -> LogicalOperator {
     LogicalOperator::Or
 }
 
+fn default_case_sensitive() -> Option<bool> {
+    Some(false)
+}
+
+fn default_parse_as() -> String {
+    String::new()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Join {
     pub r#type: String, // use r#type because `type` is a Rust keyword
@@ -470,6 +493,12 @@ pub enum FilterCriteria {
         entity: String,
         operator: FilterOperator,
         values: Vec<serde_json::Value>,
+        #[serde(default = "default_case_sensitive")]
+        case_sensitive: Option<bool>,
+        #[serde(default = "default_parse_as")]
+        parse_as: String,
+        #[serde(default)]
+        match_pattern: Option<MatchPattern>,
     },
     #[serde(rename = "operator")]
     LogicalOperator { operator: LogicalOperator },
@@ -539,4 +568,7 @@ pub enum FilterOperator {
     IsNotEmpty,
     #[serde(rename = "like")]
     Like,
+    #[serde(rename = "has_no_value")]
+    HasNoValue,
 }
+

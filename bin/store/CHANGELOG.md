@@ -12,7 +12,12 @@ Eriberto
 ### Added
 - Added mulitple sorting capabilities
 - Added group advance filters
-
+- Added has no value capabilities
+- Added match pattern capabilities
+- Added custom match pattern capabilities
+### Changed
+- Changed the way the group advance filters are parsed to be more flexible and allow for more complex filters
+- Changed the way the sorting is parsed to be more flexible and allow for more complex sorting
 ---
 ## 0.1.5
 

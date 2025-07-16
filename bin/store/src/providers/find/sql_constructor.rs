@@ -1,4 +1,4 @@
-use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, Join, LogicalOperator, SortOption}};
+use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern, SortOption}};
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -57,12 +57,27 @@ impl SQLConstructor {
     }
 
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
+        Self::get_field_with_parse_as(table, field, format_str, None)
+    }
+    
+    fn get_field_with_parse_as(table: &str, field: &str, format_str: &str, parse_as: Option<&str>) -> String {
         // TODO: apply permissions
         // TODO: apply concantenated fields
-        if field.contains("_date") {
+        let base_field = if field.contains("_date") {
             Self::date_format_wrapper(table, field, Some(format_str))
         } else {
-            format!("\"{}\".\"{}\"", table, field)
+            format!("\"{}\".\"{}\"" , table, field)
+        };
+        
+        // Apply parse_as type casting if provided and not empty
+        if let Some(cast_type) = parse_as {
+            if !cast_type.is_empty() {
+                format!("{}::{}", base_field, cast_type)
+            } else {
+                base_field
+            }
+        } else {
+            base_field
         }
     }
     fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
@@ -297,9 +312,9 @@ impl SQLConstructor {
          
          // Handle single criteria case
         if filters.len() == 1 {
-            if let FilterCriteria::Criteria { field, entity, operator, values } = &filters[0] {
-                let field_name = Self::get_field(entity, field, &self.request_body.date_format);
-                return Ok(self.format_condition(&field_name, operator, values));
+            if let FilterCriteria::Criteria { field, entity, operator, values, case_sensitive, parse_as, match_pattern } = &filters[0] {
+                let field_name = Self::get_field_with_parse_as(entity, field, &self.request_body.date_format, Some(parse_as));
+                return Ok(self.format_condition_with_case_sensitivity_and_pattern(&field_name, operator, values, *case_sensitive, match_pattern.as_ref()));
             }
             return Err("Invalid filter: single filter must be a criteria".to_string());
         }
@@ -319,9 +334,9 @@ impl SQLConstructor {
         
         while i < filters.len() {
             match &filters[i] {
-                FilterCriteria::Criteria { field, entity, operator, values } => {
-                    let field_name = Self::get_field(entity, field, &self.request_body.date_format);
-                    let condition = self.format_condition(&field_name, operator, values);
+                FilterCriteria::Criteria { field, entity, operator, values, case_sensitive, parse_as, match_pattern } => {
+                    let field_name = Self::get_field_with_parse_as(entity, field, &self.request_body.date_format, Some(parse_as));
+                    let condition = self.format_condition_with_case_sensitivity_and_pattern(&field_name, operator, values, *case_sensitive, match_pattern.as_ref());
                     tokens.push(Token::Condition(condition));
                     i += 1;
                 },
@@ -471,7 +486,9 @@ impl SQLConstructor {
         
         conditions.join(" AND ")
     }
-    fn format_condition(&self, field_name: &str, operator: &FilterOperator, values: &[serde_json::Value]) -> String {
+
+    
+    fn format_condition_with_case_sensitivity_and_pattern(&self, field_name: &str, operator: &FilterOperator, values: &[serde_json::Value], case_sensitive: Option<bool>, match_pattern: Option<&MatchPattern>) -> String {
         let values_str = values.iter()
             .map(|v| match v {
                 serde_json::Value::String(s) => format!("'{}'", s.replace("'", "''")), // Escape single quotes
@@ -494,7 +511,11 @@ impl SQLConstructor {
                 if values_str.len() == 1 {
                     format!("{} != {}", field_name, values_str[0])
                 } else {
-                    format!("{} NOT IN ({})", field_name, values_str.join(", "))
+                    // Use AND for each item: field != value1 AND field != value2 AND ...
+                    let conditions: Vec<String> = values_str.iter()
+                        .map(|value| format!("{} != {}", field_name, value))
+                        .collect();
+                    format!("({})", conditions.join(" AND "))
                 }
             },
             FilterOperator::GreaterThan => format!("{} > {}", field_name, values_str[0]),
@@ -503,8 +524,14 @@ impl SQLConstructor {
             FilterOperator::LessThanOrEqual => format!("{} <= {}", field_name, values_str[0]),
             FilterOperator::IsNull => format!("{} IS NULL", field_name),
             FilterOperator::IsNotNull => format!("{} IS NOT NULL", field_name),
-            FilterOperator::Contains => format!("{} LIKE '%{}%'", field_name, values_str[0].trim_matches('\'')),
-            FilterOperator::NotContains => format!("{} NOT LIKE '%{}%'", field_name, values_str[0].trim_matches('\'')),
+            FilterOperator::Contains => {
+                let like_op = if case_sensitive.unwrap_or(true) { "LIKE" } else { "ILIKE" };
+                format!("{} {} '%{}%'", field_name, like_op, values_str[0].trim_matches('\''))
+            },
+            FilterOperator::NotContains => {
+                let like_op = if case_sensitive.unwrap_or(true) { "NOT LIKE" } else { "NOT ILIKE" };
+                format!("{} {} '%{}%'", field_name, like_op, values_str[0].trim_matches('\''))
+            },
             FilterOperator::IsBetween => {
                 if values_str.len() >= 2 {
                     format!("{} BETWEEN {} AND {}", field_name, values_str[0], values_str[1])
@@ -521,10 +548,39 @@ impl SQLConstructor {
             },
             FilterOperator::IsEmpty => format!("{} = ''", field_name),
             FilterOperator::IsNotEmpty => format!("{} != ''", field_name),
-            FilterOperator::Like => format!("{} LIKE {}", field_name, values_str[0]),
+            FilterOperator::Like => {
+                let like_op = if case_sensitive.unwrap_or(true) { "LIKE" } else { "ILIKE" };
+                let pattern = self.build_like_pattern(&values_str[0], match_pattern);
+                format!("{} {} {}", field_name, like_op, pattern)
+            },
+            FilterOperator::HasNoValue => {
+                // Check if field is an array by looking for array indicators
+                let is_array_field = field_name.contains("[]") || field_name.ends_with("_array") || field_name.ends_with("s");
+                
+                if is_array_field {
+                    // For array fields: check if array length is null or 0
+                    format!("(ARRAY_LENGTH({}, 1) IS NULL OR ARRAY_LENGTH({}, 1) = 0 OR {} IS NULL)", field_name, field_name, field_name)
+                } else {
+                    // For regular fields: check if empty string or null
+                    format!("({} = '' OR {} IS NULL)", field_name, field_name)
+                }
+            },
         }
     }
     
+    fn build_like_pattern(&self, value: &str, match_pattern: Option<&MatchPattern>) -> String {
+        let clean_value = value.trim_matches('\'');
+        
+        match match_pattern {
+            Some(MatchPattern::Exact) => format!("'{}'", clean_value),
+            Some(MatchPattern::Prefix) => format!("'{}%'", clean_value),
+            Some(MatchPattern::Suffix) => format!("'%{}'", clean_value),
+            Some(MatchPattern::Contains) => format!("'%{}%'", clean_value),
+            Some(MatchPattern::Custom) => value.to_string(), // Use original value for custom patterns
+            None => value.to_string(), // Use original value if no pattern specified
+        }
+    }
+
     /// Helper method to extract operator from GroupAdvanceFilter enum
     fn get_group_operator<'a>(&self, group_filter: &'a GroupAdvanceFilter) -> &'a LogicalOperator {
         match group_filter {
