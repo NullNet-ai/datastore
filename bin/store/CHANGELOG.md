@@ -18,7 +18,9 @@ Eriberto
 ### Changed
 - Changed the way the group advance filters are parsed to be more flexible and allow for more complex filters
 - Changed the way the sorting is parsed to be more flexible and allow for more complex sorting
+- Change the way the concatenate fields are parsed to be more flexible and allow for more complex concatenation
 ---
+
 ## 0.1.5
 
 ### Author

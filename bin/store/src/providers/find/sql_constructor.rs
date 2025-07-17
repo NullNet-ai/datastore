@@ -117,12 +117,36 @@ impl SQLConstructor {
     }
 
     fn construct_pluck(&self) -> String {
-        let mut pluck = String::new();
+        let mut pluck_fields = Vec::new();
+        
+        // Add regular pluck fields
         for field in &self.request_body.pluck {
-            pluck.push_str(&Self::get_field(&self.table, field, &self.request_body.date_format));
-            pluck.push_str(", ");
+            pluck_fields.push(Self::get_field(&self.table, field, &self.request_body.date_format));
         }
-        pluck.trim_end_matches(", ").to_string()
+        
+        // Add concatenated fields that match the main table
+        if !self.request_body.concatenate_fields.is_empty() {
+            for field in &self.request_body.concatenate_fields {
+                if field.aliased_entity == self.table || field.entity == self.table {
+                    let table_name = if !field.aliased_entity.is_empty() {
+                        &field.aliased_entity
+                    } else {
+                        &field.entity
+                    };
+                    let concatenated_expression = field.fields.iter()
+                          .map(|f| Self::get_field(table_name, f, &self.request_body.date_format))
+                          .collect::<Vec<_>>()
+                          .join(&format!(" || '{}' || ", field.separator));
+                    pluck_fields.push(format!("({}) AS {}", concatenated_expression, field.field_name));
+                }
+            }
+        }
+        
+        if pluck_fields.is_empty() {
+            String::new()
+        } else {
+            pluck_fields.join(", ")
+        }
     }
     fn construct_pluck_group_object(&self) -> String {
         let mut selections = Vec::new();
@@ -139,6 +163,30 @@ impl SQLConstructor {
                     field
                 );
                 selections.push(selection);
+            }
+            
+            // Add concatenated fields that match this table alias
+            if !self.request_body.concatenate_fields.is_empty() {
+                for field in &self.request_body.concatenate_fields {
+                    if field.aliased_entity == *table_alias || field.entity == *table_alias {
+                        let table_name = if !field.aliased_entity.is_empty() {
+                            &field.aliased_entity
+                        } else {
+                            &field.entity
+                        };
+                        let concatenated_expression = field.fields.iter()
+                              .map(|f| Self::get_field(table_name, f, &self.request_body.date_format))
+                              .collect::<Vec<_>>()
+                              .join(&format!(" || '{}' || ", field.separator));
+                        let selection = format!(
+                            "JSONB_AGG({}) AS \"{}_{}\"",
+                            concatenated_expression,
+                            table_alias,
+                            field.field_name
+                        );
+                        selections.push(selection);
+                    }
+                }
             }
         }
         
@@ -176,11 +224,19 @@ impl SQLConstructor {
 
                 if !self.request_body.concatenate_fields.is_empty() {
                     self.request_body.concatenate_fields.iter().for_each(|field| {
-                        let concatenated_expression = field.fields.iter()
-                              .map(|f| Self::get_field(&field.entity, f, &self.request_body.date_format))
-                              .collect::<Vec<_>>()
-                              .join(&format!(" || '{}' || ", field.separator));
-                        field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
+                        // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
+                        if field.aliased_entity == *alias || field.entity == *alias {
+                            let table_name = if !field.aliased_entity.is_empty() {
+                             &field.aliased_entity
+                         } else {
+                             &field.entity
+                         };
+                            let concatenated_expression = field.fields.iter()
+                                  .map(|f| Self::get_field(table_name, f, &self.request_body.date_format))
+                                  .collect::<Vec<_>>()
+                                  .join(&format!(" || '{}' || ", field.separator));
+                            field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
+                        }
                     });
                 }
                 
