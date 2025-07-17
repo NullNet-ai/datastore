@@ -77,6 +77,7 @@ export class TimelineService {
       
           SELECT JSONB_BUILD_OBJECT(
             'id', account_organization.id,
+            'organization_id', organization_id,
             'organization_name', organization_name,
             'account_id', account_id,
             'contact_id', account_organization.contact_id,
@@ -89,6 +90,7 @@ export class TimelineService {
           FROM (
             SELECT
               joined_account_org.id,
+              organization.id as organization_id,
               organization.name as organization_name,
               account.account_id as account_id,
               joined_account_org.contact_id,

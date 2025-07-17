@@ -57,7 +57,6 @@ export class CreateActorsImplementations {
         } = responsible_account;
         const [_res, _req] = controller_args;
         const { params, body, query, headers } = _req;
-        console.log("%c 🖍️: CreateActorsImplementations -> body ", "font-size:16px;background-color:#ab14a4;color:white;", body)
         const { host, cookie } = headers;
         const { table } = params;
         const { pluck = 'id', p, rp } = query;
