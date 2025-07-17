@@ -699,6 +699,7 @@ pub async fn get_by_filter(
     path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
+ 
     let parameters = request_body.into_inner();
     let table = path_params.into_inner();
     
@@ -768,7 +769,6 @@ pub async fn get_by_filter(
             });
         }
     };
-
     // Parse JSON strings to serde_json::Value
     let data: Vec<serde_json::Value> = results
         .into_iter()
@@ -781,7 +781,7 @@ pub async fn get_by_filter(
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
-        message: format!("Filter operation completed for table: {} Query: {}", &table, &final_query),
+        message: format!("Filter operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
     })

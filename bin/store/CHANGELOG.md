@@ -5,6 +5,21 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.6
+
+### Author
+Eriberto
+### Added
+- Added mulitple sorting capabilities
+- Added group advance filters
+- Added has no value capabilities
+- Added match pattern capabilities
+- Added custom match pattern capabilities
+### Changed
+- Changed the way the group advance filters are parsed to be more flexible and allow for more complex filters
+- Changed the way the sorting is parsed to be more flexible and allow for more complex sorting
+- Change the way the concatenate fields are parsed to be more flexible and allow for more complex concatenation
+---
 
 ## 0.1.5
 
