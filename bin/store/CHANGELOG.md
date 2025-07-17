@@ -54,9 +54,16 @@ Kashan
   - Added automatic token bucket creation for channels when messages arrive for authenticated organizations
   - Integrated token bucket monitoring with real-time dashboard updates
 - **Message Queue System**:
-  - Created persistent queue system for handling backpressured messages
+  - Created persistent database queue system for handling backpressured messages
   - Implemented automatic queue processing when token buckets have available capacity
   - Added database-backed message storage with JSON normalization
+
+### Removed
+- **Architecture Cleanup**: Eliminated redundant local memory queues and simplified message routing
+  - Removed `BrokerService` and all local memory queue management
+  - Eliminated duplicate message routing logic between broker and streaming service
+  - Removed complex queue cleanup tasks and redundant pipe registration
+  - Simplified architecture to use only database queues for backpressure handling
 
 ### Enhanced
 - **Channel Discovery**: Channels are now automatically refreshed every 30 seconds without requiring service restart
@@ -81,7 +88,6 @@ Kashan
   - Created `/src/message_stream/token_bucket.rs` - Rate limiting and backpressure control
   - Created `/src/message_stream/stream_queue_service.rs` - Persistent message queuing
   - Created `/src/message_stream/gateway.rs` - Socket.IO gateway with JWT authentication
-  - Created `/src/message_stream/message_broker.rs` - Message broker for coordinating token buckets
   - Added real-time dashboard at `/message_stream/index.html` for monitoring
 - **Database Integration**:
   - Added `stream_queues` and `stream_queue_items` tables for persistent message storage
@@ -94,13 +100,16 @@ Kashan
 - **Performance**: 
   - Non-blocking periodic refresh that doesn't interfere with notification processing
   - Conditional refresh based on service state to minimize unnecessary database queries
-  - Efficient token bucket management with configurable rates
+  - Simplified token bucket management with configurable rates
   - Automatic channel cleanup and resource management
+  - Eliminated memory overhead from local queues and reduced lock contention
+  - Direct message routing without broker intermediary for improved throughput
 - **Reliability**: 
   - Automatic synchronization with database changes
   - Robust error handling with detailed logging
   - Enhanced error handling in message service with proper logging and error propagation
-  - Graceful handling of backpressure scenarios with persistent queuing
+  - Improved backpressure handling with persistent database queues only
+  - Eliminated risk of message loss from memory-based queues during service restarts
 - **CRDT Synchronization**:
   - Modified `sync_service.rs` to automatically add `sync_status` field to connections table records
   - Insert operations: `sync_status` set to "complete" and positioned as last field
@@ -109,6 +118,24 @@ Kashan
   - Added support for PostgreSQL triggers with `AFTER INSERT OR UPDATE` and conditional execution
   - Trigger conditions: `WHEN (NEW.sync_status = 'complete')` for targeted execution
 - **Code Safety**: Removed unsafe unwraps from the code
+- **Shared State Management**:
+  - Implemented global `AUTHENTICATED_CLIENTS` state using `Arc<Mutex<HashMap>>` for thread-safe client tracking
+  - Added `OrganizationClients` struct to manage client IDs and channels per organization
+  - Enhanced client registration and removal with proper state synchronization
+  - Simplified token bucket management within streaming service
+- **Dashboard Enhancements**:
+  - Added real-time Socket.IO event handling for `updateHighWaterMark` and `getCurrentHighWaterMark`
+  - Implemented dynamic token bucket capacity adjustment through dashboard interface
+  - Added comprehensive system metrics display including client status and bucket statistics
+  - Enhanced dashboard with live updates for token bucket states and message flow monitoring
+- **Documentation & Architecture**:
+  - Created comprehensive message flow diagram documenting the complete data flow from PostgreSQL to clients
+  - Added detailed explanation of message streaming architecture including all components and their interactions
+  - Documented token bucket rate limiting, backpressure handling, and organization isolation features
+- **Error Handling Improvements**:
+  - Modified `PgListenerService` to skip malformed JSON notifications instead of creating fallback messages
+  - Enhanced error logging with detailed context for debugging notification parsing failures
+  - Improved graceful error handling throughout the message streaming pipeline
 
 ### Fixed
 - Removed infinite loop test data senders that were causing performance issues

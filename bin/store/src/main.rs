@@ -283,11 +283,8 @@ async fn main() -> std::io::Result<()> {
 
 
 
-         // Start the message processing loop
-         let streaming_service_clone = streaming_service.clone();
-         tokio::spawn(async move {
-             streaming_service_clone.start_message_processing_loop().await;
-         });
+         // Note: Message processing is handled by the routing task in initialize()
+         // No need for additional message processing loop
 
 
 

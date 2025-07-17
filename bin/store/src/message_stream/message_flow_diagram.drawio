@@ -1,0 +1,305 @@
+<mxfile host="app.diagrams.net" modified="2024-01-15T10:00:00.000Z" agent="5.0" etag="abc123" version="22.1.16">
+  <diagram name="PostgreSQL to Socket Flow" id="postgres-socket-flow">
+    <mxGraphModel dx="1434" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- PostgreSQL Layer -->
+        <mxCell id="postgres-notify" value="PostgreSQL&lt;br&gt;NOTIFY Event&lt;br&gt;(JSON payload)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- PG Listener Service -->
+        <mxCell id="pg-listener" value="PgListenerService&lt;br&gt;process_notification()&lt;br&gt;Parse JSON payload" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="250" y="50" width="160" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Main Stream Processing -->
+        <mxCell id="main-stream" value="Main Stream&lt;br&gt;TokenBucket&lt;br&gt;receive_message()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="470" y="50" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- BrokerService Message Routing -->
+        <mxCell id="broker-routing" value="BrokerService&lt;br&gt;spawn_main_pipe_routing_task()&lt;br&gt;Extract event_name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="470" y="180" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Channel Exists Check -->
+        <mxCell id="channel-exists" value="Channel&lt;br&gt;Exists in&lt;br&gt;SharedState?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="310" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Organization Check -->
+        <mxCell id="org-check" value="Organization&lt;br&gt;Has Active&lt;br&gt;Clients?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="650" y="310" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Create Channel -->
+        <mxCell id="create-channel" value="Create Channel&lt;br&gt;TokenBucket&lt;br&gt;Register with SharedState&lt;br&gt;Register with Broker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="620" y="440" width="140" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Get Existing Channel -->
+        <mxCell id="get-channel" value="Get Channel&lt;br&gt;TokenBucket from&lt;br&gt;SharedState" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="350" y="310" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Discard Message -->
+        <mxCell id="discard-msg" value="Discard Message&lt;br&gt;No Active Clients&lt;br&gt;Log Info" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="800" y="310" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Channel Configuration -->
+        <mxCell id="channel-config" value="Load Channel&lt;br&gt;Configuration&lt;br&gt;(capacity, rate_limit)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="700" y="800" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="channel-bucket" value="Channel&lt;br&gt;TokenBucket&lt;br&gt;Process Message" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="500" y="800" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Token Bucket Processing -->
+        <mxCell id="bucket-capacity" value="Check Bucket&lt;br&gt;Capacity&lt;br&gt;Available?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="530" y="920" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Direct Token Bucket Processing -->
+        <mxCell id="buffer-msg" value="Buffer Message&lt;br&gt;in TokenBucket&lt;br&gt;(Unlimited Buffer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="350" y="920" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Token Processing -->
+        <mxCell id="token-check" value="Tokens&lt;br&gt;Available?&lt;br&gt;emit_message()" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="530" y="1040" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Database Queue Management -->
+        <mxCell id="queue-msg" value="Queue Message&lt;br&gt;in Database&lt;br&gt;Mark Backpressured&lt;br&gt;Update Queue Size" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="200" y="1040" width="140" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Queue Size Check -->
+        <mxCell id="queue-size" value="Queue Size&lt;br&gt;Within Limit?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="230" y="1180" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Drop Oldest Messages -->
+        <mxCell id="drop-oldest" value="Drop Oldest&lt;br&gt;Messages&lt;br&gt;Log Warning" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1180" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Organization Validation -->
+        <mxCell id="org-validation" value="Organization&lt;br&gt;Has Active&lt;br&gt;Clients?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="530" y="1160" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Client Connection Check -->
+        <mxCell id="client-check" value="Check Client&lt;br&gt;Connections&lt;br&gt;in Socket.IO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1160" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Socket Broadcasting -->
+        <mxCell id="socket-broadcast" value="Socket.IO&lt;br&gt;broadcast_to_channel()&lt;br&gt;Emit to Clients&lt;br&gt;Update Metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="500" y="1280" width="140" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Final Success -->
+        <mxCell id="success" value="Message&lt;br&gt;Delivered&lt;br&gt;Successfully" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="500" y="1420" width="140" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Queue Flush Process -->
+        <mxCell id="queue-flush" value="Queue Flush&lt;br&gt;flush_channel_queue()&lt;br&gt;Periodic Task" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1040" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Flush Conditions -->
+        <mxCell id="flush-conditions" value="Flush Conditions&lt;br&gt;Met?&lt;br&gt;(time/size/tokens)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1300" width="80" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Batch Processing -->
+        <mxCell id="batch-process" value="Batch Process&lt;br&gt;Queued Messages&lt;br&gt;try_drain()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1420" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Primary Flow Connections -->
+        <mxCell id="edge1" edge="1" parent="1" source="postgres-notify" target="pg-listener">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge2" edge="1" parent="1" source="pg-listener" target="main-stream">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge3" edge="1" parent="1" source="main-stream" target="broker-routing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Channel Management Connections -->
+        <mxCell id="edge4" edge="1" parent="1" source="broker-routing" target="channel-exists">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge5" edge="1" parent="1" source="channel-exists" target="get-channel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge5-label" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge5">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge6" edge="1" parent="1" source="channel-exists" target="org-check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge6-label" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge6">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge6a" edge="1" parent="1" source="org-check" target="create-channel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge6a-label" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge6a">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge6b" edge="1" parent="1" source="org-check" target="discard-msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge6b-label" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge6b">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge7" edge="1" parent="1" source="create-channel" target="channel-config">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge7a" edge="1" parent="1" source="channel-config" target="channel-bucket">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge8" edge="1" parent="1" source="channel-bucket" target="bucket-capacity">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge8a" edge="1" parent="1" source="bucket-capacity" target="buffer-msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge8a-label" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge8a">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge8b" edge="1" parent="1" source="bucket-capacity" target="token-check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge8b-label" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge8b">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Connect get-channel to channel-bucket -->
+        <mxCell id="edge7b" edge="1" parent="1" source="get-channel" target="channel-bucket">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="410" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Token Processing and Queue Management -->
+        <mxCell id="edge9" edge="1" parent="1" source="token-check" target="org-validation">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge9-label" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge9">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge9a" edge="1" parent="1" source="token-check" target="queue-msg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge9a-label" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge9a">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Connect buffer-msg to token-check -->
+        <mxCell id="edge8c" edge="1" parent="1" source="buffer-msg" target="token-check">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="410" y="1080" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="edge8c-label" value="When tokens available" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge8c">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Queue Size Management -->
+        <mxCell id="edge9b" edge="1" parent="1" source="queue-msg" target="queue-size">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge9c" edge="1" parent="1" source="queue-size" target="drop-oldest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge9c-label" value="No" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge9c">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Organization and Client Validation -->
+        <mxCell id="edge10" edge="1" parent="1" source="org-validation" target="client-check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge10-label" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge10">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge10a" edge="1" parent="1" source="client-check" target="socket-broadcast">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Broadcasting and Success Handling -->
+        <mxCell id="edge11" edge="1" parent="1" source="socket-broadcast" target="success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Queue Flush Process -->
+        <mxCell id="edge12" edge="1" parent="1" source="queue-flush" target="flush-conditions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge12a" edge="1" parent="1" source="flush-conditions" target="batch-process">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge12a-label" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge12a">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="edge12b" edge="1" parent="1" source="batch-process" target="channel-bucket">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="840" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="edge12b-label" value="Process batch" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="edge12b">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry" />
+        </mxCell>
+        
+
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

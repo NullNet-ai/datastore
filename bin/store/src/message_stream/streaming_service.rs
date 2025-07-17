@@ -1,39 +1,32 @@
-use crate::message_stream::message_broker::BrokerService;
 use crate::message_stream::pg_listener_service::PgListenerService;
 use crate::message_stream::token_bucket::{Message, TokenBucket};
 use crate::message_stream::gateway::broadcast_to_channel;
 use crate::message_stream::stream_queue_service::StreamQueueService;
+use crate::message_stream::shared_state::{get_shared_state, SharedStreamingState, ChannelStatus};
 use log::{error, info, warn};
 use serde_json::Value;
 use socketioxide::SocketIo;
-use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
+#[derive(Clone)]
 pub struct MessageStreamingService {
-    broker: Arc<BrokerService>,
     socket_io: SocketIo,
-    channel_pipes: Arc<Mutex<HashMap<String, Arc<TokenBucket>>>>,
-    #[allow(dead_code)]
     queue_service: Arc<StreamQueueService>,
+    shared_state: Arc<SharedStreamingState>,
 }
 
 impl MessageStreamingService {
     pub fn new(socket_io: SocketIo) -> Arc<Self> {
         Arc::new(Self {
-            broker: BrokerService::new(),
             socket_io,
-            channel_pipes: Arc::new(Mutex::new(HashMap::new())),
             queue_service: StreamQueueService::new(),
+            shared_state: get_shared_state(),
         })
     }
 
     pub async fn initialize(self: &Arc<Self>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Initializing MessageStreamingService...");
-        
-        // Start the queue cleanup task
-        self.broker.spawn_queue_cleanup_task();
         
         // Get the main stream from PgListenerService
         let pg_listener = PgListenerService::instance();
@@ -49,87 +42,51 @@ impl MessageStreamingService {
     async fn start_routing_task(self: &Arc<Self>, main_stream: Arc<TokenBucket>) {
         let service = Arc::clone(self);
         
-        // Spawn the main pipe routing task with our custom routing logic
-        self.broker.spawn_main_pipe_routing_task(
-            main_stream,
-            move |message: &Message| -> String {
-                // Extract event_name from the message
-                // The message payload should contain event_name which becomes the channel name
-                if let Ok(payload) = serde_json::from_value::<Value>(message.0.clone()) {
-                    if let Some(event_name) = payload.get("event_name").and_then(|v| v.as_str()) {
-                        return event_name.to_string();
-                    }
-                }
-                
-                // Fallback to a default channel if event_name is not found
-                "default".to_string()
-            },
-            move |channel_name: &str, message: &Message| {
-                let service_clone = Arc::clone(&service);
-                let channel_name = channel_name.to_string();
-                let message = message.clone();
-                
-                async move {
-                    // Extract organization_id from the message
-                    let organization_id = if let Ok(payload) = serde_json::from_value::<Value>(message.0.clone()) {
-                        payload.get("organization_id").and_then(|v| v.as_str()).map(|s| s.to_string())
+        tokio::spawn(async move {
+            loop {
+                // Get message from main stream
+                let msg_opt = {
+                    let mut buffer = main_stream.buffer.lock().await;
+                    buffer.pop_front()
+                };
+
+                if let Some(message) = msg_opt {
+                    // Extract channel name and organization_id from message
+                    let (channel_name, organization_id) = if let Ok(payload) = serde_json::from_value::<Value>(message.0.clone()) {
+                        let event_name = payload.get("event_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("default")
+                            .to_string();
+                        let org_id = payload.get("organization_id")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+                        (event_name, org_id)
                     } else {
-                        None
+                        ("default".to_string(), None)
                     };
-                    
+
                     if let Some(org_id) = organization_id {
                         // Check if organization has authenticated clients
                         if let Some(_org_clients) = crate::message_stream::gateway::get_organization_clients(&org_id) {
-                            // Check if channel already exists
-                            {
-                                let pipes = service_clone.channel_pipes.lock().await;
-                                if let Some(existing_pipe) = pipes.get(&channel_name) {
-                                    return Some(existing_pipe.clone());
-                                }
+                            // Handle the message using the existing handle_message logic
+                            if let Err(e) = service.handle_message(&channel_name, &org_id, message.0).await {
+                                error!("Error handling message for channel {}: {}", channel_name, e);
                             }
-                            
-                            // Channel doesn't exist but organization has authenticated clients
-                            // Create a new token bucket for this channel
-                            info!("Creating new channel pipe for: {} (org: {})", channel_name, org_id);
-                            let token_bucket = crate::message_stream::token_bucket::TokenBucket::new(
-                                &format!("{}_{}", org_id, channel_name), 
-                                1000
-                            );
-                            
-                            // Store the channel pipe
-                            {
-                                let mut pipes = service_clone.channel_pipes.lock().await;
-                                // Double-check it wasn't created while we were waiting for the lock
-                                if let Some(existing_pipe) = pipes.get(&channel_name) {
-                                    return Some(existing_pipe.clone());
-                                }
-                                pipes.insert(channel_name.clone(), token_bucket.clone());
-                            }
-                            
-                            // Register with the broker
-                            service_clone.broker.register_pipe(token_bucket.clone()).await;
-                            
-                            // Register with the global token bucket registry for dashboard access
-                            crate::message_stream::gateway::register_token_bucket(&channel_name, 1000);
-                            
-                            // Add channel to organization's channels
-                            crate::message_stream::gateway::add_channel_to_organization(&org_id, &channel_name);
-                            
-                            info!("Channel pipe {} created and associated with organization {}", channel_name, org_id);
-                            return Some(token_bucket);
                         } else {
-                            // No authenticated clients for this organization
                             info!("No authenticated clients for organization {}, discarding message for channel {}", org_id, channel_name);
-                            return None;
                         }
                     } else {
-                        // No organization_id in message
                         warn!("Message missing organization_id, discarding message for channel {}", channel_name);
-                        return None;
                     }
+                    
+                    // Increment tokens for the main stream since we processed this message
+                    main_stream.increment_tokens().await;
+                } else {
+                    // No messages in the buffer, wait a bit before checking again
+                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
                 }
-            },
-        );
+            }
+        });
         
         info!("Message routing task started");
     }
@@ -145,14 +102,13 @@ impl MessageStreamingService {
         // Create a new token bucket for this channel
         let token_bucket = TokenBucket::new(&format!("{}_{}", organization_id, channel_name), capacity);
         
-        // Store the channel pipe
-        {
-            let mut pipes = self.channel_pipes.lock().await;
-            pipes.insert(channel_name.to_string(), token_bucket.clone());
-        }
-        
-        // Register with the broker
-        self.broker.register_pipe(token_bucket.clone()).await;
+        // Register with shared state
+        self.shared_state.register_channel(
+            channel_name,
+            organization_id,
+            token_bucket.clone(),
+            capacity,
+        ).await;
         
         // Register with the global token bucket registry for dashboard access
         crate::message_stream::gateway::register_token_bucket(channel_name, capacity);
@@ -174,12 +130,18 @@ impl MessageStreamingService {
         let channel_name = channel_name.to_string();
         let organization_id = organization_id.to_string();
         let notify = token_bucket.on_drain();
+        let shared_state = Arc::clone(&self.shared_state);
         
         tokio::spawn(async move {
             loop {
                 notify.notified().await;
-                info!("Channel {} drained, flushing queue", channel_name);
+                info!("Channel {} drained, removing from backpressured and starting flush", channel_name);
                 
+                // Remove from backpressured channels when drained
+                shared_state.clear_backpressured(&channel_name).await;
+                info!("Resumed receiving data for channel {}", channel_name);
+                
+                // Start flushing the queue
                 if let Err(e) = service.flush_channel_queue(&channel_name, &organization_id).await {
                     error!("Error flushing queue for channel {}: {}", channel_name, e);
                 }
@@ -192,51 +154,107 @@ impl MessageStreamingService {
         channel_name: &str,
         organization_id: &str,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Get queued items from database
-        let queue_items = self.queue_service.get_queue_items(channel_name, 1000).await?;
-        
-        if queue_items.is_empty() {
+        // Check if already flushing to prevent concurrent flushes
+        if self.shared_state.is_flushing(channel_name).await {
+            info!("Channel {} is already flushing, skipping", channel_name);
             return Ok(());
         }
         
-        info!("Flushing {} queued messages for channel {}", queue_items.len(), channel_name);
+        // Mark as flushing
+        self.shared_state.mark_flushing(channel_name).await;
         
-        // Get the token bucket for this channel
-        let token_bucket = {
-            let pipes = self.channel_pipes.lock().await;
-            pipes.get(channel_name).cloned()
-        };
+        let result = self.flush_channel_queue_internal(channel_name, organization_id).await;
         
-        if let Some(bucket) = token_bucket {
-            for item in queue_items {
-                // Check if bucket has capacity
-                if bucket.get_tokens_remaining().await > 0 {
-                    // Send message directly to bucket (bypass handle_message to avoid infinite loop)
-                    let message = Message(item.content.clone());
-                    bucket.receive_message(message).await;
-                    
-                    // Broadcast to Socket.IO clients
-                    broadcast_to_channel(
-                        &self.socket_io,
-                        organization_id,
-                        channel_name,
-                        item.content,
-                    );
-                    
-                    // Delete from queue only after successful processing
-                    self.queue_service.delete_from_queue(&item.id).await?;
-                } else {
-                    // Bucket is backpressured again, stop processing
-                    // DO NOT save back to queue - this would create infinite loop
-                    warn!("Channel {} backpressured again during queue flush, stopping", channel_name);
+        // Always remove from flushing channels when done
+        self.shared_state.clear_flushing(channel_name).await;
+        
+        result
+    }
+    
+    async fn flush_channel_queue_internal(
+        &self,
+        channel_name: &str,
+        organization_id: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        loop {
+            // Get batch of queued items from database
+            let queue_items = self.queue_service.get_queue_items(channel_name, 1000).await?;
+            
+            if queue_items.is_empty() {
+                info!("No more queued items for channel {}, flush complete", channel_name);
+                break;
+            }
+            
+            info!("Flushing {} queued messages for channel {}", queue_items.len(), channel_name);
+            
+            // Get the token bucket for this channel
+            let token_bucket = self.shared_state.get_channel(channel_name).await;
+            
+            if let Some(bucket) = token_bucket {
+                let mut messages_processed = 0;
+                let mut items_to_delete = Vec::new();
+                
+                for item in queue_items {
+                    // Check if bucket has capacity
+                    if bucket.get_tokens_remaining().await > 0 {
+                        // Send message directly to bucket
+                         let message = Message(item.content.clone());
+                         bucket.receive_message(message).await;
+                         
+                         // Broadcast to Socket.IO clients
+                         broadcast_to_channel(
+                             &self.socket_io,
+                             organization_id,
+                             channel_name,
+                             item.content,
+                         );
+                         
+                         items_to_delete.push(item.id.clone());
+                         messages_processed += 1;
+                    } else {
+                        // No tokens available, mark as backpressured and stop
+                        warn!("Channel {} has no tokens available during queue flush after {} messages", channel_name, messages_processed);
+                        
+                        self.shared_state.mark_backpressured(channel_name).await;
+                        
+                        break;
+                    }
+                }
+                
+                // Delete processed items from queue
+                for item_id in items_to_delete {
+                    if let Err(e) = self.queue_service.delete_from_queue(&item_id).await {
+                        error!("Failed to delete queue item {}: {}", item_id, e);
+                    }
+                }
+                
+                info!("Processed {} messages from queue for channel {}", messages_processed, channel_name);
+                
+                // If we processed fewer messages than available, we hit backpressure
+                if messages_processed == 0 {
+                    info!("No messages could be processed for channel {}, stopping flush", channel_name);
                     break;
                 }
-            }
-        } else {
-            // Channel doesn't exist, discard all queued messages for this channel
-            warn!("Channel {} no longer exists, discarding {} queued messages", channel_name, queue_items.len());
-            for item in queue_items {
-                self.queue_service.delete_from_queue(&item.id).await?;
+                
+                // Check if channel is backpressured before continuing
+                if self.shared_state.is_backpressured(channel_name).await {
+                    info!("Channel {} is backpressured, stopping flush", channel_name);
+                    break;
+                }
+                
+                // Continue with next batch if there might be more items
+                // Small delay to prevent tight loop
+                tokio::task::yield_now().await;
+                
+            } else {
+                // Channel doesn't exist, discard all queued messages for this channel
+                warn!("Channel {} no longer exists, discarding {} queued messages", channel_name, queue_items.len());
+                for item in queue_items {
+                    if let Err(e) = self.queue_service.delete_from_queue(&item.id).await {
+                        error!("Failed to delete orphaned queue item {}: {}", item.id, e);
+                    }
+                }
+                break;
             }
         }
         
@@ -248,12 +266,9 @@ impl MessageStreamingService {
         channel_name: &str,
         organization_id: &str,
     ) -> Arc<TokenBucket> {
-        // First, try to get existing pipe
-        {
-            let pipes = self.channel_pipes.lock().await;
-            if let Some(pipe) = pipes.get(channel_name) {
-                return pipe.clone();
-            }
+        // Check if channel already exists in shared state
+        if let Some(existing_pipe) = self.shared_state.get_channel(channel_name).await {
+            return existing_pipe;
         }
         
         // Pipe doesn't exist, create it
@@ -262,18 +277,13 @@ impl MessageStreamingService {
         // Create a new token bucket for this channel with default capacity
         let token_bucket = TokenBucket::new(&format!("{}_{}", organization_id, channel_name), 1000);
         
-        // Store the channel pipe
-        {
-            let mut pipes = self.channel_pipes.lock().await;
-            // Double-check it wasn't created while we were waiting for the lock
-            if let Some(existing_pipe) = pipes.get(channel_name) {
-                return existing_pipe.clone();
-            }
-            pipes.insert(channel_name.to_string(), token_bucket.clone());
-        }
-        
-        // Register with the broker
-        self.broker.register_pipe(token_bucket.clone()).await;
+        // Register with shared state
+        self.shared_state.register_channel(
+            channel_name,
+            organization_id,
+            token_bucket.clone(),
+            1000, // capacity
+        ).await;
         
         // Register with the global token bucket registry for dashboard access
         crate::message_stream::gateway::register_token_bucket(channel_name, 1000);
@@ -293,11 +303,18 @@ impl MessageStreamingService {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Check if organization has authenticated clients
         if let Some(_org_clients) = crate::message_stream::gateway::get_organization_clients(organization_id) {
+            // Check if channel is currently flushing or backpressured
+            let should_queue = self.shared_state.is_flushing(channel_name).await || self.shared_state.is_backpressured(channel_name).await;
+            
+            if should_queue {
+                // Channel is flushing or backpressured, queue the message to maintain order
+                info!("Channel {} is flushing or backpressured, queuing message to maintain order", channel_name);
+                self.queue_service.insert_to_queue(channel_name, message).await?;
+                return Ok(());
+            }
+            
             // Check if channel exists
-            let token_bucket = {
-                let pipes = self.channel_pipes.lock().await;
-                pipes.get(channel_name).cloned()
-            };
+            let token_bucket = self.shared_state.get_channel(channel_name).await;
             
             let bucket = if let Some(existing_bucket) = token_bucket {
                 existing_bucket
@@ -310,48 +327,48 @@ impl MessageStreamingService {
                     1000
                 );
                 
-                // Store the channel pipe
-                {
-                    let mut pipes = self.channel_pipes.lock().await;
-                    // Double-check it wasn't created while we were waiting for the lock
-                    if let Some(existing_pipe) = pipes.get(channel_name) {
-                        existing_pipe.clone()
-                    } else {
-                        pipes.insert(channel_name.to_string(), new_bucket.clone());
-                        
-                        // Register with the broker
-                        self.broker.register_pipe(new_bucket.clone()).await;
-                        
-                        // Register with the global token bucket registry for dashboard access
-                        crate::message_stream::gateway::register_token_bucket(channel_name, 1000);
-                        
-                        // Add channel to organization's channels
-                        crate::message_stream::gateway::add_channel_to_organization(organization_id, channel_name);
-                        
-                        info!("Channel pipe {} created and associated with organization {}", channel_name, organization_id);
-                        new_bucket
-                    }
-                }
+                // Register with shared state
+                self.shared_state.register_channel(
+                    channel_name,
+                    organization_id,
+                    new_bucket.clone(),
+                    1000, // capacity
+                ).await;
+                
+                // Note: No broker registration needed anymore
+                
+                // Register with the global token bucket registry for dashboard access
+                crate::message_stream::gateway::register_token_bucket(channel_name, 1000);
+                
+                // Add channel to organization's channels
+                crate::message_stream::gateway::add_channel_to_organization(organization_id, channel_name);
+                
+                info!("Channel pipe {} created and associated with organization {}", channel_name, organization_id);
+                new_bucket
             };
             
-            // Check if bucket has capacity
-            if bucket.get_tokens_remaining().await > 0 {
-                // Send message directly
-                let msg = Message(message.clone());
-                bucket.receive_message(msg).await;
-                
-                // Broadcast to Socket.IO clients
-                broadcast_to_channel(
-                    &self.socket_io,
-                    organization_id,
-                    channel_name,
-                    message,
-                );
-            } else {
-                // Bucket is backpressured, save to database queue
-                warn!("Channel {} is backpressured, saving to queue", channel_name);
-                self.queue_service.insert_to_queue(channel_name, message).await?;
-            }
+            // Check if bucket has capacity before sending
+             if bucket.get_tokens_remaining().await > 0 {
+                 // Send message directly
+                 let msg = Message(message.clone());
+                 bucket.receive_message(msg).await;
+                 
+                 // Broadcast to Socket.IO clients
+                 broadcast_to_channel(
+                     &self.socket_io,
+                     organization_id,
+                     channel_name,
+                     message,
+                 );
+             } else {
+                 // Bucket is backpressured, save to database queue
+                 warn!("Channel {} became backpressured, saving message to queue", channel_name);
+                 
+                 // Mark channel as backpressured
+                 self.shared_state.mark_backpressured(channel_name).await;
+                 
+                 self.queue_service.insert_to_queue(channel_name, message).await?;
+             }
         } else {
             // No authenticated clients for this organization, discard message
             info!("No authenticated clients for organization {}, discarding message for channel {}", organization_id, channel_name);
@@ -363,20 +380,14 @@ impl MessageStreamingService {
     pub async fn unregister_channel(&self, channel_name: &str) {
         info!("Unregistering channel: {}", channel_name);
         
-        // Remove from our local storage
-        {
-            let mut pipes = self.channel_pipes.lock().await;
-            pipes.remove(channel_name);
-        }
-        
-        // Unregister from broker
-        self.broker.unregister_pipe(channel_name).await;
+        // Unregister from shared state (this handles all cleanup)
+        self.shared_state.unregister_channel(channel_name).await;
         
         info!("Channel {} unregistered", channel_name);
     }
 
     pub async fn get_active_channels(&self) -> Vec<String> {
-        self.broker.get_active_pipe_names().await
+        self.shared_state.get_active_channel_names().await
     }
 
     // Start a background task to process messages from all channels
@@ -401,10 +412,7 @@ impl MessageStreamingService {
         &self,
         channel_name: &str,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let token_bucket = {
-            let pipes = self.channel_pipes.lock().await;
-            pipes.get(channel_name).cloned()
-        };
+        let token_bucket = self.shared_state.get_channel(channel_name).await;
         
         if let Some(bucket) = token_bucket {
             // Emit messages from the bucket
@@ -433,5 +441,20 @@ impl MessageStreamingService {
         } else {
             None
         }
+    }
+    
+    /// Get the current status of a channel (for debugging/monitoring)
+    pub async fn get_channel_status(&self, channel_name: &str) -> Option<ChannelStatus> {
+        self.shared_state.get_channel_status(channel_name).await
+    }
+    
+    /// Manually trigger queue flushing for a channel (for debugging/admin purposes)
+    pub async fn trigger_manual_flush(
+        &self,
+        channel_name: &str,
+        organization_id: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        info!("Manually triggering flush for channel {}", channel_name);
+        self.flush_channel_queue(channel_name, organization_id).await
     }
 }

@@ -187,11 +187,6 @@ impl PgListenerService {
             while let Some(msg) = rx.recv().await {
                 match msg {
                     tokio_postgres::AsyncMessage::Notification(notification) => {
-                        println!(
-                            "Notification: channel={}, payload={}",
-                            notification.channel(),
-                            notification.payload()
-                        );
 
                         // Process the notification through the token bucket
                         service.process_notification(notification.clone()).await;
@@ -290,8 +285,7 @@ impl PgListenerService {
             Ok(parsed_json) => Message(parsed_json),
             Err(e) => {
                 log::error!("Failed to parse notification payload as JSON: {}", e);
-                // Fallback to string if parsing fails
-                Message(notification.payload().into())
+                return;
             }
         };
         // Send the message to the token bucket
