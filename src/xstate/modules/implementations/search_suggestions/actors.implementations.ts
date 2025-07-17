@@ -154,34 +154,34 @@ export class SearchSuggestionsActorsImplementations {
           search_term = _search_term;
         }
 
-        const concatenated_field_expressions =
-          Utility.generateConcatenatedExpressions(
-            concatenate_fields,
-            date_format,
-            table,
-          );
-        // default FilterAnalyzer params
-        const filter_analyzer_params = {
-          table_schema,
-          pluck_object,
-          organization_id,
-          joins,
-          type,
-          time_zone,
-          table,
-          date_format,
+      const concatenated_field_expressions =
+        Utility.generateConcatenatedExpressions(
           concatenate_fields,
-          concatenated_field_expressions,
-        };
-        const union_clauses: Array<string> = [];
-        let main_entity;
-        const json_build_object_query = Object.keys(filtered_fields).reduce(
-          (acc, entity) => {
-            const field_object_agg = filtered_fields[entity].map(
-              (field: string) => {
-                let entity_field = `${entity}.${field}`;
-                let db_field_group = this.db;
-                let db_field = this.db;
+          date_format,
+          table,
+        );
+      // default FilterAnalyzer params
+      const filter_analyzer_params = {
+        table_schema,
+        pluck_object,
+        organization_id,
+        joins,
+        type,
+        time_zone,
+        table,
+        date_format,
+        concatenate_fields,
+        concatenated_field_expressions,
+      };
+      const union_clauses: Array<string> = [];
+      // let main_entity;
+      const json_build_object_query = Object.keys(filtered_fields).reduce(
+        (acc, entity) => {
+          const field_object_agg = filtered_fields[entity].map(
+            (field: string) => {
+              let entity_field = `${entity}.${field}`;
+              let db_field_group = this.db;
+              let db_field = this.db;
 
                 let all_field_filters: Array<Record<string, any>> = [];
                 let field_filter: Record<string, any> = {};
@@ -254,31 +254,32 @@ export class SearchSuggestionsActorsImplementations {
                   match_pattern = DEFAULT_SEARCH_PATTERN,
                 } = field_filter || {};
 
-                let group_count_query = '';
-                if (has_group_count) {
-                  // Generate the subquery for the field group
-                  db_field_group = db_field_group
-                    .select({
-                      key: sql.raw(`'${field}_group' AS key`),
-                      value: sql.raw(`'count' AS value`),
-                      cnt: sql.raw(`COUNT(*) AS cnt`),
-                      match_score: sql.raw(`0 AS match_score`),
-                    })
-                    .from(table_schema);
+              let group_count_query = '';
+              if (has_group_count) {
+                // Generate the subquery for the field group
+                db_field_group = db_field_group
+                  .select({
+                    key: sql.raw(`'${field}_group' AS key`),
+                    value: sql.raw(`'count' AS value`),
+                    cnt: sql.raw(`COUNT(*) AS cnt`),
+                    match_score: sql.raw(`0 AS match_score`),
+                    entity_type: sql.raw(`'${entity}' AS entity_type`)
+                  })
+                  .from(table_schema);
 
-                  const field_group_subquery = this.generateFieldSubquery(
-                    db_field_group,
-                    {
-                      ...filter_analyzer_params,
-                      // Pass the filter specific for the field and all default filters from portal
-                      advance_filters: all_field_filters,
-                      group_advance_filters: all_field_group_filters,
-                    },
-                  );
-                  let unique_id = uid.rnd();
-                  if (has_group_count) {
-                    union_clauses.push(`${field}_group_${unique_id}`);
-                  }
+                const field_group_subquery = this.generateFieldSubquery(
+                  db_field_group,
+                  {
+                    ...filter_analyzer_params,
+                    // Pass the filter specific for the field and all default filters from portal
+                    advance_filters: all_field_filters,
+                    group_advance_filters: all_field_group_filters,
+                  },
+                );
+                let unique_id=uid.rnd()
+                if(has_group_count){
+                  union_clauses.push(`${field}_group_${unique_id}`);
+                }
 
                   group_count_query = `
               ${field}_group_${unique_id} AS (
@@ -286,34 +287,26 @@ export class SearchSuggestionsActorsImplementations {
               )`;
                 }
 
-                const values_flat = values.join(',').replace(/'/g, '"');
 
-                // Generate the subquery for the field
-                db_field = db_field
-                  .select({
-                    key: sql.raw(`'${field}' AS key`),
-                    value: sql.raw(
-                      `${entity_field}${
-                        parse_as === 'text' ? '::text' : ''
-                      } AS value`,
-                    ),
-                    cnt: sql.raw(`COUNT(*) AS cnt`),
-                    match_score: sql.raw(`
-                  CASE
-                    WHEN ${entity_field}${
-                      parse_as === 'text' ? '::text' : ''
-                    } = '${values_flat}' THEN 3
-                    WHEN ${entity_field}${
-                      parse_as === 'text' ? '::text' : ''
-                    } ILIKE '${values_flat}%' THEN 2
-                    WHEN ${entity_field}${
-                      parse_as === 'text' ? '::text' : ''
-                    } ILIKE '%${values_flat}%' THEN 1
-                    ELSE 0
-                  END AS match_score
-                `),
-                  })
-                  .from(table_schema);
+              const values_flat = values.join(',').replace(/'/g, '"');
+
+              // Generate the subquery for the field
+              db_field = db_field
+                .select({
+                  key: sql.raw(`'${field}' AS key`),
+                  value: sql.raw(`${entity_field}${parse_as === 'text' ? '::text' : ''} AS value`),
+                  cnt: sql.raw(`COUNT(*) AS cnt`),
+                  match_score: sql.raw(`
+    CASE
+      WHEN ${entity_field}${parse_as === 'text' ? '::text' : ''} = '${values_flat}' THEN 3
+      WHEN ${entity_field}${parse_as === 'text' ? '::text' : ''} ILIKE '${values_flat}%' THEN 2
+      WHEN ${entity_field}${parse_as === 'text' ? '::text' : ''} ILIKE '%${values_flat}%' THEN 1
+      ELSE 0
+    END AS match_score
+  `),
+                  entity_type: sql.raw(`'${entity}' AS entity_type`)
+                })
+                .from(table_schema);
 
                 const field_subquery = this.generateFieldSubquery(db_field, {
                   ...filter_analyzer_params,
@@ -322,117 +315,122 @@ export class SearchSuggestionsActorsImplementations {
                   group_advance_filters: all_field_group_filters,
                 });
 
-                // Generate the filter specific for the field to exclude the other filters
-                // @ts-ignore
-                const field_filter_query = Utility.evaluateFilter({
-                  operator,
-                  table_schema,
-                  field: filtered_field,
-                  values,
-                  entity: filtered_entity,
-                  aliased_entities: aliased_joined_entities.map(
-                    ({ alias }) => alias,
-                  ),
-                  case_sensitive,
-                  parse_as,
-                  time_zone,
-                  date_format,
-                  concatenated_field_expressions,
-                  dz_filter_queue: [],
-                  match_pattern,
-                });
-                let unique_id = uid.rnd();
-                union_clauses.push(`${field}_values_${unique_id}`);
-                const field_query = `
-                  ${field}_values_${unique_id} AS (
-                  ${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}
-                  )
-                `;
-                // const statusValuesCteSQL = field_query.toString();
-                // console.log("statusValuesCte SQL:", statusValuesCteSQL);
+              // Generate the filter specific for the field to exclude the other filters
+              // @ts-ignore
+              const field_filter_query = Utility.evaluateFilter({
+                operator,
+                table_schema,
+                field: filtered_field,
+                values,
+                entity: filtered_entity,
+                aliased_entities: aliased_joined_entities.map(
+                  ({ alias }) => alias,
+                ),
+                case_sensitive,
+                parse_as,
+                time_zone,
+                date_format,
+                concatenated_field_expressions,
+                dz_filter_queue: [],
+                match_pattern,
+              });
+              let unique_id=uid.rnd();
+              union_clauses.push(`${field}_values_${unique_id}`);
+              const field_query = `
+              ${field}_values_${unique_id} AS (
+              ${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}
+              )
+              `;
+              // const statusValuesCteSQL = field_query.toString();
+              // console.log("statusValuesCte SQL:", statusValuesCteSQL);
 
-                // Query for field with all the subquery and filters applied
-                // const db_field_obj_agg = this.db
-                //   .select({
-                //     dummy: sql.raw('1')  // Minimal select to keep the query valid
-                //   })
-                //   .from(
-                //     sql.raw(
-                //       `(${statusValuesCte} GROUP BY ${group_by_entity_field}
-                //           OFFSET ${offset} LIMIT ${limit}
-                //           )`,
-                //     ),
-                //   )
+              // Query for field with all the subquery and filters applied
+              // const db_field_obj_agg = this.db
+              //   .select({
+              //     dummy: sql.raw('1')  // Minimal select to keep the query valid
+              //   })
+              //   .from(
+              //     sql.raw(
+              //       `(${statusValuesCte} GROUP BY ${group_by_entity_field}
+              //           OFFSET ${offset} LIMIT ${limit}
+              //           )`,
+              //     ),
+              //   )
                 // .where(field_filter_query);
 
-                // console.log(db_field_obj_agg.toSQL());
+              // console.log(db_field_obj_agg.toSQL());
 
-                // Assigning query to field and replacing all filter value placeholder
-                // let field_query = `
-                //   '${field}', (${Utility.replacePlaceholders(
-                //   db_field_obj_agg.toSQL().sql,
-                //   db_field_obj_agg.toSQL().params,
-                // )})`;
+              // Assigning query to field and replacing all filter value placeholder
+              // let field_query = `
+              //   '${field}', (${Utility.replacePlaceholders(
+              //   db_field_obj_agg.toSQL().sql,
+              //   db_field_obj_agg.toSQL().params,
+              // )})`;
 
-                // Modify the raw query filter to use the field alias instead of the entity field
-                // field_query = this.modifyQueryFilterString(
-                //   field_query,
-                //   field,
-                //   parse_as,
-                // );
-                main_entity = entity;
-                return (
-                  `${
-                    group_count_query.length ? `${group_count_query}, ` : ''
-                  }` + field_query
-                );
-              },
-            );
+              // Modify the raw query filter to use the field alias instead of the entity field
+              // field_query = this.modifyQueryFilterString(
+              //   field_query,
+              //   field,
+              //   parse_as,
+              // );
+              // main_entity=entity;
+              return (
+                `${group_count_query.length ? `${group_count_query}, ` : ''}` +
+                field_query
+              );
+            },
+          );
 
-            return (
-              acc +
-              `${acc === '' ? 'WITH ' : ', '}${field_object_agg.join(', ')}`
-            );
-          },
-          '',
-        );
+          return (
+            acc +
+            `${acc === '' ? 'WITH ' : ', '}${field_object_agg.join(', ')}`
+          );
+        },
+        '',
+      );
 
-        //generate union clauses for all the fields
-        const union_clause = this.buildUnionClause(union_clauses);
+      //generate union clauses for all the fields
+      const union_clause=this.buildUnionClause(union_clauses);
 
-        const key_score_clause = `
-          key_scores AS (
-          SELECT
-            key,
-            MAX(match_score) AS best_score,
-            SUM(CASE WHEN match_score = 3 THEN cnt ELSE 0 END) AS exact_count,
-            SUM(CASE WHEN match_score = 2 THEN cnt ELSE 0 END) AS prefix_count,
-            SUM(CASE WHEN match_score = 1 THEN cnt ELSE 0 END) AS partial_count,
-            JSON_OBJECT_AGG(value, cnt) AS value_json
-          FROM all_values
-          GROUP BY key
-          )
-        `;
+      const key_score_clause=`
+      key_scores AS (
+      SELECT
+      entity_type,
+      key,
+      MAX(match_score) AS best_score,
+      SUM(CASE WHEN match_score = 3 THEN cnt ELSE 0 END) AS exact_count,
+      SUM(CASE WHEN match_score = 2 THEN cnt ELSE 0 END) AS prefix_count,
+      SUM(CASE WHEN match_score = 1 THEN cnt ELSE 0 END) AS partial_count,
+      JSON_OBJECT_AGG(value, cnt) AS value_json
+    FROM all_values
+    GROUP BY entity_type, key
+      ),
+      entity_grouped AS (
+  SELECT
+    entity_type,
+    JSON_OBJECT_AGG(
+      key, value_json
+      ORDER BY best_score DESC, exact_count DESC, prefix_count DESC, partial_count DESC, key
+    ) AS entity_data
+  FROM key_scores
+  GROUP BY entity_type
+)
+      `
 
-        const union_key_score_clause = union_clause + key_score_clause;
+      const union_key_score_clause = union_clause+ key_score_clause;
 
-        const sql_query_string = `
-          ${json_build_object_query.toString()},
-          ${union_key_score_clause}
-          SELECT JSON_BUILD_OBJECT( '${main_entity}', (
-          SELECT JSON_OBJECT_AGG(
-            key, value_json
-            ORDER BY best_score DESC, exact_count DESC, prefix_count DESC, partial_count DESC, key
-          )
-          FROM key_scores
-          WHERE value_json IS NOT NULL)
-          ) AS results
-        `;
+      const sql_query_string = `
+      ${json_build_object_query.toString()},
+      ${union_key_score_clause}
+   SELECT JSON_OBJECT_AGG(entity_type, entity_data) AS results
+FROM entity_grouped`;
 
-        const raw_query = sql.raw(sql_query_string);
+      // console.log(sql_query_string);
 
-        const { rows = [] } = await this.db.execute(raw_query);
-        const [{ results = {} } = {}] = rows;
+      const raw_query = sql.raw(sql_query_string);
+
+      const { rows = [] } = await this.db.execute(raw_query);
+      const [{ results = {} } = {}] = rows;
         await this.saveToCacheThroughClient(query_sha, results);
 
         return Promise.resolve({
@@ -466,9 +464,9 @@ export class SearchSuggestionsActorsImplementations {
     if (!union_strings.length) return '';
 
     // Create UNION ALL query with all value tables
-    const union_clauses = union_strings
-      .map((table_name) => `SELECT * FROM ${table_name}`)
-      .join('\n  UNION ALL\n  ');
+    const union_clauses = union_strings.map(table_name =>
+      `SELECT * FROM ${table_name}`
+    ).join('\n  UNION ALL\n  ');
 
     return `all_values AS (\n  ${union_clauses}\n),`;
   };
