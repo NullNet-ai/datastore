@@ -812,7 +812,7 @@ export class FindActorsImplementations {
           {
             ...pick(main_item, ['count', 'total_group_count']),
             [table]: pick(this.reducer(cloned_item, pluck_object, table), [
-              ...pluck_object[table],
+              ...(pluck_object[table] || []),
               ...main_fields_concatenated,
             ]),
           },

@@ -3,7 +3,6 @@ import { Logger } from '@nestjs/common';
 import { RedisStreamService } from '../../db/redis_stream.service';
 import { ulid } from 'ulid';
 import { sql } from 'drizzle-orm';
-import { postgres_channels } from '../../schema';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import {
   locale,
@@ -11,6 +10,7 @@ import {
   timezone,
 } from '@dna-platform/crdt-lww-postgres/build/modules/constants';
 import { Utility } from '../../utils/utility.service';
+import * as schema from '../../schema';
 
 const {
   TIMELINE_STREAM = 'timeline-stream',
@@ -44,6 +44,8 @@ export class TimelineService {
   async createTimelinePgTriggerFunction(table: string) {
     try {
       const channel = `timeline_${table}`;
+      const has_user_role_table = !!Object.keys(schema?.['user_roles'] || {})
+        .length;
       const function_string = `CREATE OR REPLACE FUNCTION ${channel}()
         RETURNS trigger AS
         $$
@@ -59,6 +61,8 @@ export class TimelineService {
           new_hstore hstore;
           old_hstore hstore;
           updated_fields jsonb;
+          old_value jsonb;
+          new_value jsonb;
           request_context jsonb;
           key text;
         BEGIN
@@ -66,6 +70,7 @@ export class TimelineService {
           old_hstore := hstore(OLD);
       
           updated_fields := '{}'::jsonb;
+          old_value := '{}'::jsonb;
           request_context := current_setting('my.request_context', true)::jsonb;
       
           SELECT gen_random_uuid() INTO custom_id;
@@ -75,7 +80,10 @@ export class TimelineService {
             'organization_name', organization_name,
             'account_id', account_id,
             'contact_id', account_organization.contact_id,
-            'device_id', account_organization.device_id
+            'contact_full_name', contact_full_name,
+            'device_id', account_organization.device_id,
+            'role_id', account_organization.role_id
+            ${has_user_role_table ? `,'role_name', role_name'` : ''}
           )
           INTO responsible_account
           FROM (
@@ -84,10 +92,20 @@ export class TimelineService {
               organization.name as organization_name,
               account.account_id as account_id,
               joined_account_org.contact_id,
-              joined_account_org.device_id
+        			(COALESCE("contact"."first_name", '') || CASE WHEN contact.last_name IS NOT NULL AND contact.last_name != '' 
+             THEN ' ' || contact.last_name ELSE '' END) AS contact_full_name,
+              joined_account_org.device_id,
+              joined_account_org.role_id
+              ${has_user_role_table ? ',user_role.role as role_name' : ''}
             FROM account_organizations AS joined_account_org
             LEFT JOIN accounts as account ON joined_account_org.account_id = account.id
             LEFT JOIN organizations as organization ON joined_account_org.organization_id = organization.id
+            LEFT JOIN contacts as contact ON joined_account_org.contact_id = contact.id
+            ${
+              has_user_role_table
+                ? 'LEFT JOIN user_roles AS user_role ON joined_account_org.role_id = user_role.id'
+                : ''
+            }
             WHERE
               joined_account_org.tombstone = 0
               AND joined_account_org.organization_id IS NOT NULL
@@ -108,6 +126,12 @@ export class TimelineService {
                   to_jsonb(new_hstore[key]), 
                   true
                 );
+                old_value := jsonb_set(
+                  old_value, 
+                  ARRAY[key], 
+                  COALESCE(to_jsonb(old_hstore[key]), 'null'::jsonb), 
+                  true
+                );
               END IF;
             END LOOP;
           END IF;
@@ -123,7 +147,9 @@ export class TimelineService {
             'record_id', NEW.id,
             'responsible_account', responsible_account,
             'timestamp', event_timestamp,
-            'request', CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) WHEN TG_OP = 'UPDATE' THEN updated_fields ELSE to_jsonb(NEW) END,
+            'record_code', NEW.code,
+            'old_value', old_value,
+            'new_value', CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) WHEN TG_OP = 'UPDATE' THEN updated_fields ELSE to_jsonb(NEW) END,
             'request_context', request_context
           )::text
           INTO payload;
@@ -176,7 +202,7 @@ export class TimelineService {
       };
 
       await this.db
-        .insert(postgres_channels)
+        .insert(schema.postgres_channels)
         .values(pg_channel_body)
         .then(() => {
           this.logger.log(
