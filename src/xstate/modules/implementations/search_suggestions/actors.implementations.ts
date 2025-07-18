@@ -254,32 +254,32 @@ export class SearchSuggestionsActorsImplementations {
                   match_pattern = DEFAULT_SEARCH_PATTERN,
                 } = field_filter || {};
 
-              let group_count_query = '';
-              if (has_group_count) {
-                // Generate the subquery for the field group
-                db_field_group = db_field_group
-                  .select({
-                    key: sql.raw(`'${field}_group' AS key`),
-                    value: sql.raw(`'count' AS value`),
-                    cnt: sql.raw(`COUNT(*) AS cnt`),
-                    match_score: sql.raw(`0 AS match_score`),
-                    entity_type: sql.raw(`'${entity}' AS entity_type`)
-                  })
-                  .from(table_schema);
+                let group_count_query = '';
+                if (has_group_count) {
+                  // Generate the subquery for the field group
+                  db_field_group = db_field_group
+                    .select({
+                      key: sql.raw(`'${field}_group' AS key`),
+                      value: sql.raw(`'count' AS value`),
+                      cnt: sql.raw(`COUNT(*) AS cnt`),
+                      match_score: sql.raw(`0 AS match_score`),
+                      entity_type: sql.raw(`'${entity}' AS entity_type`),
+                    })
+                    .from(table_schema);
 
-                const field_group_subquery = this.generateFieldSubquery(
-                  db_field_group,
-                  {
-                    ...filter_analyzer_params,
-                    // Pass the filter specific for the field and all default filters from portal
-                    advance_filters: all_field_filters,
-                    group_advance_filters: all_field_group_filters,
-                  },
-                );
-                let unique_id=uid.rnd()
-                if(has_group_count){
-                  union_clauses.push(`${field}_group_${unique_id}`);
-                }
+                  const field_group_subquery = this.generateFieldSubquery(
+                    db_field_group,
+                    {
+                      ...filter_analyzer_params,
+                      // Pass the filter specific for the field and all default filters from portal
+                      advance_filters: all_field_filters,
+                      group_advance_filters: all_field_group_filters,
+                    },
+                  );
+                  let unique_id = uid.rnd();
+                  if (has_group_count) {
+                    union_clauses.push(`${field}_group_${unique_id}`);
+                  }
 
                   group_count_query = `
               ${field}_group_${unique_id} AS (
@@ -289,27 +289,45 @@ export class SearchSuggestionsActorsImplementations {
 
                 const values_flat = values.join(',').replace(/'/g, '"');
 
-              // Generate the subquery for the field
-              db_field = db_field
-                .select({
-                  key: sql.raw(`'${field}' AS key`),
-                  value: sql.raw(`${entity_field}${parse_as === 'text' ? '::text' : ''} AS value`),
-                  cnt: sql.raw(`COUNT(*) AS cnt`),
-                  match_score: sql.raw(`
+                // Generate the subquery for the field
+                db_field = db_field
+                  .select({
+                    key: sql.raw(`'${field}' AS key`),
+                    value: sql.raw(
+                      `${entity_field}${
+                        parse_as === 'text' ? '::text' : ''
+                      } AS value`,
+                    ),
+                    cnt: sql.raw(`COUNT(*) AS cnt`),
+                    match_score: sql.raw(`
     CASE
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) = LOWER('${values_flat}') THEN 100  -- Exact match
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) LIKE LOWER('${values_flat} %') THEN 90  -- Starts with "${values_flat} "
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) LIKE LOWER('% ${values_flat}') THEN 85  -- Ends with " ${values_flat}"
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) LIKE LOWER('% ${values_flat} %') THEN 80  -- Contains " ${values_flat} " (word boundary)
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) LIKE LOWER('${values_flat}%') THEN 70  -- Starts with "${values_flat}"
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) LIKE LOWER('%${values_flat}') THEN 60  -- Ends with "${values_flat}"
-  WHEN LOWER(${entity_field}${parse_as === 'text' ? '::text' : ''}) LIKE LOWER('%${values_flat}%') THEN 50  -- Contains "${values_flat}"
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) = LOWER('${values_flat}') THEN 100  -- Exact match
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('${values_flat} %') THEN 90  -- Starts with "${values_flat} "
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('% ${values_flat}') THEN 85  -- Ends with " ${values_flat}"
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('% ${values_flat} %') THEN 80  -- Contains " ${values_flat} " (word boundary)
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('${values_flat}%') THEN 70  -- Starts with "${values_flat}"
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('%${values_flat}') THEN 60  -- Ends with "${values_flat}"
+  WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('%${values_flat}%') THEN 50  -- Contains "${values_flat}"
   ELSE 0
 END AS match_score
   `),
-                  entity_type: sql.raw(`'${entity}' AS entity_type`)
-                })
-                .from(table_schema);
+                    entity_type: sql.raw(`'${entity}' AS entity_type`),
+                  })
+                  .from(table_schema);
 
                 const field_subquery = this.generateFieldSubquery(db_field, {
                   ...filter_analyzer_params,
@@ -344,58 +362,59 @@ END AS match_score
               ${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}
               )
               `;
-              // const statusValuesCteSQL = field_query.toString();
-              // console.log("statusValuesCte SQL:", statusValuesCteSQL);
+                // const statusValuesCteSQL = field_query.toString();
+                // console.log("statusValuesCte SQL:", statusValuesCteSQL);
 
-              // Query for field with all the subquery and filters applied
-              // const db_field_obj_agg = this.db
-              //   .select({
-              //     dummy: sql.raw('1')  // Minimal select to keep the query valid
-              //   })
-              //   .from(
-              //     sql.raw(
-              //       `(${statusValuesCte} GROUP BY ${group_by_entity_field}
-              //           OFFSET ${offset} LIMIT ${limit}
-              //           )`,
-              //     ),
-              //   )
+                // Query for field with all the subquery and filters applied
+                // const db_field_obj_agg = this.db
+                //   .select({
+                //     dummy: sql.raw('1')  // Minimal select to keep the query valid
+                //   })
+                //   .from(
+                //     sql.raw(
+                //       `(${statusValuesCte} GROUP BY ${group_by_entity_field}
+                //           OFFSET ${offset} LIMIT ${limit}
+                //           )`,
+                //     ),
+                //   )
                 // .where(field_filter_query);
 
-              // console.log(db_field_obj_agg.toSQL());
+                // console.log(db_field_obj_agg.toSQL());
 
-              // Assigning query to field and replacing all filter value placeholder
-              // let field_query = `
-              //   '${field}', (${Utility.replacePlaceholders(
-              //   db_field_obj_agg.toSQL().sql,
-              //   db_field_obj_agg.toSQL().params,
-              // )})`;
+                // Assigning query to field and replacing all filter value placeholder
+                // let field_query = `
+                //   '${field}', (${Utility.replacePlaceholders(
+                //   db_field_obj_agg.toSQL().sql,
+                //   db_field_obj_agg.toSQL().params,
+                // )})`;
 
-              // Modify the raw query filter to use the field alias instead of the entity field
-              // field_query = this.modifyQueryFilterString(
-              //   field_query,
-              //   field,
-              //   parse_as,
-              // );
-              // main_entity=entity;
-              return (
-                `${group_count_query.length ? `${group_count_query}, ` : ''}` +
-                field_query
-              );
-            },
-          );
+                // Modify the raw query filter to use the field alias instead of the entity field
+                // field_query = this.modifyQueryFilterString(
+                //   field_query,
+                //   field,
+                //   parse_as,
+                // );
+                // main_entity=entity;
+                return (
+                  `${
+                    group_count_query.length ? `${group_count_query}, ` : ''
+                  }` + field_query
+                );
+              },
+            );
 
-          return (
-            acc +
-            `${acc === '' ? 'WITH ' : ', '}${field_object_agg.join(', ')}`
-          );
-        },
-        '',
-      );
+            return (
+              acc +
+              `${acc === '' ? 'WITH ' : ', '}${field_object_agg.join(', ')}`
+            );
+          },
+          '',
+        );
 
-      //generate union clauses for all the fields
-      const union_clause=this.buildUnionClause(union_clauses);
+        //generate union clauses for all the fields
+        const union_clause = this.buildUnionClause(union_clauses);
 
-      const key_score_clause=`
+        const key_score_clause = `
       key_scores AS (
   SELECT
     entity_type,
@@ -437,9 +456,9 @@ SELECT
   JSON_OBJECT_AGG(key, value_json ORDER BY best_score DESC) AS entity_data
 FROM key_scores
 GROUP BY entity_type
-)`
+)`;
 
-      const union_key_score_clause = union_clause+ key_score_clause;
+        const union_key_score_clause = union_clause + key_score_clause;
 
         const sql_query_string = `
       ${json_build_object_query.toString()},
