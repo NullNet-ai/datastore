@@ -84,7 +84,7 @@ export class TimelineService {
             'contact_full_name', contact_full_name,
             'device_id', account_organization.device_id,
             'role_id', account_organization.role_id
-            ${has_user_role_table ? `,'role_name', role_name'` : ''}
+            ${has_user_role_table ? `,'role_name', role_name` : ''}
           )
           INTO responsible_account
           FROM (

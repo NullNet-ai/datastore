@@ -90,7 +90,7 @@ export class SearchSuggestionsActorsImplementations {
               success: true,
               message: 'searchSuggestions Message',
               count: 0,
-              data: [existing_results],
+              data: existing_results,
             },
           });
         }
@@ -154,34 +154,34 @@ export class SearchSuggestionsActorsImplementations {
           search_term = _search_term;
         }
 
-      const concatenated_field_expressions =
-        Utility.generateConcatenatedExpressions(
-          concatenate_fields,
-          date_format,
+        const concatenated_field_expressions =
+          Utility.generateConcatenatedExpressions(
+            concatenate_fields,
+            date_format,
+            table,
+          );
+        // default FilterAnalyzer params
+        const filter_analyzer_params = {
+          table_schema,
+          pluck_object,
+          organization_id,
+          joins,
+          type,
+          time_zone,
           table,
-        );
-      // default FilterAnalyzer params
-      const filter_analyzer_params = {
-        table_schema,
-        pluck_object,
-        organization_id,
-        joins,
-        type,
-        time_zone,
-        table,
-        date_format,
-        concatenate_fields,
-        concatenated_field_expressions,
-      };
-      const union_clauses: Array<string> = [];
-      // let main_entity;
-      const json_build_object_query = Object.keys(filtered_fields).reduce(
-        (acc, entity) => {
-          const field_object_agg = filtered_fields[entity].map(
-            (field: string) => {
-              let entity_field = `${entity}.${field}`;
-              let db_field_group = this.db;
-              let db_field = this.db;
+          date_format,
+          concatenate_fields,
+          concatenated_field_expressions,
+        };
+        const union_clauses: Array<string> = [];
+        // let main_entity;
+        const json_build_object_query = Object.keys(filtered_fields).reduce(
+          (acc, entity) => {
+            const field_object_agg = filtered_fields[entity].map(
+              (field: string) => {
+                let entity_field = `${entity}.${field}`;
+                let db_field_group = this.db;
+                let db_field = this.db;
 
                 let all_field_filters: Array<Record<string, any>> = [];
                 let field_filter: Record<string, any> = {};
@@ -287,8 +287,7 @@ export class SearchSuggestionsActorsImplementations {
               )`;
                 }
 
-
-              const values_flat = values.join(',').replace(/'/g, '"');
+                const values_flat = values.join(',').replace(/'/g, '"');
 
               // Generate the subquery for the field
               db_field = db_field
@@ -319,28 +318,28 @@ END AS match_score
                   group_advance_filters: all_field_group_filters,
                 });
 
-              // Generate the filter specific for the field to exclude the other filters
-              // @ts-ignore
-              const field_filter_query = Utility.evaluateFilter({
-                operator,
-                table_schema,
-                field: filtered_field,
-                values,
-                entity: filtered_entity,
-                aliased_entities: aliased_joined_entities.map(
-                  ({ alias }) => alias,
-                ),
-                case_sensitive,
-                parse_as,
-                time_zone,
-                date_format,
-                concatenated_field_expressions,
-                dz_filter_queue: [],
-                match_pattern,
-              });
-              let unique_id=uid.rnd();
-              union_clauses.push(`${field}_values_${unique_id}`);
-              const field_query = `
+                // Generate the filter specific for the field to exclude the other filters
+                // @ts-ignore
+                const field_filter_query = Utility.evaluateFilter({
+                  operator,
+                  table_schema,
+                  field: filtered_field,
+                  values,
+                  entity: filtered_entity,
+                  aliased_entities: aliased_joined_entities.map(
+                    ({ alias }) => alias,
+                  ),
+                  case_sensitive,
+                  parse_as,
+                  time_zone,
+                  date_format,
+                  concatenated_field_expressions,
+                  dz_filter_queue: [],
+                  match_pattern,
+                });
+                let unique_id = uid.rnd();
+                union_clauses.push(`${field}_values_${unique_id}`);
+                const field_query = `
               ${field}_values_${unique_id} AS (
               ${field_subquery} GROUP BY ${group_by_entity_field} OFFSET ${offset} LIMIT ${limit}
               )
@@ -425,7 +424,7 @@ GROUP BY entity_type
 
       const union_key_score_clause = union_clause+ key_score_clause;
 
-      const sql_query_string = `
+        const sql_query_string = `
       ${json_build_object_query.toString()},
       ${union_key_score_clause}
    SELECT JSON_BUILD_OBJECT(
@@ -449,20 +448,19 @@ GROUP BY entity_type
 ) AS results
 FROM entity_scores;`;
 
-      console.log(sql_query_string);
+        const raw_query = sql.raw(sql_query_string);
 
-      const raw_query = sql.raw(sql_query_string);
-
-      const { rows = [] } = await this.db.execute(raw_query);
-      const [{ results = {} } = {}] = rows;
-        await this.saveToCacheThroughClient(query_sha, results);
+        const { rows = [] } = await this.db.execute(raw_query);
+        const [{ results = null } = {}] = rows;
+        const data = results ? [results?.data] : [];
+        await this.saveToCacheThroughClient(query_sha, data);
 
         return Promise.resolve({
           payload: {
             success: true,
             message: 'searchSuggestions Message',
             count: 0,
-            data: [results.data || {}],
+            data,
           },
         });
       } catch (error) {
@@ -488,9 +486,9 @@ FROM entity_scores;`;
     if (!union_strings.length) return '';
 
     // Create UNION ALL query with all value tables
-    const union_clauses = union_strings.map(table_name =>
-      `SELECT * FROM ${table_name}`
-    ).join('\n  UNION ALL\n  ');
+    const union_clauses = union_strings
+      .map((table_name) => `SELECT * FROM ${table_name}`)
+      .join('\n  UNION ALL\n  ');
 
     return `all_values AS (\n  ${union_clauses}\n),`;
   };

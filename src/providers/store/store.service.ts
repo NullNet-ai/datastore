@@ -565,8 +565,10 @@ export class InitializerService {
   } = {}) {
     const with_timeline_app_tables = omit(app_schema, exclude_app_tables);
     const tables = [
-      ...Object.keys(with_timeline_app_tables),
-      ...include_crdt_tables,
+      ...new Set([
+        ...Object.keys(with_timeline_app_tables),
+        ...include_crdt_tables,
+      ]),
     ];
     const install_extension = `DO $$
         BEGIN
