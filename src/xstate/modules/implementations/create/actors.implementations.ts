@@ -207,6 +207,7 @@ export class CreateActorsImplementations {
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);
 
+        await this.setRequestContext(_req);
         const results = await Utility.encryptCreate({
           query: {
             table_schema,
@@ -263,4 +264,17 @@ export class CreateActorsImplementations {
       }
     }),
   };
+
+  private async setRequestContext(request) {
+    const { cookie, authorization, ..._headers } = request.headers;
+    const raw_query = `SET my.request_context = '${JSON.stringify({
+      headers: _headers,
+      url: request.url,
+      route: request.route?.path,
+      method: request.method,
+      status_code: request.statusCode,
+      status_message: request.statusMessage,
+    })}'`;
+    await this.db.execute(sql.raw(raw_query));
+  }
 }

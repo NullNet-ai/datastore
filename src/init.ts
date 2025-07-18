@@ -74,6 +74,12 @@ export async function initializers(app) {
   // });
   await storage.makeBucket(DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_ID);
   await initializer.generateSchema();
+
+  // ! This is a sample for the timeline tables configuration
+  // await initializer.timelineTableConfig({
+  //   include_crdt_tables: ['contacts'],
+  //   exclude_app_tables: ['postgres_channels'],
+  // });
 }
 
 export async function cleanupTemporaryFiles() {

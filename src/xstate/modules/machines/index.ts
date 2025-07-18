@@ -31,3 +31,9 @@ export * from './batch_insert/batch_insert.machine';
 export * from './batch_update/batch_update.machine';
 
 export * from './search_suggestions/search_suggestions.machine';
+
+export * from './pg_function/pg_function.machine';
+
+export * from './pg_listener_get/pg_listener_get.machine';
+
+export * from './pg_listener_delete/pg_listener_delete.machine';
