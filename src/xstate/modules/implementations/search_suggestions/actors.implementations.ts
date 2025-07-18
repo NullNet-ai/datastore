@@ -490,7 +490,7 @@ FROM entity_scores;`;
 
         const { rows = [] } = await this.db.execute(raw_query);
         const [{ results = null } = {}] = rows;
-        const data = results ? [results?.data] : [];
+        const data = results?.data ? [results?.data] : [];
         await this.saveToCacheThroughClient(query_sha, data);
 
         return Promise.resolve({
