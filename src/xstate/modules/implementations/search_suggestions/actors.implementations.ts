@@ -397,17 +397,34 @@ END AS match_score
 
       const key_score_clause=`
       key_scores AS (
-    SELECT
+  SELECT
     entity_type,
     key,
     MAX(match_score) AS best_score,
     SUM(CASE WHEN match_score = 100 THEN cnt ELSE 0 END) AS exact_count,
     SUM(CASE WHEN match_score >= 70 AND match_score < 100 THEN cnt ELSE 0 END) AS prefix_count,
     SUM(CASE WHEN match_score >= 50 AND match_score < 70 THEN cnt ELSE 0 END) AS partial_count,
-    JSON_OBJECT_AGG(value, cnt) AS value_json
+    -- Create JSON with values sorted by their individual match scores
+    JSON_OBJECT_AGG(
+      value, 
+      cnt 
+      ORDER BY 
+        -- Calculate the individual match score for each value
+        CASE
+          WHEN LOWER(value) = LOWER('${search_term}') THEN 100
+          WHEN LOWER(value) LIKE LOWER('${search_term} %') THEN 90
+          WHEN LOWER(value) LIKE LOWER('% ${search_term}') THEN 85
+          WHEN LOWER(value) LIKE LOWER('% ${search_term} %') THEN 80
+          WHEN LOWER(value) LIKE LOWER('${search_term}%') THEN 70
+          WHEN LOWER(value) LIKE LOWER('%${search_term}') THEN 60
+          WHEN LOWER(value) LIKE LOWER('%${search_term}%') THEN 50
+          ELSE 0
+        END DESC,
+        value ASC  -- Alphabetical as tiebreaker
+    ) AS value_json
   FROM all_values
   GROUP BY entity_type, key
-    ),
+),
       
      entity_scores AS (
 SELECT 
@@ -447,6 +464,8 @@ GROUP BY entity_type
   )
 ) AS results
 FROM entity_scores;`;
+
+        console.log(sql_query_string);
 
         const raw_query = sql.raw(sql_query_string);
 
