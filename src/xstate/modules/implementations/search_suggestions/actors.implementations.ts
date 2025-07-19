@@ -90,7 +90,7 @@ export class SearchSuggestionsActorsImplementations {
               success: true,
               message: 'searchSuggestions Message',
               count: 0,
-              data: [existing_results],
+              data: existing_results,
             },
           });
         }
@@ -301,15 +301,27 @@ export class SearchSuggestionsActorsImplementations {
                     cnt: sql.raw(`COUNT(*) AS cnt`),
                     match_score: sql.raw(`
                       CASE
-                        WHEN ${entity_field}${
+                        WHEN LOWER(${entity_field}${
                       parse_as === 'text' ? '::text' : ''
-                    } = '${values_flat}' THEN 3
-                        WHEN ${entity_field}${
+                    }) = LOWER('${values_flat}') THEN 100  -- Exact match
+                        WHEN LOWER(${entity_field}${
                       parse_as === 'text' ? '::text' : ''
-                    } ILIKE '${values_flat}%' THEN 2
-                        WHEN ${entity_field}${
+                    }) LIKE LOWER('${values_flat} %') THEN 90  -- Starts with "${values_flat} "
+                        WHEN LOWER(${entity_field}${
                       parse_as === 'text' ? '::text' : ''
-                    } ILIKE '%${values_flat}%' THEN 1
+                    }) LIKE LOWER('% ${values_flat}') THEN 85  -- Ends with " ${values_flat}"
+                        WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('% ${values_flat} %') THEN 80  -- Contains " ${values_flat} " (word boundary)
+                        WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('${values_flat}%') THEN 70  -- Starts with "${values_flat}"
+                        WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('%${values_flat}') THEN 60  -- Ends with "${values_flat}"
+                        WHEN LOWER(${entity_field}${
+                      parse_as === 'text' ? '::text' : ''
+                    }) LIKE LOWER('%${values_flat}%') THEN 50  -- Contains "${values_flat}"
                         ELSE 0
                       END AS match_score
                     `),
@@ -403,25 +415,45 @@ export class SearchSuggestionsActorsImplementations {
         const union_clause = this.buildUnionClause(union_clauses);
 
         const key_score_clause = `
-          key_scores AS (
-          SELECT
-          entity_type,
-          key,
-          MAX(match_score) AS best_score,
-          SUM(CASE WHEN match_score = 3 THEN cnt ELSE 0 END) AS exact_count,
-          SUM(CASE WHEN match_score = 2 THEN cnt ELSE 0 END) AS prefix_count,
-          SUM(CASE WHEN match_score = 1 THEN cnt ELSE 0 END) AS partial_count,
-          JSON_OBJECT_AGG(value, cnt) AS value_json
-            FROM all_values
-            GROUP BY entity_type, key
-              ),
-              entity_grouped AS (
+        key_scores AS (
           SELECT
             entity_type,
+            key,
+            MAX(match_score) AS best_score,
+            SUM(CASE WHEN match_score = 100 THEN cnt ELSE 0 END) AS exact_count,
+            SUM(CASE WHEN match_score >= 70 AND match_score < 100 THEN cnt ELSE 0 END) AS prefix_count,
+            SUM(CASE WHEN match_score >= 50 AND match_score < 70 THEN cnt ELSE 0 END) AS partial_count,
+            -- Create JSON with values sorted by their individual match scores
             JSON_OBJECT_AGG(
-              key, value_json
-              ORDER BY best_score DESC, exact_count DESC, prefix_count DESC, partial_count DESC, key
-            ) AS entity_data
+              value, 
+              cnt 
+              ORDER BY 
+                -- Calculate the individual match score for each value
+                CASE
+                  WHEN LOWER(value) = LOWER('${search_term}') THEN 100
+                  WHEN LOWER(value) LIKE LOWER('${search_term} %') THEN 90
+                  WHEN LOWER(value) LIKE LOWER('% ${search_term}') THEN 85
+                  WHEN LOWER(value) LIKE LOWER('% ${search_term} %') THEN 80
+                  WHEN LOWER(value) LIKE LOWER('${search_term}%') THEN 70
+                  WHEN LOWER(value) LIKE LOWER('%${search_term}') THEN 60
+                  WHEN LOWER(value) LIKE LOWER('%${search_term}%') THEN 50
+                  ELSE 0
+                END DESC,
+                value ASC  -- Alphabetical as tiebreaker
+            ) AS value_json
+          FROM all_values
+          GROUP BY entity_type, key
+        ),
+            
+        entity_scores AS (
+          SELECT 
+            entity_type,
+            MAX(best_score)::integer as max_score,
+            -- Add weighted total score
+            SUM(exact_count * 100 + prefix_count * 70 + partial_count * 50)::integer as total_weighted_score,
+            -- Add count of high-scoring matches
+            SUM(CASE WHEN best_score >= 70 THEN 1 ELSE 0 END)::integer as high_score_count,
+            JSON_OBJECT_AGG(key, value_json ORDER BY best_score DESC) AS entity_data
           FROM key_scores
           GROUP BY entity_type
         )`;
@@ -429,23 +461,44 @@ export class SearchSuggestionsActorsImplementations {
         const union_key_score_clause = union_clause + key_score_clause;
 
         const sql_query_string = `
-      ${json_build_object_query.toString()},
-      ${union_key_score_clause}
-        SELECT JSON_OBJECT_AGG(entity_type, entity_data) AS results
-      FROM entity_grouped`;
+          ${json_build_object_query.toString()},
+          ${union_key_score_clause}
+          SELECT JSON_BUILD_OBJECT(
+          'data', JSON_OBJECT_AGG(
+            entity_type,
+            (
+              SELECT JSON_OBJECT_AGG(
+                key, value_json
+                ORDER BY best_score DESC, key
+              )
+              FROM key_scores ks
+              WHERE ks.entity_type = entity_scores.entity_type
+                AND ks.value_json IS NOT NULL
+            )
+            ORDER BY 
+              max_score DESC,           -- First by max score
+              total_weighted_score DESC, -- Then by total weighted score
+              high_score_count DESC,    -- Then by count of high scores
+              entity_type               -- Finally by name
+          )
+        ) AS results
+        FROM entity_scores;`;
+
+        console.log(sql_query_string);
 
         const raw_query = sql.raw(sql_query_string);
 
         const { rows = [] } = await this.db.execute(raw_query);
-        const [{ results = {} } = {}] = rows;
-        await this.saveToCacheThroughClient(query_sha, results);
+        const [{ results = null } = {}] = rows;
+        const data = results?.data ? [results?.data] : [];
+        await this.saveToCacheThroughClient(query_sha, data);
 
         return Promise.resolve({
           payload: {
             success: true,
             message: 'searchSuggestions Message',
             count: 0,
-            data: [results],
+            data,
           },
         });
       } catch (error) {
