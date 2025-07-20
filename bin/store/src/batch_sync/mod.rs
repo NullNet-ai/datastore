@@ -23,6 +23,7 @@ pub struct CodeAssignmentMessage {
     pub id: String,
     pub entity_prefix: String,
     pub auth_data: Auth,
+    pub is_batch: bool,
 }
 // Define a message structure
 #[derive(Debug, Clone)]
@@ -371,6 +372,7 @@ impl BatchSyncService {
         let id = message.id;
         let entity_prefix = message.entity_prefix;
         let auth_data = message.auth_data;
+        let is_batch = message.is_batch;
         let code = match generate_code(&table_name, &entity_prefix, 10000).await {
             Ok(code) => code,
             Err(e) => {
@@ -380,7 +382,8 @@ impl BatchSyncService {
         };
         // Try to update the record
         let record_obj = json!({
-            "code": code
+            "code": code,
+            "is_batch": is_batch,
         });
 
         match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data)
@@ -400,6 +403,7 @@ impl BatchSyncService {
         id: String,
         entity_prefix: String,
         auth_data: Auth,
+        is_batch: bool,
     ) -> Result<(), String> {
         let sender = Self::get_code_assignment_sender()
             .ok_or_else(|| "Queue service not initialized".to_string())?;
@@ -409,6 +413,7 @@ impl BatchSyncService {
             id,
             entity_prefix,
             auth_data,
+            is_batch,
         };
 
         sender

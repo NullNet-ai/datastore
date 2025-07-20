@@ -16,6 +16,7 @@ use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
 use futures::Stream;
 use hlc;
+use log::debug;
 use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
@@ -74,25 +75,6 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
     let mut modified_row = row.clone();
     if let Some(obj) = modified_row.as_object_mut() {
         obj.insert("id".to_string(), Value::String(id.clone()));
-    }
-
-    if table == "connections" {
-        if let Some(obj) = modified_row.as_object_mut() {
-            // Create a new map with sync_status first
-            let mut new_obj = serde_json::Map::new();
-            new_obj.insert(
-                "sync_status".to_string(),
-                Value::String("consumed".to_string()),
-            );
-
-            // Add all existing fields after sync_status
-            for (key, value) in obj.iter() {
-                new_obj.insert(key.clone(), value.clone());
-            }
-
-            // Replace the original object
-            *obj = new_obj;
-        }
     }
 
     let messages: Vec<CrdtMessageModel> = conn
@@ -323,7 +305,6 @@ pub async fn process_queue(
         let pack = match QueueService::dequeue(&mut conn, "test").await {
             Ok(Some(value)) => value,
             Ok(None) => {
-                println!("Queue dequeue returned None, no items available");
                 log::debug!("Queue dequeue returned None, no items available");
                 sleep(Duration::from_millis(100)).await;
                 continue;
@@ -475,15 +456,15 @@ async fn sync(
 
     let group_id =
         std::env::var("GROUP_ID").unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JBT".to_string());
-    println!("Using group_id: {}", group_id);
+    debug!("Using group_id: {}", group_id);
 
     let transaction_id =
         TransactionService::start_transaction(conn, existing_transaction_id).await?;
     let transaction_id_clone = transaction_id.clone();
-    println!("Started transaction: {}", transaction_id);
+    debug!("Started transaction: {}", transaction_id);
 
     let clock = HlcService::get_clock(conn).await?;
-    println!(
+    debug!(
         "Sync Attempt at {} since:{} messages:{} transaction_id:{}",
         chrono::Utc::now().to_rfc3339(),
         since.as_ref().map_or("null".to_string(), |s| s.to_string()),

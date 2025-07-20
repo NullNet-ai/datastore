@@ -281,7 +281,7 @@ pub async fn batch_insert_records(
             // Table doesn't exist, return an error response
             return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,
-                message: error.message,
+                message: format!("Error checking table existence: temp table for {} is missing", table_name),
                 count: 0,
                 data: vec![],
             });
@@ -360,6 +360,8 @@ pub async fn batch_insert_records(
                 id.to_string(),
                 "".to_string(),
                 auth_data.clone(),
+                true,
+
             )
             .await
             {

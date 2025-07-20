@@ -1,5 +1,6 @@
 use crate::auth::structs::Claims;
 use crate::message_stream::token_bucket::TokenBucket;
+use crate::message_stream::shared_state::get_shared_state;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
@@ -10,7 +11,6 @@ use std::env;
 use std::sync::{Arc, Mutex, OnceLock};
 use crate::message_stream::streaming_service::MessageStreamingService;
 
-// JWT Claims structure
 #[derive(Debug, Serialize, Deserialize)]
 struct Account {
     organization_id: String,
@@ -18,14 +18,12 @@ struct Account {
     organization_account_id: String,
 }
 
-// Client data structure for socket extensions
 #[derive(Debug, Clone)]
 pub struct ClientData {
     pub client_id: String,
     pub organization_id: String,
 }
 
-// Organization client data structure
 #[derive(Debug, Clone)]
 #[allow(warnings)]
 pub struct OrganizationClients {
@@ -33,26 +31,20 @@ pub struct OrganizationClients {
     pub channels: Vec<String>,
 }
 
-// Global authenticated clients registry - organized by organization_id (user_id)
 lazy_static::lazy_static! {
     static ref AUTHENTICATED_CLIENTS: Arc<Mutex<HashMap<String, OrganizationClients>>> = Arc::new(Mutex::new(HashMap::new()));
-    static ref TOKEN_BUCKETS: Arc<Mutex<HashMap<String, Arc<TokenBucket>>>> = Arc::new(Mutex::new(HashMap::new()));
+    static ref TOKEN_BUCKETS: Arc<Mutex<HashMap<String, Arc<TokenBucket>>>> = {
+        // Clear any existing buckets to prevent duplicate consumers from previous runs
+        Arc::new(Mutex::new(HashMap::new()))
+    };
 }
 
-// Global reference to the streaming service
-static STREAMING_SERVICE: OnceLock<Arc<MessageStreamingService>> = OnceLock::new();
+pub static STREAMING_SERVICE: OnceLock<Arc<MessageStreamingService>> = OnceLock::new();
 
-// Set the streaming service reference
 pub fn set_streaming_service(service: Arc<MessageStreamingService>) {
     STREAMING_SERVICE.set(service).ok();
 }
 
-// Get the streaming service reference
-pub fn get_streaming_service() -> Option<&'static Arc<MessageStreamingService>> {
-    STREAMING_SERVICE.get()
-}
-
-// Register a client for an organization
 fn register_client(organization_id: String, client_id: String) {
     let mut clients = AUTHENTICATED_CLIENTS.lock().unwrap();
 
@@ -64,7 +56,6 @@ fn register_client(organization_id: String, client_id: String) {
                 channels: Vec::new(),
             });
 
-    // Add client_id if not already present
     if !org_clients.client_ids.contains(&client_id) {
         org_clients.client_ids.push(client_id.clone());
     }
@@ -75,24 +66,19 @@ fn register_client(organization_id: String, client_id: String) {
     );
 }
 #[allow(warnings)]
+#[deprecated(note = "Use shared_state system instead")]
 pub fn register_token_bucket(channel_name: &str, capacity: usize) -> Arc<TokenBucket> {
-    let mut buckets = TOKEN_BUCKETS.lock().unwrap();
-
-    if let Some(existing_bucket) = buckets.get(channel_name) {
-        return existing_bucket.clone();
-    }
-
-    let new_bucket = TokenBucket::new(channel_name, capacity);
-    buckets.insert(channel_name.to_string(), new_bucket.clone());
-
-    info!("Registered TokenBucket: {}", channel_name);
-    new_bucket
+    // This function is deprecated and should not be used
+    // Always return a new bucket without consumer to avoid conflicts
+    TokenBucket::new(channel_name, capacity)
 }
 
 // Get a TokenBucket from the global registry
+#[deprecated(note = "Use shared_state system instead")]
 pub fn get_token_bucket(channel_name: &str) -> Option<Arc<TokenBucket>> {
-    let buckets = TOKEN_BUCKETS.lock().unwrap();
-    buckets.get(channel_name).cloned()
+    // This function is deprecated and should not be used
+    // Always return None to avoid conflicts with new system
+    None
 }
 #[allow(warnings)]
 // Remove a TokenBucket from the global registry
@@ -113,9 +99,10 @@ pub fn get_all_token_bucket_ids() -> Vec<String> {
     buckets.keys().cloned().collect()
 }
 
-pub fn get_all_token_buckets() -> Vec<(String, Arc<TokenBucket>)> {
-    let buckets = TOKEN_BUCKETS.lock().unwrap();
-    buckets.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+pub async fn get_all_token_buckets() -> Vec<(String, Arc<TokenBucket>)> {
+    let shared_state = get_shared_state();
+    let active_channels = shared_state.active_channels.lock().await;
+    active_channels.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 #[allow(warnings)]
 // Get count of registered TokenBuckets
@@ -131,7 +118,6 @@ fn remove_client(organization_id: &str, client_id: &str) {
     if let Some(org_clients) = clients.get_mut(organization_id) {
         org_clients.client_ids.retain(|id| id != client_id);
 
-        // If no clients left, remove the organization entry
         if org_clients.client_ids.is_empty() {
             clients.remove(organization_id);
         }
@@ -177,18 +163,7 @@ pub fn get_organization_channels(organization_id: &str) -> Vec<String> {
     }
     Vec::new()
 }
-#[allow(warnings)]
-// Send notification using socketioxide's broadcast functionality
-pub fn broadcast_to_organization(
-    io: &SocketIo,
-    organization_id: &str,
-    notification: serde_json::Value,
-) {
-    // Use socketioxide's room functionality to broadcast to all clients in an organization
-    io.to(format!("org_{}", organization_id))
-        .emit("notification", notification)
-        .ok();
-}
+
 #[allow(warnings)]
 // Send notification to specific channel in organization
 pub fn broadcast_to_channel(
@@ -197,18 +172,29 @@ pub fn broadcast_to_channel(
     channel: &str,
     notification: serde_json::Value,
 ) {
+    
     // Use the full channel name (which is actually the event_name) as the Socket.IO event
     let event_name = channel.to_string();
-    
-    // Only broadcast to organization room to avoid duplicates
-    // Since all clients join the org room upon connection, this ensures
-    // they receive messages without duplication from channel rooms
+        
+    // Simply emit the event to all clients using the event name
+    // Clients listen directly on the event name, no room subscription needed
+    io.emit(event_name, notification).ok();
+}
+
+// Keep organization-level broadcasting for future use cases
+#[allow(dead_code)]
+pub fn broadcast_to_organization(
+    io: &SocketIo,
+    organization_id: &str,
+    event_name: String,
+    notification: serde_json::Value,
+) {
+    // Use socketioxide's room functionality to broadcast to all clients in an organization
     io.to(format!("org_{}", organization_id))
         .emit(event_name, notification)
         .ok();
 }
 
-// Verify JWT token and extract organization ID
 fn verify_token(token: &str) -> Result<Claims, String> {
     let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default_secret".to_string());
     let key = DecodingKey::from_secret(secret.as_bytes());
@@ -221,17 +207,14 @@ fn verify_token(token: &str) -> Result<Claims, String> {
     }
 }
 
-// Socket.io handler
 pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
     let (layer, io) = SocketIo::new_layer();
 
-    // Register handlers for the default namespace with connection-time auth
     io.ns(
         "/",
         |socket: SocketRef, Data(auth_data): Data<serde_json::Value>| {
             info!("Socket.IO connection attempt: {}", socket.id);
 
-            // Extract and validate token during connection
             let token = auth_data.get("token").and_then(|t| t.as_str());
 
             if let Some(token) = token {
@@ -239,27 +222,23 @@ pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
                     Ok(claims) => {
                         let organization_id = claims.account.organization_id;
 
-                        // Generate a client ID if not provided in auth
                         let client_id = auth_data
                             .get("client_id")
                             .and_then(|c| c.as_str())
                             .map(|s| s.to_string())
                             .unwrap_or_else(|| socket.id.to_string());
 
-                        // Store client data in socket extensions immediately
                         socket.extensions.insert(ClientData {
                             client_id: client_id.clone(),
                             organization_id: organization_id.clone(),
                         });
 
-                        // Join organization room immediately upon connection
                         if let Err(e) = socket.join(format!("org_{}", organization_id)) {
                             warn!("Failed to join organization room: {}", e);
                             socket.disconnect().ok();
                             return;
                         }
 
-                        // Register client in our tracking system
                         register_client(organization_id.clone(), client_id.clone());
 
                         info!(
@@ -267,7 +246,6 @@ pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
                             client_id, organization_id
                         );
 
-                        // Send authentication success response
                         let response = serde_json::json!({
                             "status": "ok",
                             "event": "connect",
@@ -275,7 +253,6 @@ pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
                         });
                         socket.emit("auth_success", response).ok();
 
-                        // Set up event handlers for authenticated socket
                         setup_authenticated_handlers(socket);
                     }
                     Err(e) => {
@@ -308,39 +285,25 @@ pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
 }
 
 fn setup_authenticated_handlers(socket: SocketRef) {
-    // Handle channel subscription
-    // Channels are now created automatically in the main pipe when messages arrive
-    // for organizations with authenticated clients. No manual subscription needed.
-
-    // Handle updateHighWaterMark event
     socket.on(
         "updateHighWaterMark",
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
-            // Client is guaranteed to be authenticated at this point
             let channel_name = data.get("channel_name").and_then(|c| c.as_str());
             let highwatermark = data.get("highWaterMark").or_else(|| data.get("highwatermark"));
 
             if let (Some(channel), Some(mark)) = (channel_name, highwatermark) {
-                // Add channel to organization's channels
-                //get the channel with the channel_name
-                let bucket = get_token_bucket(channel);
+                let shared_state = get_shared_state();
+                let bucket = {
+                    let active_channels = shared_state.active_channels.lock().await;
+                    active_channels.get(channel).cloned()
+                };
                 if let Some(bucket) = bucket {
                     let new_watermark = mark.as_u64().unwrap() as usize;
-                    let current_watermark = bucket.get_high_watermark().await;                    
-                    // Handle watermark changes properly for both increases and decreases
-                    if new_watermark > current_watermark {
-                        // Increasing watermark: add the difference to available capacity
-                        let difference = new_watermark - current_watermark;
-                        
-                        // Update capacity first, then add the difference to available tokens
-                        bucket.set_tokens(new_watermark).await;
-                        bucket.add_tokens(difference).await;
-                    } else if new_watermark < current_watermark {
-                        // Decreasing watermark: set_tokens will clamp current tokens to new capacity
-                        // This automatically reduces available tokens if they exceed the new limit
+                    let current_watermark = bucket.get_high_watermark().await;
+                    if new_watermark != current_watermark {
+                        // Update both capacity and tokens to the new watermark
                         bucket.set_tokens(new_watermark).await;
                     }
-                    // If new_watermark == current_watermark, no action needed
                 }
 
                 info!(
@@ -364,19 +327,21 @@ fn setup_authenticated_handlers(socket: SocketRef) {
             }
         },
     );
-    // Handle getCurrentHighWaterMark event
     socket.on(
         "getCurrentHighWaterMark",
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
             let channel_name = data.get("channel_name").and_then(|c| c.as_str());
-            println!("{:?}", channel_name);
+        
 
             if let Some(channel) = channel_name {
-                // Retrieve the current high water mark for this channel from token bucket
-                let current_highwatermark = if let Some(bucket) = get_token_bucket(channel) {
-                    bucket.get_high_watermark().await
-                } else {
-                    0 // Default if bucket doesn't exist
+                let shared_state = get_shared_state();
+                let current_highwatermark = {
+                    let active_channels = shared_state.active_channels.lock().await;
+                    if let Some(bucket) = active_channels.get(channel) {
+                        bucket.get_high_watermark().await
+                    } else {
+                        0
+                    }
                 };
                 let response;
 
@@ -395,7 +360,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                     });
                 }
 
-                println!("{:?}", response);
+        
 
                 socket.emit("currentHighWaterMark", response).ok();
             } else {
@@ -409,12 +374,10 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         },
     );
 
-    // Dashboard API endpoints
     socket.on(
         "getBucketStatus",
         |socket: SocketRef| async move {
             let bucket_data = get_all_bucket_status().await;
-            // Try emitting as raw JSON string to avoid serialization issues
             let json_string = serde_json::to_string(&bucket_data).unwrap_or_else(|_| "[]".to_string());
             socket.emit("bucketStatus", json_string).ok();
         },
@@ -424,7 +387,6 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         "getClientStatus",
         |socket: SocketRef| async move {
             let client_data = get_all_client_status().await;
-            // Try emitting as raw JSON string to avoid serialization issues
             let json_string = serde_json::to_string(&client_data).unwrap_or_else(|_| "[]".to_string());
             socket.emit("clientUpdate", json_string).ok();
         },
@@ -438,27 +400,87 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         },
     );
 
-    // Handle explicit disconnect event
+    // Event subscription handlers
+    socket.on(
+        "subscribe",
+        |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
+            if let Some(event_name) = data.get("event_name").and_then(|e| e.as_str()) {
+                let room_name = format!("event_{}", event_name);
+                socket.join(room_name.clone()).ok();
+                
+                let response = serde_json::json!({
+                    "status": "ok",
+                    "event": "subscribe",
+                    "event_name": event_name,
+                    "message": "Successfully subscribed to event"
+                });
+                socket.emit("subscribeResponse", response).ok();
+                
+                info!("Client {} subscribed to event: {}", socket.id, event_name);
+            } else {
+                let response = serde_json::json!({
+                    "status": "error",
+                    "event": "subscribe",
+                    "message": "Missing event_name"
+                });
+                socket.emit("subscribeResponse", response).ok();
+            }
+        },
+    );
+
+    socket.on(
+        "unsubscribe",
+        |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
+            if let Some(event_name) = data.get("event_name").and_then(|e| e.as_str()) {
+                let room_name = format!("event_{}", event_name);
+                socket.leave(room_name.clone()).ok();
+                
+                let response = serde_json::json!({
+                    "status": "ok",
+                    "event": "unsubscribe",
+                    "event_name": event_name,
+                    "message": "Successfully unsubscribed from event"
+                });
+                socket.emit("unsubscribeResponse", response).ok();
+                
+                info!("Client {} unsubscribed from event: {}", socket.id, event_name);
+            } else {
+                let response = serde_json::json!({
+                    "status": "error",
+                    "event": "unsubscribe",
+                    "message": "Missing event_name"
+                });
+                socket.emit("unsubscribeResponse", response).ok();
+            }
+        },
+    );
+
     socket.on("disconnect", |socket: SocketRef| {
         handle_client_disconnect(&socket);
     });
 
-    // Handle automatic disconnection
     socket.on_disconnect(|socket: SocketRef| {
         handle_client_disconnect(&socket);
     });
 }
 
-// Dashboard helper functions
+#[derive(Serialize)]
+struct BucketStatus {
+    channel_name: String,
+    tokens_remaining: usize,
+    high_watermark: usize,
+    buffer_size: usize,
+}
+
 async fn get_all_bucket_status() -> serde_json::Value {
-    let buckets = get_all_token_buckets();
+    let buckets = get_all_token_buckets().await;
     let mut bucket_data = Vec::new();
     
     for (name, bucket) in buckets {
         let capacity = bucket.get_high_watermark().await;
         let tokens = bucket.get_tokens_remaining().await;
         let buffer_size = bucket.buffer.lock().await.len();
-        let high_watermark = capacity; // capacity and high_watermark are the same
+        let high_watermark = capacity;
         
         bucket_data.push(serde_json::json!({
             "name": name,
@@ -487,21 +509,21 @@ async fn get_all_client_status() -> serde_json::Value {
             }
         }
         data
-    }; // Mutex guard is dropped here
+    };
     
     serde_json::Value::Array(client_data)
 }
 
 async fn get_system_metrics() -> serde_json::Value {
-    let buckets = get_all_token_buckets();
+    let buckets = get_all_token_buckets().await;
     let total_buckets = buckets.len();
     
     let total_clients = {
         let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
         clients.values().map(|org| org.client_ids.len()).sum::<usize>()
-    }; // Mutex guard is dropped here
+    };
     
-    // Calculate system health based on bucket utilization
+
     let mut total_utilization = 0.0;
     let mut bucket_count = 0;
     
@@ -521,8 +543,7 @@ async fn get_system_metrics() -> serde_json::Value {
     
     let system_health = (100.0 - avg_utilization).max(0.0).min(100.0);
     
-    // Mock message rate - in a real implementation, this would track actual message throughput
-    let message_rate = total_clients * 2; // Assume 2 messages per client per minute
+    let message_rate = total_clients * 2;
     
     serde_json::json!({
         "totalBuckets": total_buckets,
@@ -532,7 +553,6 @@ async fn get_system_metrics() -> serde_json::Value {
     })
 }
 
-// Helper function to handle client disconnection cleanup
 fn handle_client_disconnect(socket: &SocketRef) {
     let client_data = socket.extensions.get::<ClientData>();
 

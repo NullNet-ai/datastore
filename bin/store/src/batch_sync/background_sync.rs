@@ -230,65 +230,91 @@ impl BackgroundSyncService {
     fn row_to_value(&self, row: &tokio_postgres::Row) -> Value {
         let mut obj = serde_json::Map::new();
 
+
         for i in 0..row.len() {
             let column_name = row.columns()[i].name();
             let column_type = row.columns()[i].type_();
 
-            // Handle null values
-            if row
-                .try_get::<_, Option<String>>(i)
-                .unwrap_or(None)
-                .is_none()
-            {
-                continue; // Skip null values
-            }
-
             // Convert based on PostgreSQL type OIDs
             if column_type.name() == "varchar" || column_type.name() == "text" {
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<String>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else if column_type.name() == "int4" {
-                if let Ok(val) = row.try_get::<_, i32>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<i32>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else if column_type.name() == "int8" {
-                if let Ok(val) = row.try_get::<_, i64>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<i64>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else if column_type.name() == "bool" {
-                if let Ok(val) = row.try_get::<_, bool>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<bool>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
+                }
+            } else if column_type.name() == "_text" {
+                // Handle text arrays
+                if let Ok(val) = row.try_get::<_, Option<Vec<String>>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
+                }
+            } else if column_type.name() == "inet" {
+                // Handle inet type (IP addresses)
+                if let Ok(val) = row.try_get::<_, Option<std::net::IpAddr>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val.to_string()));
+                    }
                 }
             } else if column_type.name() == "json" || column_type.name() == "jsonb" {
                 // For JSON types, first get as String then parse
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    if let Ok(json_val) = serde_json::from_str(&val) {
-                        obj.insert(column_name.to_string(), json_val);
+                if let Ok(val) = row.try_get::<_, Option<String>>(i) {
+                    if let Some(val) = val {
+                        if let Ok(json_val) = serde_json::from_str(&val) {
+                            obj.insert(column_name.to_string(), json_val);
+                        }
                     }
                 }
             } else if column_type.name() == "timestamp" || column_type.name() == "timestamptz" {
                 // Get timestamp as String and parse it
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<String>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else if column_type.name() == "date" {
                 // Get date as String and parse it
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<String>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else if column_type.name() == "float4" {
-                if let Ok(val) = row.try_get::<_, f32>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<f32>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else if column_type.name() == "float8" {
-                if let Ok(val) = row.try_get::<_, f64>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<f64>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             } else {
                 // For any other types, try to get as string
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+                if let Ok(val) = row.try_get::<_, Option<String>>(i) {
+                    if let Some(val) = val {
+                        obj.insert(column_name.to_string(), json!(val));
+                    }
                 }
             }
         }

@@ -1130,6 +1130,7 @@ table! {
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,

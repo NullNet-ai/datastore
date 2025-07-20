@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 1.0.5
+
+### Added
+- **Enhanced Batch Processing System**: Improved batch operations with automatic field insertion
+  - Added automatic `is_batch` field insertion during batch operations in `common_controller.rs`
+  - Enhanced batch records to include `sync_status` field set to "complete" for proper sync handling
+  - Implemented conditional sync_status value assignment in `message_service.rs` based on `is_batch` flag
+
+### Technical Details
+- **Batch Operation Enhancement**: Updated batch processing logic in `common_controller.rs`:
+  ```rust
+  if let Some(obj) = request_body.record.as_object_mut() {
+      obj.insert("is_batch".to_string(), serde_json::Value::Bool(true));
+      obj.insert("sync_status".to_string(), serde_json::Value::String("complete".to_string()));
+  }
+  ```
+- **Conditional Sync Status**: Modified `message_service.rs` to set sync_status to "consumed" for batch operations (`is_batch = true`) and "complete" for regular operations
+- **Database Schema**: Leveraged existing `is_batch` column in `connections` and `temp_connections` tables for batch operation identification
+
+---
+
 ## 0.1.6
 
 ### Author
@@ -57,6 +78,12 @@ Kashan
   - Created persistent database queue system for handling backpressured messages
   - Implemented automatic queue processing when token buckets have available capacity
   - Added database-backed message storage with JSON normalization
+- **Batch Processing System**: Introduced `is_batch` system field for optimized batch operations
+  - Added `is_batch` boolean column to `connections` and `temp_connections` tables with default value `false`
+  - Enhanced batch insert operations to automatically set `is_batch` to `true` for batch-processed records
+  - Modified sync service to skip `sync_status` processing for batch records (`is_batch = true`) since they are already consumed by triggers
+  - Created database migration `2025-07-20-063622_add_is_batch_to_connections` for schema updates
+  - **CRITICAL**: Set `is_batch` to `true` in `process_code_assignment_message` to ensure `sync_status` is set to "consumed" instead of "complete", preventing duplicate records in streaming caused by trigger consumption
 
 ### Removed
 - **Architecture Cleanup**: Eliminated redundant local memory queues and simplified message routing
@@ -136,11 +163,31 @@ Kashan
   - Modified `PgListenerService` to skip malformed JSON notifications instead of creating fallback messages
   - Enhanced error logging with detailed context for debugging notification parsing failures
   - Improved graceful error handling throughout the message streaming pipeline
+- **Batch Processing Implementation**:
+  - Database migration: Added `is_batch` column with `ALTER TABLE` statements for both `connections` and `temp_connections`
+  - Batch logic: Batch insert operations automatically set `is_batch` field to `true`
+  - Sync optimization: Conditional logic to skip `sync_status` assignment when `is_batch = true`
+  - Trigger optimization: Batch records bypass sync status updates as they're pre-consumed by database triggers
+  - Code changes: Updated `common_controller.rs` to insert `is_batch` field during batch operations
+  - Modified `message_service.rs` sync logic to check `is_batch` flag before applying `sync_status`
+  - **IMPORTANT**: In `process_code_assignment_message`, `is_batch` is set to `true` to ensure sync_status becomes "consumed" rather than "complete", preventing duplicate streaming records since "complete" status triggers database consumption leading to record duplication
+- **System Field Enhancement**:
+  - Introduced new system field `is_batch` to indicate if a record was inserted from batch request or simple request
+  - Helps identify if the message was consumed by trigger already or not in sync operations
+  - Provides better tracking and debugging capabilities for batch vs individual record operations
 
 ### Fixed
 - Removed infinite loop test data senders that were causing performance issues
 - Updated message flow to only create channels for organizations with authenticated clients
 - Simplified client connection flow by removing manual channel subscription requirements
+
+### Performance & Fairness Improvements
+- **Increased Message Processing Batch Size**: Enhanced throughput by increasing batch size from 100 to 500 messages per processing cycle
+- **Implemented Fair Database Access**: Modified `process_queued_messages` to process only one batch per turn, preventing process monopolization
+- **Enhanced Connection Fairness**: Added automatic re-queuing mechanism that yields database connections after processing a batch when more messages are available
+- **Improved Backpressure Handling**: Refined message deletion logic to only remove successfully transmitted messages from database during backpressure scenarios
+- **FIFO Queue Management**: Leveraged `tokio::sync::Semaphore` for fair First-In-First-Out database connection access, preventing starvation
+- **Automatic Process Re-queuing**: Implemented drain notification system to automatically re-queue channels with pending messages, ensuring all processes get fair access to resources
 
 ---
 
