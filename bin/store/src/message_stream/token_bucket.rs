@@ -115,7 +115,7 @@ impl TokenBucket {
                 "unknown".to_string()
             };
             
-            info!("📤 EMIT_MESSAGE - Message ID: {}, Buffer size: {}, Tokens: {}/{}, Bucket: {}", 
+            debug!("📤 EMIT_MESSAGE - Message ID: {}, Buffer size: {}, Tokens: {}/{}, Bucket: {}", 
                   message_id, buffer.len(), current_tokens, capacity, self.name);
             
             // Emit drain when:
@@ -203,7 +203,6 @@ impl TokenBucket {
                     let mut message_count = 0;
                     while let Some(message) = bucket.emit_message().await {
                         message_count += 1;
-                        info!("📤 CONSUMER PROCESSING MESSAGE #{} - Bucket: {}", message_count, bucket.name);
                         bucket.transmit_to_channel(&message).await;
 
                         

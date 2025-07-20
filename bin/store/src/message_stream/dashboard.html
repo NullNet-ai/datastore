@@ -777,6 +777,8 @@
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
+
+
             
             .auth-section {
                 flex-direction: column;
@@ -785,6 +787,189 @@
             input[type="text"] {
                 min-width: 250px;
             }
+        }
+
+        /* Enhanced Analytics Styles */
+        .health-dashboard {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+        }
+
+        .health-score {
+            flex-shrink: 0;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #10b981 0deg, #10b981 var(--score-angle, 270deg), #e5e7eb var(--score-angle, 270deg));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-circle::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .score-circle span {
+            position: relative;
+            z-index: 2;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .score-circle small {
+            position: relative;
+            z-index: 2;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .health-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            flex: 1;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .metric-card h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .metric-card span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .detailed-analytics {
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .channel-analytics {
+            margin: 30px 0;
+        }
+
+        .channel-analytics h3 {
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .channel-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .channel-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .channel-table th {
+            background: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .channel-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .channel-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .channel-status.healthy {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .channel-status.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .channel-status.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .network-stats {
+            margin-top: 30px;
+        }
+
+        .network-stats h3 {
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .network-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .network-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+
+        .network-item h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .network-item span {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
         }
     </style>
 </head>
@@ -996,10 +1181,121 @@
                     </div>
                 </div>
 
+                <div class="card col-6">
+                    <h3><span class="card-icon">⚡</span> Throughput Analysis</h3>
+                    <div class="chart-container">
+                        <canvas id="throughputChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card col-6">
+                    <h3><span class="card-icon">🎯</span> Channel Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3><span class="card-icon">📈</span> 24-Hour Trends</h3>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card col-12">
+                    <h3><span class="card-icon">🏥</span> System Health Dashboard</h3>
+                    <div class="health-dashboard">
+                        <div class="health-score">
+                            <div class="score-circle" id="healthScore">
+                                <span id="healthValue">--</span>
+                                <small>Health Score</small>
+                            </div>
+                        </div>
+                        <div class="health-metrics">
+                            <div class="metric-card">
+                                <h4>Uptime</h4>
+                                <span id="uptimeValue">--</span>
+                            </div>
+                            <div class="metric-card">
+                                <h4>CPU Usage</h4>
+                                <span id="cpuValue">--</span>
+                            </div>
+                            <div class="metric-card">
+                                <h4>Memory Usage</h4>
+                                <span id="memoryValue">--</span>
+                            </div>
+                            <div class="metric-card">
+                                <h4>Avg Latency</h4>
+                                <span id="latencyValue">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card col-12">
                     <h3><span class="card-icon">📋</span> Detailed Analytics</h3>
-                    <div style="padding: 20px; background: #f8fafc; border-radius: 12px; color: #4a5568;">
-                        <p>Advanced analytics and detailed metrics will be displayed here when data is available.</p>
+                    <div class="detailed-analytics">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <h4>Messages Per Minute</h4>
+                                <span id="messagesPerMinute">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Total Processed</h4>
+                                <span id="totalProcessed">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Total Queued</h4>
+                                <span id="totalQueued">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Active Clients</h4>
+                                <span id="activeClients">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Active Channels</h4>
+                                <span id="activeChannels">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Average Utilization</h4>
+                                <span id="avgUtilization">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Error Rate</h4>
+                                <span id="errorRate">--</span>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Duplicate Rate</h4>
+                                <span id="duplicateRate">--</span>
+                            </div>
+                        </div>
+                        
+                        <div class="channel-analytics">
+                            <h3>Channel Performance</h3>
+                            <div id="channelTable"></div>
+                        </div>
+                        
+                        <div class="network-stats">
+                            <h3>Network I/O</h3>
+                            <div class="network-grid">
+                                <div class="network-item">
+                                    <h4>Bytes In</h4>
+                                    <span id="bytesIn">--</span>
+                                </div>
+                                <div class="network-item">
+                                    <h4>Bytes Out</h4>
+                                    <span id="bytesOut">--</span>
+                                </div>
+                                <div class="network-item">
+                                    <h4>Peak Throughput</h4>
+                                    <span id="peakThroughput">--</span>
+                                </div>
+                                <div class="network-item">
+                                    <h4>Min Throughput</h4>
+                                    <span id="minThroughput">--</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1229,6 +1525,10 @@
                     this.updateSystemMetrics(data);
                 });
 
+                this.socket.on('analyticsData', (data) => {
+                    this.updateAnalyticsData(data);
+                });
+
                 // Notification events from index.html
                 this.socket.on('connection-01JT1R1B2XMDDB7WY3JC84DV55-01JBHKXHYSKPP247HZZWHA3JCT', (data) => {
                     this.handleNotification(data);
@@ -1305,6 +1605,9 @@
                 
                 // Request system metrics
                 this.socket.emit('getSystemMetrics');
+                
+                // Request analytics data
+                this.socket.emit('getAnalytics');
                 
                 // Remove frequent logging to reduce DOM manipulation
                 // this.addLog('info', 'Data refreshed');
@@ -1629,7 +1932,12 @@
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
                         }
                     });
                 }
@@ -1648,11 +1956,443 @@
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
                         }
                     });
                 }
+
+                // Throughput Analysis Chart
+                const throughputCtx = document.getElementById('throughputChart');
+                if (throughputCtx && !this.throughputChart) {
+                    this.throughputChart = new Chart(throughputCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Current', 'Peak', 'Average', 'Min'],
+                            datasets: [{
+                                label: 'Messages/sec',
+                                data: [0, 0, 0, 0],
+                                backgroundColor: ['#667eea', '#28a745', '#ffc107', '#dc3545']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Channel Distribution Chart
+                const channelCtx = document.getElementById('channelChart');
+                if (channelCtx && !this.channelChart) {
+                    this.channelChart = new Chart(channelCtx.getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: ['High Utilization', 'Medium Utilization', 'Low Utilization'],
+                            datasets: [{
+                                data: [0, 0, 0],
+                                backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // 24-Hour Trends Chart
+                const trendsCtx = document.getElementById('trendsChart');
+                if (trendsCtx && !this.trendsChart) {
+                    this.trendsChart = new Chart(trendsCtx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: 'Throughput',
+                                data: [],
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: false
+                            }, {
+                                label: 'Latency (ms)',
+                                data: [],
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                tension: 0.4,
+                                fill: false,
+                                yAxisID: 'y1'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    beginAtZero: true
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    grid: {
+                                        drawOnChartArea: false
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Initialize analytics tracking
+                this.analyticsHistory = [];
+                this.lastAnalyticsUpdate = Date.now();
+                this.notificationsPerMinute = 0;
+                
+                // Start analytics update interval
+                this.startAnalyticsTracking();
             }
+
+            startAnalyticsTracking() {
+                // Update analytics every 10 seconds
+                setInterval(() => {
+                    this.updateAnalyticsCharts();
+                }, 10000);
+            }
+
+            updateAnalyticsCharts() {
+                const now = new Date();
+                const timeLabel = now.toLocaleTimeString();
+                
+                // Calculate notifications per minute
+                const currentTime = Date.now();
+                const timeDiff = (currentTime - this.lastAnalyticsUpdate) / 1000 / 60; // minutes
+                const notificationsInPeriod = this.totalNotifications - (this.lastTotalNotifications || 0);
+                this.notificationsPerMinute = timeDiff > 0 ? Math.round(notificationsInPeriod / timeDiff) : 0;
+                
+                this.lastTotalNotifications = this.totalNotifications;
+                this.lastAnalyticsUpdate = currentTime;
+                
+                // Update analytics chart
+                if (this.analyticsChart) {
+                    this.analyticsHistory.push({
+                        time: timeLabel,
+                        rate: this.notificationsPerMinute
+                    });
+                    
+                    // Keep only last 20 data points
+                    if (this.analyticsHistory.length > 20) {
+                        this.analyticsHistory.shift();
+                    }
+                    
+                    this.analyticsChart.data.labels = this.analyticsHistory.map(h => h.time);
+                    this.analyticsChart.data.datasets[0].data = this.analyticsHistory.map(h => h.rate);
+                    this.analyticsChart.update('none');
+                }
+                
+                // Update metrics chart
+                if (this.metricsChart) {
+                    this.metricsChart.data.datasets[0].data = [this.uniqueNotifications, this.duplicateNotifications];
+                    this.metricsChart.update('none');
+                }
+                
+                // Detailed analytics are now handled by server data updates only
+            }
+
+            updateAnalyticsData(data) {
+                if (!data) return;
+                
+                const now = new Date();
+                const timeLabel = now.toLocaleTimeString();
+                
+                // Update analytics chart with server data
+                if (this.analyticsChart && data.messagesPerMinute !== undefined) {
+                    this.analyticsHistory.push({
+                        time: timeLabel,
+                        rate: data.messagesPerMinute
+                    });
+                    
+                    // Keep only last 20 data points
+                    if (this.analyticsHistory.length > 20) {
+                        this.analyticsHistory.shift();
+                    }
+                    
+                    this.analyticsChart.data.labels = this.analyticsHistory.map(h => h.time);
+                    this.analyticsChart.data.datasets[0].data = this.analyticsHistory.map(h => h.rate);
+                    this.analyticsChart.update('none');
+                }
+                
+                // Update metrics chart with server data
+                if (this.metricsChart && data.totalMessagesProcessed !== undefined) {
+                    const processed = data.totalMessagesProcessed || 0;
+                    const queued = data.totalMessagesQueued || 0;
+                    this.metricsChart.data.datasets[0].data = [processed, queued];
+                    this.metricsChart.data.labels = ['Processed', 'Queued'];
+                    this.metricsChart.update('none');
+                }
+
+                // Update throughput chart
+                if (this.throughputChart && data.detailedStats) {
+                    const stats = data.detailedStats;
+                    this.throughputChart.data.datasets[0].data = [
+                        data.averageThroughput || 0,
+                        stats.peakThroughput || 0,
+                        data.averageThroughput || 0,
+                        stats.minThroughput || 0
+                    ];
+                    this.throughputChart.update('none');
+                }
+
+                // Update channel distribution chart
+                if (this.channelChart && data.channelDistribution) {
+                    const util = data.channelDistribution;
+                    this.channelChart.data.datasets[0].data = [
+                        util.high || 0,
+                        util.medium || 0,
+                        util.low || 0
+                    ];
+                    this.channelChart.update('none');
+                }
+
+                // Update trends chart
+                if (this.trendsChart && data.trendData) {
+                    const trends = data.trendData;
+                    const labels = trends.map(t => `${t.hour}:00`);
+                    const throughputData = trends.map(t => t.messageRate);
+                    const utilizationData = trends.map(t => t.utilization);
+                    
+                    this.trendsChart.data.labels = labels;
+                    this.trendsChart.data.datasets[0].data = throughputData;
+                    this.trendsChart.data.datasets[1].data = utilizationData;
+                    this.trendsChart.update('none');
+                }
+
+                // Update system health dashboard
+                this.updateSystemHealthDashboard(data);
+                
+                // Update detailed analytics with server data
+                this.updateDetailedAnalyticsWithServerData(data);
+            }
+
+            updateDetailedAnalytics() {
+                const detailedAnalyticsDiv = document.querySelector('#analytics-tab .card:last-child > div');
+                if (detailedAnalyticsDiv) {
+                    const avgNotificationsPerMin = this.analyticsHistory.length > 0 ? 
+                        Math.round(this.analyticsHistory.reduce((sum, h) => sum + h.rate, 0) / this.analyticsHistory.length) : 0;
+                    
+                    const duplicateRate = this.totalNotifications > 0 ? 
+                        ((this.duplicateNotifications / this.totalNotifications) * 100).toFixed(1) : 0;
+                    
+                    const dataRate = this.totalDataBytes > 0 ? this.formatBytes(this.totalDataBytes) : '0 Bytes';
+                    
+                    detailedAnalyticsDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📊 Current Rate</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #667eea;">${this.notificationsPerMinute}/min</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📈 Average Rate</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #28a745;">${avgNotificationsPerMin}/min</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">🔄 Duplicate Rate</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #dc3545;">${duplicateRate}%</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">💾 Data Volume</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #ffc107;">${dataRate}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #6f42c1;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📋 Total Messages</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #6f42c1;">${this.totalNotifications}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">✅ Unique Messages</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #17a2b8;">${this.uniqueNotifications}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            updateSystemHealthDashboard(data) {
+                if (!data || !data.systemHealth) return;
+
+                const health = data.systemHealth;
+                
+                // Update health score
+                const scoreElement = document.getElementById('healthScore');
+                if (scoreElement) {
+                    scoreElement.textContent = health.score || '0';
+                    const circle = scoreElement.parentElement;
+                    if (circle) {
+                        const score = parseInt(health.score) || 0;
+                        if (score >= 80) {
+                            circle.className = 'health-score-circle good';
+                        } else if (score >= 60) {
+                            circle.className = 'health-score-circle warning';
+                        } else {
+                            circle.className = 'health-score-circle critical';
+                        }
+                    }
+                }
+
+                // Update metric cards
+                const updateMetric = (id, value, suffix = '') => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = value + suffix;
+                };
+
+                updateMetric('uptimeValue', health.uptime || '0h 0m');
+                updateMetric('cpuValue', health.cpuUsage || '0', '%');
+                updateMetric('memoryValue', health.memoryUsage || '0', '%');
+                updateMetric('latencyValue', health.averageLatency || '0', 'ms');
+            }
+
+            updateDetailedAnalyticsWithServerData(data) {
+                const detailedAnalyticsDiv = document.querySelector('#analytics-tab .card:last-child > div');
+                if (detailedAnalyticsDiv && data) {
+                    const avgUtilization = data.averageUtilization ? data.averageUtilization.toFixed(1) : '0.0';
+                    const duplicateRate = data.duplicateRate ? data.duplicateRate.toFixed(1) : '0.0';
+                    const errorRate = data.errorRate ? data.errorRate.toFixed(1) : '0.0';
+                    const systemHealth = data.systemHealthScore ? data.systemHealthScore.toFixed(1) : '0.0';
+                    const avgThroughput = data.averageThroughput ? data.averageThroughput.toFixed(1) : '0.0';
+                    const avgLatency = data.averageLatency ? data.averageLatency.toFixed(1) : '0.0';
+                    
+                    detailedAnalyticsDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📊 Messages/Min</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #667eea;">${data.messagesPerMinute || 0}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📈 Processed</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #28a745;">${data.totalMessagesProcessed || 0}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">⏳ Queued</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #ffc107;">${data.totalMessagesQueued || 0}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">👥 Clients</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #17a2b8;">${data.totalClients || 0}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #6f42c1;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📋 Channels</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #6f42c1;">${data.totalChannels || 0}</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">📊 Avg Utilization</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #dc3545;">${avgUtilization}%</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #e83e8c;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">🔄 Duplicate Rate</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #e83e8c;">${duplicateRate}%</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #fd7e14;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">❌ Error Rate</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #fd7e14;">${errorRate}%</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #20c997;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">💚 System Health</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #20c997;">${systemHealth}%</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #6610f2;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">⚡ Avg Throughput</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #6610f2;">${avgThroughput}/s</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #6c757d;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">⏱️ Avg Latency</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #6c757d;">${avgLatency}ms</p>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #198754;">
+                                <h4 style="margin: 0 0 8px 0; color: #2d3748;">💾 Total Capacity</h4>
+                                <p style="margin: 0; font-size: 1.2em; font-weight: bold; color: #198754;">${data.totalCapacity || 0}</p>
+                            </div>
+                        </div>
+                        ${data.detailedStats ? `
+                        <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                            <h4 style="margin: 0 0 15px 0; color: #2d3748; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">🌐 Network Statistics</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                                <div style="text-align: center; padding: 10px;">
+                                    <div style="font-size: 0.9em; color: #6c757d;">Bytes In</div>
+                                    <div style="font-size: 1.1em; font-weight: bold; color: #28a745;">${this.formatBytes(data.detailedStats.networkIO?.bytesIn || 0)}</div>
+                                </div>
+                                <div style="text-align: center; padding: 10px;">
+                                    <div style="font-size: 0.9em; color: #6c757d;">Bytes Out</div>
+                                    <div style="font-size: 1.1em; font-weight: bold; color: #dc3545;">${this.formatBytes(data.detailedStats.networkIO?.bytesOut || 0)}</div>
+                                </div>
+                                <div style="text-align: center; padding: 10px;">
+                                    <div style="font-size: 0.9em; color: #6c757d;">Memory Usage</div>
+                                    <div style="font-size: 1.1em; font-weight: bold; color: #ffc107;">${data.detailedStats.memoryUsage || 0}%</div>
+                                </div>
+                                <div style="text-align: center; padding: 10px;">
+                                    <div style="font-size: 0.9em; color: #6c757d;">CPU Usage</div>
+                                    <div style="font-size: 1.1em; font-weight: bold; color: #17a2b8;">${data.detailedStats.cpuUsage || 0}%</div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.channelAnalytics && data.channelAnalytics.length > 0 ? `
+                        <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                            <h4 style="margin: 0 0 15px 0; color: #2d3748; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">🔗 Channel Performance</h4>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #f8f9fa;">
+                                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Channel</th>
+                                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Messages</th>
+                                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Utilization</th>
+                                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Throughput</th>
+                                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.channelAnalytics.map(channel => `
+                                            <tr style="border-bottom: 1px solid #dee2e6;">
+                                                <td style="padding: 10px; font-weight: 500;">${channel.channel}</td>
+                                                <td style="padding: 10px; text-align: right;">${channel.messagesProcessed}</td>
+                                                <td style="padding: 10px; text-align: right;">${channel.utilization.toFixed(1)}%</td>
+                                                <td style="padding: 10px; text-align: right;">${channel.throughputRate.toFixed(1)}/s</td>
+                                                <td style="padding: 10px; text-align: center;">
+                                                    <span style="padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; 
+                                                        ${channel.status === 'healthy' ? 'background: #d4edda; color: #155724;' : 
+                                                          channel.status === 'warning' ? 'background: #fff3cd; color: #856404;' : 
+                                                          'background: #f8d7da; color: #721c24;'}">
+                                                        ${channel.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        ` : ''}
+                    `;
+                }
+            }
+
         resetStats() {
                 this.totalNotifications = 0;
                 this.totalDataBytes = 0;
