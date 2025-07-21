@@ -167,13 +167,26 @@ impl TokenBucket {
             info!("🔧 CAPACITY INCREASED - Bucket: {}, Old: {}, New: {}, Tokens: {} -> {}, Buffer: {}", 
                   self.name, old_capacity, new_capacity, current_tokens, *tokens, buffer_size);
                   
-            // If bucket was backpressured and now has tokens, trigger drain to resume processing
+            // If bucket was backpressured and now has tokens, coordinate with shared state before drain
             if was_backpressured && *tokens > 0 {
                 let final_tokens = *tokens;
                 drop(tokens);
                 drop(capacity);
-                info!("🔔 DRAIN NOTIFICATION - Reason: capacity increase recovery, Bucket: {}, Tokens restored: {}", self.name, final_tokens);
-                self.drain().await;
+                
+                // Coordinate with shared state to prevent race conditions
+                use crate::message_stream::shared_state::get_shared_state;
+                let shared_state = get_shared_state();
+                
+                // Only trigger drain if channel is actually backpressured in shared state
+                // This prevents race conditions during high watermark changes
+                if shared_state.is_backpressured(&self.name).await {
+                    // Mark as flushing BEFORE sending drain notification to prevent race conditions
+                    shared_state.mark_flushing(&self.name).await;
+                    info!("🔔 DRAIN NOTIFICATION - Reason: capacity increase recovery, Bucket: {}, Tokens restored: {}", self.name, final_tokens);
+                    self.drain().await;
+                } else {
+                    info!("🔧 CAPACITY INCREASED - Channel {} not backpressured in shared state, skipping drain", self.name);
+                }
                 return;
             }
         } else if new_capacity < old_capacity {
