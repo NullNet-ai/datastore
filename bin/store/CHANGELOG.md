@@ -5,6 +5,29 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.7
+
+### Author
+Kashan
+
+### Added
+- **CRDT Messages Performance Indexes**: Added comprehensive database indexes for `crdt_messages` table to significantly improve query performance
+  - Individual indexes on `dataset`, `column`, `row`, and `timestamp` columns
+  - Composite index on `(dataset, column, row)` for optimizing `find_existing_messages` function
+  - Composite index on `(dataset, column, row, timestamp DESC)` for ordered queries
+  - Timestamp descending index for `get_messages_since` function optimization
+
+### Enhanced
+- **Database Performance**: Dramatically improved `apply_messages` function performance by addressing database query bottlenecks
+- **Query Optimization**: Enhanced CRDT message comparison and retrieval operations with targeted indexing strategy
+
+### Technical Details
+- **Migration**: Updated initial migration file with new indexes using `IF NOT EXISTS` for safe deployment
+- **Index Strategy**: Implemented both single-column and composite indexes to cover various query patterns in CRDT synchronization
+- **Performance Impact**: Resolved performance issues where `apply_messages` was taking excessive time due to unindexed database queries
+
+---
+
 ## 0.1.6
 
 ### Author

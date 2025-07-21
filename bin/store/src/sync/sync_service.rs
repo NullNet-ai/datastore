@@ -136,7 +136,6 @@ pub async fn send_messages(
                 "hypertable_timestamp": msg.hypertable_timestamp,
             });
 
-            // Log each serialized message for debugging
 
             serialized
         })
@@ -163,15 +162,15 @@ pub async fn send_messages(
 
     Ok(())
 }
-
 async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessageModel>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
+    
     let sender = get_sender().cloned().unwrap_or_else(|| {
         log::error!("Failed to send message: sender not available");
-        panic!("Message sender not available") // Or handle the error differently
+        panic!("Message sender not available")
     });
 
     for (msg, existing_msg) in existing_messages {
@@ -185,15 +184,13 @@ async fn apply_messages(
         }
 
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
-            // ! bottleneck here
             let inserted_timestamp: Clock =
                 HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-            let mut updated_msg = msg; // Remove .clone()
+            
+            let mut updated_msg = msg;
             updated_msg.group_id =
                 std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
             updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
-
-            // println!("time till insert2 {:?}", time_till_insert2);
 
             sender.send(updated_msg)?;
         }
