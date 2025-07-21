@@ -92,4 +92,6 @@ pub enum FilterOperator {
     Or,
     #[serde(rename = "like")]
     Like,
+    #[serde(rename = "has_no_value")]
+    HasNoValue,
 }
