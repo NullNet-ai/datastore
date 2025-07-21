@@ -84,6 +84,8 @@ impl MessageStreamingService {
                             if let Err(e) = service.handle_message(&channel_name, &org_id, message.0).await {
                                 error!("Handle message error for channel {}: {}", channel_name, e);
                             }
+                        } else {
+                            log::info!("No clients connected for organization {}, discarding message for channel {}", org_id, channel_name);
                         }
                     }
                 }

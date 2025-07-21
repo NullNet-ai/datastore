@@ -473,14 +473,6 @@ fn setup_authenticated_handlers(socket: SocketRef) {
     });
 }
 
-#[derive(Serialize)]
-struct BucketStatus {
-    channel_name: String,
-    tokens_remaining: usize,
-    high_watermark: usize,
-    buffer_size: usize,
-}
-
 async fn get_all_bucket_status() -> serde_json::Value {
     let buckets = get_all_token_buckets().await;
     let mut bucket_data = Vec::new();

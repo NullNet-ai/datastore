@@ -257,13 +257,18 @@ impl PgListenerService {
                 return;
             }
         };
-        // Forward the message to the main stream buffer for routing (without calling receive_message)
-        // The routing task will pop messages from this buffer and process them
-        let msg = crate::message_stream::token_bucket::Message(message.0.clone());
-        self.main_stream.buffer.lock().await.push_back(msg);
         
-        // Notify the routing task that a message is available
-        self.main_stream.on_message_available().notify_one();
+        // Use the token bucket mechanism properly to manage backpressure
+        let msg = crate::message_stream::token_bucket::Message(message.0.clone());
+        let has_capacity = self.main_stream.receive_message(msg).await;
+        
+        if !has_capacity {
+            // Main stream is backpressured, pause all channels to stop receiving more notifications
+            log::warn!("Main stream backpressured, pausing all channels");
+            if let Err(e) = self.pause_all_channels().await {
+                log::error!("Failed to pause channels due to backpressure: {}", e);
+            }
+        }
 
         debug!(
             "Received notification on channel {}: {}",
