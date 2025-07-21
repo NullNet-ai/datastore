@@ -6,26 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## 1.0.5
 
-### Added
-- **Enhanced Batch Processing System**: Improved batch operations with automatic field insertion
-  - Added automatic `is_batch` field insertion during batch operations in `common_controller.rs`
-  - Enhanced batch records to include `sync_status` field set to "complete" for proper sync handling
-  - Implemented conditional sync_status value assignment in `message_service.rs` based on `is_batch` flag
-
-### Technical Details
-- **Batch Operation Enhancement**: Updated batch processing logic in `common_controller.rs`:
-  ```rust
-  if let Some(obj) = request_body.record.as_object_mut() {
-      obj.insert("is_batch".to_string(), serde_json::Value::Bool(true));
-      obj.insert("sync_status".to_string(), serde_json::Value::String("complete".to_string()));
-  }
-  ```
-- **Conditional Sync Status**: Modified `message_service.rs` to set sync_status to "consumed" for batch operations (`is_batch = true`) and "complete" for regular operations
-- **Database Schema**: Leveraged existing `is_batch` column in `connections` and `temp_connections` tables for batch operation identification
-
----
 
 ## 0.1.6
 
@@ -60,134 +41,70 @@ Eriberto
 Kashan
 
 ### Added
-- Added automatic periodic channel refresh functionality to `PgListenerService`
-  - Implemented 30-second interval refresh cycle for PostgreSQL channels
-  - Added background task that automatically discovers new channels from `postgres_channels` table
-  - Enhanced channel management with smart refresh logic that respects service state (running/paused)
-- **Message Streaming System**: Implemented comprehensive real-time message streaming architecture
-  - Created `MessageStreamingService` for managing message routing and channel operations
-  - Implemented `TokenBucket` system for rate limiting and backpressure management
-  - Added `StreamQueueService` for persistent message queuing during backpressure scenarios
-  - Created Socket.IO gateway with JWT authentication and organization-based client management
-  - Added real-time dashboard for monitoring token buckets and message flow
-- **Token Bucket Management**: 
-  - Implemented configurable token bucket system with customizable capacity and refill rates
-  - Added automatic token bucket creation for channels when messages arrive for authenticated organizations
-  - Integrated token bucket monitoring with real-time dashboard updates
-- **Message Queue System**:
-  - Created persistent database queue system for handling backpressured messages
-  - Implemented automatic queue processing when token buckets have available capacity
-  - Added database-backed message storage with JSON normalization
-- **Batch Processing System**: Introduced `is_batch` system field for optimized batch operations
-  - Added `is_batch` boolean column to `connections` and `temp_connections` tables with default value `false`
-  - Enhanced batch insert operations to automatically set `is_batch` to `true` for batch-processed records
-  - Modified sync service to skip `sync_status` processing for batch records (`is_batch = true`) since they are already consumed by triggers
-  - Created database migration `2025-07-20-063622_add_is_batch_to_connections` for schema updates
-  - **CRITICAL**: Set `is_batch` to `true` in `process_code_assignment_message` to ensure `sync_status` is set to "consumed" instead of "complete", preventing duplicate records in streaming caused by trigger consumption
+- **Message Streaming System**: Comprehensive real-time message streaming architecture
+  - `MessageStreamingService` for message routing and channel operations
+  - `TokenBucket` system for rate limiting and backpressure management
+  - `StreamQueueService` for persistent message queuing during backpressure
+  - Socket.IO gateway with JWT authentication and organization-based client management
+  - Real-time dashboard for monitoring token buckets and message flow
+- **Automatic Channel Management**: 
+  - 30-second interval refresh cycle for PostgreSQL channels in `PgListenerService`
+  - Background task for automatic channel discovery from `postgres_channels` table
+  - Smart refresh logic respecting service state (running/paused)
+- **Enhanced Batch Processing System**: Introduced `is_batch` system field for optimized operations
+  - Added `is_batch` boolean column to `connections` and `temp_connections` tables
+  - Enhanced batch operations to automatically set `is_batch` to `true`
+  - Added automatic `is_batch` field insertion during batch operations in `common_controller.rs`
+  - Enhanced batch records to include `sync_status` field set to "complete" for proper sync handling
+  - Implemented conditional sync_status value assignment in `message_service.rs` based on `is_batch` flag
+  - Modified sync service to skip `sync_status` processing for batch records
+  - **CRITICAL**: Prevents duplicate streaming records by setting proper sync_status values
 
 ### Removed
-- **Architecture Cleanup**: Eliminated redundant local memory queues and simplified message routing
-  - Removed `BrokerService` and all local memory queue management
-  - Eliminated duplicate message routing logic between broker and streaming service
-  - Removed complex queue cleanup tasks and redundant pipe registration
+- **Architecture Cleanup**: Eliminated redundant local memory queues
+  - Removed `BrokerService` and local memory queue management
   - Simplified architecture to use only database queues for backpressure handling
+  - Eliminated duplicate message routing logic and complex queue cleanup tasks
 
 ### Enhanced
-- **Channel Discovery**: Channels are now automatically refreshed every 30 seconds without requiring service restart
-- **Resource Efficiency**: Periodic refresh only runs when service is active and not paused
-- **Error Resilience**: Individual refresh failures don't stop the refresh cycle, with comprehensive error logging
-- **Real-time Communication**: 
-  - Organization-based client authentication and management
-  - Automatic channel creation based on message flow and authenticated clients
-  - WebSocket-based real-time message broadcasting
-  - JWT token validation for secure client connections
+- **Real-time Communication**: Organization-based client authentication, automatic channel creation, WebSocket broadcasting, JWT validation
+- **Performance Optimizations**: 
+  - Increased message processing batch size from 100 to 500 messages
+  - Implemented fair database access with automatic re-queuing
+  - Enhanced backpressure handling with refined message deletion logic
+  - FIFO queue management using `tokio::sync::Semaphore`
+- **CRDT Synchronization**: 
+  - Automatic `sync_status` field management for connections table
+  - PostgreSQL trigger support with conditional execution
+  - Enhanced error handling and HLC timestamp generation
 
-### Technical Details
-- **New Functionality**: 
-  - Added `tokio::time::interval` import for periodic task scheduling
-  - Implemented background task in `PgListenerService::new()` method
-  - Smart first-tick skip to avoid immediate refresh after startup
-  - Enhanced CRDT sync service with `sync_status` field management for connections table
-  - Added automatic `sync_status` field insertion for insert and update operations
-  - Implemented PostgreSQL trigger support with conditional execution based on `sync_status` values
-- **Message Streaming Architecture**:
-  - Created `/src/message_stream/streaming_service.rs` - Core message routing and channel management
-  - Created `/src/message_stream/token_bucket.rs` - Rate limiting and backpressure control
-  - Created `/src/message_stream/stream_queue_service.rs` - Persistent message queuing
-  - Created `/src/message_stream/gateway.rs` - Socket.IO gateway with JWT authentication
-  - Added real-time dashboard at `/message_stream/index.html` for monitoring
-- **Database Integration**:
-  - Added `stream_queues` and `stream_queue_items` tables for persistent message storage
-  - Implemented automatic message routing based on PostgreSQL notifications
-  - Enhanced message processing with organization-based filtering
-- **Authentication & Security**:
-  - JWT-based client authentication with organization extraction
-  - Secure token validation and client session management
-  - Organization-based message filtering and access control
-- **Performance**: 
-  - Non-blocking periodic refresh that doesn't interfere with notification processing
-  - Conditional refresh based on service state to minimize unnecessary database queries
-  - Simplified token bucket management with configurable rates
-  - Automatic channel cleanup and resource management
-  - Eliminated memory overhead from local queues and reduced lock contention
-  - Direct message routing without broker intermediary for improved throughput
-- **Reliability**: 
-  - Automatic synchronization with database changes
-  - Robust error handling with detailed logging
-  - Enhanced error handling in message service with proper logging and error propagation
-  - Improved backpressure handling with persistent database queues only
-  - Eliminated risk of message loss from memory-based queues during service restarts
-- **CRDT Synchronization**:
-  - Modified `sync_service.rs` to automatically add `sync_status` field to connections table records
-  - Insert operations: `sync_status` set to "complete" and positioned as last field
-  - Update operations: `sync_status` set to "consumed" and positioned as first field
-  - Enhanced `message_service.rs` with proper error handling for HLC timestamp generation
-  - Added support for PostgreSQL triggers with `AFTER INSERT OR UPDATE` and conditional execution
-  - Trigger conditions: `WHEN (NEW.sync_status = 'complete')` for targeted execution
-- **Code Safety**: Removed unsafe unwraps from the code
-- **Shared State Management**:
-  - Implemented global `AUTHENTICATED_CLIENTS` state using `Arc<Mutex<HashMap>>` for thread-safe client tracking
-  - Added `OrganizationClients` struct to manage client IDs and channels per organization
-  - Enhanced client registration and removal with proper state synchronization
-  - Simplified token bucket management within streaming service
-- **Dashboard Enhancements**:
-  - Added real-time Socket.IO event handling for `updateHighWaterMark` and `getCurrentHighWaterMark`
-  - Implemented dynamic token bucket capacity adjustment through dashboard interface
-  - Added comprehensive system metrics display including client status and bucket statistics
-  - Enhanced dashboard with live updates for token bucket states and message flow monitoring
-- **Documentation & Architecture**:
-  - Created comprehensive message flow diagram documenting the complete data flow from PostgreSQL to clients
-  - Added detailed explanation of message streaming architecture including all components and their interactions
-  - Documented token bucket rate limiting, backpressure handling, and organization isolation features
-- **Error Handling Improvements**:
-  - Modified `PgListenerService` to skip malformed JSON notifications instead of creating fallback messages
-  - Enhanced error logging with detailed context for debugging notification parsing failures
-  - Improved graceful error handling throughout the message streaming pipeline
-- **Batch Processing Implementation**:
-  - Database migration: Added `is_batch` column with `ALTER TABLE` statements for both `connections` and `temp_connections`
-  - Batch logic: Batch insert operations automatically set `is_batch` field to `true`
-  - Sync optimization: Conditional logic to skip `sync_status` assignment when `is_batch = true`
-  - Trigger optimization: Batch records bypass sync status updates as they're pre-consumed by database triggers
-  - Code changes: Updated `common_controller.rs` to insert `is_batch` field during batch operations
-  - Modified `message_service.rs` sync logic to check `is_batch` flag before applying `sync_status`
-  - **IMPORTANT**: In `process_code_assignment_message`, `is_batch` is set to `true` to ensure sync_status becomes "consumed" rather than "complete", preventing duplicate streaming records since "complete" status triggers database consumption leading to record duplication
-- **System Field Enhancement**:
-  - Introduced new system field `is_batch` to indicate if a record was inserted from batch request or simple request
-  - Helps identify if the message was consumed by trigger already or not in sync operations
-  - Provides better tracking and debugging capabilities for batch vs individual record operations
+### Technical Implementation
+- **Core Files**: 
+  - `/src/message_stream/streaming_service.rs` - Message routing and channel management
+  - `/src/message_stream/token_bucket.rs` - Rate limiting and backpressure control
+  - `/src/message_stream/stream_queue_service.rs` - Persistent message queuing
+  - `/src/message_stream/gateway.rs` - Socket.IO gateway with JWT authentication
+- **Database**: Added `stream_queues` and `stream_queue_items` tables, `is_batch` column migration
+- **Security**: JWT-based authentication, organization-based filtering, secure token validation
+- **Monitoring**: Real-time dashboard with dynamic token bucket capacity adjustment
+- **Batch Operation Enhancement**: Updated batch processing logic in `common_controller.rs`:
+  ```rust
+  if let Some(obj) = request_body.record.as_object_mut() {
+      obj.insert("is_batch".to_string(), serde_json::Value::Bool(true));
+      obj.insert("sync_status".to_string(), serde_json::Value::String("complete".to_string()));
+  }
+  ```
+- **Conditional Sync Status**: Modified `message_service.rs` to set sync_status to "consumed" for batch operations (`is_batch = true`) and "complete" for regular operations
+- **Race Condition Fix**: Enhanced `set_tokens` function in `token_bucket.rs` to validate shared state before triggering drain notifications, preventing simultaneous processing paths during capacity changes
 
 ### Fixed
-- Removed infinite loop test data senders that were causing performance issues
-- Updated message flow to only create channels for organizations with authenticated clients
-- Simplified client connection flow by removing manual channel subscription requirements
-
-### Performance & Fairness Improvements
-- **Increased Message Processing Batch Size**: Enhanced throughput by increasing batch size from 100 to 500 messages per processing cycle
-- **Implemented Fair Database Access**: Modified `process_queued_messages` to process only one batch per turn, preventing process monopolization
-- **Enhanced Connection Fairness**: Added automatic re-queuing mechanism that yields database connections after processing a batch when more messages are available
-- **Improved Backpressure Handling**: Refined message deletion logic to only remove successfully transmitted messages from database during backpressure scenarios
-- **FIFO Queue Management**: Leveraged `tokio::sync::Semaphore` for fair First-In-First-Out database connection access, preventing starvation
-- **Automatic Process Re-queuing**: Implemented drain notification system to automatically re-queue channels with pending messages, ensuring all processes get fair access to resources
+- **Race Condition in Message Streaming**: Resolved duplicate record issue during high watermark changes
+  - Fixed race condition in `token_bucket.rs` where capacity increases could trigger simultaneous message processing
+  - Enhanced state coordination between token bucket and shared streaming state
+  - Implemented atomic state transitions to prevent duplicate message processing during backpressure recovery
+- Removed infinite loop test data senders causing performance issues
+- Updated message flow to only create channels for authenticated organizations
+- Simplified client connection flow by removing manual subscription requirements
 
 ---
 
