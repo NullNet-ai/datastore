@@ -74,13 +74,7 @@ pub fn register_token_bucket(channel_name: &str, capacity: usize) -> Arc<TokenBu
     TokenBucket::new(channel_name, capacity)
 }
 
-// Get a TokenBucket from the global registry
-#[deprecated(note = "Use shared_state system instead")]
-pub fn get_token_bucket(channel_name: &str) -> Option<Arc<TokenBucket>> {
-    // This function is deprecated and should not be used
-    // Always return None to avoid conflicts with new system
-    None
-}
+
 #[allow(warnings)]
 // Remove a TokenBucket from the global registry
 pub fn unregister_token_bucket(channel_name: &str) -> bool {

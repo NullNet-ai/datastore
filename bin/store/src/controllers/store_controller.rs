@@ -233,12 +233,12 @@ pub async fn get_by_id(
     // Use the common function to get the record by ID
     match process_and_get_record_by_id(&table_name, &record_id, Some(pluck_fields)).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(error) => {
-            let status_code = http::StatusCode::from_u16(error.status)
+        Err(_error) => {
+            let status_code = http::StatusCode::from_u16(_error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
-                message: error.message,
+                message: _error.message,
                 count: 0,
                 data: vec![],
             })
@@ -277,7 +277,7 @@ pub async fn batch_insert_records(
         Ok(_table) => {
             // Table exists, proceed with your logic using the table
         }
-        Err(error) => {
+        Err(_error) => {
             // Table doesn't exist, return an error response
             return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,

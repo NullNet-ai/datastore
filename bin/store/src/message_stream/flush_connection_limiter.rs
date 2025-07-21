@@ -26,10 +26,7 @@ impl FlushConnectionLimiter {
         Ok((FlushPermit { _permit: permit }, conn))
     }
     
-    pub fn available_permits(&self) -> usize {
-        self.semaphore.available_permits()
-    }
-    
+
     #[allow(dead_code)]
     pub fn is_at_capacity(&self) -> bool {
         self.semaphore.available_permits() == 0

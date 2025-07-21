@@ -3,7 +3,7 @@ use crate::message_stream::token_bucket::{Message, TokenBucket};
 use crate::message_stream::stream_queue_service::StreamQueueService;
 use crate::message_stream::shared_state::{get_shared_state, SharedStreamingState};
 use crate::message_stream::flush_connection_limiter::get_flush_limiter;
-use log::{error, info, warn, debug};
+use log::{error, info, warn};
 use serde_json::Value;
 use socketioxide::SocketIo;
 use std::sync::Arc;
