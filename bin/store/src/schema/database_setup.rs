@@ -27,11 +27,11 @@ impl Default for DatabaseSetupFlags {
 
 pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std::error::Error>> {
     // Get database connection info from environment variables
-    let user = env::var("DB_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = env::var("DB_PASS").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("DB_NAME").unwrap_or_else(|_| "nullnet".to_string());
-    let host = env::var("DB_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("DB_PORT").unwrap_or_else(|_| "5433".to_string());
+    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
+    let password = env::var("POSTGRES_PASS").unwrap_or_else(|_| "admin".to_string());
+    let dbname = env::var("POSTGRES_NAME").unwrap_or_else(|_| "nullnet".to_string());
+    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
+    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
     let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
         format!(
             "postgres://{}:{}@{}:{}/{}",
