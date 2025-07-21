@@ -107,11 +107,26 @@ impl MessageStreamingService {
                 // Wait for drain event (when bucket becomes full)
                 drain_notifier.notified().await;
                 
-                // First mark as flushing to prevent new messages from bypassing queue
-                service.shared_state.mark_flushing(&channel_name_clone).await;
+                // Only proceed if channel is already in flushing or backpressured state
+                let is_flushing = service.shared_state.is_flushing(&channel_name_clone).await;
+                let is_backpressured = service.shared_state.is_backpressured(&channel_name_clone).await;
                 
-                // Then remove from backpressured state - channel is ready to receive
-                service.shared_state.remove_backpressured(&channel_name_clone).await;
+                if !is_flushing && !is_backpressured {
+                    // Channel is not in flushing or backpressured state, do nothing
+                    continue;
+                }
+
+                 // If not already flushing, mark as flushing to prevent new messages from bypassing queue
+                if !is_flushing {
+                    service.shared_state.mark_flushing(&channel_name_clone).await;
+                }
+                
+                // If channel was backpressured, remove from backpressured state - channel is ready to receive
+                if is_backpressured {
+                    service.shared_state.remove_backpressured(&channel_name_clone).await;
+                }
+                
+               
                 
                 // Check if there are actually queued messages to process
                 let flush_limiter = get_flush_limiter();

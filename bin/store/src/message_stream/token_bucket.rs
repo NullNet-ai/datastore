@@ -71,26 +71,35 @@ impl TokenBucket {
     }
 
     pub async fn receive_message(self: &Arc<Self>, msg: Message) -> bool {
+        // Always store message in buffer first to prevent message loss
+        let mut buffer = self.buffer.lock().await;
+        buffer.push_back(msg.clone());
+        let buffer_size = buffer.len();
+        drop(buffer);
+        
+        // Notify that a message is available for transmission
+        self.notify_message_available.notify_one();
+        
         let mut tokens = self.tokens.lock().await;
-
+        
         if *tokens > 0 {
-            // Decrement token and always store message in bucket first
+            // Decrement token when available
             *tokens -= 1;
             let remaining_tokens = *tokens;
             drop(tokens);
             
-            // Always store message in bucket buffer to control burst
-            let mut buffer = self.buffer.lock().await;
-            buffer.push_back(msg.clone());
-            drop(buffer);
-            
-            // Notify that a message is available for transmission
-            self.notify_message_available.notify_one();
+            debug!("📥 RECEIVE_MESSAGE - Buffer size: {}, Tokens: {}, Bucket: {}", 
+                  buffer_size, remaining_tokens, self.name);
             
             // Return true if tokens still available (> 0), false when tokens = 0 (backpressured)
             remaining_tokens > 0
         } else {
-            // No tokens available - bucket is backpressured
+            // No tokens available - bucket is backpressured but message is still buffered
+            let capacity = *self.capacity.lock().await;
+            drop(tokens);
+            
+            warn!("📥 MESSAGE BUFFERED - No tokens available, Buffer size: {}, Capacity: {}, Bucket: {}", 
+                  buffer_size, capacity, self.name);
             false
         }
     }
@@ -103,8 +112,10 @@ impl TokenBucket {
             let capacity = *self.capacity.lock().await;
             let mut tokens = self.tokens.lock().await;
             let was_backpressured = *tokens == 0;
+            let buffer_size_after_emit = buffer.len();
             
-            // Restore token after message emission, but don't exceed capacity
+            // Always restore one token when emitting a message to allow progress
+            // This ensures messages can continue to be processed even when buffer > capacity
             *tokens = std::cmp::min(*tokens + 1, capacity);
             let current_tokens = *tokens;
             
@@ -115,19 +126,19 @@ impl TokenBucket {
                 "unknown".to_string()
             };
             
-            debug!("📤 EMIT_MESSAGE - Message ID: {}, Buffer size: {}, Tokens: {}/{}, Bucket: {}", 
-                  message_id, buffer.len(), current_tokens, capacity, self.name);
+            debug!("📤 EMIT_MESSAGE - Message ID: {}, Buffer size: {}, Tokens: {}/{}, Bucket: {}, Token restored: true", 
+                  message_id, buffer_size_after_emit, current_tokens, capacity, self.name);
             
             // Emit drain when:
             // 1. Recovering from backpressure (was 0, now > 0), OR
             // 2. When buffer is empty and we have tokens available, OR
             // 3. When bucket reaches full capacity (ready to accept more messages)
-            let buffer_empty = buffer.is_empty();
+            let buffer_empty = buffer_size_after_emit == 0;
             if was_backpressured || (buffer_empty && current_tokens > 0) || current_tokens == capacity {
-                info!("🔔 DRAIN NOTIFICATION - Reason: {}, Bucket: {}", 
+                info!("🔔 DRAIN NOTIFICATION - Reason: {}, Bucket: {}, Buffer: {}, Tokens: {}", 
                       if was_backpressured { "backpressure recovery" } 
                       else if buffer_empty { "buffer empty" } 
-                      else { "full capacity" }, self.name);
+                      else { "full capacity" }, self.name, buffer_size_after_emit, current_tokens);
                 drop(buffer);
                 drop(tokens);
                 self.drain().await;
@@ -139,8 +150,46 @@ impl TokenBucket {
     pub async fn set_tokens(&self, new_capacity: usize) {
         let mut tokens = self.tokens.lock().await;
         let mut capacity = self.capacity.lock().await;
-        *tokens = std::cmp::min(*tokens, new_capacity);
+        let buffer_size = self.buffer.lock().await.len();
+        
+        let old_capacity = *capacity;
+        let current_tokens = *tokens;
+        let was_backpressured = current_tokens == 0;
+        
+        // Update capacity first
         *capacity = new_capacity;
+        
+        if new_capacity > old_capacity {
+            // Capacity increased - add the difference to current tokens
+            let capacity_increase = new_capacity - old_capacity;
+            *tokens = std::cmp::min(current_tokens + capacity_increase, new_capacity);
+            
+            info!("🔧 CAPACITY INCREASED - Bucket: {}, Old: {}, New: {}, Tokens: {} -> {}, Buffer: {}", 
+                  self.name, old_capacity, new_capacity, current_tokens, *tokens, buffer_size);
+                  
+            // If bucket was backpressured and now has tokens, trigger drain to resume processing
+            if was_backpressured && *tokens > 0 {
+                let final_tokens = *tokens;
+                drop(tokens);
+                drop(capacity);
+                info!("🔔 DRAIN NOTIFICATION - Reason: capacity increase recovery, Bucket: {}, Tokens restored: {}", self.name, final_tokens);
+                self.drain().await;
+                return;
+            }
+        } else if new_capacity < old_capacity {
+            // Capacity decreased - if buffer size exceeds new capacity, set tokens to 0
+            // Otherwise, reduce tokens proportionally but don't go below 0
+            if buffer_size >= new_capacity {
+                *tokens = 0;
+                info!("🔧 CAPACITY DECREASED - Buffer overflow, Bucket: {}, Old: {}, New: {}, Buffer: {}, Tokens: {} -> 0 (backpressured)", 
+                      self.name, old_capacity, new_capacity, buffer_size, current_tokens);
+            } else {
+                *tokens = std::cmp::min(current_tokens, new_capacity - buffer_size);
+                info!("🔧 CAPACITY DECREASED - Bucket: {}, Old: {}, New: {}, Buffer: {}, Tokens: {} -> {}", 
+                      self.name, old_capacity, new_capacity, buffer_size, current_tokens, *tokens);
+            }
+        }
+        // If capacity unchanged, tokens remain the same
     }
 
     pub async fn get_tokens_remaining(&self) -> usize {
@@ -208,7 +257,7 @@ impl TokenBucket {
                         
                         // Add a significant delay to provide effective rate limiting
                         // This controls the transmission rate to prevent overwhelming the system
-                        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
                     }
                     info!("Consumer processed {} messages for bucket: {}", message_count, bucket.name);
                 }

@@ -539,7 +539,11 @@ async fn get_system_metrics() -> serde_json::Value {
     for (_, bucket) in buckets {
         let capacity = bucket.get_high_watermark().await as f64;
         let tokens = bucket.get_tokens_remaining().await as f64;
-        let utilization = ((capacity - tokens) / capacity) * 100.0;
+        let utilization = if capacity > 0.0 {
+            ((capacity - tokens.min(capacity)) / capacity) * 100.0
+        } else {
+            0.0
+        };
         total_utilization += utilization;
         bucket_count += 1;
     }
@@ -584,8 +588,12 @@ async fn get_analytics_data() -> serde_json::Value {
         let capacity = bucket.get_high_watermark().await;
         let tokens_remaining = bucket.get_tokens_remaining().await;
         let buffer_size = bucket.buffer.lock().await.len();
-        let messages_processed = capacity - tokens_remaining;
-        let utilization = ((capacity - tokens_remaining) as f64 / capacity as f64) * 100.0;
+        let messages_processed = capacity.saturating_sub(tokens_remaining);
+        let utilization = if capacity > 0 {
+            ((capacity.saturating_sub(tokens_remaining)) as f64 / capacity as f64) * 100.0
+        } else {
+            0.0
+        };
         
         // Calculate performance metrics
         let throughput_rate = messages_processed as f64 / 60.0; // messages per second
@@ -656,7 +664,7 @@ async fn get_analytics_data() -> serde_json::Value {
     let system_health_score = {
         let utilization_score = (100.0 - avg_utilization).max(0.0);
         let queue_score = if total_capacity > 0 { 
-            ((total_capacity - total_buffer_size) as f64 / total_capacity as f64) * 100.0 
+            ((total_capacity.saturating_sub(total_buffer_size)) as f64 / total_capacity as f64) * 100.0 
         } else { 100.0 };
         (utilization_score + queue_score) / 2.0
     };
