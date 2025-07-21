@@ -1,4 +1,3 @@
-use std::pin::Pin;
 use super::common_controller::{
     convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,
     process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
@@ -29,6 +28,7 @@ use crate::generated::store::{
     BatchDeleteOrganizationAccountsResponse, BatchDeleteOrganizationContactsRequest,
     BatchDeleteOrganizationContactsResponse, BatchDeleteOrganizationsRequest,
     BatchDeleteOrganizationsResponse, BatchDeletePacketsRequest, BatchDeletePacketsResponse,
+    BatchDeletePostgresChannelsRequest, BatchDeletePostgresChannelsResponse,
     BatchDeleteResolutionsRequest, BatchDeleteResolutionsResponse, BatchDeleteSamplesRequest,
     BatchDeleteSamplesResponse, BatchDeleteTempAppguardLogsRequest,
     BatchDeleteTempAppguardLogsResponse, BatchDeleteTempConnectionsRequest,
@@ -62,6 +62,7 @@ use crate::generated::store::{
     BatchInsertOrganizationAccountsResponse, BatchInsertOrganizationContactsRequest,
     BatchInsertOrganizationContactsResponse, BatchInsertOrganizationsRequest,
     BatchInsertOrganizationsResponse, BatchInsertPacketsRequest, BatchInsertPacketsResponse,
+    BatchInsertPostgresChannelsRequest, BatchInsertPostgresChannelsResponse,
     BatchInsertResolutionsRequest, BatchInsertResolutionsResponse, BatchInsertSamplesRequest,
     BatchInsertSamplesResponse, BatchInsertTempAppguardLogsRequest,
     BatchInsertTempAppguardLogsResponse, BatchInsertTempConnectionsRequest,
@@ -95,6 +96,7 @@ use crate::generated::store::{
     BatchUpdateOrganizationAccountsResponse, BatchUpdateOrganizationContactsRequest,
     BatchUpdateOrganizationContactsResponse, BatchUpdateOrganizationsRequest,
     BatchUpdateOrganizationsResponse, BatchUpdatePacketsRequest, BatchUpdatePacketsResponse,
+    BatchUpdatePostgresChannelsRequest, BatchUpdatePostgresChannelsResponse,
     BatchUpdateResolutionsRequest, BatchUpdateResolutionsResponse, BatchUpdateSamplesRequest,
     BatchUpdateSamplesResponse, BatchUpdateTempAppguardLogsRequest,
     BatchUpdateTempAppguardLogsResponse, BatchUpdateTempConnectionsRequest,
@@ -125,10 +127,11 @@ use crate::generated::store::{
     CreateIpInfosRequest, CreateIpInfosResponse, CreateOrganizationAccountsRequest,
     CreateOrganizationAccountsResponse, CreateOrganizationContactsRequest,
     CreateOrganizationContactsResponse, CreateOrganizationsRequest, CreateOrganizationsResponse,
-    CreatePacketsRequest, CreatePacketsResponse, CreateResolutionsRequest,
-    CreateResolutionsResponse, CreateSamplesRequest, CreateSamplesResponse,
-    CreateTempAppguardLogsRequest, CreateTempAppguardLogsResponse, CreateTempConnectionsRequest,
-    CreateTempConnectionsResponse, CreateTempDeviceAliasesRequest, CreateTempDeviceAliasesResponse,
+    CreatePacketsRequest, CreatePacketsResponse, CreatePostgresChannelsRequest,
+    CreatePostgresChannelsResponse, CreateResolutionsRequest, CreateResolutionsResponse,
+    CreateSamplesRequest, CreateSamplesResponse, CreateTempAppguardLogsRequest,
+    CreateTempAppguardLogsResponse, CreateTempConnectionsRequest, CreateTempConnectionsResponse,
+    CreateTempDeviceAliasesRequest, CreateTempDeviceAliasesResponse,
     CreateTempDeviceInterfaceAddressesRequest, CreateTempDeviceInterfaceAddressesResponse,
     CreateTempDeviceInterfacesRequest, CreateTempDeviceInterfacesResponse,
     CreateTempDeviceRemoteAccessSessionsRequest, CreateTempDeviceRemoteAccessSessionsResponse,
@@ -153,10 +156,11 @@ use crate::generated::store::{
     DeleteIpInfosRequest, DeleteIpInfosResponse, DeleteOrganizationAccountsRequest,
     DeleteOrganizationAccountsResponse, DeleteOrganizationContactsRequest,
     DeleteOrganizationContactsResponse, DeleteOrganizationsRequest, DeleteOrganizationsResponse,
-    DeletePacketsRequest, DeletePacketsResponse, DeleteResolutionsRequest,
-    DeleteResolutionsResponse, DeleteSamplesRequest, DeleteSamplesResponse,
-    DeleteTempAppguardLogsRequest, DeleteTempAppguardLogsResponse, DeleteTempConnectionsRequest,
-    DeleteTempConnectionsResponse, DeleteTempDeviceAliasesRequest, DeleteTempDeviceAliasesResponse,
+    DeletePacketsRequest, DeletePacketsResponse, DeletePostgresChannelsRequest,
+    DeletePostgresChannelsResponse, DeleteResolutionsRequest, DeleteResolutionsResponse,
+    DeleteSamplesRequest, DeleteSamplesResponse, DeleteTempAppguardLogsRequest,
+    DeleteTempAppguardLogsResponse, DeleteTempConnectionsRequest, DeleteTempConnectionsResponse,
+    DeleteTempDeviceAliasesRequest, DeleteTempDeviceAliasesResponse,
     DeleteTempDeviceInterfaceAddressesRequest, DeleteTempDeviceInterfaceAddressesResponse,
     DeleteTempDeviceInterfacesRequest, DeleteTempDeviceInterfacesResponse,
     DeleteTempDeviceRemoteAccessSessionsRequest, DeleteTempDeviceRemoteAccessSessionsResponse,
@@ -180,18 +184,19 @@ use crate::generated::store::{
     GetExternalContactsRequest, GetExternalContactsResponse, GetIpInfosRequest, GetIpInfosResponse,
     GetOrganizationAccountsRequest, GetOrganizationAccountsResponse,
     GetOrganizationContactsRequest, GetOrganizationContactsResponse, GetOrganizationsRequest,
-    GetOrganizationsResponse, GetPacketsRequest, GetPacketsResponse, GetResolutionsRequest,
-    GetResolutionsResponse, GetSamplesRequest, GetSamplesResponse, GetTempAppguardLogsRequest,
-    GetTempAppguardLogsResponse, GetTempConnectionsRequest, GetTempConnectionsResponse,
-    GetTempDeviceAliasesRequest, GetTempDeviceAliasesResponse,
-    GetTempDeviceInterfaceAddressesRequest, GetTempDeviceInterfaceAddressesResponse,
-    GetTempDeviceInterfacesRequest, GetTempDeviceInterfacesResponse,
-    GetTempDeviceRemoteAccessSessionsRequest, GetTempDeviceRemoteAccessSessionsResponse,
-    GetTempDeviceRulesRequest, GetTempDeviceRulesResponse, GetTempPacketsRequest,
-    GetTempPacketsResponse, GetTempWallguardLogsRequest, GetTempWallguardLogsResponse,
-    GetWallguardLogsRequest, GetWallguardLogsResponse, IpInfos, OrganizationAccounts,
-    OrganizationContacts, Organizations, Packets, Resolutions, Samples, TempAppguardLogs,
-    TempConnections, TempDeviceAliases, TempDeviceInterfaceAddresses, TempDeviceInterfaces,
+    GetOrganizationsResponse, GetPacketsRequest, GetPacketsResponse, GetPostgresChannelsRequest,
+    GetPostgresChannelsResponse, GetResolutionsRequest, GetResolutionsResponse, GetSamplesRequest,
+    GetSamplesResponse, GetTempAppguardLogsRequest, GetTempAppguardLogsResponse,
+    GetTempConnectionsRequest, GetTempConnectionsResponse, GetTempDeviceAliasesRequest,
+    GetTempDeviceAliasesResponse, GetTempDeviceInterfaceAddressesRequest,
+    GetTempDeviceInterfaceAddressesResponse, GetTempDeviceInterfacesRequest,
+    GetTempDeviceInterfacesResponse, GetTempDeviceRemoteAccessSessionsRequest,
+    GetTempDeviceRemoteAccessSessionsResponse, GetTempDeviceRulesRequest,
+    GetTempDeviceRulesResponse, GetTempPacketsRequest, GetTempPacketsResponse,
+    GetTempWallguardLogsRequest, GetTempWallguardLogsResponse, GetWallguardLogsRequest,
+    GetWallguardLogsResponse, IpInfos, OrganizationAccounts, OrganizationContacts, Organizations,
+    Packets, PostgresChannels, Resolutions, Samples, TempAppguardLogs, TempConnections,
+    TempDeviceAliases, TempDeviceInterfaceAddresses, TempDeviceInterfaces,
     TempDeviceRemoteAccessSessions, TempDeviceRules, TempPackets, TempWallguardLogs,
     UpdateAccountOrganizationsRequest, UpdateAccountOrganizationsResponse,
     UpdateAccountProfilesRequest, UpdateAccountProfilesResponse, UpdateAccountsRequest,
@@ -211,25 +216,17 @@ use crate::generated::store::{
     UpdateIpInfosRequest, UpdateIpInfosResponse, UpdateOrganizationAccountsRequest,
     UpdateOrganizationAccountsResponse, UpdateOrganizationContactsRequest,
     UpdateOrganizationContactsResponse, UpdateOrganizationsRequest, UpdateOrganizationsResponse,
-    UpdatePacketsRequest, UpdatePacketsResponse, UpdateResolutionsRequest,
-    UpdateResolutionsResponse, UpdateSamplesRequest, UpdateSamplesResponse,
-    UpdateTempAppguardLogsRequest, UpdateTempAppguardLogsResponse, UpdateTempConnectionsRequest,
-    UpdateTempConnectionsResponse, UpdateTempDeviceAliasesRequest, UpdateTempDeviceAliasesResponse,
+    UpdatePacketsRequest, UpdatePacketsResponse, UpdatePostgresChannelsRequest,
+    UpdatePostgresChannelsResponse, UpdateResolutionsRequest, UpdateResolutionsResponse,
+    UpdateSamplesRequest, UpdateSamplesResponse, UpdateTempAppguardLogsRequest,
+    UpdateTempAppguardLogsResponse, UpdateTempConnectionsRequest, UpdateTempConnectionsResponse,
+    UpdateTempDeviceAliasesRequest, UpdateTempDeviceAliasesResponse,
     UpdateTempDeviceInterfaceAddressesRequest, UpdateTempDeviceInterfaceAddressesResponse,
     UpdateTempDeviceInterfacesRequest, UpdateTempDeviceInterfacesResponse,
     UpdateTempDeviceRemoteAccessSessionsRequest, UpdateTempDeviceRemoteAccessSessionsResponse,
     UpdateTempDeviceRulesRequest, UpdateTempDeviceRulesResponse, UpdateTempPacketsRequest,
     UpdateTempPacketsResponse, UpdateTempWallguardLogsRequest, UpdateTempWallguardLogsResponse,
-    UpdateWallguardLogsRequest, UpdateWallguardLogsResponse, WallguardLogs,
-    // PostgresChannels imports
-    PostgresChannels, CreatePostgresChannelsRequest, CreatePostgresChannelsResponse,
-    GetPostgresChannelsRequest, GetPostgresChannelsResponse, UpdatePostgresChannelsRequest,
-    UpdatePostgresChannelsResponse, DeletePostgresChannelsRequest, DeletePostgresChannelsResponse,
-    BatchInsertPostgresChannelsRequest, BatchInsertPostgresChannelsResponse,
-    BatchUpdatePostgresChannelsRequest, BatchUpdatePostgresChannelsResponse,
-    BatchDeletePostgresChannelsRequest, BatchDeletePostgresChannelsResponse,
-    UpsertPostgresChannelsRequest, UpsertPostgresChannelsResponse,
-    UpsertAccountOrganizationsRequest,
+    UpdateWallguardLogsRequest, UpdateWallguardLogsResponse, UpsertAccountOrganizationsRequest,
     UpsertAccountOrganizationsResponse, UpsertAccountProfilesRequest,
     UpsertAccountProfilesResponse, UpsertAccountsRequest, UpsertAccountsResponse,
     UpsertAddressesRequest, UpsertAddressesResponse, UpsertAppFirewallsRequest,
@@ -248,22 +245,24 @@ use crate::generated::store::{
     UpsertIpInfosRequest, UpsertIpInfosResponse, UpsertOrganizationAccountsRequest,
     UpsertOrganizationAccountsResponse, UpsertOrganizationContactsRequest,
     UpsertOrganizationContactsResponse, UpsertOrganizationsRequest, UpsertOrganizationsResponse,
-    UpsertPacketsRequest, UpsertPacketsResponse, UpsertResolutionsRequest,
-    UpsertResolutionsResponse, UpsertSamplesRequest, UpsertSamplesResponse,
-    UpsertTempAppguardLogsRequest, UpsertTempAppguardLogsResponse, UpsertTempConnectionsRequest,
-    UpsertTempConnectionsResponse, UpsertTempDeviceAliasesRequest, UpsertTempDeviceAliasesResponse,
+    UpsertPacketsRequest, UpsertPacketsResponse, UpsertPostgresChannelsRequest,
+    UpsertPostgresChannelsResponse, UpsertResolutionsRequest, UpsertResolutionsResponse,
+    UpsertSamplesRequest, UpsertSamplesResponse, UpsertTempAppguardLogsRequest,
+    UpsertTempAppguardLogsResponse, UpsertTempConnectionsRequest, UpsertTempConnectionsResponse,
+    UpsertTempDeviceAliasesRequest, UpsertTempDeviceAliasesResponse,
     UpsertTempDeviceInterfaceAddressesRequest, UpsertTempDeviceInterfaceAddressesResponse,
     UpsertTempDeviceInterfacesRequest, UpsertTempDeviceInterfacesResponse,
     UpsertTempDeviceRemoteAccessSessionsRequest, UpsertTempDeviceRemoteAccessSessionsResponse,
     UpsertTempDeviceRulesRequest, UpsertTempDeviceRulesResponse, UpsertTempPacketsRequest,
     UpsertTempPacketsResponse, UpsertTempWallguardLogsRequest, UpsertTempWallguardLogsResponse,
-    UpsertWallguardLogsRequest, UpsertWallguardLogsResponse,
+    UpsertWallguardLogsRequest, UpsertWallguardLogsResponse, WallguardLogs,
 };
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
 use crate::middlewares::interceptor_chain::InterceptorChain;
 use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
-use crate::structs::structs::{Auth, RequestBody};
-use crate::sync::sync_service::update;
+use crate::structs::structs::Auth;
+use crate::structs::structs::RequestBody;
+use crate::sync::sync_service::{update};
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use crate::{
@@ -274,8 +273,8 @@ use crate::{
 use actix_web::{web, HttpResponse, Responder};
 use serde_json::Value;
 use std::net::SocketAddr;
+use std::pin::Pin;
 use tonic::{transport::Server, Request, Response, Status};
-
 pub struct GrpcController {}
 
 impl GrpcController {

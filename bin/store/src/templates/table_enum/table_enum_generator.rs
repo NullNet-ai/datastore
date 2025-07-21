@@ -91,29 +91,30 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     )?;
     writeln!(
         file,
-        "            let obj = record_value.as_object().unwrap();"
+        "            if let Some(obj) = record_value.as_object() {{"
     )?;
-    writeln!(file, "            let mut filtered = Map::new();")?;
+    writeln!(file, "                let mut filtered = Map::new();")?;
     writeln!(file, "")?;
-    writeln!(file, "            for field in pluck_fields {{")?;
+    writeln!(file, "                for field in pluck_fields {{")?;
     writeln!(
         file,
-        "                if let Some(val) = obj.get(&field) {{"
+        "                    if let Some(val) = obj.get(&field) {{"
     )?;
     writeln!(
         file,
-        "                    filtered.insert(field, val.clone());"
+        "                        filtered.insert(field, val.clone());"
     )?;
+    writeln!(file, "                    }}")?;
     writeln!(file, "                }}")?;
-    writeln!(file, "            }}")?;
     writeln!(file, "")?;
-    writeln!(file, "            Value::Object(filtered)")?;
-    writeln!(file, "        }} else {{")?;
+    writeln!(file, "                Value::Object(filtered)")?;
+    writeln!(file, "            }} else {{")?;
     writeln!(
         file,
-        "            record_value.clone() // fallback: return original value"
+        "                record_value.clone() // fallback: return original value"
     )?;
-    writeln!(file, "        }}")?;
+    writeln!(file, "            }}")?;
+
     writeln!(file, "    }}")?;
     writeln!(file, "")?;
 

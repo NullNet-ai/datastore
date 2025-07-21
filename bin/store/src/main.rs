@@ -2,7 +2,7 @@
 use actix_web::{web, App, HttpServer};
 use batch_sync::background_sync;
 use dotenv::dotenv;
-use message_stream::gateway::create_socket_io;
+use message_stream::gateway::{create_socket_io, set_streaming_service};
 use middlewares::auth_middleware::Authentication;
 use std::env;
 use templates::grpc_controller::grpc_controller_generator;
@@ -11,6 +11,7 @@ use templates::table_enum::table_enum_generator;
 mod auth;
 mod batch_sync;
 mod cache;
+
 mod controllers;
 mod db;
 mod generated;
@@ -27,6 +28,7 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
+
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
@@ -35,6 +37,7 @@ use crate::controllers::store_controller::get_by_id;
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
 use crate::message_stream::pg_listener_service::PgListenerService;
+use crate::message_stream::streaming_service::MessageStreamingService;
 use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
@@ -45,9 +48,10 @@ use crate::sync::message_manager::{create_message_channel, SENDER};
 use crate::sync::sync_service::bg_sync;
 use crate::sync::transactions::queue_service::QueueService;
 use crate::sync::transactions::transaction_service::TransactionService;
+
 use controllers::grpc_controller::GrpcController;
 use controllers::pg_functions::pg_listener_controller::{
-    create_pg_function, test_pg_function_syntax, pg_listener_get, pg_listener_delete,
+    create_pg_function, pg_listener_delete, pg_listener_get, test_pg_function_syntax,
 };
 use controllers::store_controller::{
     batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
@@ -262,7 +266,27 @@ async fn main() -> std::io::Result<()> {
         use axum::Router;
 
         // Use your gateway function that includes all the handlers
-        let (layer, _io) = create_socket_io();
+        let (layer, io) = create_socket_io();
+
+        // Initialize the MessageStreamingService
+         let streaming_service = MessageStreamingService::new(io);
+         
+         // Set the streaming service reference in gateway
+         set_streaming_service(streaming_service.clone());
+         
+         // Initialize the streaming service (starts broker and routing)
+         if let Err(e) = streaming_service.initialize().await {
+             log::error!("Failed to initialize MessageStreamingService: {}", e);
+         } else {
+             log::info!("MessageStreamingService initialized successfully");
+         }
+
+
+
+         // Note: Message processing is handled by the routing task in initialize()
+         // No need for additional message processing loop
+
+
 
         let app = Router::new().layer(layer);
 

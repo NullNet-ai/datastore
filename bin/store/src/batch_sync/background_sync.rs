@@ -8,6 +8,10 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 use tokio_postgres::Client;
+use std::collections::HashMap;
+use tokio_postgres::types::Type;
+use base64::prelude::*;
+
 
 pub struct BackgroundSyncService {
     db_client: Arc<Mutex<Client>>,
@@ -226,85 +230,250 @@ impl BackgroundSyncService {
         // Step 4: Generate the sorted table names array
         Ok(table_weights.into_iter().map(|(name, _)| name).collect())
     }
+fn row_to_value(&self, row: &tokio_postgres::Row) -> Value {
+    let mut obj = serde_json::Map::new();
 
-    fn row_to_value(&self, row: &tokio_postgres::Row) -> Value {
-        let mut obj = serde_json::Map::new();
-
-        for i in 0..row.len() {
-            let column_name = row.columns()[i].name();
-            let column_type = row.columns()[i].type_();
-
-            // Handle null values
-            if row
-                .try_get::<_, Option<String>>(i)
-                .unwrap_or(None)
-                .is_none()
-            {
-                continue; // Skip null values
-            }
-
-            // Convert based on PostgreSQL type OIDs
-            if column_type.name() == "varchar" || column_type.name() == "text" {
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
+    for i in 0..row.len() {
+        let column_name = row.columns()[i].name();
+        let column_type = row.columns()[i].type_();
+        
+        let value = match column_type {
+            // String types
+            &Type::VARCHAR | &Type::TEXT | &Type::BPCHAR | &Type::NAME | &Type::CHAR => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Integer types
+            &Type::INT2 => {
+                row.try_get::<_, Option<i16>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::INT4 => {
+                row.try_get::<_, Option<i32>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::INT8 => {
+                row.try_get::<_, Option<i64>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Floating point types
+            &Type::FLOAT4 => {
+                row.try_get::<_, Option<f32>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::FLOAT8 => {
+                row.try_get::<_, Option<f64>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Numeric/Decimal
+            &Type::NUMERIC => {
+                // Handle as string to preserve precision
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Boolean
+            &Type::BOOL => {
+                row.try_get::<_, Option<bool>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Date and time types
+            &Type::DATE => {
+                row.try_get::<_, Option<chrono::NaiveDate>>(i).ok().flatten()
+                    .map(|v| json!(v.to_string()))
+            },
+            &Type::TIME => {
+                row.try_get::<_, Option<chrono::NaiveTime>>(i).ok().flatten()
+                    .map(|v| json!(v.to_string()))
+            },
+            &Type::TIMESTAMP => {
+                row.try_get::<_, Option<chrono::NaiveDateTime>>(i).ok().flatten()
+                    .map(|v| json!(v.to_string()))
+            },
+            &Type::TIMESTAMPTZ => {
+                row.try_get::<_, Option<chrono::DateTime<chrono::Utc>>>(i).ok().flatten()
+                    .map(|v| json!(v.to_rfc3339()))
+            },
+            &Type::INTERVAL => {
+                // Handle as string representation
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Network types
+            &Type::INET => {
+                row.try_get::<_, Option<std::net::IpAddr>>(i).ok().flatten()
+                    .map(|v| json!(v.to_string()))
+            },
+            &Type::CIDR => {
+                // Handle as string
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::MACADDR => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // JSON types
+            &Type::JSON | &Type::JSONB => {
+                if let Ok(Some(val)) = row.try_get::<_, Option<serde_json::Value>>(i) {
+                    Some(val)
+                } else {
+                    // Fallback to string parsing
+                    row.try_get::<_, Option<String>>(i).ok().flatten()
+                        .and_then(|s| serde_json::from_str(&s).ok())
                 }
-            } else if column_type.name() == "int4" {
-                if let Ok(val) = row.try_get::<_, i32>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else if column_type.name() == "int8" {
-                if let Ok(val) = row.try_get::<_, i64>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else if column_type.name() == "bool" {
-                if let Ok(val) = row.try_get::<_, bool>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else if column_type.name() == "json" || column_type.name() == "jsonb" {
-                // For JSON types, first get as String then parse
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    if let Ok(json_val) = serde_json::from_str(&val) {
-                        obj.insert(column_name.to_string(), json_val);
+            },
+            
+            // UUID
+            &Type::UUID => {
+                row.try_get::<_, Option<uuid::Uuid>>(i).ok().flatten()
+                    .map(|v| json!(v.to_string()))
+            },
+            
+            // Binary data
+            &Type::BYTEA => {
+                row.try_get::<_, Option<Vec<u8>>>(i).ok().flatten()
+                    .map(|v| json!(base64::prelude::BASE64_STANDARD.encode(v)))
+            },
+            
+            // Array types
+            &Type::TEXT_ARRAY => {
+                row.try_get::<_, Option<Vec<String>>>(i).ok().flatten()
+                    .map(|v| json!(v))
+            },
+            &Type::INT4_ARRAY => {
+                row.try_get::<_, Option<Vec<i32>>>(i).ok().flatten()
+                    .map(|v| json!(v))
+            },
+            &Type::INT8_ARRAY => {
+                row.try_get::<_, Option<Vec<i64>>>(i).ok().flatten()
+                    .map(|v| json!(v))
+            },
+            &Type::FLOAT4_ARRAY => {
+                row.try_get::<_, Option<Vec<f32>>>(i).ok().flatten()
+                    .map(|v| json!(v))
+            },
+            &Type::FLOAT8_ARRAY => {
+                row.try_get::<_, Option<Vec<f64>>>(i).ok().flatten()
+                    .map(|v| json!(v))
+            },
+            &Type::BOOL_ARRAY => {
+                row.try_get::<_, Option<Vec<bool>>>(i).ok().flatten()
+                    .map(|v| json!(v))
+            },
+            
+            // Geometric types
+            &Type::POINT => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::LINE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::LSEG => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::BOX => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::PATH => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::POLYGON => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::CIRCLE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Range types
+            &Type::INT4_RANGE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::INT8_RANGE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::NUM_RANGE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::TS_RANGE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::TSTZ_RANGE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::DATE_RANGE => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Bit string types
+            &Type::BIT | &Type::VARBIT => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Money type
+            &Type::MONEY => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // OID types
+            &Type::OID => {
+                row.try_get::<_, Option<u32>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Text search types
+            &Type::TS_VECTOR => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            &Type::TSQUERY => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // XML type
+            &Type::XML => {
+                row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+            },
+            
+            // Handle custom types and unknown types by trying string conversion
+            _ => {
+                // Try common type name patterns for custom/extension types
+                match column_type.name() {
+                    // PostGIS geometry types
+                    "geometry" | "geography" => {
+                        row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+                    },
+                    // LTREE extension
+                    "ltree" => {
+                        row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
+                    },
+                    // HSTORE extension
+                    "hstore" => {
+                        row.try_get::<_, Option<HashMap<String, Option<String>>>>(i).ok().flatten()
+                            .map(|v| json!(v))
+                    },
+                    // Enum types and other custom types - fallback to string
+                    _ => {
+                        row.try_get::<_, Option<String>>(i).ok().flatten().map(|v| json!(v))
                     }
                 }
-            } else if column_type.name() == "timestamp" || column_type.name() == "timestamptz" {
-                // Get timestamp as String and parse it
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else if column_type.name() == "date" {
-                // Get date as String and parse it
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else if column_type.name() == "float4" {
-                if let Ok(val) = row.try_get::<_, f32>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else if column_type.name() == "float8" {
-                if let Ok(val) = row.try_get::<_, f64>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
-            } else {
-                // For any other types, try to get as string
-                if let Ok(val) = row.try_get::<_, String>(i) {
-                    obj.insert(column_name.to_string(), json!(val));
-                }
             }
+        };
+        
+        // Only insert non-null values
+        if let Some(val) = value {
+            obj.insert(column_name.to_string(), val);
         }
-
-        Value::Object(obj)
     }
+
+    Value::Object(obj)
+}
 
     fn format(&self, data: &mut Value) {
         if let Some(obj) = data.as_object_mut() {
             // Collect keys to remove to avoid borrowing issues
+            //remove empty objects arrays and values
             let keys_to_remove: Vec<String> = obj
                 .iter()
                 .filter_map(|(key, value)| {
                     if value.is_null()
-                        || (value.is_array() && value.as_array().unwrap().is_empty())
-                        || (value.is_object() && value.as_object().unwrap().is_empty())
+                        || (value.is_array()
+                            && value.as_array().map_or(false, |arr| arr.is_empty()))
+                        || (value.is_object()
+                            && value.as_object().map_or(false, |obj| obj.is_empty()))
                     {
                         Some(key.clone())
                     } else {

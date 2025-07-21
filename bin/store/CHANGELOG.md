@@ -21,7 +21,9 @@ Eriberto
 - Change the way the concatenate fields are parsed to be more flexible and allow for more complex concatenation
 ---
 
-## 0.1.5
+
+
+## 0.1.6
 
 ### Author
 Eriberto
@@ -46,6 +48,79 @@ Eriberto
 ### Fixed
 - fix Structs for Advance Filter > type "Criteria" or "Operator"
 - ignore all valid warnings for unfinished features
+
+
+## 0.1.5
+
+### Author
+Kashan
+
+### Added
+- **Message Streaming System**: Comprehensive real-time message streaming architecture
+  - `MessageStreamingService` for message routing and channel operations
+  - `TokenBucket` system for rate limiting and backpressure management
+  - `StreamQueueService` for persistent message queuing during backpressure
+  - Socket.IO gateway with JWT authentication and organization-based client management
+  - Real-time dashboard for monitoring token buckets and message flow
+- **Automatic Channel Management**: 
+  - 30-second interval refresh cycle for PostgreSQL channels in `PgListenerService`
+  - Background task for automatic channel discovery from `postgres_channels` table
+  - Smart refresh logic respecting service state (running/paused)
+- **Enhanced Batch Processing System**: Introduced `is_batch` system field for optimized operations
+  - Added `is_batch` boolean column to `connections` and `temp_connections` tables
+  - Enhanced batch operations to automatically set `is_batch` to `true`
+  - Added automatic `is_batch` field insertion during batch operations in `common_controller.rs`
+  - Enhanced batch records to include `sync_status` field set to "complete" for proper sync handling
+  - Implemented conditional sync_status value assignment in `message_service.rs` based on `is_batch` flag
+  - Modified sync service to skip `sync_status` processing for batch records
+  - **CRITICAL**: Prevents duplicate streaming records by setting proper sync_status values
+
+### Removed
+- **Architecture Cleanup**: Eliminated redundant local memory queues
+  - Removed `BrokerService` and local memory queue management
+  - Simplified architecture to use only database queues for backpressure handling
+  - Eliminated duplicate message routing logic and complex queue cleanup tasks
+
+### Enhanced
+- **Real-time Communication**: Organization-based client authentication, automatic channel creation, WebSocket broadcasting, JWT validation
+- **Performance Optimizations**: 
+  - Increased message processing batch size from 100 to 500 messages
+  - Implemented fair database access with automatic re-queuing
+  - Enhanced backpressure handling with refined message deletion logic
+  - FIFO queue management using `tokio::sync::Semaphore`
+- **CRDT Synchronization**: 
+  - Automatic `sync_status` field management for connections table
+  - PostgreSQL trigger support with conditional execution
+  - Enhanced error handling and HLC timestamp generation
+
+### Technical Implementation
+- **Core Files**: 
+  - `/src/message_stream/streaming_service.rs` - Message routing and channel management
+  - `/src/message_stream/token_bucket.rs` - Rate limiting and backpressure control
+  - `/src/message_stream/stream_queue_service.rs` - Persistent message queuing
+  - `/src/message_stream/gateway.rs` - Socket.IO gateway with JWT authentication
+- **Database**: Added `stream_queues` and `stream_queue_items` tables, `is_batch` column migration
+- **Security**: JWT-based authentication, organization-based filtering, secure token validation
+- **Monitoring**: Real-time dashboard with dynamic token bucket capacity adjustment
+- **Batch Operation Enhancement**: Updated batch processing logic in `common_controller.rs`:
+  ```rust
+  if let Some(obj) = request_body.record.as_object_mut() {
+      obj.insert("is_batch".to_string(), serde_json::Value::Bool(true));
+      obj.insert("sync_status".to_string(), serde_json::Value::String("complete".to_string()));
+  }
+  ```
+- **Conditional Sync Status**: Modified `message_service.rs` to set sync_status to "consumed" for batch operations (`is_batch = true`) and "complete" for regular operations
+- **Race Condition Fix**: Enhanced `set_tokens` function in `token_bucket.rs` to validate shared state before triggering drain notifications, preventing simultaneous processing paths during capacity changes
+
+### Fixed
+- **Race Condition in Message Streaming**: Resolved duplicate record issue during high watermark changes
+  - Fixed race condition in `token_bucket.rs` where capacity increases could trigger simultaneous message processing
+  - Enhanced state coordination between token bucket and shared streaming state
+  - Implemented atomic state transitions to prevent duplicate message processing during backpressure recovery
+- Removed infinite loop test data senders causing performance issues
+- Updated message flow to only create channels for authenticated organizations
+- Simplified client connection flow by removing manual subscription requirements
+
 ---
 
 ## 0.1.4

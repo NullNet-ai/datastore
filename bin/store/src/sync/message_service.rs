@@ -16,6 +16,7 @@ pub async fn create_messages(
 ) -> Result<Vec<CrdtMessageModel>, DieselError> {
     let object = record.as_object().expect("Expected a JSON object");
 
+
     let row = object
         .get("id")
         .ok_or_else(|| DieselError::NotFound)
@@ -33,12 +34,49 @@ pub async fn create_messages(
 
     let mut messages: Vec<CrdtMessageModel> = Vec::new();
 
+    //check if the record is coming from the sync by checking is_batch field
+    let is_batch = object
+        .get("is_batch")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+
+
+    if dataset == "connections" && (operation == "Update" || is_batch) {
+        let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
+            log::error!("Failed to generate HLC timestamp: {:?}", e);
+            DieselError::DatabaseError(
+                diesel::result::DatabaseErrorKind::Unknown,
+                Box::new(format!("HLC timestamp generation failed: {}", e)),
+            )
+        })?;
+
+        messages.push(CrdtMessageModel {
+            database: None,
+            dataset: dataset.to_string(),
+            group_id: "".to_string(),
+            timestamp,
+            row: row.clone(),
+            column: "sync_status".to_string(),
+            client_id: "client_id_placeholder".to_string(),
+            value: "consumed".to_string(),
+            operation: operation.clone(),
+            hypertable_timestamp: hypertable_timestamp.clone(),
+        });
+    }
+
     for (key, value) in object.iter() {
-        if *key == "id" || value.is_null() {
+        if *key == "id" || value.is_null() || *key=="sync_status" {
             continue;
         }
 
-        let timestamp = hlc_service::HlcService::send(&mut tx).await.unwrap();
+        let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
+            log::error!("Failed to generate HLC timestamp: {:?}", e);
+            DieselError::DatabaseError(
+                diesel::result::DatabaseErrorKind::Unknown,
+                Box::new(format!("HLC timestamp generation failed: {}", e)),
+            )
+        })?;
 
         messages.push(CrdtMessageModel {
             database: None,
@@ -53,6 +91,30 @@ pub async fn create_messages(
             hypertable_timestamp: hypertable_timestamp.clone(),
         });
     }
+
+    if dataset == "connections" && operation == "Insert" && !is_batch {
+        let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
+            log::error!("Failed to generate HLC timestamp: {:?}", e);
+            DieselError::DatabaseError(
+                diesel::result::DatabaseErrorKind::Unknown,
+                Box::new(format!("HLC timestamp generation failed: {}", e)),
+            )
+        })?;
+
+        messages.push(CrdtMessageModel {
+            database: None,
+            dataset: dataset.to_string(),
+            group_id: "".to_string(),
+            timestamp,
+            row: row.clone(),
+            column: "sync_status".to_string(),
+            client_id: "client_id_placeholder".to_string(),
+            value: "complete".to_string(),
+            operation: operation.clone(),
+            hypertable_timestamp: hypertable_timestamp.clone(),
+        });
+    }
+
 
     Ok(messages)
 }

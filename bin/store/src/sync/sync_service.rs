@@ -16,6 +16,7 @@ use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
 use futures::Stream;
 use hlc;
+use log::debug;
 use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
@@ -174,7 +175,12 @@ async fn apply_messages(
     });
 
     for (msg, existing_msg) in existing_messages {
-        if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp < msg.timestamp {
+        let should_apply = match &existing_msg {
+            None => true,
+            Some(existing) => existing.timestamp < msg.timestamp,
+        };
+
+        if should_apply {
             apply(&mut tx, &msg).await?;
         }
 
@@ -299,7 +305,6 @@ pub async fn process_queue(
         let pack = match QueueService::dequeue(&mut conn, "test").await {
             Ok(Some(value)) => value,
             Ok(None) => {
-                println!("Queue dequeue returned None, no items available");
                 log::debug!("Queue dequeue returned None, no items available");
                 sleep(Duration::from_millis(100)).await;
                 continue;
@@ -451,15 +456,15 @@ async fn sync(
 
     let group_id =
         std::env::var("GROUP_ID").unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JBT".to_string());
-    println!("Using group_id: {}", group_id);
+    debug!("Using group_id: {}", group_id);
 
     let transaction_id =
         TransactionService::start_transaction(conn, existing_transaction_id).await?;
     let transaction_id_clone = transaction_id.clone();
-    println!("Started transaction: {}", transaction_id);
+    debug!("Started transaction: {}", transaction_id);
 
     let clock = HlcService::get_clock(conn).await?;
-    println!(
+    debug!(
         "Sync Attempt at {} since:{} messages:{} transaction_id:{}",
         chrono::Utc::now().to_rfc3339(),
         since.as_ref().map_or("null".to_string(), |s| s.to_string()),

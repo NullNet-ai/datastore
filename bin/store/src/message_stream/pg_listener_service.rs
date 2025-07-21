@@ -1,14 +1,14 @@
 use crate::message_stream::token_bucket::{Message, TokenBucket};
 use futures::stream;
-// use futures::StreamExt; // Add this import for next() and for_each
-use futures::TryStreamExt; // Add this import for map_err
+use futures::TryStreamExt;
+use log::debug;
 use log::{error, info};
 use once_cell::sync::OnceCell;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
-use tokio::time::{sleep, Duration};
-use tokio_postgres::{Client, NoTls}; //
+use tokio::time::{interval, sleep, Duration};
+use tokio_postgres::{Client, NoTls};
 
 static INSTANCE: OnceCell<Arc<PgListenerService>> = OnceCell::new();
 #[allow(warnings)]
@@ -36,16 +36,13 @@ impl PgListenerService {
     pub async fn initialize() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let instance = Self::instance();
 
-        // Start the service in a background task
         let instance_clone = instance.clone();
         tokio::spawn(async move {
             loop {
                 if let Err(e) = instance_clone.start().await {
                     error!("Failed to start PgListenerService: {}", e);
-                    // Wait before retrying
                     sleep(Duration::from_secs(5)).await;
                 } else {
-                    // If start() returns Ok, it means it's already running or has been stopped intentionally
                     break;
                 }
             }
@@ -60,7 +57,6 @@ impl PgListenerService {
         let mut subscribed_channels = std::collections::HashSet::new();
         subscribed_channels.insert(channel.to_string());
 
-        // Create the connection string
         let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
         let password = std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
         let dbname = std::env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
@@ -82,19 +78,33 @@ impl PgListenerService {
             connection_string: Mutex::new(connection_string),
         });
 
-        // Set up drain listener
         let service_clone = service.clone();
         tokio::spawn(async move {
             let notify = service_clone.main_stream.on_drain();
             loop {
-                // Wait for the drain notification
                 notify.notified().await;
 
-                // Check if service is paused and resume channels if needed
                 if service_clone.is_paused().await {
                     info!("Stream drained, resuming channels");
                     if let Err(e) = service_clone.resume_all_channels().await {
                         error!("Failed to resume channels after drain: {}", e);
+                    }
+                }
+            }
+        });
+
+        let service_clone = service.clone();
+        tokio::spawn(async move {
+            let mut refresh_interval = interval(Duration::from_secs(30));
+            refresh_interval.tick().await;
+
+            loop {
+                refresh_interval.tick().await;
+
+                if *service_clone.is_running.lock().await && !service_clone.is_paused().await {
+                    info!("Performing periodic channel refresh...");
+                    if let Err(e) = service_clone.refresh_channels().await {
+                        error!("Failed to refresh channels during periodic refresh: {}", e);
                     }
                 }
             }
@@ -118,16 +128,12 @@ impl PgListenerService {
         *is_running = true;
         drop(is_running);
 
-        // Get the connection string
         let connection_string = self.connection_string.lock().await.clone();
 
-        // Connect to PostgreSQL
         let (client, mut connection) = tokio_postgres::connect(&connection_string, NoTls).await?;
 
-        // Make transmitter and receiver
         let (tx, mut rx) = mpsc::unbounded_channel();
 
-        // Create a stream from the connection and forward it to the channel
         let stream = stream::poll_fn(move |cx| connection.poll_message(cx)).map_err(|e| {
             error!("Connection error: {}", e);
             e
@@ -139,54 +145,36 @@ impl PgListenerService {
             futures::future::ready(Ok(()))
         });
 
-        // Spawn a task to handle the connection
         tokio::spawn(connection_forwarder);
 
-        // Store the client
         {
             let mut client_guard = self.client.lock().await;
             *client_guard = Some(client);
         }
-
-        // Instead of listening to a default channel immediately,
-        // refresh channels from the database first
         info!("Refreshing channels from database...");
         if let Err(e) = self.refresh_channels().await {
             error!("Failed to refresh channels: {}", e);
-            // If we can't refresh channels, there's no point in continuing
             return Err(e);
         }
 
         info!("Started listening on PostgreSQL channels");
 
-        // Clone what we need for the notification processing task
         let service = Arc::clone(self);
 
-        // Wait for notifications in a separate thread
         tokio::spawn(async move {
             while let Some(msg) = rx.recv().await {
                 match msg {
                     tokio_postgres::AsyncMessage::Notification(notification) => {
-                        println!(
-                            "Notification: channel={}, payload={}",
-                            notification.channel(),
-                            notification.payload()
-                        );
-
-                        // Process the notification through the token bucket
                         service.process_notification(notification.clone()).await;
                     }
                     tokio_postgres::AsyncMessage::Notice(notice) => {
-                        println!("Notice: {}", notice);
+                        debug!("PostgreSQL Notice: {}", notice);
                     }
                     _ => {}
                 }
             }
 
-            // If we get here, the stream has ended
             error!("PostgreSQL notification stream ended");
-
-            // Attempt to reconnect
             info!("Connection closed. Attempting to reconnect in 5 seconds...");
             Self::spawn_restart_task(service.clone());
         });
@@ -197,20 +185,17 @@ impl PgListenerService {
     async fn refresh_channels(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client_guard = self.client.lock().await;
         if let Some(client) = &*client_guard {
-            // Query the database for channels
             info!("About to query postgres_channels table");
             let result = client
                 .query("SELECT channel_name FROM postgres_channels", &[])
                 .await?;
 
-            // Extract channel names from the result
             let mut channels = Vec::new();
             for row in result {
                 let channel_name: String = row.get(0);
                 channels.push(channel_name);
             }
 
-            // Subscribe to new channels
             let mut subscribed_channels = self.subscribed_channels.lock().await;
             for channel in channels {
                 if !subscribed_channels.contains(&channel) {
@@ -218,7 +203,7 @@ impl PgListenerService {
                         .batch_execute(&format!("LISTEN {};", channel))
                         .await?;
                     subscribed_channels.insert(channel.clone());
-                    info!("✅ Now listening on channel: {}", channel);
+                    info!("Now listening on channel: {}", channel);
                 }
             }
         } else {
@@ -265,23 +250,27 @@ impl PgListenerService {
     }
     /// Process a PostgreSQL notification through the token bucket
     async fn process_notification(&self, notification: tokio_postgres::Notification) {
-        // Create a message from the notification payload
-        let message = Message(notification.payload().to_string());
-
-        // Send the message to the token bucket
-        self.main_stream.receive_message(message).await;
-
-        // Check for backpressure after receiving the message
-        let tokens_remaining = self.main_stream.get_tokens_remaining().await;
-        if tokens_remaining == 0 && !*self.is_paused.lock().await {
-            // Backpressure detected, pause all channels
-            info!("⚠️ Backpressure detected, pausing channels");
+        let message = match serde_json::from_str::<serde_json::Value>(notification.payload()) {
+            Ok(parsed_json) => Message(parsed_json),
+            Err(e) => {
+                log::error!("Failed to parse notification payload as JSON: {}", e);
+                return;
+            }
+        };
+        
+        // Use the token bucket mechanism properly to manage backpressure
+        let msg = crate::message_stream::token_bucket::Message(message.0.clone());
+        let has_capacity = self.main_stream.receive_message(msg).await;
+        
+        if !has_capacity {
+            // Main stream is backpressured, pause all channels to stop receiving more notifications
+            log::warn!("Main stream backpressured, pausing all channels");
             if let Err(e) = self.pause_all_channels().await {
-                error!("Failed to pause channels: {}", e);
+                log::error!("Failed to pause channels due to backpressure: {}", e);
             }
         }
 
-        info!(
+        debug!(
             "Received notification on channel {}: {}",
             notification.channel(),
             notification.payload()
@@ -292,7 +281,6 @@ impl PgListenerService {
     async fn send_notification(&self, payload: &str) -> Result<(), Box<dyn std::error::Error>> {
         let client_guard = self.client.lock().await;
         if let Some(client) = &*client_guard {
-            // Use NOTIFY to send a notification
             client
                 .batch_execute(&format!(
                     "NOTIFY {}, '{}';",
@@ -353,7 +341,7 @@ impl PgListenerService {
                 info!("Resumed listening on channel: {}", channel);
             }
 
-            info!("✅ All channels resumed");
+            info!("All channels resumed");
         } else {
             return Err("PostgreSQL client not initialized".into());
         }

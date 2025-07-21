@@ -118,12 +118,19 @@ pub fn process_records(
 
         // Hypertable timestamp logic
         if hypertable_exists {
-            if let Some(obj) = request_body.record.as_object_mut() {
+            if let Some(obj) = request_body.record.as_object_mut() {    
                 if let Some(timestamp) = obj.get("timestamp") {
                     obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
                 }
             }
         }
+
+        //insert is_batch to the record and set it to true
+        if let Some(obj) = request_body.record.as_object_mut() {
+            obj.insert("is_batch".to_string(), serde_json::Value::Bool(true));
+            obj.insert("sync_status".to_string(), serde_json::Value::String("complete".to_string()));
+        }
+        
 
         processed_records.push(request_body.record);
     }
