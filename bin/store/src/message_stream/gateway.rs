@@ -69,14 +69,11 @@ fn register_client(organization_id: String, client_id: String) {
 #[allow(warnings)]
 #[deprecated(note = "Use shared_state system instead")]
 pub fn register_token_bucket(channel_name: &str, capacity: usize) -> Arc<TokenBucket> {
-    // This function is deprecated and should not be used
-    // Always return a new bucket without consumer to avoid conflicts
     TokenBucket::new(channel_name, capacity)
 }
 
 
 #[allow(warnings)]
-// Remove a TokenBucket from the global registry
 pub fn unregister_token_bucket(channel_name: &str) -> bool {
     let mut buckets = TOKEN_BUCKETS.lock().unwrap();
     let removed = buckets.remove(channel_name).is_some();
@@ -88,7 +85,6 @@ pub fn unregister_token_bucket(channel_name: &str) -> bool {
     removed
 }
 #[allow(warnings)]
-// Get all TokenBucket IDs
 pub fn get_all_token_bucket_ids() -> Vec<String> {
     let buckets = TOKEN_BUCKETS.lock().unwrap();
     buckets.keys().cloned().collect()
@@ -100,13 +96,11 @@ pub async fn get_all_token_buckets() -> Vec<(String, Arc<TokenBucket>)> {
     active_channels.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 #[allow(warnings)]
-// Get count of registered TokenBuckets
 pub fn get_token_bucket_count() -> usize {
     let buckets = TOKEN_BUCKETS.lock().unwrap();
     buckets.len()
 }
 
-// Remove a client from an organization
 fn remove_client(organization_id: &str, client_id: &str) {
     let mut clients = AUTHENTICATED_CLIENTS.lock().unwrap();
 
@@ -124,7 +118,6 @@ fn remove_client(organization_id: &str, client_id: &str) {
     );
 }
 #[allow(warnings)]
-// Add channel to organization
 pub fn add_channel_to_organization(organization_id: &str, channel: &str) {
     let mut clients = AUTHENTICATED_CLIENTS.lock().unwrap();
 
@@ -135,13 +128,11 @@ pub fn add_channel_to_organization(organization_id: &str, channel: &str) {
     }
 }
 #[allow(warnings)]
-// Get organization clients data
 pub fn get_organization_clients(organization_id: &str) -> Option<OrganizationClients> {
     let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
     clients.get(organization_id).cloned()
 }
 #[allow(warnings)]
-// Get all client IDs for an organization
 pub fn get_organization_client_ids(organization_id: &str) -> Vec<String> {
     let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
     if let Some(org_clients) = clients.get(organization_id) {
@@ -150,7 +141,6 @@ pub fn get_organization_client_ids(organization_id: &str) -> Vec<String> {
     Vec::new()
 }
 #[allow(warnings)]
-// Get all channels for an organization
 pub fn get_organization_channels(organization_id: &str) -> Vec<String> {
     let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
     if let Some(org_clients) = clients.get(organization_id) {
@@ -160,23 +150,16 @@ pub fn get_organization_channels(organization_id: &str) -> Vec<String> {
 }
 
 #[allow(warnings)]
-// Send notification to specific channel in organization
 pub fn broadcast_to_channel(
     io: &SocketIo,
     organization_id: &str,
     channel: &str,
     notification: serde_json::Value,
 ) {
-    
-    // Use the full channel name (which is actually the event_name) as the Socket.IO event
     let event_name = channel.to_string();
-        
-    // Simply emit the event to all clients using the event name
-    // Clients listen directly on the event name, no room subscription needed
     io.emit(event_name, notification).ok();
 }
 
-// Keep organization-level broadcasting for future use cases
 #[allow(dead_code)]
 pub fn broadcast_to_organization(
     io: &SocketIo,
@@ -184,7 +167,6 @@ pub fn broadcast_to_organization(
     event_name: String,
     notification: serde_json::Value,
 ) {
-    // Use socketioxide's room functionality to broadcast to all clients in an organization
     io.to(format!("org_{}", organization_id))
         .emit(event_name, notification)
         .ok();
@@ -296,7 +278,6 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                     let new_watermark = mark.as_u64().unwrap() as usize;
                     let current_watermark = bucket.get_high_watermark().await;
                     if new_watermark != current_watermark {
-                        // Update both capacity and tokens to the new watermark
                         bucket.set_tokens(new_watermark).await;
                     }
                 }
@@ -326,7 +307,6 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         "getCurrentHighWaterMark",
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
             let channel_name = data.get("channel_name").and_then(|c| c.as_str());
-        
 
             if let Some(channel) = channel_name {
                 let shared_state = get_shared_state();
@@ -354,8 +334,6 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                         "currentHighWaterMark": current_highwatermark
                     });
                 }
-
-        
 
                 socket.emit("currentHighWaterMark", response).ok();
             } else {
@@ -403,7 +381,6 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         },
     );
 
-    // Event subscription handlers
     socket.on(
         "subscribe",
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
@@ -581,12 +558,11 @@ async fn get_analytics_data() -> serde_json::Value {
             0.0
         };
         
-        // Calculate performance metrics
-        let throughput_rate = messages_processed as f64 / 60.0; // messages per second
+        let throughput_rate = messages_processed as f64 / 60.0;
         let queue_depth_ratio = buffer_size as f64 / capacity as f64 * 100.0;
         let efficiency_score = if capacity > 0 { (messages_processed as f64 / capacity as f64) * 100.0 } else { 0.0 };
         
-        // Categorize channels by utilization
+
         if utilization >= 80.0 {
             high_utilization_channels += 1;
         } else if utilization >= 40.0 {
@@ -617,9 +593,9 @@ async fn get_analytics_data() -> serde_json::Value {
         performance_metrics.push(serde_json::json!({
             "channel": channel_name,
             "throughput": throughput_rate,
-            "latency": if buffer_size > 0 { buffer_size as f64 * 0.1 } else { 0.0 }, // Simulated latency
-            "errorRate": if utilization > 90.0 { 5.0 } else { 1.0 }, // Simulated error rate
-            "availability": if utilization < 95.0 { 99.9 } else { 98.5 } // Simulated availability
+            "latency": if buffer_size > 0 { buffer_size as f64 * 0.1 } else { 0.0 },
+            "errorRate": if utilization > 90.0 { 5.0 } else { 1.0 },
+            "availability": if utilization < 95.0 { 99.9 } else { 98.5 }
         }));
     }
     
@@ -651,20 +627,21 @@ async fn get_analytics_data() -> serde_json::Value {
         let utilization_score = (100.0 - avg_utilization).max(0.0);
         let queue_score = if total_capacity > 0 { 
             ((total_capacity.saturating_sub(total_buffer_size)) as f64 / total_capacity as f64) * 100.0 
-        } else { 100.0 };
+        } else { 
+            100.0 
+        };
         (utilization_score + queue_score) / 2.0
     };
     
     let messages_per_minute = total_throughput * 60;
-    let duplicate_rate = if total_messages_processed > 100 { 3.2 } else { 0.5 }; // More realistic simulation
-    let error_rate = if avg_utilization > 80.0 { 2.1 } else { 0.3 }; // Dynamic error rate
+    let duplicate_rate = if total_messages_processed > 100 { 3.2 } else { 0.5 };
+    let error_rate = if avg_utilization > 80.0 { 2.1 } else { 0.3 };
     
-    // Calculate trend data (simulated)
     let trend_data = {
         let base_rate = messages_per_minute as f64;
         let mut hourly_trends = Vec::new();
         for i in 0..24 {
-            let variation = (i as f64 * 0.1).sin() * 0.2 + 1.0; // Simulate daily patterns
+            let variation = (i as f64 * 0.1).sin() * 0.2 + 1.0;
             hourly_trends.push(serde_json::json!({
                 "hour": i,
                 "messageRate": (base_rate * variation) as u64,

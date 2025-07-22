@@ -96,3 +96,23 @@ pub async fn create_connection() -> Result<Client, Box<dyn std::error::Error>> {
 
     Ok(client)
 }
+
+// Raw database connection with access to connection for polling (used by pg_listener_service)
+pub async fn create_connection_with_polling() -> Result<(Client, tokio_postgres::Connection<tokio_postgres::Socket, tokio_postgres::tls::NoTlsStream>), Box<dyn std::error::Error + Send + Sync>> {
+    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
+    let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
+    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
+    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
+    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+
+    let connection_string = format!(
+        "host={} port={} user={} password={} dbname={}",
+        host, port, user, password, dbname
+    );
+
+    let (client, connection) = tokio_postgres::connect(&connection_string, NoTls)
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+    Ok((client, connection))
+}

@@ -134,17 +134,11 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
 
 // Helper function to execute SQL scripts using the database connection
 async fn execute_sql_script(client: &Client, sql_content: &str) -> Result<(), Box<dyn std::error::Error>> {
-    // Split the SQL content into individual statements
-    // This is a simple approach - for more complex SQL files, you might need a proper SQL parser
-    let statements: Vec<&str> = sql_content
-        .split(';')
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty() && !s.starts_with("--"))
-        .collect();
+    let statements = parse_sql_statements(sql_content);
 
     for statement in statements {
         if !statement.trim().is_empty() {
-            if let Err(e) = client.execute(statement, &[]).await {
+            if let Err(e) = client.execute(&statement, &[]).await {
                 eprintln!("Error executing SQL statement: {}", statement);
                 return Err(Box::new(e));
             }
@@ -152,4 +146,70 @@ async fn execute_sql_script(client: &Client, sql_content: &str) -> Result<(), Bo
     }
 
     Ok(())
+}
+
+// Parse SQL statements while handling dollar-quoted strings properly
+fn parse_sql_statements(sql_content: &str) -> Vec<String> {
+    let mut statements = Vec::new();
+    let mut current_statement = String::new();
+    let mut chars = sql_content.chars().peekable();
+    let mut in_dollar_quote = false;
+    let mut dollar_tag = String::new();
+    
+    while let Some(ch) = chars.next() {
+        current_statement.push(ch);
+        
+        if ch == '$' && !in_dollar_quote {
+            // Start of potential dollar quote
+            let mut tag = String::new();
+            while let Some(&next_ch) = chars.peek() {
+                if next_ch == '$' {
+                    chars.next(); // consume the closing $
+                    current_statement.push('$');
+                    dollar_tag = tag;
+                    in_dollar_quote = true;
+                    break;
+                } else if next_ch.is_alphanumeric() || next_ch == '_' {
+                    tag.push(chars.next().unwrap());
+                    current_statement.push(tag.chars().last().unwrap());
+                } else {
+                    break;
+                }
+            }
+        } else if ch == '$' && in_dollar_quote {
+            // Check if this is the end of the dollar quote
+            let mut tag = String::new();
+            while let Some(&next_ch) = chars.peek() {
+                if next_ch == '$' {
+                    chars.next(); // consume the closing $
+                    current_statement.push('$');
+                    if tag == dollar_tag {
+                        in_dollar_quote = false;
+                        dollar_tag.clear();
+                    }
+                    break;
+                } else if next_ch.is_alphanumeric() || next_ch == '_' {
+                    tag.push(chars.next().unwrap());
+                    current_statement.push(tag.chars().last().unwrap());
+                } else {
+                    break;
+                }
+            }
+        } else if ch == ';' && !in_dollar_quote {
+            // End of statement
+            let statement = current_statement.trim().to_string();
+            if !statement.is_empty() && !statement.starts_with("--") {
+                statements.push(statement);
+            }
+            current_statement.clear();
+        }
+    }
+    
+    // Add the last statement if it's not empty
+    let final_statement = current_statement.trim().to_string();
+    if !final_statement.is_empty() && !final_statement.starts_with("--") {
+        statements.push(final_statement);
+    }
+    
+    statements
 }

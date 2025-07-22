@@ -2,7 +2,7 @@ use crate::db::{self, AsyncDbPooledConnection};
 use tokio::sync::Semaphore;
 use std::sync::Arc;
 
-/// Connection limiter for flush operations to prevent thundering herd problems
+
 pub struct FlushConnectionLimiter {
     semaphore: Arc<Semaphore>,
     #[allow(dead_code)]
@@ -33,7 +33,7 @@ impl FlushConnectionLimiter {
     }
 }
 
-/// RAII guard for flush permit
+
 pub struct FlushPermit {
     _permit: tokio::sync::OwnedSemaphorePermit,
 }

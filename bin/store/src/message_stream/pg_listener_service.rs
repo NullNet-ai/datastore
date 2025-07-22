@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 use tokio::time::{interval, sleep, Duration};
-use tokio_postgres::{Client, NoTls};
+use tokio_postgres::Client;
 
 static INSTANCE: OnceCell<Arc<PgListenerService>> = OnceCell::new();
 #[allow(warnings)]
@@ -19,7 +19,6 @@ pub struct PgListenerService {
     subscribed_channels: Mutex<std::collections::HashSet<String>>,
     is_running: Mutex<bool>,
     is_paused: Mutex<bool>,
-    connection_string: Mutex<String>,
 }
 #[allow(warnings)]
 impl PgListenerService {
@@ -51,22 +50,10 @@ impl PgListenerService {
         Ok(())
     }
 
-    /// Creates a new PostgreSQL listener service with a token bucket for rate limiting
     pub fn new(channel: &str, capacity: usize) -> Arc<Self> {
         let main_stream = TokenBucket::new(&format!("pg_listener_{}", channel), capacity);
         let mut subscribed_channels = std::collections::HashSet::new();
         subscribed_channels.insert(channel.to_string());
-
-        let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-        let password = std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-        let dbname = std::env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
-        let host = std::env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-        let port = std::env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
-
-        let connection_string = format!(
-            "host={} port={} user={} password={} dbname={}",
-            host, port, user, password, dbname
-        );
 
         let service = Arc::new(Self {
             client: Mutex::new(None),
@@ -75,7 +62,6 @@ impl PgListenerService {
             subscribed_channels: Mutex::new(subscribed_channels),
             is_running: Mutex::new(false),
             is_paused: Mutex::new(false),
-            connection_string: Mutex::new(connection_string),
         });
 
         let service_clone = service.clone();
@@ -113,12 +99,10 @@ impl PgListenerService {
         service
     }
     
-    /// Get the main stream token bucket
     pub fn get_main_stream(&self) -> Arc<TokenBucket> {
         self.main_stream.clone()
     }
 
-    /// Start listening for PostgreSQL notifications
     pub async fn start(self: &Arc<Self>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut is_running = self.is_running.lock().await;
         if *is_running {
@@ -128,9 +112,7 @@ impl PgListenerService {
         *is_running = true;
         drop(is_running);
 
-        let connection_string = self.connection_string.lock().await.clone();
-
-        let (client, mut connection) = tokio_postgres::connect(&connection_string, NoTls).await?;
+        let (client, mut connection) = crate::db::create_connection_with_polling().await?;
 
         let (tx, mut rx) = mpsc::unbounded_channel();
 
@@ -213,7 +195,6 @@ impl PgListenerService {
         Ok(())
     }
 
-    /// Stop listening for PostgreSQL notifications
     pub async fn stop(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut is_running = self.is_running.lock().await;
         if !*is_running {
@@ -222,7 +203,7 @@ impl PgListenerService {
 
         *is_running = false;
 
-        // Get the client and unlisten from all channels
+
         let mut client_guard = self.client.lock().await;
         if let Some(client) = client_guard.take() {
             let subscribed_channels = self.subscribed_channels.lock().await;
@@ -248,7 +229,6 @@ impl PgListenerService {
             }
         });
     }
-    /// Process a PostgreSQL notification through the token bucket
     async fn process_notification(&self, notification: tokio_postgres::Notification) {
         let message = match serde_json::from_str::<serde_json::Value>(notification.payload()) {
             Ok(parsed_json) => Message(parsed_json),
@@ -258,12 +238,11 @@ impl PgListenerService {
             }
         };
         
-        // Use the token bucket mechanism properly to manage backpressure
+
         let msg = crate::message_stream::token_bucket::Message(message.0.clone());
         let has_capacity = self.main_stream.receive_message(msg).await;
         
         if !has_capacity {
-            // Main stream is backpressured, pause all channels to stop receiving more notifications
             log::warn!("Main stream backpressured, pausing all channels");
             if let Err(e) = self.pause_all_channels().await {
                 log::error!("Failed to pause channels due to backpressure: {}", e);
@@ -277,7 +256,6 @@ impl PgListenerService {
         );
     }
 
-    /// Send a notification to the PostgreSQL channel
     async fn send_notification(&self, payload: &str) -> Result<(), Box<dyn std::error::Error>> {
         let client_guard = self.client.lock().await;
         if let Some(client) = &*client_guard {
@@ -296,7 +274,6 @@ impl PgListenerService {
         }
     }
 
-    /// Pause listening on all subscribed channels
     async fn pause_all_channels(&self) -> Result<(), Box<dyn std::error::Error>> {
         let mut is_paused = self.is_paused.lock().await;
         *is_paused = true;
@@ -318,15 +295,14 @@ impl PgListenerService {
     }
 
     async fn reconnect(self: &Arc<Self>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        // Wait before reconnecting
+
         info!("Attempting to reconnect in 5 seconds...");
         sleep(Duration::from_secs(5)).await;
 
-        // Directly call start without spawning a new task
+
         self.start().await
     }
 
-    /// Resume listening on all subscribed channels
     async fn resume_all_channels(&self) -> Result<(), Box<dyn std::error::Error>> {
         let mut is_paused = self.is_paused.lock().await;
         *is_paused = false;
@@ -349,7 +325,6 @@ impl PgListenerService {
         Ok(())
     }
 
-    /// Check if the service is currently paused
     async fn is_paused(&self) -> bool {
         *self.is_paused.lock().await
     }
