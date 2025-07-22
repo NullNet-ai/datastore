@@ -1,9 +1,19 @@
 
-# Message Stream System - Complete Technical Documentation
+# Message Stream System
 
-## Overview
+The Message Stream System is a high-performance, real-time message delivery system built on top of PostgreSQL NOTIFY/LISTEN and Socket.IO. It provides reliable message routing with backpressure handling, rate limiting, and fairness guarantees.
 
-The Message Stream System is a high-performance, real-time message delivery architecture that processes PostgreSQL notifications and delivers them to authenticated Socket.IO clients. The system implements sophisticated rate limiting, backpressure management, message queuing, and connection optimization to ensure reliable message delivery at scale.
+## Architecture Overview
+
+The system consists of several interconnected components:
+
+1. **PostgreSQL Notification System**: Receives NOTIFY events from the database
+2. **PgListenerService**: Listens to PostgreSQL notifications and routes them to the main stream
+3. **MessageStreamingService**: Central orchestrator that manages message routing and processing
+4. **TokenBucket System**: Provides rate limiting and backpressure management per channel
+5. **SharedStreamingState**: Manages global state for channels, organizations, and processing queues
+6. **StreamQueueService**: Handles database persistence for queued messages
+7. **Gateway**: Manages Socket.IO connections and client authentication
 
 ## Architecture Components
 

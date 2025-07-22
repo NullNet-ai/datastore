@@ -9,7 +9,7 @@ pub struct SharedStreamingState {
     pub flushing_channels: Arc<Mutex<HashSet<String>>>,
     pub active_channels: Arc<Mutex<HashMap<String, Arc<TokenBucket>>>>,
     pub organization_channels: Arc<Mutex<HashMap<String, HashSet<String>>>>,
-    pub channel_organizations: Arc<Mutex<HashMap<String, String>>>,
+    pub channel_organizations: Arc<Mutex<HashMap<String, String>>>, //maintaining both mappings avoids expensive reverse lookups and provides O(1) access in both directions.
     pub processing_queue: Arc<Mutex<VecDeque<String>>>,
 
 }
