@@ -2640,20 +2640,20 @@ CREATE INDEX "wallguard_logs_sensitivity_level_idx" ON "wallguard_logs" USING bt
 --> statement-breakpoint
 -- CRDT Messages Performance Indexes
 -- Individual indexes for each column
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset ON crdt_messages(dataset);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset ON crdt_messages("dataset");
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_column ON crdt_messages(column);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_column ON crdt_messages("column");
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_row ON crdt_messages(row);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_row ON crdt_messages("row");
 --> statement-breakpoint
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_timestamp ON crdt_messages(timestamp);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_timestamp ON crdt_messages("timestamp");
 --> statement-breakpoint
 -- Composite index for the common query pattern (dataset, column, row)
 -- This will significantly speed up the find_existing_messages function
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset_column_row ON crdt_messages(dataset, column, row);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset_column_row ON crdt_messages("dataset", "column", "row");
 --> statement-breakpoint
 -- Composite index including timestamp for ordering
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset_column_row_timestamp ON crdt_messages(dataset, column, row, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset_column_row_timestamp ON crdt_messages("dataset", "column", "row", "timestamp" DESC);
 --> statement-breakpoint
 -- Optional: Index for timestamp-based queries (get_messages_since)
-CREATE INDEX IF NOT EXISTS idx_crdt_messages_timestamp_desc ON crdt_messages(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_timestamp_desc ON crdt_messages("timestamp" DESC);
