@@ -1,5 +1,6 @@
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
+use crate::db::create_connection;
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
@@ -29,7 +30,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     // Get database connection info from environment variables
     let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
     let password = env::var("POSTGRES_PASS").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
+    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
     let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
     let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
@@ -38,6 +39,9 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             user, password, host, port, dbname
         )
     });
+
+    // Get raw database connection from db.rs
+    let _db_client = create_connection().await?;
 
     // Get the project directory
     let current_dir = env::current_dir()?.to_string_lossy().to_string();
