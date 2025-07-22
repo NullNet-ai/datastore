@@ -5,6 +5,7 @@ use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use tokio_postgres::Client;
 
 // Define a struct to hold the flags for each step
 pub struct DatabaseSetupFlags {
@@ -27,21 +28,20 @@ impl Default for DatabaseSetupFlags {
 }
 
 pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std::error::Error>> {
-    // Get database connection info from environment variables
-    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = env::var("POSTGRES_PASS").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
-    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+    // Get database connection from db.rs
+    let db_client = create_connection().await?;
+    
     let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
+        let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
+        let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
+        let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
+        let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
+        let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
         format!(
             "postgres://{}:{}@{}:{}/{}",
             user, password, host, port, dbname
         )
     });
-
-    // Get raw database connection from db.rs
-    let _db_client = create_connection().await?;
 
     // Get the project directory
     let current_dir = env::current_dir()?.to_string_lossy().to_string();
@@ -69,26 +69,12 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         if entered_password == expected_password {
             println!("Password correct. Running database cleanup script...");
 
-            // Run cleanup.sql
+            // Run cleanup.sql using database connection
             let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
-            let cleanup_status = Command::new("psql")
-                .args([
-                    "-U",
-                    &user,
-                    "-h",
-                    &host,
-                    "-p",
-                    &port,
-                    "-d",
-                    &dbname,
-                    "-f",
-                    cleanup_path.to_str().unwrap(),
-                ])
-                .env("DB_PASS", &password) // Use PGPASSWORD for psql
-                .status()?;
-
-            if !cleanup_status.success() {
-                return Err("Database cleanup failed".into());
+            let cleanup_sql = std::fs::read_to_string(&cleanup_path)?;
+            
+            if let Err(e) = execute_sql_script(&db_client, &cleanup_sql).await {
+                return Err(format!("Database cleanup failed: {}", e).into());
             }
 
             println!("Database cleanup completed successfully!");
@@ -135,27 +121,34 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     if flags.run_init_sql {
         println!("Step 4: Running database initialization script...");
         let init_path = Path::new(&current_dir).join("src/schema/init.sql");
-        let init_status = Command::new("psql")
-            .args([
-                "-U",
-                &user,
-                "-h",
-                &host,
-                "-p",
-                &port,
-                "-d",
-                &dbname,
-                "-f",
-                init_path.to_str().unwrap(),
-            ])
-            .env("DB_PASS", &password) // Use PGPASSWORD for psql
-            .current_dir(&current_dir) // Set working directory for relative paths in init.sql
-            .status()?;
-
-        if !init_status.success() {
-            return Err("Database initialization failed".into());
+        let init_sql = std::fs::read_to_string(&init_path)?;
+        
+        if let Err(e) = execute_sql_script(&db_client, &init_sql).await {
+            return Err(format!("Database initialization failed: {}", e).into());
         }
         println!("Database initialization completed successfully!");
+    }
+
+    Ok(())
+}
+
+// Helper function to execute SQL scripts using the database connection
+async fn execute_sql_script(client: &Client, sql_content: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // Split the SQL content into individual statements
+    // This is a simple approach - for more complex SQL files, you might need a proper SQL parser
+    let statements: Vec<&str> = sql_content
+        .split(';')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty() && !s.starts_with("--"))
+        .collect();
+
+    for statement in statements {
+        if !statement.trim().is_empty() {
+            if let Err(e) = client.execute(statement, &[]).await {
+                eprintln!("Error executing SQL statement: {}", statement);
+                return Err(Box::new(e));
+            }
+        }
     }
 
     Ok(())
