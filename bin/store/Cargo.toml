@@ -57,5 +57,6 @@ futures-util = "0.3.31"
 redis = { version = "0.23.0", features = ["tokio-comp"] }
 sha1 = "0.10.6"
 
+
 [build-dependencies]
 tonic-build = "0.12.3"

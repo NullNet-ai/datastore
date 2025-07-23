@@ -4,6 +4,16 @@ use super::common_controller::{
     process_record_for_update, process_records, sanitize_updates,
 };
 use crate::db::create_connection;
+use crate::db;
+use crate::providers::find::DynamicResult;
+use crate::providers::find::SQLConstructor;
+// Note: AggregationFilterWrapper has been moved to sql_constructor.rs
+// Note: Converter functions have been moved to grpc_struct_converter.rs
+
+// Helper functions to convert between generated protobuf types and internal struct types
+// Note: Converter functions have been moved to crate::structs::grpc_struct_converter
+
+// Note: AggregationFilterWrapper and its QueryFilter implementation have been moved to sql_constructor.rs
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
 use crate::generated::store::{
     AccountOrganizations, AccountProfiles, Accounts, Addresses, AppFirewalls, AppguardLogs,
@@ -198,6 +208,7 @@ use crate::generated::store::{
     Packets, PostgresChannels, Resolutions, Samples, TempAppguardLogs, TempConnections,
     TempDeviceAliases, TempDeviceInterfaceAddresses, TempDeviceInterfaces,
     TempDeviceRemoteAccessSessions, TempDeviceRules, TempPackets, TempWallguardLogs,
+    AggregationFilterRequest, AggregationFilterResponse,
     UpdateAccountOrganizationsRequest, UpdateAccountOrganizationsResponse,
     UpdateAccountProfilesRequest, UpdateAccountProfilesResponse, UpdateAccountsRequest,
     UpdateAccountsResponse, UpdateAddressesRequest, UpdateAddressesResponse,
@@ -266,9 +277,7 @@ use crate::sync::sync_service::{update};
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use crate::{
-    generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method,
-    generate_create_method, generate_delete_method, generate_get_method, generate_update_method,
-    generate_upsert_method,
+    generate_aggregation_filter_method, generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_delete_method, generate_get_method, generate_update_method, generate_upsert_method
 };
 use actix_web::{web, HttpResponse, Responder};
 use serde_json::Value;
@@ -651,6 +660,9 @@ impl StoreService for GrpcController {
     generate_delete_method!(contact_emails);
     generate_batch_delete_method!(contact_emails);
     generate_upsert_method!(contact_emails);
+    
+    // Aggregation filter method
+    generate_aggregation_filter_method!();
 }
 
 // You can add HTTP endpoints to configure or check gRPC status
