@@ -22,6 +22,10 @@ Kashan
   - Modified `construct_aggregation` to include table-qualified column names in SELECT clause
   - Aggregation fields now formatted as `{agg_type}({entity}.{field}) AS {bucket_name}`
   - Improved SQL clarity, consistency, and debugging capabilities for generated aggregation queries
+- **Generic Architecture**: Refactored SQL constructor to use generic type parameters
+  - Implemented `SQLConstructor<T: QueryFilter>` for trait-based polymorphism
+  - Created unified `QueryFilter` trait interface for both `GetByFilter` and `AggregationFilter`
+  - Enhanced code reusability and maintainability through generic programming
 - **Data Structures**: Extended `AggregationType` enum with `ArrayAgg` variant
   - Added `#[serde(rename = "ARRAY_AGG")]` attribute for proper JSON serialization
   - Ensures correct mapping from JSON "ARRAY_AGG" to PostgreSQL `ARRAY_AGG()` function
