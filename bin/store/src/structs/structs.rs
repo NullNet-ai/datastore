@@ -331,6 +331,8 @@ pub enum AggregationType {
     Max,
     StdDev,
     Variance,
+    #[serde(rename = "ARRAY_AGG")]
+    ArrayAgg,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

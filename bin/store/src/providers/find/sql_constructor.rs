@@ -212,6 +212,84 @@ impl<T: QueryFilter> SQLConstructor<T> {
         Ok(sql)
     }
 
+    pub fn construct_aggregation(&mut self) -> Result<String, String> {
+        // Validate required parameters for aggregation
+        let aggregations = self.request_body.get_aggregations();
+        let bucket_size = self.request_body.get_bucket_size();
+        let entity = self.request_body.get_entity();
+        
+        if aggregations.is_empty() {
+            return Err("Missing required parameter: aggregations cannot be empty".to_string());
+        }
+        
+        if bucket_size.is_none() {
+            return Err("Missing required parameter: bucket_size".to_string());
+        }
+        
+        if entity.is_none() {
+            return Err("Missing required parameter: entity".to_string());
+        }
+        
+        let bucket_size = bucket_size.unwrap();
+        let entity = entity.unwrap();
+        let timezone = self.request_body.get_timezone().unwrap_or("UTC");
+        
+        // Generate the SELECT clause with time bucket and aggregations
+        let mut sql = String::from("SELECT ");
+        
+        // Add time bucket
+        sql.push_str(&format!(
+            "time_bucket('{}', {}.timestamp AT TIME ZONE '{}') AS bucket",
+            bucket_size, entity, timezone
+        ));
+        
+        // Add aggregation clauses
+        for aggregation in aggregations {
+            sql.push_str(", ");
+            let agg_type = match aggregation.aggregation {
+                 crate::structs::structs::AggregationType::Sum => "SUM",
+                 crate::structs::structs::AggregationType::Count => "COUNT",
+                 crate::structs::structs::AggregationType::Avg => "AVG",
+                 crate::structs::structs::AggregationType::Min => "MIN",
+                 crate::structs::structs::AggregationType::Max => "MAX",
+                 crate::structs::structs::AggregationType::StdDev => "STDDEV",
+                 crate::structs::structs::AggregationType::Variance => "VARIANCE",
+                 crate::structs::structs::AggregationType::ArrayAgg => "ARRAY_AGG",
+             };
+            
+            sql.push_str(&format!(
+                "{}({}.{}) AS {}",
+                agg_type, entity, aggregation.aggregate_on, aggregation.bucket_name
+            ));
+        }
+        
+        // Add FROM clause
+        sql.push_str(&format!(" FROM {}", self.table));
+        
+        // Add joins if any
+        sql.push_str(&self.construct_joins());
+        
+        // Add WHERE clauses
+        sql.push_str(&self.construct_where_clauses()?);
+        
+        // Add GROUP BY clause
+        sql.push_str(" GROUP BY bucket");
+        
+        // Add ORDER BY clause
+        if let Some(order) = self.request_body.get_aggregation_order() {
+            let order_direction = order.order_direction.to_uppercase();
+            sql.push_str(&format!(" ORDER BY {} {}", order.order_by, order_direction));
+        }
+        
+        // Add LIMIT clause
+        if self.request_body.get_limit() > 0 {
+            sql.push_str(&format!(" LIMIT {}", self.request_body.get_limit()));
+        }
+        
+        dbg!(&sql);
+        Ok(sql)
+    }
+
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None)
     }

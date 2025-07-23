@@ -8,7 +8,7 @@ use crate::db::create_connection;
 use crate::permissions::permission_decorator::PermissionExtractor;
 use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
 use crate::structs::structs::{
-    ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody, UpsertRequestBody,
+    ApiResponse, Auth, BatchUpdateBody, GetByFilter, AggregationFilter, QueryParams, RequestBody, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
@@ -718,12 +718,12 @@ pub async fn delete_record(
 pub async fn get_by_filter(
     auth: HttpRequest,
     _pool: web::Data<db::AsyncDbPool>,
-    path_params: web::Path<String>,
+    _path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
  
     let parameters = request_body.into_inner();
-    let table = path_params.into_inner();
+    let table = _path_params.into_inner();
     
     // Extract organization_id from auth context
     let extensions = auth.extensions();
@@ -804,6 +804,101 @@ pub async fn get_by_filter(
     HttpResponse::Ok().json(ApiResponse {
         success: true,
         message: format!("Filter operation completed for table: {}", &table),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+//aggregation filter
+
+pub async fn get_by_aggregation_filter(
+    auth: HttpRequest,
+    request_body: web::Json<AggregationFilter>,
+) -> impl Responder {
+    let parameters = request_body.into_inner();
+    let table = parameters.entity.clone();
+    
+    // Extract organization_id from auth context
+    let extensions = auth.extensions();
+    let organization_id = match extensions.get::<Auth>() {
+        Some(auth_data) => Some(auth_data.organization_id.clone()),
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            None
+        }
+    };
+    
+    // Basic validation for aggregation filter
+    if parameters.entity.is_empty() {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Entity (table name) is required".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    
+    if parameters.aggregations.is_empty() {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "At least one aggregation is required".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    
+    // Create SQLConstructor with organization_id if available
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone());
+    if let Some(org_id) = organization_id {
+        sql_constructor = sql_constructor.with_organization_id(org_id);
+    }
+    
+    let query = match sql_constructor.construct_aggregation() {
+        Ok(sql) => sql,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid aggregation configuration: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    // Get a connection from the pool
+    let mut conn = db::get_async_connection().await;
+
+    // Wrap your original query with row_to_json
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    
+    // Parse JSON strings to serde_json::Value
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| {
+            result
+                .row_to_json
+                .and_then(|json_str| serde_json::from_str(&json_str).ok())
+        })
+        .collect();
+
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: format!("Aggregation operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
     })

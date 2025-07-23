@@ -5,6 +5,55 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.8
+
+### Author
+Kashan
+
+### Added
+- **Aggregation Filter System**: Comprehensive aggregation functionality for data analysis
+  - Added `get_by_aggregation_filter` endpoint in `store_controller.rs` for handling aggregation requests
+  - Implemented `construct_aggregation` method in `sql_constructor.rs` for building complex aggregation SQL queries
+  - Added `ARRAY_AGG` support to `AggregationType` enum for array aggregation operations
+  - Enhanced aggregation SQL construction with table-qualified column names for improved clarity
+
+### Enhanced
+- **SQL Constructor**: Enhanced aggregation query construction with proper table prefixing
+  - Modified `construct_aggregation` to include table-qualified column names in SELECT clause
+  - Aggregation fields now formatted as `{agg_type}({entity}.{field}) AS {bucket_name}`
+  - Improved SQL clarity, consistency, and debugging capabilities for generated aggregation queries
+- **Data Structures**: Extended `AggregationType` enum with `ArrayAgg` variant
+  - Added `#[serde(rename = "ARRAY_AGG")]` attribute for proper JSON serialization
+  - Ensures correct mapping from JSON "ARRAY_AGG" to PostgreSQL `ARRAY_AGG()` function
+
+### Fixed
+- **Request Body Parsing**: Fixed aggregation filter to use `entity` field from request body instead of URL path parameters
+  - Updated `get_by_aggregation_filter` to extract table name from `parameters.entity.clone()`
+  - Resolved unused variable warnings by prefixing unused path parameters with underscores
+  - Ensured consistency between aggregation and regular filter endpoints
+
+### Technical Implementation
+- **Core Files**:
+  - `/bin/store/src/controllers/store_controller.rs` - Aggregation endpoint implementation
+  - `/bin/store/src/sql_constructor.rs` - Enhanced aggregation SQL construction
+  - `/bin/store/src/structs/structs.rs` - Extended `AggregationType` enum
+- **API Endpoint**: `POST /api/store/aggregation` - Aggregation filter endpoint
+- **Supported Aggregations**: `Sum`, `Avg`, `Count`, `Min`, `Max`, `StdDev`, `Variance`, `ArrayAgg`
+- **Example Usage**:
+  ```json
+  {
+    "entity": "products",
+    "aggregations": [{
+      "aggregation": "ARRAY_AGG",
+      "aggregate_on": "name",
+      "bucket_name": "all_names"
+    }]
+  }
+  ```
+- **Generated SQL**: `SELECT ARRAY_AGG(products.name) AS all_names FROM products`
+
+---
+
 ## 0.1.7
 
 ### Author

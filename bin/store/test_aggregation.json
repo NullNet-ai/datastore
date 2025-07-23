@@ -1,0 +1,29 @@
+{
+  "entity": "products",
+  "aggregations": [
+    {
+      "aggregation": "Count",
+      "aggregate_on": "id",
+      "bucket_name": "user_count"
+    },
+    {
+      "aggregation": "Sum",
+      "aggregate_on": "age",
+      "bucket_name": "total_age"
+    },
+    {
+      "aggregation": "ARRAY_AGG",
+      "aggregate_on": "name",
+      "bucket_name": "all_names"
+    }
+  ],
+  "bucket_size": "1 hour",
+  "limit": 100,
+  "timezone": "UTC",
+  "order": {
+    "order_by": "bucket",
+    "order_direction": "desc"
+  },
+  "advance_filters": [],
+  "joins": []
+}
