@@ -1,4 +1,160 @@
-use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern, SortOption}};
+use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, AggregationFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern, SortOption, ConcatenateField, AggregationOrder}};
+use std::collections::HashMap;
+
+// Trait to define common interface for both GetByFilter and AggregationFilter
+pub trait QueryFilter {
+    fn get_advance_filters(&self) -> &[FilterCriteria];
+    fn get_joins(&self) -> &[Join];
+    fn get_limit(&self) -> usize;
+    fn get_date_format(&self) -> &str;
+    
+    // Optional methods with default implementations
+    fn get_pluck(&self) -> &[String] { &[] }
+    fn get_pluck_object(&self) -> &HashMap<String, Vec<String>> {
+        use std::collections::HashMap;
+        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> = std::sync::LazyLock::new(|| HashMap::new());
+        &EMPTY
+    }
+    fn get_pluck_group_object(&self) -> &HashMap<String, Vec<String>> {
+        use std::collections::HashMap;
+        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> = std::sync::LazyLock::new(|| HashMap::new());
+        &EMPTY
+    }
+    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] { &[] }
+    fn get_concatenate_fields(&self) -> &[ConcatenateField] { &[] }
+    fn get_order_by(&self) -> &str { "id" }
+    fn get_order_direction(&self) -> &str { "asc" }
+    fn get_offset(&self) -> usize { 0 }
+    fn get_multiple_sort(&self) -> &[SortOption] { &[] }
+    fn get_group_by(&self) -> &HashMap<String, Vec<String>> {
+        use std::collections::HashMap;
+        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> = std::sync::LazyLock::new(|| HashMap::new());
+        &EMPTY
+    }
+    fn get_is_case_sensitive_sorting(&self) -> Option<bool> { None }
+    fn get_distinct_by(&self) -> Option<&str> { None }
+    
+    // Aggregation-specific methods with default implementations
+    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] { &[] }
+    fn get_bucket_size(&self) -> Option<&str> { None }
+    fn get_timezone(&self) -> Option<&str> { None }
+    fn get_aggregation_order(&self) -> Option<&AggregationOrder> { None }
+    fn get_entity(&self) -> Option<&str> { None }
+}
+
+// Implement QueryFilter for GetByFilter
+impl QueryFilter for GetByFilter {
+    fn get_advance_filters(&self) -> &[FilterCriteria] {
+        &self.advance_filters
+    }
+    
+    fn get_joins(&self) -> &[Join] {
+        &self.joins
+    }
+    
+    fn get_limit(&self) -> usize {
+        self.limit
+    }
+    
+    fn get_date_format(&self) -> &str {
+        &self.date_format
+    }
+    
+    fn get_pluck(&self) -> &[String] {
+        &self.pluck
+    }
+    
+    fn get_pluck_object(&self) -> &HashMap<String, Vec<String>> {
+        &self.pluck_object
+    }
+    
+    fn get_pluck_group_object(&self) -> &HashMap<String, Vec<String>> {
+        &self.pluck_group_object
+    }
+    
+    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
+        &self.group_advance_filters
+    }
+    
+    fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+        &self.concatenate_fields
+    }
+    
+    fn get_order_by(&self) -> &str {
+        &self.order_by
+    }
+    
+    fn get_order_direction(&self) -> &str {
+        &self.order_direction
+    }
+    
+    fn get_offset(&self) -> usize {
+        self.offset
+    }
+    
+    fn get_multiple_sort(&self) -> &[SortOption] {
+        &self.multiple_sort
+    }
+    
+    fn get_group_by(&self) -> &HashMap<String, Vec<String>> {
+        &self.group_by
+    }
+    
+    fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
+        self.is_case_sensitive_sorting
+    }
+    
+    fn get_distinct_by(&self) -> Option<&str> {
+        self.distinct_by.as_deref()
+    }
+}
+
+// Implement QueryFilter for AggregationFilter
+impl QueryFilter for AggregationFilter {
+    fn get_advance_filters(&self) -> &[FilterCriteria] {
+        &self.advance_filters
+    }
+    
+    fn get_joins(&self) -> &[Join] {
+        &self.joins
+    }
+    
+    fn get_limit(&self) -> usize {
+        self.limit
+    }
+    
+    fn get_date_format(&self) -> &str {
+        "mm/dd/YYYY" // Default format for aggregation queries
+    }
+    
+    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] {
+        &self.aggregations
+    }
+    
+    fn get_bucket_size(&self) -> Option<&str> {
+        self.bucket_size.as_deref()
+    }
+    
+    fn get_timezone(&self) -> Option<&str> {
+        self.timezone.as_deref()
+    }
+    
+    fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
+        self.order.as_ref()
+    }
+    
+    fn get_entity(&self) -> Option<&str> {
+        Some(&self.entity)
+    }
+    
+    fn get_order_by(&self) -> &str {
+        self.order.as_ref().map(|o| o.order_by.as_str()).unwrap_or("id")
+    }
+    
+    fn get_order_direction(&self) -> &str {
+        self.order.as_ref().map(|o| o.order_direction.as_str()).unwrap_or("asc")
+    }
+}
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -7,14 +163,14 @@ enum Token {
     Or,
 }
 
-pub struct SQLConstructor {
-    request_body: GetByFilter,
+pub struct SQLConstructor<T: QueryFilter> {
+    request_body: T,
     table: String,
     organization_id: Option<String>,
 }
 
-impl SQLConstructor {
-    pub fn new(request_body: GetByFilter, table: String) -> Self {
+impl<T: QueryFilter> SQLConstructor<T> {
+    pub fn new(request_body: T, table: String) -> Self {
         Self {
             request_body,
             table,
@@ -56,6 +212,84 @@ impl SQLConstructor {
         Ok(sql)
     }
 
+    pub fn construct_aggregation(&mut self) -> Result<String, String> {
+        // Validate required parameters for aggregation
+        let aggregations = self.request_body.get_aggregations();
+        let bucket_size = self.request_body.get_bucket_size();
+        let entity = self.request_body.get_entity();
+        
+        if aggregations.is_empty() {
+            return Err("Missing required parameter: aggregations cannot be empty".to_string());
+        }
+        
+        if bucket_size.is_none() {
+            return Err("Missing required parameter: bucket_size".to_string());
+        }
+        
+        if entity.is_none() {
+            return Err("Missing required parameter: entity".to_string());
+        }
+        
+        let bucket_size = bucket_size.unwrap();
+        let entity = entity.unwrap();
+        let timezone = self.request_body.get_timezone().unwrap_or("UTC");
+        
+        // Generate the SELECT clause with time bucket and aggregations
+        let mut sql = String::from("SELECT ");
+        
+        // Add time bucket
+        sql.push_str(&format!(
+            "time_bucket('{}', {}.timestamp AT TIME ZONE '{}') AS bucket",
+            bucket_size, entity, timezone
+        ));
+        
+        // Add aggregation clauses
+        for aggregation in aggregations {
+            sql.push_str(", ");
+            let agg_type = match aggregation.aggregation {
+                 crate::structs::structs::AggregationType::Sum => "SUM",
+                 crate::structs::structs::AggregationType::Count => "COUNT",
+                 crate::structs::structs::AggregationType::Avg => "AVG",
+                 crate::structs::structs::AggregationType::Min => "MIN",
+                 crate::structs::structs::AggregationType::Max => "MAX",
+                 crate::structs::structs::AggregationType::StdDev => "STDDEV",
+                 crate::structs::structs::AggregationType::Variance => "VARIANCE",
+                 crate::structs::structs::AggregationType::ArrayAgg => "ARRAY_AGG",
+             };
+            
+            sql.push_str(&format!(
+                "{}({}.{}) AS {}",
+                agg_type, entity, aggregation.aggregate_on, aggregation.bucket_name
+            ));
+        }
+        
+        // Add FROM clause
+        sql.push_str(&format!(" FROM {}", self.table));
+        
+        // Add joins if any
+        sql.push_str(&self.construct_joins());
+        
+        // Add WHERE clauses
+        sql.push_str(&self.construct_where_clauses()?);
+        
+        // Add GROUP BY clause
+        sql.push_str(" GROUP BY bucket");
+        
+        // Add ORDER BY clause
+        if let Some(order) = self.request_body.get_aggregation_order() {
+            let order_direction = order.order_direction.to_uppercase();
+            sql.push_str(&format!(" ORDER BY {} {}", order.order_by, order_direction));
+        }
+        
+        // Add LIMIT clause
+        if self.request_body.get_limit() > 0 {
+            sql.push_str(&format!(" LIMIT {}", self.request_body.get_limit()));
+        }
+        
+        dbg!(&sql);
+        Ok(sql)
+    }
+
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None)
     }
@@ -88,21 +322,21 @@ impl SQLConstructor {
         let mut selections = Vec::new();
         
         // Add join selections from pluck_object if joins are present
-        if !self.request_body.joins.is_empty() && !self.request_body.pluck_object.is_empty() && self.request_body.pluck_object.iter().any(|(_, fields)| !fields.is_empty()) {
+        if !self.request_body.get_joins().is_empty() && !self.request_body.get_pluck_object().is_empty() && self.request_body.get_pluck_object().iter().any(|(_, fields)| !fields.is_empty()) {
             let join_selections = self.construct_join_selections();
             if !join_selections.is_empty() {
                 selections.extend(join_selections);
             }
         }
         // set pluck as selections
-        else if !self.request_body.pluck.is_empty() {
+        else if !self.request_body.get_pluck().is_empty() {
             let pluck = self.construct_pluck();
             if !pluck.is_empty() {
                 selections.push(pluck);
             }
         }
         // set pluck group object as selections
-        if !self.request_body.pluck_group_object.is_empty() {
+        if !self.request_body.get_pluck_group_object().is_empty() {
             let pluck_group_object = self.construct_pluck_group_object();
             if !pluck_group_object.is_empty() {
                 selections.push(pluck_group_object);
@@ -120,13 +354,13 @@ impl SQLConstructor {
         let mut pluck_fields = Vec::new();
         
         // Add regular pluck fields
-        for field in &self.request_body.pluck {
-            pluck_fields.push(Self::get_field(&self.table, field, &self.request_body.date_format));
+        for field in self.request_body.get_pluck() {
+            pluck_fields.push(Self::get_field(&self.table, field, self.request_body.get_date_format()));
         }
         
         // Add concatenated fields that match the main table
-        if !self.request_body.concatenate_fields.is_empty() {
-            for field in &self.request_body.concatenate_fields {
+        if !self.request_body.get_concatenate_fields().is_empty() {
+            for field in self.request_body.get_concatenate_fields() {
                 if field.aliased_entity == self.table || field.entity == self.table {
                     let table_name = if !field.aliased_entity.is_empty() {
                         &field.aliased_entity
@@ -134,7 +368,7 @@ impl SQLConstructor {
                         &field.entity
                     };
                     let concatenated_expression = field.fields.iter()
-                          .map(|f| Self::get_field(table_name, f, &self.request_body.date_format))
+                          .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
                           .collect::<Vec<_>>()
                           .join(&format!(" || '{}' || ", field.separator));
                     pluck_fields.push(format!("({}) AS {}", concatenated_expression, field.field_name));
@@ -152,7 +386,7 @@ impl SQLConstructor {
         let mut selections = Vec::new();
         // Check if pluck_group_object exists and is not empty
         // Iterate over each key-value pair in pluck_group_object
-        for (table_alias, fields) in &self.request_body.pluck_group_object {
+        for (table_alias, fields) in self.request_body.get_pluck_group_object() {
             // For each field in the fields vector, create a JSONB_AGG statement
             for field in fields {
                 let selection = format!(
@@ -166,8 +400,8 @@ impl SQLConstructor {
             }
             
             // Add concatenated fields that match this table alias
-            if !self.request_body.concatenate_fields.is_empty() {
-                for field in &self.request_body.concatenate_fields {
+            if !self.request_body.get_concatenate_fields().is_empty() {
+                for field in self.request_body.get_concatenate_fields() {
                     if field.aliased_entity == *table_alias || field.entity == *table_alias {
                         let table_name = if !field.aliased_entity.is_empty() {
                             &field.aliased_entity
@@ -175,7 +409,7 @@ impl SQLConstructor {
                             &field.entity
                         };
                         let concatenated_expression = field.fields.iter()
-                              .map(|f| Self::get_field(table_name, f, &self.request_body.date_format))
+                              .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
                               .collect::<Vec<_>>()
                               .join(&format!(" || '{}' || ", field.separator));
                         let selection = format!(
@@ -201,7 +435,7 @@ impl SQLConstructor {
         let mut join_selections = Vec::new();
         
         // Only construct selections if joins are present
-        if self.request_body.joins.is_empty() {
+        if self.request_body.get_joins().is_empty() {
             return join_selections;
         }
         
@@ -211,7 +445,7 @@ impl SQLConstructor {
             .unwrap_or_else(|| "NULL".to_string());
         
         // Iterate through each alias in pluck_object
-        for (alias, fields) in &self.request_body.pluck_object {
+        for (alias, fields) in self.request_body.get_pluck_object() {
             // Find the corresponding join to get table information
             if let Some(join) = self.find_join_by_alias(alias) {
                 let target_table = &join.field_relation.to.entity;
@@ -219,11 +453,11 @@ impl SQLConstructor {
                 
                 // Build JSONB_BUILD_OBJECT field pairs
                 let mut field_pairs: Vec<String> = fields.iter()
-                    .map(|field| format!("'{}', {}", field, Self::get_field(alias, field, &self.request_body.date_format)))
+                    .map(|field| format!("'{}', {}", field, Self::get_field(alias, field, self.request_body.get_date_format())))
                     .collect();
 
-                if !self.request_body.concatenate_fields.is_empty() {
-                    self.request_body.concatenate_fields.iter().for_each(|field| {
+                if !self.request_body.get_concatenate_fields().is_empty() {
+                    self.request_body.get_concatenate_fields().iter().for_each(|field| {
                         // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
                         if field.aliased_entity == *alias || field.entity == *alias {
                             let table_name = if !field.aliased_entity.is_empty() {
@@ -232,7 +466,7 @@ impl SQLConstructor {
                              &field.entity
                          };
                             let concatenated_expression = field.fields.iter()
-                                  .map(|f| Self::get_field(table_name, f, &self.request_body.date_format))
+                                  .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
                                   .collect::<Vec<_>>()
                                   .join(&format!(" || '{}' || ", field.separator));
                             field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
@@ -265,7 +499,7 @@ impl SQLConstructor {
     }
     
     fn find_join_by_alias(&self, alias: &str) -> Option<&Join> {
-        self.request_body.joins.iter()
+        self.request_body.get_joins().iter()
             .find(|join| join.field_relation.to.alias.as_deref() == Some(alias))
     }
     
@@ -276,12 +510,12 @@ impl SQLConstructor {
     }
     
     fn construct_joins(&self) -> String {
-        if self.request_body.joins.is_empty() {
+        if self.request_body.get_joins().is_empty() {
             String::from("")
         } else {
             let mut join_clauses = Vec::new();
             
-            for join in &self.request_body.joins {
+            for join in self.request_body.get_joins() {
                 match join.r#type.as_str() {
                     "left" => {
                         let join_clause = self.build_left_join_lateral(join);
@@ -323,14 +557,14 @@ impl SQLConstructor {
         let mut base_where = format!(" WHERE {}", self.build_system_where_clause(&self.table)?);
 
         // Prioritize advance_filters over group_advance_filters
-        if !self.request_body.advance_filters.is_empty() {
-            let expression = self.build_infix_expression(&self.request_body.advance_filters)?;
+        if !self.request_body.get_advance_filters().is_empty() {
+            let expression = self.build_infix_expression(self.request_body.get_advance_filters())?;
             if !expression.is_empty() {
                 base_where.push_str(" AND ");
                 base_where.push_str(&expression);
             }
-        } else if !self.request_body.group_advance_filters.is_empty() {
-            let group_expression = self.build_group_advance_filters_expression(&self.request_body.group_advance_filters)?;
+        } else if !self.request_body.get_group_advance_filters().is_empty() {
+            let group_expression = self.build_group_advance_filters_expression(self.request_body.get_group_advance_filters())?;
             if !group_expression.is_empty() {
                 base_where.push_str(" AND ");
                 base_where.push_str(&group_expression);
@@ -369,7 +603,7 @@ impl SQLConstructor {
          // Handle single criteria case
         if filters.len() == 1 {
             if let FilterCriteria::Criteria { field, entity, operator, values, case_sensitive, parse_as, match_pattern } = &filters[0] {
-                let field_name = Self::get_field_with_parse_as(entity, field, &self.request_body.date_format, Some(parse_as));
+                let field_name = Self::get_field_with_parse_as(entity, field, self.request_body.get_date_format(), Some(parse_as));
                 return Ok(self.format_condition_with_case_sensitivity_and_pattern(&field_name, operator, values, *case_sensitive, match_pattern.as_ref()));
             }
             return Err("Invalid filter: single filter must be a criteria".to_string());
@@ -391,7 +625,7 @@ impl SQLConstructor {
         while i < filters.len() {
             match &filters[i] {
                 FilterCriteria::Criteria { field, entity, operator, values, case_sensitive, parse_as, match_pattern } => {
-                    let field_name = Self::get_field_with_parse_as(entity, field, &self.request_body.date_format, Some(parse_as));
+                    let field_name = Self::get_field_with_parse_as(entity, field, self.request_body.get_date_format(), Some(parse_as));
                     let condition = self.format_condition_with_case_sensitivity_and_pattern(&field_name, operator, values, *case_sensitive, match_pattern.as_ref());
                     tokens.push(Token::Condition(condition));
                     i += 1;
@@ -449,7 +683,7 @@ impl SQLConstructor {
         let lateral_alias = format!("joined_{}", to_alias);
         
         // Build dynamic field selection based on pluck_object
-        let selected_fields = if let Some(fields) = self.request_body.pluck_object.get(to_alias) {
+        let selected_fields = if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
             fields.iter()
                 .map(|field| format!("\"{}\".\"{}\"" , lateral_alias, field))
                 .collect::<Vec<_>>()
@@ -708,17 +942,10 @@ impl SQLConstructor {
         Ok(self.build_expression_with_precedence(&tokens))
     }
     
-    fn construct_order_by(&mut self) -> String {
-        if !self.request_body.order_by.is_empty() && self.request_body.multiple_sort.is_empty() {
-            self.request_body.multiple_sort.push(SortOption {
-                by_field: self.request_body.order_by.clone(),
-                by_direction: self.request_body.order_direction.clone(),
-                is_case_sensitive_sorting: self.request_body.is_case_sensitive_sorting,
-            });
-        }
+    fn construct_order_by(&self) -> String {
         // Check if multiple_sort is available and not empty
-        if !self.request_body.multiple_sort.is_empty() {
-            let sort_clauses: Vec<String> = self.request_body.multiple_sort
+        if !self.request_body.get_multiple_sort().is_empty() {
+            let sort_clauses: Vec<String> = self.request_body.get_multiple_sort()
                 .iter()
                 .map(|sort_option| {
                     let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
@@ -728,7 +955,7 @@ impl SQLConstructor {
                         (self.table.as_str(), sort_option.by_field.as_str())
                     };
                     
-                    let field_expression = Self::get_field(table_alias, field_name, &self.request_body.date_format);
+                    let field_expression = Self::get_field(table_alias, field_name, self.request_body.get_date_format());
                     
                     // Handle case sensitivity
                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
@@ -743,36 +970,57 @@ impl SQLConstructor {
             
             format!(" ORDER BY {}", sort_clauses.join(", "))
         }
-        // Fallback to single field sorting if multiple_sort is empty
-        else {
+        // Fallback to single field sorting using trait methods
+        else if !self.request_body.get_order_by().is_empty() {
+            let field_expression = Self::get_field(&self.table, self.request_body.get_order_by(), self.request_body.get_date_format());
+            
+            // Handle case sensitivity
+            let final_field = if self.request_body.get_is_case_sensitive_sorting().unwrap_or(false) {
+                field_expression
+            } else {
+                format!("LOWER({})", field_expression)
+            };
+            
+            format!(" ORDER BY {} {}", final_field, self.request_body.get_order_direction().to_uppercase())
+        } else {
             String::from("")
         }
     }
     fn construct_group_by(&self) -> String {
-        if !self.request_body.pluck_group_object.is_empty() {
-            if !self.request_body.group_by.is_empty() {
-                if let Some(first_key) = self.request_body.group_by.keys().next() {
-                    format!(" GROUP BY {}", Self::get_field(&self.table, first_key, &self.request_body.date_format))
+        if !self.request_body.get_pluck_group_object().is_empty() {
+            let group_by = self.request_body.get_group_by();
+            if !group_by.is_empty() {
+                // Get all fields from the group_by HashMap and create GROUP BY clause
+                let group_fields: Vec<String> = group_by.iter()
+                    .flat_map(|(table, fields)| {
+                        fields.iter().map(|field| {
+                            Self::get_field(table, field, self.request_body.get_date_format())
+                        })
+                    })
+                    .collect();
+                
+                if !group_fields.is_empty() {
+                    format!(" GROUP BY {}", group_fields.join(", "))
                 } else {
-                    String::from("")
+                    format!(" GROUP BY {}", Self::get_field(&self.table, "id", self.request_body.get_date_format()))
                 }
             } else {
-                format!(" GROUP BY {}", Self::get_field(&self.table, "id", &self.request_body.date_format))
+                format!(" GROUP BY {}", Self::get_field(&self.table, "id", self.request_body.get_date_format()))
             }
         } else {
             String::from("")
         }
     }
     fn construct_offset(&self) -> String {
-        if self.request_body.offset > 0 {
-            format!(" OFFSET {}", self.request_body.offset)
+        if self.request_body.get_offset() > 0 {
+            format!(" OFFSET {}", self.request_body.get_offset())
         } else {
             String::from("")
         }
     }
     fn construct_limit(&self) -> String {
-        if self.request_body.limit > 0 {
-            format!(" LIMIT {}", self.request_body.limit)
+        if self.request_body.get_limit() > 0 {
+            format!(" LIMIT {}", self.request_body.get_limit())
         } else {
             String::from("LIMIT 10")
         }

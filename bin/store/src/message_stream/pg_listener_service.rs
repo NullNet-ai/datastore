@@ -2,7 +2,7 @@ use crate::message_stream::token_bucket::{Message, TokenBucket};
 use futures::stream;
 use futures::TryStreamExt;
 use log::debug;
-use log::{error, info};
+use log::{error, info, warn};
 use once_cell::sync::OnceCell;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -150,7 +150,7 @@ impl PgListenerService {
                         service.process_notification(notification.clone()).await;
                     }
                     tokio_postgres::AsyncMessage::Notice(notice) => {
-                        debug!("PostgreSQL Notice: {}", notice);
+                        warn!("PostgreSQL Notice: {}", notice);
                     }
                     _ => {}
                 }

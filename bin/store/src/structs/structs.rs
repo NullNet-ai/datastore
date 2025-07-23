@@ -293,6 +293,55 @@ pub struct GetByFilter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AggregationFilter {
+    pub entity: String,
+    
+    pub aggregations: Vec<Aggregation>,
+    
+    #[serde(default)]
+    pub advance_filters: Vec<FilterCriteria>,
+    
+    #[serde(default)]
+    pub joins: Vec<Join>,
+    
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+    
+    pub bucket_size: Option<String>,
+    
+    pub timezone: Option<String>,
+    
+    pub order: Option<AggregationOrder>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Aggregation {
+    pub aggregation: AggregationType,
+    pub aggregate_on: String,
+    pub bucket_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum AggregationType {
+    Sum,
+    Avg,
+    Count,
+    Min,
+    Max,
+    StdDev,
+    Variance,
+    #[serde(rename = "ARRAY_AGG")]
+    ArrayAgg,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AggregationOrder {
+    pub order_by: String,
+    pub order_direction: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConcatenateField {
     pub fields: Vec<String>,
     pub field_name: String,

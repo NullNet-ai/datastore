@@ -55,7 +55,7 @@ use controllers::pg_functions::pg_listener_controller::{
 };
 use controllers::store_controller::{
     batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
-    get_by_filter, update_record, upsert,
+    get_by_filter, get_by_aggregation_filter, update_record, upsert,
 };
 use env_logger::Env;
 use std::process;
@@ -324,6 +324,7 @@ async fn main() -> std::io::Result<()> {
                     .wrap(ShutdownGuard)
                     .wrap(Authentication)
                     .wrap(SessionMiddleware)
+                    .route("/aggregate", web::post().to(get_by_aggregation_filter))
                     .route("/{table}", web::post().to(create_record))
                     .route("/upsert/{table}", web::post().to(upsert))
                     .route("/batch/{table}", web::patch().to(batch_update_records))
