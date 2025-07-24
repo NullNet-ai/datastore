@@ -447,17 +447,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
             return join_selections;
         }
         
-        // Get organization_id for WHERE clause
-        let organization_id = self.organization_id.as_ref()
-            .map(|id| format!("'{}'", id))
-            .unwrap_or_else(|| "NULL".to_string());
-        
         // Iterate through each alias in pluck_object
         for (alias, fields) in self.request_body.get_pluck_object() {
             // Find the corresponding join to get table information
             if let Some(join) = self.find_join_by_alias(alias) {
                 let target_table = &join.field_relation.to.entity;
-                let join_condition = self.build_join_condition_for_alias(alias, join);
+                let previous_join = self.request_body.get_joins().iter()
+                    .find(|j| j.field_relation.to.entity == join.field_relation.from.entity);
+                let join_condition = self.build_join_condition_for_alias(alias, join, previous_join);
                 
                 // Build JSONB_BUILD_OBJECT field pairs
                 let mut field_pairs: Vec<String> = fields.iter()
@@ -483,15 +480,16 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
                 // TODO: root get it from request params
                 // TODO: remove organization contraints
+                let standard_where = match self.build_system_where_clause(alias) {
+                    Ok(clause) => clause,
+                    Err(_) => format!("({}.tombstone = 0)", alias)
+                };
                 let selection = format!(
-                    "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE (\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {}) AND {}), '[]') AS \"{}\"",
+                    "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
                     field_pairs.join(", "),
                     target_table,
                     alias,
-                    alias,
-                    alias,
-                    alias,
-                    organization_id,
+                    standard_where,
                     join_condition,
                     alias
                 );
@@ -512,9 +510,27 @@ impl<T: QueryFilter> SQLConstructor<T> {
             .find(|join| join.field_relation.to.alias.as_deref() == Some(alias))
     }
     
-    fn build_join_condition_for_alias(&self, alias: &str, join: &Join) -> String {
+    fn build_join_condition_for_alias(&self, alias: &str, join: &Join, previous_join: Option<&Join>) -> String {
+        let is_nested = join.nested;
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
+        
+        if is_nested {
+            if let Some(prev_join) = previous_join {
+                // Use the previous join's alias if available
+                let prev_from_alias = prev_join.field_relation.from.alias.as_deref()
+                    .unwrap_or(&prev_join.field_relation.from.entity);
+                let prev_from_field = &prev_join.field_relation.from.field;
+                let prev_to_alias = prev_join.field_relation.to.alias.as_deref()
+                    .unwrap_or(&prev_join.field_relation.to.entity);
+                let prev_to_field = &prev_join.field_relation.to.field;
+                return format!("\"{}\".\"{}\" = \"{}\".\"{}\"", prev_from_alias, prev_from_field, prev_to_alias, prev_to_field);
+            } else {
+                // Fallback to the from entity if no previous join
+                let from_entity = &join.field_relation.from.entity;
+                return format!("\"{}\".\"{}\" = \"{}\".\"{}\"", from_entity, from_field, alias, to_field);
+            }
+        }
         format!("\"{}\".\"{}\" = \"{}\".\"{}\"" , self.table, from_field, alias, to_field)
     }
     
@@ -687,13 +703,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
     fn build_left_join_lateral(&self, join: &Join) -> String {
         let to_entity = &join.field_relation.to.entity;
-        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or("");
+        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
         let to_field = &join.field_relation.to.field;
-        // TODO: revisit this
-        // let from_entity = &join.field_relation.from.entity;
+        let from_entity = &join.field_relation.from.entity;
+        // let from_alias = join.field_relation.from.alias.as_deref().unwrap_or(from_entity);
         let from_field = &join.field_relation.from.field;
         // TODO: Add nested join logic after jean fix the issue from Typescript datastore
+        let is_nested = join.nested;
         
+
         // Build the lateral subquery alias
         let lateral_alias = format!("joined_{}", to_alias);
         
@@ -710,7 +728,16 @@ impl<T: QueryFilter> SQLConstructor<T> {
         
         let standard_where = self.build_system_where_clause(&lateral_alias)
             .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
-        
+        if is_nested {
+           return format!(
+                "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                selected_fields,
+                to_entity, lateral_alias,
+                standard_where,
+                lateral_alias, to_field, from_entity, from_field,
+                to_alias
+            );
+        }
         format!(
             "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
             selected_fields,
