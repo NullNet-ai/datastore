@@ -5,6 +5,7 @@ use crate::models::crdt_messages::CrdtMessage;
 
 #[derive(Deserialize)]
 #[serde(transparent)]
+#[allow(warnings)]
 pub struct CreateRequestBody {
     pub record: Value,
 }

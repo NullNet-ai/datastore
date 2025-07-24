@@ -21,7 +21,7 @@ pub struct WebSocketSession {
     // Client ID if authenticated
     client_id: Option<String>,
 }
-
+#[allow(warnings)]
 impl WebSocketSession {
     pub fn new() -> Self {
         Self {
@@ -157,6 +157,7 @@ fn remove_client(client_id: &str) {
 }
 
 // Send a notification to a specific client
+#[allow(warnings)]
 pub fn send_notification_to_client(client_id: &str, notification: serde_json::Value) {
     let clients = CLIENTS.lock().unwrap();
     if let Some(addr) = clients.get(client_id) {
@@ -173,12 +174,14 @@ pub fn broadcast_notification(notification: serde_json::Value) {
 }
 
 // Handler for WebSocket connections
+#[allow(warnings)]
 pub async fn ws_index(req: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
     log::info!("WebSocket connection request");
     ws::start(WebSocketSession::new(), &req, stream)
 }
 
 // Helper function to send a notice
+#[allow(warnings)]
 pub fn send_notice(group_id: &str, client_id: &str) {
     let notice = serde_json::json!({
         "type": "notice",

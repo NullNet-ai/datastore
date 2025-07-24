@@ -167,14 +167,16 @@ pub struct SQLConstructor<T: QueryFilter> {
     request_body: T,
     table: String,
     organization_id: Option<String>,
+    is_root: bool,
 }
 
 impl<T: QueryFilter> SQLConstructor<T> {
-    pub fn new(request_body: T, table: String) -> Self {
+    pub fn new(request_body: T, table: String, is_root: bool) -> Self {
         Self {
             request_body,
             table,
             organization_id: None,
+            is_root,
         }
     }
     
@@ -317,6 +319,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
     fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
         let format = format_str.unwrap_or("mm/dd/YYYY");
         format!("Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')", table, field, format)
+    }
+    fn time_format_wrapper(field: &str, timezone: Option<&str>) -> String {
+        let timezone_query = format!(" AT TIME ZONE {} AT TIME ZONE '{}'", std::env::var("TZ").unwrap_or("UTC".to_string()), timezone.unwrap_or("UTC"));
+        format!("({} {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
@@ -473,7 +479,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         }
                     });
                 }
-                
+                // TODO: root get it from request params
+                // TODO: remove organization contraints
                 let selection = format!(
                     "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE (\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {}) AND {}), '[]') AS \"{}\"",
                     field_pairs.join(", "),
@@ -541,6 +548,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     /// Constructs the standard WHERE clause pattern used across queries
     fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
+        // For root access, only check tombstone
+        if self.is_root {
+            return Ok(format!("({}.tombstone = 0)", table_alias));
+        }
+
+        // For non-root access, check organization constraints
         let organization_id = match &self.organization_id {
             Some(id) => format!("'{}'", id),
             None => return Err("Organization ID is required".to_string()),
