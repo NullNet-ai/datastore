@@ -115,10 +115,10 @@ where
                         let auth_data = Auth {
                             organization_id: claims.account.organization_id.clone(),
                             responsible_account: claims.account.account_organization_id.clone(),
-                            sensitivity_level: claims.sensitivity_level,
-                            role_name: claims.role_name.clone(),
+                            sensitivity_level: claims.sensitivity_level.unwrap_or(1000),
+                            role_name: claims.role_name.clone().unwrap_or_default(),
                             account_organization_id: claims.account.organization_id.clone(),
-                            role_id: claims.account.role_id.clone(),
+                            role_id: claims.account.role_id.clone().unwrap_or_default(),
                             is_root_account: claims.account.is_root_account,
                             account_id: claims.account.account_id.clone(),
                         };
@@ -159,7 +159,7 @@ where
                                 url,
                             });
 
-                            updated_session.user.role_id = claims.account.role_id.clone();
+                            updated_session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
                             updated_session.user.is_root_user = claims.account.is_root_account;
                             updated_session.user.account_id = claims.account.account_id.clone();
 
@@ -276,10 +276,10 @@ impl Interceptor for GrpcAuthInterceptor {
                     let auth_data = Auth {
                         organization_id: claims.account.organization_id.clone(),
                         responsible_account: claims.account.account_organization_id.clone(),
-                        sensitivity_level: claims.sensitivity_level,
-                        role_name: claims.role_name.clone(),
+                        sensitivity_level: claims.sensitivity_level.unwrap_or(1000),
+                        role_name: claims.role_name.clone().unwrap_or_default(),
                         account_organization_id: claims.account.organization_id.clone(),
-                        role_id: claims.account.role_id.clone(),
+                        role_id: claims.account.role_id.clone().unwrap_or_default(),
                         is_root_account: claims.account.is_root_account,
                         account_id: claims.account.account_id.clone(),
                     };

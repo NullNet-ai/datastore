@@ -86,7 +86,7 @@ impl StreamQueueService {
         Ok(count > 0)
     }
 
-
+    #[allow(warnings)]
     fn normalize_json_numbers(&self, value: Value) -> Value {
         match value {
             Value::Object(mut map) => {

@@ -6,3 +6,4 @@
 - [ ] change uuid to ULID
 - [ ] delete the session, option for deleting the sessions
 - [ ] instead of deleting the session, set the session to expired, instead of active
+- [ ] Revisit the default sensitivity level of 1000 in auth/structs.rs Claims struct

@@ -107,13 +107,24 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             println!("Failed to initialize global organization: {}", e);
         } else {
             log::info!("Global organization initialized successfully");
-        };
-
-        // Second initialization with ROOT_ACCOUNT_CONFIG
-        if let Err(e) = initialize(EInitializer::SYSTEM_DEVICE_CONFIG, None).await {
-            println!("Failed to initialize root account: {}", e);
-        } else {
-            log::info!("Root account initialized successfully");
+            
+            // Initialize root account after global organization is successfully created
+            let root_params = Some(crate::initializers::structs::InitializerParams {
+                entity: "account_organizations".to_string(),
+                ..Default::default()
+            });
+            if let Err(e) = initialize(EInitializer::ROOT_ACCOUNT_CONFIG, root_params).await {
+                println!("Failed to initialize root account: {}", e);
+            } else {
+                log::info!("Root account initialized successfully");
+            };
+            
+            // Initialize system device after root account
+            if let Err(e) = initialize(EInitializer::SYSTEM_DEVICE_CONFIG, None).await {
+                println!("Failed to initialize system device: {}", e);
+            } else {
+                log::info!("System device initialized successfully");
+            };
         };
     }
 

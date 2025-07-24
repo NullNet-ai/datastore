@@ -27,7 +27,7 @@ impl From<BlockingError> for ApiError {
         }
     }
 }
-
+#[allow(warnings)]
 impl ApiError {
     fn new(status: http::StatusCode, message: impl Into<String>) -> Self {
         Self {
@@ -199,7 +199,7 @@ pub async fn get_chunk(
         }
     }
 }
-
+#[allow(warnings)]
 pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
     log::debug!(
         "Received sync request: {}",
@@ -223,7 +223,7 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
         req_messages.len()
     );
     let mut conn = db::db::get_connection();
-    let result_trie: Result<MerkleTree, DieselError> = conn.transaction(|mut tx| {
+    let result_trie: Result<MerkleTree, DieselError> = conn.transaction(|tx| {
         Ok(crdt_service::add_messages(
             tx,
             req_group_id.clone(),

@@ -325,6 +325,22 @@ async fn main() -> std::io::Result<()> {
                     .route("/logout", web::post().to(OrganizationsController::logout)),
             )
             .service(
+                web::scope("/api/store/root")
+                    .wrap(ShutdownGuard)
+                    .wrap(Authentication)
+                    .wrap(SessionMiddleware)
+                    .route("/aggregate", web::post().to(root_aggregation_filter))
+                    .route("/{table}", web::post().to(root_create_record))
+                    .route("/upsert/{table}", web::post().to(root_upsert))
+                    .route("/batch/{table}", web::patch().to(root_batch_update_records))
+                    .route("/batch/{table}", web::delete().to(root_batch_delete_records))
+                    .route("/{table}/filter", web::post().to(root_get_by_filter))
+                    .route("/{table}/{id}", web::get().to(root_get_by_id))
+                    .route("/{table}/{id}", web::patch().to(root_update_record))
+                    .route("/{table}/{id}", web::delete().to(root_delete_record))
+                    .route("/batch/{table}", web::post().to(root_batch_insert_records)),
+            )
+            .service(
                 web::scope("/api/store")
                     .wrap(ShutdownGuard)
                     .wrap(Authentication)
@@ -339,22 +355,6 @@ async fn main() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records)),
-            )
-            .service(
-                web::scope("/api/store/{type}")
-                    .wrap(ShutdownGuard)
-                    .wrap(Authentication)
-                    .wrap(SessionMiddleware)
-                    .route("/aggregate", web::post().to(root_aggregation_filter))
-                    .route("/{table}", web::post().to(root_create_record))
-                    .route("/upsert/{table}", web::post().to(root_upsert))
-                    .route("/batch/{table}", web::patch().to(root_batch_update_records))
-                    .route("/batch/{table}", web::delete().to(root_batch_delete_records))
-                    .route("/{table}/filter", web::post().to(root_get_by_filter))
-                    .route("/{table}/{id}", web::get().to(root_get_by_id))
-                    .route("/{table}/{id}", web::patch().to(root_update_record))
-                    .route("/{table}/{id}", web::delete().to(root_delete_record))
-                    .route("/batch/{table}", web::post().to(root_batch_insert_records)),
             )
             .service(
                 web::scope("/api/listener")

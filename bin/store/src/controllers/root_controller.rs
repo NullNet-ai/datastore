@@ -1,11 +1,8 @@
 use actix_web::{HttpRequest, HttpMessage};
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
-    // Extract the 'type' parameter from the URL path using Actix Web's match_info
-    let controller_type: Option<String> = req
-        .match_info()
-        .get("type")
-        .map(|s| s.to_string());
+    // Since we're using /api/store/root, hardcode the type as 'root'
+    let controller_type: Option<String> = Some("root".to_string());
     req.extensions_mut().insert(controller_type);
     req
 }
@@ -69,7 +66,7 @@ create_root_wrapper!(root_batch_delete_records => batch_delete_records,
 
 create_root_wrapper!(root_get_by_filter => get_by_filter,
     auth: HttpRequest,
-    path_params: actix_web::web::Path<String>,
+    table: actix_web::web::Path<String>,
     request_body: actix_web::web::Json<crate::structs::structs::GetByFilter>
 );
 

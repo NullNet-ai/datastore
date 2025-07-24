@@ -228,7 +228,7 @@ pub async fn root_auth(
             'account_status', ao.account_organization_status,
             'role_id', ao.role_id,
             'role_name', ur.role,
-            'sensitivity_level', ur.level
+            'sensitivity_level', ur.sensitivity_level
         ) as json_result
         FROM account_organizations ao
         LEFT JOIN accounts a ON a.id = ao.account_id
@@ -275,11 +275,7 @@ pub async fn root_auth(
         }
         Err(diesel::result::Error::NotFound) => {
             // Return an empty JSON object if no results found
-            if let Some(debug) = std::env::var("DEBUG").ok() {
-                if debug == "true" {
                     log::error!("Root account not found");
-                }
-            }
             json!({})
         }
         Err(e) => {
