@@ -381,6 +381,148 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
 
     // Generate batch operations for multiple records - only once
 
+    // Add aggregation filter enums and messages
+    proto.push_str("// Enum for aggregation types\n");
+    proto.push_str("enum AggregationType {\n");
+    proto.push_str("  SUM = 0;\n");
+    proto.push_str("  AVG = 1;\n");
+    proto.push_str("  COUNT = 2;\n");
+    proto.push_str("  MIN = 3;\n");
+    proto.push_str("  MAX = 4;\n");
+    proto.push_str("  STDDEV = 5;\n");
+    proto.push_str("  VARIANCE = 6;\n");
+    proto.push_str("  ARRAY_AGG = 7;\n");
+    proto.push_str("}\n\n");
+
+    // Enum for filter operators
+    proto.push_str("// Enum for filter operators\n");
+    proto.push_str("enum FilterOperator {\n");
+    proto.push_str("  EQUAL = 0;\n");
+    proto.push_str("  NOT_EQUAL = 1;\n");
+    proto.push_str("  GREATER_THAN = 2;\n");
+    proto.push_str("  GREATER_THAN_OR_EQUAL = 3;\n");
+    proto.push_str("  LESS_THAN = 4;\n");
+    proto.push_str("  LESS_THAN_OR_EQUAL = 5;\n");
+    proto.push_str("  IS_NULL = 6;\n");
+    proto.push_str("  IS_NOT_NULL = 7;\n");
+    proto.push_str("  CONTAINS = 8;\n");
+    proto.push_str("  NOT_CONTAINS = 9;\n");
+    proto.push_str("  LIKE = 10;\n");
+    proto.push_str("  IS_BETWEEN = 11;\n");
+    proto.push_str("  IS_NOT_BETWEEN = 12;\n");
+    proto.push_str("  IS_EMPTY = 13;\n");
+    proto.push_str("  IS_NOT_EMPTY = 14;\n");
+    proto.push_str("  HAS_NO_VALUE = 15;\n");
+    proto.push_str("}\n\n");
+
+    // Enum for logical operators
+    proto.push_str("// Enum for logical operators\n");
+    proto.push_str("enum LogicalOperator {\n");
+    proto.push_str("  AND = 0;\n");
+    proto.push_str("  OR = 1;\n");
+    proto.push_str("}\n\n");
+
+    // Enum for match patterns
+    proto.push_str("// Enum for match patterns\n");
+    proto.push_str("enum MatchPattern {\n");
+    proto.push_str("  EXACT = 0;\n");
+    proto.push_str("  PREFIX = 1;\n");
+    proto.push_str("  SUFFIX = 2;\n");
+    proto.push_str("  CONTAINS_PATTERN = 3;\n");
+    proto.push_str("  CUSTOM = 4;\n");
+    proto.push_str("}\n\n");
+
+    // Individual aggregation definition
+    proto.push_str("// Individual aggregation definition\n");
+    proto.push_str("message Aggregation {\n");
+    proto.push_str("  AggregationType aggregation = 1;\n");
+    proto.push_str("  string aggregate_on = 2;\n");
+    proto.push_str("  string bucket_name = 3;\n");
+    proto.push_str("}\n\n");
+
+    // Order specification for aggregation results
+    proto.push_str("// Order specification for aggregation results\n");
+    proto.push_str("message AggregationOrder {\n");
+    proto.push_str("  string order_by = 1;\n");
+    proto.push_str("  string order_direction = 2;\n");
+    proto.push_str("}\n\n");
+
+    // Relation endpoint for joins
+    proto.push_str("// Relation endpoint for joins\n");
+    proto.push_str("message RelationEndpoint {\n");
+    proto.push_str("  string entity = 1;\n");
+    proto.push_str("  string field = 2;\n");
+    proto.push_str("  optional string alias = 3;\n");
+    proto.push_str("  optional string order_direction = 4;\n");
+    proto.push_str("  optional string order_by = 5;\n");
+    proto.push_str("  optional int32 limit = 6;\n");
+    proto.push_str("  optional int32 offset = 7;\n");
+    proto.push_str("}\n\n");
+
+    // Field relation for joins
+    proto.push_str("// Field relation for joins\n");
+    proto.push_str("message FieldRelation {\n");
+    proto.push_str("  RelationEndpoint to = 1;\n");
+    proto.push_str("  RelationEndpoint from = 2;\n");
+    proto.push_str("}\n\n");
+
+    // Join definition
+    proto.push_str("// Join definition\n");
+    proto.push_str("message Join {\n");
+    proto.push_str("  string type = 1;  // \"left\", \"right\", \"inner\", etc.\n");
+    proto.push_str("  FieldRelation field_relation = 2;\n");
+    proto.push_str("  optional bool nested = 3;\n");
+    proto.push_str("}\n\n");
+
+    // Filter criteria (can be a criteria or logical operator)
+    proto.push_str("// Filter criteria (can be a criteria or logical operator)\n");
+    proto.push_str("message FilterCriteria {\n");
+    proto.push_str("  oneof filter_type {\n");
+    proto.push_str("    CriteriaFilter criteria = 1;\n");
+    proto.push_str("    LogicalOperatorFilter logical_operator = 2;\n");
+    proto.push_str("  }\n");
+    proto.push_str("}\n\n");
+
+    // Actual filter criteria
+    proto.push_str("// Actual filter criteria\n");
+    proto.push_str("message CriteriaFilter {\n");
+    proto.push_str("  string field = 1;\n");
+    proto.push_str("  string entity = 2;\n");
+    proto.push_str("  FilterOperator operator = 3;\n");
+    proto.push_str("  repeated string values = 4;  // JSON values as strings\n");
+    proto.push_str("  optional bool case_sensitive = 5;\n");
+    proto.push_str("  optional string parse_as = 6;\n");
+    proto.push_str("  optional MatchPattern match_pattern = 7;\n");
+    proto.push_str("}\n\n");
+
+    // Logical operator filter
+    proto.push_str("// Logical operator filter\n");
+    proto.push_str("message LogicalOperatorFilter {\n");
+    proto.push_str("  LogicalOperator operator = 1;\n");
+    proto.push_str("}\n\n");
+
+    // Main aggregation filter request
+    proto.push_str("// Main aggregation filter request\n");
+    proto.push_str("message AggregationFilterRequest {\n");
+    proto.push_str("  string entity = 1;\n");
+    proto.push_str("  repeated Aggregation aggregations = 2;\n");
+    proto.push_str("  repeated FilterCriteria advance_filters = 3;\n");
+    proto.push_str("  repeated Join joins = 4;\n");
+    proto.push_str("  optional int32 limit = 5;\n");
+    proto.push_str("  optional string bucket_size = 6;\n");
+    proto.push_str("  optional string timezone = 7;\n");
+    proto.push_str("  optional AggregationOrder order = 8;\n");
+    proto.push_str("}\n\n");
+
+    // Aggregation filter response with flexible JSON structure
+    proto.push_str("// Aggregation filter response with flexible JSON structure\n");
+    proto.push_str("message AggregationFilterResponse {\n");
+    proto.push_str("  bool success = 1;\n");
+    proto.push_str("  string message = 2;\n");
+    proto.push_str("  int32 count = 3;\n");
+    proto.push_str("  string data = 4;  // Single JSON string containing the entire result array\n");
+    proto.push_str("}\n\n");
+
     // Generate unified service with full CRUD operations
     proto.push_str("// Store service definition with CRUD operations\n");
     proto.push_str("service StoreService {\n");
@@ -453,6 +595,10 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
             pascal_name, pascal_name, pascal_name
         ));
     }
+
+    // Add AggregationFilter RPC service
+    proto.push_str("  // Aggregation filter for advanced queries\n");
+    proto.push_str("  rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);\n\n");
 
     proto.push_str("}\n");
 
