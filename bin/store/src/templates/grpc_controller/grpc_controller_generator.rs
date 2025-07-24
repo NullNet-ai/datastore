@@ -58,12 +58,11 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     // Write imports
     writeln!(file, "use crate::db::create_connection;")?;
 
-    writeln!(file, "use actix_web::{{HttpResponse, Responder, web}};")?;
     writeln!(file, "use std::pin::Pin;")?;
     writeln!(file, "use std::net::SocketAddr;")?;
     writeln!(file, "use crate::table_enum::Table;")?;
     writeln!(file, "use crate::utils::utils::table_exists;")?;
-    writeln!(file, "use crate::sync::sync_service::{{insert, update}};")?;
+    writeln!(file, "use crate::sync::sync_service::update;")?;
     writeln!(file, "use crate::structs::structs::Auth;")?;
     writeln!(file, "use serde_json::Value;")?;
     writeln!(
@@ -84,13 +83,18 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "use crate::middlewares::auth_middleware::GrpcAuthInterceptor;"
     )?;
-    writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id}};")?;
+    writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id}};")?;
     writeln!(
         file,
         "use crate::generated::store::store_service_server::{{{}Server, {} }};",
         service_name, service_name
     )?;
-    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method}};")?;
+    writeln!(file, "use crate::providers::find::DynamicResult;")?;
+    writeln!(file, "use crate::providers::find::SQLConstructor;")?;
+    writeln!(file, "use crate::db;")?;
+    writeln!(file, "// Note: AggregationFilterWrapper has been moved to sql_constructor.rs")?;
+    writeln!(file, "// Note: Converter functions have been moved to grpc_struct_converter.rs")?;
+    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method, generate_aggregation_filter_method}};")?;
 
     // Import request and response types
     write!(file, "use crate::generated::store::{{")?;
@@ -152,7 +156,9 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
             table.name.to_case(Case::Pascal)
         )?;
     }
-    writeln!(file, "}};")?;
+    // Add AggregationFilterRequest and AggregationFilterResponse imports
+    writeln!(file, ", AggregationFilterRequest, AggregationFilterResponse")?;
+    writeln!(file, "}};");
 
     // Initialize method
     writeln!(file, "pub struct GrpcController {{}}\n")?;
@@ -215,31 +221,13 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         writeln!(file, "    generate_batch_delete_method!({});", table.name)?;
         writeln!(file, "    generate_upsert_method!({});", table.name)?;
     }
+    
+    // Add aggregation filter method
+    writeln!(file, "    // Aggregation filter method")?;
+    writeln!(file, "    generate_aggregation_filter_method!();")?;
+    
     writeln!(file, "}}")?;
 
-    // Add HTTP endpoints
-    writeln!(
-        file,
-        "\n// You can add HTTP endpoints to configure or check gRPC status"
-    )?;
-    writeln!(file, "pub async fn grpc_status() -> impl Responder {{")?;
-    writeln!(file, "    HttpResponse::Ok().json(serde_json::json!({{")?;
-    writeln!(file, "        \"status\": \"running\",")?;
-    writeln!(file, "        \"message\": \"gRPC server is operational\"")?;
-    writeln!(file, "    }}))")?;
-    writeln!(file, "}}")?;
-
-    // Add configuration function
-    writeln!(
-        file,
-        "\n// Function to configure and register HTTP routes related to gRPC"
-    )?;
-    writeln!(file, "pub fn configure(cfg: &mut web::ServiceConfig) {{")?;
-    writeln!(
-        file,
-        "    cfg.service(web::resource(\"/api/grpc/status\").route(web::get().to(grpc_status)));"
-    )?;
-    writeln!(file, "}}")?;
 
     println!("Successfully generated gRPC controller at: {}", output_path);
     Ok(())

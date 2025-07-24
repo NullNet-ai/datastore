@@ -5,6 +5,7 @@ syntax = "proto3";
 
 package store;
 
+
 // Standard timestamp representation
 message Timestamp {
   int64 seconds = 1; // Seconds since epoch
@@ -6051,8 +6052,145 @@ message UpsertContactEmailsResponse {
   repeated ContactEmails data = 4;
 }
 
+// Aggregation Filter Messages
+
+// Enum for aggregation types
+enum AggregationType {
+  SUM = 0;
+  AVG = 1;
+  COUNT = 2;
+  MIN = 3;
+  MAX = 4;
+  STDDEV = 5;
+  VARIANCE = 6;
+  ARRAY_AGG = 7;
+}
+
+// Enum for filter operators
+enum FilterOperator {
+  EQUAL = 0;
+  NOT_EQUAL = 1;
+  GREATER_THAN = 2;
+  GREATER_THAN_OR_EQUAL = 3;
+  LESS_THAN = 4;
+  LESS_THAN_OR_EQUAL = 5;
+  IS_NULL = 6;
+  IS_NOT_NULL = 7;
+  CONTAINS = 8;
+  NOT_CONTAINS = 9;
+  LIKE = 10;
+  IS_BETWEEN = 11;
+  IS_NOT_BETWEEN = 12;
+  IS_EMPTY = 13;
+  IS_NOT_EMPTY = 14;
+  HAS_NO_VALUE = 15;
+}
+
+// Enum for logical operators
+enum LogicalOperator {
+  AND = 0;
+  OR = 1;
+}
+
+// Enum for match patterns
+enum MatchPattern {
+  EXACT = 0;
+  PREFIX = 1;
+  SUFFIX = 2;
+  CONTAINS_PATTERN = 3;
+  CUSTOM = 4;
+}
+
+// Individual aggregation definition
+message Aggregation {
+  AggregationType aggregation = 1;
+  string aggregate_on = 2;
+  string bucket_name = 3;
+}
+
+// Order specification for aggregation results
+message AggregationOrder {
+  string order_by = 1;
+  string order_direction = 2;
+}
+
+// Relation endpoint for joins
+message RelationEndpoint {
+  string entity = 1;
+  string field = 2;
+  optional string alias = 3;
+  optional string order_direction = 4;
+  optional string order_by = 5;
+  optional int32 limit = 6;
+  optional int32 offset = 7;
+}
+
+// Field relation for joins
+message FieldRelation {
+  RelationEndpoint to = 1;
+  RelationEndpoint from = 2;
+}
+
+// Join definition
+message Join {
+  string type = 1;  // "left", "right", "inner", etc.
+  FieldRelation field_relation = 2;
+  optional bool nested = 3;
+}
+
+// Filter criteria (can be a criteria or logical operator)
+message FilterCriteria {
+  oneof filter_type {
+    CriteriaFilter criteria = 1;
+    LogicalOperatorFilter logical_operator = 2;
+  }
+}
+
+// Actual filter criteria
+message CriteriaFilter {
+  string field = 1;
+  string entity = 2;
+  FilterOperator operator = 3;
+  repeated string values = 4;  // JSON values as strings
+  optional bool case_sensitive = 5;
+  optional string parse_as = 6;
+  optional MatchPattern match_pattern = 7;
+}
+
+// Logical operator filter
+message LogicalOperatorFilter {
+  LogicalOperator operator = 1;
+}
+
+// Main aggregation filter request
+message AggregationFilterRequest {
+  string entity = 1;
+  repeated Aggregation aggregations = 2;
+  repeated FilterCriteria advance_filters = 3;
+  repeated Join joins = 4;
+  optional int32 limit = 5;
+  optional string bucket_size = 6;
+  optional string timezone = 7;
+  optional AggregationOrder order = 8;
+}
+
+// Aggregation filter response
+// Aggregation filter response with flexible JSON structure
+message AggregationFilterResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  string data = 4;  // Single JSON string containing the entire result array
+}
+
+// ... existing code ...
+
 // Store service definition with CRUD operations
 service StoreService {
+
+   // Aggregation filter for any entity
+  rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);
+
   // Create a new ExternalContacts
   rpc CreateExternalContacts(CreateExternalContactsRequest) returns (CreateExternalContactsResponse);
 
