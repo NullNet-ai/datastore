@@ -32,6 +32,7 @@ pub trait QueryFilter {
         &EMPTY
     }
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> { None }
+    #[allow(warnings)]
     fn get_distinct_by(&self) -> Option<&str> { None }
     
     // Aggregation-specific methods with default implementations
@@ -301,10 +302,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // TODO: apply concantenated fields
         let base_field = if field.contains("_date") {
             Self::date_format_wrapper(table, field, Some(format_str))
+        } else if field.ends_with("_time") {
+            Self::time_format_wrapper(&format!("\"{}\".\"{}\"", table, field), None)
         } else {
-            format!("\"{}\".\"{}\"" , table, field)
+            format!("\"{}\".\"{}\"", table, field)
         };
-        
         // Apply parse_as type casting if provided and not empty
         if let Some(cast_type) = parse_as {
             if !cast_type.is_empty() {
