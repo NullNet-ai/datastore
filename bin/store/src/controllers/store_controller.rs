@@ -717,13 +717,13 @@ pub async fn delete_record(
 
 pub async fn get_by_filter(
     auth: HttpRequest,
-    _pool: web::Data<db::AsyncDbPool>,
-    _path_params: web::Path<String>,
+    path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
  
     let parameters = request_body.into_inner();
-    let table = _path_params.into_inner();
+    let table = path_params.into_inner();
+    let is_root = auth.extensions().get::<Auth>().map_or(false, |auth_data| auth_data.is_root_account);
     
     // Extract organization_id from auth context
     let extensions = auth.extensions();
@@ -752,7 +752,7 @@ pub async fn get_by_filter(
     }
     
     // Create SQLConstructor with organization_id if available
-    let mut sql_constructor = SQLConstructor::new(parameters, table.clone());
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
@@ -813,7 +813,7 @@ pub async fn aggregation_filter(
 ) -> impl Responder {
     let parameters = request_body.into_inner();
     let table = parameters.entity.clone();
-    
+    let is_root = auth.extensions().get::<Auth>().map_or(false, |auth_data| auth_data.is_root_account);
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -825,7 +825,7 @@ pub async fn aggregation_filter(
     };
     
     // Create SQLConstructor with organization_id if available
-    let mut sql_constructor = SQLConstructor::new(parameters, table.clone());
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }

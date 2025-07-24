@@ -2481,8 +2481,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613283563cd90e1dfc3518d548caee47e0e725455ed619881f5cf21f36de4b48"
 dependencies = [
  "bytes",
+ "chrono",
  "fallible-iterator",
  "postgres-protocol",
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]
@@ -3310,7 +3314,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "store"
-version = "0.1.6"
+version = "0.1.9"
 dependencies = [
  "actix",
  "actix-web",
@@ -3318,6 +3322,7 @@ dependencies = [
  "argon2",
  "async-stream",
  "axum",
+ "base64 0.22.1",
  "bytes",
  "cargo-make",
  "chrono",

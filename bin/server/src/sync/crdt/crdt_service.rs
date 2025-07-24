@@ -91,7 +91,7 @@ pub fn add_messages(
 }
 
 pub fn get_merkle(
-    mut tx: &mut DbPooledConnection,
+    tx: &mut DbPooledConnection,
     group_id_param: String,
 ) -> Result<MerkleTree, diesel::result::Error> {
     let rows = crdt_messages_merkles
