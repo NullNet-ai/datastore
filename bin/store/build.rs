@@ -7,8 +7,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .out_dir("src/generated")
         .type_attribute(
             ".",
-            "#[derive(serde::Serialize, serde::Deserialize)] #[serde(default)]",
-        ) // Custom output directory
+            "#[derive(serde::Serialize, serde::Deserialize)]",
+        )
+        .message_attribute(
+            ".",
+            "#[serde(default)]",
+        ) // Apply serde(default) only to message types (structs)
         .compile_protos(&["src/proto/store.proto"], &["src"])?;
 
     println!("cargo:warning=Successfully compiled proto files");

@@ -11567,6 +11567,338 @@ pub struct UpsertContactEmailsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<ContactEmails>,
 }
+/// Individual aggregation definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Aggregation {
+    #[prost(enumeration = "AggregationType", tag = "1")]
+    pub aggregation: i32,
+    #[prost(string, tag = "2")]
+    pub aggregate_on: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub bucket_name: ::prost::alloc::string::String,
+}
+/// Order specification for aggregation results
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AggregationOrder {
+    #[prost(string, tag = "1")]
+    pub order_by: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub order_direction: ::prost::alloc::string::String,
+}
+/// Relation endpoint for joins
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RelationEndpoint {
+    #[prost(string, tag = "1")]
+    pub entity: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub field: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub alias: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "4")]
+    pub order_direction: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "5")]
+    pub order_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "6")]
+    pub limit: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "7")]
+    pub offset: ::core::option::Option<i32>,
+}
+/// Field relation for joins
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FieldRelation {
+    #[prost(message, optional, tag = "1")]
+    pub to: ::core::option::Option<RelationEndpoint>,
+    #[prost(message, optional, tag = "2")]
+    pub from: ::core::option::Option<RelationEndpoint>,
+}
+/// Join definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Join {
+    /// "left", "right", "inner", etc.
+    #[prost(string, tag = "1")]
+    pub r#type: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub field_relation: ::core::option::Option<FieldRelation>,
+    #[prost(bool, optional, tag = "3")]
+    pub nested: ::core::option::Option<bool>,
+}
+/// Filter criteria (can be a criteria or logical operator)
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FilterCriteria {
+    #[prost(oneof = "filter_criteria::FilterType", tags = "1, 2")]
+    pub filter_type: ::core::option::Option<filter_criteria::FilterType>,
+}
+/// Nested message and enum types in `FilterCriteria`.
+pub mod filter_criteria {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum FilterType {
+        #[prost(message, tag = "1")]
+        Criteria(super::CriteriaFilter),
+        #[prost(message, tag = "2")]
+        LogicalOperator(super::LogicalOperatorFilter),
+    }
+}
+/// Actual filter criteria
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CriteriaFilter {
+    #[prost(string, tag = "1")]
+    pub field: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub entity: ::prost::alloc::string::String,
+    #[prost(enumeration = "FilterOperator", tag = "3")]
+    pub operator: i32,
+    /// JSON values as strings
+    #[prost(string, repeated, tag = "4")]
+    pub values: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "5")]
+    pub case_sensitive: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "6")]
+    pub parse_as: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "MatchPattern", optional, tag = "7")]
+    pub match_pattern: ::core::option::Option<i32>,
+}
+/// Logical operator filter
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct LogicalOperatorFilter {
+    #[prost(enumeration = "LogicalOperator", tag = "1")]
+    pub operator: i32,
+}
+/// Main aggregation filter request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AggregationFilterRequest {
+    #[prost(string, tag = "1")]
+    pub entity: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "2")]
+    pub aggregations: ::prost::alloc::vec::Vec<Aggregation>,
+    #[prost(message, repeated, tag = "3")]
+    pub advance_filters: ::prost::alloc::vec::Vec<FilterCriteria>,
+    #[prost(message, repeated, tag = "4")]
+    pub joins: ::prost::alloc::vec::Vec<Join>,
+    #[prost(int32, optional, tag = "5")]
+    pub limit: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "6")]
+    pub bucket_size: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub timezone: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "8")]
+    pub order: ::core::option::Option<AggregationOrder>,
+}
+/// Aggregation filter response
+/// Aggregation filter response with flexible JSON structure
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AggregationFilterResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    /// Single JSON string containing the entire result array
+    #[prost(string, tag = "4")]
+    pub data: ::prost::alloc::string::String,
+}
+/// Enum for aggregation types
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum AggregationType {
+    Sum = 0,
+    Avg = 1,
+    Count = 2,
+    Min = 3,
+    Max = 4,
+    Stddev = 5,
+    Variance = 6,
+    ArrayAgg = 7,
+}
+impl AggregationType {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Sum => "SUM",
+            Self::Avg => "AVG",
+            Self::Count => "COUNT",
+            Self::Min => "MIN",
+            Self::Max => "MAX",
+            Self::Stddev => "STDDEV",
+            Self::Variance => "VARIANCE",
+            Self::ArrayAgg => "ARRAY_AGG",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SUM" => Some(Self::Sum),
+            "AVG" => Some(Self::Avg),
+            "COUNT" => Some(Self::Count),
+            "MIN" => Some(Self::Min),
+            "MAX" => Some(Self::Max),
+            "STDDEV" => Some(Self::Stddev),
+            "VARIANCE" => Some(Self::Variance),
+            "ARRAY_AGG" => Some(Self::ArrayAgg),
+            _ => None,
+        }
+    }
+}
+/// Enum for filter operators
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum FilterOperator {
+    Equal = 0,
+    NotEqual = 1,
+    GreaterThan = 2,
+    GreaterThanOrEqual = 3,
+    LessThan = 4,
+    LessThanOrEqual = 5,
+    IsNull = 6,
+    IsNotNull = 7,
+    Contains = 8,
+    NotContains = 9,
+    Like = 10,
+    IsBetween = 11,
+    IsNotBetween = 12,
+    IsEmpty = 13,
+    IsNotEmpty = 14,
+    HasNoValue = 15,
+}
+impl FilterOperator {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Equal => "EQUAL",
+            Self::NotEqual => "NOT_EQUAL",
+            Self::GreaterThan => "GREATER_THAN",
+            Self::GreaterThanOrEqual => "GREATER_THAN_OR_EQUAL",
+            Self::LessThan => "LESS_THAN",
+            Self::LessThanOrEqual => "LESS_THAN_OR_EQUAL",
+            Self::IsNull => "IS_NULL",
+            Self::IsNotNull => "IS_NOT_NULL",
+            Self::Contains => "CONTAINS",
+            Self::NotContains => "NOT_CONTAINS",
+            Self::Like => "LIKE",
+            Self::IsBetween => "IS_BETWEEN",
+            Self::IsNotBetween => "IS_NOT_BETWEEN",
+            Self::IsEmpty => "IS_EMPTY",
+            Self::IsNotEmpty => "IS_NOT_EMPTY",
+            Self::HasNoValue => "HAS_NO_VALUE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "EQUAL" => Some(Self::Equal),
+            "NOT_EQUAL" => Some(Self::NotEqual),
+            "GREATER_THAN" => Some(Self::GreaterThan),
+            "GREATER_THAN_OR_EQUAL" => Some(Self::GreaterThanOrEqual),
+            "LESS_THAN" => Some(Self::LessThan),
+            "LESS_THAN_OR_EQUAL" => Some(Self::LessThanOrEqual),
+            "IS_NULL" => Some(Self::IsNull),
+            "IS_NOT_NULL" => Some(Self::IsNotNull),
+            "CONTAINS" => Some(Self::Contains),
+            "NOT_CONTAINS" => Some(Self::NotContains),
+            "LIKE" => Some(Self::Like),
+            "IS_BETWEEN" => Some(Self::IsBetween),
+            "IS_NOT_BETWEEN" => Some(Self::IsNotBetween),
+            "IS_EMPTY" => Some(Self::IsEmpty),
+            "IS_NOT_EMPTY" => Some(Self::IsNotEmpty),
+            "HAS_NO_VALUE" => Some(Self::HasNoValue),
+            _ => None,
+        }
+    }
+}
+/// Enum for logical operators
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum LogicalOperator {
+    And = 0,
+    Or = 1,
+}
+impl LogicalOperator {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::And => "AND",
+            Self::Or => "OR",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "AND" => Some(Self::And),
+            "OR" => Some(Self::Or),
+            _ => None,
+        }
+    }
+}
+/// Enum for match patterns
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum MatchPattern {
+    Exact = 0,
+    Prefix = 1,
+    Suffix = 2,
+    ContainsPattern = 3,
+    Custom = 4,
+}
+impl MatchPattern {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Exact => "EXACT",
+            Self::Prefix => "PREFIX",
+            Self::Suffix => "SUFFIX",
+            Self::ContainsPattern => "CONTAINS_PATTERN",
+            Self::Custom => "CUSTOM",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "EXACT" => Some(Self::Exact),
+            "PREFIX" => Some(Self::Prefix),
+            "SUFFIX" => Some(Self::Suffix),
+            "CONTAINS_PATTERN" => Some(Self::ContainsPattern),
+            "CUSTOM" => Some(Self::Custom),
+            _ => None,
+        }
+    }
+}
 /// Generated server implementations.
 pub mod store_service_server {
     #![allow(
@@ -11580,6 +11912,14 @@ pub mod store_service_server {
     /// Generated trait containing gRPC methods that should be implemented for use with StoreServiceServer.
     #[async_trait]
     pub trait StoreService: std::marker::Send + std::marker::Sync + 'static {
+        /// Aggregation filter for any entity
+        async fn aggregation_filter(
+            &self,
+            request: tonic::Request<super::AggregationFilterRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AggregationFilterResponse>,
+            tonic::Status,
+        >;
         /// Create a new ExternalContacts
         async fn create_external_contacts(
             &self,
@@ -14102,6 +14442,52 @@ pub mod store_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
+                "/store.StoreService/AggregationFilter" => {
+                    #[allow(non_camel_case_types)]
+                    struct AggregationFilterSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::AggregationFilterRequest>
+                    for AggregationFilterSvc<T> {
+                        type Response = super::AggregationFilterResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AggregationFilterRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::aggregation_filter(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = AggregationFilterSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/store.StoreService/CreateExternalContacts" => {
                     #[allow(non_camel_case_types)]
                     struct CreateExternalContactsSvc<T: StoreService>(pub Arc<T>);

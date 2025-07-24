@@ -71,6 +71,84 @@ macro_rules! generate_create_method {
 }
 
 #[macro_export]
+macro_rules! generate_aggregation_filter_method {
+    () => {
+        paste::paste! {
+            fn aggregation_filter<'life0, 'async_trait>(
+                &'life0 self,
+                request: Request<AggregationFilterRequest>,
+            ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<AggregationFilterResponse>, Status>> + Send + 'async_trait>>
+            where
+                'life0: 'async_trait,
+                Self: 'async_trait,
+            {
+                Box::pin(async move {
+                    let auth_data = match request.extensions().get::<Auth>() {
+                        Some(data) => data.clone(),
+                        None => {
+                            return Err(tonic::Status::internal(
+                                "Authentication information not available",
+                            ));
+                        }
+                    };
+
+                    let request = request.into_inner();
+                    let table = request.entity.clone();
+
+                    // Create SQLConstructor with organization_id if available
+                    let wrapper = crate::providers::find::sql_constructor::AggregationFilterWrapper::new(request);
+                    let mut sql_constructor = SQLConstructor::new(wrapper, table.clone());
+                    sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
+
+                    let query = match sql_constructor.construct_aggregation() {
+                        Ok(sql) => sql,
+                        Err(e) => {
+                            return Err(Status::invalid_argument(format!(
+                                "Invalid aggregation configuration: {}", e
+                            )));
+                        }
+                    };
+
+                    // Get a connection from the pool
+                    let mut conn = db::get_async_connection().await;
+
+                    // Wrap your original query with row_to_json
+                    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+
+                    let results = match diesel_async::RunQueryDsl::load::<DynamicResult>(diesel::dsl::sql_query(&final_query), &mut conn)
+                        .await
+                    {
+                        Ok(results) => results,
+                        Err(e) => {
+                            return Err(Status::internal(format!("Query execution error: {}", e)));
+                        }
+                    };
+
+                    // Extract JSON values and serialize as a single JSON string
+                    let data_values: Vec<serde_json::Value> = results
+                        .into_iter()
+                        .filter_map(|result| result.row_to_json)
+                        .collect();
+
+                    // Serialize the entire array as a single JSON string
+                    let data = serde_json::to_string(&data_values)
+                        .unwrap_or_else(|_| "[]".to_string());
+
+                    let response = AggregationFilterResponse {
+                        success: true,
+                        message: format!("Aggregation operation completed for table: {}", &table),
+                        count: data_values.len() as i32,
+                        data,
+                    };
+
+                    Ok(Response::new(response))
+                })
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! generate_update_method {
     ($table:ident, $table_singular:ident) => {
         paste::paste! {

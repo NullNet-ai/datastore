@@ -1,4 +1,4 @@
-use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, AggregationFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern, SortOption, ConcatenateField, AggregationOrder}};
+use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, AggregationFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern, SortOption, ConcatenateField, AggregationOrder, Aggregation}, structs::grpc_struct_converter::{convert_filter_criteria, convert_join, convert_aggregation, convert_aggregation_order}};
 use std::collections::HashMap;
 
 // Trait to define common interface for both GetByFilter and AggregationFilter
@@ -32,9 +32,7 @@ pub trait QueryFilter {
         &EMPTY
     }
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> { None }
-    fn get_distinct_by(&self) -> Option<&str> { None }
-    
-    // Aggregation-specific methods with default implementations
+
     fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] { &[] }
     fn get_bucket_size(&self) -> Option<&str> { None }
     fn get_timezone(&self) -> Option<&str> { None }
@@ -104,9 +102,6 @@ impl QueryFilter for GetByFilter {
         self.is_case_sensitive_sorting
     }
     
-    fn get_distinct_by(&self) -> Option<&str> {
-        self.distinct_by.as_deref()
-    }
 }
 
 // Implement QueryFilter for AggregationFilter
@@ -208,7 +203,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
-        dbg!(&sql);
         Ok(sql)
     }
 
@@ -286,7 +280,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
             sql.push_str(&format!(" LIMIT {}", self.request_body.get_limit()));
         }
         
-        dbg!(&sql);
         Ok(sql)
     }
 
@@ -1024,5 +1017,86 @@ impl<T: QueryFilter> SQLConstructor<T> {
         } else {
             String::from("LIMIT 10")
         }
+    }
+}
+
+// Wrapper struct for AggregationFilterRequest that holds converted data
+pub struct AggregationFilterWrapper {
+    pub request: crate::generated::store::AggregationFilterRequest,
+    pub converted_filters: Vec<FilterCriteria>,
+    pub converted_joins: Vec<Join>,
+    pub converted_aggregations: Vec<Aggregation>,
+    pub converted_order: Option<AggregationOrder>,
+}
+
+impl AggregationFilterWrapper {
+    pub fn new(request: crate::generated::store::AggregationFilterRequest) -> Self {
+        let converted_filters: Vec<_> = request.advance_filters.iter()
+            .filter_map(convert_filter_criteria)
+            .collect();
+            
+        let converted_joins: Vec<_> = request.joins.iter()
+            .filter_map(convert_join)
+            .collect();
+            
+        let converted_aggregations: Vec<_> = request.aggregations.iter()
+            .map(convert_aggregation)
+            .collect();
+            
+        let converted_order = request.order.as_ref().map(convert_aggregation_order);
+        
+        Self {
+            request,
+            converted_filters,
+            converted_joins,
+            converted_aggregations,
+            converted_order,
+        }
+    }
+}
+
+impl QueryFilter for AggregationFilterWrapper {
+    fn get_advance_filters(&self) -> &[FilterCriteria] {
+        &self.converted_filters
+    }
+    
+    fn get_joins(&self) -> &[Join] {
+        &self.converted_joins
+    }
+    
+    fn get_limit(&self) -> usize {
+        self.request.limit.unwrap_or(100) as usize
+    }
+    
+    fn get_date_format(&self) -> &str {
+        "mm/dd/YYYY"
+    }
+    
+    fn get_aggregations(&self) -> &[Aggregation] {
+        &self.converted_aggregations
+    }
+    
+    fn get_bucket_size(&self) -> Option<&str> {
+        self.request.bucket_size.as_deref()
+    }
+    
+    fn get_timezone(&self) -> Option<&str> {
+        self.request.timezone.as_deref()
+    }
+    
+    fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
+        self.converted_order.as_ref()
+    }
+    
+    fn get_entity(&self) -> Option<&str> {
+        Some(&self.request.entity)
+    }
+    
+    fn get_order_by(&self) -> &str {
+        self.request.order.as_ref().map(|o| o.order_by.as_str()).unwrap_or("id")
+    }
+    
+    fn get_order_direction(&self) -> &str {
+        self.request.order.as_ref().map(|o| o.order_direction.as_str()).unwrap_or("asc")
     }
 }

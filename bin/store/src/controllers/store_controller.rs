@@ -791,14 +791,10 @@ pub async fn get_by_filter(
             });
         }
     };
-    // Parse JSON strings to serde_json::Value
+    // Extract JSON values directly (no string parsing needed)
     let data: Vec<serde_json::Value> = results
         .into_iter()
-        .filter_map(|result| {
-            result
-                .row_to_json
-                .and_then(|json_str| serde_json::from_str(&json_str).ok())
-        })
+        .filter_map(|result| result.row_to_json)
         .collect();
 
     HttpResponse::Ok().json(ApiResponse {
@@ -811,7 +807,7 @@ pub async fn get_by_filter(
 
 //aggregation filter
 
-pub async fn get_by_aggregation_filter(
+pub async fn aggregation_filter(
     auth: HttpRequest,
     request_body: web::Json<AggregationFilter>,
 ) -> impl Responder {
@@ -827,25 +823,6 @@ pub async fn get_by_aggregation_filter(
             None
         }
     };
-    
-    // Basic validation for aggregation filter
-    if parameters.entity.is_empty() {
-        return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: "Entity (table name) is required".to_string(),
-            count: 0,
-            data: vec![],
-        });
-    }
-    
-    if parameters.aggregations.is_empty() {
-        return HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: "At least one aggregation is required".to_string(),
-            count: 0,
-            data: vec![],
-        });
-    }
     
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone());
@@ -886,14 +863,10 @@ pub async fn get_by_aggregation_filter(
         }
     };
     
-    // Parse JSON strings to serde_json::Value
+    // Extract JSON values directly (no string parsing needed)
     let data: Vec<serde_json::Value> = results
         .into_iter()
-        .filter_map(|result| {
-            result
-                .row_to_json
-                .and_then(|json_str| serde_json::from_str(&json_str).ok())
-        })
+        .filter_map(|result| result.row_to_json)
         .collect();
 
     HttpResponse::Ok().json(ApiResponse {
