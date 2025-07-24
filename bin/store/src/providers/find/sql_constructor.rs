@@ -448,73 +448,73 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
         
         // Iterate through each alias in pluck_object
-        for (alias, fields) in self.request_body.get_pluck_object() {
-            // Find the corresponding join to get table information
-            if let Some(join) = self.find_join_by_alias(alias) {
-                let target_table = &join.field_relation.to.entity;
-                let previous_join = self.request_body.get_joins().iter()
-                    .find(|j| j.field_relation.to.entity == join.field_relation.from.entity);
-                let join_condition = self.build_join_condition_for_alias(alias, join, previous_join);
-                
-                // Build JSONB_BUILD_OBJECT field pairs
-                let mut field_pairs: Vec<String> = fields.iter()
-                    .map(|field| format!("'{}', {}", field, Self::get_field(alias, field, self.request_body.get_date_format())))
-                    .collect();
+        for join in self.request_body.get_joins() {
+            if let Some(to_alias) = &join.field_relation.to.alias {
+                if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
+                    let target_table = &join.field_relation.to.entity;
+                    // Fixed: Look for a join whose target entity matches this join's source entity
+                    let previous_join = self.request_body.get_joins().iter()
+                        .find(|j| {
+                            // Find a join where the target entity/alias matches this join's from entity
+                            let target_matches = j.field_relation.to.entity == join.field_relation.from.entity;
+                            let alias_matches = j.field_relation.to.alias.as_deref() == Some(&join.field_relation.from.entity);
+                            target_matches || alias_matches
+                        });
+                    let join_condition = self.build_join_condition_for_alias(to_alias, join, previous_join);
+                    
+                    // Build JSONB_BUILD_OBJECT field pairs
+                    let mut field_pairs: Vec<String> = fields.iter()
+                        .map(|field| format!("'{}', {}", field, Self::get_field(to_alias, field, self.request_body.get_date_format())))
+                        .collect();
 
-                if !self.request_body.get_concatenate_fields().is_empty() {
-                    self.request_body.get_concatenate_fields().iter().for_each(|field| {
-                        // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
-                        if field.aliased_entity == *alias || field.entity == *alias {
-                            let table_name = if !field.aliased_entity.is_empty() {
-                             &field.aliased_entity
-                         } else {
-                             &field.entity
-                         };
-                            let concatenated_expression = field.fields.iter()
-                                  .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
-                                  .collect::<Vec<_>>()
-                                  .join(&format!(" || '{}' || ", field.separator));
-                            field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
-                        }
-                    });
+                    if !self.request_body.get_concatenate_fields().is_empty() {
+                        self.request_body.get_concatenate_fields().iter().for_each(|field| {
+                            // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
+                            if field.aliased_entity == *to_alias || field.entity == *to_alias {
+                                let table_name = if !field.aliased_entity.is_empty() {
+                                    &field.aliased_entity
+                                } else {
+                                    &field.entity
+                                };
+                                let concatenated_expression = field.fields.iter()
+                                    .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
+                                    .collect::<Vec<_>>()
+                                    .join(&format!(" || '{}' || ", field.separator));
+                                field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
+                            }
+                        });
+                    }
+
+                    let standard_where = match self.build_system_where_clause(to_alias) {
+                        Ok(clause) => clause,
+                        Err(_) => format!("({}.tombstone = 0)", to_alias)
+                    };
+
+                    let selection = format!(
+                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
+                        field_pairs.join(", "),
+                        target_table,
+                        to_alias,
+                        standard_where,
+                        join_condition,
+                        to_alias
+                    );
+                    
+                    join_selections.push(selection);
+                } else {
+                    // Handle case where no fields are specified for this alias
+                    join_selections.push(format!("\"{}\".\"id\"", to_alias));
                 }
-                // TODO: root get it from request params
-                // TODO: remove organization contraints
-                let standard_where = match self.build_system_where_clause(alias) {
-                    Ok(clause) => clause,
-                    Err(_) => format!("({}.tombstone = 0)", alias)
-                };
-                let selection = format!(
-                    "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
-                    field_pairs.join(", "),
-                    target_table,
-                    alias,
-                    standard_where,
-                    join_condition,
-                    alias
-                );
-                
-                join_selections.push(selection);
-            } else {
-                fields.iter().for_each(|field| {
-                    join_selections.push(format!("\"{}\".\"{}\"", alias, field));
-                });
             }
         }
         
         join_selections
     }
     
-    fn find_join_by_alias(&self, alias: &str) -> Option<&Join> {
-        self.request_body.get_joins().iter()
-            .find(|join| join.field_relation.to.alias.as_deref() == Some(alias))
-    }
-    
     fn build_join_condition_for_alias(&self, alias: &str, join: &Join, previous_join: Option<&Join>) -> String {
         let is_nested = join.nested;
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
-        
         if is_nested {
             if let Some(prev_join) = previous_join {
                 // Use the previous join's alias if available
@@ -525,10 +525,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .unwrap_or(&prev_join.field_relation.to.entity);
                 let prev_to_field = &prev_join.field_relation.to.field;
                 return format!("\"{}\".\"{}\" = \"{}\".\"{}\"", prev_from_alias, prev_from_field, prev_to_alias, prev_to_field);
-            } else {
-                // Fallback to the from entity if no previous join
-                let from_entity = &join.field_relation.from.entity;
-                return format!("\"{}\".\"{}\" = \"{}\".\"{}\"", from_entity, from_field, alias, to_field);
             }
         }
         format!("\"{}\".\"{}\" = \"{}\".\"{}\"" , self.table, from_field, alias, to_field)
