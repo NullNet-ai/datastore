@@ -300,7 +300,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
     fn get_field_with_parse_as(table: &str, field: &str, format_str: &str, parse_as: Option<&str>) -> String {
         // TODO: apply permissions
         // TODO: apply concantenated fields
-        let base_field = if field.contains("_date") {
+        let base_field = if field.ends_with("_date") {
             Self::date_format_wrapper(table, field, Some(format_str))
         } else if field.ends_with("_time") {
             Self::time_format_wrapper(&format!("\"{}\".\"{}\"", table, field), None)
