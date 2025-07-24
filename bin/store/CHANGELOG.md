@@ -5,6 +5,62 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.9
+
+### Author
+Kashan
+
+### Added
+- **gRPC Aggregation Filter System**: Complete gRPC implementation for aggregation filtering
+  - Added `AggregationFilter` RPC service definition in `proto_generator.rs`
+  - Implemented comprehensive protobuf message definitions for aggregation operations
+  - Added `generate_aggregation_filter_method!` macro for gRPC controller generation
+  - Created `grpc_struct_converter.rs` with conversion functions for protobuf to internal structs
+
+### Enhanced
+- **Protocol Buffer Definitions**: Extended proto generator with aggregation filter support
+  - Added `AggregationType` enum (SUM, AVG, COUNT, MIN, MAX, STDDEV, VARIANCE, ARRAY_AGG)
+  - Added `FilterOperator` enum with 16 different operators (EQUAL, NOT_EQUAL, GREATER_THAN, etc.)
+  - Added `LogicalOperator` enum (AND, OR) for complex filter combinations
+  - Added `MatchPattern` enum (EXACT, PREFIX, SUFFIX, CONTAINS_PATTERN, CUSTOM)
+  - Implemented `Aggregation`, `AggregationOrder`, `RelationEndpoint`, `FieldRelation` messages
+  - Added `Join`, `FilterCriteria`, `CriteriaFilter`, `LogicalOperatorFilter` messages
+  - Created `AggregationFilterRequest` and `AggregationFilterResponse` messages
+
+- **gRPC Controller Generator**: Automated generation of gRPC service implementations
+  - Enhanced `grpc_controller_generator.rs` with proper import statements
+  - Added automatic generation of aggregation filter methods
+  - Implemented macro-based code generation for consistent gRPC service patterns
+  - Fixed syntax errors and improved code generation reliability
+
+- **gRPC Macros System**: Comprehensive macro library for gRPC operations
+  - Created `generate_aggregation_filter_method!` macro for aggregation endpoint generation
+  - Enhanced existing CRUD macros with improved error handling
+  - Implemented authentication integration for all gRPC methods
+  - Added support for organization-based filtering in aggregation queries
+
+- **Type Conversion System**: Robust protobuf to internal struct conversion
+  - Implemented `convert_filter_criteria()` for FilterCriteria conversion
+  - Added `convert_join()` for Join operation conversion
+  - Created `convert_aggregation()` for Aggregation struct conversion
+  - Implemented `convert_aggregation_order()` for ordering conversion
+  - Added comprehensive enum mapping with fallback defaults
+
+### Technical Implementation
+- **Core Files**:
+  - `/src/templates/proto_generator.rs` - Extended with aggregation filter proto definitions
+  - `/src/templates/grpc_controller/grpc_controller_generator.rs` - Enhanced gRPC controller generation
+  - `/src/templates/grpc_controller/grpc_macros.rs` - New aggregation filter macro implementation
+  - `/src/structs/grpc_struct_converter.rs` - Complete protobuf conversion system
+  - `/proto/store.proto` - Updated with aggregation filter definitions
+
+- **gRPC Service**: `rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse)`
+- **Authentication**: JWT-based authentication with organization-based filtering
+- **Query Construction**: Integration with existing SQLConstructor for aggregation queries
+- **Response Format**: JSON-serialized aggregation results with flexible data structure
+
+---
+
 ## 0.1.8
 
 ### Author

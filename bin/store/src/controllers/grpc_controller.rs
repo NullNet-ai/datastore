@@ -1,10 +1,9 @@
 use crate::db::create_connection;
-use actix_web::{HttpResponse, Responder, web};
 use std::pin::Pin;
 use std::net::SocketAddr;
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
-use crate::sync::sync_service::{insert, update};
+use crate::sync::sync_service::update;
 use crate::structs::structs::Auth;
 use serde_json::Value;
 use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
@@ -12,7 +11,7 @@ use crate::middlewares::interceptor_chain::InterceptorChain;
 use crate::structs::structs::RequestBody;
 use tonic::{Request, Response, Status, transport::Server};
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
-use super::common_controller::{perform_batch_update, process_record_for_insert, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id};
+use super::common_controller::{perform_batch_update, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id};
 use crate::generated::store::store_service_server::{StoreServiceServer, StoreService };
 use crate::providers::find::DynamicResult;
 use crate::providers::find::SQLConstructor;
@@ -392,17 +391,4 @@ impl StoreService for GrpcController {
     generate_upsert_method!(contact_emails);
     // Aggregation filter method
     generate_aggregation_filter_method!();
-}
-
-// You can add HTTP endpoints to configure or check gRPC status
-pub async fn grpc_status() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
-        "status": "running",
-        "message": "gRPC server is operational"
-    }))
-}
-
-// Function to configure and register HTTP routes related to gRPC
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/api/grpc/status").route(web::get().to(grpc_status)));
 }
