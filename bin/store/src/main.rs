@@ -57,6 +57,11 @@ use controllers::store_controller::{
     batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
     get_by_filter, aggregation_filter, update_record, upsert,
 };
+use controllers::root_controller::{
+    root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
+    root_batch_update_records, root_create_record, root_delete_record, root_get_by_filter,
+    root_get_by_id, root_update_record, root_upsert,
+};
 use env_logger::Env;
 use std::process;
 use std::sync::Arc;
@@ -318,6 +323,22 @@ async fn main() -> std::io::Result<()> {
                     )
                     .route("/auth", web::post().to(OrganizationsController::auth))
                     .route("/logout", web::post().to(OrganizationsController::logout)),
+            )
+            .service(
+                web::scope("/api/store/root")
+                    .wrap(ShutdownGuard)
+                    .wrap(Authentication)
+                    .wrap(SessionMiddleware)
+                    .route("/aggregate", web::post().to(root_aggregation_filter))
+                    .route("/{table}", web::post().to(root_create_record))
+                    .route("/upsert/{table}", web::post().to(root_upsert))
+                    .route("/batch/{table}", web::patch().to(root_batch_update_records))
+                    .route("/batch/{table}", web::delete().to(root_batch_delete_records))
+                    .route("/{table}/filter", web::post().to(root_get_by_filter))
+                    .route("/{table}/{id}", web::get().to(root_get_by_id))
+                    .route("/{table}/{id}", web::patch().to(root_update_record))
+                    .route("/{table}/{id}", web::delete().to(root_delete_record))
+                    .route("/batch/{table}", web::post().to(root_batch_insert_records)),
             )
             .service(
                 web::scope("/api/store")

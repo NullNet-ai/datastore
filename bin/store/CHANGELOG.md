@@ -5,6 +5,52 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.11
+
+### Author
+Kashan
+
+### Added
+- **Root Controller System**: Implemented comprehensive root controller functionality using macro-based architecture
+  - Added controller type checking logic to all store controller functions (`create_record`, `get_by_id`, `update_record`, `delete_record`, `batch_update_records`, `batch_delete_records`, `get_by_filter`, `upsert`)
+  - Implemented controller type extraction from request extensions with conditional logic based on `is_root_controller` flag
+  - Added comprehensive logging for root vs simple controller operations
+  - Enhanced authentication middleware with root account validation logic
+
+### Enhanced
+- **Authentication Structs**: Made critical authentication fields optional to handle null values in JWT tokens
+  - Modified `Claims` struct in `auth/structs.rs`:
+    - Changed `role_name` from `String` to `Option<String>` with `#[serde(default)]`
+    - Changed `sensitivity_level` from `u32` to `Option<u32>` with `#[serde(default)]`
+  - Modified `Account` struct in `auth/structs.rs`:
+    - Changed `role_id` from `String` to `Option<String>` with `#[serde(default)]`
+  - Updated `auth_middleware.rs` to handle optional fields with default values:
+    - `role_name` defaults to empty string using `unwrap_or_default()`
+    - `sensitivity_level` defaults to 1000 using `unwrap_or(1000)`
+    - `role_id` defaults to empty string using `unwrap_or_default()`
+- **Authentication Middleware**: Enhanced `auth_middleware.rs` with root controller validation
+  - Added logic to extract controller type from request path (`/api/store/{type}` pattern)
+  - Implemented validation to prevent root accounts from accessing non-root endpoints and vice versa
+
+### Fixed
+- **JSON Deserialization**: Resolved "JSON error: invalid type: null, expected a string" errors during token verification
+- **Token Caching**: Added error handling for cached token data deserialization with automatic cache cleanup for invalid entries
+- **Authentication Flow**: Improved robustness of authentication middleware to handle incomplete JWT token data
+
+### Technical Implementation
+- **Core Files**:
+  - `/src/auth/structs.rs` - Updated `Claims` and `Account` structs with optional fields
+  - `/src/controllers/store_controller.rs` - Enhanced all controller functions with root controller logic
+  - `/src/middlewares/auth_middleware.rs` - Enhanced to handle optional authentication fields and added controller type validation and path parsing
+  - `/src/auth/auth_service.rs` - Added error handling for token cache deserialization
+- **Controller Type Logic**: All store controller functions now extract `controller_type` from request extensions and implement conditional behavior
+- **Security Enhancement**: Middleware-level validation ensures proper controller type usage based on account permissions
+- **Default Values**: Implemented sensible defaults for missing authentication data
+- **Backward Compatibility**: Changes maintain compatibility with existing tokens while handling edge cases
+- **Logging**: Comprehensive logging added to differentiate between root and simple controller operations
+
+---
+
 ## 0.1.10
 
 ### Author

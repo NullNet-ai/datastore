@@ -14,7 +14,8 @@ pub struct Account {
     pub organization_id: String,
     pub account_organization_id: String,
     pub account_status: String,
-    pub role_id: String,
+    #[serde(default)]
+    pub role_id: Option<String>,
     #[serde(default)]
     pub role_name: Option<String>,
 
@@ -42,8 +43,10 @@ pub struct Account {
 pub struct Claims {
     pub account: Account,
     pub sessionID: String,
-    pub role_name: String,
-    pub sensitivity_level: u32,
+    #[serde(default)]
+    pub role_name: Option<String>,
+    #[serde(default)]
+    pub sensitivity_level: Option<u32>,
     #[serde(default)]
     pub previously_logged_in: Option<String>,
     exp: usize,
