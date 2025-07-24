@@ -30,6 +30,11 @@ store-watch:
 	@echo "Starting store in watch mode..."
 	@cd bin/store && cargo watch -x run
 
+# Build the store
+store-build:
+	@echo "Building store..."
+	@cd bin/store && cargo build --release
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
