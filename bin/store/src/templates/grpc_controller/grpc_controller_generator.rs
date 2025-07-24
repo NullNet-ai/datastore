@@ -90,7 +90,12 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         "use crate::generated::store::store_service_server::{{{}Server, {} }};",
         service_name, service_name
     )?;
-    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method}};")?;
+    writeln!(file, "use crate::providers::find::DynamicResult;")?;
+    writeln!(file, "use crate::providers::find::SQLConstructor;")?;
+    writeln!(file, "use crate::db;")?;
+    writeln!(file, "// Note: AggregationFilterWrapper has been moved to sql_constructor.rs")?;
+    writeln!(file, "// Note: Converter functions have been moved to grpc_struct_converter.rs")?;
+    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method, generate_aggregation_filter_method}};")?;
 
     // Import request and response types
     write!(file, "use crate::generated::store::{{")?;
@@ -152,7 +157,9 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
             table.name.to_case(Case::Pascal)
         )?;
     }
-    writeln!(file, "}};")?;
+    // Add AggregationFilterRequest and AggregationFilterResponse imports
+    writeln!(file, ", AggregationFilterRequest, AggregationFilterResponse")?;
+    writeln!(file, "}};");
 
     // Initialize method
     writeln!(file, "pub struct GrpcController {{}}\n")?;
@@ -215,6 +222,11 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         writeln!(file, "    generate_batch_delete_method!({});", table.name)?;
         writeln!(file, "    generate_upsert_method!({});", table.name)?;
     }
+    
+    // Add aggregation filter method
+    writeln!(file, "    // Aggregation filter method")?;
+    writeln!(file, "    generate_aggregation_filter_method!();")?;
+    
     writeln!(file, "}}")?;
 
     // Add HTTP endpoints
