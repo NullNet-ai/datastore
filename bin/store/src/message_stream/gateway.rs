@@ -1,6 +1,8 @@
 use crate::auth::structs::Claims;
-use crate::message_stream::token_bucket::TokenBucket;
 use crate::message_stream::shared_state::get_shared_state;
+use crate::message_stream::streaming_service::MessageStreamingService;
+use crate::message_stream::token_bucket::TokenBucket;
+use chrono;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
@@ -9,8 +11,6 @@ use socketioxide::SocketIo;
 use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex, OnceLock};
-use crate::message_stream::streaming_service::MessageStreamingService;
-use chrono;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Account {
@@ -72,7 +72,6 @@ pub fn register_token_bucket(channel_name: &str, capacity: usize) -> Arc<TokenBu
     TokenBucket::new(channel_name, capacity)
 }
 
-
 #[allow(warnings)]
 pub fn unregister_token_bucket(channel_name: &str) -> bool {
     let mut buckets = TOKEN_BUCKETS.lock().unwrap();
@@ -93,7 +92,10 @@ pub fn get_all_token_bucket_ids() -> Vec<String> {
 pub async fn get_all_token_buckets() -> Vec<(String, Arc<TokenBucket>)> {
     let shared_state = get_shared_state();
     let active_channels = shared_state.active_channels.lock().await;
-    active_channels.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+    active_channels
+        .iter()
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
 }
 #[allow(warnings)]
 pub fn get_token_bucket_count() -> usize {
@@ -266,7 +268,9 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         "updateHighWaterMark",
         |socket: SocketRef, Data(data): Data<serde_json::Value>| async move {
             let channel_name = data.get("channel_name").and_then(|c| c.as_str());
-            let highwatermark = data.get("highWaterMark").or_else(|| data.get("highwatermark"));
+            let highwatermark = data
+                .get("highWaterMark")
+                .or_else(|| data.get("highwatermark"));
 
             if let (Some(channel), Some(mark)) = (channel_name, highwatermark) {
                 let shared_state = get_shared_state();
@@ -347,39 +351,27 @@ fn setup_authenticated_handlers(socket: SocketRef) {
         },
     );
 
-    socket.on(
-        "getBucketStatus",
-        |socket: SocketRef| async move {
-            let bucket_data = get_all_bucket_status().await;
-            let json_string = serde_json::to_string(&bucket_data).unwrap_or_else(|_| "[]".to_string());
-            socket.emit("bucketStatus", json_string).ok();
-        },
-    );
+    socket.on("getBucketStatus", |socket: SocketRef| async move {
+        let bucket_data = get_all_bucket_status().await;
+        let json_string = serde_json::to_string(&bucket_data).unwrap_or_else(|_| "[]".to_string());
+        socket.emit("bucketStatus", json_string).ok();
+    });
 
-    socket.on(
-        "getClientStatus",
-        |socket: SocketRef| async move {
-            let client_data = get_all_client_status().await;
-            let json_string = serde_json::to_string(&client_data).unwrap_or_else(|_| "[]".to_string());
-            socket.emit("clientUpdate", json_string).ok();
-        },
-    );
+    socket.on("getClientStatus", |socket: SocketRef| async move {
+        let client_data = get_all_client_status().await;
+        let json_string = serde_json::to_string(&client_data).unwrap_or_else(|_| "[]".to_string());
+        socket.emit("clientUpdate", json_string).ok();
+    });
 
-    socket.on(
-        "getSystemMetrics",
-        |socket: SocketRef| async move {
-            let metrics = get_system_metrics().await;
-            socket.emit("systemMetrics", metrics).ok();
-        },
-    );
+    socket.on("getSystemMetrics", |socket: SocketRef| async move {
+        let metrics = get_system_metrics().await;
+        socket.emit("systemMetrics", metrics).ok();
+    });
 
-    socket.on(
-        "getAnalytics",
-        |socket: SocketRef| async move {
-            let analytics = get_analytics_data().await;
-            socket.emit("analyticsData", analytics).ok();
-        },
-    );
+    socket.on("getAnalytics", |socket: SocketRef| async move {
+        let analytics = get_analytics_data().await;
+        socket.emit("analyticsData", analytics).ok();
+    });
 
     socket.on(
         "subscribe",
@@ -387,7 +379,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
             if let Some(event_name) = data.get("event_name").and_then(|e| e.as_str()) {
                 let room_name = format!("event_{}", event_name);
                 socket.join(room_name.clone()).ok();
-                
+
                 let response = serde_json::json!({
                     "status": "ok",
                     "event": "subscribe",
@@ -395,7 +387,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                     "message": "Successfully subscribed to event"
                 });
                 socket.emit("subscribeResponse", response).ok();
-                
+
                 info!("Client {} subscribed to event: {}", socket.id, event_name);
             } else {
                 let response = serde_json::json!({
@@ -414,7 +406,7 @@ fn setup_authenticated_handlers(socket: SocketRef) {
             if let Some(event_name) = data.get("event_name").and_then(|e| e.as_str()) {
                 let room_name = format!("event_{}", event_name);
                 socket.leave(room_name.clone()).ok();
-                
+
                 let response = serde_json::json!({
                     "status": "ok",
                     "event": "unsubscribe",
@@ -422,8 +414,11 @@ fn setup_authenticated_handlers(socket: SocketRef) {
                     "message": "Successfully unsubscribed from event"
                 });
                 socket.emit("unsubscribeResponse", response).ok();
-                
-                info!("Client {} unsubscribed from event: {}", socket.id, event_name);
+
+                info!(
+                    "Client {} unsubscribed from event: {}",
+                    socket.id, event_name
+                );
             } else {
                 let response = serde_json::json!({
                     "status": "error",
@@ -447,13 +442,13 @@ fn setup_authenticated_handlers(socket: SocketRef) {
 async fn get_all_bucket_status() -> serde_json::Value {
     let buckets = get_all_token_buckets().await;
     let mut bucket_data = Vec::new();
-    
+
     for (name, bucket) in buckets {
         let capacity = bucket.get_high_watermark().await;
         let tokens = bucket.get_tokens_remaining().await;
         let buffer_size = bucket.buffer.lock().await.len();
         let high_watermark = capacity;
-        
+
         bucket_data.push(serde_json::json!({
             "name": name,
             "capacity": capacity,
@@ -462,7 +457,7 @@ async fn get_all_bucket_status() -> serde_json::Value {
             "high_watermark": high_watermark
         }));
     }
-    
+
     serde_json::Value::Array(bucket_data)
 }
 
@@ -470,7 +465,7 @@ async fn get_all_client_status() -> serde_json::Value {
     let client_data = {
         let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
         let mut data = Vec::new();
-        
+
         for (org_id, org_clients) in clients.iter() {
             for client_id in &org_clients.client_ids {
                 data.push(serde_json::json!({
@@ -482,23 +477,25 @@ async fn get_all_client_status() -> serde_json::Value {
         }
         data
     };
-    
+
     serde_json::Value::Array(client_data)
 }
 
 async fn get_system_metrics() -> serde_json::Value {
     let buckets = get_all_token_buckets().await;
     let total_buckets = buckets.len();
-    
+
     let total_clients = {
         let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
-        clients.values().map(|org| org.client_ids.len()).sum::<usize>()
+        clients
+            .values()
+            .map(|org| org.client_ids.len())
+            .sum::<usize>()
     };
-    
 
     let mut total_utilization = 0.0;
     let mut bucket_count = 0;
-    
+
     for (_, bucket) in buckets {
         let capacity = bucket.get_high_watermark().await as f64;
         let tokens = bucket.get_tokens_remaining().await as f64;
@@ -510,17 +507,17 @@ async fn get_system_metrics() -> serde_json::Value {
         total_utilization += utilization;
         bucket_count += 1;
     }
-    
+
     let avg_utilization = if bucket_count > 0 {
         total_utilization / bucket_count as f64
     } else {
         0.0
     };
-    
+
     let system_health = (100.0 - avg_utilization).max(0.0).min(100.0);
-    
+
     let message_rate = total_clients * 2;
-    
+
     serde_json::json!({
         "totalBuckets": total_buckets,
         "totalClients": total_clients,
@@ -533,9 +530,12 @@ async fn get_analytics_data() -> serde_json::Value {
     let buckets = get_all_token_buckets().await;
     let total_clients = {
         let clients = AUTHENTICATED_CLIENTS.lock().unwrap();
-        clients.values().map(|org| org.client_ids.len()).sum::<usize>()
+        clients
+            .values()
+            .map(|org| org.client_ids.len())
+            .sum::<usize>()
     };
-    
+
     let mut total_messages_processed = 0;
     let mut total_messages_queued = 0;
     let mut total_throughput = 0;
@@ -546,7 +546,7 @@ async fn get_analytics_data() -> serde_json::Value {
     let mut low_utilization_channels = 0;
     let mut total_capacity = 0;
     let mut total_buffer_size = 0;
-    
+
     for (channel_name, bucket) in buckets {
         let capacity = bucket.get_high_watermark().await;
         let tokens_remaining = bucket.get_tokens_remaining().await;
@@ -557,11 +557,14 @@ async fn get_analytics_data() -> serde_json::Value {
         } else {
             0.0
         };
-        
+
         let throughput_rate = messages_processed as f64 / 60.0;
         let queue_depth_ratio = buffer_size as f64 / capacity as f64 * 100.0;
-        let efficiency_score = if capacity > 0 { (messages_processed as f64 / capacity as f64) * 100.0 } else { 0.0 };
-        
+        let efficiency_score = if capacity > 0 {
+            (messages_processed as f64 / capacity as f64) * 100.0
+        } else {
+            0.0
+        };
 
         if utilization >= 80.0 {
             high_utilization_channels += 1;
@@ -570,13 +573,13 @@ async fn get_analytics_data() -> serde_json::Value {
         } else {
             low_utilization_channels += 1;
         }
-        
+
         total_messages_processed += messages_processed;
         total_messages_queued += buffer_size;
         total_throughput += messages_processed;
         total_capacity += capacity;
         total_buffer_size += buffer_size;
-        
+
         channel_analytics.push(serde_json::json!({
             "channel": channel_name,
             "messagesProcessed": messages_processed,
@@ -589,7 +592,7 @@ async fn get_analytics_data() -> serde_json::Value {
             "efficiencyScore": efficiency_score,
             "status": if utilization >= 80.0 { "critical" } else if utilization >= 40.0 { "warning" } else { "healthy" }
         }));
-        
+
         performance_metrics.push(serde_json::json!({
             "channel": channel_name,
             "throughput": throughput_rate,
@@ -598,45 +601,56 @@ async fn get_analytics_data() -> serde_json::Value {
             "availability": if utilization < 95.0 { 99.9 } else { 98.5 }
         }));
     }
-    
+
     let avg_utilization = if !channel_analytics.is_empty() {
-        channel_analytics.iter()
+        channel_analytics
+            .iter()
             .map(|c| c["utilization"].as_f64().unwrap_or(0.0))
-            .sum::<f64>() / channel_analytics.len() as f64
+            .sum::<f64>()
+            / channel_analytics.len() as f64
     } else {
         0.0
     };
-    
+
     let avg_throughput = if !performance_metrics.is_empty() {
-        performance_metrics.iter()
+        performance_metrics
+            .iter()
             .map(|p| p["throughput"].as_f64().unwrap_or(0.0))
-            .sum::<f64>() / performance_metrics.len() as f64
+            .sum::<f64>()
+            / performance_metrics.len() as f64
     } else {
         0.0
     };
-    
+
     let avg_latency = if !performance_metrics.is_empty() {
-        performance_metrics.iter()
+        performance_metrics
+            .iter()
             .map(|p| p["latency"].as_f64().unwrap_or(0.0))
-            .sum::<f64>() / performance_metrics.len() as f64
+            .sum::<f64>()
+            / performance_metrics.len() as f64
     } else {
         0.0
     };
-    
+
     let system_health_score = {
         let utilization_score = (100.0 - avg_utilization).max(0.0);
-        let queue_score = if total_capacity > 0 { 
-            ((total_capacity.saturating_sub(total_buffer_size)) as f64 / total_capacity as f64) * 100.0 
-        } else { 
-            100.0 
+        let queue_score = if total_capacity > 0 {
+            ((total_capacity.saturating_sub(total_buffer_size)) as f64 / total_capacity as f64)
+                * 100.0
+        } else {
+            100.0
         };
         (utilization_score + queue_score) / 2.0
     };
-    
+
     let messages_per_minute = total_throughput * 60;
-    let duplicate_rate = if total_messages_processed > 100 { 3.2 } else { 0.5 };
+    let duplicate_rate = if total_messages_processed > 100 {
+        3.2
+    } else {
+        0.5
+    };
     let error_rate = if avg_utilization > 80.0 { 2.1 } else { 0.3 };
-    
+
     let trend_data = {
         let base_rate = messages_per_minute as f64;
         let mut hourly_trends = Vec::new();
@@ -651,7 +665,7 @@ async fn get_analytics_data() -> serde_json::Value {
         }
         hourly_trends
     };
-    
+
     serde_json::json!({
         "totalMessagesProcessed": total_messages_processed,
         "totalMessagesQueued": total_messages_queued,

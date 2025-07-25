@@ -132,10 +132,15 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
     pub fn validate_concatenated_fields(&self) -> ApiResponse {
         for concatenate_field in &self.request_body.concatenate_fields {
-            if concatenate_field.fields.is_empty() || concatenate_field.field_name.is_empty() || concatenate_field.entity.is_empty() {
+            if concatenate_field.fields.is_empty()
+                || concatenate_field.field_name.is_empty()
+                || concatenate_field.entity.is_empty()
+            {
                 return ApiResponse {
                     success: false,
-                    message: "Each concatenated field must have non-empty fields, field_name and entity".to_string(),
+                    message:
+                        "Each concatenated field must have non-empty fields, field_name and entity"
+                            .to_string(),
                     count: 0,
                     data: vec![],
                 };
@@ -143,10 +148,10 @@ impl<'a, 'b> Validation<'a, 'b> {
         }
 
         return ApiResponse {
-                success: true,
-                message: "Successfully validated concatenated_fields".to_string(),
-                count: 0,
-                data: vec![],
-            };
+            success: true,
+            message: "Successfully validated concatenated_fields".to_string(),
+            count: 0,
+            data: vec![],
+        };
     }
 }

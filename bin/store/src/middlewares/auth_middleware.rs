@@ -159,7 +159,8 @@ where
                                 url,
                             });
 
-                            updated_session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
+                            updated_session.user.role_id =
+                                claims.account.role_id.clone().unwrap_or_default();
                             updated_session.user.is_root_user = claims.account.is_root_account;
                             updated_session.user.account_id = claims.account.account_id.clone();
 

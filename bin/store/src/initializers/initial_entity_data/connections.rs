@@ -1,5 +1,5 @@
-use serde_json::{json, Value};
 use chrono::Utc;
+use serde_json::{json, Value};
 use std::env;
 
 pub fn get_initial_connections() -> Vec<Value> {
@@ -10,7 +10,7 @@ pub fn get_initial_connections() -> Vec<Value> {
     let hypertable_timestamp = timestamp.clone();
     let default_organization_id = env::var("DEFAULT_ORGANIZATION_ID")
         .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string());
-    
+
     vec![
         json!({
             "id": "01K0ZEXPJ2MCC6KJ56XHS3JBH2",
@@ -59,6 +59,6 @@ pub fn get_initial_connections() -> Vec<Value> {
             "destination_port": 22,
             "protocol": "TCP",
             "sensitivity_level": 3
-        })
+        }),
     ]
 }

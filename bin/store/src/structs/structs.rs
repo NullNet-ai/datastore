@@ -250,7 +250,7 @@ pub struct GetByFilter {
     #[serde(default)]
     pub pluck_object: HashMap<String, Vec<String>>,
 
-     #[serde(default)]
+    #[serde(default)]
     pub pluck_group_object: HashMap<String, Vec<String>>,
 
     #[serde(default)]
@@ -295,22 +295,22 @@ pub struct GetByFilter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregationFilter {
     pub entity: String,
-    
+
     pub aggregations: Vec<Aggregation>,
-    
+
     #[serde(default)]
     pub advance_filters: Vec<FilterCriteria>,
-    
+
     #[serde(default)]
     pub joins: Vec<Join>,
-    
+
     #[serde(default = "default_limit")]
     pub limit: usize,
-    
+
     pub bucket_size: Option<String>,
-    
+
     pub timezone: Option<String>,
-    
+
     pub order: Option<AggregationOrder>,
 }
 
@@ -512,8 +512,6 @@ pub struct Join {
     pub nested: bool,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldRelation {
     pub to: RelationEndpoint,
@@ -620,4 +618,3 @@ pub enum FilterOperator {
     #[serde(rename = "has_no_value")]
     HasNoValue,
 }
-

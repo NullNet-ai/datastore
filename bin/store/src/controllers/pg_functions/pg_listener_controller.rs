@@ -1,15 +1,15 @@
-use actix_web::{web, HttpRequest, HttpResponse, HttpMessage, Responder};
 use crate::controllers::common_controller::process_and_insert_record;
-use crate::structs::structs::{ApiResponse, Auth};
 use crate::db::get_async_connection;
-use serde_json::{json, Value};
+use crate::structs::structs::{ApiResponse, Auth};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
+use serde_json::{json, Value};
 // use regex::Regex;
-use diesel::sql_query;
-use diesel_async::RunQueryDsl;
 use super::function_validators::FunctionValidator;
+use diesel::sql_query;
 use diesel::sql_types::Text;
 use diesel::QueryableByName;
+use diesel_async::RunQueryDsl;
 use std::collections::HashMap;
 
 #[derive(QueryableByName, Debug)]
@@ -356,7 +356,9 @@ pub async fn create_pg_function(
                 "function": body_data.function_string,
             });
 
-            match process_and_insert_record("postgres_channels", record, None, &auth_data, false).await {
+            match process_and_insert_record("postgres_channels", record, None, &auth_data, false)
+                .await
+            {
                 Ok(_) => {
                     // Both PG function creation and record insertion successful
                     HttpResponse::Ok().json(response)
@@ -404,11 +406,9 @@ pub async fn create_pg_function(
 
 /// Test PostgreSQL function syntax endpoint
 /// POST /api/listener/test
-pub async fn test_pg_function_syntax(
-    _body: web::Json<TestFunctionRequest>,
-) -> impl Responder {
+pub async fn test_pg_function_syntax(_body: web::Json<TestFunctionRequest>) -> impl Responder {
     let service = PgFunctionService;
-    
+
     match service.test_function_syntax(_body.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => HttpResponse::BadRequest().json(ApiResponse {

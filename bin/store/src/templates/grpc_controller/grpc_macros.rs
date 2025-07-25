@@ -32,7 +32,7 @@ macro_rules! generate_create_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
                     let table_name = params.table;
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
@@ -97,19 +97,19 @@ macro_rules! generate_aggregation_filter_method {
                     };
 
                     let request = request.into_inner();
-                    
+
                     // Extract params and validate
                     let params = match request.params.as_ref() {
                         Some(p) => p,
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
-                    
+
                     let table = params.table.clone();
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
-                    
+
                     // Create SQLConstructor with organization_id if available
                     let wrapper = crate::providers::find::sql_constructor::AggregationFilterWrapper::new(request);
                     let mut sql_constructor = SQLConstructor::new(wrapper, table.clone(), is_root_request);
@@ -198,7 +198,7 @@ macro_rules! generate_update_method {
                     };
                     let table_name = params.table;
                     let record_id = params.id;
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
@@ -281,11 +281,11 @@ macro_rules! generate_batch_insert_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
                     let table_name = params.table;
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
-                    
+
                     let temp_table= format!("temp_{}", table_name);
                     match table_exists(&temp_table) {
                         Ok(_table) => {
@@ -411,10 +411,8 @@ macro_rules! generate_batch_update_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
-                    
+
                     // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.as_str();
-                    let is_root_request = request_type == "root";
                     let body = request
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
@@ -584,11 +582,11 @@ macro_rules! generate_upsert_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
-                    
+
                     let query = request
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
@@ -665,11 +663,11 @@ macro_rules! generate_delete_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
-                    
+
                     let _query = request
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
@@ -743,11 +741,11 @@ macro_rules! generate_batch_delete_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
-                    
+
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
                     let is_root_request = request_type == "root";
-                    
+
                     let body = request
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;

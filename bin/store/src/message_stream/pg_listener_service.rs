@@ -98,7 +98,7 @@ impl PgListenerService {
 
         service
     }
-    
+
     pub fn get_main_stream(&self) -> Arc<TokenBucket> {
         self.main_stream.clone()
     }
@@ -203,7 +203,6 @@ impl PgListenerService {
 
         *is_running = false;
 
-
         let mut client_guard = self.client.lock().await;
         if let Some(client) = client_guard.take() {
             let subscribed_channels = self.subscribed_channels.lock().await;
@@ -237,11 +236,10 @@ impl PgListenerService {
                 return;
             }
         };
-        
 
         let msg = crate::message_stream::token_bucket::Message(message.0.clone());
         let has_capacity = self.main_stream.receive_message(msg).await;
-        
+
         if !has_capacity {
             log::warn!("Main stream backpressured, pausing all channels");
             if let Err(e) = self.pause_all_channels().await {
@@ -295,10 +293,8 @@ impl PgListenerService {
     }
 
     async fn reconnect(self: &Arc<Self>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-
         info!("Attempting to reconnect in 5 seconds...");
         sleep(Duration::from_secs(5)).await;
-
 
         self.start().await
     }

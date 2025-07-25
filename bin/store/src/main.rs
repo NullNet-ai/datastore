@@ -53,14 +53,14 @@ use controllers::grpc_controller::GrpcController;
 use controllers::pg_functions::pg_listener_controller::{
     create_pg_function, pg_listener_delete, pg_listener_get, test_pg_function_syntax,
 };
-use controllers::store_controller::{
-    batch_delete_records, batch_insert_records, batch_update_records, create_record, delete_record,
-    get_by_filter, aggregation_filter, update_record, upsert,
-};
 use controllers::root_controller::{
     root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
     root_batch_update_records, root_create_record, root_delete_record, root_get_by_filter,
     root_get_by_id, root_update_record, root_upsert,
+};
+use controllers::store_controller::{
+    aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
+    create_record, delete_record, get_by_filter, update_record, upsert,
 };
 use env_logger::Env;
 use std::process;
@@ -210,9 +210,9 @@ async fn main() -> std::io::Result<()> {
     println!("Database connected successfully.");
 
     // Initialize entity data if environment variable is set
-    let initialize_entity_data = env::var("INITIALIZE_ENTITY_DATA")
-        .unwrap_or_else(|_| "false".to_string()) == "true";
-    
+    let initialize_entity_data =
+        env::var("INITIALIZE_ENTITY_DATA").unwrap_or_else(|_| "false".to_string()) == "true";
+
     if initialize_entity_data {
         println!("Initializing entity data...");
         if let Err(e) = initialize(EInitializer::INITIAL_ENTITY_DATA_CONFIG, None).await {
@@ -287,24 +287,20 @@ async fn main() -> std::io::Result<()> {
         let (layer, io) = create_socket_io();
 
         // Initialize the MessageStreamingService
-         let streaming_service = MessageStreamingService::new(io);
-         
-         // Set the streaming service reference in gateway
-         set_streaming_service(streaming_service.clone());
-         
-         // Initialize the streaming service (starts broker and routing)
-         if let Err(e) = streaming_service.initialize().await {
-             log::error!("Failed to initialize MessageStreamingService: {}", e);
-         } else {
-             log::info!("MessageStreamingService initialized successfully");
-         }
+        let streaming_service = MessageStreamingService::new(io);
 
+        // Set the streaming service reference in gateway
+        set_streaming_service(streaming_service.clone());
 
+        // Initialize the streaming service (starts broker and routing)
+        if let Err(e) = streaming_service.initialize().await {
+            log::error!("Failed to initialize MessageStreamingService: {}", e);
+        } else {
+            log::info!("MessageStreamingService initialized successfully");
+        }
 
-         // Note: Message processing is handled by the routing task in initialize()
-         // No need for additional message processing loop
-
-
+        // Note: Message processing is handled by the routing task in initialize()
+        // No need for additional message processing loop
 
         let app = Router::new().layer(layer);
 
@@ -346,7 +342,10 @@ async fn main() -> std::io::Result<()> {
                     .route("/{table}", web::post().to(root_create_record))
                     .route("/upsert/{table}", web::post().to(root_upsert))
                     .route("/batch/{table}", web::patch().to(root_batch_update_records))
-                    .route("/batch/{table}", web::delete().to(root_batch_delete_records))
+                    .route(
+                        "/batch/{table}",
+                        web::delete().to(root_batch_delete_records),
+                    )
                     .route("/{table}/filter", web::post().to(root_get_by_filter))
                     .route("/{table}/{id}", web::get().to(root_get_by_id))
                     .route("/{table}/{id}", web::patch().to(root_update_record))

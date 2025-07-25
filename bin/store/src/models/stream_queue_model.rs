@@ -2,7 +2,9 @@ use crate::schema::schema::stream_queue;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug)]
+#[derive(
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
+)]
 #[diesel(table_name = stream_queue)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]

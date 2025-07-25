@@ -8,7 +8,8 @@ use crate::db::create_connection;
 
 use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
 use crate::structs::structs::{
-    ApiResponse, Auth, BatchUpdateBody, GetByFilter, AggregationFilter, QueryParams, RequestBody, UpsertRequestBody,
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
+    UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
@@ -111,36 +112,50 @@ pub async fn update_record(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing batch_update_records via root controller for table: {}", table_name.as_str());
+        log::info!(
+            "Processing batch_update_records via root controller for table: {}",
+            table_name.as_str()
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing batch_update_records via simple controller for table: {}", table_name.as_str());
+        log::info!(
+            "Processing batch_update_records via simple controller for table: {}",
+            table_name.as_str()
+        );
         // Add any simple controller-specific logic here
     }
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing update_record via root controller for table: {}, id: {}", table_name, record_id);
+        log::info!(
+            "Processing update_record via root controller for table: {}, id: {}",
+            table_name,
+            record_id
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing update_record via simple controller for table: {}, id: {}", table_name, record_id);
+        log::info!(
+            "Processing update_record via simple controller for table: {}, id: {}",
+            table_name,
+            record_id
+        );
         // Add any simple controller-specific logic here
     }
 
@@ -160,7 +175,7 @@ pub async fn update_record(
         Some(pluck_fields),
         "update",
         &auth_data,
-        is_root_controller
+        is_root_controller,
     )
     .await
     {
@@ -197,22 +212,28 @@ pub async fn create_record(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     let table_name = table.into_inner();
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing create_record via root controller for table: {}", table_name);
+        log::info!(
+            "Processing create_record via root controller for table: {}",
+            table_name
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing create_record via simple controller for table: {}", table_name);
+        log::info!(
+            "Processing create_record via simple controller for table: {}",
+            table_name
+        );
         // Add any simple controller-specific logic here
     }
     let pluck_fields: Vec<String> = query
@@ -226,7 +247,7 @@ pub async fn create_record(
         body.into_inner(),
         Some(pluck_fields),
         &auth_data,
-        is_root_controller
+        is_root_controller,
     )
     .await
     {
@@ -265,20 +286,28 @@ pub async fn get_by_id(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing get_by_id via root controller for table: {}, id: {}", table_name, record_id);
+        log::info!(
+            "Processing get_by_id via root controller for table: {}, id: {}",
+            table_name,
+            record_id
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing get_by_id via simple controller for table: {}, id: {}", table_name, record_id);
+        log::info!(
+            "Processing get_by_id via simple controller for table: {}, id: {}",
+            table_name,
+            record_id
+        );
         // Add any simple controller-specific logic here
     }
 
@@ -295,9 +324,17 @@ pub async fn get_by_id(
 
     // Extract organization_id from auth_data
     let organization_id = Some(auth_data.organization_id.as_str());
-    
+
     // Use the common function to get the record by ID
-    match process_and_get_record_by_id(&table_name, &record_id, Some(pluck_fields), is_root_controller, organization_id).await {
+    match process_and_get_record_by_id(
+        &table_name,
+        &record_id,
+        Some(pluck_fields),
+        is_root_controller,
+        organization_id,
+    )
+    .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(_error) => {
             let status_code = http::StatusCode::from_u16(_error.status)
@@ -339,17 +376,23 @@ pub async fn batch_insert_records(
         }
     };
     let controller_type = extensions.get::<Option<String>>();
-     let is_root_controller = controller_type
+    let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing batch_update_records via root controller for table: {}", table_name.as_str());
+        log::info!(
+            "Processing batch_update_records via root controller for table: {}",
+            table_name.as_str()
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing batch_update_records via simple controller for table: {}", table_name.as_str());
+        log::info!(
+            "Processing batch_update_records via simple controller for table: {}",
+            table_name.as_str()
+        );
         // Add any simple controller-specific logic here
     }
     let temp_table = format!("temp_{}", table_name);
@@ -361,7 +404,10 @@ pub async fn batch_insert_records(
             // Table doesn't exist, return an error response
             return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,
-                message: format!("Error checking table existence: temp table for {} is missing", table_name),
+                message: format!(
+                    "Error checking table existence: temp table for {} is missing",
+                    table_name
+                ),
                 count: 0,
                 data: vec![],
             });
@@ -380,18 +426,22 @@ pub async fn batch_insert_records(
             data: vec![],
         });
     }
-    let (processed_records, columns) =
-        match process_records(json_records, &table_name, &auth_data.clone(), is_root_controller) {
-            Ok((records, cols)) => (records, cols),
-            Err(e) => {
-                return HttpResponse::BadRequest().json(ApiResponse {
-                    success: false,
-                    message: format!("Error processing records: {}", e),
-                    count: 0,
-                    data: vec![],
-                })
-            }
-        };
+    let (processed_records, columns) = match process_records(
+        json_records,
+        &table_name,
+        &auth_data.clone(),
+        is_root_controller,
+    ) {
+        Ok((records, cols)) => (records, cols),
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Error processing records: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
 
     let csv_data = match convert_json_to_csv(&processed_records, &columns) {
         Ok(data) => data,
@@ -441,7 +491,6 @@ pub async fn batch_insert_records(
                 "".to_string(),
                 auth_data.clone(),
                 true,
-
             )
             .await
             {
@@ -482,23 +531,29 @@ pub async fn batch_update_records(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing batch_update_records via root controller for table: {}", table);
+        log::info!(
+            "Processing batch_update_records via root controller for table: {}",
+            table
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing batch_update_records via simple controller for table: {}", table);
+        log::info!(
+            "Processing batch_update_records via simple controller for table: {}",
+            table
+        );
         // Add any simple controller-specific logic here
     }
-    
+
     let table_name = table.into_inner();
     let batch_data = request.into_inner();
     let filters = batch_data.advance_filters;
@@ -642,23 +697,29 @@ pub async fn batch_delete_records(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing batch_delete_records via root controller for table: {}", table.as_str());
+        log::info!(
+            "Processing batch_delete_records via root controller for table: {}",
+            table.as_str()
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing batch_delete_records via simple controller for table: {}", table.as_str());
+        log::info!(
+            "Processing batch_delete_records via simple controller for table: {}",
+            table.as_str()
+        );
         // Add any simple controller-specific logic here
     }
-    
+
     let table_name = table.into_inner();
     let batch_data = request.into_inner();
     let filters = batch_data.advance_filters;
@@ -713,23 +774,29 @@ pub async fn upsert(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing upsert via root controller for table: {}", table_name);
+        log::info!(
+            "Processing upsert via root controller for table: {}",
+            table_name
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing upsert via simple controller for table: {}", table_name);
+        log::info!(
+            "Processing upsert via simple controller for table: {}",
+            table_name
+        );
         // Add any simple controller-specific logic here
     }
-    
+
     let table_name = table_name.into_inner();
     let request_body = request_body.into_inner();
 
@@ -753,7 +820,7 @@ pub async fn upsert(
         request_body.data,
         pluck_fields,
         &auth_data,
-        is_root_controller
+        is_root_controller,
     )
     .await
     {
@@ -789,20 +856,28 @@ pub async fn delete_record(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing delete_record via root controller for table: {}, id: {}", table_name, record_id);
+        log::info!(
+            "Processing delete_record via root controller for table: {}, id: {}",
+            table_name,
+            record_id
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing delete_record via simple controller for table: {}, id: {}", table_name, record_id);
+        log::info!(
+            "Processing delete_record via simple controller for table: {}, id: {}",
+            table_name,
+            record_id
+        );
         // Add any simple controller-specific logic here
     }
 
@@ -818,7 +893,7 @@ pub async fn delete_record(
         None,
         "delete",
         &auth_data,
-        is_root_controller
+        is_root_controller,
     )
     .await
     {
@@ -865,11 +940,13 @@ pub async fn get_by_filter(
     path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
- 
     let parameters = request_body.into_inner();
     let table = path_params.into_inner();
-    let is_root = auth.extensions().get::<Auth>().map_or(false, |auth_data| auth_data.is_root_account);
-    
+    let is_root = auth
+        .extensions()
+        .get::<Auth>()
+        .map_or(false, |auth_data| auth_data.is_root_account);
+
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -879,23 +956,29 @@ pub async fn get_by_filter(
             None
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Perform different operations based on controller type
     if is_root_controller {
-        log::info!("Processing get_by_filter via root controller for table: {}", table);
+        log::info!(
+            "Processing get_by_filter via root controller for table: {}",
+            table
+        );
         // Add any root-specific logic here
     } else {
-        log::info!("Processing get_by_filter via simple controller for table: {}", table);
+        log::info!(
+            "Processing get_by_filter via simple controller for table: {}",
+            table
+        );
         // Add any simple controller-specific logic here
     }
-    
+
     let validation = Validation::new(&parameters, &table);
     let ApiResponse {
         success,
@@ -911,13 +994,13 @@ pub async fn get_by_filter(
             data,
         });
     }
-    
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
-    
+
     let query = match sql_constructor.construct() {
         Ok(sql) => sql,
         Err(e) => {
@@ -974,7 +1057,10 @@ pub async fn aggregation_filter(
 ) -> impl Responder {
     let parameters = request_body.into_inner();
     let table = parameters.entity.clone();
-    let is_root = auth.extensions().get::<Auth>().map_or(false, |auth_data| auth_data.is_root_account);
+    let is_root = auth
+        .extensions()
+        .get::<Auth>()
+        .map_or(false, |auth_data| auth_data.is_root_account);
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -984,13 +1070,13 @@ pub async fn aggregation_filter(
             None
         }
     };
-    
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
-    
+
     let query = match sql_constructor.construct_aggregation() {
         Ok(sql) => sql,
         Err(e) => {
@@ -1022,7 +1108,7 @@ pub async fn aggregation_filter(
             });
         }
     };
-    
+
     // Extract JSON values directly (no string parsing needed)
     let data: Vec<serde_json::Value> = results
         .into_iter()

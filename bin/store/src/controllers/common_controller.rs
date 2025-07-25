@@ -107,7 +107,7 @@ pub fn process_records(
     records: Vec<Value>,
     table_name: &str,
     auth: &Auth,
-    is_root_account:bool
+    is_root_account: bool,
 ) -> Result<(Vec<Value>, Vec<String>), String> {
     let hypertable_exists = field_exists_in_table(table_name, "hypertable_timestamp");
     let mut processed_records = Vec::new();
@@ -119,7 +119,7 @@ pub fn process_records(
 
         // Hypertable timestamp logic
         if hypertable_exists {
-            if let Some(obj) = request_body.record.as_object_mut() {    
+            if let Some(obj) = request_body.record.as_object_mut() {
                 if let Some(timestamp) = obj.get("timestamp") {
                     obj.insert("hypertable_timestamp".to_string(), timestamp.clone());
                 }
@@ -129,9 +129,11 @@ pub fn process_records(
         //insert is_batch to the record and set it to true
         if let Some(obj) = request_body.record.as_object_mut() {
             obj.insert("is_batch".to_string(), serde_json::Value::Bool(true));
-            obj.insert("sync_status".to_string(), serde_json::Value::String("complete".to_string()));
+            obj.insert(
+                "sync_status".to_string(),
+                serde_json::Value::String("complete".to_string()),
+            );
         }
-        
 
         processed_records.push(request_body.record);
     }
@@ -476,7 +478,7 @@ pub async fn process_and_insert_record(
     mut record: Value,
     pluck_fields: Option<Vec<String>>,
     auth: &Auth,
-    is_root_account: bool
+    is_root_account: bool,
 ) -> ControllerResult {
     let code = generate_code(table_name, "", 100000).await.map_err(|e| {
         ApiError::new(
@@ -564,7 +566,14 @@ pub async fn process_record_for_update<T: serde::Serialize>(
 
     // Check if record exists
     let mut conn = db::get_async_connection().await;
-    let data_exists = table.get_by_id(&mut conn, record_id, is_root_account, Some(auth.organization_id.as_str())).await;
+    let data_exists = table
+        .get_by_id(
+            &mut conn,
+            record_id,
+            is_root_account,
+            Some(auth.organization_id.clone()),
+        )
+        .await;
     match data_exists {
         Ok(record) => {
             if record.is_none() {
@@ -617,7 +626,7 @@ pub async fn process_and_update_record(
     pluck_fields: Option<Vec<String>>,
     operation: &str,
     auth: &Auth,
-    is_root_account: bool
+    is_root_account: bool,
 ) -> ControllerResult {
     let table = Table::from_str(table_name).ok_or_else(|| {
         ApiError::new(
@@ -626,15 +635,22 @@ pub async fn process_and_update_record(
         )
     })?;
 
-    let processed_record =
-        process_record_for_update(record, table_name, id, &table, operation, auth, is_root_account)
-            .await
-            .map_err(|status| {
-                ApiError::new(
-                    http::StatusCode::INTERNAL_SERVER_ERROR,
-                    status.message().to_string(),
-                )
-            })?;
+    let processed_record = process_record_for_update(
+        record,
+        table_name,
+        id,
+        &table,
+        operation,
+        auth,
+        is_root_account,
+    )
+    .await
+    .map_err(|status| {
+        ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            status.message().to_string(),
+        )
+    })?;
 
     update(
         &table_name.to_string(),
@@ -684,12 +700,15 @@ pub async fn process_and_get_record_by_id(
     let mut conn = db::get_async_connection().await;
 
     // Get record by ID
-    let record = table.get_by_id(&mut conn, id, is_root_account, organization_id).await.map_err(|e| {
-        ApiError::new(
-            http::StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to get record: {}", e),
-        )
-    })?;
+    let record = table
+        .get_by_id(&mut conn, id, is_root_account, organization_id.map(|s| s.to_string()))
+        .await
+        .map_err(|e| {
+            ApiError::new(
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to get record: {}", e),
+            )
+        })?;
 
     // Check if record exists
     match record {
@@ -722,7 +741,7 @@ pub async fn perform_upsert(
     data: serde_json::Value,
     pluck_fields: Option<Vec<String>>,
     auth: &Auth,
-    is_root_account: bool
+    is_root_account: bool,
 ) -> Result<ApiResponse, ApiError> {
     // Build filters from conflict columns
     let filters = FilterCriteria::build_from_conflict_columns(conflict_columns, &data)
@@ -765,6 +784,15 @@ pub async fn perform_upsert(
         process_and_insert_record(table_name, data, pluck_fields, auth, is_root_account).await
     } else {
         // If the record exists, perform an update
-        process_and_update_record(table_name, data, &record_id, pluck_fields, "update", auth, is_root_account).await
+        process_and_update_record(
+            table_name,
+            data,
+            &record_id,
+            pluck_fields,
+            "update",
+            auth,
+            is_root_account,
+        )
+        .await
     }
 }

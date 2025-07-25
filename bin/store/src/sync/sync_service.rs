@@ -136,7 +136,6 @@ pub async fn send_messages(
                 "hypertable_timestamp": msg.hypertable_timestamp,
             });
 
-
             serialized
         })
         .collect();
@@ -167,7 +166,7 @@ async fn apply_messages(
     messages: Vec<CrdtMessageModel>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
-    
+
     let sender = get_sender().cloned().unwrap_or_else(|| {
         log::error!("Failed to send message: sender not available");
         panic!("Message sender not available")
@@ -186,7 +185,7 @@ async fn apply_messages(
         if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
             let inserted_timestamp: Clock =
                 HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-            
+
             let mut updated_msg = msg;
             updated_msg.group_id =
                 std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());

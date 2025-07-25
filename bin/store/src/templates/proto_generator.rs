@@ -578,7 +578,8 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  bool success = 1;\n");
     proto.push_str("  string message = 2;\n");
     proto.push_str("  int32 count = 3;\n");
-    proto.push_str("  string data = 4;  // Single JSON string containing the entire result array\n");
+    proto
+        .push_str("  string data = 4;  // Single JSON string containing the entire result array\n");
     proto.push_str("}\n\n");
 
     // Generate unified service with full CRUD operations
