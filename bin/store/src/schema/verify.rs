@@ -189,6 +189,79 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
     None
 }
 
+/// Gets all field names for a specified table by parsing the schema.rs file
+///
+/// # Arguments
+///
+/// * `table_name` - The name of the table to get fields for
+///
+/// # Returns
+///
+/// * `Option<Vec<String>>` - Vector of field names if table exists, None otherwise
+///
+pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
+    // Path to schema.rs file
+    let possible_paths = vec![Path::new("src/schema/schema.rs"), Path::new("schema.rs")];
+    // Read the schema file
+    let mut schema_content = String::new();
+    for path in possible_paths {
+        if let Ok(content) = fs::read_to_string(&path) {
+            schema_content = content;
+            break;
+        }
+    }
+
+    if schema_content.is_empty() {
+        log::error!("Could not find schema file");
+        schema_content = SCHEMA_CONTENT.to_string();
+    }
+
+    // Create a regex pattern to find the table definition
+    let table_pattern = format!(
+        r"(?s)table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{(.*?)\}}\s*\}}",
+        regex::escape(table_name)
+    );
+    let table_regex = match Regex::new(&table_pattern) {
+        Ok(re) => re,
+        Err(e) => {
+            log::error!("Failed to create table regex: {}", e);
+            return None;
+        }
+    };
+
+    // Find the table definition
+    if let Some(captures) = table_regex.captures(&schema_content) {
+        if let Some(table_body) = captures.get(1) {
+            // Get the table body content
+            let table_content = table_body.as_str();
+
+            // Create a regex pattern to find all field definitions
+            let field_pattern = r"(?m)^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*->\s*[^,]*";
+            let field_regex = match Regex::new(field_pattern) {
+                Ok(re) => re,
+                Err(e) => {
+                    log::error!("Failed to create field regex: {}", e);
+                    return None;
+                }
+            };
+
+            // Extract all field names
+            let mut fields = Vec::new();
+            for captures in field_regex.captures_iter(table_content) {
+                if let Some(field_name) = captures.get(1) {
+                    fields.push(field_name.as_str().to_string());
+                }
+            }
+
+            if !fields.is_empty() {
+                return Some(fields);
+            }
+        }
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -203,5 +276,18 @@ mod tests {
 
         // Test with non-existing table
         assert!(!field_exists_in_table("nonexistent_table", "name"));
+    }
+
+    #[test]
+    fn test_get_table_fields() {
+        // Test with existing table
+        if let Some(fields) = get_table_fields("items") {
+            assert!(!fields.is_empty());
+            // Check that common fields exist
+            assert!(fields.contains(&"id".to_string()));
+        }
+
+        // Test with non-existing table
+        assert!(get_table_fields("nonexistent_table").is_none());
     }
 }
