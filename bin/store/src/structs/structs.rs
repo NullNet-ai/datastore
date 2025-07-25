@@ -75,7 +75,7 @@ pub struct SqlUpdate {
 
 impl RequestBody {
     // Process record with common fields and return a Value directly
-    pub fn process_record(&mut self, operation: &str, auth: &Auth) {
+    pub fn process_record(&mut self, operation: &str, auth: &Auth, is_root_account: bool) {
         // // Add common fields to the record
         self.add_common_fields(operation, auth);
 

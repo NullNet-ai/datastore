@@ -1067,19 +1067,23 @@ pub struct AggregationFilterWrapper {
 
 impl AggregationFilterWrapper {
     pub fn new(request: crate::generated::store::AggregationFilterRequest) -> Self {
-        let converted_filters: Vec<_> = request.advance_filters.iter()
-            .filter_map(convert_filter_criteria)
-            .collect();
+        // Extract data from the body field
+        let body = request.body.as_ref();
+        
+        let converted_filters: Vec<_> = body
+            .map(|b| b.advance_filters.iter().filter_map(convert_filter_criteria).collect())
+            .unwrap_or_default();
             
-        let converted_joins: Vec<_> = request.joins.iter()
-            .filter_map(convert_join)
-            .collect();
+        let converted_joins: Vec<_> = body
+            .map(|b| b.joins.iter().filter_map(convert_join).collect())
+            .unwrap_or_default();
             
-        let converted_aggregations: Vec<_> = request.aggregations.iter()
-            .map(convert_aggregation)
-            .collect();
+        let converted_aggregations: Vec<_> = body
+            .map(|b| b.aggregations.iter().map(convert_aggregation).collect())
+            .unwrap_or_default();
             
-        let converted_order = request.order.as_ref().map(convert_aggregation_order);
+        let converted_order = body
+            .and_then(|b| b.order.as_ref().map(convert_aggregation_order));
         
         Self {
             request,
@@ -1101,7 +1105,9 @@ impl QueryFilter for AggregationFilterWrapper {
     }
     
     fn get_limit(&self) -> usize {
-        self.request.limit.unwrap_or(100) as usize
+        self.request.body.as_ref()
+            .and_then(|b| b.limit)
+            .unwrap_or(100) as usize
     }
     
     fn get_date_format(&self) -> &str {
@@ -1113,11 +1119,13 @@ impl QueryFilter for AggregationFilterWrapper {
     }
     
     fn get_bucket_size(&self) -> Option<&str> {
-        self.request.bucket_size.as_deref()
+        self.request.body.as_ref()
+            .and_then(|b| b.bucket_size.as_deref())
     }
     
     fn get_timezone(&self) -> Option<&str> {
-        self.request.timezone.as_deref()
+        self.request.body.as_ref()
+            .and_then(|b| b.timezone.as_deref())
     }
     
     fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
@@ -1125,14 +1133,21 @@ impl QueryFilter for AggregationFilterWrapper {
     }
     
     fn get_entity(&self) -> Option<&str> {
-        Some(&self.request.entity)
+        self.request.params.as_ref()
+            .map(|p| p.table.as_str())
     }
     
     fn get_order_by(&self) -> &str {
-        self.request.order.as_ref().map(|o| o.order_by.as_str()).unwrap_or("id")
+        self.request.body.as_ref()
+            .and_then(|b| b.order.as_ref())
+            .map(|o| o.order_by.as_str())
+            .unwrap_or("id")
     }
     
     fn get_order_direction(&self) -> &str {
-        self.request.order.as_ref().map(|o| o.order_direction.as_str()).unwrap_or("asc")
+        self.request.body.as_ref()
+            .and_then(|b| b.order.as_ref())
+            .map(|o| o.order_direction.as_str())
+            .unwrap_or("asc")
     }
 }

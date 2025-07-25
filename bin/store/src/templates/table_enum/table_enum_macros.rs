@@ -33,7 +33,7 @@ macro_rules! generate_insert_record_match {
         paste::paste! {
             {
                 let mut request = $request.into_inner();
-                request.process_record("create", $auth);
+                request.process_record("create", $auth, false);
                 // ! needs refactoring for hypertable_timestamp
 
                 match $self {
@@ -71,14 +71,26 @@ macro_rules! generate_insert_record_match {
 #[allow(warnings)]
 #[macro_export]
 macro_rules! generate_get_by_id_match {
-    ($self:expr, $conn:expr, $id:expr, $($table:ident, $model:ty),*) => {
+    ($self:expr, $conn:expr, $id:expr, $is_root_account:expr, $organization_id:expr, $($table:ident, $model:ty),*) => {
         paste::paste! {
             match $self {
                 $(
                     Table::$table => {
-                        let result = schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
+                        let mut query = schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
                             .filter(schema::[<$table:snake:lower>]::id.eq($id))
                             .filter(schema::[<$table:snake:lower>]::tombstone.eq(0))
+                            .into_boxed();
+
+                        // Add organization_id filter if not root account
+                        if !$is_root_account {
+                            if let Some(org_id) = $organization_id {
+                                query = query
+                                    .filter(schema::[<$table:snake:lower>]::organization_id.is_not_null())
+                                    .filter(schema::[<$table:snake:lower>]::organization_id.eq(org_id));
+                            }
+                        }
+
+                        let result = query
                             .select(schema::[<$table:snake:lower>]::all_columns)
                             .first::<$model>($conn)
                             .await

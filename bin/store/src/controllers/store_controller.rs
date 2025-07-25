@@ -160,6 +160,7 @@ pub async fn update_record(
         Some(pluck_fields),
         "update",
         &auth_data,
+        is_root_controller
     )
     .await
     {
@@ -225,6 +226,7 @@ pub async fn create_record(
         body.into_inner(),
         Some(pluck_fields),
         &auth_data,
+        is_root_controller
     )
     .await
     {
@@ -291,8 +293,11 @@ pub async fn get_by_id(
             .collect()
     };
 
+    // Extract organization_id from auth_data
+    let organization_id = Some(auth_data.organization_id.as_str());
+    
     // Use the common function to get the record by ID
-    match process_and_get_record_by_id(&table_name, &record_id, Some(pluck_fields)).await {
+    match process_and_get_record_by_id(&table_name, &record_id, Some(pluck_fields), is_root_controller, organization_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(_error) => {
             let status_code = http::StatusCode::from_u16(_error.status)
@@ -333,6 +338,20 @@ pub async fn batch_insert_records(
             });
         }
     };
+    let controller_type = extensions.get::<Option<String>>();
+     let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    
+    // Perform different operations based on controller type
+    if is_root_controller {
+        log::info!("Processing batch_update_records via root controller for table: {}", table_name.as_str());
+        // Add any root-specific logic here
+    } else {
+        log::info!("Processing batch_update_records via simple controller for table: {}", table_name.as_str());
+        // Add any simple controller-specific logic here
+    }
     let temp_table = format!("temp_{}", table_name);
     match table_exists(&temp_table) {
         Ok(_table) => {
@@ -362,7 +381,7 @@ pub async fn batch_insert_records(
         });
     }
     let (processed_records, columns) =
-        match process_records(json_records, &table_name, &auth_data.clone()) {
+        match process_records(json_records, &table_name, &auth_data.clone(), is_root_controller) {
             Ok((records, cols)) => (records, cols),
             Err(e) => {
                 return HttpResponse::BadRequest().json(ApiResponse {
@@ -496,7 +515,7 @@ pub async fn batch_update_records(
             data: vec![],
         });
     }
-    updates.process_record("update", &auth_data);
+    updates.process_record("update", &auth_data, is_root_controller);
     if let Some(record) = updates.record.as_object_mut() {
         record.remove("version");
     }
@@ -650,7 +669,7 @@ pub async fn batch_delete_records(
     };
 
     // Process the record through the common processing logic
-    delete_updates.process_record("delete", &auth_data);
+    delete_updates.process_record("delete", &auth_data, is_root_controller);
     if let Some(record) = delete_updates.record.as_object_mut() {
         record.remove("version");
     }
@@ -734,6 +753,7 @@ pub async fn upsert(
         request_body.data,
         pluck_fields,
         &auth_data,
+        is_root_controller
     )
     .await
     {
@@ -798,6 +818,7 @@ pub async fn delete_record(
         None,
         "delete",
         &auth_data,
+        is_root_controller
     )
     .await
     {

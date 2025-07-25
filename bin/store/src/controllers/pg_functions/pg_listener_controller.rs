@@ -356,7 +356,7 @@ pub async fn create_pg_function(
                 "function": body_data.function_string,
             });
 
-            match process_and_insert_record("postgres_channels", record, None, &auth_data).await {
+            match process_and_insert_record("postgres_channels", record, None, &auth_data, false).await {
                 Ok(_) => {
                     // Both PG function creation and record insertion successful
                     HttpResponse::Ok().json(response)

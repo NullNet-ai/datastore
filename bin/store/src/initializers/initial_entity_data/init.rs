@@ -170,7 +170,7 @@ impl InitialEntityDataInitializer {
         let mut conn = db::get_async_connection().await;
         
         // Check if record already exists using get_by_id
-        let existing_record = table.get_by_id(&mut conn, record_id).await.map_err(|e| {
+        let existing_record = table.get_by_id(&mut conn, record_id, true, None).await.map_err(|e| {
             ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Failed to check if record exists in {}: {}", table_name, e),

@@ -275,11 +275,15 @@ impl Table {
         &self,
         conn: &mut AsyncPgConnection,
         id: &str,
+        is_root_account: bool,
+        organization_id: Option<&str>,
     ) -> Result<Option<Value>, DieselError> {
         generate_get_by_id_match!(
             self,
             conn,
             id,
+            is_root_account,
+            organization_id,
             ExternalContacts,
             ExternalContactModel,
             Organizations,

@@ -19,6 +19,9 @@ pub struct CreateParams {
     /// Table name
     #[prost(string, tag = "1")]
     pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// Common query structure for Create requests
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -61,6 +64,9 @@ pub struct BatchUpdateParams {
     /// Table name
     #[prost(string, tag = "1")]
     pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// Common parameter structure for BatchDelete requests
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -70,6 +76,9 @@ pub struct BatchDeleteParams {
     /// Table name
     #[prost(string, tag = "1")]
     pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// Common parameter structure for Update requests
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -82,6 +91,9 @@ pub struct UpdateParams {
     /// Table name
     #[prost(string, tag = "2")]
     pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "3")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// Common query structure for Update requests
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -100,6 +112,9 @@ pub struct BatchInsertParams {
     /// Table name
     #[prost(string, tag = "1")]
     pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// Common query structure for BatchInsert requests
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -118,6 +133,8 @@ pub struct UpsertParams {
     /// Table name
     #[prost(string, tag = "1")]
     pub table: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// Common query structure for Upsert requests
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -148,6 +165,20 @@ pub struct DeleteParams {
     /// Table name
     #[prost(string, tag = "2")]
     pub table: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub r#type: ::prost::alloc::string::String,
+}
+/// Common parameter structure for AggregationFilter requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AggregationFilterParams {
+    /// Table name
+    #[prost(string, tag = "1")]
+    pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
 }
 /// ExternalContacts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -11685,22 +11716,34 @@ pub struct LogicalOperatorFilter {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AggregationFilterRequest {
-    #[prost(string, tag = "1")]
-    pub entity: ::prost::alloc::string::String,
-    #[prost(message, repeated, tag = "2")]
-    pub aggregations: ::prost::alloc::vec::Vec<Aggregation>,
-    #[prost(message, repeated, tag = "3")]
-    pub advance_filters: ::prost::alloc::vec::Vec<FilterCriteria>,
-    #[prost(message, repeated, tag = "4")]
-    pub joins: ::prost::alloc::vec::Vec<Join>,
-    #[prost(int32, optional, tag = "5")]
-    pub limit: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "6")]
-    pub bucket_size: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "7")]
-    pub timezone: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(message, optional, tag = "8")]
-    pub order: ::core::option::Option<AggregationOrder>,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<AggregationFilterParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<aggregation_filter_request::AggregationFilterBody>,
+}
+/// Nested message and enum types in `AggregationFilterRequest`.
+pub mod aggregation_filter_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct AggregationFilterBody {
+        #[prost(string, tag = "1")]
+        pub entity: ::prost::alloc::string::String,
+        #[prost(message, repeated, tag = "2")]
+        pub aggregations: ::prost::alloc::vec::Vec<super::Aggregation>,
+        #[prost(message, repeated, tag = "3")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+        #[prost(message, repeated, tag = "4")]
+        pub joins: ::prost::alloc::vec::Vec<super::Join>,
+        #[prost(int32, optional, tag = "5")]
+        pub limit: ::core::option::Option<i32>,
+        #[prost(string, optional, tag = "6")]
+        pub bucket_size: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(string, optional, tag = "7")]
+        pub timezone: ::core::option::Option<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "8")]
+        pub order: ::core::option::Option<super::AggregationOrder>,
+    }
 }
 /// Aggregation filter response
 /// Aggregation filter response with flexible JSON structure

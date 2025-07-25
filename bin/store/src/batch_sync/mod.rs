@@ -386,7 +386,7 @@ impl BatchSyncService {
             "is_batch": is_batch,
         });
 
-        match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data)
+        match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data, false)
             .await
         {
             Ok(_response) => true,

@@ -15,6 +15,7 @@ message Timestamp {
 // Common parameter structure for Create requests
 message CreateParams {
   string table = 1; // Table name
+  string type = 2; // request type
 }
 
 // Common query structure for Create requests
@@ -35,17 +36,23 @@ message AdvanceFilter {
 // Common parameter structure for BatchUpdate requests
 message BatchUpdateParams {
   string table = 1; // Table name
+  string type = 2; // request type
+
 }
 
 // Common parameter structure for BatchDelete requests
 message BatchDeleteParams {
   string table = 1; // Table name
+  string type = 2; // request type
+
 }
 
 // Common parameter structure for Update requests
 message UpdateParams {
   string id = 1; // Record ID
   string table = 2; // Table name
+  string type = 3; // request type
+
 }
 
 // Common query structure for Update requests
@@ -56,6 +63,8 @@ message UpdateQuery {
 // Common parameter structure for BatchInsert requests
 message BatchInsertParams {
   string table = 1; // Table name
+  string type = 2; // request type
+
 }
 
 // Common query structure for BatchInsert requests
@@ -66,6 +75,7 @@ message BatchInsertQuery {
 // Common parameter structure for Upsert requests
 message UpsertParams {
   string table = 1; // Table name
+  string type= 2;
 }
 
 // Common query structure for Upsert requests
@@ -82,6 +92,13 @@ message DeleteQuery {
 message DeleteParams {
   string id = 1; // Record ID
   string table = 2; // Table name
+  string type = 3;
+}
+
+// Common parameter structure for AggregationFilter requests
+message AggregationFilterParams {
+  string table = 1; // Table name
+  string type = 2; // request type
 }
 
 // ExternalContacts entity definition
@@ -6164,14 +6181,18 @@ message LogicalOperatorFilter {
 
 // Main aggregation filter request
 message AggregationFilterRequest {
-  string entity = 1;
-  repeated Aggregation aggregations = 2;
-  repeated FilterCriteria advance_filters = 3;
-  repeated Join joins = 4;
-  optional int32 limit = 5;
-  optional string bucket_size = 6;
-  optional string timezone = 7;
-  optional AggregationOrder order = 8;
+  AggregationFilterParams params = 1;
+  message AggregationFilterBody {
+    string entity = 1;
+    repeated Aggregation aggregations = 2;
+    repeated FilterCriteria advance_filters = 3;
+    repeated Join joins = 4;
+    optional int32 limit = 5;
+    optional string bucket_size = 6;
+    optional string timezone = 7;
+    optional AggregationOrder order = 8;
+  }
+  AggregationFilterBody body = 2;
 }
 
 // Aggregation filter response
