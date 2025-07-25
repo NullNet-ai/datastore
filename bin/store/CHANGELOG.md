@@ -5,6 +5,49 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.12
+
+### Author
+Kashan
+
+### Added
+- **Entity Initializer System**: Comprehensive initialization system for database entities with dynamic data generation
+  - Added `initial_entity_data` module with initialization functions for connections and packets
+  - Implemented `get_initial_connections()` function in `connections.rs` for generating sample connection data
+  - Implemented `get_initial_packets()` function in `packets.rs` for generating sample packet data
+  - Added `init.rs` with `test_error_resilient_initialization` function for validating initialization data
+  - Created dynamic timestamp generation using `chrono::Utc` for current date and time formatting
+
+### Enhanced
+- **Dynamic Data Generation**: Enhanced initialization data with real-time values
+  - `created_date` and `created_time` fields now use current UTC date/time formatted as "YYYY-MM-DD" and "HH:MM:SS"
+  - `timestamp` and `hypertable_timestamp` fields use ISO 8601 format with microseconds ("%Y-%m-%dT%H:%M:%S%.6f+00:00")
+  - `organization_id` dynamically retrieved from `DEFAULT_ORGANIZATION_ID` environment variable with fallback
+  - All timestamp fields generate current values instead of using hardcoded dates
+
+- **Environment Integration**: Enhanced configuration management
+  - Added `std::env::var` integration for `DEFAULT_ORGANIZATION_ID` retrieval
+  - Implemented fallback mechanism for missing environment variables
+  - Ensured consistency between initialization data and environment configuration
+
+- **Test Coverage**: Comprehensive validation for initialization data
+  - Added assertions for presence of `created_date`, `created_time`, `timestamp`, and `hypertable_timestamp` fields
+  - Implemented format validation for date ("YYYY-MM-DD") and time ("HH:MM:SS") fields
+  - Added ISO 8601 timestamp format validation with UTC timezone verification
+  - Verified `organization_id` matches environment variable configuration
+
+### Technical Implementation
+- **Core Files**:
+  - `/src/initializers/initial_entity_data/connections.rs` - Connection initialization with dynamic timestamps
+  - `/src/initializers/initial_entity_data/packets.rs` - Packet initialization with dynamic timestamps
+  - `/src/initializers/initial_entity_data/init.rs` - Test validation for initialization data
+- **Data Generation**: Real-time timestamp generation using `chrono::Utc::now()`
+- **Format Standards**: ISO 8601 timestamps, separate date/time fields, environment-based organization IDs
+- **Schema Compliance**: All generated fields match database schema definitions for `connections` and `packets` tables
+- **Error Resilience**: Comprehensive error handling and validation in initialization process
+
+---
+
 ## 0.1.11
 
 ### Author
