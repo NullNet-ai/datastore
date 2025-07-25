@@ -6,6 +6,7 @@ pub enum EInitializer {
     GLOBAL_ORGANIZATION_CONFIG,
     SYSTEM_DEVICE_CONFIG,
     BACKGROUND_SERVICES_CONFIG,
+    INITIAL_ENTITY_DATA_CONFIG,
 }
 #[allow(warnings)]
 impl EInitializer {
@@ -16,6 +17,7 @@ impl EInitializer {
             EInitializer::GLOBAL_ORGANIZATION_CONFIG => "global_organization_config",
             EInitializer::SYSTEM_DEVICE_CONFIG => "system_device_config",
             EInitializer::BACKGROUND_SERVICES_CONFIG => "background_services_config",
+            EInitializer::INITIAL_ENTITY_DATA_CONFIG => "initial_entity_data_config",
         }
     }
 
@@ -26,6 +28,7 @@ impl EInitializer {
             "global_organization_config" => Some(EInitializer::GLOBAL_ORGANIZATION_CONFIG),
             "system_device_config" => Some(EInitializer::SYSTEM_DEVICE_CONFIG),
             "background_services_config" => Some(EInitializer::BACKGROUND_SERVICES_CONFIG),
+            "initial_entity_data_config" => Some(EInitializer::INITIAL_ENTITY_DATA_CONFIG),
             _ => None,
         }
     }
