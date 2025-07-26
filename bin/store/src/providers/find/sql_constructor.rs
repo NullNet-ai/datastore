@@ -1384,7 +1384,7 @@ impl QueryFilter for AggregationFilterWrapper {
     }
 
     fn get_entity(&self) -> Option<&str> {
-        self.request.params.as_ref().map(|p| p.table.as_str())
+        self.request.body.as_ref().map(|b| b.entity.as_str())
     }
 
     fn get_order_by(&self) -> &str {

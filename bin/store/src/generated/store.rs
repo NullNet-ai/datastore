@@ -168,16 +168,37 @@ pub struct DeleteParams {
     #[prost(string, tag = "3")]
     pub r#type: ::prost::alloc::string::String,
 }
+/// Common parameter structure for Get requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetParams {
+    /// Record ID
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    /// Table name
+    #[prost(string, tag = "2")]
+    pub table: ::prost::alloc::string::String,
+    /// request type
+    #[prost(string, tag = "3")]
+    pub r#type: ::prost::alloc::string::String,
+}
+/// Common query structure for Get requests
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetQuery {
+    /// Field to pluck
+    #[prost(string, tag = "1")]
+    pub pluck: ::prost::alloc::string::String,
+}
 /// Common parameter structure for AggregationFilter requests
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AggregationFilterParams {
-    /// Table name
-    #[prost(string, tag = "1")]
-    pub table: ::prost::alloc::string::String,
     /// request type
-    #[prost(string, tag = "2")]
+    #[prost(string, tag = "1")]
     pub r#type: ::prost::alloc::string::String,
 }
 /// ExternalContacts entity definition
@@ -441,8 +462,8 @@ pub struct AccountOrganizations {
     pub account_organization_status: ::core::option::Option<
         ::prost::alloc::string::String,
     >,
-    #[prost(string, optional, tag = "25")]
-    pub is_invited: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "25")]
+    pub is_invited: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "26")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -547,8 +568,8 @@ pub struct Accounts {
     pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
     pub account_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
-    pub is_new_user: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "23")]
+    pub is_new_user: ::core::option::Option<bool>,
 }
 /// Addresses entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1325,8 +1346,8 @@ pub struct DeviceRules {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
     pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub disabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
     pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
@@ -1351,12 +1372,12 @@ pub struct DeviceRules {
     pub interface: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(int32, optional, tag = "33")]
     pub order: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "34")]
-    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "34")]
+    pub destination_inversed: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "35")]
     pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "36")]
-    pub source_inversed: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "36")]
+    pub source_inversed: ::core::option::Option<bool>,
 }
 /// TempDeviceRules entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1403,8 +1424,8 @@ pub struct TempDeviceRules {
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "20")]
     pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub disabled: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub disabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
     pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
@@ -1429,12 +1450,12 @@ pub struct TempDeviceRules {
     pub interface: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(int32, optional, tag = "33")]
     pub order: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "34")]
-    pub destination_inversed: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "34")]
+    pub destination_inversed: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "35")]
     pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "36")]
-    pub source_inversed: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "36")]
+    pub source_inversed: ::core::option::Option<bool>,
 }
 /// Packets entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1652,26 +1673,30 @@ pub struct Connections {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
+    #[prost(string, optional, tag = "23")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "22")]
+    #[prost(int32, optional, tag = "24")]
     pub total_packet: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "23")]
+    #[prost(int32, optional, tag = "25")]
     pub total_byte: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "24")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "25")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "30")]
     pub remote_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "29")]
+    #[prost(int32, optional, tag = "31")]
     pub source_port: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "30")]
+    #[prost(int32, optional, tag = "32")]
     pub destination_port: ::core::option::Option<i32>,
 }
 /// TempConnections entity definition
@@ -1841,20 +1866,18 @@ pub struct Devices {
     pub address_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
     pub instance_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
-    pub is_connection_established: ::core::option::Option<
-        ::prost::alloc::string::String,
-    >,
+    #[prost(bool, optional, tag = "23")]
+    pub is_connection_established: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "24")]
     pub system_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
     pub device_version: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
     pub last_heartbeat: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "27")]
-    pub is_monitoring_enabled: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "28")]
-    pub is_remote_access_enabled: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "27")]
+    pub is_monitoring_enabled: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "28")]
+    pub is_remote_access_enabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "29")]
     pub ip_address: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
@@ -1921,8 +1944,8 @@ pub struct IpInfos {
     pub postal: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
     pub timezone: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "28")]
-    pub blacklist: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "28")]
+    pub blacklist: ::core::option::Option<bool>,
 }
 /// PostgresChannels entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2313,8 +2336,8 @@ pub struct ContactEmails {
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
     pub email: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "22")]
-    pub is_primary: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "22")]
+    pub is_primary: ::core::option::Option<bool>,
 }
 /// Create ExternalContacts request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2347,8 +2370,10 @@ pub struct CreateExternalContactsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetExternalContactsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get ExternalContacts response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2591,8 +2616,10 @@ pub struct CreateOrganizationsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetOrganizationsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Organizations response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2835,8 +2862,10 @@ pub struct CreateOrganizationContactsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetOrganizationContactsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get OrganizationContacts response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -3081,8 +3110,10 @@ pub struct CreateOrganizationAccountsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetOrganizationAccountsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get OrganizationAccounts response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -3327,8 +3358,10 @@ pub struct CreateAccountOrganizationsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAccountOrganizationsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get AccountOrganizations response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -3573,8 +3606,10 @@ pub struct CreateAccountProfilesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAccountProfilesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get AccountProfiles response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -3817,8 +3852,10 @@ pub struct CreateAccountsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAccountsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Accounts response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -4057,8 +4094,10 @@ pub struct CreateAddressesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAddressesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Addresses response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -4297,8 +4336,10 @@ pub struct CreateSamplesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetSamplesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Samples response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -4537,8 +4578,10 @@ pub struct CreateAppFirewallsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAppFirewallsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get AppFirewalls response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -4781,8 +4824,10 @@ pub struct CreateAppguardLogsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetAppguardLogsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get AppguardLogs response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -5025,8 +5070,10 @@ pub struct CreateTempAppguardLogsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempAppguardLogsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempAppguardLogs response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -5269,8 +5316,10 @@ pub struct CreateDeviceAliasesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceAliasesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceAliases response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -5513,8 +5562,10 @@ pub struct CreateTempDeviceAliasesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempDeviceAliasesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempDeviceAliases response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -5759,8 +5810,10 @@ pub struct CreateDeviceConfigurationsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceConfigurationsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceConfigurations response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -6005,8 +6058,10 @@ pub struct CreateDeviceInterfaceAddressesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceInterfaceAddressesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceInterfaceAddresses response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -6257,8 +6312,10 @@ pub struct CreateTempDeviceInterfaceAddressesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempDeviceInterfaceAddressesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempDeviceInterfaceAddresses response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -6509,8 +6566,10 @@ pub struct CreateDeviceInterfacesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceInterfacesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceInterfaces response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -6753,8 +6812,10 @@ pub struct CreateTempDeviceInterfacesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempDeviceInterfacesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempDeviceInterfaces response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -7003,8 +7064,10 @@ pub struct CreateDeviceRemoteAccessSessionsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceRemoteAccessSessionsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceRemoteAccessSessions response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -7255,8 +7318,10 @@ pub struct CreateTempDeviceRemoteAccessSessionsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempDeviceRemoteAccessSessionsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempDeviceRemoteAccessSessions response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -7507,8 +7572,10 @@ pub struct CreateDeviceRulesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceRulesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceRules response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -7747,8 +7814,10 @@ pub struct CreateTempDeviceRulesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempDeviceRulesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempDeviceRules response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -7991,8 +8060,10 @@ pub struct CreatePacketsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetPacketsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Packets response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -8231,8 +8302,10 @@ pub struct CreateTempPacketsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempPacketsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempPackets response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -8471,8 +8544,10 @@ pub struct CreateConnectionsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetConnectionsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Connections response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -8711,8 +8786,10 @@ pub struct CreateTempConnectionsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempConnectionsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempConnections response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -8955,8 +9032,10 @@ pub struct CreateDeviceSshKeysResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceSshKeysRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceSshKeys response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -9199,8 +9278,10 @@ pub struct CreateDevicesResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDevicesRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Devices response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -9439,8 +9520,10 @@ pub struct CreateIpInfosResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetIpInfosRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get IpInfos response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -9679,8 +9762,10 @@ pub struct CreatePostgresChannelsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetPostgresChannelsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get PostgresChannels response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -9923,8 +10008,10 @@ pub struct CreateResolutionsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetResolutionsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Resolutions response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -10163,8 +10250,10 @@ pub struct CreateWallguardLogsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetWallguardLogsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get WallguardLogs response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -10407,8 +10496,10 @@ pub struct CreateTempWallguardLogsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetTempWallguardLogsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get TempWallguardLogs response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -10653,8 +10744,10 @@ pub struct CreateDeviceGroupSettingsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetDeviceGroupSettingsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get DeviceGroupSettings response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -10899,8 +10992,10 @@ pub struct CreateContactsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetContactsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get Contacts response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -11139,8 +11234,10 @@ pub struct CreateContactPhoneNumbersResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetContactPhoneNumbersRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get ContactPhoneNumbers response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -11385,8 +11482,10 @@ pub struct CreateContactEmailsResponse {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetContactEmailsRequest {
-    #[prost(string, tag = "1")]
-    pub id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
 }
 /// Get ContactEmails response
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -11745,7 +11844,6 @@ pub mod aggregation_filter_request {
         pub order: ::core::option::Option<super::AggregationOrder>,
     }
 }
-/// Aggregation filter response
 /// Aggregation filter response with flexible JSON structure
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -11955,14 +12053,6 @@ pub mod store_service_server {
     /// Generated trait containing gRPC methods that should be implemented for use with StoreServiceServer.
     #[async_trait]
     pub trait StoreService: std::marker::Send + std::marker::Sync + 'static {
-        /// Aggregation filter for any entity
-        async fn aggregation_filter(
-            &self,
-            request: tonic::Request<super::AggregationFilterRequest>,
-        ) -> std::result::Result<
-            tonic::Response<super::AggregationFilterResponse>,
-            tonic::Status,
-        >;
         /// Create a new ExternalContacts
         async fn create_external_contacts(
             &self,
@@ -14407,6 +14497,14 @@ pub mod store_service_server {
             tonic::Response<super::UpsertContactEmailsResponse>,
             tonic::Status,
         >;
+        /// Aggregation filter for advanced queries
+        async fn aggregation_filter(
+            &self,
+            request: tonic::Request<super::AggregationFilterRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::AggregationFilterResponse>,
+            tonic::Status,
+        >;
     }
     /// Store service definition with CRUD operations
     #[derive(Debug)]
@@ -14485,52 +14583,6 @@ pub mod store_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/store.StoreService/AggregationFilter" => {
-                    #[allow(non_camel_case_types)]
-                    struct AggregationFilterSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::AggregationFilterRequest>
-                    for AggregationFilterSvc<T> {
-                        type Response = super::AggregationFilterResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::AggregationFilterRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::aggregation_filter(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = AggregationFilterSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
                 "/store.StoreService/CreateExternalContacts" => {
                     #[allow(non_camel_case_types)]
                     struct CreateExternalContactsSvc<T: StoreService>(pub Arc<T>);
@@ -29513,6 +29565,52 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertContactEmailsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/AggregationFilter" => {
+                    #[allow(non_camel_case_types)]
+                    struct AggregationFilterSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::AggregationFilterRequest>
+                    for AggregationFilterSvc<T> {
+                        type Response = super::AggregationFilterResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AggregationFilterRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::aggregation_filter(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = AggregationFilterSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

@@ -115,7 +115,7 @@ pub fn process_records(
     for record in records {
         // Run your custom processing logic
         let mut request_body = RequestBody { record };
-        request_body.process_record("create", auth, is_root_account);
+        request_body.process_record("create", auth, is_root_account, table_name);
 
         // Hypertable timestamp logic
         if hypertable_exists {
@@ -455,7 +455,7 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
     let mut request_body = RequestBody {
         record: processed_record,
     };
-    request_body.process_record("create", auth, is_root_account);
+    request_body.process_record("create", auth, is_root_account, table_name);
     processed_record = request_body.record;
 
     if field_exists_in_table(table_name, "hypertable_timestamp") {
@@ -561,7 +561,7 @@ pub async fn process_record_for_update<T: serde::Serialize>(
     let mut request_body = RequestBody {
         record: processed_record.clone(),
     };
-    request_body.process_record(operation, auth, is_root_account);
+    request_body.process_record(operation, auth, is_root_account, table_name);
     processed_record = request_body.record;
 
     // Check if record exists

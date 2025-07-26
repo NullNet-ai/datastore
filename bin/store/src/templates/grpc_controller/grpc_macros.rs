@@ -34,7 +34,7 @@ macro_rules! generate_create_method {
                     let table_name = params.table;
 
                     // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.as_str();
+                    let request_type = params.r#type.clone();
                     let is_root_request = request_type == "root";
                     let record = match request.[<$table:lower>] {
                         Some(r) => r,
@@ -104,7 +104,10 @@ macro_rules! generate_aggregation_filter_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
 
-                    let table = params.table.clone();
+                    // Get table from body.entity instead of params.table
+                    let table = request.body.as_ref()
+                        .map(|b| b.entity.clone())
+                        .ok_or_else(|| Status::invalid_argument("Body with entity is required"))?;
 
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();
@@ -513,7 +516,10 @@ macro_rules! generate_get_method {
 
                     // Extract request parameters
                     let request = request.into_inner();
-                    let id = request.id;
+                    let params = request
+                        .params
+                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                    let id = params.id;
 
                     // Check if ID is provided
                     if id.is_empty() {
@@ -532,6 +538,7 @@ macro_rules! generate_get_method {
                                     format!("Record with ID '{}' not found in '{}'", id, table_name)
                                 ));
                             }
+
 
                             // Convert the first item to the specific type
                             let typed_data: [<$table:camel>] = serde_json::from_value(response.data[0].clone())
@@ -755,7 +762,7 @@ macro_rules! generate_batch_delete_method {
                     };
 
                     // Process the record through the common processing logic
-                    delete_updates.process_record("delete", &auth_data, is_root_request);
+                    delete_updates.process_record("delete", &auth_data, is_root_request, &params.table);
                     if let Some(record) = delete_updates.record.as_object_mut() {
                         record.remove("version");
                     }

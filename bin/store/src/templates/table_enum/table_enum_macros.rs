@@ -34,12 +34,12 @@ macro_rules! generate_insert_record_match {
         paste::paste! {
             {
                 let mut request = $request.into_inner();
-                request.process_record("create", $auth, false);
                 // ! needs refactoring for hypertable_timestamp
 
                 match $self {
                     $(
                         Table::$table => {
+                            request.process_record("create", $auth, false, stringify!([<$table:snake:lower>]));
                             let value: $model = serde_json::from_value($record)
                                 .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 

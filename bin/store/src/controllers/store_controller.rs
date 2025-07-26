@@ -570,7 +570,7 @@ pub async fn batch_update_records(
             data: vec![],
         });
     }
-    updates.process_record("update", &auth_data, is_root_controller);
+    updates.process_record("update", &auth_data, is_root_controller, &table_name);
     if let Some(record) = updates.record.as_object_mut() {
         record.remove("version");
     }
@@ -730,7 +730,7 @@ pub async fn batch_delete_records(
     };
 
     // Process the record through the common processing logic
-    delete_updates.process_record("delete", &auth_data, is_root_controller);
+    delete_updates.process_record("delete", &auth_data, is_root_controller, &table_name);
     if let Some(record) = delete_updates.record.as_object_mut() {
         record.remove("version");
     }

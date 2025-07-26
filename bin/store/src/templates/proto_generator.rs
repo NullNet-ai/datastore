@@ -146,14 +146,14 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("// Common parameter structure for BatchUpdate requests\n");
     proto.push_str("message BatchUpdateParams {\n");
     proto.push_str("  string table = 1; // Table name\n");
-    proto.push_str("  string type = 2; // request type\n");
+    proto.push_str("  string type = 2; // request type\n\n");
     proto.push_str("}\n\n");
 
     // Add BatchDelete common structures
     proto.push_str("// Common parameter structure for BatchDelete requests\n");
     proto.push_str("message BatchDeleteParams {\n");
     proto.push_str("  string table = 1; // Table name\n");
-    proto.push_str("  string type = 2; // request type\n");
+    proto.push_str("  string type = 2; // request type\n\n");
     proto.push_str("}\n\n");
 
     // Common structures for Update requests
@@ -161,7 +161,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("message UpdateParams {\n");
     proto.push_str("  string id = 1; // Record ID\n");
     proto.push_str("  string table = 2; // Table name\n");
-    proto.push_str("  string type = 3; // request type\n");
+    proto.push_str("  string type = 3; // request type\n\n");
     proto.push_str("}\n\n");
 
     proto.push_str("// Common query structure for Update requests\n");
@@ -173,7 +173,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("// Common parameter structure for BatchInsert requests\n");
     proto.push_str("message BatchInsertParams {\n");
     proto.push_str("  string table = 1; // Table name\n");
-    proto.push_str("  string type = 2; // request type\n");
+    proto.push_str("  string type = 2; // request type\n\n");
     proto.push_str("}\n\n");
 
     proto.push_str("// Common query structure for BatchInsert requests\n");
@@ -185,7 +185,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("// Common parameter structure for Upsert requests\n");
     proto.push_str("message UpsertParams {\n");
     proto.push_str("  string table = 1; // Table name\n");
-    proto.push_str("  string type = 2; // request type\n");
+    proto.push_str("  string type= 2;\n");
     proto.push_str("}\n\n");
 
     proto.push_str("// Common query structure for Upsert requests\n");
@@ -203,7 +203,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("message DeleteParams {\n");
     proto.push_str("  string id = 1; // Record ID\n");
     proto.push_str("  string table = 2; // Table name\n");
-    proto.push_str("  string type = 3; // request type\n");
+    proto.push_str("  string type = 3;\n");
     proto.push_str("}\n\n");
 
     // Add Get common structures
@@ -219,37 +219,10 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  string pluck = 1; // Field to pluck\n");
     proto.push_str("}\n\n");
 
-    // Add other common query structures
-    proto.push_str("// Common query structure for Create requests\n");
-    proto.push_str("message CreateQuery {\n");
-    proto.push_str("  string pluck = 1; // Field to pluck\n");
-    proto.push_str("}\n\n");
-
-    proto.push_str("// Common query structure for Update requests\n");
-    proto.push_str("message UpdateQuery {\n");
-    proto.push_str("  string pluck = 1; // Field to pluck\n");
-    proto.push_str("}\n\n");
-
-    proto.push_str("// Common query structure for Delete requests\n");
-    proto.push_str("message DeleteQuery {\n");
-    proto.push_str("  string pluck = 1; // Field to pluck\n");
-    proto.push_str("}\n\n");
-
-    proto.push_str("// Common query structure for BatchInsert requests\n");
-    proto.push_str("message BatchInsertQuery {\n");
-    proto.push_str("  string pluck = 1; // Field to pluck\n");
-    proto.push_str("}\n\n");
-
-    proto.push_str("// Common query structure for Upsert requests\n");
-    proto.push_str("message UpsertQuery {\n");
-    proto.push_str("  string pluck = 1; // Field to pluck\n");
-    proto.push_str("}\n\n");
-
     // Add AggregationFilter common structures
     proto.push_str("// Common parameter structure for AggregationFilter requests\n");
     proto.push_str("message AggregationFilterParams {\n");
-    proto.push_str("  string table = 1; // Table name\n");
-    proto.push_str("  string type = 2; // request type\n");
+    proto.push_str("  string type = 1; // request type\n");
     proto.push_str("}\n\n");
 
     // Generate all data messages first
@@ -733,6 +706,7 @@ pub fn diesel_type_to_proto(diesel_type: &str) -> &'static str {
         t if t.contains("Int4") => "int32",
         t if t.contains("Integer") => "int32",
         t if t.contains("BigInt") => "int64",
+        t if t.contains("Bool") => "bool",
         t if t.contains("Uuid") => "string",
         t if t.contains("Text") => "string",
         t if t.contains("Varchar") => "string",
