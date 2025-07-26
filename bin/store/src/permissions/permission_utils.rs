@@ -75,7 +75,7 @@ pub async fn get_cached_permissions(
         body: _body,
         metadata: _metadata,
         account_id,
-        query:_query,
+        query: _query,
         uri,
         method,
         session,

@@ -27,18 +27,19 @@ macro_rules! generate_hypertable_timestamp_match {
     }
 }
 #[allow(warnings)]
+#[allow(unreachable_patterns)]
 #[macro_export]
 macro_rules! generate_insert_record_match {
     ($self:expr, $auth:expr, $conn:expr, $record:expr, $request:expr, $($table:ident, $model:ty),*) => {
         paste::paste! {
             {
                 let mut request = $request.into_inner();
-                request.process_record("create", $auth);
                 // ! needs refactoring for hypertable_timestamp
 
                 match $self {
                     $(
                         Table::$table => {
+                            request.process_record("create", $auth, false, stringify!([<$table:snake:lower>]));
                             let value: $model = serde_json::from_value($record)
                                 .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
 
@@ -55,13 +56,6 @@ macro_rules! generate_insert_record_match {
                             Ok(serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string()))
                         },
                     )*
-                    _ => {
-                        log::error!(
-                            "Inserting record for table {:?} is not implemented",
-                            $self
-                        );
-                        Err(DieselError::RollbackTransaction)
-                    }
                 }
             }
         }
@@ -69,16 +63,29 @@ macro_rules! generate_insert_record_match {
 }
 
 #[allow(warnings)]
+#[allow(unreachable_patterns)]
 #[macro_export]
 macro_rules! generate_get_by_id_match {
-    ($self:expr, $conn:expr, $id:expr, $($table:ident, $model:ty),*) => {
+    ($self:expr, $conn:expr, $id:expr, $is_root_account:expr, $organization_id:expr, $($table:ident, $model:ty),*) => {
         paste::paste! {
             match $self {
                 $(
                     Table::$table => {
-                        let result = schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
+                        let mut query = schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
                             .filter(schema::[<$table:snake:lower>]::id.eq($id))
                             .filter(schema::[<$table:snake:lower>]::tombstone.eq(0))
+                            .into_boxed();
+
+                        // Add organization_id filter if not root account
+                        if !$is_root_account {
+                            if let Some(org_id) = $organization_id {
+                                query = query
+                                    .filter(schema::[<$table:snake:lower>]::organization_id.is_not_null())
+                                    .filter(schema::[<$table:snake:lower>]::organization_id.eq(org_id));
+                            }
+                        }
+
+                        let result = query
                             .select(schema::[<$table:snake:lower>]::all_columns)
                             .first::<$model>($conn)
                             .await
@@ -87,19 +94,13 @@ macro_rules! generate_get_by_id_match {
                         Ok(result.map(|record| serde_json::to_value(record).unwrap_or_default()))
                     },
                 )*
-                _ => {
-                    log::error!(
-                        "Getting record by id for table {:?} is not implemented",
-                        $self
-                    );
-                    Err(DieselError::RollbackTransaction)
-                }
             }
         }
     }
 }
 
 #[allow(warnings)]
+#[allow(unreachable_patterns)]
 #[macro_export]
 macro_rules! generate_upsert_record_match {
     ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
@@ -149,13 +150,6 @@ macro_rules! generate_upsert_record_match {
                             }
                         },
                     )*
-                    _ => {
-                        log::error!(
-                            "Upserting record with id for table {:?} is not implemented",
-                            $self
-                        );
-                        Err(DieselError::RollbackTransaction)
-                    }
                 }
             }
         }
@@ -212,13 +206,6 @@ macro_rules! generate_upsert_record_with_timestamp_match {
                             }
                         },
                     )*
-                    _ => {
-                        log::error!(
-                            "Upserting record with id and timestamp for table {:?} is not implemented",
-                            $self
-                        );
-                        Err(DieselError::RollbackTransaction)
-                    }
                 }
             }
         }

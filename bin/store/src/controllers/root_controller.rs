@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpMessage};
+use actix_web::{HttpMessage, HttpRequest};
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
     // Since we're using /api/store/root, hardcode the type as 'root'

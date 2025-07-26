@@ -1,4 +1,13 @@
-use crate::{structs::structs::{FilterCriteria, FilterOperator, GetByFilter, AggregationFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern, SortOption, ConcatenateField, AggregationOrder, Aggregation}, structs::grpc_struct_converter::{convert_filter_criteria, convert_join, convert_aggregation, convert_aggregation_order}};
+use crate::{
+    structs::grpc_struct_converter::{
+        convert_aggregation, convert_aggregation_order, convert_filter_criteria, convert_join,
+    },
+    structs::structs::{
+        Aggregation, AggregationFilter, AggregationOrder, ConcatenateField, FilterCriteria,
+        FilterOperator, GetByFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern,
+        SortOption,
+    },
+};
 use std::collections::HashMap;
 
 // Trait to define common interface for both GetByFilter and AggregationFilter
@@ -7,36 +16,65 @@ pub trait QueryFilter {
     fn get_joins(&self) -> &[Join];
     fn get_limit(&self) -> usize;
     fn get_date_format(&self) -> &str;
-    
+
     // Optional methods with default implementations
-    fn get_pluck(&self) -> &[String] { &[] }
+    fn get_pluck(&self) -> &[String] {
+        &[]
+    }
     fn get_pluck_object(&self) -> &HashMap<String, Vec<String>> {
         use std::collections::HashMap;
-        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> = std::sync::LazyLock::new(|| HashMap::new());
+        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> =
+            std::sync::LazyLock::new(|| HashMap::new());
         &EMPTY
     }
     fn get_pluck_group_object(&self) -> &HashMap<String, Vec<String>> {
         use std::collections::HashMap;
-        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> = std::sync::LazyLock::new(|| HashMap::new());
+        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> =
+            std::sync::LazyLock::new(|| HashMap::new());
         &EMPTY
     }
-    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] { &[] }
-    fn get_concatenate_fields(&self) -> &[ConcatenateField] { &[] }
-    fn get_order_by(&self) -> &str { "id" }
-    fn get_order_direction(&self) -> &str { "asc" }
-    fn get_offset(&self) -> usize { 0 }
-    fn get_multiple_sort(&self) -> &[SortOption] { &[] }
+    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
+        &[]
+    }
+    fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+        &[]
+    }
+    fn get_order_by(&self) -> &str {
+        "id"
+    }
+    fn get_order_direction(&self) -> &str {
+        "asc"
+    }
+    fn get_offset(&self) -> usize {
+        0
+    }
+    fn get_multiple_sort(&self) -> &[SortOption] {
+        &[]
+    }
     fn get_group_by(&self) -> &HashMap<String, Vec<String>> {
         use std::collections::HashMap;
-        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> = std::sync::LazyLock::new(|| HashMap::new());
+        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> =
+            std::sync::LazyLock::new(|| HashMap::new());
         &EMPTY
     }
-    fn get_is_case_sensitive_sorting(&self) -> Option<bool> { None }
-    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] { &[] }
-    fn get_bucket_size(&self) -> Option<&str> { None }
-    fn get_timezone(&self) -> Option<&str> { None }
-    fn get_aggregation_order(&self) -> Option<&AggregationOrder> { None }
-    fn get_entity(&self) -> Option<&str> { None }
+    fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
+        None
+    }
+    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] {
+        &[]
+    }
+    fn get_bucket_size(&self) -> Option<&str> {
+        None
+    }
+    fn get_timezone(&self) -> Option<&str> {
+        None
+    }
+    fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
+        None
+    }
+    fn get_entity(&self) -> Option<&str> {
+        None
+    }
 }
 
 // Implement QueryFilter for GetByFilter
@@ -44,63 +82,62 @@ impl QueryFilter for GetByFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria] {
         &self.advance_filters
     }
-    
+
     fn get_joins(&self) -> &[Join] {
         &self.joins
     }
-    
+
     fn get_limit(&self) -> usize {
         self.limit
     }
-    
+
     fn get_date_format(&self) -> &str {
         &self.date_format
     }
-    
+
     fn get_pluck(&self) -> &[String] {
         &self.pluck
     }
-    
+
     fn get_pluck_object(&self) -> &HashMap<String, Vec<String>> {
         &self.pluck_object
     }
-    
+
     fn get_pluck_group_object(&self) -> &HashMap<String, Vec<String>> {
         &self.pluck_group_object
     }
-    
+
     fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
         &self.group_advance_filters
     }
-    
+
     fn get_concatenate_fields(&self) -> &[ConcatenateField] {
         &self.concatenate_fields
     }
-    
+
     fn get_order_by(&self) -> &str {
         &self.order_by
     }
-    
+
     fn get_order_direction(&self) -> &str {
         &self.order_direction
     }
-    
+
     fn get_offset(&self) -> usize {
         self.offset
     }
-    
+
     fn get_multiple_sort(&self) -> &[SortOption] {
         &self.multiple_sort
     }
-    
+
     fn get_group_by(&self) -> &HashMap<String, Vec<String>> {
         &self.group_by
     }
-    
+
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
         self.is_case_sensitive_sorting
     }
-    
 }
 
 // Implement QueryFilter for AggregationFilter
@@ -108,45 +145,51 @@ impl QueryFilter for AggregationFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria] {
         &self.advance_filters
     }
-    
+
     fn get_joins(&self) -> &[Join] {
         &self.joins
     }
-    
+
     fn get_limit(&self) -> usize {
         self.limit
     }
-    
+
     fn get_date_format(&self) -> &str {
         "mm/dd/YYYY" // Default format for aggregation queries
     }
-    
+
     fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] {
         &self.aggregations
     }
-    
+
     fn get_bucket_size(&self) -> Option<&str> {
         self.bucket_size.as_deref()
     }
-    
+
     fn get_timezone(&self) -> Option<&str> {
         self.timezone.as_deref()
     }
-    
+
     fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
         self.order.as_ref()
     }
-    
+
     fn get_entity(&self) -> Option<&str> {
         Some(&self.entity)
     }
-    
+
     fn get_order_by(&self) -> &str {
-        self.order.as_ref().map(|o| o.order_by.as_str()).unwrap_or("id")
+        self.order
+            .as_ref()
+            .map(|o| o.order_by.as_str())
+            .unwrap_or("id")
     }
-    
+
     fn get_order_direction(&self) -> &str {
-        self.order.as_ref().map(|o| o.order_direction.as_str()).unwrap_or("asc")
+        self.order
+            .as_ref()
+            .map(|o| o.order_direction.as_str())
+            .unwrap_or("asc")
     }
 }
 
@@ -173,7 +216,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             is_root,
         }
     }
-    
+
     pub fn with_organization_id(mut self, organization_id: String) -> Self {
         self.organization_id = Some(organization_id);
         self
@@ -183,24 +226,24 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let mut sql = String::from("SELECT ");
         // TODO: suggestions for adding correct parameters
         // TODO: group by selections
-            // TODO: concantenated fields
-            // TODO: pluck_group_object need to fix by jean
+        // TODO: concantenated fields
+        // TODO: pluck_group_object need to fix by jean
         sql.push_str(&self.construct_selections());
 
         sql.push_str(" FROM ");
         sql.push_str(&self.table);
         // TODO: set join selections
-            // TODO: concantenated fields
+        // TODO: concantenated fields
         sql.push_str(&self.construct_joins());
         // TODO: set Where Clauses
-            // TODO: concantenated fields
+        // TODO: concantenated fields
         sql.push_str(&self.construct_where_clauses()?);
         // TODO: set Group By
-            // TODO: concantenated fields
+        // TODO: concantenated fields
         sql.push_str(&self.construct_group_by());
         // TODO: set Order By
         // TODO: multiple sort
-            // TODO: concantenated fields
+        // TODO: concantenated fields
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
@@ -212,83 +255,88 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let aggregations = self.request_body.get_aggregations();
         let bucket_size = self.request_body.get_bucket_size();
         let entity = self.request_body.get_entity();
-        
+
         if aggregations.is_empty() {
             return Err("Missing required parameter: aggregations cannot be empty".to_string());
         }
-        
+
         if bucket_size.is_none() {
             return Err("Missing required parameter: bucket_size".to_string());
         }
-        
+
         if entity.is_none() {
             return Err("Missing required parameter: entity".to_string());
         }
-        
+
         let bucket_size = bucket_size.unwrap();
         let entity = entity.unwrap();
         let timezone = self.request_body.get_timezone().unwrap_or("UTC");
-        
+
         // Generate the SELECT clause with time bucket and aggregations
         let mut sql = String::from("SELECT ");
-        
+
         // Add time bucket
         sql.push_str(&format!(
             "time_bucket('{}', {}.timestamp AT TIME ZONE '{}') AS bucket",
             bucket_size, entity, timezone
         ));
-        
+
         // Add aggregation clauses
         for aggregation in aggregations {
             sql.push_str(", ");
             let agg_type = match aggregation.aggregation {
-                 crate::structs::structs::AggregationType::Sum => "SUM",
-                 crate::structs::structs::AggregationType::Count => "COUNT",
-                 crate::structs::structs::AggregationType::Avg => "AVG",
-                 crate::structs::structs::AggregationType::Min => "MIN",
-                 crate::structs::structs::AggregationType::Max => "MAX",
-                 crate::structs::structs::AggregationType::StdDev => "STDDEV",
-                 crate::structs::structs::AggregationType::Variance => "VARIANCE",
-                 crate::structs::structs::AggregationType::ArrayAgg => "ARRAY_AGG",
-             };
-            
+                crate::structs::structs::AggregationType::Sum => "SUM",
+                crate::structs::structs::AggregationType::Count => "COUNT",
+                crate::structs::structs::AggregationType::Avg => "AVG",
+                crate::structs::structs::AggregationType::Min => "MIN",
+                crate::structs::structs::AggregationType::Max => "MAX",
+                crate::structs::structs::AggregationType::StdDev => "STDDEV",
+                crate::structs::structs::AggregationType::Variance => "VARIANCE",
+                crate::structs::structs::AggregationType::ArrayAgg => "ARRAY_AGG",
+            };
+
             sql.push_str(&format!(
                 "{}({}.{}) AS {}",
                 agg_type, entity, aggregation.aggregate_on, aggregation.bucket_name
             ));
         }
-        
+
         // Add FROM clause
         sql.push_str(&format!(" FROM {}", self.table));
-        
+
         // Add joins if any
         sql.push_str(&self.construct_joins());
-        
+
         // Add WHERE clauses
         sql.push_str(&self.construct_where_clauses()?);
-        
+
         // Add GROUP BY clause
         sql.push_str(" GROUP BY bucket");
-        
+
         // Add ORDER BY clause
         if let Some(order) = self.request_body.get_aggregation_order() {
             let order_direction = order.order_direction.to_uppercase();
             sql.push_str(&format!(" ORDER BY {} {}", order.order_by, order_direction));
         }
-        
+
         // Add LIMIT clause
         if self.request_body.get_limit() > 0 {
             sql.push_str(&format!(" LIMIT {}", self.request_body.get_limit()));
         }
-        
+
         Ok(sql)
     }
 
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None)
     }
-    
-    fn get_field_with_parse_as(table: &str, field: &str, format_str: &str, parse_as: Option<&str>) -> String {
+
+    fn get_field_with_parse_as(
+        table: &str,
+        field: &str,
+        format_str: &str,
+        parse_as: Option<&str>,
+    ) -> String {
         // TODO: apply permissions
         // TODO: apply concantenated fields
         let base_field = if field.ends_with("_date") {
@@ -311,17 +359,31 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
         let format = format_str.unwrap_or("mm/dd/YYYY");
-        format!("Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')", table, field, format)
+        format!(
+            "Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')",
+            table, field, format
+        )
     }
     fn time_format_wrapper(field: &str, timezone: Option<&str>) -> String {
-        let timezone_query = format!(" AT TIME ZONE {} AT TIME ZONE '{}'", std::env::var("TZ").unwrap_or("UTC".to_string()), timezone.unwrap_or("UTC"));
+        let timezone_query = format!(
+            " AT TIME ZONE {} AT TIME ZONE '{}'",
+            std::env::var("TZ").unwrap_or("UTC".to_string()),
+            timezone.unwrap_or("UTC")
+        );
         format!("({} {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
-        
+
         // Add join selections from pluck_object if joins are present
-        if !self.request_body.get_joins().is_empty() && !self.request_body.get_pluck_object().is_empty() && self.request_body.get_pluck_object().iter().any(|(_, fields)| !fields.is_empty()) {
+        if !self.request_body.get_joins().is_empty()
+            && !self.request_body.get_pluck_object().is_empty()
+            && self
+                .request_body
+                .get_pluck_object()
+                .iter()
+                .any(|(_, fields)| !fields.is_empty())
+        {
             let join_selections = self.construct_join_selections();
             if !join_selections.is_empty() {
                 selections.extend(join_selections);
@@ -343,7 +405,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
 
         if selections.is_empty() {
-          "id".to_string()
+            "id".to_string()
         } else {
             selections.join(", ")
         }
@@ -351,12 +413,16 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
     fn construct_pluck(&self) -> String {
         let mut pluck_fields = Vec::new();
-        
+
         // Add regular pluck fields
         for field in self.request_body.get_pluck() {
-            pluck_fields.push(Self::get_field(&self.table, field, self.request_body.get_date_format()));
+            pluck_fields.push(Self::get_field(
+                &self.table,
+                field,
+                self.request_body.get_date_format(),
+            ));
         }
-        
+
         // Add concatenated fields that match the main table
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
@@ -366,15 +432,22 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     } else {
                         &field.entity
                     };
-                    let concatenated_expression = field.fields.iter()
-                          .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
-                          .collect::<Vec<_>>()
-                          .join(&format!(" || '{}' || ", field.separator));
-                    pluck_fields.push(format!("({}) AS {}", concatenated_expression, field.field_name));
+                    let concatenated_expression = field
+                        .fields
+                        .iter()
+                        .map(|f| {
+                            Self::get_field(table_name, f, self.request_body.get_date_format())
+                        })
+                        .collect::<Vec<_>>()
+                        .join(&format!(" || '{}' || ", field.separator));
+                    pluck_fields.push(format!(
+                        "({}) AS {}",
+                        concatenated_expression, field.field_name
+                    ));
                 }
             }
         }
-        
+
         if pluck_fields.is_empty() {
             String::new()
         } else {
@@ -390,14 +463,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
             for field in fields {
                 let selection = format!(
                     "JSONB_AGG(\"{}\".\"{}\") AS \"{}_{}\"",
-                    table_alias,
-                    field,
-                    table_alias,
-                    field
+                    table_alias, field, table_alias, field
                 );
                 selections.push(selection);
             }
-            
+
             // Add concatenated fields that match this table alias
             if !self.request_body.get_concatenate_fields().is_empty() {
                 for field in self.request_body.get_concatenate_fields() {
@@ -407,22 +477,24 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         } else {
                             &field.entity
                         };
-                        let concatenated_expression = field.fields.iter()
-                              .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
-                              .collect::<Vec<_>>()
-                              .join(&format!(" || '{}' || ", field.separator));
+                        let concatenated_expression = field
+                            .fields
+                            .iter()
+                            .map(|f| {
+                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                            })
+                            .collect::<Vec<_>>()
+                            .join(&format!(" || '{}' || ", field.separator));
                         let selection = format!(
                             "JSONB_AGG({}) AS \"{}_{}\"",
-                            concatenated_expression,
-                            table_alias,
-                            field.field_name
+                            concatenated_expression, table_alias, field.field_name
                         );
                         selections.push(selection);
                     }
                 }
             }
         }
-        
+
         // Join all selections with commas, or return empty string if no selections
         if selections.is_empty() {
             String::new()
@@ -432,53 +504,80 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn construct_join_selections(&self) -> Vec<String> {
         let mut join_selections = Vec::new();
-        
+
         // Only construct selections if joins are present
         if self.request_body.get_joins().is_empty() {
             return join_selections;
         }
-        
+
         // Iterate through each alias in pluck_object
         for join in self.request_body.get_joins() {
             if let Some(to_alias) = &join.field_relation.to.alias {
                 if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
                     let target_table = &join.field_relation.to.entity;
                     // Fixed: Look for a join whose target entity matches this join's source entity
-                    let previous_join = self.request_body.get_joins().iter()
-                        .find(|j| {
-                            // Find a join where the target entity/alias matches this join's from entity
-                            let target_matches = j.field_relation.to.entity == join.field_relation.from.entity;
-                            let alias_matches = j.field_relation.to.alias.as_deref() == Some(&join.field_relation.from.entity);
-                            target_matches || alias_matches
-                        });
-                    let join_condition = self.build_join_condition_for_alias(to_alias, join, previous_join);
-                    
+                    let previous_join = self.request_body.get_joins().iter().find(|j| {
+                        // Find a join where the target entity/alias matches this join's from entity
+                        let target_matches =
+                            j.field_relation.to.entity == join.field_relation.from.entity;
+                        let alias_matches = j.field_relation.to.alias.as_deref()
+                            == Some(&join.field_relation.from.entity);
+                        target_matches || alias_matches
+                    });
+                    let join_condition =
+                        self.build_join_condition_for_alias(to_alias, join, previous_join);
+
                     // Build JSONB_BUILD_OBJECT field pairs
-                    let mut field_pairs: Vec<String> = fields.iter()
-                        .map(|field| format!("'{}', {}", field, Self::get_field(to_alias, field, self.request_body.get_date_format())))
+                    let mut field_pairs: Vec<String> = fields
+                        .iter()
+                        .map(|field| {
+                            format!(
+                                "'{}', {}",
+                                field,
+                                Self::get_field(
+                                    to_alias,
+                                    field,
+                                    self.request_body.get_date_format()
+                                )
+                            )
+                        })
                         .collect();
 
                     if !self.request_body.get_concatenate_fields().is_empty() {
-                        self.request_body.get_concatenate_fields().iter().for_each(|field| {
-                            // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
-                            if field.aliased_entity == *to_alias || field.entity == *to_alias {
-                                let table_name = if !field.aliased_entity.is_empty() {
-                                    &field.aliased_entity
-                                } else {
-                                    &field.entity
-                                };
-                                let concatenated_expression = field.fields.iter()
-                                    .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
-                                    .collect::<Vec<_>>()
-                                    .join(&format!(" || '{}' || ", field.separator));
-                                field_pairs.push(format!("'{}', ({})", field.field_name, concatenated_expression));
-                            }
-                        });
+                        self.request_body
+                            .get_concatenate_fields()
+                            .iter()
+                            .for_each(|field| {
+                                // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
+                                if field.aliased_entity == *to_alias || field.entity == *to_alias {
+                                    let table_name = if !field.aliased_entity.is_empty() {
+                                        &field.aliased_entity
+                                    } else {
+                                        &field.entity
+                                    };
+                                    let concatenated_expression = field
+                                        .fields
+                                        .iter()
+                                        .map(|f| {
+                                            Self::get_field(
+                                                table_name,
+                                                f,
+                                                self.request_body.get_date_format(),
+                                            )
+                                        })
+                                        .collect::<Vec<_>>()
+                                        .join(&format!(" || '{}' || ", field.separator));
+                                    field_pairs.push(format!(
+                                        "'{}', ({})",
+                                        field.field_name, concatenated_expression
+                                    ));
+                                }
+                            });
                     }
 
                     let standard_where = match self.build_system_where_clause(to_alias) {
                         Ok(clause) => clause,
-                        Err(_) => format!("({}.tombstone = 0)", to_alias)
+                        Err(_) => format!("({}.tombstone = 0)", to_alias),
                     };
 
                     let selection = format!(
@@ -490,7 +589,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         join_condition,
                         to_alias
                     );
-                    
+
                     join_selections.push(selection);
                 } else {
                     // Handle case where no fields are specified for this alias
@@ -498,35 +597,54 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             }
         }
-        
+
         join_selections
     }
-    
-    fn build_join_condition_for_alias(&self, alias: &str, join: &Join, previous_join: Option<&Join>) -> String {
+
+    fn build_join_condition_for_alias(
+        &self,
+        alias: &str,
+        join: &Join,
+        previous_join: Option<&Join>,
+    ) -> String {
         let is_nested = join.nested;
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
         if is_nested {
             if let Some(prev_join) = previous_join {
                 // Use the previous join's alias if available
-                let prev_from_alias = prev_join.field_relation.from.alias.as_deref()
+                let prev_from_alias = prev_join
+                    .field_relation
+                    .from
+                    .alias
+                    .as_deref()
                     .unwrap_or(&prev_join.field_relation.from.entity);
                 let prev_from_field = &prev_join.field_relation.from.field;
-                let prev_to_alias = prev_join.field_relation.to.alias.as_deref()
+                let prev_to_alias = prev_join
+                    .field_relation
+                    .to
+                    .alias
+                    .as_deref()
                     .unwrap_or(&prev_join.field_relation.to.entity);
                 let prev_to_field = &prev_join.field_relation.to.field;
-                return format!("\"{}\".\"{}\" = \"{}\".\"{}\"", prev_from_alias, prev_from_field, prev_to_alias, prev_to_field);
+                return format!(
+                    "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                    prev_from_alias, prev_from_field, prev_to_alias, prev_to_field
+                );
             }
         }
-        format!("\"{}\".\"{}\" = \"{}\".\"{}\"" , self.table, from_field, alias, to_field)
+        format!(
+            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+            self.table, from_field, alias, to_field
+        )
     }
-    
+
     fn construct_joins(&self) -> String {
         if self.request_body.get_joins().is_empty() {
             String::from("")
         } else {
             let mut join_clauses = Vec::new();
-            
+
             for join in self.request_body.get_joins() {
                 match join.r#type.as_str() {
                     "left" => {
@@ -543,7 +661,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     }
                 }
             }
-            
+
             if join_clauses.is_empty() {
                 String::from("")
             } else {
@@ -563,7 +681,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             Some(id) => format!("'{}'", id),
             None => return Err("Organization ID is required".to_string()),
         };
-        
+
         Ok(format!(
             "({}.tombstone = 0 AND {}.organization_id IS NOT NULL AND {}.organization_id = {})",
             table_alias, table_alias, table_alias, organization_id
@@ -576,78 +694,123 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
         // Prioritize advance_filters over group_advance_filters
         if !self.request_body.get_advance_filters().is_empty() {
-            let expression = self.build_infix_expression(self.request_body.get_advance_filters())?;
+            let expression =
+                self.build_infix_expression(self.request_body.get_advance_filters())?;
             if !expression.is_empty() {
                 base_where.push_str(" AND ");
                 base_where.push_str(&expression);
             }
         } else if !self.request_body.get_group_advance_filters().is_empty() {
-            let group_expression = self.build_group_advance_filters_expression(self.request_body.get_group_advance_filters())?;
+            let group_expression = self.build_group_advance_filters_expression(
+                self.request_body.get_group_advance_filters(),
+            )?;
             if !group_expression.is_empty() {
                 base_where.push_str(" AND ");
                 base_where.push_str(&group_expression);
             }
         }
-        
+
         Ok(base_where)
     }
-    
+
     /// Builds an infix expression with proper order of operations using infix notation
-     /// 
-     /// Order of precedence (highest to lowest):
-     /// 1. Parentheses (for grouping OR expressions)
-     /// 2. AND operators (higher precedence)
-     /// 3. OR operators (lower precedence)
-     /// 
-     /// Examples:
-     /// - `A AND B OR C AND D` becomes `(A AND B) OR (C AND D)`
-     /// - `A OR B AND C` becomes `A OR (B AND C)`
-     /// - Single conditions and pure AND chains remain unchanged
-     /// 
-     /// The implementation ensures that:
-     /// - Filter arrays follow the pattern: [criteria, operator, criteria, operator, ...]
-     /// - AND operations are grouped together naturally
-     /// - OR operations split the expression into separate groups with parentheses when needed
+    ///
+    /// Order of precedence (highest to lowest):
+    /// 1. Parentheses (for grouping OR expressions)
+    /// 2. AND operators (higher precedence)
+    /// 3. OR operators (lower precedence)
+    ///
+    /// Examples:
+    /// - `A AND B OR C AND D` becomes `(A AND B) OR (C AND D)`
+    /// - `A OR B AND C` becomes `A OR (B AND C)`
+    /// - Single conditions and pure AND chains remain unchanged
+    ///
+    /// The implementation ensures that:
+    /// - Filter arrays follow the pattern: [criteria, operator, criteria, operator, ...]
+    /// - AND operations are grouped together naturally
+    /// - OR operations split the expression into separate groups with parentheses when needed
     fn build_infix_expression(&self, filters: &[FilterCriteria]) -> Result<String, String> {
-         if filters.is_empty() {
-             return Ok(String::new());
-         }
-         
-         // Ensure first filter is always a criteria
-         if !matches!(filters[0], FilterCriteria::Criteria { .. }) {
-             return Err("Invalid filter sequence: first filter must be a criteria, not an operator".to_string());
-         }
-         
-         // Handle single criteria case
+        if filters.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Ensure first filter is always a criteria
+        if !matches!(filters[0], FilterCriteria::Criteria { .. }) {
+            return Err(
+                "Invalid filter sequence: first filter must be a criteria, not an operator"
+                    .to_string(),
+            );
+        }
+
+        // Handle single criteria case
         if filters.len() == 1 {
-            if let FilterCriteria::Criteria { field, entity, operator, values, case_sensitive, parse_as, match_pattern } = &filters[0] {
-                let field_name = Self::get_field_with_parse_as(entity, field, self.request_body.get_date_format(), Some(parse_as));
-                return Ok(self.format_condition_with_case_sensitivity_and_pattern(&field_name, operator, values, *case_sensitive, match_pattern.as_ref()));
+            if let FilterCriteria::Criteria {
+                field,
+                entity,
+                operator,
+                values,
+                case_sensitive,
+                parse_as,
+                match_pattern,
+            } = &filters[0]
+            {
+                let field_name = Self::get_field_with_parse_as(
+                    entity,
+                    field,
+                    self.request_body.get_date_format(),
+                    Some(parse_as),
+                );
+                return Ok(self.format_condition_with_case_sensitivity_and_pattern(
+                    &field_name,
+                    operator,
+                    values,
+                    *case_sensitive,
+                    match_pattern.as_ref(),
+                ));
             }
             return Err("Invalid filter: single filter must be a criteria".to_string());
         }
-        
+
         // Parse the filter array into tokens
         let tokens = self.parse_filter_tokens(filters)?;
         if tokens.is_empty() {
             return Err("Failed to parse filter tokens: invalid filter sequence".to_string());
         }
-        
+
         // Build expression with proper precedence (AND > OR)
         Ok(self.build_expression_with_precedence(&tokens))
     }
     fn parse_filter_tokens(&self, filters: &[FilterCriteria]) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
         let mut i = 0;
-        
+
         while i < filters.len() {
             match &filters[i] {
-                FilterCriteria::Criteria { field, entity, operator, values, case_sensitive, parse_as, match_pattern } => {
-                    let field_name = Self::get_field_with_parse_as(entity, field, self.request_body.get_date_format(), Some(parse_as));
-                    let condition = self.format_condition_with_case_sensitivity_and_pattern(&field_name, operator, values, *case_sensitive, match_pattern.as_ref());
+                FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                } => {
+                    let field_name = Self::get_field_with_parse_as(
+                        entity,
+                        field,
+                        self.request_body.get_date_format(),
+                        Some(parse_as),
+                    );
+                    let condition = self.format_condition_with_case_sensitivity_and_pattern(
+                        &field_name,
+                        operator,
+                        values,
+                        *case_sensitive,
+                        match_pattern.as_ref(),
+                    );
                     tokens.push(Token::Condition(condition));
                     i += 1;
-                },
+                }
                 FilterCriteria::LogicalOperator { operator } => {
                     match operator {
                         LogicalOperator::And => tokens.push(Token::And),
@@ -657,33 +820,33 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             }
         }
-        
+
         // Validate token sequence (should be: condition, operator, condition, operator, ...)
         if !self.is_valid_token_sequence(&tokens) {
             return Err("Invalid filter sequence: filters must follow the pattern [criteria, operator, criteria, operator, ...] and start/end with criteria".to_string());
         }
-        
+
         Ok(tokens)
     }
     fn is_valid_token_sequence(&self, tokens: &[Token]) -> bool {
         if tokens.is_empty() {
             return false;
         }
-        
+
         // Must start with a condition
         if !matches!(tokens[0], Token::Condition(_)) {
             return false;
         }
-        
+
         // Check alternating pattern: condition, operator, condition, operator, ...
         for (i, token) in tokens.iter().enumerate() {
             match (i % 2, token) {
-                (0, Token::Condition(_)) => {}, // Even indices should be conditions
-                (1, Token::And | Token::Or) => {}, // Odd indices should be operators
+                (0, Token::Condition(_)) => {}    // Even indices should be conditions
+                (1, Token::And | Token::Or) => {} // Odd indices should be operators
                 _ => return false,
             }
         }
-        
+
         // Must end with a condition (even number of tokens)
         tokens.len() % 2 == 1
     }
@@ -697,26 +860,28 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let from_field = &join.field_relation.from.field;
         // TODO: Add nested join logic after jean fix the issue from Typescript datastore
         let is_nested = join.nested;
-        
 
         // Build the lateral subquery alias
         let lateral_alias = format!("joined_{}", to_alias);
-        
+
         // Build dynamic field selection based on pluck_object
-        let selected_fields = if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
-            fields.iter()
-                .map(|field| format!("\"{}\".\"{}\"" , lateral_alias, field))
-                .collect::<Vec<_>>()
-                .join(", ")
-        } else {
-            // Default fallback fields if no pluck_object configuration found
-            format!("\"{}\".\"id\"", lateral_alias)
-        };
-        
-        let standard_where = self.build_system_where_clause(&lateral_alias)
+        let selected_fields =
+            if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
+                fields
+                    .iter()
+                    .map(|field| format!("\"{}\".\"{}\"", lateral_alias, field))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            } else {
+                // Default fallback fields if no pluck_object configuration found
+                format!("\"{}\".\"id\"", lateral_alias)
+            };
+
+        let standard_where = self
+            .build_system_where_clause(&lateral_alias)
             .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
         if is_nested {
-           return format!(
+            return format!(
                 "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
                 selected_fields,
                 to_entity, lateral_alias,
@@ -738,17 +903,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         if tokens.is_empty() {
             return String::new();
         }
-        
+
         if tokens.len() == 1 {
             if let Token::Condition(condition) = &tokens[0] {
                 return condition.clone();
             }
             return String::new();
         }
-        
+
         // Split by OR operators (lowest precedence)
         let or_groups = self.split_by_or(tokens);
-        
+
         if or_groups.len() == 1 {
             // No OR operators, just handle AND operations
             self.build_and_expression(&or_groups[0])
@@ -765,14 +930,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     }
                 })
                 .collect();
-            
+
             or_expressions.join(" OR ")
         }
     }
     fn split_by_or(&self, tokens: &[Token]) -> Vec<Vec<Token>> {
         let mut groups = Vec::new();
         let mut current_group = Vec::new();
-        
+
         for token in tokens {
             match token {
                 Token::Or => {
@@ -780,15 +945,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         groups.push(current_group);
                         current_group = Vec::new();
                     }
-                },
+                }
                 _ => current_group.push(token.clone()),
             }
         }
-        
+
         if !current_group.is_empty() {
             groups.push(current_group);
         }
-        
+
         groups
     }
     fn build_and_expression(&self, tokens: &[Token]) -> String {
@@ -802,22 +967,29 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             })
             .collect();
-        
+
         conditions.join(" AND ")
     }
 
-    
-    fn format_condition_with_case_sensitivity_and_pattern(&self, field_name: &str, operator: &FilterOperator, values: &[serde_json::Value], case_sensitive: Option<bool>, match_pattern: Option<&MatchPattern>) -> String {
-        let values_str = values.iter()
+    fn format_condition_with_case_sensitivity_and_pattern(
+        &self,
+        field_name: &str,
+        operator: &FilterOperator,
+        values: &[serde_json::Value],
+        case_sensitive: Option<bool>,
+        match_pattern: Option<&MatchPattern>,
+    ) -> String {
+        let values_str = values
+            .iter()
             .map(|v| match v {
                 serde_json::Value::String(s) => format!("'{}'", s.replace("'", "''")), // Escape single quotes
                 serde_json::Value::Number(n) => n.to_string(),
                 serde_json::Value::Bool(b) => b.to_string(),
                 serde_json::Value::Null => "NULL".to_string(),
-                _ => format!("'{}'", v.to_string().replace("'", "''"))
+                _ => format!("'{}'", v.to_string().replace("'", "''")),
             })
             .collect::<Vec<_>>();
-            
+
         match operator {
             FilterOperator::Equal => {
                 if values_str.len() == 1 {
@@ -825,18 +997,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 } else {
                     format!("{} IN ({})", field_name, values_str.join(", "))
                 }
-            },
+            }
             FilterOperator::NotEqual => {
                 if values_str.len() == 1 {
                     format!("{} != {}", field_name, values_str[0])
                 } else {
                     // Use AND for each item: field != value1 AND field != value2 AND ...
-                    let conditions: Vec<String> = values_str.iter()
+                    let conditions: Vec<String> = values_str
+                        .iter()
                         .map(|value| format!("{} != {}", field_name, value))
                         .collect();
                     format!("({})", conditions.join(" AND "))
                 }
-            },
+            }
             FilterOperator::GreaterThan => format!("{} > {}", field_name, values_str[0]),
             FilterOperator::GreaterThanOrEqual => format!("{} >= {}", field_name, values_str[0]),
             FilterOperator::LessThan => format!("{} < {}", field_name, values_str[0]),
@@ -844,52 +1017,85 @@ impl<T: QueryFilter> SQLConstructor<T> {
             FilterOperator::IsNull => format!("{} IS NULL", field_name),
             FilterOperator::IsNotNull => format!("{} IS NOT NULL", field_name),
             FilterOperator::Contains => {
-                let like_op = if case_sensitive.unwrap_or(true) { "LIKE" } else { "ILIKE" };
-                format!("{} {} '%{}%'", field_name, like_op, values_str[0].trim_matches('\''))
-            },
+                let like_op = if case_sensitive.unwrap_or(true) {
+                    "LIKE"
+                } else {
+                    "ILIKE"
+                };
+                format!(
+                    "{} {} '%{}%'",
+                    field_name,
+                    like_op,
+                    values_str[0].trim_matches('\'')
+                )
+            }
             FilterOperator::NotContains => {
-                let like_op = if case_sensitive.unwrap_or(true) { "NOT LIKE" } else { "NOT ILIKE" };
-                format!("{} {} '%{}%'", field_name, like_op, values_str[0].trim_matches('\''))
-            },
+                let like_op = if case_sensitive.unwrap_or(true) {
+                    "NOT LIKE"
+                } else {
+                    "NOT ILIKE"
+                };
+                format!(
+                    "{} {} '%{}%'",
+                    field_name,
+                    like_op,
+                    values_str[0].trim_matches('\'')
+                )
+            }
             FilterOperator::IsBetween => {
                 if values_str.len() >= 2 {
-                    format!("{} BETWEEN {} AND {}", field_name, values_str[0], values_str[1])
+                    format!(
+                        "{} BETWEEN {} AND {}",
+                        field_name, values_str[0], values_str[1]
+                    )
                 } else {
                     format!("{} = {}", field_name, values_str[0])
                 }
-            },
+            }
             FilterOperator::IsNotBetween => {
                 if values_str.len() >= 2 {
-                    format!("{} NOT BETWEEN {} AND {}", field_name, values_str[0], values_str[1])
+                    format!(
+                        "{} NOT BETWEEN {} AND {}",
+                        field_name, values_str[0], values_str[1]
+                    )
                 } else {
                     format!("{} != {}", field_name, values_str[0])
                 }
-            },
+            }
             FilterOperator::IsEmpty => format!("{} = ''", field_name),
             FilterOperator::IsNotEmpty => format!("{} != ''", field_name),
             FilterOperator::Like => {
-                let like_op = if case_sensitive.unwrap_or(true) { "LIKE" } else { "ILIKE" };
+                let like_op = if case_sensitive.unwrap_or(true) {
+                    "LIKE"
+                } else {
+                    "ILIKE"
+                };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
                 format!("{} {} {}", field_name, like_op, pattern)
-            },
+            }
             FilterOperator::HasNoValue => {
                 // Check if field is an array by looking for array indicators
-                let is_array_field = field_name.contains("[]") || field_name.ends_with("_array") || field_name.ends_with("s");
-                
+                let is_array_field = field_name.contains("[]")
+                    || field_name.ends_with("_array")
+                    || field_name.ends_with("s");
+
                 if is_array_field {
                     // For array fields: check if array length is null or 0
-                    format!("(ARRAY_LENGTH({}, 1) IS NULL OR ARRAY_LENGTH({}, 1) = 0 OR {} IS NULL)", field_name, field_name, field_name)
+                    format!(
+                        "(ARRAY_LENGTH({}, 1) IS NULL OR ARRAY_LENGTH({}, 1) = 0 OR {} IS NULL)",
+                        field_name, field_name, field_name
+                    )
                 } else {
                     // For regular fields: check if empty string or null
                     format!("({} = '' OR {} IS NULL)", field_name, field_name)
                 }
-            },
+            }
         }
     }
-    
+
     fn build_like_pattern(&self, value: &str, match_pattern: Option<&MatchPattern>) -> String {
         let clean_value = value.trim_matches('\'');
-        
+
         match match_pattern {
             Some(MatchPattern::Exact) => format!("'{}'", clean_value),
             Some(MatchPattern::Prefix) => format!("'{}%'", clean_value),
@@ -907,24 +1113,30 @@ impl<T: QueryFilter> SQLConstructor<T> {
             GroupAdvanceFilter::Operator { operator, .. } => operator,
         }
     }
-    
+
     /// Helper method to extract filters from GroupAdvanceFilter enum
-    fn get_group_filters<'a>(&self, group_filter: &'a GroupAdvanceFilter) -> &'a Vec<FilterCriteria> {
+    fn get_group_filters<'a>(
+        &self,
+        group_filter: &'a GroupAdvanceFilter,
+    ) -> &'a Vec<FilterCriteria> {
         match group_filter {
             GroupAdvanceFilter::Criteria { filters, .. } => filters,
             GroupAdvanceFilter::Operator { filters, .. } => filters,
         }
     }
-    
+
     /// Builds SQL expression for group advance filters
     /// Handles GroupAdvanceFilter enum which can be either "criteria" or "operator" type
     /// Each group can contain multiple FilterCriteria that are processed as a unit
     /// For "operator" type groups, filters can be empty array
-    fn build_group_advance_filters_expression(&self, group_filters: &[GroupAdvanceFilter]) -> Result<String, String> {
+    fn build_group_advance_filters_expression(
+        &self,
+        group_filters: &[GroupAdvanceFilter],
+    ) -> Result<String, String> {
         if group_filters.is_empty() {
             return Ok(String::new());
         }
-        
+
         if group_filters.len() == 1 {
             // Single group case - just process the filters within the group
             let group_filter = &group_filters[0];
@@ -937,14 +1149,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
             }
             return Ok(String::new());
         }
-        
+
         // Multiple groups case - build infix expression with group operators
         let mut tokens = Vec::new();
-        
+
         for (i, group_filter) in group_filters.iter().enumerate() {
             let filters = self.get_group_filters(group_filter);
             let operator = self.get_group_operator(group_filter);
-            
+
             // Process the filters within this group (skip if empty for operator type)
             if !filters.is_empty() {
                 let group_expression = self.build_infix_expression(filters)?;
@@ -953,7 +1165,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     tokens.push(Token::Condition(format!("({})", group_expression)));
                 }
             }
-            
+
             // Add operator token if not the last group
             if i < group_filters.len() - 1 {
                 match operator {
@@ -962,19 +1174,21 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             }
         }
-        
+
         if tokens.is_empty() {
             return Ok(String::new());
         }
-        
+
         // Use the same infix expression building logic as advance filters
         Ok(self.build_expression_with_precedence(&tokens))
     }
-    
+
     fn construct_order_by(&self) -> String {
         // Check if multiple_sort is available and not empty
         if !self.request_body.get_multiple_sort().is_empty() {
-            let sort_clauses: Vec<String> = self.request_body.get_multiple_sort()
+            let sort_clauses: Vec<String> = self
+                .request_body
+                .get_multiple_sort()
                 .iter()
                 .map(|sort_option| {
                     let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
@@ -983,34 +1197,54 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     } else {
                         (self.table.as_str(), sort_option.by_field.as_str())
                     };
-                    
-                    let field_expression = Self::get_field(table_alias, field_name, self.request_body.get_date_format());
-                    
+
+                    let field_expression = Self::get_field(
+                        table_alias,
+                        field_name,
+                        self.request_body.get_date_format(),
+                    );
+
                     // Handle case sensitivity
                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
                         field_expression
                     } else {
                         format!("LOWER({})", field_expression)
                     };
-                    
-                    format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
+
+                    format!(
+                        "{} {}",
+                        final_field,
+                        sort_option.by_direction.to_uppercase()
+                    )
                 })
                 .collect();
-            
+
             format!(" ORDER BY {}", sort_clauses.join(", "))
         }
         // Fallback to single field sorting using trait methods
         else if !self.request_body.get_order_by().is_empty() {
-            let field_expression = Self::get_field(&self.table, self.request_body.get_order_by(), self.request_body.get_date_format());
-            
+            let field_expression = Self::get_field(
+                &self.table,
+                self.request_body.get_order_by(),
+                self.request_body.get_date_format(),
+            );
+
             // Handle case sensitivity
-            let final_field = if self.request_body.get_is_case_sensitive_sorting().unwrap_or(false) {
+            let final_field = if self
+                .request_body
+                .get_is_case_sensitive_sorting()
+                .unwrap_or(false)
+            {
                 field_expression
             } else {
                 format!("LOWER({})", field_expression)
             };
-            
-            format!(" ORDER BY {} {}", final_field, self.request_body.get_order_direction().to_uppercase())
+
+            format!(
+                " ORDER BY {} {}",
+                final_field,
+                self.request_body.get_order_direction().to_uppercase()
+            )
         } else {
             String::from("")
         }
@@ -1020,21 +1254,28 @@ impl<T: QueryFilter> SQLConstructor<T> {
             let group_by = self.request_body.get_group_by();
             if !group_by.is_empty() {
                 // Get all fields from the group_by HashMap and create GROUP BY clause
-                let group_fields: Vec<String> = group_by.iter()
+                let group_fields: Vec<String> = group_by
+                    .iter()
                     .flat_map(|(table, fields)| {
                         fields.iter().map(|field| {
                             Self::get_field(table, field, self.request_body.get_date_format())
                         })
                     })
                     .collect();
-                
+
                 if !group_fields.is_empty() {
                     format!(" GROUP BY {}", group_fields.join(", "))
                 } else {
-                    format!(" GROUP BY {}", Self::get_field(&self.table, "id", self.request_body.get_date_format()))
+                    format!(
+                        " GROUP BY {}",
+                        Self::get_field(&self.table, "id", self.request_body.get_date_format())
+                    )
                 }
             } else {
-                format!(" GROUP BY {}", Self::get_field(&self.table, "id", self.request_body.get_date_format()))
+                format!(
+                    " GROUP BY {}",
+                    Self::get_field(&self.table, "id", self.request_body.get_date_format())
+                )
             }
         } else {
             String::from("")
@@ -1067,20 +1308,28 @@ pub struct AggregationFilterWrapper {
 
 impl AggregationFilterWrapper {
     pub fn new(request: crate::generated::store::AggregationFilterRequest) -> Self {
-        let converted_filters: Vec<_> = request.advance_filters.iter()
-            .filter_map(convert_filter_criteria)
-            .collect();
-            
-        let converted_joins: Vec<_> = request.joins.iter()
-            .filter_map(convert_join)
-            .collect();
-            
-        let converted_aggregations: Vec<_> = request.aggregations.iter()
-            .map(convert_aggregation)
-            .collect();
-            
-        let converted_order = request.order.as_ref().map(convert_aggregation_order);
-        
+        // Extract data from the body field
+        let body = request.body.as_ref();
+
+        let converted_filters: Vec<_> = body
+            .map(|b| {
+                b.advance_filters
+                    .iter()
+                    .filter_map(convert_filter_criteria)
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let converted_joins: Vec<_> = body
+            .map(|b| b.joins.iter().filter_map(convert_join).collect())
+            .unwrap_or_default();
+
+        let converted_aggregations: Vec<_> = body
+            .map(|b| b.aggregations.iter().map(convert_aggregation).collect())
+            .unwrap_or_default();
+
+        let converted_order = body.and_then(|b| b.order.as_ref().map(convert_aggregation_order));
+
         Self {
             request,
             converted_filters,
@@ -1095,44 +1344,64 @@ impl QueryFilter for AggregationFilterWrapper {
     fn get_advance_filters(&self) -> &[FilterCriteria] {
         &self.converted_filters
     }
-    
+
     fn get_joins(&self) -> &[Join] {
         &self.converted_joins
     }
-    
+
     fn get_limit(&self) -> usize {
-        self.request.limit.unwrap_or(100) as usize
+        self.request
+            .body
+            .as_ref()
+            .and_then(|b| b.limit)
+            .unwrap_or(100) as usize
     }
-    
+
     fn get_date_format(&self) -> &str {
         "mm/dd/YYYY"
     }
-    
+
     fn get_aggregations(&self) -> &[Aggregation] {
         &self.converted_aggregations
     }
-    
+
     fn get_bucket_size(&self) -> Option<&str> {
-        self.request.bucket_size.as_deref()
+        self.request
+            .body
+            .as_ref()
+            .and_then(|b| b.bucket_size.as_deref())
     }
-    
+
     fn get_timezone(&self) -> Option<&str> {
-        self.request.timezone.as_deref()
+        self.request
+            .body
+            .as_ref()
+            .and_then(|b| b.timezone.as_deref())
     }
-    
+
     fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
         self.converted_order.as_ref()
     }
-    
+
     fn get_entity(&self) -> Option<&str> {
-        Some(&self.request.entity)
+        self.request.body.as_ref().map(|b| b.entity.as_str())
     }
-    
+
     fn get_order_by(&self) -> &str {
-        self.request.order.as_ref().map(|o| o.order_by.as_str()).unwrap_or("id")
+        self.request
+            .body
+            .as_ref()
+            .and_then(|b| b.order.as_ref())
+            .map(|o| o.order_by.as_str())
+            .unwrap_or("id")
     }
-    
+
     fn get_order_direction(&self) -> &str {
-        self.request.order.as_ref().map(|o| o.order_direction.as_str()).unwrap_or("asc")
+        self.request
+            .body
+            .as_ref()
+            .and_then(|b| b.order.as_ref())
+            .map(|o| o.order_direction.as_str())
+            .unwrap_or("asc")
     }
 }

@@ -275,7 +275,7 @@ pub async fn root_auth(
         }
         Err(diesel::result::Error::NotFound) => {
             // Return an empty JSON object if no results found
-                    log::error!("Root account not found");
+            log::error!("Root account not found");
             json!({})
         }
         Err(e) => {

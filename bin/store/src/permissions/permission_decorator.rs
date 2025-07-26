@@ -177,8 +177,7 @@ impl FromRequest for PermissionExtractor {
                         }
 
                         data_permissions.schema = schema;
-                    }
-                    // _ => {}
+                    } // _ => {}
                 }
                 data_permissions.account_organization_id = a.responsible_account.clone();
                 data_permissions.role_permissions_query_params =

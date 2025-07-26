@@ -17,7 +17,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     let service_regex = Regex::new(r"service\s+(\w+)\s*\{([\s\S]*?)\}").unwrap();
     let rpc_regex =
         Regex::new(r"rpc\s+(\w+)\s*\(\s*(\w+)\s*\)\s*returns\s*\(\s*(\w+)\s*\)").unwrap();
-    
+
     let mut service_name = String::new();
     let mut rpc_methods = Vec::new();
     let schema_path = "src/schema/schema.rs";
@@ -92,8 +92,14 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(file, "use crate::providers::find::DynamicResult;")?;
     writeln!(file, "use crate::providers::find::SQLConstructor;")?;
     writeln!(file, "use crate::db;")?;
-    writeln!(file, "// Note: AggregationFilterWrapper has been moved to sql_constructor.rs")?;
-    writeln!(file, "// Note: Converter functions have been moved to grpc_struct_converter.rs")?;
+    writeln!(
+        file,
+        "// Note: AggregationFilterWrapper has been moved to sql_constructor.rs"
+    )?;
+    writeln!(
+        file,
+        "// Note: Converter functions have been moved to grpc_struct_converter.rs"
+    )?;
     writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method, generate_aggregation_filter_method}};")?;
 
     // Import request and response types
@@ -157,7 +163,10 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         )?;
     }
     // Add AggregationFilterRequest and AggregationFilterResponse imports
-    writeln!(file, ", AggregationFilterRequest, AggregationFilterResponse")?;
+    writeln!(
+        file,
+        ", AggregationFilterRequest, AggregationFilterResponse"
+    )?;
     writeln!(file, "}};");
 
     // Initialize method
@@ -221,13 +230,12 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         writeln!(file, "    generate_batch_delete_method!({});", table.name)?;
         writeln!(file, "    generate_upsert_method!({});", table.name)?;
     }
-    
+
     // Add aggregation filter method
     writeln!(file, "    // Aggregation filter method")?;
     writeln!(file, "    generate_aggregation_filter_method!();")?;
-    
-    writeln!(file, "}}")?;
 
+    writeln!(file, "}}")?;
 
     println!("Successfully generated gRPC controller at: {}", output_path);
     Ok(())

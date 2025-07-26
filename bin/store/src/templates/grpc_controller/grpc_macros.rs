@@ -32,6 +32,10 @@ macro_rules! generate_create_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
                     let table_name = params.table;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.clone();
+                    let is_root_request = request_type == "root";
                     let record = match request.[<$table:lower>] {
                         Some(r) => r,
                         None => return Err(Status::invalid_argument("Record is required")),
@@ -47,7 +51,7 @@ macro_rules! generate_create_method {
                         .map(|s| s.trim().to_string())
                         .collect();
 
-                        match process_and_insert_record(&table_name, record_value, Some(pluck_fields), &auth_data).await {
+                        match process_and_insert_record(&table_name, record_value, Some(pluck_fields), &auth_data, is_root_request).await {
                             Ok(api_response) => {
                                 // Convert the data back to the specific type
                                 let data: [<$table:camel>] = serde_json::from_value(api_response.data[0].clone())
@@ -93,11 +97,25 @@ macro_rules! generate_aggregation_filter_method {
                     };
 
                     let request = request.into_inner();
-                    let table = request.entity.clone();
-                    let is_root = auth_data.is_root_account;
+
+                    // Extract params and validate
+                    let params = match request.params.as_ref() {
+                        Some(p) => p,
+                        None => return Err(Status::invalid_argument("Params are required")),
+                    };
+
+                    // Get table from body.entity instead of params.table
+                    let table = request.body.as_ref()
+                        .map(|b| b.entity.clone())
+                        .ok_or_else(|| Status::invalid_argument("Body with entity is required"))?;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
+
                     // Create SQLConstructor with organization_id if available
                     let wrapper = crate::providers::find::sql_constructor::AggregationFilterWrapper::new(request);
-                    let mut sql_constructor = SQLConstructor::new(wrapper, table.clone(), is_root);
+                    let mut sql_constructor = SQLConstructor::new(wrapper, table.clone(), is_root_request);
                     sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
 
                     let query = match sql_constructor.construct_aggregation() {
@@ -183,6 +201,10 @@ macro_rules! generate_update_method {
                     };
                     let table_name = params.table;
                     let record_id = params.id;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
                     let record = match request.[<$table_singular:lower>] {
                         Some(r) => r,
                         None => return Err(Status::invalid_argument("Record is required")),
@@ -199,7 +221,7 @@ macro_rules! generate_update_method {
                     };
 
                     // Process record using common function
-                    let processed_record = match process_record_for_update(record, &table_name, &record_id, &table,"update", &auth_data).await {
+                    let processed_record = match process_record_for_update(record, &table_name, &record_id, &table,"update", &auth_data, is_root_request).await {
                         Ok(processed) => processed,
                         Err(status) => {
                             return Err(status);
@@ -262,6 +284,11 @@ macro_rules! generate_batch_insert_method {
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
                     let table_name = params.table;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
+
                     let temp_table= format!("temp_{}", table_name);
                     match table_exists(&temp_table) {
                         Ok(_table) => {
@@ -294,7 +321,7 @@ macro_rules! generate_batch_insert_method {
                         .map_err(|e| Status::internal(format!("Failed to process records: {}", e)))?;
 
                     // Process records using common controller method
-                    let (processed_records, columns) = match process_records(json_records, &table_name, &auth_data.clone()) {
+                    let (processed_records, columns) = match process_records(json_records, &table_name, &auth_data.clone(), is_root_request) {
                         Ok((records, cols)) => (records, cols),
                         Err(e) => return Err(Status::internal(format!("Error processing records: {}", e))),
                     };
@@ -387,6 +414,8 @@ macro_rules! generate_batch_update_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+
+                    // Extract type from params to determine if it's a root request
                     let body = request
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
@@ -487,7 +516,10 @@ macro_rules! generate_get_method {
 
                     // Extract request parameters
                     let request = request.into_inner();
-                    let id = request.id;
+                    let params = request
+                        .params
+                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                    let id = params.id;
 
                     // Check if ID is provided
                     if id.is_empty() {
@@ -498,7 +530,7 @@ macro_rules! generate_get_method {
                     let table_name = stringify!($table).to_string();
 
                     // Process and get record by ID
-                    match process_and_get_record_by_id(&table_name, &id, None).await {
+                    match process_and_get_record_by_id(&table_name, &id, None, _auth_data.is_root_account, Some(&_auth_data.organization_id)).await {
                         Ok(response) => {
                             // Check if we have data
                             if response.data.is_empty() {
@@ -506,6 +538,7 @@ macro_rules! generate_get_method {
                                     format!("Record with ID '{}' not found in '{}'", id, table_name)
                                 ));
                             }
+
 
                             // Convert the first item to the specific type
                             let typed_data: [<$table:camel>] = serde_json::from_value(response.data[0].clone())
@@ -556,6 +589,11 @@ macro_rules! generate_upsert_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
+
                     let query = request
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
@@ -580,6 +618,7 @@ macro_rules! generate_upsert_method {
                         data_value,
                         pluck_fields,
                         &auth_data,
+                        is_root_request,
                     ).await {
                         Ok(response) => {
                             // Convert ApiResponse to gRPC response
@@ -631,6 +670,11 @@ macro_rules! generate_delete_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
+
                     let _query = request
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
@@ -642,7 +686,7 @@ macro_rules! generate_delete_method {
                     let delete_updates = serde_json::json!({});
 
                     // Process record using common function
-                    match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete", &auth_data).await {
+                    match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete", &auth_data, is_root_request).await {
                         Ok(response) => {
                             // Convert response to Value to modify message
                             // let mut response_value: serde_json::Value = serde_json::from_str(&serde_json::to_string(&response).unwrap())
@@ -704,6 +748,11 @@ macro_rules! generate_batch_delete_method {
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+
+                    // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
+
                     let body = request
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
@@ -713,7 +762,7 @@ macro_rules! generate_batch_delete_method {
                     };
 
                     // Process the record through the common processing logic
-                    delete_updates.process_record("delete", &auth_data);
+                    delete_updates.process_record("delete", &auth_data, is_root_request, &params.table);
                     if let Some(record) = delete_updates.record.as_object_mut() {
                         record.remove("version");
                     }

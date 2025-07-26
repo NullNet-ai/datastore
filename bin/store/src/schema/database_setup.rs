@@ -1,6 +1,6 @@
+use crate::db::create_connection;
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
-use crate::db::create_connection;
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
@@ -30,7 +30,7 @@ impl Default for DatabaseSetupFlags {
 pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std::error::Error>> {
     // Get database connection from db.rs
     let db_client = create_connection().await?;
-    
+
     let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
         let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
         let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
@@ -72,7 +72,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             // Run cleanup.sql using database connection
             let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
             let cleanup_sql = std::fs::read_to_string(&cleanup_path)?;
-            
+
             if let Err(e) = execute_sql_script(&db_client, &cleanup_sql).await {
                 return Err(format!("Database cleanup failed: {}", e).into());
             }
@@ -107,7 +107,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             println!("Failed to initialize global organization: {}", e);
         } else {
             log::info!("Global organization initialized successfully");
-            
+
             // Initialize root account after global organization is successfully created
             let root_params = Some(crate::initializers::structs::InitializerParams {
                 entity: "account_organizations".to_string(),
@@ -118,7 +118,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             } else {
                 log::info!("Root account initialized successfully");
             };
-            
+
             // Initialize system device after root account
             if let Err(e) = initialize(EInitializer::SYSTEM_DEVICE_CONFIG, None).await {
                 println!("Failed to initialize system device: {}", e);
@@ -133,7 +133,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         println!("Step 4: Running database initialization script...");
         let init_path = Path::new(&current_dir).join("src/schema/init.sql");
         let init_sql = std::fs::read_to_string(&init_path)?;
-        
+
         if let Err(e) = execute_sql_script(&db_client, &init_sql).await {
             return Err(format!("Database initialization failed: {}", e).into());
         }
@@ -144,7 +144,10 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
 }
 
 // Helper function to execute SQL scripts using the database connection
-async fn execute_sql_script(client: &Client, sql_content: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn execute_sql_script(
+    client: &Client,
+    sql_content: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let statements = parse_sql_statements(sql_content);
 
     for statement in statements {
@@ -166,10 +169,10 @@ fn parse_sql_statements(sql_content: &str) -> Vec<String> {
     let mut chars = sql_content.chars().peekable();
     let mut in_dollar_quote = false;
     let mut dollar_tag = String::new();
-    
+
     while let Some(ch) = chars.next() {
         current_statement.push(ch);
-        
+
         if ch == '$' && !in_dollar_quote {
             // Start of potential dollar quote
             let mut tag = String::new();
@@ -215,12 +218,12 @@ fn parse_sql_statements(sql_content: &str) -> Vec<String> {
             current_statement.clear();
         }
     }
-    
+
     // Add the last statement if it's not empty
     let final_statement = current_statement.trim().to_string();
     if !final_statement.is_empty() && !final_statement.starts_with("--") {
         statements.push(final_statement);
     }
-    
+
     statements
 }

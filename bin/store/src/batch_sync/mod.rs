@@ -83,7 +83,7 @@ impl BatchSyncService {
     }
 
     // TODO: Kindly revisit this
-    
+
     // Get the global insert sender
     pub fn get_insert_sender() -> Option<Arc<UnboundedSender<SyncMessage>>> {
         unsafe { INSERT_SENDER.clone() }
@@ -386,8 +386,16 @@ impl BatchSyncService {
             "is_batch": is_batch,
         });
 
-        match process_and_update_record(&table_name, record_obj, &id, None, "update", &auth_data)
-            .await
+        match process_and_update_record(
+            &table_name,
+            record_obj,
+            &id,
+            None,
+            "update",
+            &auth_data,
+            false,
+        )
+        .await
         {
             Ok(_response) => true,
             Err(error) => {

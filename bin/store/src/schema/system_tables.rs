@@ -24,7 +24,7 @@ pub const SYSTEM_TABLES: [&str; 23] = [
     "role_permission",
     "table_indexes",
     "stream_queue",
-    "stream_queue_items"
+    "stream_queue_items",
 ];
 
 // Function to check if a table is a system table

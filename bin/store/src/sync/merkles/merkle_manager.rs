@@ -95,7 +95,7 @@ impl MerkleManager {
     }
 
     // Get a timestamp by group ID
-    
+
     pub async fn get_timestamp(&self, group_id: &str) -> Option<String> {
         let trees = self.trees.read().await;
         trees.get(group_id).map(|entry| entry.timestamp.clone())

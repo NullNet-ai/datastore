@@ -53,7 +53,7 @@ impl CodePrefixInitializer {
 
         CodePrefixInitializer { prefixes }
     }
-    
+
     pub fn get_config(&self, table_name: &str) -> Option<&CounterModel> {
         self.prefixes.get(table_name)
     }

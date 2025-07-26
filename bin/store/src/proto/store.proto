@@ -5,7 +5,6 @@ syntax = "proto3";
 
 package store;
 
-
 // Standard timestamp representation
 message Timestamp {
   int64 seconds = 1; // Seconds since epoch
@@ -15,6 +14,7 @@ message Timestamp {
 // Common parameter structure for Create requests
 message CreateParams {
   string table = 1; // Table name
+  string type = 2; // request type
 }
 
 // Common query structure for Create requests
@@ -35,17 +35,23 @@ message AdvanceFilter {
 // Common parameter structure for BatchUpdate requests
 message BatchUpdateParams {
   string table = 1; // Table name
+  string type = 2; // request type
+
 }
 
 // Common parameter structure for BatchDelete requests
 message BatchDeleteParams {
   string table = 1; // Table name
+  string type = 2; // request type
+
 }
 
 // Common parameter structure for Update requests
 message UpdateParams {
   string id = 1; // Record ID
   string table = 2; // Table name
+  string type = 3; // request type
+
 }
 
 // Common query structure for Update requests
@@ -56,6 +62,8 @@ message UpdateQuery {
 // Common parameter structure for BatchInsert requests
 message BatchInsertParams {
   string table = 1; // Table name
+  string type = 2; // request type
+
 }
 
 // Common query structure for BatchInsert requests
@@ -66,6 +74,7 @@ message BatchInsertQuery {
 // Common parameter structure for Upsert requests
 message UpsertParams {
   string table = 1; // Table name
+  string type= 2;
 }
 
 // Common query structure for Upsert requests
@@ -82,6 +91,24 @@ message DeleteQuery {
 message DeleteParams {
   string id = 1; // Record ID
   string table = 2; // Table name
+  string type = 3;
+}
+
+// Common parameter structure for Get requests
+message GetParams {
+  string id = 1; // Record ID
+  string table = 2; // Table name
+  string type = 3; // request type
+}
+
+// Common query structure for Get requests
+message GetQuery {
+  string pluck = 1; // Field to pluck
+}
+
+// Common parameter structure for AggregationFilter requests
+message AggregationFilterParams {
+  string type = 1; // request type
 }
 
 // ExternalContacts entity definition
@@ -217,7 +244,7 @@ message AccountOrganizations {
   optional string account_id = 22;
   optional string role_id = 23;
   optional string account_organization_status = 24;
-  optional string is_invited = 25;
+  optional bool is_invited = 25;
   optional string device_id = 26;
 }
 
@@ -272,7 +299,7 @@ message Accounts {
   optional string account_id = 20;
   optional string account_secret = 21;
   optional string account_status = 22;
-  optional string is_new_user = 23;
+  optional bool is_new_user = 23;
 }
 
 // Addresses entity definition
@@ -676,7 +703,7 @@ message DeviceRules {
   optional int32 sensitivity_level = 18;
   optional string id = 19;
   optional string device_configuration_id = 20;
-  optional string disabled = 21;
+  optional bool disabled = 21;
   optional string rule_type = 22;
   optional string policy = 23;
   optional string protocol = 24;
@@ -689,9 +716,9 @@ message DeviceRules {
   optional string device_rule_status = 31;
   optional string interface = 32;
   optional int32 order = 33;
-  optional string destination_inversed = 34;
+  optional bool destination_inversed = 34;
   optional string destination_type = 35;
-  optional string source_inversed = 36;
+  optional bool source_inversed = 36;
 }
 
 // TempDeviceRules entity definition
@@ -716,7 +743,7 @@ message TempDeviceRules {
   optional int32 sensitivity_level = 18;
   optional string id = 19;
   optional string device_configuration_id = 20;
-  optional string disabled = 21;
+  optional bool disabled = 21;
   optional string rule_type = 22;
   optional string policy = 23;
   optional string protocol = 24;
@@ -729,9 +756,9 @@ message TempDeviceRules {
   optional string device_rule_status = 31;
   optional string interface = 32;
   optional int32 order = 33;
-  optional string destination_inversed = 34;
+  optional bool destination_inversed = 34;
   optional string destination_type = 35;
-  optional string source_inversed = 36;
+  optional bool source_inversed = 36;
 }
 
 // Packets entity definition
@@ -843,17 +870,19 @@ message Connections {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string interface_name = 20;
-  optional string hypertable_timestamp = 21;
-  optional int32 total_packet = 22;
-  optional int32 total_byte = 23;
-  optional string device_id = 24;
-  optional string protocol = 25;
-  optional string source_ip = 26;
-  optional string destination_ip = 27;
-  optional string remote_ip = 28;
-  optional int32 source_port = 29;
-  optional int32 destination_port = 30;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string interface_name = 22;
+  optional string hypertable_timestamp = 23;
+  optional int32 total_packet = 24;
+  optional int32 total_byte = 25;
+  optional string device_id = 26;
+  optional string protocol = 27;
+  optional string source_ip = 28;
+  optional string destination_ip = 29;
+  optional string remote_ip = 30;
+  optional int32 source_port = 31;
+  optional int32 destination_port = 32;
 }
 
 // TempConnections entity definition
@@ -941,12 +970,12 @@ message Devices {
   optional string model = 20;
   optional string address_id = 21;
   optional string instance_name = 22;
-  optional string is_connection_established = 23;
+  optional bool is_connection_established = 23;
   optional string system_id = 24;
   optional string device_version = 25;
   optional string last_heartbeat = 26;
-  optional string is_monitoring_enabled = 27;
-  optional string is_remote_access_enabled = 28;
+  optional bool is_monitoring_enabled = 27;
+  optional bool is_remote_access_enabled = 28;
   optional string ip_address = 29;
   optional string device_status = 30;
   optional string device_gui_protocol = 31;
@@ -981,7 +1010,7 @@ message IpInfos {
   optional string region = 25;
   optional string postal = 26;
   optional string timezone = 27;
-  optional string blacklist = 28;
+  optional bool blacklist = 28;
 }
 
 // PostgresChannels entity definition
@@ -1185,7 +1214,7 @@ message ContactEmails {
   optional int32 sensitivity_level = 19;
   optional string contact_id = 20;
   optional string email = 21;
-  optional string is_primary = 22;
+  optional bool is_primary = 22;
 }
 
 // Create ExternalContacts request
@@ -1205,7 +1234,8 @@ message CreateExternalContactsResponse {
 
 // Get ExternalContacts request
 message GetExternalContactsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get ExternalContacts response
@@ -1333,7 +1363,8 @@ message CreateOrganizationsResponse {
 
 // Get Organizations request
 message GetOrganizationsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Organizations response
@@ -1461,7 +1492,8 @@ message CreateOrganizationContactsResponse {
 
 // Get OrganizationContacts request
 message GetOrganizationContactsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get OrganizationContacts response
@@ -1589,7 +1621,8 @@ message CreateOrganizationAccountsResponse {
 
 // Get OrganizationAccounts request
 message GetOrganizationAccountsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get OrganizationAccounts response
@@ -1717,7 +1750,8 @@ message CreateAccountOrganizationsResponse {
 
 // Get AccountOrganizations request
 message GetAccountOrganizationsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get AccountOrganizations response
@@ -1845,7 +1879,8 @@ message CreateAccountProfilesResponse {
 
 // Get AccountProfiles request
 message GetAccountProfilesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get AccountProfiles response
@@ -1973,7 +2008,8 @@ message CreateAccountsResponse {
 
 // Get Accounts request
 message GetAccountsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Accounts response
@@ -2101,7 +2137,8 @@ message CreateAddressesResponse {
 
 // Get Addresses request
 message GetAddressesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Addresses response
@@ -2229,7 +2266,8 @@ message CreateSamplesResponse {
 
 // Get Samples request
 message GetSamplesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Samples response
@@ -2357,7 +2395,8 @@ message CreateAppFirewallsResponse {
 
 // Get AppFirewalls request
 message GetAppFirewallsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get AppFirewalls response
@@ -2485,7 +2524,8 @@ message CreateAppguardLogsResponse {
 
 // Get AppguardLogs request
 message GetAppguardLogsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get AppguardLogs response
@@ -2613,7 +2653,8 @@ message CreateTempAppguardLogsResponse {
 
 // Get TempAppguardLogs request
 message GetTempAppguardLogsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempAppguardLogs response
@@ -2741,7 +2782,8 @@ message CreateDeviceAliasesResponse {
 
 // Get DeviceAliases request
 message GetDeviceAliasesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceAliases response
@@ -2869,7 +2911,8 @@ message CreateTempDeviceAliasesResponse {
 
 // Get TempDeviceAliases request
 message GetTempDeviceAliasesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempDeviceAliases response
@@ -2997,7 +3040,8 @@ message CreateDeviceConfigurationsResponse {
 
 // Get DeviceConfigurations request
 message GetDeviceConfigurationsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceConfigurations response
@@ -3125,7 +3169,8 @@ message CreateDeviceInterfaceAddressesResponse {
 
 // Get DeviceInterfaceAddresses request
 message GetDeviceInterfaceAddressesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceInterfaceAddresses response
@@ -3253,7 +3298,8 @@ message CreateTempDeviceInterfaceAddressesResponse {
 
 // Get TempDeviceInterfaceAddresses request
 message GetTempDeviceInterfaceAddressesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempDeviceInterfaceAddresses response
@@ -3381,7 +3427,8 @@ message CreateDeviceInterfacesResponse {
 
 // Get DeviceInterfaces request
 message GetDeviceInterfacesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceInterfaces response
@@ -3509,7 +3556,8 @@ message CreateTempDeviceInterfacesResponse {
 
 // Get TempDeviceInterfaces request
 message GetTempDeviceInterfacesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempDeviceInterfaces response
@@ -3637,7 +3685,8 @@ message CreateDeviceRemoteAccessSessionsResponse {
 
 // Get DeviceRemoteAccessSessions request
 message GetDeviceRemoteAccessSessionsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceRemoteAccessSessions response
@@ -3765,7 +3814,8 @@ message CreateTempDeviceRemoteAccessSessionsResponse {
 
 // Get TempDeviceRemoteAccessSessions request
 message GetTempDeviceRemoteAccessSessionsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempDeviceRemoteAccessSessions response
@@ -3893,7 +3943,8 @@ message CreateDeviceRulesResponse {
 
 // Get DeviceRules request
 message GetDeviceRulesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceRules response
@@ -4021,7 +4072,8 @@ message CreateTempDeviceRulesResponse {
 
 // Get TempDeviceRules request
 message GetTempDeviceRulesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempDeviceRules response
@@ -4149,7 +4201,8 @@ message CreatePacketsResponse {
 
 // Get Packets request
 message GetPacketsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Packets response
@@ -4277,7 +4330,8 @@ message CreateTempPacketsResponse {
 
 // Get TempPackets request
 message GetTempPacketsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempPackets response
@@ -4405,7 +4459,8 @@ message CreateConnectionsResponse {
 
 // Get Connections request
 message GetConnectionsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Connections response
@@ -4533,7 +4588,8 @@ message CreateTempConnectionsResponse {
 
 // Get TempConnections request
 message GetTempConnectionsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempConnections response
@@ -4661,7 +4717,8 @@ message CreateDeviceSshKeysResponse {
 
 // Get DeviceSshKeys request
 message GetDeviceSshKeysRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceSshKeys response
@@ -4789,7 +4846,8 @@ message CreateDevicesResponse {
 
 // Get Devices request
 message GetDevicesRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Devices response
@@ -4917,7 +4975,8 @@ message CreateIpInfosResponse {
 
 // Get IpInfos request
 message GetIpInfosRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get IpInfos response
@@ -5045,7 +5104,8 @@ message CreatePostgresChannelsResponse {
 
 // Get PostgresChannels request
 message GetPostgresChannelsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get PostgresChannels response
@@ -5173,7 +5233,8 @@ message CreateResolutionsResponse {
 
 // Get Resolutions request
 message GetResolutionsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Resolutions response
@@ -5301,7 +5362,8 @@ message CreateWallguardLogsResponse {
 
 // Get WallguardLogs request
 message GetWallguardLogsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get WallguardLogs response
@@ -5429,7 +5491,8 @@ message CreateTempWallguardLogsResponse {
 
 // Get TempWallguardLogs request
 message GetTempWallguardLogsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get TempWallguardLogs response
@@ -5557,7 +5620,8 @@ message CreateDeviceGroupSettingsResponse {
 
 // Get DeviceGroupSettings request
 message GetDeviceGroupSettingsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get DeviceGroupSettings response
@@ -5685,7 +5749,8 @@ message CreateContactsResponse {
 
 // Get Contacts request
 message GetContactsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get Contacts response
@@ -5813,7 +5878,8 @@ message CreateContactPhoneNumbersResponse {
 
 // Get ContactPhoneNumbers request
 message GetContactPhoneNumbersRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get ContactPhoneNumbers response
@@ -5941,7 +6007,8 @@ message CreateContactEmailsResponse {
 
 // Get ContactEmails request
 message GetContactEmailsRequest {
-  string id = 1;
+  GetParams params = 1;
+  GetQuery query = 2;
 }
 
 // Get ContactEmails response
@@ -6051,8 +6118,6 @@ message UpsertContactEmailsResponse {
   int32 count = 3;
   repeated ContactEmails data = 4;
 }
-
-// Aggregation Filter Messages
 
 // Enum for aggregation types
 enum AggregationType {
@@ -6164,17 +6229,20 @@ message LogicalOperatorFilter {
 
 // Main aggregation filter request
 message AggregationFilterRequest {
-  string entity = 1;
-  repeated Aggregation aggregations = 2;
-  repeated FilterCriteria advance_filters = 3;
-  repeated Join joins = 4;
-  optional int32 limit = 5;
-  optional string bucket_size = 6;
-  optional string timezone = 7;
-  optional AggregationOrder order = 8;
+  AggregationFilterParams params = 1;
+  message AggregationFilterBody {
+    string entity = 1;
+    repeated Aggregation aggregations = 2;
+    repeated FilterCriteria advance_filters = 3;
+    repeated Join joins = 4;
+    optional int32 limit = 5;
+    optional string bucket_size = 6;
+    optional string timezone = 7;
+    optional AggregationOrder order = 8;
+  }
+  AggregationFilterBody body = 2;
 }
 
-// Aggregation filter response
 // Aggregation filter response with flexible JSON structure
 message AggregationFilterResponse {
   bool success = 1;
@@ -6183,14 +6251,8 @@ message AggregationFilterResponse {
   string data = 4;  // Single JSON string containing the entire result array
 }
 
-// ... existing code ...
-
 // Store service definition with CRUD operations
 service StoreService {
-
-   // Aggregation filter for any entity
-  rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);
-
   // Create a new ExternalContacts
   rpc CreateExternalContacts(CreateExternalContactsRequest) returns (CreateExternalContactsResponse);
 
@@ -7102,5 +7164,8 @@ service StoreService {
 
   // Upsert a ContactEmails (create if not exists, update if exists)
   rpc UpsertContactEmails(UpsertContactEmailsRequest) returns (UpsertContactEmailsResponse);
+
+  // Aggregation filter for advanced queries
+  rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);
 
 }

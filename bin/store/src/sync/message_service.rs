@@ -16,7 +16,6 @@ pub async fn create_messages(
 ) -> Result<Vec<CrdtMessageModel>, DieselError> {
     let object = record.as_object().expect("Expected a JSON object");
 
-
     let row = object
         .get("id")
         .ok_or_else(|| DieselError::NotFound)
@@ -39,8 +38,6 @@ pub async fn create_messages(
         .get("is_batch")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-
-
 
     if dataset == "connections" && (operation == "Update" || is_batch) {
         let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
@@ -66,7 +63,7 @@ pub async fn create_messages(
     }
 
     for (key, value) in object.iter() {
-        if *key == "id" || value.is_null() || *key=="sync_status" {
+        if *key == "id" || value.is_null() || *key == "sync_status" {
             continue;
         }
 
@@ -114,7 +111,6 @@ pub async fn create_messages(
             hypertable_timestamp: hypertable_timestamp.clone(),
         });
     }
-
 
     Ok(messages)
 }

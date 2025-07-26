@@ -1,3 +1,4 @@
+use crate::cache::cache;
 use crate::controllers::store_controller::ApiError;
 use crate::initializers::background_services_init::get_background_services_initializer;
 use crate::initializers::code_prefix_init::get_code_prefix_initializer;
@@ -6,16 +7,11 @@ use crate::initializers::initial_entity_data::init::get_initial_entity_data_init
 use crate::initializers::root_account_init::get_root_account_initializer;
 use crate::initializers::structs::{EInitializer, InitializerParams};
 use crate::initializers::system_device_init::get_system_device_initializer;
-use crate::cache::cache;
-
-
-
 
 pub async fn initialize(
     initializer_type: EInitializer,
     params: Option<InitializerParams>,
 ) -> Result<(), ApiError> {
-
     cache.get("test");
     match initializer_type {
         EInitializer::SYSTEM_CODE_CONFIG => {

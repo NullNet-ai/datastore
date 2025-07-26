@@ -1,4 +1,5 @@
 use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
+use crate::schema::forbidden_tables;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
 use diesel::sql_types::Text;
@@ -75,9 +76,9 @@ pub struct SqlUpdate {
 
 impl RequestBody {
     // Process record with common fields and return a Value directly
-    pub fn process_record(&mut self, operation: &str, auth: &Auth) {
+    pub fn process_record(&mut self, operation: &str, auth: &Auth, is_root_account: bool, table: &str) {
         // // Add common fields to the record
-        self.add_common_fields(operation, auth);
+        self.add_common_fields(operation, auth, is_root_account, table);
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
@@ -100,7 +101,7 @@ impl RequestBody {
     }
 
     // Helper method to add common fields
-    fn add_common_fields(&mut self, operation: &str, auth: &Auth) {
+    fn add_common_fields(&mut self, operation: &str, auth: &Auth, is_root_account: bool, table: &str) {
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
@@ -125,6 +126,13 @@ impl RequestBody {
                 self.record["updated_time"] = json!(time_str);
                 self.record["updated_by"] = json!(auth.responsible_account);
                 self.record["version"] = json!(0); // ! don't change this, it gets discarded in the end, it's just a placeholder
+                
+                // Add organization_id if conditions are met
+                if !self.record.get("organization_id").is_some_and(|v| !v.is_null()) 
+                    && !is_root_account 
+                    && !forbidden_tables::is_forbidden_table(table) {
+                    self.record["organization_id"] = json!(auth.organization_id);
+                }
             }
             "delete" => {
                 self.record["updated_date"] = json!(date_str);
@@ -250,7 +258,7 @@ pub struct GetByFilter {
     #[serde(default)]
     pub pluck_object: HashMap<String, Vec<String>>,
 
-     #[serde(default)]
+    #[serde(default)]
     pub pluck_group_object: HashMap<String, Vec<String>>,
 
     #[serde(default)]
@@ -295,22 +303,22 @@ pub struct GetByFilter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AggregationFilter {
     pub entity: String,
-    
+
     pub aggregations: Vec<Aggregation>,
-    
+
     #[serde(default)]
     pub advance_filters: Vec<FilterCriteria>,
-    
+
     #[serde(default)]
     pub joins: Vec<Join>,
-    
+
     #[serde(default = "default_limit")]
     pub limit: usize,
-    
+
     pub bucket_size: Option<String>,
-    
+
     pub timezone: Option<String>,
-    
+
     pub order: Option<AggregationOrder>,
 }
 
@@ -512,8 +520,6 @@ pub struct Join {
     pub nested: bool,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldRelation {
     pub to: RelationEndpoint,
@@ -620,4 +626,3 @@ pub enum FilterOperator {
     #[serde(rename = "has_no_value")]
     HasNoValue,
 }
-
