@@ -5,6 +5,49 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.13
+
+### Author
+Kashan
+
+### Fixed
+- **AggregationFilter Parameter Handling**: Fixed aggregation filter method to correctly extract table name from `request.body.entity` instead of non-existent `params.table`
+  - Updated `generate_aggregation_filter_method` macro in `grpc_macros.rs` to use `request.body.entity` for table extraction
+  
+- **Process Record Method Signatures**: Updated all `process_record` method calls to include required `table` parameter
+  - Modified `process_record` signature in `structs.rs` to accept `table: &str` parameter
+  - Updated calls in `store_controller.rs`, `grpc_macros.rs`, and `table_enum_macros.rs` to pass table name
+
+### Enhanced
+- **Organization ID Handling**: Implemented conditional organization_id assignment during update operations
+  - Added `forbidden_tables` module with `FORBIDDEN_TABLES` constant and `is_forbidden_table()` function
+  - Enhanced `add_common_fields` method to conditionally set `organization_id` based on:
+    - Existing `organization_id` presence in request body
+    - `is_root_account` flag status
+    - Table inclusion in forbidden tables list
+  - Updated `process_record` method to pass `table` parameter for forbidden table checks
+
+- **Protocol Buffer Type Field**: Added `type` field to all request messages for root request handling
+  - Enhanced proto generation to include `type` field in request structures
+  - Improved request classification and routing based on request type
+
+- **Table Enum Generator Enhancement**: Enhanced `get_by_id` method to support root account access
+  - Modified `generate_get_by_id_match` macro to accept `is_root_account` and `organization_id` parameters
+  - Implemented conditional organization_id filtering based on root account status
+  - Root accounts can now access records without organization_id restrictions
+  - Non-root accounts continue to have organization-based access control enforced
+
+### Technical Implementation
+- **Core Files**:
+  - `/src/grpc_macros.rs` - Fixed aggregation filter table extraction and process_record calls
+  - `/src/structs/structs.rs` - Enhanced organization_id handling and process_record signature
+  - `/src/schema/forbidden_tables.rs` - New forbidden tables management system
+  - `/src/templates/table_enum/table_enum_macros.rs` - Fixed macro repetition and variable scoping
+  - `/src/controllers/store_controller.rs` - Updated process_record calls with table parameter
+  - `/src/structs/sql_constructor.rs` - Fixed entity extraction from request body
+
+---
+
 ## 0.1.12
 
 ### Author
