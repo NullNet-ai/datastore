@@ -752,8 +752,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         join_clauses.push(join_clause);
                     }
                     "self" => {
-                        // Handle self joins if needed
-                        // TODO: Implement self join logic
+                        let join_clause = self.build_self_join_lateral(join);
+                        join_clauses.push(join_clause);
                     }
                     _ => {
                         // Unsupported join type, skip or log warning
@@ -952,13 +952,33 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
 
     fn build_left_join_lateral(&self, join: &Join) -> String {
-        let to_entity = &join.field_relation.to.entity;
-        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
+        self.build_join_lateral(join, false)
+    }
+
+    fn build_self_join_lateral(&self, join: &Join) -> String {
+        self.build_join_lateral(join, true)
+    }
+
+    fn build_join_lateral(&self, join: &Join, is_self_join: bool) -> String {
+        let to_entity = if is_self_join {
+            &self.table
+        } else {
+            &join.field_relation.to.entity
+        };
+        
+        let to_alias = if is_self_join {
+            join.field_relation.to.alias.as_deref().unwrap_or(&self.table)
+        } else {
+            join.field_relation.to.alias.as_deref().unwrap_or(to_entity)
+        };
+        
         let to_field = &join.field_relation.to.field;
-        let from_entity = &join.field_relation.from.entity;
-        // let from_alias = join.field_relation.from.alias.as_deref().unwrap_or(from_entity);
+        let from_entity = if is_self_join {
+            &self.table
+        } else {
+            &join.field_relation.from.entity
+        };
         let from_field = &join.field_relation.from.field;
-        // TODO: Add nested join logic after jean fix the issue from Typescript datastore
         let is_nested = join.nested;
 
         // Build the lateral subquery alias
@@ -969,7 +989,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
                 fields
                     .iter()
-                    .map(|field| format!("\"{}\".\"{}\"", lateral_alias, field))
+                    .map(|field| format!("\"{}\".\"{}\"" , lateral_alias, field))
                     .collect::<Vec<_>>()
                     .join(", ")
             } else {
@@ -980,6 +1000,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let standard_where = self
             .build_system_where_clause(&lateral_alias)
             .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
+        
         if is_nested {
             return format!(
                 "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
@@ -990,12 +1011,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 to_alias
             );
         }
+        
+        let from_table_ref = if is_self_join {
+            &self.table
+        } else {
+            &self.table
+        };
+        
         format!(
             "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
             selected_fields,
             to_entity, lateral_alias,
             standard_where,
-            self.table, from_field, lateral_alias, to_field,
+            from_table_ref, from_field, lateral_alias, to_field,
             to_alias
         )
     }

@@ -169,6 +169,7 @@ pub async fn auth(
         return Ok(LoginResponse {
             message: "Authenticated".to_string(),
             token: Some(new_token),
+            role_id: signed_in_account["role_id"].as_str().unwrap_or_default().to_string(),
         });
     }
 
@@ -329,6 +330,7 @@ pub async fn root_auth(
         return Ok(LoginResponse {
             message: "Invalid Root Credentials".to_string(),
             token: None,
+            role_id: "".to_string(),
         });
     }
 
@@ -365,6 +367,7 @@ pub async fn root_auth(
     Ok(LoginResponse {
         message: "Authenticated".to_string(),
         token: Some(new_token),
+        role_id: account_organization["role_id"].as_str().unwrap_or_default().to_string(),
     })
 }
 #[allow(warnings)]
