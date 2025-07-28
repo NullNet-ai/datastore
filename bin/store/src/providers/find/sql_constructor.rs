@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use std::collections::HashMap;
-
+use std::env;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria];
@@ -247,6 +247,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
+        if env::var("DEBUG").unwrap() == "true" {
+            dbg!(&sql);
+        }
         Ok(sql)
     }
 
@@ -579,8 +582,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         Ok(clause) => clause,
                         Err(_) => format!("({}.tombstone = 0)", to_alias),
                     };
-
-                    let selection = format!(
+                  
+                    let mut selection = format!(
                         "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
                         field_pairs.join(", "),
                         target_table,
@@ -589,6 +592,35 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         join_condition,
                         to_alias
                     );
+
+                    if join.nested {
+                        let prev_join_to_alias = previous_join
+                            .unwrap()
+                            .field_relation
+                            .to
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&previous_join.unwrap().field_relation.to.entity);
+                        selection = format!(
+                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
+                        // JSON_BUILD OBJECT
+                        field_pairs.join(", "),
+                        // FROM
+                        previous_join.unwrap().field_relation.to.entity,
+                        prev_join_to_alias,
+                        // LEFT JOIN
+                        target_table,
+                        to_alias,
+                        // ON
+                        self.build_join_condition_for_alias(to_alias, join, Some(join)),
+                        // WHERE
+                        standard_where,
+                        // ADDITIONAL WHERE
+                        join_condition,
+                        // selection alias
+                        to_alias
+                    );
+                    }
 
                     join_selections.push(selection);
                 } else {
