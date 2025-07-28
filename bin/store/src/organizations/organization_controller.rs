@@ -1,11 +1,10 @@
-use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder, HttpMessage};
 use serde::{Deserialize, Serialize};
 
-// use crate::auth::structs::Session;
+use crate::auth::structs::{Origin, User};
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
-use actix_web::HttpMessage;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -156,6 +155,16 @@ impl OrganizationsController {
                 if let Some(token) = login_response.token {
                     let updated = crate::auth::structs::Session {
                         token: token.clone(),
+                        origin: Some(Origin {
+                            user_agent: req.headers().get("user-agent").map(|v| v.to_str().unwrap_or_default().to_string()),
+                            host: req.connection_info().host().to_string(),
+                            url: req.path().to_string(),
+                        }),
+                        user: User {
+                            role_id: login_response.role_id,
+                            is_root_user: is_root,
+                            account_id,
+                        },
                         ..session
                     };
                     req.extensions_mut().insert(updated);

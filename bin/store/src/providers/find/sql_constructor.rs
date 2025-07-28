@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use std::collections::HashMap;
-
+use std::env;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria];
@@ -247,6 +247,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
+        if env::var("DEBUG").unwrap() == "true" {
+            dbg!(&sql);
+        }
         Ok(sql)
     }
 
@@ -579,16 +582,49 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         Ok(clause) => clause,
                         Err(_) => format!("({}.tombstone = 0)", to_alias),
                     };
-
-                    let selection = format!(
-                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
+                  
+                    let order_by_clause = self.build_jsonb_agg_order_by(to_alias);
+                    let mut selection = format!(
+                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
                         field_pairs.join(", "),
+                        order_by_clause,
                         target_table,
                         to_alias,
                         standard_where,
                         join_condition,
                         to_alias
                     );
+
+                    if join.nested {
+                        let prev_join_to_alias = previous_join
+                            .unwrap()
+                            .field_relation
+                            .to
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&previous_join.unwrap().field_relation.to.entity);
+                        selection = format!(
+                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
+                        // JSON_BUILD OBJECT
+                        field_pairs.join(", "),
+                        // ORDER BY
+                        order_by_clause,
+                        // FROM
+                        previous_join.unwrap().field_relation.to.entity,
+                        prev_join_to_alias,
+                        // LEFT JOIN
+                        target_table,
+                        to_alias,
+                        // ON
+                        self.build_join_condition_for_alias(to_alias, join, Some(join)),
+                        // WHERE
+                        standard_where,
+                        // ADDITIONAL WHERE
+                        join_condition,
+                        // selection alias
+                        to_alias
+                    );
+                    }
 
                     join_selections.push(selection);
                 } else {
@@ -599,6 +635,70 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
 
         join_selections
+    }
+
+    /// Builds ORDER BY clause for JSONB_AGG based on multiple_sort or fallback to order_by/order_direction
+    fn build_jsonb_agg_order_by(&self, table_alias: &str) -> String {
+        // Check if multiple_sort is available and not empty
+        if !self.request_body.get_multiple_sort().is_empty() {
+            let sort_clauses: Vec<String> = self
+                .request_body
+                .get_multiple_sort()
+                .iter()
+                .map(|sort_option| {
+                    let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
+                    let (sort_table_alias, field_name) = if field_parts.len() == 2 {
+                        (field_parts[0], field_parts[1])
+                    } else {
+                        (table_alias, sort_option.by_field.as_str())
+                    };
+
+                    let field_expression = Self::get_field(
+                        sort_table_alias,
+                        field_name,
+                        self.request_body.get_date_format(),
+                    );
+
+                    // Handle case sensitivity
+                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
+                         field_expression
+                     } else {
+                         format!("LOWER({})", field_expression)
+                     };
+
+                    format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
+                })
+                .collect();
+
+            format!(" ORDER BY {}", sort_clauses.join(", "))
+        }
+        // Fallback to single field sorting using trait methods
+        else if !self.request_body.get_order_by().is_empty() {
+            let field_expression = Self::get_field(
+                table_alias,
+                self.request_body.get_order_by(),
+                self.request_body.get_date_format(),
+            );
+
+            // Handle case sensitivity
+            let final_field = if self
+                .request_body
+                .get_is_case_sensitive_sorting()
+                .unwrap_or(false)
+            {
+                field_expression
+            } else {
+                format!("LOWER({})", field_expression)
+            };
+
+            format!(
+                " ORDER BY {} {}",
+                final_field,
+                self.request_body.get_order_direction().to_uppercase()
+            )
+        } else {
+            String::new()
+        }
     }
 
     fn build_join_condition_for_alias(
@@ -652,8 +752,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         join_clauses.push(join_clause);
                     }
                     "self" => {
-                        // Handle self joins if needed
-                        // TODO: Implement self join logic
+                        let join_clause = self.build_self_join_lateral(join);
+                        join_clauses.push(join_clause);
                     }
                     _ => {
                         // Unsupported join type, skip or log warning
@@ -852,13 +952,33 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
 
     fn build_left_join_lateral(&self, join: &Join) -> String {
-        let to_entity = &join.field_relation.to.entity;
-        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
+        self.build_join_lateral(join, false)
+    }
+
+    fn build_self_join_lateral(&self, join: &Join) -> String {
+        self.build_join_lateral(join, true)
+    }
+
+    fn build_join_lateral(&self, join: &Join, is_self_join: bool) -> String {
+        let to_entity = if is_self_join {
+            &self.table
+        } else {
+            &join.field_relation.to.entity
+        };
+        
+        let to_alias = if is_self_join {
+            join.field_relation.to.alias.as_deref().unwrap_or(&self.table)
+        } else {
+            join.field_relation.to.alias.as_deref().unwrap_or(to_entity)
+        };
+        
         let to_field = &join.field_relation.to.field;
-        let from_entity = &join.field_relation.from.entity;
-        // let from_alias = join.field_relation.from.alias.as_deref().unwrap_or(from_entity);
+        let from_entity = if is_self_join {
+            &self.table
+        } else {
+            &join.field_relation.from.entity
+        };
         let from_field = &join.field_relation.from.field;
-        // TODO: Add nested join logic after jean fix the issue from Typescript datastore
         let is_nested = join.nested;
 
         // Build the lateral subquery alias
@@ -869,7 +989,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
                 fields
                     .iter()
-                    .map(|field| format!("\"{}\".\"{}\"", lateral_alias, field))
+                    .map(|field| format!("\"{}\".\"{}\"" , lateral_alias, field))
                     .collect::<Vec<_>>()
                     .join(", ")
             } else {
@@ -880,6 +1000,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let standard_where = self
             .build_system_where_clause(&lateral_alias)
             .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
+        
         if is_nested {
             return format!(
                 "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
@@ -890,12 +1011,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 to_alias
             );
         }
+        
+        let from_table_ref = if is_self_join {
+            &self.table
+        } else {
+            &self.table
+        };
+        
         format!(
             "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
             selected_fields,
             to_entity, lateral_alias,
             standard_where,
-            self.table, from_field, lateral_alias, to_field,
+            from_table_ref, from_field, lateral_alias, to_field,
             to_alias
         )
     }

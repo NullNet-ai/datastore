@@ -28,7 +28,7 @@ store-clean-setup:
 # Run the store in watch mode
 store-watch:
 	@echo "Starting store in watch mode..."
-	@cd bin/store && cargo watch -x run
+	@cd bin/store && DEBUG=true cargo watch -x run
 
 # Build the store
 store-build:
