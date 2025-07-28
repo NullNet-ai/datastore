@@ -16,10 +16,10 @@ Bert
   - Ensured that join selections are constructed correctly for complex query structures`
 ### Added
 - ORDER BY clause in `construct_join_selections` function for join selections
-  - Added `order_by` parameter to `construct_join_selections` function
+  - Added `multiple_sort` or `order` parameter to `construct_join_selections` function
   - Implemented ORDER BY clause construction for join selections
-  - Ensured that join selections are ordered correctly based on `order_by` parameter
-  - Nested join selections are also ordered correctly based on `order_by` parameter
+  - Ensured that join selections are ordered correctly based on `multiple_sort` or `order` parameter
+  - Nested join selections are also ordered correctly based on `multiple_sort` or `order` parameter
 
 ---
 
