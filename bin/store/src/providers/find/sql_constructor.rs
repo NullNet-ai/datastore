@@ -224,32 +224,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
     pub fn construct(&mut self) -> Result<String, String> {
         let mut sql = String::from("SELECT ");
-        // TODO: suggestions for adding correct parameters
-        // TODO: group by selections
-        // TODO: concantenated fields
-        // TODO: pluck_group_object need to fix by jean
         sql.push_str(&self.construct_selections());
-
         sql.push_str(" FROM ");
         sql.push_str(&self.table);
-        // TODO: set join selections
-        // TODO: concantenated fields
         sql.push_str(&self.construct_joins());
-        // TODO: set Where Clauses
-        // TODO: concantenated fields
         sql.push_str(&self.construct_where_clauses()?);
-        // TODO: set Group By
-        // TODO: concantenated fields
         sql.push_str(&self.construct_group_by());
-        // TODO: set Order By
-        // TODO: multiple sort
-        // TODO: concantenated fields
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
-        if env::var("DEBUG").unwrap() == "true" {
-            dbg!(&sql);
-        }
         Ok(sql)
     }
 
@@ -341,7 +324,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
         parse_as: Option<&str>,
     ) -> String {
         // TODO: apply permissions
-        // TODO: apply concantenated fields
         let base_field = if field.ends_with("_date") {
             Self::date_format_wrapper(table, field, Some(format_str))
         } else if field.ends_with("_time") {
