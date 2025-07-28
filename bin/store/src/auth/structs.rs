@@ -7,7 +7,7 @@ pub struct LoginResponse {
     pub token: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     pub id: String,
     pub account_id: String,
@@ -38,7 +38,7 @@ pub struct Account {
     pub device: Option<serde_json::Value>, // Unknown shape
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct Claims {
     pub account: Account,

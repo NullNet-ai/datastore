@@ -1,6 +1,7 @@
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
 
+/// A chain of two interceptors that applies them in sequence
 #[derive(Clone)]
 pub struct InterceptorChain<A, B> {
     first: A,

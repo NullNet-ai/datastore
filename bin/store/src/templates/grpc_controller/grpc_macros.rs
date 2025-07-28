@@ -1,16 +1,75 @@
+// Session management macro for automatic session persistence
+#[macro_export]
+macro_rules! with_session_management {
+    ($request:ident, $body:block) => {
+        {
+            // Extract session ID from interceptor and load/create session
+            let session = if let Some(session_id) = $request.extensions().get::<String>().cloned() {
+                let session_manager = crate::middlewares::session_core::SessionManager::with_default_config();
+                let mut session = session_manager.get_or_create_session(&session_id).await;
+                
+                // Update session with auth data if available (similar to HTTP middleware)
+                if let (Some(auth_token), Some(claims)) = (
+                    $request.extensions().get::<crate::middlewares::auth_middleware::AuthToken>(),
+                    $request.extensions().get::<crate::auth::structs::Claims>()
+                ) {
+                    use crate::auth::structs::Origin;
+                    
+                    // Update session with token
+                    session.token = auth_token.0.clone();
+                    
+                    // Update session with user data from claims
+                    session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
+                    session.user.is_root_user = claims.account.is_root_account;
+                    session.user.account_id = claims.account.account_id.clone();
+                    
+                    // Set origin for gRPC (simplified compared to HTTP)
+                    session.origin = Some(Origin {
+                        user_agent: Some("gRPC-client".to_string()),
+                        host: "grpc".to_string(),
+                        url: "grpc://".to_string(),
+                    });
+                }
+                
+                Some(session)
+            } else {
+                None
+            };
+            
+            // Store session in request extensions for use in business logic before consuming the request
+            if let Some(ref session) = session {
+                $request.extensions_mut().insert(session.clone());
+            }
+            
+            // Execute the business logic
+            let result = $body;
+            
+            // Save session after processing if it was modified
+            if let Some(session) = session {
+                if let Err(e) = crate::middlewares::grpc_session_interceptor::save_session_after_request(&session).await {
+                    log::warn!("Failed to save session: {}", e);
+                }
+            }
+            
+            result
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! generate_create_method {
     ($table:ident) => {
         paste::paste! {
             fn [<create_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<Create $table:camel Request>]>,
+                mut request: Request<[<Create $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<Create $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
+                    with_session_management!(request, {
 
                     let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
@@ -68,6 +127,7 @@ macro_rules! generate_create_method {
                             },
                             Err(e) => Err(Status::internal(e.message)),
                         }
+                    })
                 })
             }
         }
@@ -80,14 +140,15 @@ macro_rules! generate_aggregation_filter_method {
         paste::paste! {
             fn aggregation_filter<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<AggregationFilterRequest>,
+                mut request: Request<AggregationFilterRequest>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<AggregationFilterResponse>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    let auth_data = match request.extensions().get::<Auth>() {
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(),
                         None => {
                             return Err(tonic::Status::internal(
@@ -159,7 +220,8 @@ macro_rules! generate_aggregation_filter_method {
                         data,
                     };
 
-                    Ok(Response::new(response))
+                        Ok(Response::new(response))
+                    })
                 })
             }
         }
@@ -172,15 +234,15 @@ macro_rules! generate_update_method {
         paste::paste! {
             fn [<update_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<Update $table:camel Request>]>,
+                mut request: Request<[<Update $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<Update $table:camel Response>]>, Status>> + Send + 'static>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
              {
                 Box::pin(async move {
-
-                    let auth_data = match request.extensions().get::<Auth>() {
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
                         None => {
                             return Err(tonic::Status::internal(
@@ -248,7 +310,8 @@ macro_rules! generate_update_method {
                         success: true,
                     };
 
-                    Ok(Response::new(response))
+                        Ok(Response::new(response))
+                    })
                 })
             }
         }
@@ -261,15 +324,15 @@ macro_rules! generate_batch_insert_method {
         paste::paste! {
             fn [<batch_insert_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<BatchInsert $table:camel Request>]>,
+                mut request: Request<[<BatchInsert $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<BatchInsert $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-
-                    let auth_data = match request.extensions().get::<Auth>() {
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
                         None => {
                             return Err(tonic::Status::internal(
@@ -390,7 +453,8 @@ crate::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clo
                         data: response_records,
                     };
 
-                    Ok(Response::new(response))
+                        Ok(Response::new(response))
+                    })
                 })
             }
         }
@@ -403,19 +467,32 @@ macro_rules! generate_batch_update_method {
         paste::paste! {
             fn [<batch_update_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<BatchUpdate $table:camel Request>]>,
+                mut request: Request<[<BatchUpdate $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<BatchUpdate $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    let request = request.into_inner();
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
+                            Some(data) => data.clone(),
+                            None => {
+                                return Err(tonic::Status::internal(
+                                    "Authentication information not available",
+                                ));
+                            }
+                        };
+                        
+                        let request = request.into_inner();
                     let params = request
                         .params
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
 
                     // Extract type from params to determine if it's a root request
+                    let request_type = params.r#type.as_str();
+                    let is_root_request = request_type == "root";
+                    
                     let body = request
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
@@ -444,7 +521,17 @@ macro_rules! generate_batch_update_method {
 })
                         .collect();
 
-                    let updates_map = match serde_json::to_value(&updates) {
+                    // Process the updates through common processing logic
+                    let mut request_body = RequestBody {
+                        record: serde_json::to_value(&updates)
+                            .map_err(|e| Status::internal(format!("Failed to convert updates to JSON: {}", e)))?,
+                    };
+                    request_body.process_record("update", &auth_data, is_root_request, &params.table);
+                    if let Some(record) = request_body.record.as_object_mut() {
+                        record.remove("version");
+                    }
+
+                    let updates_map = match serde_json::to_value(&request_body.record) {
                         Ok(Value::Object(map)) => map,
                         Ok(_) => return Err(Status::invalid_argument("Updates must be a JSON object")),
                         Err(e) => {
@@ -485,6 +572,7 @@ macro_rules! generate_batch_update_method {
                     };
 
                     Ok(Response::new(response))
+                    })
                 })
             }
         }
@@ -570,14 +658,15 @@ macro_rules! generate_upsert_method {
         paste::paste! {
             fn [<upsert_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<Upsert $table:camel Request>]>,
+                mut request: Request<[<Upsert $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<Upsert $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    let auth_data = match request.extensions().get::<Auth>() {
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
                         None => {
                             return Err(tonic::Status::internal(
@@ -639,6 +728,7 @@ macro_rules! generate_upsert_method {
                             Err(Status::internal(error.message))
                         }
                     }
+                    })
                 })
             }
         }
@@ -651,14 +741,15 @@ macro_rules! generate_delete_method {
         paste::paste! {
             fn [<delete_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<Delete $table:camel Request>]>,
+                mut request: Request<[<Delete $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<Delete $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    let auth_data = match request.extensions().get::<Auth>() {
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
                         None => {
                             return Err(tonic::Status::internal(
@@ -717,6 +808,7 @@ macro_rules! generate_delete_method {
                             Ok(Response::new(response))
                         }
                     }
+                    })
                 })
             }
         }
@@ -729,14 +821,15 @@ macro_rules! generate_batch_delete_method {
         paste::paste! {
             fn [<batch_delete_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<BatchDelete $table:camel Request>]>,
+                mut request: Request<[<BatchDelete $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<BatchDelete $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    let auth_data = match request.extensions().get::<Auth>() {
+                    with_session_management!(request, {
+                        let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
                         None => {
                             return Err(tonic::Status::internal(
@@ -814,7 +907,8 @@ macro_rules! generate_batch_delete_method {
                         data: None,
                     };
 
-                    Ok(Response::new(response))
+                        Ok(Response::new(response))
+                    })
                 })
             }
         }

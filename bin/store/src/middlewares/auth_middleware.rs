@@ -16,6 +16,10 @@ use tonic::{Request, Status};
 #[derive(Debug)]
 pub struct AuthFailedMarker;
 
+// Wrapper type for authentication token to avoid conflicts with session ID
+#[derive(Debug, Clone)]
+pub struct AuthToken(pub String);
+
 pub struct Authentication;
 
 // Middleware factory implementation
@@ -287,6 +291,11 @@ impl Interceptor for GrpcAuthInterceptor {
 
                     // Store the Auth object in request extensions
                     request.extensions_mut().insert(auth_data);
+                    
+                    // Store the token and claims for session update in gRPC macros
+                    request.extensions_mut().insert(AuthToken(t.clone()));
+                    request.extensions_mut().insert(claims);
+                    
                     Ok(request)
                 }
                 Err(_) => Err(Status::unauthenticated("Invalid token")),
