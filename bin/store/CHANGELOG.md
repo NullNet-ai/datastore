@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.15
+### Author
+Bert
+
+### Fixed
+- ***organization_controllers***: Fixed issue with `get_organization` function not returning `role_id` `account_id` and `is_root_user` in `user` property
+- ***auth_service***: Fixed issue with `login` function not returning `role_id` in `LoginResponse` struct
+- Fixed missing `origin` property in `Session` struct during login process
+  - Added `origin` field to `Session` struct definition
+  - Enhanced `login` function to properly set the `origin` value
+  - Ensured `origin` is consistently populated during session creation
+---
+
 ## 0.1.14
 
 ### Author
@@ -20,7 +33,7 @@ Bert
   - Implemented ORDER BY clause construction for join selections
   - Ensured that join selections are ordered correctly based on `multiple_sort` or `order` parameter
   - Nested join selections are also ordered correctly based on `multiple_sort` or `order` parameter
-
+- Add self join support in `construct_join_selections` function
 ---
 
 ## 0.1.13
