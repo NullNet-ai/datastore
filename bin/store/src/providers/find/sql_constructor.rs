@@ -583,9 +583,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         Err(_) => format!("({}.tombstone = 0)", to_alias),
                     };
                   
+                    let order_by_clause = self.build_jsonb_agg_order_by(to_alias);
                     let mut selection = format!(
-                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
+                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
                         field_pairs.join(", "),
+                        order_by_clause,
                         target_table,
                         to_alias,
                         standard_where,
@@ -602,9 +604,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             .as_deref()
                             .unwrap_or(&previous_join.unwrap().field_relation.to.entity);
                         selection = format!(
-                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({})) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
+                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
                         // JSON_BUILD OBJECT
                         field_pairs.join(", "),
+                        // ORDER BY
+                        order_by_clause,
                         // FROM
                         previous_join.unwrap().field_relation.to.entity,
                         prev_join_to_alias,
@@ -631,6 +635,70 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
 
         join_selections
+    }
+
+    /// Builds ORDER BY clause for JSONB_AGG based on multiple_sort or fallback to order_by/order_direction
+    fn build_jsonb_agg_order_by(&self, table_alias: &str) -> String {
+        // Check if multiple_sort is available and not empty
+        if !self.request_body.get_multiple_sort().is_empty() {
+            let sort_clauses: Vec<String> = self
+                .request_body
+                .get_multiple_sort()
+                .iter()
+                .map(|sort_option| {
+                    let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
+                    let (sort_table_alias, field_name) = if field_parts.len() == 2 {
+                        (field_parts[0], field_parts[1])
+                    } else {
+                        (table_alias, sort_option.by_field.as_str())
+                    };
+
+                    let field_expression = Self::get_field(
+                        sort_table_alias,
+                        field_name,
+                        self.request_body.get_date_format(),
+                    );
+
+                    // Handle case sensitivity
+                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
+                         field_expression
+                     } else {
+                         format!("LOWER({})", field_expression)
+                     };
+
+                    format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
+                })
+                .collect();
+
+            format!(" ORDER BY {}", sort_clauses.join(", "))
+        }
+        // Fallback to single field sorting using trait methods
+        else if !self.request_body.get_order_by().is_empty() {
+            let field_expression = Self::get_field(
+                table_alias,
+                self.request_body.get_order_by(),
+                self.request_body.get_date_format(),
+            );
+
+            // Handle case sensitivity
+            let final_field = if self
+                .request_body
+                .get_is_case_sensitive_sorting()
+                .unwrap_or(false)
+            {
+                field_expression
+            } else {
+                format!("LOWER({})", field_expression)
+            };
+
+            format!(
+                " ORDER BY {} {}",
+                final_field,
+                self.request_body.get_order_direction().to_uppercase()
+            )
+        } else {
+            String::new()
+        }
     }
 
     fn build_join_condition_for_alias(
