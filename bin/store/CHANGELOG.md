@@ -5,6 +5,24 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.14
+
+### Author
+Bert
+
+### Fixed
+- ***construct_join_selections***: Fixed nested join selection issue in `construct_join_selections` function
+  - Updated `construct_join_selections` to handle nested join selections more effectively
+  - Ensured that join selections are constructed correctly for complex query structures`
+### Added
+- ORDER BY clause in `construct_join_selections` function for join selections
+  - Added `multiple_sort` or `order` parameter to `construct_join_selections` function
+  - Implemented ORDER BY clause construction for join selections
+  - Ensured that join selections are ordered correctly based on `multiple_sort` or `order` parameter
+  - Nested join selections are also ordered correctly based on `multiple_sort` or `order` parameter
+
+---
+
 ## 0.1.13
 
 ### Author
