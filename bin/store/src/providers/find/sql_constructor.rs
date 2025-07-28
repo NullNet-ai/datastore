@@ -9,7 +9,6 @@ use crate::{
     },
 };
 use std::collections::HashMap;
-use std::env;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria];
