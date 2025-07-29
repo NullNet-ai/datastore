@@ -5,40 +5,30 @@ use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error, HttpMessage,
 };
-use chrono::{Duration, Utc};
-use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
 use futures::future::{ok, Ready};
-use serde_json::json;
-use ulid::Ulid;
+use tonic::service::Interceptor;
+use tonic::{Request, Status};
 
-use crate::db;
-use crate::models::session_model::SessionModel;
-use crate::schema::schema::sessions;
-use crate::{
-    auth::structs::{Session, User},
-    utils::utils::time_string_to_ms,
-};
+use crate::auth::structs::{Session, Claims, Origin};
+use crate::utils::utils::time_string_to_ms;
+use super::session_core::SessionManager;
 
 // Just a marker type
 pub struct SessionMiddleware;
 
 // Configuration holder used internally
 #[allow(warnings)]
-struct SessionConfig {
-    cookie_name: String,
-    cookie_max_age: String,
-    session_header: String,
+struct HttpSessionConfig {
+    session_manager: SessionManager,
     cookie_same_site: SameSite,
     cookie_secure: bool,
     cookie_http_only: bool,
-    secret: String,
 }
 
 // Internal service
 pub struct SessionMiddlewareService<S> {
     service: Rc<S>,
-    config: SessionConfig,
+    config: HttpSessionConfig,
 }
 
 impl Default for SessionMiddleware {
@@ -60,19 +50,14 @@ where
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        let config = SessionConfig {
-            cookie_name: std::env::var("SESSION_COOKIE_NAME")
-                .unwrap_or_else(|_| "SessionCookie".to_string()),
-            cookie_max_age: std::env::var("SESSION_COOKIE_MAX_AGE")
-                .unwrap_or_else(|_| "1d".to_string()),
-            session_header: std::env::var("SESSION_HEADER_NAME")
-                .unwrap_or_else(|_| "x-session-id".to_string()),
+        let session_manager = SessionManager::with_default_config();
+        let config = HttpSessionConfig {
+            session_manager,
             cookie_same_site: SameSite::Lax,
             cookie_secure: std::env::var("SESSION_COOKIE_SECURE")
                 .map(|v| v == "true")
                 .unwrap_or(false),
             cookie_http_only: true,
-            secret: std::env::var("PGP_SYM_KEY").unwrap_or_default(),
         };
 
         ok(SessionMiddlewareService {
@@ -96,67 +81,37 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
-        let config = &self.config;
-        let cookie_name = config.cookie_name.clone();
-        let cookie_max_age = config.cookie_max_age.clone();
-        let session_header = config.session_header.clone();
-        let cookie_same_site = config.cookie_same_site;
-        let cookie_secure = config.cookie_secure;
-        let cookie_http_only = config.cookie_http_only;
+        let session_manager = self.config.session_manager.clone();
+        let cookie_same_site = self.config.cookie_same_site;
+        let cookie_secure = self.config.cookie_secure;
+        let cookie_http_only = self.config.cookie_http_only;
 
         let path = req.path().to_string();
-        let skip_session = path.contains("logout") || !path.contains("/api/");
+        let skip_session = session_manager.should_skip_session(&path);
 
         Box::pin(async move {
             if skip_session {
                 return service.call(req).await;
             }
 
-            // Extract session ID from header or cookie or generate a new one
-            let session_id = req
+            // Extract session ID from header or cookie
+            let header_value = req
                 .headers()
-                .get(&session_header)
-                .and_then(|h| h.to_str().ok())
-                .map(|s| s.to_string())
-                .or_else(|| {
-                    // Try to get session ID from cookie
-                    req.cookie(&cookie_name).map(|c| c.value().to_string())
-                })
-                .unwrap_or_else(|| {
-                    // Generate new session ID if none exists
-                    let new_id = Ulid::new().to_string();
-                    log::info!("Generated new SessionId {}", new_id);
-                    new_id
-                });
+                .get(session_manager.session_header())
+                .and_then(|h| h.to_str().ok());
+            
+            let cookie_value = req
+                .cookie(session_manager.cookie_name())
+                .map(|c| c.value().to_string());
 
-            // Try to load existing session
-            let mut conn = db::get_async_connection().await;
+            let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
-            let session_result = sessions::table
-                .filter(sessions::sid.eq(&session_id))
-                .first::<SessionModel>(&mut conn)
-                .await;
-
-            let session = match session_result {
-                Ok(session_model) => {
-                    // Parse the session data from JSON
-                    match serde_json::from_value::<Session>(session_model.sess) {
-                        Ok(session) => session,
-                        Err(err) => {
-                            // Create new session if parsing fails
-                            log::error!(
-                                "Error parsing session to json, in session middleware, {:?}",
-                                err
-                            );
-                            create_new_session(&session_id, &cookie_max_age, "".to_string())
-                        }
-                    }
-                }
-                Err(err) => {
-                    // log an error and print it
-                    log::error!("Error loading session, in session middleware, {:?}", err);
-                    create_new_session(&session_id, &cookie_max_age, "".to_string())
-                }
+            // Load or create session
+            let session = if let Some(session_id) = session_id {
+                session_manager.get_or_create_session(&session_id).await
+            } else {
+                let new_session_id = session_manager.extract_session_id(None, None);
+                session_manager.get_or_create_session(&new_session_id).await
             };
 
             // Store session in request extensions
@@ -170,20 +125,20 @@ where
 
             if let Some(session) = updated_session {
                 // Save the session to the database
-                if let Err(err) = save_session(&session).await {
+                if let Err(err) = session_manager.save_session(&session).await {
                     log::error!("Failed to save session: {:?}", err);
                 }
 
                 // Set the session cookie in the response
-                let cookie = ActixCookie::build(cookie_name, session.session_id)
+                let cookie = ActixCookie::build(session_manager.cookie_name(), session.session_id)
                     .path("/")
                     .same_site(cookie_same_site)
                     .secure(cookie_secure)
                     .http_only(cookie_http_only);
 
                 // Set cookie expiration if max_age is provided
-                let cookie = if let Ok(max_age) = time_string_to_ms(&cookie_max_age) {
-                    cookie.max_age(time::Duration::milliseconds(max_age as i64))
+                let cookie = if let Ok(max_age) = time_string_to_ms(session_manager.cookie_max_age()) {
+                    cookie.max_age(actix_web::cookie::time::Duration::milliseconds(max_age as i64))
                 } else {
                     cookie
                 };
@@ -196,68 +151,8 @@ where
     }
 }
 
-// Helper function to create a new session
-fn create_new_session(session_id: &str, cookie_max_age: &str, token: String) -> Session {
-    let cookie_expiry_res = time_string_to_ms(cookie_max_age);
-    let cookie_exp = match cookie_expiry_res {
-        Ok(expiry) => expiry,
-        Err(err) => {
-            log::error!("Error converting cookie expiry time '{}' to milliseconds in session middleware: {}", cookie_max_age, err);
-            86400000 // Default to 1 day (86400000 ms) on error
-        }
-    };
-
-    let cookie = crate::auth::structs::Cookie {
-        path: "/".to_string(),
-        expires: Utc::now()
-            .checked_add_signed(Duration::milliseconds(cookie_exp as i64))
-            .unwrap_or(Utc::now())
-            .to_rfc3339(),
-        originalMaxAge: cookie_exp as i64,
-        httpOnly: true,
-    };
-
-    // Create a new session with default User and extracted Origin
-    Session {
-        user: User::default(),
-        session_id: session_id.to_string(),
-        origin: None,
-        token,
-        cookie,
-        ..Default::default()
-    }
-}
-
-// Helper function to save session data
-pub async fn save_session(session: &Session) -> Result<(), diesel::result::Error> {
-    let mut conn = db::get_async_connection().await;
-
-    let session_expires = std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
-    let expiry_ms = match time_string_to_ms(&session_expires) {
-        Ok(ms) => ms,
-        Err(err) => {
-            log::warn!("Error converting session expiry time '{}' to milliseconds in session middleware: {}", session_expires, err);
-            86400000 // Default to 1 day (86400000 ms) on error
-        }
-    };
-
-    let expires = Utc::now().naive_utc() + Duration::milliseconds(expiry_ms as i64); // Default expiry of 1 day
-
-    let session_model = SessionModel {
-        sid: session.session_id.clone(),
-        sess: json!(session),
-        expire: expires,
-    };
-
-    diesel::insert_into(sessions::table)
-        .values(&session_model)
-        .on_conflict(sessions::sid)
-        .do_update()
-        .set(&session_model)
-        .execute(&mut conn)
-        .await
-        .map(|_| ())
-}
+// Re-export the shared session management functions
+pub use super::session_core::prune_expired_sessions;
 
 // Helper function to get session from request
 #[allow(warnings)]
@@ -265,13 +160,161 @@ pub fn get_session(req: &ServiceRequest) -> Option<Session> {
     req.extensions().get::<Session>().cloned()
 }
 
-// Function to prune expired sessions
-pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
-    let mut conn = db::get_async_connection().await;
-    let now = Utc::now().naive_utc();
+// ============================================================================
+// gRPC Session Management
+// ============================================================================
 
-    diesel::delete(sessions::table)
-        .filter(sessions::expire.lt(now))
-        .execute(&mut conn)
+/// gRPC Session Interceptor that reuses the core session logic
+#[derive(Clone)]
+pub struct GrpcSessionInterceptor {
+    session_manager: SessionManager,
+}
+
+impl GrpcSessionInterceptor {
+    pub fn new() -> Self {
+        Self {
+            session_manager: SessionManager::with_default_config(),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn with_config(config: super::session_core::SessionConfig) -> Self {
+        Self {
+            session_manager: SessionManager::new(config),
+        }
+    }
+}
+
+impl Default for GrpcSessionInterceptor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Interceptor for GrpcSessionInterceptor {
+    fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
+        let metadata = request.metadata();
+        
+        // Log all headers for debugging
+        log::debug!("gRPC Request headers: {:?}", metadata);
+        
+        // Extract session ID from header
+        let session_header_value = metadata
+            .get(self.session_manager.session_header())
+            .and_then(|v| v.to_str().ok());
+        
+        log::debug!("Session header '{}' value: {:?}", self.session_manager.session_header(), session_header_value);
+        
+        // For gRPC, we don't have cookies, so we only check headers
+        let session_id = self.session_manager.extract_session_id(session_header_value, None);
+        
+        log::debug!("Extracted/Generated session ID: {}", session_id);
+        
+        // Store session ID in request extensions for later async loading
+        // This avoids the runtime panic from calling block_on in an async context
+        request.extensions_mut().insert(session_id);
+        
+        Ok(request)
+    }
+}
+
+/// A chain of two interceptors that applies them in sequence
+#[derive(Clone)]
+pub struct InterceptorChain<A, B> {
+    first: A,
+    second: B,
+}
+
+impl<A, B> InterceptorChain<A, B> {
+    pub fn new(first: A, second: B) -> Self {
+        Self { first, second }
+    }
+}
+
+impl<A, B> Interceptor for InterceptorChain<A, B>
+where
+    A: Interceptor + Clone,
+    B: Interceptor + Clone,
+{
+    fn call(&mut self, request: Request<()>) -> Result<Request<()>, Status> {
+        // Apply the first interceptor
+        let mut first = self.first.clone();
+        let request = first.call(request)?;
+
+        // Apply the second interceptor
+        let mut second = self.second.clone();
+        second.call(request)
+    }
+}
+
+/// Helper function to extract session from gRPC request
+#[allow(dead_code)]
+pub fn get_session_from_grpc_request<T>(request: &Request<T>) -> Option<Session> {
+    request.extensions().get::<Session>().cloned()
+}
+
+/// Helper function to update session in gRPC request
+#[allow(dead_code)]
+pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: Session) {
+    request.extensions_mut().insert(session);
+}
+
+/// Async helper to save session after gRPC request processing
+#[allow(dead_code)]
+pub async fn save_session_after_request(session: &Session) -> Result<(), String> {
+    let session_manager = SessionManager::with_default_config();
+    session_manager
+        .save_session(session)
         .await
+        .map_err(|e| format!("Failed to save session: {:?}", e))
+}
+
+/// Common function to populate session with authentication data
+/// Used by both HTTP and gRPC authentication flows
+pub fn populate_session_with_auth_data(
+    session: &mut Session,
+    token: &str,
+    claims: &Claims,
+    origin: Origin,
+) {
+    // Update session with token
+    session.token = token.to_string();
+    
+    // Update session with user data from claims
+    session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
+    session.user.is_root_user = claims.account.is_root_account;
+    session.user.account_id = claims.account.account_id.clone();
+    
+    // Set origin
+    session.origin = Some(origin);
+}
+
+/// Load and populate session with auth data for gRPC requests
+/// This function centralizes session management logic similar to HTTP middleware
+pub async fn load_and_populate_session_for_grpc<T>(
+    request: &tonic::Request<T>,
+) -> Option<Session> {
+    // Extract session ID from interceptor
+    let session_id = request.extensions().get::<String>().cloned()?;
+    
+    let session_manager = SessionManager::with_default_config();
+    let mut session = session_manager.get_or_create_session(&session_id).await;
+    
+    // Update session with auth data if available (similar to HTTP middleware)
+    if let (Some(auth_token), Some(claims)) = (
+        request.extensions().get::<crate::middlewares::auth_middleware::AuthToken>(),
+        request.extensions().get::<Claims>()
+    ) {
+        // Create gRPC-specific origin
+        let origin = Origin {
+            user_agent: Some("gRPC-client".to_string()),
+            host: "grpc".to_string(),
+            url: "grpc://".to_string(),
+        };
+        
+        // Use common function to populate session
+        populate_session_with_auth_data(&mut session, &auth_token.0, claims, origin);
+    }
+    
+    Some(session)
 }

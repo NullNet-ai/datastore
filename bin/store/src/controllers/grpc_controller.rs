@@ -3,11 +3,12 @@ use super::common_controller::{
     process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
     process_record_for_update, process_records, sanitize_updates,
 };
+use crate::with_session_management;
 use crate::db;
 use crate::db::create_connection;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
-use crate::middlewares::interceptor_chain::InterceptorChain;
+use crate::middlewares::session_middleware::{GrpcSessionInterceptor, InterceptorChain};
 use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
 use crate::providers::find::DynamicResult;
 use crate::providers::find::SQLConstructor;
@@ -292,9 +293,13 @@ impl GrpcController {
         let grpc_controller = GrpcController::new();
         println!("gRPC Server listening on {}", addr);
         // Create a chain of interceptors
+        let session_interceptor = GrpcSessionInterceptor::new();
         let auth_interceptor = GrpcAuthInterceptor;
         let shutdown_interceptor = GrpcShutdownInterceptor;
-        let interceptor_chain = InterceptorChain::new(shutdown_interceptor, auth_interceptor);
+        
+        // Chain interceptors: shutdown -> session -> auth
+        let session_auth_chain = InterceptorChain::new(session_interceptor, auth_interceptor);
+        let interceptor_chain = InterceptorChain::new(shutdown_interceptor, session_auth_chain);
         Server::builder()
             .add_service(StoreServiceServer::with_interceptor(
                 grpc_controller,

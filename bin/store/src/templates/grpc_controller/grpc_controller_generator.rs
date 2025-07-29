@@ -69,10 +69,6 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
     )?;
-    writeln!(
-        file,
-        "use crate::middlewares::interceptor_chain::InterceptorChain;"
-    )?;
 
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
     writeln!(
@@ -82,6 +78,10 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(
         file,
         "use crate::middlewares::auth_middleware::GrpcAuthInterceptor;"
+    )?;
+    writeln!(
+        file,
+        "use crate::middlewares::session_middleware::{{GrpcSessionInterceptor, InterceptorChain}};"
     )?;
     writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id}};")?;
     writeln!(
@@ -184,14 +184,18 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         "        println!(\"gRPC Server listening on {{}}\", addr);"
     )?;
     writeln!(file, "        // Create a chain of interceptors")?;
+    writeln!(file, "        let session_interceptor = GrpcSessionInterceptor::new();")?;
     writeln!(file, "        let auth_interceptor = GrpcAuthInterceptor;")?;
     writeln!(
         file,
         "        let shutdown_interceptor = GrpcShutdownInterceptor;"
     )?;
+    writeln!(file, "        ")?;
+    writeln!(file, "        // Chain interceptors: shutdown -> session -> auth")?;
+    writeln!(file, "        let session_auth_chain = InterceptorChain::new(session_interceptor, auth_interceptor);")?;
     writeln!(
         file,
-        "        let interceptor_chain = InterceptorChain::new(shutdown_interceptor, auth_interceptor);"
+        "        let interceptor_chain = InterceptorChain::new(shutdown_interceptor, session_auth_chain);"
     )?;
     writeln!(
         file,
