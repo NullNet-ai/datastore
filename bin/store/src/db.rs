@@ -243,14 +243,44 @@ impl DatabaseTypeConverter {
                 .map(|v| json!(v)),
 
             // Date and time types
-            &Type::DATE | &Type::TIME | &Type::TIMESTAMP | &Type::TIMESTAMPTZ | &Type::TIMETZ => {
+            &Type::DATE => {
+                row.try_get::<_, Option<chrono::NaiveDate>>(column_index)
+                    .map_err(|e| e.to_string())?
+                    .map(|v| json!(v.to_string()))
+            }
+            &Type::TIME => {
+                row.try_get::<_, Option<chrono::NaiveTime>>(column_index)
+                    .map_err(|e| e.to_string())?
+                    .map(|v| json!(v.to_string()))
+            }
+            &Type::TIMESTAMP => {
+                row.try_get::<_, Option<chrono::NaiveDateTime>>(column_index)
+                    .map_err(|e| e.to_string())?
+                    .map(|v| json!(v.to_string()))
+            }
+            &Type::TIMESTAMPTZ => {
+                row.try_get::<_, Option<chrono::DateTime<chrono::Utc>>>(column_index)
+                    .map_err(|e| e.to_string())?
+                    .map(|v| json!(v.to_rfc3339()))
+            }
+            &Type::TIMETZ => {
                 row.try_get::<_, Option<String>>(column_index)
                     .map_err(|e| e.to_string())?
                     .map(|v| json!(v))
             }
 
             // Network types
-            &Type::INET | &Type::CIDR | &Type::MACADDR | &Type::MACADDR8 => {
+            &Type::INET => {
+                row.try_get::<_, Option<std::net::IpAddr>>(column_index)
+                    .map_err(|e| e.to_string())?
+                    .map(|v| json!(v.to_string()))
+            }
+            &Type::CIDR => {
+                row.try_get::<_, Option<String>>(column_index)
+                    .map_err(|e| e.to_string())?
+                    .map(|v| json!(v))
+            }
+            &Type::MACADDR | &Type::MACADDR8 => {
                 row.try_get::<_, Option<String>>(column_index)
                     .map_err(|e| e.to_string())?
                     .map(|v| json!(v))

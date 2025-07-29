@@ -7,7 +7,7 @@ use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
 use diesel_async::RunQueryDsl;
 use serde_json::Value;
 use std::sync::Arc;
-use uuid::Uuid;
+use ulid::Ulid;
 
 pub struct StreamQueueService;
 
@@ -23,7 +23,7 @@ impl StreamQueueService {
         content: Value,
     ) -> Result<StreamQueueItemModel, DieselError> {
         let new_item =
-            NewStreamQueueItem::new(Uuid::new_v4().to_string(), queue_name.to_string(), content);
+            NewStreamQueueItem::new(Ulid::new().to_string(), queue_name.to_string(), content);
 
         let item_model = diesel::insert_into(stream_queue_items::table)
             .values(&new_item)

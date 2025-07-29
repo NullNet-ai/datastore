@@ -5,7 +5,7 @@ use diesel_async::AsyncPgConnection;
 use hlc::Timestamp;
 use merkle::MerkleTree;
 use std::env;
-use uuid::Uuid;
+use ulid::Ulid;
 #[allow(warnings)]
 pub struct HlcService {
     pub timestamp: Timestamp,
@@ -147,17 +147,16 @@ impl HlcService {
     }
 
     fn make_client_id() -> Result<String, &'static str> {
-        let uuid = Uuid::new_v4();
-        let uuid_str = uuid.to_string();
-        let no_hyphens = uuid_str.replace("-", "");
-        if no_hyphens.len() >= 16 {
-            let start_index = no_hyphens.len() - 16;
-            match no_hyphens.get(start_index..) {
+        let ulid = Ulid::new();
+        let ulid_str = ulid.to_string();
+        if ulid_str.len() >= 16 {
+            let start_index = ulid_str.len() - 16;
+            match ulid_str.get(start_index..) {
                 Some(client_id) => Ok(client_id.to_string()),
                 None => Err("Failed to extract client ID substring"),
             }
         } else {
-            Err("Failed to generate client ID: UUID string too short")
+            Err("Failed to generate client ID: ULID string too short")
         }
     }
 }

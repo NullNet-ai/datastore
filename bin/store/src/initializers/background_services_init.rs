@@ -1,4 +1,5 @@
 use crate::controllers::store_controller::ApiError;
+use crate::initializers::code_prefix_init::get_code_prefix_initializer;
 use crate::middlewares::session_middleware;
 use crate::sync::merkles::merkle_manager::MerkleManager;
 use tokio::time::{interval, Duration};
@@ -15,6 +16,13 @@ impl BackgroundServicesInitializer {
         _params: Option<crate::initializers::structs::InitializerParams>,
     ) -> Result<(), ApiError> {
         log::info!("Initializing background services...");
+
+        // Initialize code prefix first to ensure counters table is properly populated
+        if let Err(e) = get_code_prefix_initializer().initialize().await {
+            log::error!("Failed to initialize code prefix: {}", e);
+        } else {
+            log::info!("Code prefix initialized successfully");
+        }
 
         // Start session pruning task
         self.start_session_pruning();

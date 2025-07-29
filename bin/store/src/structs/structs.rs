@@ -8,7 +8,8 @@ use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use uuid::Uuid as uuid_crate;
+use ulid::Ulid;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -154,7 +155,7 @@ impl RequestBody {
                     .as_str()
                     .map_or(true, |s| s.trim().is_empty()))
         {
-            self.record["id"] = json!(uuid_crate::new_v4().to_string());
+            self.record["id"] = json!(Ulid::new().to_string());
         }
     }
 }
@@ -201,7 +202,8 @@ pub enum ColumnValue {
 #[diesel(sql_type = Text)]
 pub enum Id {
     Text(String),
-    Uuid(uuid::Uuid),
+    Uuid(Uuid),
+    Ulid(Ulid),
 }
 
 impl Id {
@@ -217,6 +219,10 @@ impl Id {
                 "'{}'",
                 uuid.to_string()
             ))),
+            Id::Ulid(ulid) => Box::new(diesel::dsl::sql::<diesel::sql_types::Text>(&format!(
+                "'{}'",
+                ulid.to_string()
+            ))),
         }
     }
 
@@ -224,6 +230,7 @@ impl Id {
         match self {
             Id::Text(text) => text.clone(),
             Id::Uuid(uuid) => uuid.to_string(),
+            Id::Ulid(ulid) => ulid.to_string(),
         }
     }
 }
