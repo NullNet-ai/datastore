@@ -5,6 +5,27 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.17
+
+### Author
+Kashan Ali Khalid
+
+### Fixed
+- ***grpc_macros***: Modified `generate_get_method` macro in `grpc_macros.rs` to extract `pluck_fields` from gRPC query
+  - Added query extraction logic: `let query = request.query.ok_or_else(|| Status::invalid_argument("Query is required"))?;`
+  - Added pluck_fields parsing: `let pluck_fields = if !query.pluck.is_empty() { Some(query.pluck.split(',').map(|s| s.trim().to_string()).collect()) } else { Some(vec!["id".to_string()]) };`
+  - Updated `process_and_get_record_by_id` call to pass extracted `pluck_fields` instead of hardcoded `None`
+  - Changed default behavior from returning `None` to returning `["id"]` when no fields specified
+- ***session_middleware***: Integrated `with_session_management!` macro wrapper across all gRPC method macros
+  - Added session loading: `load_and_populate_session_for_grpc(&request)`
+  - Added session extension insertion: `request.extensions_mut().insert(session.clone())`
+  - Added session persistence: `save_session_after_request(&session)`
+  - Applied to `generate_create_method`, `generate_update_method`, `generate_get_method`, `generate_upsert_method`, `generate_delete_method`, and `generate_batch_delete_method`
+- ***auth_middleware***: Enhanced gRPC request validation to work seamlessly with session management
+  - Updated authentication flow to extract session data from request extensions
+  - Maintained compatibility with existing `validate_grpc_request_with_root_access` function calls
+---
+
 ## 0.1.16
 
 ### Author
