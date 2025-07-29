@@ -1,5 +1,5 @@
 use crate::batch_sync::BatchSyncService;
-use crate::db::{self, create_connection};
+use crate::db::{self, create_connection, DatabaseTypeConverter};
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, Auth, RequestBody, SqlUpdate};
 use crate::sync::sync_service::{insert, update};
@@ -190,62 +190,15 @@ fn serialize_value(value: &Value) -> String {
 
 //BATCH UPDATE FUNCTIONS
 
+/// Convert serde_json::Value parameters to PostgreSQL-compatible types
+/// This function now uses the centralized DatabaseTypeConverter for better error handling
+/// and consistency across the application.
 pub fn convert_params_to_sql_types(
     params: &[serde_json::Value],
-) -> Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> {
-    let mut converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> = Vec::new();
-
-    for p in params {
-        let boxed_value: Box<dyn tokio_postgres::types::ToSql + Sync + Send> = match p {
-            serde_json::Value::Null => Box::new(None::<String>),
-            serde_json::Value::Bool(b) => Box::new(*b),
-            serde_json::Value::Number(n) => {
-                if n.is_i64() {
-                    let i_val = n.as_i64().unwrap();
-                    if i_val >= i32::MIN as i64 && i_val <= i32::MAX as i64 {
-                        Box::new(i_val as i32)
-                    } else {
-                        Box::new(i_val)
-                    }
-                } else if n.is_u64() {
-                    let u_val = n.as_u64().unwrap();
-                    if u_val <= i32::MAX as u64 {
-                        Box::new(u_val as i32)
-                    } else if u_val <= i64::MAX as u64 {
-                        Box::new(u_val as i64)
-                    } else {
-                        Box::new(u_val.to_string())
-                    }
-                } else {
-                    Box::new(n.as_f64().unwrap())
-                }
-            }
-            serde_json::Value::String(s) => {
-                // Try to parse as IpAddr first for inet fields
-                if let Ok(ip) = s.parse::<std::net::IpAddr>() {
-                    Box::new(ip)
-                } else {
-                    Box::new(s.clone())
-                }
-            }
-            serde_json::Value::Array(arr) => {
-                // Convert array elements to Vec<String>
-                let string_array: Vec<String> = arr
-                    .iter()
-                    .map(|v| match v {
-                        serde_json::Value::String(s) => s.clone(),
-                        _ => v.to_string(),
-                    })
-                    .collect();
-                Box::new(string_array)
-            }
-            _ => Box::new(format!("{}", p)),
-        };
-        converted_values.push(boxed_value);
-    }
-
-    converted_values
+) -> Result<Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>>, String> {
+    DatabaseTypeConverter::values_to_sql_params(params)
 }
+
 
 pub fn process_result_rows(
     rows: &[tokio_postgres::Row],
@@ -401,7 +354,8 @@ pub async fn perform_batch_update(
         .await
         .map_err(|e| format!("DB connection failed: {:?}", e))?;
 
-    let converted_values = convert_params_to_sql_types(&params);
+    let converted_values = convert_params_to_sql_types(&params)
+        .map_err(|e| format!("Failed to convert parameters: {}", e))?;
     let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_values
         .iter()
         .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
@@ -749,7 +703,8 @@ pub async fn perform_upsert(
 
     // Build SQL filter
     let SqlFilter { sql, params } = build_sql_filter(&filters.clone());
-    let converted_params = convert_params_to_sql_types(&params);
+    let converted_params = convert_params_to_sql_types(&params)
+        .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, format!("Failed to convert parameters: {}", e)))?;
     let query = format!("SELECT id FROM {} WHERE {} LIMIT 1", table_name, sql);
     let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_params
         .iter()

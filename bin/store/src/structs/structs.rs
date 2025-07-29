@@ -184,6 +184,16 @@ pub enum ColumnValue {
     Float(f64),
     Timestamp(chrono::DateTime<chrono::FixedOffset>),
     Boolean(bool),
+    /// JSON/JSONB fields - preserves structured data
+    Json(serde_json::Value),
+    /// UUID fields
+    Uuid(String),
+    /// Binary data (bytea)
+    Binary(Vec<u8>),
+    /// Network addresses (inet, cidr)
+    Network(String),
+    /// Numeric/decimal with arbitrary precision
+    Numeric(String),
     None,
 }
 
