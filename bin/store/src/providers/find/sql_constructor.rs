@@ -4,7 +4,7 @@ use crate::{
     },
     structs::structs::{
         Aggregation, AggregationFilter, AggregationOrder, ConcatenateField, FilterCriteria,
-        FilterOperator, GetByFilter, GroupAdvanceFilter, Join, LogicalOperator, MatchPattern,
+        FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy, Join, LogicalOperator, MatchPattern,
         SortOption,
     },
 };
@@ -50,10 +50,9 @@ pub trait QueryFilter {
     fn get_multiple_sort(&self) -> &[SortOption] {
         &[]
     }
-    fn get_group_by(&self) -> &HashMap<String, Vec<String>> {
-        use std::collections::HashMap;
-        static EMPTY: std::sync::LazyLock<HashMap<String, Vec<String>>> =
-            std::sync::LazyLock::new(|| HashMap::new());
+    fn get_group_by(&self) -> &GroupBy {
+        static EMPTY: std::sync::LazyLock<GroupBy> =
+            std::sync::LazyLock::new(|| GroupBy::default());
         &EMPTY
     }
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
@@ -130,7 +129,7 @@ impl QueryFilter for GetByFilter {
         &self.multiple_sort
     }
 
-    fn get_group_by(&self) -> &HashMap<String, Vec<String>> {
+    fn get_group_by(&self) -> &GroupBy {
         &self.group_by
     }
 
@@ -357,6 +356,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format!("({} {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
+        let group_by = self.request_body.get_group_by();
+        
+        // If group_by is not empty, replace all selections with group by aggregations
+        if !group_by.fields.is_empty() {
+            return self.construct_group_by_selections();
+        }
+
         let mut selections = Vec::new();
 
         // Add join selections from pluck_object if joins are present
@@ -386,6 +392,29 @@ impl<T: QueryFilter> SQLConstructor<T> {
             if !pluck_group_object.is_empty() {
                 selections.push(pluck_group_object);
             }
+        }
+
+        if selections.is_empty() {
+            "id".to_string()
+        } else {
+            selections.join(", ")
+        }
+    }
+
+    fn construct_group_by_selections(&self) -> String {
+        let group_by = self.request_body.get_group_by();
+        let mut selections = Vec::new();
+
+        // Add count aggregation if has_count is true
+        if group_by.has_count {
+            selections.push("COUNT(*) AS count".to_string());
+            selections.push("COUNT(*) OVER () AS total_group_count".to_string());
+        }
+
+        // Add unique fields from group_by.fields
+        for field in &group_by.fields {
+            let field_selection = Self::get_field(&self.table, field, self.request_body.get_date_format());
+            selections.push(field_selection);
         }
 
         if selections.is_empty() {
@@ -1359,33 +1388,18 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
     }
     fn construct_group_by(&self) -> String {
-        if !self.request_body.get_pluck_group_object().is_empty() {
-            let group_by = self.request_body.get_group_by();
-            if !group_by.is_empty() {
-                // Get all fields from the group_by HashMap and create GROUP BY clause
-                let group_fields: Vec<String> = group_by
-                    .iter()
-                    .flat_map(|(table, fields)| {
-                        fields.iter().map(|field| {
-                            Self::get_field(table, field, self.request_body.get_date_format())
-                        })
-                    })
-                    .collect();
+        let group_by = self.request_body.get_group_by();
+        if !group_by.fields.is_empty() {
+            // Get all fields from the group_by fields and create GROUP BY clause
+            let group_fields: Vec<String> = group_by
+                .fields
+                .iter()
+                .map(|field| {
+                    Self::get_field(&self.table, field, self.request_body.get_date_format())
+                })
+                .collect();
 
-                if !group_fields.is_empty() {
-                    format!(" GROUP BY {}", group_fields.join(", "))
-                } else {
-                    format!(
-                        " GROUP BY {}",
-                        Self::get_field(&self.table, "id", self.request_body.get_date_format())
-                    )
-                }
-            } else {
-                format!(
-                    " GROUP BY {}",
-                    Self::get_field(&self.table, "id", self.request_body.get_date_format())
-                )
-            }
+            format!(" GROUP BY {}", group_fields.join(", "))
         } else {
             String::from("")
         }
