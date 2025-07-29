@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.18
+### Author
+
+### Added
+- ***find***: Implemented distinct_by query parameter
+  - Added `get_distinct_by` method to `FindRequest` struct
+  - Modified `construct_selections` method to handle distinct_by
+  - Updated `construct_query` method to include distinct_by in query construction
+  - Update `construct_order_by` method to handle distinct_by
+---
+
 ## 0.1.17
 
 ### Author
