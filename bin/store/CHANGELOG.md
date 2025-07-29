@@ -5,6 +5,24 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.16
+
+### Author
+Bert
+
+### Improvements
+- validations for advance_filters - validates filter criteria and field existence
+- validations for group_advance_filters - validates grouped filter criteria and logical operators
+- validations for concatenated_fields - validates field existence in specified entities and ensures non-empty field arrays
+- validations for group_by - validates that all group by fields exist in the target table
+- validations for joins - validates join types (LEFT, SELF), field relations, and nested join sequences
+- validations for order_by_format - validates order by field format and field existence
+- validations for order_direction - validates sort direction values (asc, desc)
+- validations for date_format - validates date format strings against allowed patterns
+- validations for multiple_sort - validates multiple sort criteria including field existence and direction
+- validations for limit_offset - validates limit and offset parameter constraints
+---
+
 ## 0.1.15
 ### Author
 Bert

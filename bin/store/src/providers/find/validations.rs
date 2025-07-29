@@ -16,16 +16,7 @@ impl<'a, 'b> Validation<'a, 'b> {
             table,
         }
     }
-    // Made this a static method since it doesn't need self
-    // pub fn get_keys_from_object<T: Serialize>(obj: &T) -> Vec<String> {
-    //     let value = serde_json::to_value(obj).unwrap();
-    //     if let Value::Object(map) = value {
-    //         map.keys().cloned().collect()
-    //     } else {
-    //         Vec::new()
-    //     }
-    // }
-
+ 
     pub fn exec(&self) -> ApiResponse {
         let validation_checks = vec![
             "table",
@@ -35,8 +26,11 @@ impl<'a, 'b> Validation<'a, 'b> {
             "advance_filters",
             "group_advance_filters",
             "concatenated_fields",
+            "group_by",
             "joins",
             "order_by_format",
+            "order_direction",
+            "date_format",
             "multiple_sort",
             "limit_offset"
         ];
@@ -51,8 +45,11 @@ impl<'a, 'b> Validation<'a, 'b> {
                  "advance_filters" => self.validate_advance_filters(),
                  "group_advance_filters" => self.validate_group_advance_filters(),
                  "concatenated_fields" => self.validate_concatenated_fields(),
+                 "group_by" => self.validate_group_by(),
                  "joins" => self.validate_joins(),
                  "order_by_format" => self.validate_order_by_format(),
+                 "order_direction" => self.validate_order_direction(),
+                 "date_format" => self.validate_date_format(),
                  "multiple_sort" => self.validate_multiple_sort(),
                  "limit_offset" => self.validate_limit_offset(),
                  _ => continue,
@@ -127,19 +124,56 @@ impl<'a, 'b> Validation<'a, 'b> {
         }
     }
     pub fn validate_concatenated_fields(&self) -> ApiResponse {
-        for concatenate_field in &self.request_body.concatenate_fields {
-            if concatenate_field.fields.is_empty()
-                || concatenate_field.field_name.is_empty()
-                || concatenate_field.entity.is_empty()
-            {
+        for (concat_index, concatenate_field) in self.request_body.concatenate_fields.iter().enumerate() {
+            if concatenate_field.fields.is_empty() {
                 return ApiResponse {
                     success: false,
-                    message:
-                        "Each concatenated field must have non-empty fields, field_name and entity"
-                            .to_string(),
+                    message: format!(
+                        "concatenate_fields[{}] > fields > Fields array cannot be empty",
+                        concat_index
+                    ),
                     count: 0,
                     data: vec![],
                 };
+            }
+            
+            if concatenate_field.field_name.is_empty() {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "concatenate_fields[{}] > field_name > Field name cannot be empty",
+                        concat_index
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+            
+            if concatenate_field.entity.is_empty() {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "concatenate_fields[{}] > entity > Entity cannot be empty",
+                        concat_index
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+            
+            // Validate that all fields exist in the specified entity
+            for (field_index, field) in concatenate_field.fields.iter().enumerate() {
+                if !field_exists_in_table(&concatenate_field.entity, field) {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "concatenate_fields[{}] > fields[{}] > Field '{}' does not exist in entity '{}'",
+                            concat_index, field_index, field, concatenate_field.entity
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
             }
         }
 
@@ -151,16 +185,118 @@ impl<'a, 'b> Validation<'a, 'b> {
         };
     }
 
+    pub fn validate_group_by(&self) -> ApiResponse {
+        // Validate that all fields in group_by exist in the main table
+        for (field_index, field) in self.request_body.group_by.fields.iter().enumerate() {
+            if !field_exists_in_table(self.table, field) {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "group_by > fields[{}] > Field '{}' does not exist in table '{}'",
+                        field_index, field, self.table
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+        }
+
+        ApiResponse {
+            success: true,
+            message: "Successfully validated group_by fields".to_string(),
+            count: 0,
+            data: vec![],
+        }
+    }
+
     pub fn validate_pluck_object(&self) -> ApiResponse {
-        // Validate pluck_object fields exist in schema
-        for (entity, fields) in &self.request_body.pluck_object {
-            for field in fields {
-                if !field_exists_in_table(entity, field) {
+        // If no joins are present, pluck_object should be empty or only reference the main table
+        if self.request_body.joins.is_empty() {
+            for (entity, _) in &self.request_body.pluck_object {
+                if entity != self.table {
                     return ApiResponse {
                         success: false,
                         message: format!(
-                            "Field '{}' does not exist in entity '{}'",
-                            field, entity
+                            "pluck_object[{}] > Entity '{}' is not valid. Without joins, only the main table '{}' can be referenced",
+                            entity, entity, self.table
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+            }
+        } else {
+            // Collect valid entities from joins (both entity names and aliases)
+            let mut valid_entities = std::collections::HashSet::new();
+            
+            // Add the main table as a valid entity
+            valid_entities.insert(self.table.clone());
+            
+            // Add join entities and their aliases
+            for join in &self.request_body.joins {
+                // Add the target entity
+                valid_entities.insert(join.field_relation.to.entity.clone());
+                
+                // Add the alias if it exists
+                if let Some(alias) = &join.field_relation.to.alias {
+                    valid_entities.insert(alias.clone());
+                }
+            }
+            
+            // Validate that pluck_object entities are valid (either join entities or aliases)
+            for (entity, _) in &self.request_body.pluck_object {
+                if !valid_entities.contains(entity) {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "pluck_object[{}] > Entity '{}' is not valid. Must be either a joined entity or its alias",
+                            entity, entity
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+            }
+        }
+        
+        // Validate pluck_object fields exist in their respective entities
+        for (entity, fields) in &self.request_body.pluck_object {
+            // Determine the actual table name to check against
+            let table_to_check = if entity == self.table {
+                // If entity is the main table, use it directly
+                entity.clone()
+            } else {
+                // Find the join that corresponds to this entity (either by entity name or alias)
+                let join_entity = self.request_body.joins.iter()
+                    .find(|join| {
+                        join.field_relation.to.entity == *entity || 
+                        join.field_relation.to.alias.as_ref() == Some(entity)
+                    })
+                    .map(|join| join.field_relation.to.entity.clone());
+                    
+                match join_entity {
+                    Some(table) => table,
+                    None => {
+                        return ApiResponse {
+                            success: false,
+                            message: format!(
+                                "pluck_object[{}] > Cannot find corresponding join for entity '{}'",
+                                entity, entity
+                            ),
+                            count: 0,
+                            data: vec![],
+                        };
+                    }
+                }
+            };
+            
+            for (field_index, field) in fields.iter().enumerate() {
+                if !field_exists_in_table(&table_to_check, field) {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "pluck_object[{}][{}] > Field '{}' does not exist in entity '{}'",
+                            entity, field_index, field, table_to_check
                         ),
                         count: 0,
                         data: vec![],
@@ -178,15 +314,15 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
 
     pub fn validate_joins(&self) -> ApiResponse {
-        for join in &self.request_body.joins {
+        for (join_index, join) in self.request_body.joins.iter().enumerate() {
             // Validate join type
             let join_type = join.r#type.to_uppercase();
             if join_type != "LEFT" && join_type != "SELF" {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Invalid join type: '{}'. Supported types are: LEFT, SELF",
-                        join.r#type
+                        "joins[{}] > type > Invalid join type: '{}'. Supported types are: LEFT, SELF",
+                        join_index, join.r#type
                     ),
                     count: 0,
                     data: vec![],
@@ -199,12 +335,52 @@ impl<'a, 'b> Validation<'a, 'b> {
             let to_entity = &join.field_relation.to.entity;
             let to_field = &join.field_relation.to.field;
 
-            if !field_exists_in_table(from_entity, from_field) {
+            // For nested joins, validate that the from entity matches the previous join's to entity or alias
+            if join.nested && join_index > 0 {
+                let previous_join = &self.request_body.joins[join_index - 1];
+                let expected_from_entity = if let Some(alias) = &previous_join.field_relation.to.alias {
+                    alias
+                } else {
+                    &previous_join.field_relation.to.entity
+                };
+                
+                if from_entity != expected_from_entity {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "joins[{}] > field_relation > from > entity > Nested join from entity '{}' must match previous join's to entity or alias '{}'",
+                            join_index, from_entity, expected_from_entity
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+            } else if join.nested && join_index == 0 {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Join from field '{}' does not exist in entity '{}'",
-                        from_field, from_entity
+                        "joins[{}] > nested > First join cannot be nested",
+                        join_index
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+
+            // Determine the actual table to validate the from field against
+            let from_table_to_check = if join.nested && join_index > 0 {
+                let previous_join = &self.request_body.joins[join_index - 1];
+                &previous_join.field_relation.to.entity
+            } else {
+                from_entity
+            };
+
+            if !field_exists_in_table(from_table_to_check, from_field) {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "joins[{}] > field_relation > from > field > Join from field '{}' does not exist in entity '{}'",
+                        join_index, from_field, from_table_to_check
                     ),
                     count: 0,
                     data: vec![],
@@ -215,8 +391,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Join to field '{}' does not exist in entity '{}'",
-                        to_field, to_entity
+                        "joins[{}] > field_relation > to > field > Join to field '{}' does not exist in entity '{}'",
+                        join_index, to_field, to_entity
                     ),
                     count: 0,
                     data: vec![],
@@ -233,31 +409,34 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
 
     pub fn validate_order_by_format(&self) -> ApiResponse {
-        // Validate order_by format (should be "entity.field")
+        // Validate order_by format (should be "entity.field" or just "field" for main table)
         if !self.request_body.order_by.is_empty() {
             let by_entity_field: Vec<&str> = self.request_body.order_by.split('.').collect();
             
-            if by_entity_field.len() < 2 {
+            let (sort_entity, sort_field) = if by_entity_field.len() == 1 {
+                // If just field name (e.g., "id"), default to main table
+                (self.table.as_str(), by_entity_field[0])
+            } else if by_entity_field.len() == 2 {
+                // If entity.field format
+                (by_entity_field[0], by_entity_field[1])
+            } else {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Invalid order_by format: '{}'. It should be separated by dot like 'table.field'",
+                        "order_by > Invalid order_by format: '{}'. It should be 'field' or 'table.field'",
                         self.request_body.order_by
                     ),
                     count: 0,
                     data: vec![],
                 };
-            }
-
-            let sort_entity = by_entity_field[0];
-            let sort_field = by_entity_field[1];
+            };
 
             // Validate field exists in schema
             if !field_exists_in_table(sort_entity, sort_field) {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Order by field '{}' does not exist in entity '{}'",
+                        "order_by > Order by field '{}' does not exist in entity '{}'",
                         sort_field, sort_entity
                     ),
                     count: 0,
@@ -274,33 +453,98 @@ impl<'a, 'b> Validation<'a, 'b> {
         }
     }
 
-    pub fn validate_multiple_sort(&self) -> ApiResponse {
-        for sort_option in &self.request_body.multiple_sort {
-            // Validate sort field format
-            let by_entity_field: Vec<&str> = sort_option.by_field.split('.').collect();
-            
-            if by_entity_field.len() < 2 {
+    pub fn validate_order_direction(&self) -> ApiResponse {
+        // Validate order_direction if it's not empty
+        if !self.request_body.order_direction.is_empty() {
+            let direction_lower = self.request_body.order_direction.to_lowercase();
+            if direction_lower != "asc" && direction_lower != "desc" {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Invalid sort field format: '{}'. It should be separated by dot like 'table.field'",
-                        sort_option.by_field
+                        "order_direction > Invalid order direction: '{}'. Valid values are: asc, desc",
+                        self.request_body.order_direction
                     ),
                     count: 0,
                     data: vec![],
                 };
             }
+        }
 
-            let sort_entity = by_entity_field[0];
-            let sort_field = by_entity_field[1];
+        ApiResponse {
+            success: true,
+            message: "Successfully validated order_direction".to_string(),
+            count: 0,
+            data: vec![],
+        }
+    }
+
+    pub fn validate_date_format(&self) -> ApiResponse {
+        // Define allowed date formats
+        let allowed_formats = vec![
+            "mm/dd/YYYY",
+            "dd/mm/YYYY",
+            "YYYY/mm/dd",
+            "YYYY/dd/mm",
+            "mm-dd-YYYY",
+            "dd-mm-YYYY",
+            "YYYY-mm-dd",
+            "YYYY-dd-mm",
+        ];
+
+        // Validate date_format if it's not empty
+        if !self.request_body.date_format.is_empty() {
+            if !allowed_formats.contains(&self.request_body.date_format.as_str()) {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "date_format > Invalid date format: '{}'. Valid formats are: {}",
+                        self.request_body.date_format,
+                        allowed_formats.join(", ")
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+        }
+
+        ApiResponse {
+            success: true,
+            message: "Successfully validated date_format".to_string(),
+            count: 0,
+            data: vec![],
+        }
+    }
+
+    pub fn validate_multiple_sort(&self) -> ApiResponse {
+        for (sort_index, sort_option) in self.request_body.multiple_sort.iter().enumerate() {
+            // Validate sort field format
+            let by_entity_field: Vec<&str> = sort_option.by_field.split('.').collect();
+            
+            let (sort_entity, sort_field) = if by_entity_field.len() == 1 {
+                // If just field name (e.g., "id"), default to main table
+                (self.table.as_str(), by_entity_field[0])
+            } else if by_entity_field.len() == 2 {
+                // If entity.field format
+                (by_entity_field[0], by_entity_field[1])
+            } else {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "multiple_sort[{}] > by_field > Invalid sort field format: '{}'. It should be 'field' or 'table.field'",
+                        sort_index, sort_option.by_field
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            };
 
             // Validate field exists in schema
             if !field_exists_in_table(sort_entity, sort_field) {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Sort field '{}' does not exist in entity '{}'",
-                        sort_field, sort_entity
+                        "multiple_sort[{}] > by_field > Sort field '{}' does not exist in entity '{}'",
+                        sort_index, sort_field, sort_entity
                     ),
                     count: 0,
                     data: vec![],
@@ -309,12 +553,12 @@ impl<'a, 'b> Validation<'a, 'b> {
 
             // Validate direction
             let direction = sort_option.by_direction.to_lowercase();
-            if direction != "asc" && direction != "desc" && direction != "ascending" && direction != "descending" {
+            if direction != "asc" && direction != "desc" {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "Invalid sort direction: '{}'. Valid values are: asc, desc, ascending, descending",
-                        sort_option.by_direction
+                        "multiple_sort[{}] > by_direction > Invalid sort direction: '{}'. Valid values are: asc, desc",
+                        sort_index, sort_option.by_direction
                     ),
                     count: 0,
                     data: vec![],
@@ -360,7 +604,7 @@ impl<'a, 'b> Validation<'a, 'b> {
      }
 
      pub fn validate_advance_filters(&self) -> ApiResponse {
-         for filter in &self.request_body.advance_filters {
+         for (filter_index, filter) in self.request_body.advance_filters.iter().enumerate() {
              match filter {
                  FilterCriteria::Criteria { field, entity, operator, values, .. } => {
                      // Validate field exists in schema
@@ -368,8 +612,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                          return ApiResponse {
                              success: false,
                              message: format!(
-                                 "Filter field '{}' does not exist in entity '{}'",
-                                 field, entity
+                                 "advance_filters[{}] > field > Filter field '{}' does not exist in entity '{}'",
+                                 filter_index, field, entity
                              ),
                              count: 0,
                              data: vec![],
@@ -381,8 +625,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                          return ApiResponse {
                              success: false,
                              message: format!(
-                                 "Filter values cannot be empty for operator '{:?}' on field '{}'",
-                                 operator, field
+                                 "advance_filters[{}] > values > Filter values cannot be empty for operator '{:?}' on field '{}'",
+                                 filter_index, operator, field
                              ),
                              count: 0,
                              data: vec![],
@@ -405,13 +649,13 @@ impl<'a, 'b> Validation<'a, 'b> {
      }
 
      pub fn validate_group_advance_filters(&self) -> ApiResponse {
-         for group_filter in &self.request_body.group_advance_filters {
+         for (group_index, group_filter) in self.request_body.group_advance_filters.iter().enumerate() {
              let filters = match group_filter {
                  crate::structs::structs::GroupAdvanceFilter::Criteria { filters, .. } => filters,
                  crate::structs::structs::GroupAdvanceFilter::Operator { filters, .. } => filters,
              };
 
-             for filter in filters {
+             for (filter_index, filter) in filters.iter().enumerate() {
                  match filter {
                      FilterCriteria::Criteria { field, entity, operator, values, .. } => {
                          // Validate field exists in schema
@@ -419,8 +663,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                              return ApiResponse {
                                  success: false,
                                  message: format!(
-                                     "Group filter field '{}' does not exist in entity '{}'",
-                                     field, entity
+                                     "group_advance_filters[{}] > filters[{}] > field > Group filter field '{}' does not exist in entity '{}'",
+                                     group_index, filter_index, field, entity
                                  ),
                                  count: 0,
                                  data: vec![],
@@ -432,8 +676,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                              return ApiResponse {
                                  success: false,
                                  message: format!(
-                                     "Group filter values cannot be empty for operator '{:?}' on field '{}'",
-                                     operator, field
+                                     "group_advance_filters[{}] > filters[{}] > values > Group filter values cannot be empty for operator '{:?}' on field '{}'",
+                                     group_index, filter_index, operator, field
                                  ),
                                  count: 0,
                                  data: vec![],

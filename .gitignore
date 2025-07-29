@@ -2,6 +2,7 @@
 /target/
 **/target/
 
+Cargo.lock
 # Generated protocol buffer files
 *.pb
 

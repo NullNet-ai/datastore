@@ -251,6 +251,13 @@ pub struct ParsedConcatenatedFields {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GroupBy {
+    pub fields: Vec<String>,
+    #[serde(default)]
+    pub has_count: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GetByFilter {
     #[serde(default = "default_pluck_vec")]
     pub pluck: Vec<String>,
@@ -271,7 +278,7 @@ pub struct GetByFilter {
     pub joins: Vec<Join>,
 
     #[serde(default)]
-    pub group_by: HashMap<String, Vec<String>>,
+    pub group_by: GroupBy,
 
     #[serde(default)]
     pub concatenate_fields: Vec<ConcatenateField>,
