@@ -55,6 +55,9 @@ pub trait QueryFilter {
             std::sync::LazyLock::new(|| GroupBy::default());
         &EMPTY
     }
+    fn get_distinct_by(&self) -> Option<&str> {
+        None
+    }
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
         None
     }
@@ -135,6 +138,10 @@ impl QueryFilter for GetByFilter {
 
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
         self.is_case_sensitive_sorting
+    }
+
+    fn get_distinct_by(&self) -> Option<&str> {
+        self.distinct_by.as_deref()
     }
 }
 
@@ -231,6 +238,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
+        dbg!(&sql);
         Ok(sql)
     }
 
@@ -356,6 +364,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format!("({} {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
+        if let Some(distinct_by) = self.request_body.get_distinct_by() {
+            return if distinct_by == "id" {
+                format!("DISTINCT \"{}\".\"{}\"", self.table, distinct_by)
+            } else {
+                let parts: Vec<&str> = distinct_by.split('.').collect();
+                if parts.len() == 2 {
+                    format!("DISTINCT \"{}\".\"{}\"", parts[0], parts[1])
+                } else {
+                    format!("DISTINCT \"{}\".\"{}\"", self.table, distinct_by)
+                }
+            };
+        }
+
         let group_by = self.request_body.get_group_by();
         
         // If group_by is not empty, replace all selections with group by aggregations
@@ -1322,6 +1343,20 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
 
     fn construct_order_by(&self) -> String {
+        if let Some(distinct_by) = self.request_body.get_distinct_by() {
+            let fields: Vec<String> = distinct_by
+                .split(',')
+                .map(|field| {
+                    let parts: Vec<&str> = field.trim().split('.').collect();
+                    if parts.len() == 2 {
+                        format!("\"{}\".\"{}\"", parts[0], parts[1])
+                    } else {
+                        format!("\"{}\".\"{}\"", self.table, field.trim())
+                    }
+                })
+                .collect();
+            return format!(" ORDER BY {}", fields.join(", "));
+        }
         // Check if multiple_sort is available and not empty
         if !self.request_body.get_multiple_sort().is_empty() {
             let sort_clauses: Vec<String> = self
