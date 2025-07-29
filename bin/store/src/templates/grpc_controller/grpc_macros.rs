@@ -110,22 +110,16 @@ macro_rules! generate_aggregation_filter_method {
             {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(),
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
-                    };
-
-                    let request = request.into_inner();
-
-                    // Extract params and validate
-                    let params = match request.params.as_ref() {
-                        Some(p) => p,
-                        None => return Err(Status::invalid_argument("Params are required")),
-                    };
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
+                        };
+                        
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        let request = request.into_inner();
 
                     // Get table from body.entity instead of params.table
                     let table = request.body.as_ref()
@@ -286,20 +280,16 @@ macro_rules! generate_batch_insert_method {
             {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
-                    };
-
-                    let request = request.into_inner();
-                    let params = match request.params {
-                        Some(p) => p,
-                        None => return Err(Status::invalid_argument("Params are required")),
-                    };
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
+                        };
+                        
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        let request = request.into_inner();
                     let table_name = params.table;
 
                     // Extract type from params to determine if it's a root request
@@ -532,28 +522,25 @@ macro_rules! generate_get_method {
         paste::paste! {
             fn [<get_ $table:lower>]<'life0, 'async_trait>(
                 &'life0 self,
-                request: Request<[<Get $table:camel Request>]>,
+                mut request: Request<[<Get $table:camel Request>]>,
             ) -> Pin<Box<dyn std::future::Future<Output = Result<Response<[<Get $table:camel Response>]>, Status>> + Send + 'async_trait>>
             where
                 'life0: 'async_trait,
                 Self: 'async_trait,
             {
                 Box::pin(async move {
-                    // Get authentication data from request extensions
-                    let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
-                    };
-
-                    // Extract request parameters
-                    let request = request.into_inner();
-                    let params = request
-                        .params
-                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                    with_session_management!(request, {
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
+                        };
+                        
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        // Extract request parameters
+                        let request = request.into_inner();
                     let id = params.id;
 
                     // Extract query and parse pluck_fields
@@ -604,6 +591,7 @@ macro_rules! generate_get_method {
                             Err(Status::internal(error.message))
                         }
                     }
+                    })
                 })
             }
         }
@@ -775,18 +763,16 @@ macro_rules! generate_batch_delete_method {
             {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
-                    };
-                    let request = request.into_inner();
-                    let params = request
-                        .params
-                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
+                        };
+                        
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        let request = request.into_inner();
 
                     // Extract type from params to determine if it's a root request
                     let request_type = params.r#type.as_str();

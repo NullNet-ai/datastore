@@ -16,6 +16,11 @@ Kashan Ali Khalid
   - Added pluck_fields parsing: `let pluck_fields = if !query.pluck.is_empty() { Some(query.pluck.split(',').map(|s| s.trim().to_string()).collect()) } else { Some(vec!["id".to_string()]) };`
   - Updated `process_and_get_record_by_id` call to pass extracted `pluck_fields` instead of hardcoded `None`
   - Changed default behavior from returning `None` to returning `["id"]` when no fields specified
+- ***grpc_macros***: **SECURITY FIX** - Added missing root access validation to `generate_get_method`, `generate_aggregation_filter_method`, `generate_batch_insert_method`, and `generate_batch_delete_method`
+  - Fixed critical security vulnerability where non-root tokens with root type could bypass authentication
+  - Added `validate_grpc_request_with_root_access` calls to all affected methods
+  - Standardized parameter extraction pattern: `let params = match request.get_ref().params { Some(ref p) => p.clone(), None => return Err(Status::invalid_argument("Params are required")), };`
+  - Implemented consistent root access validation: `let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;`
 - ***session_middleware***: Integrated `with_session_management!` macro wrapper across all gRPC method macros
   - Added session loading: `load_and_populate_session_for_grpc(&request)`
   - Added session extension insertion: `request.extensions_mut().insert(session.clone())`
