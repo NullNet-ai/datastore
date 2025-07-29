@@ -96,6 +96,8 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         role -> Nullable<Text>,
         entity -> Nullable<Text>,
@@ -217,6 +219,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
@@ -335,6 +339,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         parent_organization_id -> Nullable<Text>,
         name -> Nullable<Text>,
@@ -365,6 +371,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         contact_id -> Nullable<Text>,
     }
@@ -391,6 +399,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         organization_contact_id -> Nullable<Text>,
         account_id -> Nullable<Text>,
@@ -422,6 +432,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,
@@ -454,6 +466,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
@@ -512,6 +526,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         domain_name -> Nullable<Text>,
     }
@@ -543,6 +559,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         address -> Nullable<Text>,
@@ -582,6 +600,8 @@ table! {
         requested_by -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Integer>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
         name -> Nullable<Text>,
         sample_text -> Nullable<Text>,
     }
@@ -606,6 +626,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         app_id -> Nullable<Text>,
@@ -633,6 +655,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         level -> Nullable<Text>,
@@ -660,6 +684,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         level -> Nullable<Text>,
@@ -687,6 +713,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         #[sql_name = "type"]
@@ -718,6 +746,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         #[sql_name = "type"]
@@ -749,6 +779,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -779,6 +811,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_interface_id -> Nullable<Text>,
@@ -806,6 +840,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_interface_id -> Nullable<Text>,
@@ -833,6 +869,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -861,6 +899,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -889,6 +929,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -919,6 +961,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_id -> Nullable<Text>,
@@ -949,6 +993,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -992,6 +1038,8 @@ table! {
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         id -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
@@ -1034,6 +1082,8 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
          sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
 
         id -> Nullable<Text>,
@@ -1083,6 +1133,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         hypertable_timestamp -> Nullable<Text>,
         interface_name -> Nullable<Text>,
@@ -1167,7 +1219,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
-
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         interface_name -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
@@ -1204,7 +1257,8 @@ table! {
            id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
-
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         public_key -> Nullable<Text>,
         private_key -> Nullable<Text>,
@@ -1234,6 +1288,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         model -> Nullable<Text>,
         address_id -> Nullable<Text>,
@@ -1271,6 +1327,8 @@ table! {
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         country -> Nullable<Text>,
         asn -> Nullable<Text>,
@@ -1304,6 +1362,8 @@ table! {
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         channel_name -> Nullable<Text>,
         function -> Nullable<Text>,
@@ -1331,6 +1391,8 @@ table! {
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         resolution_type -> Nullable<Text>
     }
@@ -1357,6 +1419,8 @@ table! {
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -1385,6 +1449,8 @@ table! {
         timestamp -> Nullable<Timestamp>,
         id -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         level -> Nullable<Text>,
         message -> Nullable<Text>,
@@ -1413,6 +1479,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         name -> Nullable<Text>,
     }
@@ -1439,6 +1507,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         first_name -> Nullable<Text>,
         middle_name -> Nullable<Text>,
@@ -1469,6 +1539,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         contact_id -> Nullable<Text>,
         phone_number_raw -> Nullable<Text>,
@@ -1496,6 +1568,8 @@ table! {
         id -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,

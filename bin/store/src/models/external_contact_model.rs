@@ -30,6 +30,8 @@ pub struct ExternalContactModel {
     pub timestamp: Option<chrono::NaiveDateTime>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
 
     // Specific fields
     pub first_name: Option<String>,

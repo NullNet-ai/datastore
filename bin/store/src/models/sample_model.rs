@@ -26,6 +26,8 @@ pub struct SampleModel {
     pub requested_by: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
     pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
     pub name: Option<String>,
     pub sample_text: Option<String>,
 }

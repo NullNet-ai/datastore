@@ -29,6 +29,8 @@ pub struct OrganizationModel {
     pub timestamp: Option<chrono::NaiveDateTime>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
 
     pub parent_organization_id: Option<String>,
     pub name: Option<String>,
