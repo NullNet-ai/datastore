@@ -32,7 +32,8 @@ impl<'a, 'b> Validation<'a, 'b> {
             "order_direction",
             "date_format",
             "multiple_sort",
-            "limit_offset"
+            "limit_offset",
+            "distinct_by"
         ];
         
         // Iterate through validation checks
@@ -52,6 +53,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                  "date_format" => self.validate_date_format(),
                  "multiple_sort" => self.validate_multiple_sort(),
                  "limit_offset" => self.validate_limit_offset(),
+                 "distinct_by" => self.validate_distinct_by(),
                  _ => continue,
              };
             
@@ -81,6 +83,32 @@ impl<'a, 'b> Validation<'a, 'b> {
         ApiResponse {
             success: true,
             message: "Successfully validated table field".to_string(),
+            count: 0,
+            data: vec![],
+        }
+    }
+    pub fn validate_distinct_by(&self) -> ApiResponse {
+        if self.request_body.distinct_by.is_none() {
+            if !field_exists_in_table(self.table, self.request_body.distinct_by.as_ref().unwrap()) {
+                return ApiResponse {
+                    success: false,
+                    message: format!("distinct_by field {} does not exist in table {}", self.request_body.distinct_by.as_ref().unwrap(), self.table),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+
+            return ApiResponse {
+                success: false,
+                message: format!("distinct_by field {} does not exist in table {}", self.request_body.distinct_by.as_ref().unwrap(), self.table),
+                count: 0,
+                data: vec![],
+            };
+        }
+
+        ApiResponse {
+            success: true,
+            message: "Successfully validated distinct_by field".to_string(),
             count: 0,
             data: vec![],
         }
