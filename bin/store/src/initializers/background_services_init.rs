@@ -1,7 +1,9 @@
 use crate::controllers::store_controller::ApiError;
 use crate::initializers::code_prefix_init::get_code_prefix_initializer;
+use crate::initializers::initial_entity_data::init::get_initial_entity_data_initializer;
 use crate::middlewares::session_middleware;
 use crate::sync::merkles::merkle_manager::MerkleManager;
+use std::env;
 use tokio::time::{interval, Duration};
 
 pub struct BackgroundServicesInitializer;
@@ -22,6 +24,19 @@ impl BackgroundServicesInitializer {
             log::error!("Failed to initialize code prefix: {}", e);
         } else {
             log::info!("Code prefix initialized successfully");
+        }
+
+        // Initialize entity data if environment variable is set
+        let initialize_entity_data =
+            env::var("INITIALIZE_ENTITY_DATA").unwrap_or_else(|_| "false".to_string()) == "true";
+
+        if initialize_entity_data {
+            log::info!("Initializing entity data...");
+            if let Err(e) = get_initial_entity_data_initializer().initialize(None).await {
+                log::error!("Failed to initialize entity data: {}", e);
+            } else {
+                log::info!("Entity data initialized successfully");
+            }
         }
 
         // Start session pruning task
