@@ -166,6 +166,10 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                         "bool" => "bool".to_string(),
                         "timestamp" | "timestamptz" => "timestamp".to_string(),
                         "jsonb" | "json" => "json".to_string(),
+                        "inet" | "cidr" => "inet".to_string(),
+                        "uuid" => "uuid".to_string(),
+                        "bytea" => "bytea".to_string(),
+                        "numeric" | "decimal" => "numeric".to_string(),
                         _ => processed_type.to_lowercase(),
                     };
 

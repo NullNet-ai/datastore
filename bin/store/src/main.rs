@@ -209,19 +209,6 @@ async fn main() -> std::io::Result<()> {
     let pool = db::establish_async_pool();
     println!("Database connected successfully.");
 
-    // Initialize entity data if environment variable is set
-    let initialize_entity_data =
-        env::var("INITIALIZE_ENTITY_DATA").unwrap_or_else(|_| "false".to_string()) == "true";
-
-    if initialize_entity_data {
-        println!("Initializing entity data...");
-        if let Err(e) = initialize(EInitializer::INITIAL_ENTITY_DATA_CONFIG, None).await {
-            log::error!("Failed to initialize entity data: {}", e);
-        } else {
-            log::info!("Entity data initialized successfully");
-        }
-    }
-
     // init batch sync
     if let Err(e) = BatchSyncService::init().await {
         log::error!("Failed to initialize queue: {}", e);

@@ -9,7 +9,7 @@ use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::Value;
-use uuid::Uuid;
+use ulid::Ulid;
 
 pub struct QueueService;
 
@@ -71,7 +71,7 @@ impl QueueService {
                 let new_order = queue.size + 1;
 
                 let queue_item = QueueItemModel {
-                    id: Uuid::new_v4().to_string(),
+                    id: Ulid::new().to_string(),
                     order: new_order,
                     queue_id: queue.id.clone(),
                     value: serde_json::to_string(&item).unwrap_or_else(|_| "{}".to_string()),

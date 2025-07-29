@@ -1,7 +1,6 @@
 use crate::controllers::store_controller::ApiError;
 use crate::db;
-use crate::initializers::initial_entity_data::connections::get_initial_connections;
-use crate::initializers::initial_entity_data::packets::get_initial_packets;
+// use crate::initializers::initial_entity_data::connections::get_initial_connections;
 use crate::initializers::structs::InitializerParams;
 use crate::schema::verify::{field_exists_in_table, get_table_fields};
 use crate::sync::sync_service;
@@ -21,28 +20,19 @@ impl InitialEntityDataInitializer {
         log::info!("Starting initial entity data initialization");
 
         // Define entity data mappings with error handling
-        let mut entity_data: HashMap<&str, Vec<Value>> = HashMap::new();
+        let entity_data: HashMap<&str, Vec<Value>> = HashMap::new();
 
         // Load initial data with individual error handling
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| get_initial_connections())) {
-            Ok(connections) => {
-                entity_data.insert("connections", connections);
-                log::debug!("Successfully loaded connections data");
-            }
-            Err(_) => {
-                log::error!("Failed to load connections data, skipping connections initialization");
-            }
-        }
+        // match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| get_initial_connections())) {
+        //     Ok(connections) => {
+        //         entity_data.insert("connections", connections);
+        //         log::debug!("Successfully loaded connections data");
+        //     }
+        //     Err(_) => {
+        //         log::error!("Failed to load connections data, skipping connections initialization");
+        //     }
+        // }
 
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| get_initial_packets())) {
-            Ok(packets) => {
-                entity_data.insert("packets", packets);
-                log::debug!("Successfully loaded packets data");
-            }
-            Err(_) => {
-                log::error!("Failed to load packets data, skipping packets initialization");
-            }
-        }
 
         if entity_data.is_empty() {
             log::warn!("No entity data could be loaded, initialization completed with no changes");
@@ -321,179 +311,4 @@ impl InitialEntityDataInitializer {
 
 pub fn get_initial_entity_data_initializer() -> InitialEntityDataInitializer {
     InitialEntityDataInitializer::new()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_error_resilient_initialization() {
-        let initializer = InitialEntityDataInitializer::new();
-
-        // Test that initialization doesn't panic even with potential errors
-        let result = initializer.initialize(None).await;
-        assert!(
-            result.is_ok(),
-            "Initialization should always return Ok to prevent crashes"
-        );
-
-        // Test with sample data to ensure structure is correct
-        let sample_connections = get_initial_connections();
-        let sample_packets = get_initial_packets();
-
-        assert!(
-            !sample_connections.is_empty(),
-            "Connections data should not be empty"
-        );
-        assert!(
-            !sample_packets.is_empty(),
-            "Packets data should not be empty"
-        );
-
-        // Get expected organization ID from environment
-        let expected_org_id = std::env::var("DEFAULT_ORGANIZATION_ID")
-            .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string());
-
-        // Verify the first record of each type has required fields
-        let first_connection = &sample_connections[0];
-        assert!(
-            first_connection.get("id").is_some(),
-            "Connection record should have an id field"
-        );
-        assert!(
-            first_connection.get("created_by").is_some(),
-            "Connection record should have a created_by field"
-        );
-        assert!(
-            first_connection.get("created_date").is_some(),
-            "Connection record should have a created_date field"
-        );
-        assert!(
-            first_connection.get("created_time").is_some(),
-            "Connection record should have a created_time field"
-        );
-        assert!(
-            first_connection.get("timestamp").is_some(),
-            "Connection record should have a timestamp field"
-        );
-        assert!(
-            first_connection.get("hypertable_timestamp").is_some(),
-            "Connection record should have a hypertable_timestamp field"
-        );
-        assert!(
-            first_connection.get("organization_id").is_some(),
-            "Connection record should have an organization_id field"
-        );
-
-        // Verify organization_id matches environment variable
-        let conn_org_id = first_connection
-            .get("organization_id")
-            .unwrap()
-            .as_str()
-            .unwrap();
-        assert_eq!(
-            conn_org_id, expected_org_id,
-            "Connection organization_id should match DEFAULT_ORGANIZATION_ID"
-        );
-
-        // Verify timestamp format (ISO 8601 with microseconds)
-        let conn_timestamp = first_connection.get("timestamp").unwrap().as_str().unwrap();
-        let conn_hypertable_timestamp = first_connection
-            .get("hypertable_timestamp")
-            .unwrap()
-            .as_str()
-            .unwrap();
-        assert!(
-            conn_timestamp.contains("T"),
-            "Timestamp should be in ISO 8601 format"
-        );
-        assert!(
-            conn_timestamp.ends_with("+00:00"),
-            "Timestamp should have UTC timezone"
-        );
-        assert_eq!(
-            conn_timestamp, conn_hypertable_timestamp,
-            "Timestamp and hypertable_timestamp should match"
-        );
-
-        let first_packet = &sample_packets[0];
-        assert!(
-            first_packet.get("id").is_some(),
-            "Packet record should have an id field"
-        );
-        assert!(
-            first_packet.get("created_by").is_some(),
-            "Packet record should have a created_by field"
-        );
-        assert!(
-            first_packet.get("created_date").is_some(),
-            "Packet record should have a created_date field"
-        );
-        assert!(
-            first_packet.get("created_time").is_some(),
-            "Packet record should have a created_time field"
-        );
-        assert!(
-            first_packet.get("timestamp").is_some(),
-            "Packet record should have a timestamp field"
-        );
-        assert!(
-            first_packet.get("hypertable_timestamp").is_some(),
-            "Packet record should have a hypertable_timestamp field"
-        );
-        assert!(
-            first_packet.get("organization_id").is_some(),
-            "Packet record should have an organization_id field"
-        );
-
-        // Verify organization_id matches environment variable
-        let packet_org_id = first_packet
-            .get("organization_id")
-            .unwrap()
-            .as_str()
-            .unwrap();
-        assert_eq!(
-            packet_org_id, expected_org_id,
-            "Packet organization_id should match DEFAULT_ORGANIZATION_ID"
-        );
-
-        // Verify timestamp format (ISO 8601 with microseconds)
-        let packet_timestamp = first_packet.get("timestamp").unwrap().as_str().unwrap();
-        let packet_hypertable_timestamp = first_packet
-            .get("hypertable_timestamp")
-            .unwrap()
-            .as_str()
-            .unwrap();
-        assert!(
-            packet_timestamp.contains("T"),
-            "Timestamp should be in ISO 8601 format"
-        );
-        assert!(
-            packet_timestamp.ends_with("+00:00"),
-            "Timestamp should have UTC timezone"
-        );
-        assert_eq!(
-            packet_timestamp, packet_hypertable_timestamp,
-            "Timestamp and hypertable_timestamp should match"
-        );
-
-        // Verify that timestamps are in the correct format (current date/time)
-        let created_date = first_connection["created_date"].as_str().unwrap();
-        let created_time = first_connection["created_time"].as_str().unwrap();
-
-        // Check date format (YYYY-MM-DD)
-        assert!(
-            created_date.len() == 10,
-            "Date should be in YYYY-MM-DD format"
-        );
-        assert!(created_date.contains('-'), "Date should contain hyphens");
-
-        // Check time format (HH:MM:SS)
-        assert!(created_time.len() == 8, "Time should be in HH:MM:SS format");
-        assert!(created_time.contains(':'), "Time should contain colons");
-
-        // Note: This test verifies error resilience, data structure correctness, and current timestamp usage
-        // Full database integration testing would require a test database connection
-    }
 }

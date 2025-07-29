@@ -8,7 +8,7 @@ use std::error::Error;
 use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::OnceCell;
-use uuid::Uuid;
+use ulid::Ulid;
 
 pub struct TransactionService;
 static INIT: OnceCell<()> = OnceCell::const_new();
@@ -101,7 +101,7 @@ impl TransactionService {
         // Create a new transaction
         let timestamp = chrono::Utc::now().to_rfc3339();
         let expiry = now + 30000; // 30 seconds expiry
-        let new_id = Uuid::new_v4().to_string();
+        let new_id = Ulid::new().to_string();
 
         let new_transaction = TransactionModel {
             id: new_id.clone(),

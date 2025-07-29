@@ -11,7 +11,6 @@ use std::collections::HashMap;
 pub struct CodePrefixInitializer {
     pub prefixes: HashMap<String, CounterModel>,
 }
-#[allow(warnings)]
 impl CodePrefixInitializer {
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
@@ -53,15 +52,7 @@ impl CodePrefixInitializer {
 
         CodePrefixInitializer { prefixes }
     }
-
-    pub fn get_config(&self, table_name: &str) -> Option<&CounterModel> {
-        self.prefixes.get(table_name)
-    }
-
-    pub fn add_config(&mut self, table_name: String, config: CounterModel) {
-        self.prefixes.insert(table_name, config);
-    }
-
+    
     /// Inserts all prefix configurations into the counter table in the database
     /// If a record with the same entity already exists, it will be skipped
     pub async fn initialize(&self) -> Result<(), ApiError> {

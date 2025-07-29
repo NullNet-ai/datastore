@@ -31,6 +31,8 @@ pub struct DeviceSshKeyModel {
     pub timestamp: Option<chrono::NaiveDateTime>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
 
     pub public_key: Option<String>,
     pub private_key: Option<String>,
