@@ -13,6 +13,7 @@ use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use merkle::MerkleTree;
 use serde::Serialize;
+use ulid::Ulid;
 
 #[derive(Serialize)]
 struct ApiError {
@@ -345,7 +346,7 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                 }
             };
             let client_message = CrdtClientMessage {
-                record_id: uuid::Uuid::new_v4().to_string(),
+                record_id: Ulid::new().to_string(),
                 client_id: req_client_id.clone(),
                 message: serde_json::to_string(&message_json).unwrap_or_else(|e| {
                     log::error!("Error serializing message: {}", e);

@@ -1,7 +1,7 @@
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use uuid::Uuid;
+use ulid::Ulid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Node {
@@ -160,7 +160,7 @@ impl MerkleTree {
     }
 
     pub fn to_proto(&self) -> Vec<u8> {
-        let tree_id = Uuid::new_v4().to_string();
+        let tree_id = Ulid::new().to_string();
 
         let proto_leaves: Vec<ProtoNode> = self
             .leaves
