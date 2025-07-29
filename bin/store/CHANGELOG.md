@@ -14,6 +14,7 @@ Kashan Ali Khalid
 - ***core***: Migrated all UUID fields to ULID for better performance and sortability
   - Updated all database schemas and models to use ULID instead of UUID
   - Modified ID generation throughout the codebase
+  - Updated CRDT libraries to use ULID instead of UUID
   - Ensured backward compatibility during migration
 
 ### Added
