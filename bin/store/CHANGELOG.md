@@ -5,6 +5,36 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.19
+
+### Author
+Kashan Ali Khalid
+
+### Changed
+- ***core***: Migrated all UUID fields to ULID for better performance and sortability
+  - Updated all database schemas and models to use ULID instead of UUID
+  - Modified ID generation throughout the codebase
+  - Ensured backward compatibility during migration
+
+### Added
+- ***parsers***: Enhanced SQL parsing capabilities
+  - Updated parsers for SQL to row conversion
+  - Updated parsers for row to SQL conversion
+  - Added support for additional PostgreSQL types in CRDT insert record operations
+  - Improved type safety and conversion accuracy
+- ***database***: Added system fields to all tables
+  - Added `is_batch` field to track batch operations
+  - Added `sync_status` field to monitor synchronization state
+  - Created corresponding database migrations for system fields
+
+### Fixed
+- ***initialization***: Moved initialization logic to background services
+  - Moved code prefix initialization from main.rs to background_services_init.rs
+  - Moved initial entity data initialization from main.rs to background_services_init.rs
+  - Ensured initializers run consistently on every store startup
+  - Fixed recursion issues in initialization process
+---
+
 ## 0.1.18
 
 ### Author
