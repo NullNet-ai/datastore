@@ -3,38 +3,8 @@
 macro_rules! with_session_management {
     ($request:ident, $body:block) => {
         {
-            // Extract session ID from interceptor and load/create session
-            let session = if let Some(session_id) = $request.extensions().get::<String>().cloned() {
-                let session_manager = crate::middlewares::session_core::SessionManager::with_default_config();
-                let mut session = session_manager.get_or_create_session(&session_id).await;
-                
-                // Update session with auth data if available (similar to HTTP middleware)
-                if let (Some(auth_token), Some(claims)) = (
-                    $request.extensions().get::<crate::middlewares::auth_middleware::AuthToken>(),
-                    $request.extensions().get::<crate::auth::structs::Claims>()
-                ) {
-                    use crate::auth::structs::Origin;
-                    
-                    // Update session with token
-                    session.token = auth_token.0.clone();
-                    
-                    // Update session with user data from claims
-                    session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
-                    session.user.is_root_user = claims.account.is_root_account;
-                    session.user.account_id = claims.account.account_id.clone();
-                    
-                    // Set origin for gRPC (simplified compared to HTTP)
-                    session.origin = Some(Origin {
-                        user_agent: Some("gRPC-client".to_string()),
-                        host: "grpc".to_string(),
-                        url: "grpc://".to_string(),
-                    });
-                }
-                
-                Some(session)
-            } else {
-                None
-            };
+            // Load and populate session using centralized function (similar to HTTP middleware)
+            let session = crate::middlewares::session_middleware::load_and_populate_session_for_grpc(&$request).await;
             
             // Store session in request extensions for use in business logic before consuming the request
             if let Some(ref session) = session {
@@ -46,7 +16,7 @@ macro_rules! with_session_management {
             
             // Save session after processing if it was modified
             if let Some(session) = session {
-                if let Err(e) = crate::middlewares::grpc_session_interceptor::save_session_after_request(&session).await {
+                if let Err(e) = crate::middlewares::session_middleware::save_session_after_request(&session).await {
                     log::warn!("Failed to save session: {}", e);
                 }
             }
@@ -71,31 +41,23 @@ macro_rules! generate_create_method {
                 Box::pin(async move {
                     with_session_management!(request, {
 
-                    let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
+                    // Extract params first to get the type for validation
+                    let params = match request.get_ref().params {
+                        Some(ref p) => p.clone(),
+                        None => return Err(Status::invalid_argument("Params are required")),
                     };
-
-
-                    let request = request.into_inner();
-                    let query = match request.query {
+                    
+                    // Use common validation function
+                    let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                    
+                    let request_inner = request.into_inner();
+                    let query = match request_inner.query {
                         Some(q) => q,
                         None => return Err(Status::invalid_argument("Query is required")),
                     };
-                    let params = match request.params {
-                        Some(p) => p,
-                        None => return Err(Status::invalid_argument("Params are required")),
-                    };
+                    
                     let table_name = params.table;
-
-                    // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.clone();
-                    let is_root_request = request_type == "root";
-                    let record = match request.[<$table:lower>] {
+                    let record = match request_inner.[<$table:lower>] {
                         Some(r) => r,
                         None => return Err(Status::invalid_argument("Record is required")),
                     };
@@ -110,7 +72,7 @@ macro_rules! generate_create_method {
                         .map(|s| s.trim().to_string())
                         .collect();
 
-                        match process_and_insert_record(&table_name, record_value, Some(pluck_fields), &auth_data, is_root_request).await {
+                        match process_and_insert_record(&table_name, record_value, Some(pluck_fields), &auth_data, params.r#type == "root").await {
                             Ok(api_response) => {
                                 // Convert the data back to the specific type
                                 let data: [<$table:camel>] = serde_json::from_value(api_response.data[0].clone())
@@ -242,32 +204,24 @@ macro_rules! generate_update_method {
              {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
+                    // Extract params first to get the type for validation
+                    let params = match request.get_ref().params {
+                        Some(ref p) => p.clone(),
+                        None => return Err(Status::invalid_argument("Params are required")),
                     };
-
-                    let request = request.into_inner();
-                    let query = match request.query {
+                    
+                    // Use common validation function
+                    let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                    
+                    let request_inner = request.into_inner();
+                    let query = match request_inner.query {
                         Some(q) => q,
                         None => return Err(Status::invalid_argument("Query is required")),
                     };
-
-                    let params = match request.params {
-                        Some(p) => p,
-                        None => return Err(Status::invalid_argument("Params are required")),
-                    };
+                    
                     let table_name = params.table;
                     let record_id = params.id;
-
-                    // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.as_str();
-                    let is_root_request = request_type == "root";
-                    let record = match request.[<$table_singular:lower>] {
+                    let record = match request_inner.[<$table_singular:lower>] {
                         Some(r) => r,
                         None => return Err(Status::invalid_argument("Record is required")),
                     };
@@ -283,7 +237,7 @@ macro_rules! generate_update_method {
                     };
 
                     // Process record using common function
-                    let processed_record = match process_record_for_update(record, &table_name, &record_id, &table,"update", &auth_data, is_root_request).await {
+                    let processed_record = match process_record_for_update(record, &table_name, &record_id, &table,"update", &auth_data, params.r#type == "root").await {
                         Ok(processed) => processed,
                         Err(status) => {
                             return Err(status);
@@ -475,25 +429,18 @@ macro_rules! generate_batch_update_method {
             {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                            Some(data) => data.clone(),
-                            None => {
-                                return Err(tonic::Status::internal(
-                                    "Authentication information not available",
-                                ));
-                            }
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
                         };
                         
-                        let request = request.into_inner();
-                    let params = request
-                        .params
-                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
-
-                    // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.as_str();
-                    let is_root_request = request_type == "root";
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        let request_inner = request.into_inner();
                     
-                    let body = request
+                    let body = request_inner
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
                     let updates = body
@@ -526,7 +473,7 @@ macro_rules! generate_batch_update_method {
                         record: serde_json::to_value(&updates)
                             .map_err(|e| Status::internal(format!("Failed to convert updates to JSON: {}", e)))?,
                     };
-                    request_body.process_record("update", &auth_data, is_root_request, &params.table);
+                    request_body.process_record("update", &auth_data, params.r#type == "root", &params.table);
                     if let Some(record) = request_body.record.as_object_mut() {
                         record.remove("version");
                     }
@@ -666,27 +613,21 @@ macro_rules! generate_upsert_method {
             {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
-                    };
-                    let request = request.into_inner();
-                    let params = request
-                        .params
-                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
+                        };
+                        
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        let request_inner = request.into_inner();
 
-                    // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.as_str();
-                    let is_root_request = request_type == "root";
-
-                    let query = request
+                    let query = request_inner
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
-                    let body = request
+                    let body = request_inner
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
                     // Extract pluck fields if provided
@@ -707,7 +648,7 @@ macro_rules! generate_upsert_method {
                         data_value,
                         pluck_fields,
                         &auth_data,
-                        is_root_request,
+                        params.r#type == "root",
                     ).await {
                         Ok(response) => {
                             // Convert ApiResponse to gRPC response
@@ -749,24 +690,18 @@ macro_rules! generate_delete_method {
             {
                 Box::pin(async move {
                     with_session_management!(request, {
-                        let auth_data = match request.extensions().get::<Auth>() {
-                        Some(data) => data.clone(), // Clone the auth data
-                        None => {
-                            return Err(tonic::Status::internal(
-                                "Authentication information not available",
-                            ));
-                        }
-                    };
-                    let request = request.into_inner();
-                    let params = request
-                        .params
-                        .ok_or_else(|| Status::invalid_argument("Params are required"))?;
+                        // Extract params first to get the type for validation
+                        let params = match request.get_ref().params {
+                            Some(ref p) => p.clone(),
+                            None => return Err(Status::invalid_argument("Params are required")),
+                        };
+                        
+                        // Use common validation function
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        
+                        let request_inner = request.into_inner();
 
-                    // Extract type from params to determine if it's a root request
-                    let request_type = params.r#type.as_str();
-                    let is_root_request = request_type == "root";
-
-                    let _query = request
+                    let _query = request_inner
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
 
@@ -777,7 +712,7 @@ macro_rules! generate_delete_method {
                     let delete_updates = serde_json::json!({});
 
                     // Process record using common function
-                    match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete", &auth_data, is_root_request).await {
+                    match process_and_update_record(&table_name, delete_updates, &record_id, None, "delete", &auth_data, params.r#type == "root").await {
                         Ok(response) => {
                             // Convert response to Value to modify message
                             // let mut response_value: serde_json::Value = serde_json::from_str(&serde_json::to_string(&response).unwrap())
