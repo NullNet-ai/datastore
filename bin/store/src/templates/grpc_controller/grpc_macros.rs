@@ -540,7 +540,7 @@ macro_rules! generate_get_method {
             {
                 Box::pin(async move {
                     // Get authentication data from request extensions
-                    let _auth_data = match request.extensions().get::<Auth>() {
+                    let auth_data = match request.extensions().get::<Auth>() {
                         Some(data) => data.clone(), // Clone the auth data
                         None => {
                             return Err(tonic::Status::internal(
@@ -556,6 +556,17 @@ macro_rules! generate_get_method {
                         .ok_or_else(|| Status::invalid_argument("Params are required"))?;
                     let id = params.id;
 
+                    // Extract query and parse pluck_fields
+                    let query = request
+                        .query
+                        .ok_or_else(|| Status::invalid_argument("Query is required"))?;
+                    
+                    let pluck_fields = if !query.pluck.is_empty() {
+                        Some(query.pluck.split(',').map(|s| s.trim().to_string()).collect())
+                    } else {
+                        Some(vec!["id".to_string()])
+                    };
+
                     // Check if ID is provided
                     if id.is_empty() {
                         return Err(Status::invalid_argument("ID is required"));
@@ -565,7 +576,7 @@ macro_rules! generate_get_method {
                     let table_name = stringify!($table).to_string();
 
                     // Process and get record by ID
-                    match process_and_get_record_by_id(&table_name, &id, None, _auth_data.is_root_account, Some(&_auth_data.organization_id)).await {
+                    match process_and_get_record_by_id(&table_name, &id, pluck_fields, auth_data.is_root_account, Some(&auth_data.organization_id)).await {
                         Ok(response) => {
                             // Check if we have data
                             if response.data.is_empty() {
