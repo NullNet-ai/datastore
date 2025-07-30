@@ -1,6 +1,3 @@
-//! Improved schema definition using actual Diesel types
-//! This replaces the comment-based approach with proper Rust structs
-
 use serde::{Deserialize, Serialize};
 
 /// Trait for defining table schemas using Diesel types

@@ -1,5 +1,4 @@
-//! Product catalog table definition using the new struct-based approach with Diesel types
-//! Demonstrates a more complex table with various field types and constraints
+
 
 use crate::schema::generator::diesel_schema_definition::{
     DieselTableDefinition, types::*
@@ -13,10 +12,10 @@ define_table_schema! {
     table_name: "products",
     fields: {
         id: uuid(), primary_key: true,
-        sku: text(), indexed: true,
+        sku: text(),
         name: text(),
         description: nullable(text()),
-        category_id: integer(), indexed: true,
+        category_id: integer(),
         price: DieselType::Numeric,
         currency: DieselType::VarChar(Some(3)), default: "USD",
         stock_quantity: integer(), default: "0",
@@ -30,7 +29,8 @@ define_table_schema! {
         supplier_info: nullable(jsonb()),
         created_at: timestamptz(), default: "CURRENT_TIMESTAMP",
         updated_at: timestamptz(), default: "CURRENT_TIMESTAMP",
-        deleted_at: nullable(timestamptz())
+        deleted_at: nullable(timestamptz()),
+        first_name: nullable(text())
     },
     indexes: {
         idx_products_sku: {
@@ -89,7 +89,7 @@ impl DieselTableDefinition for ProductVariantsTable {
                 is_primary_key: true,
                 is_nullable: false,
                 default_value: Some("gen_random_uuid()".to_string()),
-                is_indexed: true,
+                is_indexed: false,
             },
             DieselFieldDefinition {
                 name: "product_id".to_string(),
@@ -97,7 +97,7 @@ impl DieselTableDefinition for ProductVariantsTable {
                 is_primary_key: false,
                 is_nullable: false,
                 default_value: None,
-                is_indexed: true,
+                is_indexed: false,
             },
             DieselFieldDefinition {
                 name: "variant_name".to_string(),
@@ -137,7 +137,7 @@ impl DieselTableDefinition for ProductVariantsTable {
                 is_primary_key: false,
                 is_nullable: false,
                 default_value: Some("false".to_string()),
-                is_indexed: true,
+                is_indexed: false,
             },
             DieselFieldDefinition {
                 name: "sort_order".to_string(),

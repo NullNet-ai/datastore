@@ -18,6 +18,7 @@ pub enum SchemaChangeType {
     NewTable,
     NewField,
     NewIndex,
+    NewForeignKey,
 }
 
 impl SchemaGenerator {
@@ -49,23 +50,59 @@ impl SchemaGenerator {
                         field_definition: Some(field.field_type.clone()),
                     });
                 }
-                
-                // Check for new indexes
-                if field.is_index {
-                    // For now, we'll assume all index requests are new
-                    // In a more sophisticated implementation, we'd check existing indexes
-                    changes.push(SchemaChange {
-                        table_name: table_def.table_name.clone(),
-                        change_type: SchemaChangeType::NewIndex,
-                        field_name: Some(field.field_name.clone()),
-                        field_definition: None,
-                    });
-                }
             }
         }
         
         Ok(changes)
     }
+    
+    /// Analyze what changes need to be made to the schema with indexes and foreign keys
+    pub fn analyze_changes_with_indexes_and_foreign_keys(
+        table_def: &TableDefinition, 
+        indexes: &[(String, Vec<String>, bool, Option<String>)],
+        foreign_keys: &[crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition]
+    ) -> Result<Vec<SchemaChange>, String> {
+        let mut changes = Self::analyze_changes(table_def)?;
+        
+        // Add index changes
+         for (index_name, columns, _is_unique, index_type) in indexes {
+             // For now, we'll assume all index requests are new
+             // In a more sophisticated implementation, we'd check existing indexes
+             let field_def = if let Some(idx_type) = index_type {
+                 format!("{}|{}", columns.join(","), idx_type)
+             } else {
+                 columns.join(",")
+             };
+             
+             changes.push(SchemaChange {
+                 table_name: table_def.table_name.clone(),
+                 change_type: SchemaChangeType::NewIndex,
+                 field_name: Some(index_name.clone()),
+                 field_definition: Some(field_def),
+             });
+         }
+         
+         // Add foreign key changes
+         for foreign_key in foreign_keys {
+             let field_def = format!("{}|{}|{}", 
+                 foreign_key.column, 
+                 foreign_key.references_table, 
+                 foreign_key.references_column
+             );
+             
+             // Generate constraint name: fk_tablename_columnname
+             let constraint_name = format!("fk_{}_{}", table_def.table_name, foreign_key.column);
+             
+             changes.push(SchemaChange {
+                 table_name: table_def.table_name.clone(),
+                 change_type: SchemaChangeType::NewForeignKey,
+                 field_name: Some(constraint_name),
+                 field_definition: Some(field_def),
+             });
+         }
+         
+         Ok(changes)
+      }
     
     /// Update the schema.rs file with new table definition
     pub fn update_schema_file(table_def: &TableDefinition) -> Result<(), String> {

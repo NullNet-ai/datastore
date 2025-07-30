@@ -67,10 +67,10 @@ impl FieldDefinition {
             "BigInt" => "i64".to_string(),
             "Bool" => "bool".to_string(),
             "Timestamp" => "chrono::NaiveDateTime".to_string(),
-            "Timestamptz" => "chrono::DateTime<chrono::Utc>".to_string(),
+            "Timestamptz" => "DateTime<Utc>".to_string(),
             "Jsonb" => {
                 is_json = true;
-                "serde_json::Value".to_string()
+                "Value".to_string()
             },
             "Inet" => "std::net::IpAddr".to_string(),
             _ => return Err(format!("Unsupported field type: {}", core_type)),

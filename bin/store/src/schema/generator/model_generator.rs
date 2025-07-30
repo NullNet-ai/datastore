@@ -33,30 +33,19 @@ impl ModelGenerator {
         content.push_str("\nuse serde::{Deserialize, Serialize};");
         
         // Add additional imports based on field types
-        let mut needs_chrono = false;
-        let mut needs_serde_json = false;
-        let mut needs_std_net = false;
+        let mut import_sets = std::collections::HashSet::new();
         
         for field in fields {
-            if field.rust_type.contains("chrono::") {
-                needs_chrono = true;
-            }
-            if field.rust_type.contains("serde_json::") {
-                needs_serde_json = true;
-            }
-            if field.rust_type.contains("std::net::") {
-                needs_std_net = true;
-            }
+            let type_dependencies = Self::extract_type_dependencies(&field.rust_type);
+            import_sets.extend(type_dependencies);
         }
         
-        if needs_chrono {
-            content.push_str("\nuse chrono::{DateTime, Utc};");
-        }
-        if needs_serde_json {
-            content.push_str("\nuse serde_json::Value;");
-        }
-        if needs_std_net {
-            content.push_str("\nuse std::net::IpAddr;");
+        // Add imports in a consistent order
+        let mut imports: Vec<_> = import_sets.into_iter().collect();
+        imports.sort();
+        
+        for import in imports {
+            content.push_str(&format!("\n{}", import));
         }
         
         content.push_str("\n\n");
@@ -99,6 +88,68 @@ impl ModelGenerator {
                 }
             })
             .collect()
+    }
+    
+    fn extract_type_dependencies(rust_type: &str) -> Vec<String> {
+        let mut dependencies = Vec::new();
+        
+        // Handle chrono types - be more specific about what's needed
+        let mut chrono_imports = Vec::new();
+        if rust_type.contains("DateTime") || rust_type.contains("chrono::DateTime") {
+            chrono_imports.push("DateTime");
+        }
+        if rust_type.contains("NaiveDateTime") || rust_type.contains("chrono::NaiveDateTime") {
+            chrono_imports.push("NaiveDateTime");
+        }
+        if rust_type.contains("Utc") || rust_type.contains("chrono::Utc") {
+            chrono_imports.push("Utc");
+        }
+        if rust_type.contains("NaiveDate") || rust_type.contains("chrono::NaiveDate") {
+            chrono_imports.push("NaiveDate");
+        }
+        if rust_type.contains("NaiveTime") || rust_type.contains("chrono::NaiveTime") {
+            chrono_imports.push("NaiveTime");
+        }
+        
+        if !chrono_imports.is_empty() {
+            dependencies.push(format!("use chrono::{{{}}};", chrono_imports.join(", ")));
+        }
+        
+        // Handle serde_json types
+        if rust_type.contains("Value") || rust_type.contains("serde_json::") {
+            dependencies.push("use serde_json::Value;".to_string());
+        }
+        
+        // Handle std::net types
+        if rust_type.contains("IpAddr") || rust_type.contains("std::net::") {
+            dependencies.push("use std::net::IpAddr;".to_string());
+        }
+        
+        // Handle UUID types
+        if rust_type.contains("Uuid") || rust_type.contains("uuid::") {
+            dependencies.push("use uuid::Uuid;".to_string());
+        }
+        
+        // Handle BigDecimal types
+        if rust_type.contains("BigDecimal") || rust_type.contains("bigdecimal::") {
+            dependencies.push("use bigdecimal::BigDecimal;".to_string());
+        }
+        
+        // Handle collections
+        if rust_type.contains("HashMap") {
+            dependencies.push("use std::collections::HashMap;".to_string());
+        }
+        if rust_type.contains("HashSet") {
+            dependencies.push("use std::collections::HashSet;".to_string());
+        }
+        if rust_type.contains("BTreeMap") {
+            dependencies.push("use std::collections::BTreeMap;".to_string());
+        }
+        if rust_type.contains("BTreeSet") {
+            dependencies.push("use std::collections::BTreeSet;".to_string());
+        }
+        
+        dependencies
     }
 }
 
@@ -148,5 +199,26 @@ mod tests {
         assert!(content.contains("pub struct User"));
         assert!(content.contains("pub id: i32"));
         assert!(content.contains("pub name: String"));
+    }
+    
+    #[test]
+    fn test_extract_type_dependencies() {
+        // Test complex types with multiple dependencies
+        let deps = ModelGenerator::extract_type_dependencies("Option<DateTime<Utc>>");
+        assert!(deps.contains(&"use chrono::{DateTime, Utc};".to_string()));
+        
+        let deps = ModelGenerator::extract_type_dependencies("HashMap<String, Value>");
+        assert!(deps.contains(&"use std::collections::HashMap;".to_string()));
+        assert!(deps.contains(&"use serde_json::Value;".to_string()));
+        
+        let deps = ModelGenerator::extract_type_dependencies("Vec<Option<BigDecimal>>");
+        assert!(deps.contains(&"use bigdecimal::BigDecimal;".to_string()));
+        
+        // Test that no dependencies are returned for simple types
+        let deps = ModelGenerator::extract_type_dependencies("String");
+        assert!(deps.is_empty());
+        
+        let deps = ModelGenerator::extract_type_dependencies("i32");
+        assert!(deps.is_empty());
     }
 }

@@ -2,6 +2,7 @@ use crate::schema::generator::field_definition::{FieldDefinition, TableDefinitio
 use crate::schema::generator::model_generator::ModelGenerator;
 use crate::schema::generator::schema_generator::SchemaGenerator;
 use crate::schema::generator::migration_generator::MigrationGenerator;
+use crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition;
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -34,13 +35,39 @@ impl GeneratorService {
             println!("Processing table: {}", table_def.table_name);
             
             // Generate model
-            ModelGenerator::generate_model(table_def)?;
+            let model_content = ModelGenerator::generate_model(&table_def)?;
+            Self::write_model_file(&table_def.table_name, &model_content)?;
             
-            // Analyze schema changes
-            let changes = SchemaGenerator::analyze_changes(table_def)?;
+            // Extract indexes and foreign keys from table definition file
+            let (indexes, foreign_keys) = {
+                // Find the table definition file to read its content
+                let table_files_dir = "src/schema/tables";
+                
+                // Try multiple possible file names for the table
+                let possible_files = vec![
+                    format!("{}/{}.rs", table_files_dir, table_def.table_name),
+                    format!("{}/{}_catalog.rs", table_files_dir, table_def.table_name.trim_end_matches('s')),
+                    format!("{}/{}_table.rs", table_files_dir, table_def.table_name),
+                ];
+                
+                let mut extracted_indexes = Vec::new();
+                let mut extracted_foreign_keys = Vec::new();
+                 
+                 for table_file_path in possible_files {
+                     if let Ok(file_content) = fs::read_to_string(&table_file_path) {
+                         extracted_indexes = Self::extract_indexes_from_macro(&file_content).unwrap_or_else(|_| Vec::new());
+                         extracted_foreign_keys = Self::extract_foreign_keys_from_macro(&file_content).unwrap_or_else(|_| Vec::new());
+                         break;
+                     }
+                 }
+                
+                (extracted_indexes, extracted_foreign_keys)
+            };
+            
+            // Analyze schema changes with indexes and foreign keys
+            let changes = SchemaGenerator::analyze_changes_with_indexes_and_foreign_keys(&table_def, &indexes, &foreign_keys)?;
             
             if !changes.is_empty() {
-                println!("Found {} changes for table {}", changes.len(), table_def.table_name);
                 all_changes.extend(changes);
                 
                 // Update schema.rs
@@ -88,7 +115,81 @@ impl GeneratorService {
         }
     }
     
-    /// Discover all table definition files in the schema tables directory
+    /// Write model file to the models directory
+    fn write_model_file(table_name: &str, model_content: &str) -> Result<(), String> {
+        let models_dir = Path::new("src/models");
+        
+        // Create models directory if it doesn't exist
+        if !models_dir.exists() {
+            fs::create_dir_all(models_dir)
+                .map_err(|e| format!("Failed to create models directory: {}", e))?;
+        }
+        
+        // Convert table name to singular for model file name
+        let singular_name = Self::to_singular(table_name);
+        let model_file_path = models_dir.join(format!("{}_model.rs", singular_name));
+        
+        // Write model content to file
+        fs::write(&model_file_path, model_content)
+            .map_err(|e| format!("Failed to write model file {}: {}", model_file_path.display(), e))?;
+        
+        // Add module declaration to mod.rs
+        Self::add_module_to_mod_rs(&singular_name)?;
+        
+        println!("Generated model file: {}", model_file_path.display());
+        Ok(())
+    }
+    
+    /// Convert table name to singular form (simple implementation)
+    fn to_singular(table_name: &str) -> String {
+        if table_name.ends_with("ies") {
+            format!("{}y", &table_name[..table_name.len()-3])
+        } else if table_name.ends_with("s") && !table_name.ends_with("ss") {
+            table_name[..table_name.len()-1].to_string()
+        } else {
+            table_name.to_string()
+        }
+    }
+    
+    /// Add module declaration to models/mod.rs
+    fn add_module_to_mod_rs(singular_name: &str) -> Result<(), String> {
+        let mod_file_path = Path::new("src/models/mod.rs");
+        
+        // Read existing mod.rs content
+        let content = fs::read_to_string(mod_file_path)
+            .map_err(|e| format!("Failed to read mod.rs: {}", e))?;
+        
+        let module_declaration = format!("pub mod {}_model;", singular_name);
+        
+        // Check if module is already declared
+        if content.contains(&module_declaration) {
+            return Ok(()); // Already exists
+        }
+        
+        // Find the right place to insert (alphabetically)
+        let mut lines: Vec<&str> = content.lines().collect();
+        let mut insert_index = lines.len();
+        
+        for (i, line) in lines.iter().enumerate() {
+            if line.starts_with("pub mod ") && *line > module_declaration.as_str() {
+                insert_index = i;
+                break;
+            }
+        }
+        
+        // Insert the new module declaration
+        lines.insert(insert_index, &module_declaration);
+        
+        // Write back to file
+        let new_content = lines.join("\n");
+        fs::write(mod_file_path, new_content)
+            .map_err(|e| format!("Failed to update mod.rs: {}", e))?;
+        
+        println!("Added module declaration: {}", module_declaration);
+        Ok(())
+    }
+    
+    /// Discover all table definition files in the schema directory
     fn discover_table_definitions() -> Result<Vec<TableDefinition>, String> {
         let tables_dir = "src/schema/tables";
         
@@ -211,15 +312,6 @@ impl GeneratorService {
             // Extract table name from macro or struct
             let table_name = Self::extract_table_name_from_diesel_def(content, file_name)?;
             
-            // For now, create a basic TableDefinition
-            // In a real implementation, we would need to compile and execute the Rust code
-            // or use a more sophisticated parser to extract the actual field definitions
-            
-            // This is a simplified approach - in practice, you'd want to:
-            // 1. Use syn crate to parse the Rust AST
-            // 2. Extract the actual DieselTableDefinition implementation
-            // 3. Convert DieselFieldDefinition to FieldDefinition
-            
             let mut fields = Vec::new();
             
             // Try to extract field information from macro usage
@@ -230,10 +322,20 @@ impl GeneratorService {
                 fields.push(FieldDefinition {
                     field_name: "id".to_string(),
                     field_type: "Int4".to_string(),
-                    is_index: true,
+                    is_index: false, // Remove indexed: true from field level
                     joins_with: None,
                     default_value: None,
                 });
+            }
+            
+            // Extract foreign keys from macro and add to fields
+            if let Ok(foreign_keys) = Self::extract_foreign_keys_from_macro(content) {
+                for fk in foreign_keys {
+                    // Find the field and add foreign key info
+                    if let Some(field) = fields.iter_mut().find(|f| f.field_name == fk.column) {
+                        field.joins_with = Some(format!("{}.{}", fk.references_table, fk.references_column));
+                    }
+                }
             }
             
             return Ok(TableDefinition {
@@ -269,7 +371,27 @@ impl GeneratorService {
         // Look for fields section in macro
         if let Some(fields_start) = content.find("fields: {") {
             let after_fields = &content[fields_start + 9..];
-            if let Some(fields_end) = after_fields.find("}\n") {
+            
+            // Find the end of the fields section by counting braces
+            let mut brace_count = 1;
+            let mut fields_end = 0;
+            let chars: Vec<char> = after_fields.chars().collect();
+            
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            fields_end = i;
+                            break;
+                        }
+                    },
+                    _ => {}
+                }
+            }
+            
+            if fields_end > 0 {
                 let fields_content = &after_fields[..fields_end];
                 
                 // Parse each field line
@@ -310,7 +432,7 @@ impl GeneratorService {
                             "Text".to_string() // default
                         };
                         
-                        let is_index = rest.contains("primary_key: true") || rest.contains("indexed: true");
+                        let is_index = rest.contains("primary_key: true"); // Remove indexed: true check
                         
                         fields.push(FieldDefinition {
                             field_name,
@@ -329,6 +451,166 @@ impl GeneratorService {
         }
         
         Ok(fields)
+    }
+    
+    /// Extract indexes from macro definition
+    fn extract_indexes_from_macro(content: &str) -> Result<Vec<(String, Vec<String>, bool, Option<String>)>, String> {
+        let mut indexes = Vec::new();
+        
+        // Look for indexes section in macro
+        if let Some(indexes_start) = content.find("indexes: {") {
+            let after_indexes = &content[indexes_start + 10..];
+            
+            // Find the end of the indexes section by counting braces
+            let mut brace_count = 1;
+            let mut indexes_end = 0;
+            let chars: Vec<char> = after_indexes.chars().collect();
+            
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            indexes_end = i;
+                            break;
+                        }
+                    },
+                    _ => {}
+                }
+            }
+            
+            if indexes_end > 0 {
+                let indexes_content = &after_indexes[..indexes_end];
+                
+                // Parse each index definition
+                let mut current_index: Option<(String, Vec<String>, bool, Option<String>)> = None;
+                let mut in_index_def = false;
+                
+                for line in indexes_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+                    
+                    // Check for index name
+                    if line.contains(": {") {
+                        // Save previous index if exists
+                        if let Some(index) = current_index.take() {
+                            indexes.push(index);
+                        }
+                        
+                        let index_name = line.split(':').next().unwrap().trim().to_string();
+                        current_index = Some((index_name, Vec::new(), false, None));
+                        in_index_def = true;
+                    } else if in_index_def {
+                        if line.contains("columns:") {
+                            // Extract columns
+                            if let Some(bracket_start) = line.find('[') {
+                                if let Some(bracket_end) = line.find(']') {
+                                    let columns_str = &line[bracket_start + 1..bracket_end];
+                                    let columns: Vec<String> = columns_str
+                                        .split(',')
+                                        .map(|s| s.trim().trim_matches('"').to_string())
+                                        .collect();
+                                    if let Some(ref mut index) = current_index {
+                                        index.1 = columns;
+                                    }
+                                }
+                            }
+                        } else if line.contains("unique:") {
+                            let unique_val = line.split(':').nth(1).unwrap().trim();
+                            let is_unique = unique_val == "true";
+                            if let Some(ref mut index) = current_index {
+                                index.2 = is_unique;
+                            }
+                        } else if line.contains("type:") {
+                            let type_val = line.split(':').nth(1).unwrap().trim().trim_matches('"').to_string();
+                            if let Some(ref mut index) = current_index {
+                                index.3 = Some(type_val);
+                            }
+                        } else if line == "}" {
+                            in_index_def = false;
+                        }
+                    }
+                }
+                
+                // Save last index if exists
+                if let Some(index) = current_index {
+                    indexes.push(index);
+                }
+            }
+        }
+        
+        Ok(indexes)
+    }
+    
+    /// Extract foreign keys from macro definition
+    fn extract_foreign_keys_from_macro(content: &str) -> Result<Vec<ForeignKeyDefinition>, String> {
+        use crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition;
+        
+        let mut foreign_keys = Vec::new();
+        
+        // Look for foreign_keys section in macro
+        if let Some(fk_start) = content.find("foreign_keys: {") {
+            let after_fk = &content[fk_start + 15..];
+            
+            // Find the end of the foreign_keys section by counting braces
+            let mut brace_count = 1;
+            let mut fk_end = 0;
+            let chars: Vec<char> = after_fk.chars().collect();
+            
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            fk_end = i;
+                            break;
+                        }
+                    },
+                    _ => {}
+                }
+            }
+            
+            if fk_end > 0 {
+                let fk_content = &after_fk[..fk_end];
+                
+                // Parse each foreign key line
+                for line in fk_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+                    
+                    // Parse foreign key like: "category_id -> "categories"."id""
+                    if line.contains(" -> ") {
+                        let parts: Vec<&str> = line.split(" -> ").collect();
+                        if parts.len() == 2 {
+                            let column = parts[0].trim().to_string();
+                            let reference = parts[1].trim().trim_matches(',');
+                            
+                            // Parse "table"."column" format
+                            if let Some(dot_pos) = reference.find('.') {
+                                let table_part = &reference[..dot_pos].trim_matches('"');
+                                let column_part = &reference[dot_pos + 1..].trim_matches('"');
+                                
+                                foreign_keys.push(ForeignKeyDefinition {
+                                    column,
+                                    references_table: table_part.to_string(),
+                                    references_column: column_part.to_string(),
+                                    on_delete: None,
+                                    on_update: None,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(foreign_keys)
     }
     
     /// Parse Rust-style table definition

@@ -34,6 +34,7 @@ pub mod organization_model;
 pub mod packet_model;
 pub mod permission_model;
 pub mod postgres_channel_model;
+pub mod product_model;
 pub mod queue_item_model;
 pub mod queue_model;
 pub mod record_permission_model;
