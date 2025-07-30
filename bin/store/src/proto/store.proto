@@ -132,9 +132,11 @@ message ExternalContacts {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string first_name = 20;
-  optional string last_name = 21;
-  optional string email = 22;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string first_name = 22;
+  optional string last_name = 23;
+  optional string email = 24;
 }
 
 // Organizations entity definition
@@ -158,11 +160,13 @@ message Organizations {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string parent_organization_id = 20;
-  optional string name = 21;
-  optional int32 organization_level = 22;
-  optional string root_organization_id = 23;
-  repeated string path_level = 24;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string parent_organization_id = 22;
+  optional string name = 23;
+  optional int32 organization_level = 24;
+  optional string root_organization_id = 25;
+  repeated string path_level = 26;
 }
 
 // OrganizationContacts entity definition
@@ -186,7 +190,9 @@ message OrganizationContacts {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string contact_id = 20;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string contact_id = 22;
 }
 
 // OrganizationAccounts entity definition
@@ -210,12 +216,14 @@ message OrganizationAccounts {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string organization_contact_id = 20;
-  optional string account_id = 21;
-  optional string account_secret = 22;
-  optional string role_id = 23;
-  optional string contact_id = 24;
-  optional string device_id = 25;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string organization_contact_id = 22;
+  optional string account_id = 23;
+  optional string account_secret = 24;
+  optional string role_id = 25;
+  optional string contact_id = 26;
+  optional string device_id = 27;
 }
 
 // AccountOrganizations entity definition
@@ -239,13 +247,15 @@ message AccountOrganizations {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string contact_id = 20;
-  optional string email = 21;
-  optional string account_id = 22;
-  optional string role_id = 23;
-  optional string account_organization_status = 24;
-  optional bool is_invited = 25;
-  optional string device_id = 26;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string contact_id = 22;
+  optional string email = 23;
+  optional string account_id = 24;
+  optional string role_id = 25;
+  optional string account_organization_status = 26;
+  optional bool is_invited = 27;
+  optional string device_id = 28;
 }
 
 // AccountProfiles entity definition
@@ -269,10 +279,12 @@ message AccountProfiles {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string first_name = 20;
-  optional string last_name = 21;
-  optional string email = 22;
-  optional string account_id = 23;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string first_name = 22;
+  optional string last_name = 23;
+  optional string email = 24;
+  optional string account_id = 25;
 }
 
 // Accounts entity definition
@@ -322,22 +334,24 @@ message Addresses {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string address = 20;
-  optional string address_line_one = 21;
-  optional string address_line_two = 22;
-  optional string latitude = 23;
-  optional string longitude = 24;
-  optional string place_id = 25;
-  optional string street_number = 26;
-  optional string street = 27;
-  optional string region = 28;
-  optional string region_code = 29;
-  optional string country_code = 30;
-  optional string postal_code = 31;
-  optional string country = 32;
-  optional string state = 33;
-  optional string city = 34;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string address = 22;
+  optional string address_line_one = 23;
+  optional string address_line_two = 24;
+  optional string latitude = 25;
+  optional string longitude = 26;
+  optional string place_id = 27;
+  optional string street_number = 28;
+  optional string street = 29;
+  optional string region = 30;
+  optional string region_code = 31;
+  optional string country_code = 32;
+  optional string postal_code = 33;
+  optional string country = 34;
+  optional string state = 35;
+  optional string city = 36;
 }
 
 // Samples entity definition
@@ -360,8 +374,10 @@ message Samples {
   optional string requested_by = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string name = 19;
-  optional string sample_text = 20;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string name = 21;
+  optional string sample_text = 22;
 }
 
 // AppFirewalls entity definition
@@ -384,9 +400,11 @@ message AppFirewalls {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string app_id = 20;
-  optional string firewall = 21;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string app_id = 22;
+  optional string firewall = 23;
 }
 
 // AppguardLogs entity definition
@@ -409,9 +427,11 @@ message AppguardLogs {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string level = 20;
-  optional string message = 21;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string level = 22;
+  optional string message = 23;
 }
 
 // TempAppguardLogs entity definition
@@ -434,9 +454,11 @@ message TempAppguardLogs {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string level = 20;
-  optional string message = 21;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string level = 22;
+  optional string message = 23;
 }
 
 // DeviceAliases entity definition
@@ -459,12 +481,14 @@ message DeviceAliases {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string alias_type = 20;
-  optional string name = 21;
-  optional string value = 22;
-  optional string description = 23;
-  optional string device_alias_status = 24;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string alias_type = 22;
+  optional string name = 23;
+  optional string value = 24;
+  optional string description = 25;
+  optional string device_alias_status = 26;
 }
 
 // TempDeviceAliases entity definition
@@ -487,12 +511,14 @@ message TempDeviceAliases {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string alias_type = 20;
-  optional string name = 21;
-  optional string value = 22;
-  optional string description = 23;
-  optional string device_alias_status = 24;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string alias_type = 22;
+  optional string name = 23;
+  optional string value = 24;
+  optional string description = 25;
+  optional string device_alias_status = 26;
 }
 
 // DeviceConfigurations entity definition
@@ -515,12 +541,14 @@ message DeviceConfigurations {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_id = 20;
-  optional string digest = 21;
-  optional string hostname = 22;
-  optional string raw_content = 23;
-  optional int32 config_version = 24;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_id = 22;
+  optional string digest = 23;
+  optional string hostname = 24;
+  optional string raw_content = 25;
+  optional int32 config_version = 26;
 }
 
 // DeviceInterfaceAddresses entity definition
@@ -543,9 +571,11 @@ message DeviceInterfaceAddresses {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_interface_id = 20;
-  optional string address = 21;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_interface_id = 22;
+  optional string address = 23;
 }
 
 // TempDeviceInterfaceAddresses entity definition
@@ -568,9 +598,11 @@ message TempDeviceInterfaceAddresses {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_interface_id = 20;
-  optional string address = 21;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_interface_id = 22;
+  optional string address = 23;
 }
 
 // DeviceInterfaces entity definition
@@ -593,10 +625,12 @@ message DeviceInterfaces {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_configuration_id = 20;
-  optional string name = 21;
-  optional string device = 22;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_configuration_id = 22;
+  optional string name = 23;
+  optional string device = 24;
 }
 
 // TempDeviceInterfaces entity definition
@@ -619,10 +653,12 @@ message TempDeviceInterfaces {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_configuration_id = 20;
-  optional string name = 21;
-  optional string device = 22;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_configuration_id = 22;
+  optional string name = 23;
+  optional string device = 24;
 }
 
 // DeviceRemoteAccessSessions entity definition
@@ -645,12 +681,14 @@ message DeviceRemoteAccessSessions {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_id = 20;
-  optional string remote_access_type = 21;
-  optional string remote_access_session = 22;
-  optional string remote_access_status = 23;
-  optional string remote_access_category = 24;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_id = 22;
+  optional string remote_access_type = 23;
+  optional string remote_access_session = 24;
+  optional string remote_access_status = 25;
+  optional string remote_access_category = 26;
 }
 
 // TempDeviceRemoteAccessSessions entity definition
@@ -673,12 +711,14 @@ message TempDeviceRemoteAccessSessions {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_id = 20;
-  optional string remote_access_type = 21;
-  optional string remote_access_session = 22;
-  optional string remote_access_status = 23;
-  optional string remote_access_category = 24;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_id = 22;
+  optional string remote_access_type = 23;
+  optional string remote_access_session = 24;
+  optional string remote_access_status = 25;
+  optional string remote_access_category = 26;
 }
 
 // DeviceRules entity definition
@@ -701,24 +741,26 @@ message DeviceRules {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_configuration_id = 20;
-  optional bool disabled = 21;
-  optional string rule_type = 22;
-  optional string policy = 23;
-  optional string protocol = 24;
-  optional string source_port = 25;
-  optional string source_addr = 26;
-  optional string source_type = 27;
-  optional string destination_port = 28;
-  optional string destination_addr = 29;
-  optional string description = 30;
-  optional string device_rule_status = 31;
-  optional string interface = 32;
-  optional int32 order = 33;
-  optional bool destination_inversed = 34;
-  optional string destination_type = 35;
-  optional bool source_inversed = 36;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_configuration_id = 22;
+  optional bool disabled = 23;
+  optional string rule_type = 24;
+  optional string policy = 25;
+  optional string protocol = 26;
+  optional string source_port = 27;
+  optional string source_addr = 28;
+  optional string source_type = 29;
+  optional string destination_port = 30;
+  optional string destination_addr = 31;
+  optional string description = 32;
+  optional string device_rule_status = 33;
+  optional string interface = 34;
+  optional int32 order = 35;
+  optional bool destination_inversed = 36;
+  optional string destination_type = 37;
+  optional bool source_inversed = 38;
 }
 
 // TempDeviceRules entity definition
@@ -741,24 +783,26 @@ message TempDeviceRules {
   optional string code = 16;
   optional string timestamp = 17;
   optional int32 sensitivity_level = 18;
-  optional string id = 19;
-  optional string device_configuration_id = 20;
-  optional bool disabled = 21;
-  optional string rule_type = 22;
-  optional string policy = 23;
-  optional string protocol = 24;
-  optional string source_port = 25;
-  optional string source_addr = 26;
-  optional string source_type = 27;
-  optional string destination_port = 28;
-  optional string destination_addr = 29;
-  optional string description = 30;
-  optional string device_rule_status = 31;
-  optional string interface = 32;
-  optional int32 order = 33;
-  optional bool destination_inversed = 34;
-  optional string destination_type = 35;
-  optional bool source_inversed = 36;
+  optional string sync_status = 19;
+  optional bool is_batch = 20;
+  optional string id = 21;
+  optional string device_configuration_id = 22;
+  optional bool disabled = 23;
+  optional string rule_type = 24;
+  optional string policy = 25;
+  optional string protocol = 26;
+  optional string source_port = 27;
+  optional string source_addr = 28;
+  optional string source_type = 29;
+  optional string destination_port = 30;
+  optional string destination_addr = 31;
+  optional string description = 32;
+  optional string device_rule_status = 33;
+  optional string interface = 34;
+  optional int32 order = 35;
+  optional bool destination_inversed = 36;
+  optional string destination_type = 37;
+  optional bool source_inversed = 38;
 }
 
 // Packets entity definition
@@ -780,29 +824,31 @@ message Packets {
   repeated string categories = 15;
   optional string code = 16;
   optional int32 sensitivity_level = 17;
-  optional string id = 18;
-  optional string timestamp = 19;
-  optional string hypertable_timestamp = 20;
-  optional string interface_name = 21;
-  optional string device_id = 22;
-  optional string source_mac = 23;
-  optional string destination_mac = 24;
-  optional string ether_type = 25;
-  optional string protocol = 26;
-  optional int32 total_length = 27;
-  optional string source_ip = 28;
-  optional string destination_ip = 29;
-  optional int32 source_port = 30;
-  optional int32 destination_port = 31;
-  optional int32 tcp_header_length = 32;
-  optional int64 tcp_sequence_number = 33;
-  optional int64 tcp_acknowledgment_number = 34;
-  optional int32 tcp_data_offset = 35;
-  optional int32 tcp_flags = 36;
-  optional int32 tcp_window_size = 37;
-  optional int32 tcp_urgent_pointer = 38;
-  optional int32 icmp_type = 39;
-  optional int32 icmp_code = 40;
+  optional string sync_status = 18;
+  optional bool is_batch = 19;
+  optional string id = 20;
+  optional string timestamp = 21;
+  optional string hypertable_timestamp = 22;
+  optional string interface_name = 23;
+  optional string device_id = 24;
+  optional string source_mac = 25;
+  optional string destination_mac = 26;
+  optional string ether_type = 27;
+  optional string protocol = 28;
+  optional int32 total_length = 29;
+  optional string source_ip = 30;
+  optional string destination_ip = 31;
+  optional int32 source_port = 32;
+  optional int32 destination_port = 33;
+  optional int32 tcp_header_length = 34;
+  optional int64 tcp_sequence_number = 35;
+  optional int64 tcp_acknowledgment_number = 36;
+  optional int32 tcp_data_offset = 37;
+  optional int32 tcp_flags = 38;
+  optional int32 tcp_window_size = 39;
+  optional int32 tcp_urgent_pointer = 40;
+  optional int32 icmp_type = 41;
+  optional int32 icmp_code = 42;
 }
 
 // TempPackets entity definition
@@ -826,27 +872,29 @@ message TempPackets {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string hypertable_timestamp = 20;
-  optional string interface_name = 21;
-  optional string device_id = 22;
-  optional string source_mac = 23;
-  optional string destination_mac = 24;
-  optional string ether_type = 25;
-  optional string protocol = 26;
-  optional int32 total_length = 27;
-  optional string source_ip = 28;
-  optional string destination_ip = 29;
-  optional int32 source_port = 30;
-  optional int32 destination_port = 31;
-  optional int32 tcp_header_length = 32;
-  optional int64 tcp_sequence_number = 33;
-  optional int64 tcp_acknowledgment_number = 34;
-  optional int32 tcp_data_offset = 35;
-  optional int32 tcp_flags = 36;
-  optional int32 tcp_window_size = 37;
-  optional int32 tcp_urgent_pointer = 38;
-  optional int32 icmp_type = 39;
-  optional int32 icmp_code = 40;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string hypertable_timestamp = 22;
+  optional string interface_name = 23;
+  optional string device_id = 24;
+  optional string source_mac = 25;
+  optional string destination_mac = 26;
+  optional string ether_type = 27;
+  optional string protocol = 28;
+  optional int32 total_length = 29;
+  optional string source_ip = 30;
+  optional string destination_ip = 31;
+  optional int32 source_port = 32;
+  optional int32 destination_port = 33;
+  optional int32 tcp_header_length = 34;
+  optional int64 tcp_sequence_number = 35;
+  optional int64 tcp_acknowledgment_number = 36;
+  optional int32 tcp_data_offset = 37;
+  optional int32 tcp_flags = 38;
+  optional int32 tcp_window_size = 39;
+  optional int32 tcp_urgent_pointer = 40;
+  optional int32 icmp_type = 41;
+  optional int32 icmp_code = 42;
 }
 
 // Connections entity definition
@@ -906,17 +954,19 @@ message TempConnections {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string interface_name = 20;
-  optional string hypertable_timestamp = 21;
-  optional int32 total_packet = 22;
-  optional int32 total_byte = 23;
-  optional string device_id = 24;
-  optional string protocol = 25;
-  optional string source_ip = 26;
-  optional string destination_ip = 27;
-  optional string remote_ip = 28;
-  optional int32 source_port = 29;
-  optional int32 destination_port = 30;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string interface_name = 22;
+  optional string hypertable_timestamp = 23;
+  optional int32 total_packet = 24;
+  optional int32 total_byte = 25;
+  optional string device_id = 26;
+  optional string protocol = 27;
+  optional string source_ip = 28;
+  optional string destination_ip = 29;
+  optional string remote_ip = 30;
+  optional int32 source_port = 31;
+  optional int32 destination_port = 32;
 }
 
 // DeviceSshKeys entity definition
@@ -940,10 +990,12 @@ message DeviceSshKeys {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string public_key = 20;
-  optional string private_key = 21;
-  optional string passphrase = 22;
-  optional string device_id = 23;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string public_key = 22;
+  optional string private_key = 23;
+  optional string passphrase = 24;
+  optional string device_id = 25;
 }
 
 // Devices entity definition
@@ -967,18 +1019,20 @@ message Devices {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string model = 20;
-  optional string address_id = 21;
-  optional string instance_name = 22;
-  optional bool is_connection_established = 23;
-  optional string system_id = 24;
-  optional string device_version = 25;
-  optional string last_heartbeat = 26;
-  optional bool is_monitoring_enabled = 27;
-  optional bool is_remote_access_enabled = 28;
-  optional string ip_address = 29;
-  optional string device_status = 30;
-  optional string device_gui_protocol = 31;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string model = 22;
+  optional string address_id = 23;
+  optional string instance_name = 24;
+  optional bool is_connection_established = 25;
+  optional string system_id = 26;
+  optional string device_version = 27;
+  optional string last_heartbeat = 28;
+  optional bool is_monitoring_enabled = 29;
+  optional bool is_remote_access_enabled = 30;
+  optional string ip_address = 31;
+  optional string device_status = 32;
+  optional string device_gui_protocol = 33;
 }
 
 // IpInfos entity definition
@@ -1002,15 +1056,17 @@ message IpInfos {
   optional string timestamp = 17;
   optional string id = 18;
   optional int32 sensitivity_level = 19;
-  optional string country = 20;
-  optional string asn = 21;
-  optional string org = 22;
-  optional string continent_code = 23;
-  optional string city = 24;
-  optional string region = 25;
-  optional string postal = 26;
-  optional string timezone = 27;
-  optional bool blacklist = 28;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string country = 22;
+  optional string asn = 23;
+  optional string org = 24;
+  optional string continent_code = 25;
+  optional string city = 26;
+  optional string region = 27;
+  optional string postal = 28;
+  optional string timezone = 29;
+  optional bool blacklist = 30;
 }
 
 // PostgresChannels entity definition
@@ -1034,8 +1090,10 @@ message PostgresChannels {
   optional string timestamp = 17;
   optional string id = 18;
   optional int32 sensitivity_level = 19;
-  optional string channel_name = 20;
-  optional string function = 21;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string channel_name = 22;
+  optional string function = 23;
 }
 
 // Resolutions entity definition
@@ -1059,7 +1117,9 @@ message Resolutions {
   optional string timestamp = 17;
   optional string id = 18;
   optional int32 sensitivity_level = 19;
-  optional string resolution_type = 20;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string resolution_type = 22;
 }
 
 // WallguardLogs entity definition
@@ -1083,9 +1143,11 @@ message WallguardLogs {
   optional string timestamp = 17;
   optional string id = 18;
   optional int32 sensitivity_level = 19;
-  optional string level = 20;
-  optional string message = 21;
-  optional string hypertable_timestamp = 22;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string level = 22;
+  optional string message = 23;
+  optional string hypertable_timestamp = 24;
 }
 
 // TempWallguardLogs entity definition
@@ -1109,9 +1171,11 @@ message TempWallguardLogs {
   optional string timestamp = 17;
   optional string id = 18;
   optional int32 sensitivity_level = 19;
-  optional string level = 20;
-  optional string message = 21;
-  optional string hypertable_timestamp = 22;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string level = 22;
+  optional string message = 23;
+  optional string hypertable_timestamp = 24;
 }
 
 // DeviceGroupSettings entity definition
@@ -1135,7 +1199,9 @@ message DeviceGroupSettings {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string name = 20;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string name = 22;
 }
 
 // Contacts entity definition
@@ -1159,11 +1225,13 @@ message Contacts {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string first_name = 20;
-  optional string middle_name = 21;
-  optional string last_name = 22;
-  optional string date_of_birth = 23;
-  optional string account_id = 24;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string first_name = 22;
+  optional string middle_name = 23;
+  optional string last_name = 24;
+  optional string date_of_birth = 25;
+  optional string account_id = 26;
 }
 
 // ContactPhoneNumbers entity definition
@@ -1187,8 +1255,10 @@ message ContactPhoneNumbers {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string contact_id = 20;
-  optional string phone_number_raw = 21;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string contact_id = 22;
+  optional string phone_number_raw = 23;
 }
 
 // ContactEmails entity definition
@@ -1212,9 +1282,11 @@ message ContactEmails {
   optional string id = 17;
   optional string timestamp = 18;
   optional int32 sensitivity_level = 19;
-  optional string contact_id = 20;
-  optional string email = 21;
-  optional bool is_primary = 22;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string contact_id = 22;
+  optional string email = 23;
+  optional bool is_primary = 24;
 }
 
 // Create ExternalContacts request

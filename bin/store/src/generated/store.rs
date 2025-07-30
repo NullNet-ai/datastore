@@ -245,10 +245,14 @@ pub struct ExternalContacts {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub email: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Organizations entity definition
@@ -295,14 +299,18 @@ pub struct Organizations {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "22")]
-    pub organization_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "23")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "24")]
+    pub organization_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "25")]
     pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "24")]
+    #[prost(string, repeated, tag = "26")]
     pub path_level: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// OrganizationContacts entity definition
@@ -349,6 +357,10 @@ pub struct OrganizationContacts {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// OrganizationAccounts entity definition
@@ -395,16 +407,20 @@ pub struct OrganizationAccounts {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
+    pub organization_contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_secret: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
+    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AccountOrganizations entity definition
@@ -451,20 +467,24 @@ pub struct AccountOrganizations {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub account_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub role_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub account_organization_status: ::core::option::Option<
         ::prost::alloc::string::String,
     >,
-    #[prost(bool, optional, tag = "25")]
+    #[prost(bool, optional, tag = "27")]
     pub is_invited: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "26")]
+    #[prost(string, optional, tag = "28")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AccountProfiles entity definition
@@ -511,12 +531,16 @@ pub struct AccountProfiles {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub email: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
     pub account_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Accounts entity definition
@@ -613,36 +637,40 @@ pub struct Addresses {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub address: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub address_line_one: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub address_line_two: ::core::option::Option<::prost::alloc::string::String>,
+    pub address: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub latitude: ::core::option::Option<::prost::alloc::string::String>,
+    pub address_line_one: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub longitude: ::core::option::Option<::prost::alloc::string::String>,
+    pub address_line_two: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub place_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub latitude: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub street_number: ::core::option::Option<::prost::alloc::string::String>,
+    pub longitude: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub street: ::core::option::Option<::prost::alloc::string::String>,
+    pub place_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub region: ::core::option::Option<::prost::alloc::string::String>,
+    pub street_number: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub region_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub street: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub country_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub region: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
-    pub postal_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub region_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "32")]
-    pub country: ::core::option::Option<::prost::alloc::string::String>,
+    pub country_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "33")]
-    pub state: ::core::option::Option<::prost::alloc::string::String>,
+    pub postal_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "34")]
+    pub country: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "35")]
+    pub state: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "36")]
     pub city: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Samples entity definition
@@ -687,8 +715,12 @@ pub struct Samples {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "21")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
+    #[prost(string, optional, tag = "22")]
     pub sample_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AppFirewalls entity definition
@@ -733,10 +765,14 @@ pub struct AppFirewalls {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub app_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub app_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub firewall: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// AppguardLogs entity definition
@@ -781,10 +817,14 @@ pub struct AppguardLogs {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempAppguardLogs entity definition
@@ -829,10 +869,14 @@ pub struct TempAppguardLogs {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub message: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceAliases entity definition
@@ -877,16 +921,20 @@ pub struct DeviceAliases {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub device_alias_status: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceAliases entity definition
@@ -931,16 +979,20 @@ pub struct TempDeviceAliases {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    pub alias_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub value: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub device_alias_status: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceConfigurations entity definition
@@ -985,16 +1037,20 @@ pub struct DeviceConfigurations {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub digest: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub hostname: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub digest: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub hostname: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
     pub raw_content: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "24")]
+    #[prost(int32, optional, tag = "26")]
     pub config_version: ::core::option::Option<i32>,
 }
 /// DeviceInterfaceAddresses entity definition
@@ -1039,10 +1095,14 @@ pub struct DeviceInterfaceAddresses {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub address: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceInterfaceAddresses entity definition
@@ -1087,10 +1147,14 @@ pub struct TempDeviceInterfaceAddresses {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "22")]
+    pub device_interface_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
     pub address: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceInterfaces entity definition
@@ -1135,12 +1199,16 @@ pub struct DeviceInterfaces {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub device: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceInterfaces entity definition
@@ -1185,12 +1253,16 @@ pub struct TempDeviceInterfaces {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub device: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceRemoteAccessSessions entity definition
@@ -1235,16 +1307,20 @@ pub struct DeviceRemoteAccessSessions {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempDeviceRemoteAccessSessions entity definition
@@ -1289,16 +1365,20 @@ pub struct TempDeviceRemoteAccessSessions {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "21")]
-    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub remote_access_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub remote_access_session: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub remote_access_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub remote_access_category: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceRules entity definition
@@ -1343,40 +1423,44 @@ pub struct DeviceRules {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "21")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "21")]
-    pub disabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
-    pub policy: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "23")]
+    pub disabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "24")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub policy: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
-    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "32")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "33")]
+    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "34")]
     pub interface: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "33")]
+    #[prost(int32, optional, tag = "35")]
     pub order: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "34")]
-    pub destination_inversed: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "35")]
-    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "36")]
+    pub destination_inversed: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "37")]
+    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "38")]
     pub source_inversed: ::core::option::Option<bool>,
 }
 /// TempDeviceRules entity definition
@@ -1421,40 +1505,44 @@ pub struct TempDeviceRules {
     #[prost(int32, optional, tag = "18")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "19")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "20")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "21")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "21")]
-    pub disabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
-    pub policy: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_configuration_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "23")]
+    pub disabled: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "24")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    pub rule_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub policy: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
-    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "29")]
-    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_port: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
-    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    pub destination_addr: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "32")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "33")]
+    pub device_rule_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "34")]
     pub interface: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "33")]
+    #[prost(int32, optional, tag = "35")]
     pub order: ::core::option::Option<i32>,
-    #[prost(bool, optional, tag = "34")]
-    pub destination_inversed: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "35")]
-    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "36")]
+    pub destination_inversed: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "37")]
+    pub destination_type: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "38")]
     pub source_inversed: ::core::option::Option<bool>,
 }
 /// Packets entity definition
@@ -1497,50 +1585,54 @@ pub struct Packets {
     #[prost(int32, optional, tag = "17")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "18")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "19")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "20")]
-    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "21")]
-    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "22")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "27")]
-    pub total_length: ::core::option::Option<i32>,
+    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
+    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "29")]
+    pub total_length: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "30")]
     pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "29")]
+    #[prost(string, optional, tag = "31")]
     pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "30")]
-    pub source_port: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "31")]
-    pub destination_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "32")]
+    pub source_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "33")]
+    pub destination_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "34")]
     pub tcp_header_length: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "33")]
+    #[prost(int64, optional, tag = "35")]
     pub tcp_sequence_number: ::core::option::Option<i64>,
-    #[prost(int64, optional, tag = "34")]
+    #[prost(int64, optional, tag = "36")]
     pub tcp_acknowledgment_number: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "35")]
-    pub tcp_data_offset: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "36")]
-    pub tcp_flags: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "37")]
-    pub tcp_window_size: ::core::option::Option<i32>,
+    pub tcp_data_offset: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "38")]
-    pub tcp_urgent_pointer: ::core::option::Option<i32>,
+    pub tcp_flags: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "39")]
-    pub icmp_type: ::core::option::Option<i32>,
+    pub tcp_window_size: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "40")]
+    pub tcp_urgent_pointer: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "41")]
+    pub icmp_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "42")]
     pub icmp_code: ::core::option::Option<i32>,
 }
 /// TempPackets entity definition
@@ -1587,46 +1679,50 @@ pub struct TempPackets {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
+    pub source_mac: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "27")]
-    pub total_length: ::core::option::Option<i32>,
+    pub destination_mac: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
+    pub ether_type: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "29")]
+    pub total_length: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "30")]
     pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "29")]
+    #[prost(string, optional, tag = "31")]
     pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "30")]
-    pub source_port: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "31")]
-    pub destination_port: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "32")]
+    pub source_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "33")]
+    pub destination_port: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "34")]
     pub tcp_header_length: ::core::option::Option<i32>,
-    #[prost(int64, optional, tag = "33")]
+    #[prost(int64, optional, tag = "35")]
     pub tcp_sequence_number: ::core::option::Option<i64>,
-    #[prost(int64, optional, tag = "34")]
+    #[prost(int64, optional, tag = "36")]
     pub tcp_acknowledgment_number: ::core::option::Option<i64>,
-    #[prost(int32, optional, tag = "35")]
-    pub tcp_data_offset: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "36")]
-    pub tcp_flags: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "37")]
-    pub tcp_window_size: ::core::option::Option<i32>,
+    pub tcp_data_offset: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "38")]
-    pub tcp_urgent_pointer: ::core::option::Option<i32>,
+    pub tcp_flags: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "39")]
-    pub icmp_type: ::core::option::Option<i32>,
+    pub tcp_window_size: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "40")]
+    pub tcp_urgent_pointer: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "41")]
+    pub icmp_type: ::core::option::Option<i32>,
+    #[prost(int32, optional, tag = "42")]
     pub icmp_code: ::core::option::Option<i32>,
 }
 /// Connections entity definition
@@ -1743,26 +1839,30 @@ pub struct TempConnections {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub interface_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
+    #[prost(string, optional, tag = "23")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "22")]
+    #[prost(int32, optional, tag = "24")]
     pub total_packet: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "23")]
+    #[prost(int32, optional, tag = "25")]
     pub total_byte: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "24")]
-    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "25")]
-    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub device_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
-    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    pub protocol: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "28")]
+    pub source_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
+    pub destination_ip: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "30")]
     pub remote_ip: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "29")]
+    #[prost(int32, optional, tag = "31")]
     pub source_port: ::core::option::Option<i32>,
-    #[prost(int32, optional, tag = "30")]
+    #[prost(int32, optional, tag = "32")]
     pub destination_port: ::core::option::Option<i32>,
 }
 /// DeviceSshKeys entity definition
@@ -1809,12 +1909,16 @@ pub struct DeviceSshKeys {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub public_key: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub private_key: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub passphrase: ::core::option::Option<::prost::alloc::string::String>,
+    pub public_key: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub private_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub passphrase: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
     pub device_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Devices entity definition
@@ -1861,28 +1965,32 @@ pub struct Devices {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub model: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub address_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub instance_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "23")]
-    pub is_connection_established: ::core::option::Option<bool>,
+    pub model: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub address_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub system_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "25")]
-    pub device_version: ::core::option::Option<::prost::alloc::string::String>,
+    pub instance_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "25")]
+    pub is_connection_established: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "26")]
+    pub system_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
+    pub device_version: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
     pub last_heartbeat: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "27")]
+    #[prost(bool, optional, tag = "29")]
     pub is_monitoring_enabled: ::core::option::Option<bool>,
-    #[prost(bool, optional, tag = "28")]
+    #[prost(bool, optional, tag = "30")]
     pub is_remote_access_enabled: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "29")]
-    pub ip_address: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "30")]
-    pub device_status: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
+    pub ip_address: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "32")]
+    pub device_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "33")]
     pub device_gui_protocol: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// IpInfos entity definition
@@ -1929,22 +2037,26 @@ pub struct IpInfos {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub country: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub asn: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub org: ::core::option::Option<::prost::alloc::string::String>,
+    pub country: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub continent_code: ::core::option::Option<::prost::alloc::string::String>,
+    pub asn: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub city: ::core::option::Option<::prost::alloc::string::String>,
+    pub org: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
-    pub region: ::core::option::Option<::prost::alloc::string::String>,
+    pub continent_code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub postal: ::core::option::Option<::prost::alloc::string::String>,
+    pub city: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
+    pub region: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
+    pub postal: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
     pub timezone: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "28")]
+    #[prost(bool, optional, tag = "30")]
     pub blacklist: ::core::option::Option<bool>,
 }
 /// PostgresChannels entity definition
@@ -1991,8 +2103,12 @@ pub struct PostgresChannels {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub channel_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
+    #[prost(string, optional, tag = "23")]
     pub function: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Resolutions entity definition
@@ -2039,6 +2155,10 @@ pub struct Resolutions {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub resolution_type: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// WallguardLogs entity definition
@@ -2085,10 +2205,14 @@ pub struct WallguardLogs {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// TempWallguardLogs entity definition
@@ -2135,10 +2259,14 @@ pub struct TempWallguardLogs {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub level: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
+    pub level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub message: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub hypertable_timestamp: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// DeviceGroupSettings entity definition
@@ -2185,6 +2313,10 @@ pub struct DeviceGroupSettings {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Contacts entity definition
@@ -2231,14 +2363,18 @@ pub struct Contacts {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
-    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
-    pub middle_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    pub first_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub date_of_birth: ::core::option::Option<::prost::alloc::string::String>,
+    pub middle_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub last_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub date_of_birth: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
     pub account_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ContactPhoneNumbers entity definition
@@ -2285,8 +2421,12 @@ pub struct ContactPhoneNumbers {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
+    #[prost(string, optional, tag = "23")]
     pub phone_number_raw: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ContactEmails entity definition
@@ -2333,10 +2473,14 @@ pub struct ContactEmails {
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
     pub contact_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "21")]
+    #[prost(string, optional, tag = "23")]
     pub email: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "22")]
+    #[prost(bool, optional, tag = "24")]
     pub is_primary: ::core::option::Option<bool>,
 }
 /// Create ExternalContacts request

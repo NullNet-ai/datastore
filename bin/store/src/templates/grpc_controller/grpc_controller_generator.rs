@@ -56,24 +56,22 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     let mut file = File::create(output_path)?;
 
     // Write imports
+    writeln!(file, "use super::common_controller::{{")?;
+    writeln!(file, "    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,")?;
+    writeln!(file, "    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,")?;
+    writeln!(file, "    process_record_for_update, process_records, sanitize_updates,")?;
+    writeln!(file, "}};")?;
+    writeln!(file, "use crate::with_session_management;")?;
+    writeln!(file, "use crate::db;")?;
     writeln!(file, "use crate::db::create_connection;")?;
+    writeln!(file, "use crate::{{generate_create_method, generate_update_method, generate_batch_insert_method,")?;
+    writeln!(file, "    generate_batch_update_method, generate_get_method, generate_delete_method,")?;
+    writeln!(file, "    generate_batch_delete_method, generate_upsert_method, generate_aggregation_filter_method}};")?;
 
-    writeln!(file, "use std::pin::Pin;")?;
-    writeln!(file, "use std::net::SocketAddr;")?;
-    writeln!(file, "use crate::table_enum::Table;")?;
-    writeln!(file, "use crate::utils::utils::table_exists;")?;
-    writeln!(file, "use crate::sync::sync_service::update;")?;
-    writeln!(file, "use crate::structs::structs::Auth;")?;
-    writeln!(file, "use serde_json::Value;")?;
     writeln!(
         file,
-        "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
-    )?;
-
-    writeln!(file, "use crate::structs::structs::RequestBody;")?;
-    writeln!(
-        file,
-        "use tonic::{{Request, Response, Status, transport::Server}};"
+        "use crate::generated::store::store_service_server::{{{}Server, {} }};",
+        service_name, service_name
     )?;
     writeln!(
         file,
@@ -83,15 +81,23 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "use crate::middlewares::session_middleware::{{GrpcSessionInterceptor, InterceptorChain}};"
     )?;
-    writeln!(file, "use super::common_controller::{{perform_batch_update, process_record_for_update, sanitize_updates, convert_json_to_csv, process_records, execute_copy, perform_upsert, process_and_update_record, process_and_insert_record, process_and_get_record_by_id}};")?;
     writeln!(
         file,
-        "use crate::generated::store::store_service_server::{{{}Server, {} }};",
-        service_name, service_name
+        "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
     )?;
     writeln!(file, "use crate::providers::find::DynamicResult;")?;
     writeln!(file, "use crate::providers::find::SQLConstructor;")?;
-    writeln!(file, "use crate::db;")?;
+    writeln!(file, "use crate::structs::structs::RequestBody;")?;
+    writeln!(file, "use crate::sync::sync_service::update;")?;
+    writeln!(file, "use crate::table_enum::Table;")?;
+    writeln!(file, "use crate::utils::utils::table_exists;")?;
+    writeln!(file, "use serde_json::Value;")?;
+    writeln!(file, "use std::net::SocketAddr;")?;
+    writeln!(file, "use std::pin::Pin;")?;
+    writeln!(
+        file,
+        "use tonic::{{transport::Server, Request, Response, Status}};"
+    )?;
     writeln!(
         file,
         "// Note: AggregationFilterWrapper has been moved to sql_constructor.rs"
@@ -100,7 +106,6 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "// Note: Converter functions have been moved to grpc_struct_converter.rs"
     )?;
-    writeln!(file, "use crate::{{ generate_batch_delete_method, generate_batch_insert_method, generate_batch_update_method, generate_create_method, generate_update_method, generate_get_method, generate_delete_method, generate_upsert_method, generate_aggregation_filter_method}};")?;
 
     // Import request and response types
     write!(file, "use crate::generated::store::{{")?;

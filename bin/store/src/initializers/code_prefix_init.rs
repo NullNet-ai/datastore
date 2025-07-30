@@ -2,7 +2,7 @@ use crate::controllers::store_controller::ApiError;
 use crate::db;
 use crate::models::counter_model::CounterModel;
 use crate::schema::schema;
-// use diesel::prelude::*;
+use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -54,21 +54,26 @@ impl CodePrefixInitializer {
     }
     
     /// Inserts all prefix configurations into the counter table in the database
-    /// If a record with the same entity already exists, it will be skipped
+    /// If a record with the same entity already exists, it will update the prefix and default_code
     pub async fn initialize(&self) -> Result<(), ApiError> {
         let mut conn = db::get_async_connection().await;
 
         // Process each counter without using a transaction
         for (_, counter) in &self.prefixes {
-            // Insert with on_conflict_do_nothing - if the entity already exists, skip it
+            // Insert with on_conflict_do_update - if the entity already exists, update prefix and default_code
             diesel::insert_into(schema::counters::table)
                 .values(counter)
-                .on_conflict_do_nothing()
+                .on_conflict(schema::counters::entity)
+                .do_update()
+                .set((
+                    schema::counters::prefix.eq(diesel::upsert::excluded(schema::counters::prefix)),
+                    schema::counters::default_code.eq(diesel::upsert::excluded(schema::counters::default_code)),
+                ))
                 .execute(&mut conn)
                 .await
                 .map_err(|e| {
                     log::error!(
-                        "Error inserting counter for entity {}: {}",
+                        "Error inserting/updating counter for entity {}: {}",
                         counter.entity,
                         e
                     );
@@ -76,7 +81,7 @@ impl CodePrefixInitializer {
                     ApiError::from(e)
                 })?;
 
-            log::info!("Initialized counter for entity: {}", counter.entity);
+            log::info!("Initialized/updated counter for entity: {}", counter.entity);
         }
 
         Ok(())
