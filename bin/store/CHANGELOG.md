@@ -5,6 +5,21 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.25
+
+### Author
+Kashan Ali Khalid
+
+### Added
+- ***Token Verification Route***: Added new `/api/token/verify` endpoint for JWT token validation
+  - Implemented `verify_token` method in `OrganizationsController` for standalone token verification
+  - Supports token extraction Authorization header (`Bearer <token>`)
+  - Returns decoded token claims and account information without access control restrictions
+  - Provides consistent error handling for invalid or missing tokens
+  - Enables client applications to verify token validity independently of protected routes
+  - Configured as GET endpoint under `/api/token` scope with session middleware
+---
+
 ## 0.1.24
 
 ### Author
