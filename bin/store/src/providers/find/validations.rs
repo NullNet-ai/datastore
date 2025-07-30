@@ -88,22 +88,15 @@ impl<'a, 'b> Validation<'a, 'b> {
         }
     }
     pub fn validate_distinct_by(&self) -> ApiResponse {
-        if self.request_body.distinct_by.is_none() {
-            if !field_exists_in_table(self.table, self.request_body.distinct_by.as_ref().unwrap()) {
+        if let Some(distinct_by) = &self.request_body.distinct_by {
+            if !field_exists_in_table(self.table, distinct_by) {
                 return ApiResponse {
                     success: false,
-                    message: format!("distinct_by field {} does not exist in table {}", self.request_body.distinct_by.as_ref().unwrap(), self.table),
+                    message: format!("distinct_by field {} does not exist in table {}", distinct_by, self.table),
                     count: 0,
                     data: vec![],
                 };
             }
-
-            return ApiResponse {
-                success: false,
-                message: format!("distinct_by field {} does not exist in table {}", self.request_body.distinct_by.as_ref().unwrap(), self.table),
-                count: 0,
-                data: vec![],
-            };
         }
 
         ApiResponse {
