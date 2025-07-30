@@ -5,6 +5,27 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.20
+
+### Author
+Kashan Ali Khalid
+
+### Fixed
+- ***grpc_controller_generator***: Fixed syntax errors in gRPC controller generator
+  - Corrected malformed `writeln!` macro calls with proper string formatting
+  - Fixed delimiter mismatches and string escaping issues
+  - Resolved compilation errors in server initialization code
+  - Ensured proper dynamic service name usage throughout the generator
+
+### Changed
+- ***code_prefix_init***: Updated prefix initialization to use upsert behavior
+  - Changed from `on_conflict_do_nothing()` to `on_conflict().do_update()`
+  - Modified initialization to update `prefix` and `default_code` fields when entity conflicts occur
+  - Added proper Diesel upsert syntax using `diesel::upsert::excluded()`
+  - Updated function documentation and log messages to reflect upsert behavior
+  - Ensured configuration changes are properly applied to existing counter records
+---
+
 ## 0.1.19
 
 ### Author
