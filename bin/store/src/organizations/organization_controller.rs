@@ -1,10 +1,13 @@
 use actix_web::{web, HttpRequest, HttpResponse, Responder, HttpMessage};
 use serde::{Deserialize, Serialize};
 
+use crate::auth::auth_service::verify;
 use crate::auth::structs::{Origin, User};
+use crate::middlewares::auth_middleware::extract_token;
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
+use crate::structs::structs::ApiResponse;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -196,5 +199,53 @@ impl OrganizationsController {
     pub async fn logout(_req: HttpRequest, _token_header: Option<String>) -> impl Responder {
         // Empty implementation
         HttpResponse::Ok().finish()
+    }
+
+    pub async fn verify_token(
+        req: HttpRequest,
+        query: web::Query<std::collections::HashMap<String, String>>,
+    ) -> impl Responder {
+        // Extract token from Authorization header or query parameter
+        let auth_header = req
+            .headers()
+            .get("authorization")
+            .and_then(|h| h.to_str().ok());
+        
+        let token_from_header = extract_token(auth_header);
+        let token_from_query = query.get("t").cloned();
+        
+        let token = token_from_query.or(token_from_header);
+        
+        match token {
+            Some(t) => {
+                match verify(&t) {
+                    Ok(result) => {
+                        // Return success response
+                        HttpResponse::Ok().json(serde_json::json!({
+                            "payload": {
+                                "success": true,
+                                "message": "Token Verified",
+                                "count": 1,
+                                "data": [result]
+                            }
+                        }))
+                    }
+                    Err(err) => {
+                        let error_response = ApiResponse {
+                            success: false,
+                            message: format!("Token Verification Failed: {}", err),
+                            count: 0,
+                            data: vec![],
+                        };
+                        HttpResponse::BadRequest().json(error_response)
+                    }
+                }
+            }
+            None => {
+                HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Token Verification Failed: Missing token"
+                }))
+            }
+        }
     }
 }

@@ -333,6 +333,11 @@ async fn main() -> std::io::Result<()> {
                     .route("/logout", web::post().to(OrganizationsController::logout)),
             )
             .service(
+                web::scope("/api/token")
+                    .wrap(SessionMiddleware)
+                    .route("/verify", web::post().to(OrganizationsController::verify_token)),
+            )
+            .service(
                 web::scope("/api/store/root")
                     .wrap(ShutdownGuard)
                     .wrap(Authentication)
@@ -369,6 +374,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/api/listener")
+                    .wrap(ShutdownGuard)
                     .wrap(Authentication)
                     .wrap(SessionMiddleware)
                     .route("", web::get().to(pg_listener_get))
