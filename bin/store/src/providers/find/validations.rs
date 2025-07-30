@@ -280,6 +280,12 @@ impl<'a, 'b> Validation<'a, 'b> {
             }
         }
         
+        // Collect all concatenated field names
+        let concatenated_field_names: std::collections::HashSet<_> = self.request_body.concatenate_fields
+            .iter()
+            .map(|cf| cf.field_name.as_str())
+            .collect();
+
         // Validate pluck_object fields exist in their respective entities
         for (entity, fields) in &self.request_body.pluck_object {
             // Determine the actual table name to check against
@@ -312,6 +318,11 @@ impl<'a, 'b> Validation<'a, 'b> {
             };
             
             for (field_index, field) in fields.iter().enumerate() {
+                // Skip validation if field is a concatenated field name
+                if concatenated_field_names.contains(field.as_str()) {
+                    continue;
+                }
+
                 if !field_exists_in_table(&table_to_check, field) {
                     return ApiResponse {
                         success: false,
@@ -333,7 +344,6 @@ impl<'a, 'b> Validation<'a, 'b> {
             data: vec![],
         }
     }
-
     pub fn validate_joins(&self) -> ApiResponse {
         for (join_index, join) in self.request_body.joins.iter().enumerate() {
             // Validate join type

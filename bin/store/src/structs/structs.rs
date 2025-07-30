@@ -379,7 +379,7 @@ pub struct ConcatenateField {
     pub field_name: String,
     pub separator: String,
     pub entity: String,
-    pub aliased_entity: String,
+    pub aliased_entity: Option<String>,
 }
 #[allow(warnings)]
 impl ConcatenateField {

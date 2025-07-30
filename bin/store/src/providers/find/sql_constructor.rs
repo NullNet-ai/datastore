@@ -169,6 +169,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
+        dbg!(&sql);
         Ok(sql)
     }
 
@@ -219,6 +220,39 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format!("({} {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
+        let mut selections = Vec::new();
+        
+        // Handle concatenated fields for main table and joins
+        if !self.request_body.get_concatenate_fields().is_empty() {
+            for field in self.request_body.get_concatenate_fields() {
+                let table_name = if let Some(aliased_entity) = &field.aliased_entity {
+                    // Check if this is for the main table or a joined table
+                    if aliased_entity == &self.table || field.entity == self.table {
+                        aliased_entity
+                    } else {
+                        continue; // Skip if not for main table - join selections handled elsewhere
+                    }
+                } else if field.entity == self.table {
+                    field.entity.as_str()
+                } else {
+                    continue; // Skip if not for main table
+                };
+
+                let concatenated_expression = field
+                    .fields
+                    .iter()
+                    .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
+                    .collect::<Vec<_>>()
+                    .join(&format!(" || '{}' || ", field.separator));
+                
+                selections.push(format!(
+                    "({}) AS \"{}\"",
+                    concatenated_expression,
+                    field.field_name
+                ));
+            }
+        }
+        
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
             return if distinct_by == "id" {
                 format!("DISTINCT \"{}\".\"{}\"", self.table, distinct_by)
@@ -239,7 +273,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             return self.construct_group_by_selections();
         }
 
-        let mut selections = Vec::new();
+        
 
         // Add join selections from pluck_object if joins are present
         if !self.request_body.get_joins().is_empty()
@@ -315,11 +349,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Add concatenated fields that match the main table
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                if field.aliased_entity == self.table || field.entity == self.table {
-                    let table_name = if !field.aliased_entity.is_empty() {
-                        &field.aliased_entity
+                if field.aliased_entity.as_ref() == Some(&self.table) || field.entity == self.table {
+                    let table_name = if let Some(aliased_entity) = &field.aliased_entity {
+                        aliased_entity
                     } else {
-                        &field.entity
+                        field.entity.as_str()
                     };
                     let concatenated_expression = field
                         .fields
@@ -360,11 +394,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Add concatenated fields that match this table alias
             if !self.request_body.get_concatenate_fields().is_empty() {
                 for field in self.request_body.get_concatenate_fields() {
-                    if field.aliased_entity == *table_alias || field.entity == *table_alias {
-                        let table_name = if !field.aliased_entity.is_empty() {
-                            &field.aliased_entity
+                    if field.aliased_entity.as_ref() == Some(table_alias) || field.entity == *table_alias {
+                        let table_name = if let Some(aliased_entity) = &field.aliased_entity {
+                            aliased_entity
                         } else {
-                            &field.entity
+                            field.entity.as_str()
                         };
                         let concatenated_expression = field
                             .fields
@@ -394,9 +428,18 @@ impl<T: QueryFilter> SQLConstructor<T> {
     fn construct_join_selections(&self) -> Vec<String> {
         let mut join_selections = Vec::new();
         if let Some(fields) = self.request_body.get_pluck_object().get(&self.table) {
-            join_selections.extend(fields.iter().map(|field| {
-                Self::get_field(&self.table, field, self.request_body.get_date_format())
-            }));
+            // Get concatenated field names to filter out
+            let concatenated_field_names: Vec<String> = self.request_body
+                .get_concatenate_fields()
+                .iter()
+                .map(|f| f.field_name.clone())
+                .collect();
+
+            join_selections.extend(fields.iter()
+                .filter(|field| *field != "id" && !concatenated_field_names.contains(field))
+                .map(|field| {
+                    Self::get_field(&self.table, field, self.request_body.get_date_format())
+                }));
         }
         // Only construct selections if joins are present
         if self.request_body.get_joins().is_empty() {
@@ -442,11 +485,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             .iter()
                             .for_each(|field| {
                                 // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
-                                if field.aliased_entity == *to_alias || field.entity == *to_alias {
-                                    let table_name = if !field.aliased_entity.is_empty() {
-                                        &field.aliased_entity
+                                if field.aliased_entity.as_ref() == Some(to_alias) || field.entity == *to_alias {
+                                    let table_name = if let Some(aliased_entity) = &field.aliased_entity {
+                                        aliased_entity
                                     } else {
-                                        &field.entity
+                                        field.entity.as_str()
                                     };
                                     let concatenated_expression = field
                                         .fields
