@@ -5,6 +5,26 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.23
+
+### Author
+Kashan Ali Khalid
+
+### Enhanced
+- ***Migration Generator***: Added statement-breakpoint functionality to automatically generated migrations
+  - Modified `migration_generator.rs` to include `--> statement-breakpoint` comments between SQL statements
+  - Updated both `generate_up_sql` and `generate_down_sql` functions to add breakpoints
+  - Improved readability and consistency with existing migration format
+  - Enhanced tool compatibility for database migration tools and IDEs
+  - Added breakpoints between CREATE TABLE, ALTER TABLE, CREATE INDEX, and foreign key constraint statements
+- ***Schema Automation***: Enhanced automated schema generation system
+  - Integrated foreign key extraction and processing in `generator_service.rs`
+  - Updated `schema_generator.rs` to handle foreign key schema changes with `NewForeignKey` type
+  - Automated generation of foreign key constraints in migration files
+  - Complete end-to-end automation: table definition files → model generation → schema updates → migration creation
+  - Supports complex relationships including foreign keys with ON DELETE/UPDATE actions
+---
+
 ## 0.1.22
 ### Author
 Bert
