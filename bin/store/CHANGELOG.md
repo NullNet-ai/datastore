@@ -14,7 +14,7 @@ Bert
 - Main table selections are not shown if there's a join
 - set `aliased_entity` to optional in `concatenate_fields`
 - fix concatenated field names validation for main fields
-- fix the concatenated fields for main fields
+- fix the concatenated fields selections for main fields
 ---
 
 ## 0.1.21
