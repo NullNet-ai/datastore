@@ -5,6 +5,21 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.24
+
+### Author
+Kashan Ali Khalid
+
+### Refactored
+- ***Type Conversion Simplification***: Removed complex type conversion logic and unnecessary intermediate structures
+  - Eliminated redundant `DatabaseTypeConverter` usage in direct database insertion paths
+  - Simplified data flow from `store_driver.rs` to database operations
+  - Leveraged Diesel ORM's native type conversion capabilities for `serde_json::Value` to PostgreSQL types
+  - Removed unnecessary struct intermediaries in favor of direct JSON-to-model conversion using `serde_json::from_value`
+  - Streamlined upsert operations to use macro-generated code with built-in type handling
+  - Improved code maintainability by reducing conversion complexity while maintaining full type safety
+---
+
 ## 0.1.23
 
 ### Author
