@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Author
 Bert
 
+### Features
+- **Schema Generator**: Added comprehensive schema generator feature that allows users to define database schemas through simple configuration files
+  - Automatically generates Rust model files with Diesel traits
+  - Updates `schema.rs` with new table definitions
+  - Creates database migrations with proper up/down SQL
+  - Supports intelligent re-runs without duplicating existing fields
+  - Interactive migration naming with conflict detection
+  - Supports all major Diesel types including arrays, nullable types, and foreign keys
+  - Integrated with main application via `CREATE_SCHEMA` environment variable
+
 ### Fixes
 - ***validations.rs*** revise validation for distinct_by that causes the app to crash
 - Main table selections are not shown if there's a join
