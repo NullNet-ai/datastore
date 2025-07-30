@@ -1,7 +1,6 @@
 use crate::schema::generator::field_definition::{ParsedField, TableDefinition};
 use crate::schema::verify::{field_exists_in_table, get_table_fields};
 use std::fs;
-use std::path::Path;
 use regex::Regex;
 
 pub struct SchemaGenerator;

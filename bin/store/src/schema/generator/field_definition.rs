@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldDefinition {
     pub field_name: String,
@@ -10,12 +10,14 @@ pub struct FieldDefinition {
     pub default_value: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TableDefinition {
     pub table_name: String,
     pub fields: Vec<FieldDefinition>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ParsedField {
     pub name: String,
@@ -29,6 +31,7 @@ pub struct ParsedField {
     pub default_value: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ForeignKey {
     pub table: String,
@@ -116,6 +119,7 @@ impl FieldDefinition {
 }
 
 /// Parse a table definition file
+#[allow(dead_code)]
 pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, String> {
     // Try to parse as JSON first
     if let Ok(table_def) = serde_json::from_str::<TableDefinition>(content) {

@@ -13,7 +13,7 @@ The Schema Generator automatically creates Rust models, updates `schema.rs`, and
 
 ## Table Definition Formats
 
-### 🆕 Recommended: Struct-Based with Diesel Types
+### Struct-Based with Diesel Types
 
 Use actual Diesel types for better type safety and IDE support:
 
@@ -26,18 +26,28 @@ use crate::define_table_schema;
 
 pub struct UserProfileTable;
 
-// Using the convenient macro
+// Using the convenient macro with various types
 define_table_schema! {
     table_name: "user_profiles",
     fields: {
         id: integer(), primary_key: true,
         user_id: integer(), indexed: true,
-        display_name: nullable(text()),
-        bio: nullable(text()),
-        avatar_url: nullable(text()),
-        preferences: nullable(jsonb()), default: "{}",
-        tags: nullable(array(text())),
-        is_public: nullable(boolean()), default: "true",
+        display_name: nullable_text(),
+        bio: nullable_text(),
+        avatar_url: varchar(Some(500)),
+        email: varchar(Some(255)), indexed: true,
+        age: nullable(smallint()),
+        salary: nullable(numeric()),
+        rating: nullable(float()),
+        ip_address: nullable_inet(),
+        mac_address: nullable(macaddr()),
+        preferences: nullable_jsonb(), default: "{}",
+        tags: nullable_text_array(),
+        scores: nullable_integer_array(),
+        is_public: nullable_boolean(), default: "true",
+        is_verified: boolean(), default: "false",
+        birth_date: nullable(date()),
+        last_login: nullable_timestamptz(),
         created_at: timestamptz(), default: "CURRENT_TIMESTAMP",
         updated_at: timestamptz(), default: "CURRENT_TIMESTAMP"
     },
@@ -45,6 +55,11 @@ define_table_schema! {
         idx_user_profiles_user_id: {
             columns: ["user_id"],
             unique: false,
+            type: "btree"
+        },
+        idx_user_profiles_email: {
+            columns: ["email"],
+            unique: true,
             type: "btree"
         }
     },
@@ -89,67 +104,71 @@ impl DieselTableDefinition for ComplexUserProfileTable {
 }
 ```
 
-### 📝 Legacy: Comment-Based Format
-
-Still supported for backward compatibility:
-
-```rust
-// Example: connections.rs
-// Connections table definition
-// This file defines the schema for a connections table
-
-// field_name: id
-// field_type: Int4
-// is_index: true
-// joins_with: 
-// default_value: 
-
-// field_name: first_name
-// field_type: Nullable<Text>
-// is_index: false
-// joins_with: 
-// default_value: 
-
-// field_name: email
-// field_type: Nullable<Text>
-// is_index: true
-// joins_with: 
-// default_value: 
-
-// field_name: user_id
-// field_type: Nullable<Int4>
-// is_index: true
-// joins_with: users.id
-// default_value: 
-
-// field_name: created_at
-// field_type: Nullable<Timestamp>
-// is_index: false
-// joins_with: 
-// default_value: NOW()
-```
-
 ## Available Diesel Types
 
-### Helper Functions (Recommended)
+### Helper Functions
 ```rust
 use crate::schema::generator::diesel_schema_definition::types::*;
 
-// Basic types
-integer()     // Int4
-bigint()      // Int8  
-text()        // Text
+// Integer types
+smallint()    // SmallInt (i16)
+integer()     // Int4 (i32)
+bigint()      // Int8 (i64)
+
+// Text types
+text()                    // Text (unlimited length)
+varchar(Some(255))        // VarChar with length limit
+varchar(None)             // VarChar without length limit
+char(10)                  // Char with fixed length
+
+// Floating point types
+float()       // Float (f32)
+double()      // Double (f64)
+numeric()     // Numeric (decimal)
+
+// Boolean type
 boolean()     // Bool
-timestamp()   // Timestamp
-timestamptz() // Timestamptz
-jsonb()       // Jsonb
-inet()        // Inet
-uuid()        // Uuid
+
+// Date and time types
+date()        // Date
+time()        // Time
+timestamp()   // Timestamp (without timezone)
+timestamptz() // Timestamptz (with timezone)
+
+// JSON types
+json()        // Json
+jsonb()       // Jsonb (binary JSON, recommended)
+
+// Network types
+inet()        // Inet (IP address)
+cidr()        // Cidr (network address)
+macaddr()     // MacAddr (MAC address)
+
+// Other types
+binary()      // Binary data
+uuid()        // UUID
 
 // Wrapper types
 nullable(text())           // Nullable<Text>
 array(text())              // Array<Text>
 nullable(array(text()))    // Nullable<Array<Text>>
+
+// Convenience functions for common nullable types
+nullable_text()            // Nullable<Text>
+nullable_integer()         // Nullable<Int4>
+nullable_bigint()          // Nullable<Int8>
+nullable_boolean()         // Nullable<Bool>
+nullable_timestamp()       // Nullable<Timestamp>
+nullable_timestamptz()     // Nullable<Timestamptz>
+nullable_jsonb()           // Nullable<Jsonb>
+nullable_uuid()            // Nullable<Uuid>
+nullable_inet()            // Nullable<Inet>
+
+// Convenience functions for common array types
+text_array()               // Array<Text>
+integer_array()            // Array<Int4>
+nullable_text_array()      // Nullable<Array<Text>>
+nullable_integer_array()   // Nullable<Array<Int4>>
 ```
 
 ### Direct DieselType Enum
@@ -166,30 +185,7 @@ DieselType::Array(Box::new(DieselType::Text))
 DieselType::Nullable(Box::new(DieselType::Text))
 ```
 
-### Legacy Comment-Based Types
-
-- `Text` - Non-nullable text
-- `Nullable<Text>` - Nullable text
-- `Int4` - Non-nullable 32-bit integer
-- `Nullable<Int4>` - Nullable 32-bit integer
-- `Int8` - Non-nullable 64-bit integer
-- `Nullable<Int8>` - Nullable 64-bit integer
-- `BigInt` - Non-nullable big integer
-- `Nullable<BigInt>` - Nullable big integer
-- `Bool` - Non-nullable boolean
-- `Nullable<Bool>` - Nullable boolean
-- `Timestamp` - Non-nullable timestamp
-- `Nullable<Timestamp>` - Nullable timestamp
-- `Timestamptz` - Non-nullable timestamp with timezone
-- `Nullable<Timestamptz>` - Nullable timestamp with timezone
-- `Jsonb` - Non-nullable JSONB
-- `Nullable<Jsonb>` - Nullable JSONB
-- `Inet` - Non-nullable IP address
-- `Nullable<Inet>` - Nullable IP address
-- `Array<Text>` - Array of text
-- `Nullable<Array<Text>>` - Nullable array of text
-
-## Benefits of Struct-Based Approach
+## Benefits
 
 ✅ **Type Safety**: Uses actual Diesel types, preventing typos and mismatches  
 ✅ **IDE Support**: Full autocomplete and error checking  
@@ -200,12 +196,12 @@ DieselType::Nullable(Box::new(DieselType::Text))
 
 ## Field Properties
 
-- `field_name`/`name`: The database column name
-- `field_type`/`diesel_type`: The Diesel SQL type
-- `is_index`/`is_indexed`: Whether to create an index (optional, default: false)
+- `name`: The database column name
+- `diesel_type`: The Diesel SQL type
+- `indexed`: Whether to create an index (optional, default: false)
 - `primary_key`: Whether this is the primary key (optional, default: false)
-- `joins_with`: Foreign key reference in format `table.column` (optional)
-- `default_value`/`default`: Default value for the column (optional)
+- `foreign_keys`: Foreign key reference in format `table.column` (optional)
+- `default`: Default value for the column (optional)
 
 ### 5. What Gets Generated
 
@@ -236,31 +232,39 @@ When changes are detected, the generator will:
 
 ### 8. Example Generated Files
 
-#### Model File (`connections_model.rs`)
+#### Model File (`user_profiles_model.rs`)
 
 ```rust
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Selectable, Serialize, Deserialize, Debug, Clone)]
-#[diesel(table_name = connections)]
+#[diesel(table_name = user_profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Connection {
+pub struct UserProfile {
     pub id: i32,
-    pub first_name: Option<String>,
-    pub email: Option<String>,
-    pub user_id: Option<i32>,
-    pub created_at: Option<NaiveDateTime>,
+    pub user_id: i32,
+    pub display_name: Option<String>,
+    pub bio: Option<String>,
+    pub avatar_url: Option<String>,
+    pub preferences: Option<serde_json::Value>,
+    pub tags: Option<Vec<String>>,
+    pub is_public: Option<bool>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Insertable, AsChangeset, Serialize, Deserialize, Debug, Clone)]
-#[diesel(table_name = connections)]
-pub struct NewConnection {
-    pub first_name: Option<String>,
-    pub email: Option<String>,
-    pub user_id: Option<i32>,
-    pub created_at: Option<NaiveDateTime>,
+#[diesel(table_name = user_profiles)]
+pub struct NewUserProfile {
+    pub user_id: i32,
+    pub display_name: Option<String>,
+    pub bio: Option<String>,
+    pub avatar_url: Option<String>,
+    pub preferences: Option<serde_json::Value>,
+    pub tags: Option<Vec<String>>,
+    pub is_public: Option<bool>,
 }
 ```
 
@@ -268,12 +272,17 @@ pub struct NewConnection {
 
 ```rust
 table! {
-    connections (id) {
+    user_profiles (id) {
         id -> Int4,
-        first_name -> Nullable<Text>,
-        email -> Nullable<Text>,
-        user_id -> Nullable<Int4>,
-        created_at -> Nullable<Timestamp>,
+        user_id -> Int4,
+        display_name -> Nullable<Text>,
+        bio -> Nullable<Text>,
+        avatar_url -> Nullable<Text>,
+        preferences -> Nullable<Jsonb>,
+        tags -> Nullable<Array<Text>>,
+        is_public -> Nullable<Bool>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
     }
 }
 ```
@@ -282,48 +291,47 @@ table! {
 
 **up.sql**:
 ```sql
--- Your SQL goes here
-
-CREATE TABLE "connections" (
-    "id" INTEGER NOT NULL,
-    "first_name" TEXT,
-    "email" TEXT,
-    "user_id" INTEGER,
-    "created_at" TIMESTAMP DEFAULT NOW()
+CREATE TABLE "user_profiles" (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" INTEGER NOT NULL,
+    "display_name" TEXT,
+    "bio" TEXT,
+    "avatar_url" TEXT,
+    "preferences" JSONB DEFAULT '{}',
+    "tags" TEXT[],
+    "is_public" BOOLEAN DEFAULT true,
+    "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX "idx_connections_id" ON "connections" ("id");
-CREATE INDEX "idx_connections_email" ON "connections" ("email");
-CREATE INDEX "idx_connections_user_id" ON "connections" ("user_id");
+CREATE INDEX "idx_user_profiles_user_id" ON "user_profiles" ("user_id");
+ALTER TABLE "user_profiles" ADD CONSTRAINT "fk_user_profiles_user_id" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 ```
 
 **down.sql**:
 ```sql
--- This file should undo anything in `up.sql`
-
-DROP INDEX IF EXISTS "idx_connections_user_id";
-DROP INDEX IF EXISTS "idx_connections_email";
-DROP INDEX IF EXISTS "idx_connections_id";
-DROP TABLE IF EXISTS "connections";
+DROP TABLE IF EXISTS "user_profiles";
 ```
 
 ## Best Practices
 
-1. **File Naming**: Use singular table names for files (e.g., `connection.rs` not `connections.rs`)
+1. **File Naming**: Use singular table names for files (e.g., `user_profile.rs` not `user_profiles.rs`)
 2. **Field Naming**: Use snake_case for field names
 3. **Indexes**: Only add indexes on fields that will be frequently queried
-4. **Foreign Keys**: Always specify the full table.column reference for joins_with
-5. **Default Values**: Use appropriate SQL default values (e.g., `NOW()` for timestamps)
-6. **Testing**: Test your schema definitions in a development environment first
+4. **Foreign Keys**: Always specify the full table.column reference in foreign_keys section
+5. **Default Values**: Use appropriate SQL default values (e.g., `CURRENT_TIMESTAMP` for timestamps)
+6. **Type Safety**: Use the helper functions from `types::*` for better IDE support
+7. **Testing**: Test your schema definitions in a development environment first
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Compilation Errors**: Make sure all Diesel types are correctly spelled
+1. **Compilation Errors**: Ensure all Diesel types are correctly imported and spelled
 2. **Migration Conflicts**: Use descriptive migration names to avoid conflicts
-3. **Schema Parsing**: Ensure proper formatting of field definitions
-4. **Foreign Key Errors**: Verify that referenced tables exist
+3. **Macro Syntax**: Verify proper formatting of `define_table_schema!` macro syntax
+4. **Foreign Key Errors**: Verify that referenced tables exist and are properly defined
+5. **Type Mismatches**: Use consistent Diesel types throughout your schema definitions
 
 ### Debug Mode
 

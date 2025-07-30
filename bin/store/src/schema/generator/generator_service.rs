@@ -1,6 +1,6 @@
 use crate::schema::generator::field_definition::{FieldDefinition, TableDefinition};
 use crate::schema::generator::model_generator::ModelGenerator;
-use crate::schema::generator::schema_generator::{SchemaGenerator, SchemaChange};
+use crate::schema::generator::schema_generator::SchemaGenerator;
 use crate::schema::generator::migration_generator::MigrationGenerator;
 use std::env;
 use std::fs;

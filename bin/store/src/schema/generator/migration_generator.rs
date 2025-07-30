@@ -1,4 +1,4 @@
-use crate::schema::generator::field_definition::{ParsedField, TableDefinition};
+use crate::schema::generator::field_definition::TableDefinition;
 use crate::schema::generator::schema_generator::{SchemaChange, SchemaChangeType};
 use std::fs;
 use std::path::Path;

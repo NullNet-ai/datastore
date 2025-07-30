@@ -1,6 +1,4 @@
 use crate::schema::generator::field_definition::{ParsedField, TableDefinition};
-use std::fs;
-use std::path::Path;
 
 pub struct ModelGenerator;
 

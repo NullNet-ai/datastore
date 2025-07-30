@@ -1,11 +1,10 @@
 //! Improved schema definition using actual Diesel types
 //! This replaces the comment-based approach with proper Rust structs
 
-use diesel::sql_types::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Trait for defining table schemas using Diesel types
+#[allow(dead_code)]
 pub trait DieselTableDefinition {
     /// Get the table name
     fn table_name() -> &'static str;
@@ -206,6 +205,7 @@ macro_rules! define_table_schema {
 
 impl DieselType {
     /// Convert to Diesel schema.rs format
+    #[allow(dead_code)]
     pub fn to_diesel_schema_type(&self) -> String {
         match self {
             DieselType::SmallInt => "Int2".to_string(),
@@ -236,6 +236,7 @@ impl DieselType {
     }
     
     /// Convert to Rust type for model generation
+    #[allow(dead_code)]
     pub fn to_rust_type(&self) -> String {
         match self {
             DieselType::SmallInt => "i16".to_string(),
@@ -262,6 +263,7 @@ impl DieselType {
     }
     
     /// Get SQL type for migration
+    #[allow(dead_code)]
     pub fn to_sql_type(&self) -> String {
         match self {
             DieselType::SmallInt => "SMALLINT".to_string(),
@@ -293,9 +295,11 @@ impl DieselType {
 }
 
 /// Helper functions to create common Diesel types
+#[allow(dead_code)]
 pub mod types {
     use super::DieselType;
     
+    // Wrapper functions
     pub fn nullable<T>(inner: T) -> DieselType 
     where 
         T: Into<DieselType>
@@ -310,14 +314,61 @@ pub mod types {
         DieselType::Array(Box::new(inner.into()))
     }
     
-    pub fn text() -> DieselType { DieselType::Text }
+    // Integer types
+    pub fn smallint() -> DieselType { DieselType::SmallInt }
     pub fn integer() -> DieselType { DieselType::Integer }
     pub fn bigint() -> DieselType { DieselType::BigInt }
+    
+    // Text types
+    pub fn text() -> DieselType { DieselType::Text }
+    pub fn varchar(length: Option<u32>) -> DieselType { DieselType::VarChar(length) }
+    pub fn char(length: u32) -> DieselType { DieselType::Char(length) }
+    
+    // Floating point types
+    pub fn float() -> DieselType { DieselType::Float }
+    pub fn double() -> DieselType { DieselType::Double }
+    pub fn numeric() -> DieselType { DieselType::Numeric }
+    
+    // Boolean type
     pub fn boolean() -> DieselType { DieselType::Bool }
+    
+    // Date and time types
+    pub fn date() -> DieselType { DieselType::Date }
+    pub fn time() -> DieselType { DieselType::Time }
+    pub fn timestamp() -> DieselType { DieselType::Timestamp }
     pub fn timestamptz() -> DieselType { DieselType::Timestamptz }
+    
+    // JSON types
+    pub fn json() -> DieselType { DieselType::Json }
     pub fn jsonb() -> DieselType { DieselType::Jsonb }
+    
+    // Network types
     pub fn inet() -> DieselType { DieselType::Inet }
+    pub fn cidr() -> DieselType { DieselType::Cidr }
+    pub fn macaddr() -> DieselType { DieselType::MacAddr }
+    
+    // Binary type
+    pub fn binary() -> DieselType { DieselType::Binary }
+    
+    // UUID type
     pub fn uuid() -> DieselType { DieselType::Uuid }
+    
+    // Convenience functions for common nullable types
+    pub fn nullable_text() -> DieselType { nullable(text()) }
+    pub fn nullable_integer() -> DieselType { nullable(integer()) }
+    pub fn nullable_bigint() -> DieselType { nullable(bigint()) }
+    pub fn nullable_boolean() -> DieselType { nullable(boolean()) }
+    pub fn nullable_timestamp() -> DieselType { nullable(timestamp()) }
+    pub fn nullable_timestamptz() -> DieselType { nullable(timestamptz()) }
+    pub fn nullable_jsonb() -> DieselType { nullable(jsonb()) }
+    pub fn nullable_uuid() -> DieselType { nullable(uuid()) }
+    pub fn nullable_inet() -> DieselType { nullable(inet()) }
+    
+    // Convenience functions for common array types
+    pub fn text_array() -> DieselType { array(text()) }
+    pub fn integer_array() -> DieselType { array(integer()) }
+    pub fn nullable_text_array() -> DieselType { nullable(array(text())) }
+    pub fn nullable_integer_array() -> DieselType { nullable(array(integer())) }
 }
 
 // Note: From<DieselType> for DieselType is automatically implemented by Rust
