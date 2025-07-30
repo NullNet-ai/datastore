@@ -220,15 +220,13 @@ impl OrganizationsController {
             Some(t) => {
                 match verify(&t) {
                     Ok(result) => {
-                        // Return success response
-                        HttpResponse::Ok().json(serde_json::json!({
-                            "payload": {
-                                "success": true,
-                                "message": "Token Verified",
-                                "count": 1,
-                                "data": [result]
-                            }
-                        }))
+                        let success_response = ApiResponse {
+                            success: true,
+                            message: "Token Verified".to_string(),
+                            count: 1,
+                            data: vec![serde_json::to_value(result).unwrap_or_default()],
+                        };
+                        HttpResponse::Ok().json(success_response)
                     }
                     Err(err) => {
                         let error_response = ApiResponse {
@@ -242,9 +240,13 @@ impl OrganizationsController {
                 }
             }
             None => {
-                HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": "Token Verification Failed: Missing token"
-                }))
+                let error_response = ApiResponse {
+                    success: false,
+                    message: "Token Verification Failed: Missing token".to_string(),
+                    count: 0,
+                    data: vec![],
+                };
+                HttpResponse::BadRequest().json(error_response)
             }
         }
     }
