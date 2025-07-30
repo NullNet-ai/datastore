@@ -86,7 +86,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
     )?;
     writeln!(file, "use crate::providers::find::DynamicResult;")?;
-    writeln!(file, "use crate::providers::find::SQLConstructor;")?;
+
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
     writeln!(file, "use crate::sync::sync_service::update;")?;
     writeln!(file, "use crate::table_enum::Table;")?;
@@ -100,7 +100,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     )?;
     writeln!(
         file,
-        "// Note: AggregationFilterWrapper has been moved to sql_constructor.rs"
+        "// Note: AggregationFilterWrapper has been moved to providers::aggregation_filter"
     )?;
     writeln!(
         file,

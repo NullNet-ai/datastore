@@ -21,7 +21,7 @@ use serde_json::Value;
 use std::net::SocketAddr;
 use std::pin::Pin;
 use tonic::{transport::Server, Request, Response, Status};
-// Note: AggregationFilterWrapper has been moved to sql_constructor.rs
+// Note: AggregationFilterWrapper has been moved to providers::aggregation_filter
 // Note: Converter functions have been moved to grpc_struct_converter.rs
 use crate::generated::store::{
     AccountOrganizations, AccountProfiles, Accounts, Addresses, AggregationFilterRequest,

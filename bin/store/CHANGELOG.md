@@ -5,6 +5,33 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.21
+
+### Author
+Kashan Ali Khalid
+
+### Fixed
+- ***Separation of Concerns***: Corrected improper mixing of aggregation and find SQL constructors
+  - Fixed `get_by_filter` function in `store_controller.rs` that incorrectly used `AggregationSQLConstructor` instead of `SQLConstructor` from the find module
+  - Changed method call from `construct_aggregation()` to `construct()` to match the find module's API
+  - Established clear architectural boundary: aggregation module handles aggregation queries, find module handles regular filtering
+
+### Refactored
+- ***aggregation_filter module***: Consolidated `query_filter.rs` and `sql_constructor.rs` into single file
+  - Moved `AggregationFilter` and `AggregationFilterWrapper` trait implementations from `query_filter.rs` to `sql_constructor.rs`
+  - Removed `query_filter.rs` file and updated `mod.rs` exports
+  - Kept all `QueryFilter` and `AggregationQueryFilter` implementations intact
+- ***grpc_controller_generator***: Removed unused `SQLConstructor` import
+  - Eliminated `use crate::providers::find::SQLConstructor;` line that was removed from manual `grpc_controller.rs`
+  - Maintained consistency between generated and manually maintained controller files
+
+### Technical Debt
+- ***AggregationQueryFilter trait***: Added default implementations to eliminate dead code warnings
+  - Provided default implementations for `get_advance_filters()`, `get_joins()`, `get_date_format()`, `get_order_by()`, and `get_order_direction()`
+  - Added `#[allow(dead_code)]` attributes to suppress compiler warnings for unused trait methods
+  - Maintained backward compatibility while cleaning up compilation warnings
+---
+
 ## 0.1.20
 
 ### Author

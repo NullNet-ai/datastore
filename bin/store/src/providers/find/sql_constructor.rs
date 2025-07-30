@@ -1,9 +1,6 @@
 use crate::{
-    structs::grpc_struct_converter::{
-        convert_aggregation, convert_aggregation_order, convert_filter_criteria, convert_join,
-    },
     structs::structs::{
-        Aggregation, AggregationFilter, AggregationOrder, ConcatenateField, FilterCriteria,
+        ConcatenateField, FilterCriteria,
         FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy, Join, LogicalOperator, MatchPattern,
         SortOption,
     },
@@ -59,21 +56,6 @@ pub trait QueryFilter {
         None
     }
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
-        None
-    }
-    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] {
-        &[]
-    }
-    fn get_bucket_size(&self) -> Option<&str> {
-        None
-    }
-    fn get_timezone(&self) -> Option<&str> {
-        None
-    }
-    fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
-        None
-    }
-    fn get_entity(&self) -> Option<&str> {
         None
     }
 }
@@ -145,58 +127,7 @@ impl QueryFilter for GetByFilter {
     }
 }
 
-// Implement QueryFilter for AggregationFilter
-impl QueryFilter for AggregationFilter {
-    fn get_advance_filters(&self) -> &[FilterCriteria] {
-        &self.advance_filters
-    }
 
-    fn get_joins(&self) -> &[Join] {
-        &self.joins
-    }
-
-    fn get_limit(&self) -> usize {
-        self.limit
-    }
-
-    fn get_date_format(&self) -> &str {
-        "mm/dd/YYYY" // Default format for aggregation queries
-    }
-
-    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] {
-        &self.aggregations
-    }
-
-    fn get_bucket_size(&self) -> Option<&str> {
-        self.bucket_size.as_deref()
-    }
-
-    fn get_timezone(&self) -> Option<&str> {
-        self.timezone.as_deref()
-    }
-
-    fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
-        self.order.as_ref()
-    }
-
-    fn get_entity(&self) -> Option<&str> {
-        Some(&self.entity)
-    }
-
-    fn get_order_by(&self) -> &str {
-        self.order
-            .as_ref()
-            .map(|o| o.order_by.as_str())
-            .unwrap_or("id")
-    }
-
-    fn get_order_direction(&self) -> &str {
-        self.order
-            .as_ref()
-            .map(|o| o.order_direction.as_str())
-            .unwrap_or("asc")
-    }
-}
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -206,10 +137,10 @@ enum Token {
 }
 
 pub struct SQLConstructor<T: QueryFilter> {
-    request_body: T,
-    table: String,
-    organization_id: Option<String>,
-    is_root: bool,
+    pub request_body: T,
+    pub table: String,
+    pub organization_id: Option<String>,
+    pub is_root: bool,
 }
 
 impl<T: QueryFilter> SQLConstructor<T> {
@@ -242,82 +173,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         Ok(sql)
     }
 
-    pub fn construct_aggregation(&mut self) -> Result<String, String> {
-        // Validate required parameters for aggregation
-        let aggregations = self.request_body.get_aggregations();
-        let bucket_size = self.request_body.get_bucket_size();
-        let entity = self.request_body.get_entity();
 
-        if aggregations.is_empty() {
-            return Err("Missing required parameter: aggregations cannot be empty".to_string());
-        }
-
-        if bucket_size.is_none() {
-            return Err("Missing required parameter: bucket_size".to_string());
-        }
-
-        if entity.is_none() {
-            return Err("Missing required parameter: entity".to_string());
-        }
-
-        let bucket_size = bucket_size.unwrap();
-        let entity = entity.unwrap();
-        let timezone = self.request_body.get_timezone().unwrap_or("UTC");
-
-        // Generate the SELECT clause with time bucket and aggregations
-        let mut sql = String::from("SELECT ");
-
-        // Add time bucket
-        sql.push_str(&format!(
-            "time_bucket('{}', {}.timestamp AT TIME ZONE '{}') AS bucket",
-            bucket_size, entity, timezone
-        ));
-
-        // Add aggregation clauses
-        for aggregation in aggregations {
-            sql.push_str(", ");
-            let agg_type = match aggregation.aggregation {
-                crate::structs::structs::AggregationType::Sum => "SUM",
-                crate::structs::structs::AggregationType::Count => "COUNT",
-                crate::structs::structs::AggregationType::Avg => "AVG",
-                crate::structs::structs::AggregationType::Min => "MIN",
-                crate::structs::structs::AggregationType::Max => "MAX",
-                crate::structs::structs::AggregationType::StdDev => "STDDEV",
-                crate::structs::structs::AggregationType::Variance => "VARIANCE",
-                crate::structs::structs::AggregationType::ArrayAgg => "ARRAY_AGG",
-            };
-
-            sql.push_str(&format!(
-                "{}({}.{}) AS {}",
-                agg_type, entity, aggregation.aggregate_on, aggregation.bucket_name
-            ));
-        }
-
-        // Add FROM clause
-        sql.push_str(&format!(" FROM {}", self.table));
-
-        // Add joins if any
-        sql.push_str(&self.construct_joins());
-
-        // Add WHERE clauses
-        sql.push_str(&self.construct_where_clauses()?);
-
-        // Add GROUP BY clause
-        sql.push_str(" GROUP BY bucket");
-
-        // Add ORDER BY clause
-        if let Some(order) = self.request_body.get_aggregation_order() {
-            let order_direction = order.order_direction.to_uppercase();
-            sql.push_str(&format!(" ORDER BY {} {}", order.order_by, order_direction));
-        }
-
-        // Add LIMIT clause
-        if self.request_body.get_limit() > 0 {
-            sql.push_str(&format!(" LIMIT {}", self.request_body.get_limit()));
-        }
-
-        Ok(sql)
-    }
 
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None)
@@ -770,7 +626,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         )
     }
 
-    fn construct_joins(&self) -> String {
+    pub fn construct_joins(&self) -> String {
         if self.request_body.get_joins().is_empty() {
             String::from("")
         } else {
@@ -819,7 +675,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         ))
     }
 
-    fn construct_where_clauses(&self) -> Result<String, String> {
+    pub fn construct_where_clauses(&self) -> Result<String, String> {
         // Use the reusable standard WHERE clause pattern
         let mut base_where = format!(" WHERE {}", self.build_system_where_clause(&self.table)?);
 
@@ -1452,114 +1308,5 @@ impl<T: QueryFilter> SQLConstructor<T> {
         } else {
             String::from("LIMIT 10")
         }
-    }
-}
-
-// Wrapper struct for AggregationFilterRequest that holds converted data
-pub struct AggregationFilterWrapper {
-    pub request: crate::generated::store::AggregationFilterRequest,
-    pub converted_filters: Vec<FilterCriteria>,
-    pub converted_joins: Vec<Join>,
-    pub converted_aggregations: Vec<Aggregation>,
-    pub converted_order: Option<AggregationOrder>,
-}
-
-impl AggregationFilterWrapper {
-    pub fn new(request: crate::generated::store::AggregationFilterRequest) -> Self {
-        // Extract data from the body field
-        let body = request.body.as_ref();
-
-        let converted_filters: Vec<_> = body
-            .map(|b| {
-                b.advance_filters
-                    .iter()
-                    .filter_map(convert_filter_criteria)
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        let converted_joins: Vec<_> = body
-            .map(|b| b.joins.iter().filter_map(convert_join).collect())
-            .unwrap_or_default();
-
-        let converted_aggregations: Vec<_> = body
-            .map(|b| b.aggregations.iter().map(convert_aggregation).collect())
-            .unwrap_or_default();
-
-        let converted_order = body.and_then(|b| b.order.as_ref().map(convert_aggregation_order));
-
-        Self {
-            request,
-            converted_filters,
-            converted_joins,
-            converted_aggregations,
-            converted_order,
-        }
-    }
-}
-
-impl QueryFilter for AggregationFilterWrapper {
-    fn get_advance_filters(&self) -> &[FilterCriteria] {
-        &self.converted_filters
-    }
-
-    fn get_joins(&self) -> &[Join] {
-        &self.converted_joins
-    }
-
-    fn get_limit(&self) -> usize {
-        self.request
-            .body
-            .as_ref()
-            .and_then(|b| b.limit)
-            .unwrap_or(100) as usize
-    }
-
-    fn get_date_format(&self) -> &str {
-        "mm/dd/YYYY"
-    }
-
-    fn get_aggregations(&self) -> &[Aggregation] {
-        &self.converted_aggregations
-    }
-
-    fn get_bucket_size(&self) -> Option<&str> {
-        self.request
-            .body
-            .as_ref()
-            .and_then(|b| b.bucket_size.as_deref())
-    }
-
-    fn get_timezone(&self) -> Option<&str> {
-        self.request
-            .body
-            .as_ref()
-            .and_then(|b| b.timezone.as_deref())
-    }
-
-    fn get_aggregation_order(&self) -> Option<&AggregationOrder> {
-        self.converted_order.as_ref()
-    }
-
-    fn get_entity(&self) -> Option<&str> {
-        self.request.body.as_ref().map(|b| b.entity.as_str())
-    }
-
-    fn get_order_by(&self) -> &str {
-        self.request
-            .body
-            .as_ref()
-            .and_then(|b| b.order.as_ref())
-            .map(|o| o.order_by.as_str())
-            .unwrap_or("id")
-    }
-
-    fn get_order_direction(&self) -> &str {
-        self.request
-            .body
-            .as_ref()
-            .and_then(|b| b.order.as_ref())
-            .map(|o| o.order_direction.as_str())
-            .unwrap_or("asc")
     }
 }
