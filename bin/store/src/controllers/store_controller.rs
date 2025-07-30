@@ -6,7 +6,8 @@ use crate::controllers::common_controller::{
 use crate::db;
 use crate::db::create_connection;
 
-use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
+use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
+use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::structs::structs::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
     UpsertRequestBody,
@@ -1071,8 +1072,8 @@ pub async fn aggregation_filter(
         }
     };
 
-    // Create SQLConstructor with organization_id if available
-    let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root);
+    // Create AggregationSQLConstructor with organization_id if available
+    let mut sql_constructor = AggregationSQLConstructor::new(parameters, table.clone(), is_root);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
