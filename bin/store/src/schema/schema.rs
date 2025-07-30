@@ -1576,3 +1576,28 @@ table! {
         is_primary -> Nullable<Bool>
     }
 }
+
+table! {
+    products(id) {
+        id -> Text,
+        sku -> Text,
+        name -> Text,
+        description -> Text,
+        category_id -> Int4,
+        price -> Text,
+        currency -> Text,
+        stock_quantity -> Int4,
+        is_active -> Bool,
+        is_featured -> Bool,
+        weight_kg -> Nullable<Text>,
+        dimensions -> Nullable<Jsonb>,
+        tags -> Text,
+        metadata -> Nullable<Jsonb>,
+        image_urls -> Text,
+        supplier_info -> Nullable<Jsonb>,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        deleted_at -> Timestamptz,
+        first_name -> Text,
+}
+}

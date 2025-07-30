@@ -42,6 +42,7 @@ use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
 use crate::schema::database_setup::DatabaseSetupFlags;
+use crate::schema::generator::generator_service::GeneratorService;
 use crate::sync::controllers::sync_endpoints_controller;
 // use crate::sync::merkles::merkle_manager::MerkleManager;
 use crate::sync::message_manager::{create_message_channel, SENDER};
@@ -95,6 +96,8 @@ async fn main() -> std::io::Result<()> {
     let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
     let generate_table_enum =
         env::var("GENERATE_TABLE_ENUM").unwrap_or_else(|_| "false".to_string()) == "true";
+    let create_schema =
+        env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true";
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
@@ -145,7 +148,7 @@ async fn main() -> std::io::Result<()> {
 
     TransactionService::initialize().await;
 
-    if generate_proto || generate_grpc || generate_table_enum {
+    if generate_proto || generate_grpc || generate_table_enum || create_schema {
         println!("Starting code generation...");
 
         // Proto generation
@@ -172,6 +175,15 @@ async fn main() -> std::io::Result<()> {
             println!("Generating table enums");
             if let Err(e) = table_enum_generator::run_generator() {
                 eprintln!("Failed to generate table enum: {}", e);
+            }
+        }
+
+        // Schema generation
+        if create_schema {
+            println!("Running schema generator");
+            if let Err(e) = GeneratorService::run() {
+                eprintln!("Failed to generate schema: {}", e);
+                process::exit(1);
             }
         }
 
