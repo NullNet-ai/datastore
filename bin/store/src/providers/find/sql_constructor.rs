@@ -169,7 +169,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
-        dbg!(&sql);
         Ok(sql)
     }
 
@@ -394,7 +393,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn construct_join_selections(&self) -> Vec<String> {
         let mut join_selections = Vec::new();
-
+        if let Some(fields) = self.request_body.get_pluck_object().get(&self.table) {
+            join_selections.extend(fields.iter().map(|field| {
+                Self::get_field(&self.table, field, self.request_body.get_date_format())
+            }));
+        }
         // Only construct selections if joins are present
         if self.request_body.get_joins().is_empty() {
             return join_selections;
