@@ -1821,6 +1821,7 @@
                     if (!this.duplicatesSet.has(recordKey)) {
                         this.duplicatesSet.add(recordKey);
                         this.duplicateNotifications++;
+                        this.addDuplicateToList(recordKey, data);
                     }
                 } else {
                     this.seenRecords.add(recordKey);
@@ -2393,7 +2394,45 @@
                 }
             }
 
-        resetStats() {
+        addDuplicateToList(recordKey, data) {
+                // Print the entire duplicate record to console
+                console.log('DUPLICATE RECORD DETECTED:', {
+                    key: recordKey,
+                    timestamp: new Date().toISOString(),
+                    fullRecord: data
+                });
+                
+                const duplicateList = document.getElementById('duplicateList');
+                if (duplicateList) {
+                    const listItem = document.createElement('li');
+                    listItem.style.cssText = 'margin-bottom: 8px; padding: 8px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; border-left: 3px solid #dc3545;';
+                    
+                    const keySpan = document.createElement('span');
+                    keySpan.style.cssText = 'font-weight: bold; color: #dc3545; font-family: monospace;';
+                    keySpan.textContent = recordKey;
+                    
+                    const timestampSpan = document.createElement('span');
+                    timestampSpan.style.cssText = 'font-size: 0.8em; color: #6c757d; margin-left: 10px;';
+                    timestampSpan.textContent = `(${new Date().toLocaleTimeString()})`;
+                    
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.style.cssText = 'font-size: 0.75em; color: #6c757d; margin-top: 4px; font-family: monospace; white-space: pre-wrap; max-height: 100px; overflow-y: auto;';
+                    detailsDiv.textContent = JSON.stringify(data, null, 2);
+                    
+                    listItem.appendChild(keySpan);
+                    listItem.appendChild(timestampSpan);
+                    listItem.appendChild(detailsDiv);
+                    
+                    duplicateList.insertBefore(listItem, duplicateList.firstChild);
+                    
+                    // Keep only last 50 duplicates for performance
+                    while (duplicateList.children.length > 50) {
+                        duplicateList.removeChild(duplicateList.lastChild);
+                    }
+                }
+            }
+
+            resetStats() {
                 this.totalNotifications = 0;
                 this.totalDataBytes = 0;
                 this.seenRecords.clear();

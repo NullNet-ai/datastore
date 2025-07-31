@@ -10,14 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Author
 Kashan Ali Khalid
 
-### Enhanced
-- ***System Tables Template***: Expanded system tables configuration for comprehensive testing coverage
-  - Added all application tables from `schema.rs` to `system_tables.rs` after the "test" entry
-  - Included 45 additional tables covering organizations, accounts, devices, contacts, logs, and their temporary counterparts
-  - Excluded "samples" table as specified for testing purposes
-  - Changed from fixed-size array `[&str; 69]` to dynamic slice `&[&str]` to eliminate manual size management
-  - Updated array size automatically from 24 to 69 entries to accommodate all application tables
-  - Improved maintainability by removing the need to manually update array size when adding/removing tables
+### Fixed
+- ***Message Queue Processing***: Resolved critical issues with message dequeuing and processing
+  - Fixed race condition where multiple processes could dequeue the same message items simultaneously
+  - Eliminated duplicate message processing by ensuring messages are marked as consumed immediately after being sent to token bucket
+  - Moved `consumed_ids.push(item.id)` to execute right after `bucket.receive_message(msg).await` in streaming service
+- ***Timestamp Formatting***: Fixed timestamp formatting issues in record creation
+  - Corrected timestamp serialization to prevent malformed data entries
 ---
 
 ## 0.1.25
