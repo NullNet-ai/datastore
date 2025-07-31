@@ -8,32 +8,9 @@ use crate::models::account_profile_model::AccountProfileModel;
 use crate::models::account_model::AccountModel;
 use crate::models::address_model::AddressModel;
 use crate::models::sample_model::SampleModel;
-use crate::models::app_firewall_model::AppFirewallModel;
-use crate::models::appguard_log_model::AppguardLogModel;
-use crate::models::temp_appguard_log_model::TempAppguardLogModel;
-use crate::models::device_alias_model::DeviceAliasModel;
-use crate::models::temp_device_alias_model::TempDeviceAliasModel;
-use crate::models::device_configuration_model::DeviceConfigurationModel;
-use crate::models::device_interface_address_model::DeviceInterfaceAddressModel;
-use crate::models::temp_device_interface_address_model::TempDeviceInterfaceAddressModel;
-use crate::models::device_interface_model::DeviceInterfaceModel;
-use crate::models::temp_device_interface_model::TempDeviceInterfaceModel;
-use crate::models::device_remote_access_session_model::DeviceRemoteAccessSessionModel;
-use crate::models::temp_device_remote_access_session_model::TempDeviceRemoteAccessSessionModel;
-use crate::models::device_rule_model::DeviceRuleModel;
-use crate::models::temp_device_rule_model::TempDeviceRuleModel;
-use crate::models::packet_model::PacketModel;
-use crate::models::temp_packet_model::TempPacketModel;
-use crate::models::connection_model::ConnectionModel;
-use crate::models::temp_connection_model::TempConnectionModel;
-use crate::models::device_ssh_key_model::DeviceSshKeyModel;
 use crate::models::device_model::DeviceModel;
 use crate::models::ip_info_model::IpInfoModel;
 use crate::models::postgres_channel_model::PostgresChannelModel;
-use crate::models::resolution_model::ResolutionModel;
-use crate::models::wallguard_log_model::WallguardLogModel;
-use crate::models::temp_wallguard_log_model::TempWallguardLogModel;
-use crate::models::device_group_setting_model::DeviceGroupSettingModel;
 use crate::models::contact_model::ContactModel;
 use crate::models::contact_phone_number_model::ContactPhoneNumberModel;
 use crate::models::contact_email_model::ContactEmailModel;
@@ -60,32 +37,9 @@ pub enum Table {
     Accounts,
     Addresses,
     Samples,
-    AppFirewalls,
-    AppguardLogs,
-    TempAppguardLogs,
-    DeviceAliases,
-    TempDeviceAliases,
-    DeviceConfigurations,
-    DeviceInterfaceAddresses,
-    TempDeviceInterfaceAddresses,
-    DeviceInterfaces,
-    TempDeviceInterfaces,
-    DeviceRemoteAccessSessions,
-    TempDeviceRemoteAccessSessions,
-    DeviceRules,
-    TempDeviceRules,
-    Packets,
-    TempPackets,
-    Connections,
-    TempConnections,
-    DeviceSshKeys,
     Devices,
     IpInfos,
     PostgresChannels,
-    Resolutions,
-    WallguardLogs,
-    TempWallguardLogs,
-    DeviceGroupSettings,
     Contacts,
     ContactPhoneNumbers,
     ContactEmails,
@@ -104,32 +58,9 @@ impl Table {
             "accounts" => Some(Table::Accounts),
             "addresses" => Some(Table::Addresses),
             "samples" => Some(Table::Samples),
-            "app_firewalls" => Some(Table::AppFirewalls),
-            "appguard_logs" => Some(Table::AppguardLogs),
-            "temp_appguard_logs" => Some(Table::TempAppguardLogs),
-            "device_aliases" => Some(Table::DeviceAliases),
-            "temp_device_aliases" => Some(Table::TempDeviceAliases),
-            "device_configurations" => Some(Table::DeviceConfigurations),
-            "device_interface_addresses" => Some(Table::DeviceInterfaceAddresses),
-            "temp_device_interface_addresses" => Some(Table::TempDeviceInterfaceAddresses),
-            "device_interfaces" => Some(Table::DeviceInterfaces),
-            "temp_device_interfaces" => Some(Table::TempDeviceInterfaces),
-            "device_remote_access_sessions" => Some(Table::DeviceRemoteAccessSessions),
-            "temp_device_remote_access_sessions" => Some(Table::TempDeviceRemoteAccessSessions),
-            "device_rules" => Some(Table::DeviceRules),
-            "temp_device_rules" => Some(Table::TempDeviceRules),
-            "packets" => Some(Table::Packets),
-            "temp_packets" => Some(Table::TempPackets),
-            "connections" => Some(Table::Connections),
-            "temp_connections" => Some(Table::TempConnections),
-            "device_ssh_keys" => Some(Table::DeviceSshKeys),
             "devices" => Some(Table::Devices),
             "ip_infos" => Some(Table::IpInfos),
             "postgres_channels" => Some(Table::PostgresChannels),
-            "resolutions" => Some(Table::Resolutions),
-            "wallguard_logs" => Some(Table::WallguardLogs),
-            "temp_wallguard_logs" => Some(Table::TempWallguardLogs),
-            "device_group_settings" => Some(Table::DeviceGroupSettings),
             "contacts" => Some(Table::Contacts),
             "contact_phone_numbers" => Some(Table::ContactPhoneNumbers),
             "contact_emails" => Some(Table::ContactEmails),
@@ -163,7 +94,7 @@ impl Table {
         conn: &mut AsyncPgConnection,
         id: &str,
     ) -> Result<Option<String>, DieselError> {
-        generate_hypertable_timestamp_match!(self, conn, id, Packets, TempPackets, Connections, TempConnections, WallguardLogs, TempWallguardLogs)
+        generate_hypertable_timestamp_match!(self, conn, id, )
     }
 
     #[allow(dead_code)]
@@ -180,7 +111,7 @@ impl Table {
             conn,
             record,
             request,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -197,7 +128,7 @@ impl Table {
             id,
             is_root_account,
             organization_id,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -210,7 +141,7 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -223,7 +154,7 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, AppFirewalls, AppFirewallModel, AppguardLogs, AppguardLogModel, TempAppguardLogs, TempAppguardLogModel, DeviceAliases, DeviceAliasModel, TempDeviceAliases, TempDeviceAliasModel, DeviceConfigurations, DeviceConfigurationModel, DeviceInterfaceAddresses, DeviceInterfaceAddressModel, TempDeviceInterfaceAddresses, TempDeviceInterfaceAddressModel, DeviceInterfaces, DeviceInterfaceModel, TempDeviceInterfaces, TempDeviceInterfaceModel, DeviceRemoteAccessSessions, DeviceRemoteAccessSessionModel, TempDeviceRemoteAccessSessions, TempDeviceRemoteAccessSessionModel, DeviceRules, DeviceRuleModel, TempDeviceRules, TempDeviceRuleModel, Packets, PacketModel, TempPackets, TempPacketModel, Connections, ConnectionModel, TempConnections, TempConnectionModel, DeviceSshKeys, DeviceSshKeyModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Resolutions, ResolutionModel, WallguardLogs, WallguardLogModel, TempWallguardLogs, TempWallguardLogModel, DeviceGroupSettings, DeviceGroupSettingModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 }

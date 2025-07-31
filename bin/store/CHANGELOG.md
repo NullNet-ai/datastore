@@ -5,6 +5,21 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.26
+
+### Author
+Kashan Ali Khalid
+
+### Enhanced
+- ***System Tables Template***: Expanded system tables configuration for comprehensive testing coverage
+  - Added all application tables from `schema.rs` to `system_tables.rs` after the "test" entry
+  - Included 45 additional tables covering organizations, accounts, devices, contacts, logs, and their temporary counterparts
+  - Excluded "samples" table as specified for testing purposes
+  - Changed from fixed-size array `[&str; 69]` to dynamic slice `&[&str]` to eliminate manual size management
+  - Updated array size automatically from 24 to 69 entries to accommodate all application tables
+  - Improved maintainability by removing the need to manually update array size when adding/removing tables
+---
+
 ## 0.1.25
 
 ### Author
