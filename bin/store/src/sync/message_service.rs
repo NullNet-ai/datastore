@@ -39,7 +39,7 @@ pub async fn create_messages(
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    if dataset == "connections" && (operation == "Update" || is_batch) {
+    if operation == "Update" || is_batch {
         let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
             log::error!("Failed to generate HLC timestamp: {:?}", e);
             DieselError::DatabaseError(
@@ -89,7 +89,7 @@ pub async fn create_messages(
         });
     }
 
-    if dataset == "connections" && operation == "Insert" && !is_batch {
+    if operation == "Insert" && !is_batch {
         let timestamp = hlc_service::HlcService::send(&mut tx).await.map_err(|e| {
             log::error!("Failed to generate HLC timestamp: {:?}", e);
             DieselError::DatabaseError(

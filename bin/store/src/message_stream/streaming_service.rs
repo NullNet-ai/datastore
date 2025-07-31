@@ -52,6 +52,7 @@ impl MessageStreamingService {
                 main_stream.on_message_available().notified().await;
 
                 while let Some(message) = main_stream.emit_message().await {
+
                     let (channel_name, organization_id) =
                         if let Ok(payload) = serde_json::from_value::<Value>(message.0.clone()) {
                             let event_name = payload.get("event_name").and_then(|v| v.as_str());
@@ -144,13 +145,21 @@ impl MessageStreamingService {
                     {
                         Ok(has_messages) => {
                             if has_messages {
-                                if let Err(e) =
-                                    service.process_queued_messages(&channel_name_clone).await
-                                {
-                                    error!(
-                                        "Error processing queued messages for channel {}: {}",
-                                        channel_name_clone, e
-                                    );
+                                // Try to acquire processing lock for this channel
+                                if service.shared_state.mark_processing(&channel_name_clone).await {
+                                    if let Err(e) =
+                                        service.process_queued_messages(&channel_name_clone).await
+                                    {
+                                        error!(
+                                            "Error processing queued messages for channel {}: {}",
+                                            channel_name_clone, e
+                                        );
+                                    }
+                                    // Always remove processing lock when done
+                                    service.shared_state.remove_processing(&channel_name_clone).await;
+                                } else {
+                                    // Channel is already being processed, skip for now
+                                    info!("Channel {} already being processed by another task, skipping drain processing", channel_name_clone);
                                 }
                             } else {
                                 service
@@ -194,16 +203,25 @@ impl MessageStreamingService {
         tokio::spawn(async move {
             loop {
                 if let Some(channel_name) = service.shared_state.dequeue_for_processing().await {
+                    // Check if channel is flushing and not already being processed
                     if service.shared_state.is_flushing(&channel_name).await {
-                        info!(
-                            "Processing queued channel {} from fairness queue",
-                            channel_name
-                        );
-                        if let Err(e) = service.process_queued_messages(&channel_name).await {
-                            error!(
-                                "Error processing queued messages for channel {}: {}",
-                                channel_name, e
+                        // Try to acquire processing lock for this channel
+                        if service.shared_state.mark_processing(&channel_name).await {
+                            info!(
+                                "Processing queued channel {} from fairness queue",
+                                channel_name
                             );
+                            if let Err(e) = service.process_queued_messages(&channel_name).await {
+                                error!(
+                                    "Error processing queued messages for channel {}: {}",
+                                    channel_name, e
+                                );
+                            }
+                            // Always remove processing lock when done
+                            service.shared_state.remove_processing(&channel_name).await;
+                        } else {
+                            // Channel is already being processed, re-queue it for later
+                            service.shared_state.queue_for_processing(&channel_name).await;
                         }
                     }
                 } else {
@@ -226,11 +244,79 @@ impl MessageStreamingService {
         {
             org_id
         } else {
-            warn!(
-                "No organization found for channel {}, skipping queue processing",
-                channel_name
-            );
-            return Ok(());
+            // Try to extract organization_id from the first queued message
+            let flush_limiter = get_flush_limiter();
+            let (_permit, mut conn) = match flush_limiter.acquire_flush_connection().await {
+                Ok((permit, conn)) => (permit, conn),
+                Err(e) => {
+                    error!(
+                        "Failed to acquire connection to check organization for channel {}: {}",
+                        channel_name, e
+                    );
+                    return Err(e);
+                }
+            };
+            
+            let sample_items = self
+                .queue_service
+                .dequeue_batch_from_channel(&mut conn, channel_name, 1)
+                .await?;
+                
+            if let Some(item) = sample_items.first() {
+                if let Some(org_id) = item.content.get("organization_id").and_then(|v| v.as_str()) {
+                    info!(
+                        "Found organization {} for unregistered channel {}, registering channel",
+                        org_id, channel_name
+                    );
+                    
+                    // Create and register the channel
+                    let bucket_capacity = std::env::var("BUCKET_CAPACITY")
+                        .ok()
+                        .and_then(|s| s.parse::<usize>().ok())
+                        .unwrap_or(1000);
+                    
+                    let new_bucket = crate::message_stream::token_bucket::TokenBucket::new_without_consumer(
+                        channel_name,
+                        bucket_capacity,
+                    );
+                    
+                    let actual_bucket = self
+                        .shared_state
+                        .register_channel(
+                            channel_name,
+                            org_id,
+                            new_bucket.clone(),
+                            bucket_capacity,
+                        )
+                        .await;
+                    
+                    if Arc::ptr_eq(&new_bucket, &actual_bucket) {
+                        actual_bucket.start_consumer();
+                        // Note: drain listener will be started by the main routing task
+                        crate::message_stream::gateway::add_channel_to_organization(org_id, channel_name);
+                        info!("Channel {} registered and initialized for organization {}", channel_name, org_id);
+                    }
+                    
+                    // Put the message back in the queue
+                    self.queue_service
+                        .insert_to_queue(&mut conn, channel_name, item.content.clone())
+                        .await?;
+                    
+                    org_id.to_string()
+                } else {
+                    warn!(
+                        "No organization_id found in queued message for channel {}, skipping queue processing",
+                        channel_name
+                    );
+                    return Ok(());
+                }
+            } else {
+                warn!(
+                    "No queued messages found for channel {}, skipping queue processing",
+                    channel_name
+                );
+                return Ok(());
+            }
         };
 
         if !self.shared_state.is_flushing(channel_name).await {
@@ -277,10 +363,13 @@ impl MessageStreamingService {
             let mut backpressured_during_flush = false;
 
             for item in queued_items {
-                let msg = Message(item.content);
+                let msg = Message(item.content.clone());
+                
+
 
                 let has_capacity = bucket.receive_message(msg).await;
 
+                // Always mark as consumed - the bucket handles the message regardless of capacity
                 consumed_ids.push(item.id);
 
                 if !has_capacity {
@@ -297,6 +386,7 @@ impl MessageStreamingService {
                 self.shared_state.mark_backpressured(channel_name).await;
             }
 
+            // Only delete successfully transmitted messages
             if !consumed_ids.is_empty() {
                 self.queue_service
                     .delete_processed_items(&mut conn, &consumed_ids)
@@ -329,6 +419,7 @@ impl MessageStreamingService {
         organization_id: &str,
         message: Value,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+
         if let Some(_org_clients) =
             crate::message_stream::gateway::get_organization_clients(organization_id)
         {
@@ -403,6 +494,8 @@ impl MessageStreamingService {
             };
 
             let msg = Message(message.clone());
+            
+
 
             let has_capacity = bucket.receive_message(msg).await;
 

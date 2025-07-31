@@ -74,6 +74,7 @@ pub async fn apply(
 
         let json_values = serde_json::Value::Object(json_obj);
 
+
         match table.upsert_record_with_id_timestamp(tx, json_values).await {
             Ok(_) => return Ok(()),
             Err(e) => {
@@ -84,6 +85,7 @@ pub async fn apply(
     } else {
         // Insert or update without hypertable timestamp
         let json_values = serde_json::Value::Object(json_obj);
+
         match table.upsert_record_with_id(tx, json_values).await {
             Ok(_) => return Ok(()),
             Err(e) => {
@@ -138,20 +140,26 @@ fn parse_message_value_to_json(
             serde_json::Value::Array(vec![serde_json::Value::String(value.to_string())])
         }
     } else {
-        // Try to parse as JSON first, fallback to string
-        match serde_json::from_str::<serde_json::Value>(value) {
-            Ok(parsed) => parsed,
-            Err(_) => {
-                // If it's a quoted string, try to unquote it
-                if value.starts_with('"') && value.ends_with('"') && value.len() > 1 {
-                    let unquoted = &value[1..value.len()-1];
-                    // Try parsing the unquoted value
-                    match serde_json::from_str::<serde_json::Value>(unquoted) {
-                        Ok(parsed) => parsed,
-                        Err(_) => serde_json::Value::String(unquoted.to_string())
+        // For text fields, especially long ones like PostgreSQL functions,
+        // treat as string directly to avoid JSON parsing issues
+        if field_type == "text" || field_type == "varchar" {
+            serde_json::Value::String(value.to_string())
+        } else {
+            // Try to parse as JSON first, fallback to string
+            match serde_json::from_str::<serde_json::Value>(value) {
+                Ok(parsed) => parsed,
+                Err(_) => {
+                    // If it's a quoted string, try to unquote it
+                    if value.starts_with('"') && value.ends_with('"') && value.len() > 1 {
+                        let unquoted = &value[1..value.len()-1];
+                        // Try parsing the unquoted value
+                        match serde_json::from_str::<serde_json::Value>(unquoted) {
+                            Ok(parsed) => parsed,
+                            Err(_) => serde_json::Value::String(unquoted.to_string())
+                        }
+                    } else {
+                        serde_json::Value::String(value.to_string())
                     }
-                } else {
-                    serde_json::Value::String(value.to_string())
                 }
             }
         }
@@ -172,6 +180,7 @@ fn parse_message_value_to_json(
     // Handle timestamp types with special formatting
     if field_type == "timestamp" || field_type == "timestamptz" || column == "timestamp" {
         if let serde_json::Value::String(timestamp_str) = json_value {
+            // Parse timestamp using the same logic as hypertable_timestamp
             let formatted_timestamp = if timestamp_str.contains('T')
                 && !timestamp_str.contains('Z')
                 && !timestamp_str.contains('+')
@@ -179,7 +188,7 @@ fn parse_message_value_to_json(
             {
                 format!("{}+00:00", timestamp_str)
             } else {
-                timestamp_str
+                timestamp_str.to_string()
             };
 
             let parsed_timestamp = chrono::DateTime::parse_from_rfc3339(&formatted_timestamp)
@@ -187,7 +196,8 @@ fn parse_message_value_to_json(
                     log::error!("Failed to parse timestamp '{}': {}", formatted_timestamp, e);
                     Box::new(e) as Box<dyn std::error::Error>
                 })?;
-            return Ok(serde_json::Value::String(parsed_timestamp.to_rfc3339()));
+            // Use naive_utc() to match hypertable_timestamp handling
+            return Ok(json!(parsed_timestamp.naive_utc()));
         }
     }
 

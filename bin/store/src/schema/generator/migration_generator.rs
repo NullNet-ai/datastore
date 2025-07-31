@@ -209,7 +209,7 @@ impl MigrationGenerator {
         let mut reverse_changes = changes.to_vec();
         reverse_changes.reverse();
         
-        let mut first_statement = true;
+        let first_statement = true;
         
         for change in reverse_changes {
             if !first_statement {

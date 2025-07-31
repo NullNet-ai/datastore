@@ -83,7 +83,12 @@ impl RequestBody {
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
-                // Remove any trailing Z, +00:00, etc.
+                // Keep timestamp as-is if it's already properly formatted
+                if chrono::DateTime::parse_from_rfc3339(ts_str).is_ok() {
+                    // Timestamp is already valid, keep it
+                    return;
+                }
+                // Remove any trailing Z, +00:00, etc. only if needed
                 let cleaned_ts =
                     if ts_str.contains('T') && (ts_str.contains('Z') || ts_str.contains('+')) {
                         // Extract just the part before Z or +
@@ -95,8 +100,9 @@ impl RequestBody {
                 *timestamp = json!(cleaned_ts);
             }
         } else {
+            // Generate timestamp without timezone to match the cleaning logic
             let now = chrono::Utc::now();
-            let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f+00:00").to_string();
+            let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
             self.record["timestamp"] = json!(formatted_timestamp);
         }
     }
