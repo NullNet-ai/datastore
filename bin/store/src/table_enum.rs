@@ -9,7 +9,6 @@ use crate::models::account_model::AccountModel;
 use crate::models::address_model::AddressModel;
 use crate::models::sample_model::SampleModel;
 use crate::models::device_model::DeviceModel;
-use crate::models::ip_info_model::IpInfoModel;
 use crate::models::postgres_channel_model::PostgresChannelModel;
 use crate::models::contact_model::ContactModel;
 use crate::models::contact_phone_number_model::ContactPhoneNumberModel;
@@ -38,7 +37,6 @@ pub enum Table {
     Addresses,
     Samples,
     Devices,
-    IpInfos,
     PostgresChannels,
     Contacts,
     ContactPhoneNumbers,
@@ -59,7 +57,6 @@ impl Table {
             "addresses" => Some(Table::Addresses),
             "samples" => Some(Table::Samples),
             "devices" => Some(Table::Devices),
-            "ip_infos" => Some(Table::IpInfos),
             "postgres_channels" => Some(Table::PostgresChannels),
             "contacts" => Some(Table::Contacts),
             "contact_phone_numbers" => Some(Table::ContactPhoneNumbers),
@@ -111,7 +108,7 @@ impl Table {
             conn,
             record,
             request,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -128,7 +125,7 @@ impl Table {
             id,
             is_root_account,
             organization_id,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -141,7 +138,7 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 
@@ -154,7 +151,7 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, IpInfos, IpInfoModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel // Add other tables and their models here as needed
         )
     }
 }

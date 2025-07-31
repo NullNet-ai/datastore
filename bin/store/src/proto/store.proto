@@ -417,40 +417,6 @@ message Devices {
   optional string device_gui_protocol = 33;
 }
 
-// IpInfos entity definition
-message IpInfos {
-  optional int32 tombstone = 1;
-  optional string status = 2;
-  optional string previous_status = 3;
-  optional int32 version = 4;
-  optional string created_date = 5;
-  optional string created_time = 6;
-  optional string updated_date = 7;
-  optional string updated_time = 8;
-  optional string organization_id = 9;
-  optional string created_by = 10;
-  optional string updated_by = 11;
-  optional string deleted_by = 12;
-  optional string requested_by = 13;
-  repeated string tags = 14;
-  repeated string categories = 15;
-  optional string code = 16;
-  optional string timestamp = 17;
-  optional string id = 18;
-  optional int32 sensitivity_level = 19;
-  optional string sync_status = 20;
-  optional bool is_batch = 21;
-  optional string country = 22;
-  optional string asn = 23;
-  optional string org = 24;
-  optional string continent_code = 25;
-  optional string city = 26;
-  optional string region = 27;
-  optional string postal = 28;
-  optional string timezone = 29;
-  optional bool blacklist = 30;
-}
-
 // PostgresChannels entity definition
 message PostgresChannels {
   optional int32 tombstone = 1;
@@ -1853,135 +1819,6 @@ message UpsertDevicesResponse {
   repeated Devices data = 4;
 }
 
-// Create IpInfos request
-message CreateIpInfosRequest {
-  IpInfos ip_infos = 1;
-  CreateParams params = 2;
-  CreateQuery query = 3;
-}
-
-// Create IpInfos response
-message CreateIpInfosResponse {
-  bool success = 1;
-  int32 count = 2;
-  string message = 3;
-  IpInfos data = 4;
-}
-
-// Get IpInfos request
-message GetIpInfosRequest {
-  GetParams params = 1;
-  GetQuery query = 2;
-}
-
-// Get IpInfos response
-message GetIpInfosResponse {
-  bool success = 1;
-  string message = 2;
-  IpInfos data = 3;
-}
-
-// Update IpInfos request
-message UpdateIpInfosRequest {
-  IpInfos ip_info = 1;
-  UpdateParams params = 2;
-  UpdateQuery query = 3;
-}
-
-// Update IpInfos response
-message UpdateIpInfosResponse {
-  bool success = 1;
-  int32 count = 2;
-  string message = 3;
-  IpInfos data = 4;
-}
-
-// BatchUpdate IpInfos request
-message BatchUpdateIpInfosRequest {
-  BatchUpdateParams params = 1;
-  message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
-  IpInfos updates = 2;
-  }
-  BatchUpdateBody body = 2;
-}
-
-// BatchUpdate IpInfos response
-message BatchUpdateIpInfosResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  repeated IpInfos data = 4;
-}
-
-// BatchDelete IpInfos request
-message BatchDeleteIpInfosRequest {
-  BatchDeleteParams params = 1;
-  message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
-  }
-  BatchDeleteBody body = 2;
-}
-
-// BatchDelete IpInfos response
-message BatchDeleteIpInfosResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  IpInfos data = 4;
-}
-
-// Delete IpInfos request
-message DeleteIpInfosRequest {
-  DeleteParams params = 1;
-  DeleteQuery query = 2;
-}
-
-// Delete IpInfos response
-message DeleteIpInfosResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  IpInfos data = 4;
-}
-
-// BatchInsert IpInfos request
-message BatchInsertIpInfosRequest {
-  BatchInsertParams params = 1;
-  BatchInsertQuery query = 2;
-  message BatchBody {
-    repeated IpInfos ip_infos = 1;
-  }
-  BatchBody body = 3;
-}
-
-// BatchInsert IpInfos response
-message BatchInsertIpInfosResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  repeated IpInfos data = 4;
-}
-
-// Upsert IpInfos request
-message UpsertIpInfosRequest {
-  UpsertParams params = 1;
-  UpsertQuery query = 2;
-  message UpsertBody {
-    repeated string conflict_columns = 1;
-    IpInfos data = 2;
-  }
-  UpsertBody body = 3;
-}
-
-// Upsert IpInfos response
-message UpsertIpInfosResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  repeated IpInfos data = 4;
-}
-
 // Create PostgresChannels request
 message CreatePostgresChannelsRequest {
   PostgresChannels postgres_channels = 1;
@@ -2871,30 +2708,6 @@ service StoreService {
 
   // Upsert a Devices (create if not exists, update if exists)
   rpc UpsertDevices(UpsertDevicesRequest) returns (UpsertDevicesResponse);
-
-  // Create a new IpInfos
-  rpc CreateIpInfos(CreateIpInfosRequest) returns (CreateIpInfosResponse);
-
-  // Get a IpInfos by ID
-  rpc GetIpInfos(GetIpInfosRequest) returns (GetIpInfosResponse);
-
-  // Update an existing IpInfos
-  rpc UpdateIpInfos(UpdateIpInfosRequest) returns (UpdateIpInfosResponse);
-
-  // Delete a IpInfos by ID
-  rpc DeleteIpInfos(DeleteIpInfosRequest) returns (DeleteIpInfosResponse);
-
-  // Batch insert multiple IpInfoss
-  rpc BatchInsertIpInfos(BatchInsertIpInfosRequest) returns (BatchInsertIpInfosResponse);
-
-  // Batch update multiple IpInfoss based on filters
-  rpc BatchUpdateIpInfos(BatchUpdateIpInfosRequest) returns (BatchUpdateIpInfosResponse);
-
-  // Batch delete multiple IpInfoss based on filters
-  rpc BatchDeleteIpInfos(BatchDeleteIpInfosRequest) returns (BatchDeleteIpInfosResponse);
-
-  // Upsert a IpInfos (create if not exists, update if exists)
-  rpc UpsertIpInfos(UpsertIpInfosRequest) returns (UpsertIpInfosResponse);
 
   // Create a new PostgresChannels
   rpc CreatePostgresChannels(CreatePostgresChannelsRequest) returns (CreatePostgresChannelsResponse);
