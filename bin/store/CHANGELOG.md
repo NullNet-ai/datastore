@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.26
+
+### Author
+Kashan Ali Khalid
+
+### Fixed
+- ***Message Queue Processing***: Resolved critical issues with message dequeuing and processing
+  - Fixed race condition where multiple processes could dequeue the same message items simultaneously
+  - Eliminated duplicate message processing by ensuring messages are marked as consumed immediately after being sent to token bucket
+  - Moved `consumed_ids.push(item.id)` to execute right after `bucket.receive_message(msg).await` in streaming service
+- ***Timestamp Formatting***: Fixed timestamp formatting issues in record creation
+  - Corrected timestamp serialization to prevent malformed data entries
+---
+
 ## 0.1.25
 
 ### Author

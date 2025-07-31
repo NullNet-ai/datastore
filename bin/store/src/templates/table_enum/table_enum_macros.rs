@@ -40,8 +40,10 @@ macro_rules! generate_insert_record_match {
                     $(
                         Table::$table => {
                             request.process_record("create", $auth, false, stringify!([<$table:snake:lower>]));
-                            let value: $model = serde_json::from_value($record)
-                                .map_err(|e| DieselError::DeserializationError(Box::new(e)))?;
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
+                                DieselError::DeserializationError(Box::new(e))
+                            })?;
 
                             // Set hypertable_timestamp if the model has a timestamp field
                             // if field_exists_in_table(stringify!([<$table:lower>]), "hypertable_timestamp") {
@@ -112,8 +114,8 @@ macro_rules! generate_upsert_record_match {
                 match $self {
                     $(
                         Table::$table => {
-                            let value: $model = serde_json::from_value($record).map_err(|e| {
-                                log::error!("Deserialization error: {:?}", e);
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
                                 DieselError::DeserializationError(Box::new(e))
                             })?;
 
@@ -167,9 +169,9 @@ macro_rules! generate_upsert_record_with_timestamp_match {
                 match $self {
                     $(
                         Table::$table => {
-                            let value: $model = serde_json::from_value($record).map_err(|e| {
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
                                 log::error!("Deserialization error: {:?}", e);
-                                log::error!("Failed to deserialize record:");
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
                                 DieselError::DeserializationError(Box::new(e))
                             })?;
 

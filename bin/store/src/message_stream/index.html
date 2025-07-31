@@ -195,9 +195,7 @@
 
         if (!duplicatesSet.has(key)) {
           duplicatesSet.add(key);
-          const li = document.createElement('li');
-          li.textContent = key;
-          duplicateListEl.appendChild(li);
+          addDuplicateToList(key, data);
         }
       } else {
         seenRecords.add(key);
@@ -270,6 +268,42 @@
     socket.emit('forceFlushQueue', { channel_name: channelName });
     addNotification('System', `Requested queue flush for ${channelName}`);
   });
+
+  // Add duplicate to list with details
+  function addDuplicateToList(key, data) {
+    // Print the entire duplicate record to console
+    console.log('DUPLICATE RECORD DETECTED:', {
+      key: key,
+      timestamp: new Date().toISOString(),
+      fullRecord: data
+    });
+    
+    const li = document.createElement('li');
+    li.style.cssText = 'margin-bottom: 8px; padding: 8px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; border-left: 3px solid #dc3545;';
+    
+    const keySpan = document.createElement('span');
+    keySpan.style.cssText = 'font-weight: bold; color: #dc3545; font-family: monospace; display: block;';
+    keySpan.textContent = key;
+    
+    const timestampSpan = document.createElement('span');
+    timestampSpan.style.cssText = 'font-size: 0.8em; color: #6c757d;';
+    timestampSpan.textContent = `(${new Date().toLocaleTimeString()})`;
+    
+    const detailsDiv = document.createElement('div');
+    detailsDiv.style.cssText = 'font-size: 0.75em; color: #6c757d; margin-top: 4px; font-family: monospace; white-space: pre-wrap; max-height: 100px; overflow-y: auto;';
+    detailsDiv.textContent = JSON.stringify(data, null, 2);
+    
+    li.appendChild(keySpan);
+    li.appendChild(timestampSpan);
+    li.appendChild(detailsDiv);
+    
+    duplicateListEl.insertBefore(li, duplicateListEl.firstChild);
+    
+    // Keep only last 50 duplicates for performance
+    while (duplicateListEl.children.length > 50) {
+      duplicateListEl.removeChild(duplicateListEl.lastChild);
+    }
+  }
 
   // Reset stats
   resetStatsBtn.addEventListener('click', () => {

@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 pub struct SharedStreamingState {
     pub backpressured_channels: Arc<Mutex<HashSet<String>>>,
     pub flushing_channels: Arc<Mutex<HashSet<String>>>,
+    pub processing_channels: Arc<Mutex<HashSet<String>>>, // Tracks channels currently being processed
     pub active_channels: Arc<Mutex<HashMap<String, Arc<TokenBucket>>>>,
     pub organization_channels: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub channel_organizations: Arc<Mutex<HashMap<String, String>>>, //maintaining both mappings avoids expensive reverse lookups and provides O(1) access in both directions.
@@ -18,6 +19,7 @@ impl SharedStreamingState {
         Arc::new(Self {
             backpressured_channels: Arc::new(Mutex::new(HashSet::new())),
             flushing_channels: Arc::new(Mutex::new(HashSet::new())),
+            processing_channels: Arc::new(Mutex::new(HashSet::new())),
             active_channels: Arc::new(Mutex::new(HashMap::new())),
             organization_channels: Arc::new(Mutex::new(HashMap::new())),
             channel_organizations: Arc::new(Mutex::new(HashMap::new())),
@@ -109,6 +111,18 @@ impl SharedStreamingState {
         let mut queue = self.processing_queue.lock().await;
         queue.pop_front()
     }
+
+    pub async fn mark_processing(&self, channel_name: &str) -> bool {
+        let mut processing = self.processing_channels.lock().await;
+        processing.insert(channel_name.to_string())
+    }
+
+    pub async fn remove_processing(&self, channel_name: &str) {
+        let mut processing = self.processing_channels.lock().await;
+        processing.remove(channel_name);
+    }
+
+
 }
 
 static SHARED_STATE: std::sync::OnceLock<Arc<SharedStreamingState>> = std::sync::OnceLock::new();

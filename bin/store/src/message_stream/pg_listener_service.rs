@@ -237,6 +237,8 @@ impl PgListenerService {
             }
         };
 
+
+
         let msg = crate::message_stream::token_bucket::Message(message.0.clone());
         let has_capacity = self.main_stream.receive_message(msg).await;
 

@@ -159,6 +159,7 @@ pub fn broadcast_to_channel(
     notification: serde_json::Value,
 ) {
     let event_name = channel.to_string();
+    
     io.emit(event_name, notification).ok();
 }
 

@@ -1,6 +1,7 @@
 use crate::db::AsyncDbPooledConnection;
 use crate::models::stream_queue_item_model::{NewStreamQueueItem, StreamQueueItemModel};
-use crate::schema::schema::stream_queue_items;
+use crate::models::stream_queue_model::NewStreamQueue;
+use crate::schema::schema::{stream_queue, stream_queue_items};
 
 use diesel::result::Error as DieselError;
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};
@@ -22,6 +23,9 @@ impl StreamQueueService {
         queue_name: &str,
         content: Value,
     ) -> Result<StreamQueueItemModel, DieselError> {
+        // Ensure the queue exists before inserting items
+        self.ensure_queue_exists(conn, queue_name).await?;
+
         let new_item =
             NewStreamQueueItem::new(Ulid::new().to_string(), queue_name.to_string(), content);
 
@@ -31,6 +35,23 @@ impl StreamQueueService {
             .await?;
 
         Ok(item_model)
+    }
+
+    async fn ensure_queue_exists(
+        &self,
+        conn: &mut AsyncDbPooledConnection,
+        queue_name: &str,
+    ) -> Result<(), DieselError> {
+        let new_queue = NewStreamQueue::new(Ulid::new().to_string(), queue_name.to_string());
+
+        diesel::insert_into(stream_queue::table)
+            .values(&new_queue)
+            .on_conflict(stream_queue::name)
+            .do_nothing()
+            .execute(conn)
+            .await?;
+
+        Ok(())
     }
 
     pub async fn dequeue_batch_from_channel(
@@ -45,7 +66,9 @@ impl StreamQueueService {
             .limit(batch_size as i64)
             .select(StreamQueueItemModel::as_select())
             .load(conn)
-            .await?;
+            .await?
+            .into_iter()
+            .collect();
 
         Ok(items)
     }
