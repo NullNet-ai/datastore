@@ -556,6 +556,454 @@ CREATE TABLE "samples" (
 	"name" text,
 	"sample_text" text
 );
+
+--> statement-breakpoint
+CREATE TABLE "allowed_fields" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
+	"label" text,
+	"name" text,
+	"type" text,
+	"class_type_id" text,
+	"is_optional" boolean DEFAULT false,
+	"is_primary_key" boolean DEFAULT false,
+	"reference_to" text,
+	"data_type" text,
+	"default_value" text
+);
+--> statement-breakpoint
+CREATE TABLE "class_types" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
+	"type" text,
+	"company" text,
+	"entity" text,
+	"is_list" boolean DEFAULT false,
+	"is_with_version" boolean DEFAULT false,
+	"schema_version" text
+);
+--> statement-breakpoint
+CREATE TABLE "config_applications" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"type" text,
+	"value" text
+);
+--> statement-breakpoint
+CREATE TABLE "counters" (
+	"entity" text PRIMARY KEY NOT NULL,
+	"default_code" integer DEFAULT 0,
+	"prefix" text DEFAULT 'CTR',
+	"counter" integer DEFAULT 0,
+	"digits_number" integer DEFAULT 0
+);
+--> statement-breakpoint
+
+--> statement-breakpoint
+CREATE TABLE "crdt_merkles" (
+	"group_id" text PRIMARY KEY NOT NULL,
+	"timestamp" text NOT NULL,
+	"merkle" text NOT NULL,
+	CONSTRAINT "crdt_merkles_group_id_unique" UNIQUE("group_id")
+);
+--> statement-breakpoint
+CREATE TABLE "crdt_messages" (
+	"database" text,
+	"dataset" text NOT NULL,
+	"group_id" text NOT NULL,
+	"timestamp" text NOT NULL,
+	"row" text NOT NULL,
+	"column" text NOT NULL,
+	"client_id" text NOT NULL,
+	"value" text NOT NULL,
+	"operation" text,
+	"hypertable_timestamp" text,
+	CONSTRAINT "crdt_messages_timestamp_group_id_row_column_pk" PRIMARY KEY("timestamp","group_id","row","column")
+);
+
+
+--> statement-breakpoint
+CREATE TABLE "organization_files" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"organizaion_id" text,
+	"organization_contact_id" text,
+	"url" text,
+	"name" text,
+	"mime_type" text,
+	"size" text,
+	"type" text
+);
+
+--> statement-breakpoint
+CREATE TABLE "queue_items" (
+	"id" text PRIMARY KEY NOT NULL,
+	"order" integer NOT NULL,
+	"queue_id" text NOT NULL,
+	"value" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "queues" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"count" integer NOT NULL,
+	"size" integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "sync_endpoints" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text,
+	"url" text,
+	"group_id" text,
+	"username" text,
+	"password" text,
+	"status" text
+);
+--> statement-breakpoint
+CREATE TABLE "transactions" (
+	"id" text PRIMARY KEY NOT NULL,
+	"timestamp" text NOT NULL,
+	"status" text DEFAULT 'Active' NOT NULL,
+	"expiry" bigint
+);
+--> statement-breakpoint
+
+
+CREATE TABLE "communication_templates" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
+	"name" text,
+	"communication_template_status" text,
+	"event" text,
+	"content" text,
+	"subject" text
+);
+--> statement-breakpoint
+
+CREATE TABLE "dead_letter_queue" (
+	"id" text,
+	"record_id" text,
+	"created_date" timestamp DEFAULT now(),
+	"table" text,
+	"prefix" text,
+	"error" text,
+	CONSTRAINT "dead_letter_queue_id_pk" PRIMARY KEY("id")
+);
+--> statement-breakpoint
+
+
+
+
+-- device_heartbeats table removed
+--> statement-breakpoint
+
+
+
+
+
+
+CREATE TABLE "files" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"fieldname" text,
+	"originalname" text,
+	"encoding" text,
+	"mimetype" text,
+	"destination" text,
+	"filename" text,
+	"path" text,
+	"size" integer,
+	"uploaded_by" text,
+	"downloaded_by" text,
+	"etag" text,
+	"versionId" text,
+	"download_path" text,
+	"presignedURL" text,
+	"presignedURLExpires" integer
+);
+--> statement-breakpoint
+CREATE TABLE "grid_filters" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"name" text,
+	"grid_id" text,
+	"link" text DEFAULT '',
+	"is_current" boolean DEFAULT false,
+	"is_default" boolean DEFAULT false,
+	"contact_id" text,
+	"account_organization_id" text,
+	"entity" text,
+	"columns" jsonb DEFAULT '[]'::jsonb,
+	"groups" jsonb DEFAULT '[]'::jsonb,
+	"sorts" jsonb DEFAULT '[]'::jsonb,
+	"default_sorts" jsonb DEFAULT '[]'::jsonb,
+	"advance_filters" jsonb DEFAULT '[]'::jsonb,
+	"group_advance_filters" jsonb DEFAULT '[]'::jsonb,
+	"filter_groups" jsonb DEFAULT '[]'::jsonb
+);
+
+--> statement-breakpoint
+CREATE TABLE "invitations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"account_id" text,
+	"expiration_date" text,
+	"expiration_time" text,
+	"account_organization_id" text
+);
+--> statement-breakpoint
+
+--> statement-breakpoint
+-- locations table removed
+--> statement-breakpoint
+CREATE TABLE "notifications" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"title" text,
+	"description" text,
+	"event_timestamp" text,
+	"link" text DEFAULT '',
+	"icon" text DEFAULT '',
+	"source" text,
+	"is_pinned" boolean DEFAULT false,
+	"recipient_id" text,
+	"actions" jsonb DEFAULT '[]'::jsonb,
+	"notification_status" text DEFAULT 'unread',
+	"priority_label" text DEFAULT 'low',
+	"priority_level" integer DEFAULT 0,
+	"expiry_date" text DEFAULT '',
+	"metadata" text
+);
+--> statement-breakpoint
+CREATE TABLE "organization_contact_user_roles" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" text,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"organization_contact_id" text,
+	"user_role_id" text
+);
+
+--> statement-breakpoint
+
+CREATE TABLE "postgres_channels" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categories" text[] DEFAULT ARRAY[]::TEXT[],
+	"code" text,
+	"tombstone" integer DEFAULT 0,
+	"status" text DEFAULT 'Active',
+	"previous_status" text,
+	"version" integer DEFAULT 1,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text DEFAULT (null),
+	"created_by" text DEFAULT (null),
+	"updated_by" text DEFAULT (null),
+	"deleted_by" text DEFAULT (null),
+	"requested_by" text DEFAULT (null),
+	"timestamp" timestamp with time zone,
+	"tags" text[] DEFAULT ARRAY[]::TEXT[],
+	"image_url" varchar(300),
+	"sensitivity_level" integer DEFAULT 1000,
+	"channel_name" text,
+	"function" text,
+	CONSTRAINT "postgres_channels_channel_name_unique" UNIQUE("channel_name")
+);
+
+CREATE TABLE stream_queue (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    last_accessed TIMESTAMPTZ
+);
+CREATE TABLE stream_queue_items (
+    id TEXT PRIMARY KEY,
+    queue_name TEXT NOT NULL REFERENCES stream_queue(name) ON DELETE CASCADE,
+    content JSONB NOT NULL,
+    timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_stream_queue_items_queue_name ON stream_queue_items(queue_name);
+CREATE INDEX idx_stream_queue_items_timestamp ON stream_queue_items(timestamp);
+
+CREATE INDEX idx_stream_queue_name ON stream_queue(name);
+CREATE INDEX idx_stream_queue_created_at ON stream_queue(created_at);
+CREATE INDEX idx_stream_queue_last_accessed ON stream_queue(last_accessed);
+
+
 ALTER TABLE "table_indexes" ADD CONSTRAINT "table_indexes_entity_id_entities_id_fk" FOREIGN KEY ("entity_id") REFERENCES "public"."entities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "devices" ADD CONSTRAINT "devices_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1018,3 +1466,365 @@ CREATE INDEX "table_indexes_created_by_idx" ON "table_indexes" USING btree ("cre
 CREATE INDEX "table_indexes_updated_by_idx" ON "table_indexes" USING btree ("updated_by");--> statement-breakpoint
 CREATE INDEX "table_indexes_deleted_by_idx" ON "table_indexes" USING btree ("deleted_by");--> statement-breakpoint
 CREATE INDEX "table_indexes_tombstone_idx" ON "table_indexes" USING btree ("tombstone");--> statement-breakpoint
+
+ALTER TABLE "allowed_fields" ADD CONSTRAINT "allowed_fields_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "allowed_fields" ADD CONSTRAINT "allowed_fields_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "allowed_fields" ADD CONSTRAINT "allowed_fields_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "allowed_fields" ADD CONSTRAINT "allowed_fields_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "allowed_fields" ADD CONSTRAINT "allowed_fields_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "allowed_fields" ADD CONSTRAINT "allowed_fields_class_type_id_class_types_id_fk" FOREIGN KEY ("class_type_id") REFERENCES "public"."class_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
+
+ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
+ALTER TABLE "files" ADD CONSTRAINT "files_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_contact_id_contacts_id_fk" FOREIGN KEY ("contact_id") REFERENCES "public"."contacts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_account_id_organization_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."organization_accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitations" ADD CONSTRAINT "invitations_account_organization_id_account_organizations_id_fk" FOREIGN KEY ("account_organization_id") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_contacts_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."contacts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_organization_contact_id_organization_contacts_id_fk" FOREIGN KEY ("organization_contact_id") REFERENCES "public"."organization_contacts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_contact_user_roles" ADD CONSTRAINT "organization_contact_user_roles_user_role_id_user_roles_id_fk" FOREIGN KEY ("user_role_id") REFERENCES "public"."user_roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
+ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
+CREATE INDEX "allowed_fields_id_idx" ON "allowed_fields" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "allowed_fields_categories_idx" ON "allowed_fields" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "allowed_fields_code_idx" ON "allowed_fields" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "allowed_fields_tombstone_idx" ON "allowed_fields" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "allowed_fields_status_idx" ON "allowed_fields" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "allowed_fields_previous_status_idx" ON "allowed_fields" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "allowed_fields_version_idx" ON "allowed_fields" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "allowed_fields_created_date_idx" ON "allowed_fields" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "allowed_fields_updated_date_idx" ON "allowed_fields" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "allowed_fields_organization_id_idx" ON "allowed_fields" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "allowed_fields_created_by_idx" ON "allowed_fields" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "allowed_fields_updated_by_idx" ON "allowed_fields" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "allowed_fields_deleted_by_idx" ON "allowed_fields" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "allowed_fields_requested_by_idx" ON "allowed_fields" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "allowed_fields_tags_idx" ON "allowed_fields" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "allowed_fields_image_url_idx" ON "allowed_fields" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "allowed_fields_sensitivity_level_idx" ON "allowed_fields" USING btree ("sensitivity_level");--> statement-breakpoint
+CREATE INDEX "class_types_id_idx" ON "class_types" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "class_types_categories_idx" ON "class_types" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "class_types_code_idx" ON "class_types" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "class_types_tombstone_idx" ON "class_types" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "class_types_status_idx" ON "class_types" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "class_types_previous_status_idx" ON "class_types" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "class_types_version_idx" ON "class_types" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "class_types_created_date_idx" ON "class_types" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "class_types_updated_date_idx" ON "class_types" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "class_types_organization_id_idx" ON "class_types" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "class_types_created_by_idx" ON "class_types" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "class_types_updated_by_idx" ON "class_types" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "class_types_deleted_by_idx" ON "class_types" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "class_types_requested_by_idx" ON "class_types" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "class_types_tags_idx" ON "class_types" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "class_types_image_url_idx" ON "class_types" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "class_types_sensitivity_level_idx" ON "class_types" USING btree ("sensitivity_level");--> statement-breakpoint
+CREATE INDEX "organization_files_id_idx" ON "organization_files" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "organization_files_categories_idx" ON "organization_files" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "organization_files_code_idx" ON "organization_files" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "organization_files_tombstone_idx" ON "organization_files" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "organization_files_status_idx" ON "organization_files" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "organization_files_previous_status_idx" ON "organization_files" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "organization_files_version_idx" ON "organization_files" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "organization_files_created_date_idx" ON "organization_files" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "organization_files_updated_date_idx" ON "organization_files" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "organization_files_organization_id_idx" ON "organization_files" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "organization_files_created_by_idx" ON "organization_files" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "organization_files_updated_by_idx" ON "organization_files" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "organization_files_deleted_by_idx" ON "organization_files" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "organization_files_requested_by_idx" ON "organization_files" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "organization_files_tags_idx" ON "organization_files" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "organization_files_image_url_idx" ON "organization_files" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "communication_templates_id_idx" ON "communication_templates" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "communication_templates_categories_idx" ON "communication_templates" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "communication_templates_code_idx" ON "communication_templates" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "communication_templates_tombstone_idx" ON "communication_templates" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "communication_templates_status_idx" ON "communication_templates" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "communication_templates_previous_status_idx" ON "communication_templates" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "communication_templates_version_idx" ON "communication_templates" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "communication_templates_created_date_idx" ON "communication_templates" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "communication_templates_updated_date_idx" ON "communication_templates" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "communication_templates_organization_id_idx" ON "communication_templates" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "communication_templates_created_by_idx" ON "communication_templates" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "communication_templates_updated_by_idx" ON "communication_templates" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "communication_templates_deleted_by_idx" ON "communication_templates" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "communication_templates_requested_by_idx" ON "communication_templates" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "communication_templates_tags_idx" ON "communication_templates" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "communication_templates_image_url_idx" ON "communication_templates" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "communication_templates_name_idx" ON "communication_templates" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "communication_templates_communication_template_status_idx" ON "communication_templates" USING btree ("communication_template_status");--> statement-breakpoint
+CREATE INDEX "communication_templates_event_idx" ON "communication_templates" USING btree ("event");--> statement-breakpoint
+CREATE INDEX "communication_templates_content_idx" ON "communication_templates" USING btree ("content");--> statement-breakpoint
+CREATE INDEX "communication_templates_subject_idx" ON "communication_templates" USING btree ("subject");--> statement-breakpoint
+CREATE INDEX "files_id_idx" ON "files" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "files_categories_idx" ON "files" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "files_code_idx" ON "files" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "files_tombstone_idx" ON "files" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "files_status_idx" ON "files" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "files_previous_status_idx" ON "files" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "files_version_idx" ON "files" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "files_created_date_idx" ON "files" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "files_updated_date_idx" ON "files" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "files_organization_id_idx" ON "files" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "files_created_by_idx" ON "files" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "files_updated_by_idx" ON "files" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "files_deleted_by_idx" ON "files" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "files_requested_by_idx" ON "files" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "files_tags_idx" ON "files" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "files_image_url_idx" ON "files" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "grid_filters_id_idx" ON "grid_filters" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "grid_filters_categories_idx" ON "grid_filters" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "grid_filters_code_idx" ON "grid_filters" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "grid_filters_tombstone_idx" ON "grid_filters" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "grid_filters_status_idx" ON "grid_filters" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "grid_filters_previous_status_idx" ON "grid_filters" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "grid_filters_version_idx" ON "grid_filters" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "grid_filters_created_date_idx" ON "grid_filters" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "grid_filters_updated_date_idx" ON "grid_filters" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "grid_filters_organization_id_idx" ON "grid_filters" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "grid_filters_created_by_idx" ON "grid_filters" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "grid_filters_updated_by_idx" ON "grid_filters" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "grid_filters_deleted_by_idx" ON "grid_filters" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "grid_filters_requested_by_idx" ON "grid_filters" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "grid_filters_tags_idx" ON "grid_filters" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "grid_filters_image_url_idx" ON "grid_filters" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "grid_filters_name_idx" ON "grid_filters" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "grid_filters_grid_id_idx" ON "grid_filters" USING btree ("grid_id");--> statement-breakpoint
+CREATE INDEX "grid_filters_link_idx" ON "grid_filters" USING btree ("link");--> statement-breakpoint
+CREATE INDEX "grid_filters_is_current_idx" ON "grid_filters" USING btree ("is_current");--> statement-breakpoint
+CREATE INDEX "grid_filters_is_default_idx" ON "grid_filters" USING btree ("is_default");--> statement-breakpoint
+CREATE INDEX "grid_filters_contact_id_idx" ON "grid_filters" USING btree ("contact_id");--> statement-breakpoint
+CREATE INDEX "grid_filters_entity_idx" ON "grid_filters" USING btree ("entity");--> statement-breakpoint
+CREATE INDEX "http_requests_id_idx" ON "http_requests" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "http_requests_categories_idx" ON "http_requests" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "http_requests_code_idx" ON "http_requests" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "http_requests_tombstone_idx" ON "http_requests" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "http_requests_status_idx" ON "http_requests" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "http_requests_previous_status_idx" ON "http_requests" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "http_requests_version_idx" ON "http_requests" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "http_requests_created_date_idx" ON "http_requests" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "http_requests_updated_date_idx" ON "http_requests" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "http_requests_organization_id_idx" ON "http_requests" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "http_requests_created_by_idx" ON "http_requests" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "http_requests_updated_by_idx" ON "http_requests" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "http_requests_deleted_by_idx" ON "http_requests" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "http_requests_requested_by_idx" ON "http_requests" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "http_requests_tags_idx" ON "http_requests" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "http_requests_image_url_idx" ON "http_requests" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "http_responses_id_idx" ON "http_responses" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "http_responses_categories_idx" ON "http_responses" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "http_responses_code_idx" ON "http_responses" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "http_responses_tombstone_idx" ON "http_responses" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "http_responses_status_idx" ON "http_responses" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "http_responses_previous_status_idx" ON "http_responses" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "http_responses_version_idx" ON "http_responses" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "http_responses_created_date_idx" ON "http_responses" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "http_responses_updated_date_idx" ON "http_responses" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "http_responses_organization_id_idx" ON "http_responses" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "http_responses_created_by_idx" ON "http_responses" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "http_responses_updated_by_idx" ON "http_responses" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "http_responses_deleted_by_idx" ON "http_responses" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "http_responses_requested_by_idx" ON "http_responses" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "http_responses_tags_idx" ON "http_responses" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "http_responses_image_url_idx" ON "http_responses" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "invitations_id_idx" ON "invitations" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "invitations_categories_idx" ON "invitations" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "invitations_code_idx" ON "invitations" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "invitations_tombstone_idx" ON "invitations" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "invitations_status_idx" ON "invitations" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "invitations_previous_status_idx" ON "invitations" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "invitations_version_idx" ON "invitations" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "invitations_created_date_idx" ON "invitations" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "invitations_updated_date_idx" ON "invitations" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "invitations_organization_id_idx" ON "invitations" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "invitations_created_by_idx" ON "invitations" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "invitations_updated_by_idx" ON "invitations" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "invitations_deleted_by_idx" ON "invitations" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "invitations_requested_by_idx" ON "invitations" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "invitations_tags_idx" ON "invitations" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "invitations_image_url_idx" ON "invitations" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "invitations_account_id_idx" ON "invitations" USING btree ("account_id");--> statement-breakpoint
+CREATE INDEX "invitations_expiration_date_idx" ON "invitations" USING btree ("expiration_date");--> statement-breakpoint
+
+CREATE INDEX "notifications_id_idx" ON "notifications" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "notifications_categories_idx" ON "notifications" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "notifications_code_idx" ON "notifications" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "notifications_tombstone_idx" ON "notifications" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "notifications_status_idx" ON "notifications" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "notifications_previous_status_idx" ON "notifications" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "notifications_version_idx" ON "notifications" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "notifications_created_date_idx" ON "notifications" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "notifications_updated_date_idx" ON "notifications" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "notifications_organization_id_idx" ON "notifications" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "notifications_created_by_idx" ON "notifications" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "notifications_updated_by_idx" ON "notifications" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "notifications_deleted_by_idx" ON "notifications" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "notifications_requested_by_idx" ON "notifications" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "notifications_tags_idx" ON "notifications" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "notifications_image_url_idx" ON "notifications" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "notifications_title_idx" ON "notifications" USING btree ("title");--> statement-breakpoint
+CREATE INDEX "notifications_description_idx" ON "notifications" USING btree ("description");--> statement-breakpoint
+CREATE INDEX "notifications_link_idx" ON "notifications" USING btree ("link");--> statement-breakpoint
+CREATE INDEX "notifications_icon_idx" ON "notifications" USING btree ("icon");--> statement-breakpoint
+CREATE INDEX "notifications_source_idx" ON "notifications" USING btree ("source");--> statement-breakpoint
+CREATE INDEX "notifications_is_pinned_idx" ON "notifications" USING btree ("is_pinned");--> statement-breakpoint
+CREATE INDEX "notifications_recipient_id_idx" ON "notifications" USING btree ("recipient_id");--> statement-breakpoint
+CREATE INDEX "notifications_notification_status_idx" ON "notifications" USING btree ("notification_status");--> statement-breakpoint
+CREATE INDEX "notifications_priority_label_idx" ON "notifications" USING btree ("priority_label");--> statement-breakpoint
+CREATE INDEX "notifications_priority_level_idx" ON "notifications" USING btree ("priority_level");--> statement-breakpoint
+CREATE INDEX "notifications_expiry_date_idx" ON "notifications" USING btree ("expiry_date");--> statement-breakpoint
+
+CREATE INDEX "postgres_channels_id_idx" ON "postgres_channels" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "postgres_channels_categories_idx" ON "postgres_channels" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "postgres_channels_code_idx" ON "postgres_channels" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "postgres_channels_tombstone_idx" ON "postgres_channels" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "postgres_channels_status_idx" ON "postgres_channels" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "postgres_channels_previous_status_idx" ON "postgres_channels" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "postgres_channels_version_idx" ON "postgres_channels" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "postgres_channels_created_date_idx" ON "postgres_channels" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "postgres_channels_updated_date_idx" ON "postgres_channels" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "postgres_channels_organization_id_idx" ON "postgres_channels" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "postgres_channels_created_by_idx" ON "postgres_channels" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "postgres_channels_updated_by_idx" ON "postgres_channels" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "postgres_channels_deleted_by_idx" ON "postgres_channels" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "postgres_channels_requested_by_idx" ON "postgres_channels" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "postgres_channels_tags_idx" ON "postgres_channels" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "postgres_channels_image_url_idx" ON "postgres_channels" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "postgres_channels_sensitivity_level_idx" ON "postgres_channels" USING btree ("sensitivity_level");--> statement-breakpoint
+--> statement-breakpoint
+-- CRDT Messages Performance Indexes
+-- Individual indexes for each column
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset ON crdt_messages("dataset");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_column ON crdt_messages("column");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_row ON crdt_messages("row");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_timestamp ON crdt_messages("timestamp");
+--> statement-breakpoint
+-- Composite index for the common query pattern (dataset, column, row)
+-- This will significantly speed up the find_existing_messages function
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset_column_row ON crdt_messages("dataset", "column", "row");
+--> statement-breakpoint
+-- Composite index including timestamp for ordering
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_dataset_column_row_timestamp ON crdt_messages("dataset", "column", "row", "timestamp" DESC);
+--> statement-breakpoint
+-- Optional: Index for timestamp-based queries (get_messages_since)
+CREATE INDEX IF NOT EXISTS idx_crdt_messages_timestamp_desc ON crdt_messages("timestamp" DESC);
+
+
+
+-- Your SQL goes here
+ALTER TABLE "user_roles" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "user_roles" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "external_contacts" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "external_contacts" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "organizations" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "organizations" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "organization_contacts" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "organization_contacts" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "organization_accounts" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "organization_accounts" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "account_organizations" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "account_organizations" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "account_profiles" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "account_profiles" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "organization_domains" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "organization_domains" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "addresses" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "addresses" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+
+
+ALTER TABLE "devices" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "devices" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "postgres_channels" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "postgres_channels" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+
+
+ALTER TABLE "contacts" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "contacts" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "contact_phone_numbers" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "contact_phone_numbers" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "contact_emails" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "contact_emails" 
+ADD COLUMN "is_batch" boolean DEFAULT false;

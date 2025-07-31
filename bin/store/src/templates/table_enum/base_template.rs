@@ -1,8 +1,5 @@
 use crate::db;
-use crate::models::connection_model::ConnectionModel;
 use crate::models::counter_model::CounterModel;
-use crate::models::device_ssh_key_model::DeviceSshKeyModel;
-use crate::models::packet_model::PacketModel;
 use crate::schema::schema;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
@@ -20,18 +17,12 @@ use serde_json::{Map, Value};
 
 #[derive(Debug)]
 pub enum Table {
-    Packets,
-    Connections,
-    DeviceSshKeys,
     // Add other tables here
 }
 
 impl Table {
     pub fn from_str(name: &str) -> Option<Self> {
         match name {
-            "packets" => Some(Table::Packets),
-            "connections" => Some(Table::Connections),
-            "device_ssh_keys" => Some(Table::DeviceSshKeys),
             // Add other tables here
             _ => None,
         }
@@ -59,7 +50,7 @@ impl Table {
         conn: &mut AsyncPgConnection,
         id: &str,
     ) -> Result<Option<String>, DieselError> {
-        generate_hypertable_timestamp_match!(self, conn, id, Packets, Connections)
+        generate_hypertable_timestamp_match!(self, conn, id)
     }
 
     pub async fn insert_record(
@@ -74,13 +65,8 @@ impl Table {
             auth,
             conn,
             record,
-            request,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            request
+            // Add other tables and their models here as needed
         )
     }
 
@@ -96,13 +82,8 @@ impl Table {
             conn,
             id,
             is_root_account,
-            organization_id,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            organization_id
+            // Add other tables and their models here as needed
         )
     }
 
@@ -114,13 +95,8 @@ impl Table {
         generate_upsert_record_match!(
             self,
             conn,
-            record,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            record
+            // Add other tables and their models here as needed
         )
     }
 
@@ -132,13 +108,8 @@ impl Table {
         generate_upsert_record_with_timestamp_match!(
             self,
             conn,
-            record,
-            Packets,
-            PacketModel,
-            Connections,
-            ConnectionModel,
-            DeviceSshKeys,
-            DeviceSshKeyModel // Add other tables and their models here as needed
+            record
+            // Add other tables and their models here as needed
         )
     }
 }

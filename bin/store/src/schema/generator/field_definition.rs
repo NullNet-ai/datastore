@@ -6,7 +6,7 @@ pub struct FieldDefinition {
     pub field_name: String,
     pub field_type: String, // e.g., "Nullable<Text>", "Nullable<Jsonb>"
     pub is_index: bool,
-    pub joins_with: Option<String>, // e.g., "connections.id"
+    pub joins_with: Option<String>, // e.g., "devices.id"
     pub default_value: Option<String>,
 }
 
@@ -234,17 +234,17 @@ mod tests {
     #[test]
     fn test_parse_foreign_key() {
         let field = FieldDefinition {
-            field_name: "connection_id".to_string(),
+            field_name: "device_id".to_string(),
             field_type: "Nullable<Text>".to_string(),
             is_index: true,
-            joins_with: Some("connections.id".to_string()),
+            joins_with: Some("devices.id".to_string()),
             default_value: None,
         };
         
         let parsed = field.parse().unwrap();
         assert!(parsed.foreign_key.is_some());
         let fk = parsed.foreign_key.unwrap();
-        assert_eq!(fk.table, "connections");
+        assert_eq!(fk.table, "devices");
         assert_eq!(fk.column, "id");
     }
 }

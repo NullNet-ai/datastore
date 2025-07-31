@@ -1,7 +1,5 @@
 #[allow(warnings)]
 pub const HYPERTABLES: &[&str] = &[
-    "packets",
-    "connections",
     // Add more hypertable names as needed
 ];
 #[allow(warnings)]

@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_to_singular() {
-        assert_eq!(ModelGenerator::to_singular("connections"), "connection");
+        assert_eq!(ModelGenerator::to_singular("devices"), "device");
         assert_eq!(ModelGenerator::to_singular("categories"), "category");
         assert_eq!(ModelGenerator::to_singular("address"), "address");
     }

@@ -17,17 +17,6 @@ impl CodePrefixInitializer {
 
         // Initialize with the example provided
         prefixes.insert(
-            "connections".to_string(),
-            CounterModel {
-                default_code: 10000,
-                prefix: "CO".to_string(),
-                counter: 0,
-                entity: "connections".to_string(),
-                digits_number: 6,
-            },
-        );
-
-        prefixes.insert(
             "devices".to_string(),
             CounterModel {
                 default_code: 10000,
