@@ -13,7 +13,7 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id'), // Primary key ---
-    active: boolean('active'),
+    active: boolean('active').default(true),
     app_id: text('app_id').unique(),
     // timestamp: timestamp('timestamp', { withTimezone: true }),
     firewall: text('firewall'),

@@ -14,7 +14,7 @@ export const table = pgTable(
     ...system_fields,
     id: text('id'), // Primary key
     // timestamp: timestamp('timestamp', { withTimezone: true }), // NOT NULL timestamp
-    active: boolean('active'),
+    active: boolean('active').default(true),
     log_request: boolean('log_request'),
     log_response: boolean('log_response'),
     retention_sec: integer('retention_sec'),
