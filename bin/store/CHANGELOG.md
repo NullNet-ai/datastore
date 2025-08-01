@@ -5,6 +5,52 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.27
+
+### Author
+Kashan Ali Khalid
+
+### Enhanced
+- ***Dynamic System Fields Management***: Revolutionized system fields handling with dynamic parsing and detection
+  - Replaced hardcoded system field definitions with dynamic parsing from `system_fields.rs`
+  - Implemented `get_system_fields_expansion()` in `generator_service.rs` to dynamically read system field macro content
+  - Added `get_system_field_names()` in `schema_generator.rs` for runtime system field detection
+  - Eliminated manual synchronization requirements between system field definitions and generator logic
+  - Automatic detection of new system fields when added to `system_fields!()` macro
+
+- ***Removed Field Detection and Migration***: Added comprehensive support for detecting and handling removed database fields
+  - Enhanced `analyze_changes()` function to detect fields that exist in database but are removed from table definitions
+  - Added `RemovedField` variant to `SchemaChangeType` enum for proper change categorization
+  - Implemented `generate_drop_column_sql()` in `migration_generator.rs` for generating `ALTER TABLE DROP COLUMN` statements
+  - Added reverse migration support in `generate_down_sql()` to re-add removed fields in down migrations
+  - Complete bidirectional migration support for field additions and removals
+
+- ***Advanced Migration Generation***: Improved migration system to handle complex schema changes in single migrations
+  - Enhanced migration generator to process multiple change types (new tables, new fields, removed fields, indexes, foreign keys) in unified migrations
+  - Improved SQL statement ordering and formatting with proper statement breakpoints
+  - Added comprehensive up/down migration support for all schema change types
+  - Optimized migration generation to group related changes efficiently
+
+- ***Field Type and Model Enhancements***: Extended support for advanced field configurations and model generation
+  - Enhanced nullable field handling with explicit migration support for nullable specifications
+  - Improved timestamp type handling in model generation with proper Rust type mapping
+  - Added support for custom field defaults in table definitions
+  - Enhanced model name generation and field naming conventions
+  - Improved field type validation and conversion between Diesel and PostgreSQL types
+
+- ***Schema Generation Workflow***: Streamlined end-to-end schema generation process
+  - Integrated removed field detection into main schema generation workflow
+  - Enhanced table definition parsing to handle complex field configurations
+  - Improved error handling and validation throughout the generation pipeline
+  - Added comprehensive logging for schema change detection and migration generation
+  - Optimized performance of schema analysis and change detection algorithms
+
+### Fixed
+- ***System Field Synchronization***: Resolved issues with hardcoded system field handling causing inconsistencies
+- ***Migration Completeness***: Fixed incomplete migration generation when fields were removed from table definitions
+- ***Schema Analysis***: Improved accuracy of schema change detection for complex field modifications
+---
+
 ## 0.1.26
 
 ### Author
