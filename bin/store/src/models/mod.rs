@@ -18,6 +18,7 @@ pub mod entity_field_model;
 pub mod entity_model;
 pub mod external_contact_model;
 pub mod field_model;
+pub mod file_model;
 pub mod organization_account_model;
 pub mod organization_contact_model;
 pub mod organization_domain_model;

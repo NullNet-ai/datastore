@@ -34,5 +34,7 @@ macro_rules! system_fields {
         sensitivity_level: nullable(integer()),
         sync_status: nullable(text()), default: "in_process",
         is_batch: nullable(boolean()), default: "false"
+
+
     };
 }

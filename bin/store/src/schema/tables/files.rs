@@ -35,7 +35,7 @@ define_table_schema! {
         version_id: nullable(text()), 
         download_path: nullable(text()), 
         presigned_url: nullable(text()), 
-        presigned_url_expires: nullable(integer()), 
+        presigned_url_expires: nullable(integer()),
     },
     indexes: {
         idx_files_filename: {

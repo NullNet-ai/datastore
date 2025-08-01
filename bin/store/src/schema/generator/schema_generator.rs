@@ -1,5 +1,5 @@
 use crate::schema::generator::field_definition::TableDefinition;
-use crate::schema::verify::{field_exists_in_table, get_table_fields};
+use crate::schema::verify::{field_exists_in_table, get_table_fields, field_type_in_table, FieldTypeInfo};
 use std::fs;
 use regex::Regex;
 
@@ -60,6 +60,11 @@ impl SchemaGenerator {
             
             for field in &table_def.fields {
                 if !existing_fields.contains(&field.field_name) {
+                    // Skip system fields if they were already processed above
+                    if uses_system_fields && Self::should_force_system_fields_update() && Self::is_system_field(&field.field_name) {
+                        continue;
+                    }
+                    
                     changes.push(SchemaChange {
                         table_name: table_def.table_name.clone(),
                         change_type: SchemaChangeType::NewField,
@@ -76,11 +81,18 @@ impl SchemaGenerator {
             
             for existing_field in &existing_fields {
                 if !current_field_names.contains(existing_field) {
+                    // Get field type information for the removed field
+                    let field_definition = if let Some(field_type_info) = field_type_in_table(&table_def.table_name, existing_field) {
+                        Some(Self::field_type_info_to_definition(&field_type_info))
+                    } else {
+                        None
+                    };
+                    
                     changes.push(SchemaChange {
                         table_name: table_def.table_name.clone(),
                         change_type: SchemaChangeType::RemovedField,
                         field_name: Some(existing_field.clone()),
-                        field_definition: None,
+                        field_definition,
                     });
                 }
             }
@@ -153,11 +165,112 @@ impl SchemaGenerator {
         
         // Check if table already exists
         if Self::table_exists_in_schema(&existing_content, &table_def.table_name) {
-            // Table exists, we need to add new fields
-            Self::add_fields_to_existing_table(&existing_content, table_def, schema_file_path)
+            // Table exists, we need to handle field changes
+            Self::update_existing_table_in_schema(&existing_content, table_def, schema_file_path)
         } else {
             // Table doesn't exist, add new table
             Self::add_new_table_to_schema(&existing_content, table_def, schema_file_path)
+        }
+    }
+    
+    /// Update an existing table in schema.rs by adding new fields and removing deleted fields
+    fn update_existing_table_in_schema(existing_content: &str, table_def: &TableDefinition, file_path: &str) -> Result<(), String> {
+        // Get current fields in schema.rs
+        let existing_fields = get_table_fields(&table_def.table_name).unwrap_or_default();
+        
+        // Get current field names from table definition
+        let current_field_names: Vec<String> = table_def.fields.iter()
+            .map(|f| f.field_name.clone())
+            .collect();
+        
+        // Find fields to remove (exist in schema but not in table definition)
+        let fields_to_remove: Vec<String> = existing_fields.iter()
+            .filter(|field| !current_field_names.contains(field))
+            .cloned()
+            .collect();
+        
+        // Start with existing content
+        let mut updated_content = existing_content.to_string();
+        
+        // Remove fields that are no longer in the table definition
+        if !fields_to_remove.is_empty() {
+            updated_content = Self::remove_fields_from_table(&updated_content, &table_def.table_name, &fields_to_remove)?;
+            println!("Removed {} fields from table '{}' in schema.rs", fields_to_remove.len(), table_def.table_name);
+        }
+        
+        // Check if there are new fields to add
+        let has_new_fields = table_def.fields.iter()
+            .any(|field| !field_exists_in_table(&table_def.table_name, &field.field_name));
+        
+        if has_new_fields {
+            // Add new fields
+            Self::add_fields_to_existing_table(&updated_content, table_def, file_path)
+        } else if !fields_to_remove.is_empty() {
+            // Only removed fields, write the updated content
+            if let Err(e) = fs::write(file_path, updated_content) {
+                return Err(format!("Failed to write schema.rs: {}", e));
+            }
+            Ok(())
+        } else {
+            // No changes needed
+            Ok(())
+        }
+    }
+    
+    /// Remove specified fields from a table in schema.rs
+    fn remove_fields_from_table(existing_content: &str, table_name: &str, fields_to_remove: &[String]) -> Result<String, String> {
+        // Find the table definition
+        let table_pattern = format!(
+            r"(?s)(table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{)(.*?)(\}}\s*\}})",
+            regex::escape(table_name)
+        );
+        
+        let table_regex = match Regex::new(&table_pattern) {
+            Ok(re) => re,
+            Err(e) => return Err(format!("Failed to create table regex: {}", e)),
+        };
+        
+        if let Some(captures) = table_regex.captures(existing_content) {
+            let table_start = captures.get(1).unwrap().as_str();
+            let table_body = captures.get(2).unwrap().as_str();
+            let table_end = captures.get(3).unwrap().as_str();
+            
+            // Remove specified fields from table body
+            let mut new_table_body = String::new();
+            for line in table_body.lines() {
+                let trimmed_line = line.trim();
+                
+                // Skip empty lines and comments
+                if trimmed_line.is_empty() || trimmed_line.starts_with("//") {
+                    new_table_body.push_str(line);
+                    new_table_body.push('\n');
+                    continue;
+                }
+                
+                // Check if this line defines a field to remove
+                let mut should_remove = false;
+                for field_to_remove in fields_to_remove {
+                    if trimmed_line.starts_with(&format!("{} ->", field_to_remove)) {
+                        should_remove = true;
+                        break;
+                    }
+                }
+                
+                if !should_remove {
+                    new_table_body.push_str(line);
+                    new_table_body.push('\n');
+                }
+            }
+            
+            // Reconstruct the table definition
+            let new_table_definition = format!("{}{}{}", table_start, new_table_body, table_end);
+            
+            // Replace the old table definition with the new one
+            let new_content = table_regex.replace(existing_content, new_table_definition.as_str());
+            
+            Ok(new_content.to_string())
+        } else {
+            Err(format!("Could not find table '{}' in schema.rs", table_name))
         }
     }
     
@@ -250,7 +363,7 @@ impl SchemaGenerator {
         Ok(())
     }
     
-    /// Add fields to an existing table in the schema
+    /// Add fields to an existing table in the schema with proper field ordering
     fn add_fields_to_existing_table(existing_content: &str, table_def: &TableDefinition, file_path: &str) -> Result<(), String> {
         
         // Find the table definition
@@ -285,14 +398,19 @@ impl SchemaGenerator {
                 return Ok(());
             }
             
-            // Generate field definitions for new fields
-            let mut new_field_definitions = String::new();
-            for field in &new_fields {
-                new_field_definitions.push_str(&format!("        {} -> {},\n", field.name, field.diesel_type));
+            // Get existing fields from the table body
+            let existing_fields = Self::parse_existing_fields_from_table_body(table_body)?;
+            
+            // Combine existing and new fields with proper ordering
+            let ordered_fields = Self::order_fields_properly(&existing_fields, &new_fields)?;
+            
+            // Generate the new table body with properly ordered fields
+            let mut new_table_body = String::new();
+            for field in &ordered_fields {
+                new_table_body.push_str(&format!("        {} -> {},\n", field.name, field.diesel_type));
             }
             
-            // Reconstruct the table with new fields
-            let new_table_body = format!("{}{}", table_body, new_field_definitions);
+            // Reconstruct the table with ordered fields
             let new_table_definition = format!("{}{}{}", table_start, new_table_body, table_end);
             
             // Replace the old table definition with the new one
@@ -303,7 +421,7 @@ impl SchemaGenerator {
                 return Err(format!("Failed to write schema.rs: {}", e));
             }
             
-            println!("Added {} new fields to table '{}' in schema.rs", new_fields.len(), table_def.table_name);
+            println!("Added {} new fields to table '{}' in schema.rs with proper ordering", new_fields.len(), table_def.table_name);
             Ok(())
         } else {
             Err(format!("Could not find table '{}' in schema.rs", table_def.table_name))
@@ -333,6 +451,149 @@ impl SchemaGenerator {
     }
 
     /// Dynamically extracts system field names from the system_fields macro
+    /// Convert FieldTypeInfo to a field definition string for migrations
+    fn field_type_info_to_definition(field_type_info: &FieldTypeInfo) -> String {
+        // Convert database types to Diesel types
+        let diesel_type = match field_type_info.field_type.to_lowercase().as_str() {
+            "bool" | "boolean" => "Bool",
+            "text" | "varchar" | "char" => "Text",
+            "integer" | "int4" => "Int4",
+            "float" | "float4" => "Float4",
+            "float8" | "double" => "Float8",
+            "timestamp" | "timestamptz" => "Timestamp",
+            "jsonb" => "Jsonb",
+            "json" => "Json",
+            "inet" => "Inet",
+            "uuid" => "Uuid",
+            "bytea" => "Bytea",
+            "numeric" | "decimal" => "Numeric",
+            _ => &field_type_info.field_type, // fallback to original
+        };
+        
+        let mut definition = diesel_type.to_string();
+        
+        // Handle nullable wrapper
+        if field_type_info.nullable {
+            definition = format!("Nullable<{}>", definition);
+        }
+        
+        // Handle array wrapper
+        if field_type_info.is_array {
+            definition = format!("Array<{}>", definition);
+        }
+        
+        definition
+    }
+    
+    /// Parse existing fields from table body in schema.rs
+    fn parse_existing_fields_from_table_body(table_body: &str) -> Result<Vec<crate::schema::generator::field_definition::ParsedField>, String> {
+        let mut fields = Vec::new();
+        
+        for line in table_body.lines() {
+            let line = line.trim();
+            if line.is_empty() || !line.contains(" -> ") {
+                continue;
+            }
+            
+            // Parse field definition: "field_name -> Type,"
+            if let Some(arrow_pos) = line.find(" -> ") {
+                let field_name = line[..arrow_pos].trim();
+                let rest = &line[arrow_pos + 4..];
+                let diesel_type = if let Some(comma_pos) = rest.find(',') {
+                    rest[..comma_pos].trim()
+                } else {
+                    rest.trim()
+                };
+                
+                // Parse the diesel type to determine other properties
+                let is_nullable = diesel_type.starts_with("Nullable<");
+                let is_array = diesel_type.contains("Array<");
+                let is_json = diesel_type.contains("Jsonb");
+                
+                // Extract core type for rust type mapping
+                let mut core_type = diesel_type;
+                if is_nullable {
+                    core_type = &diesel_type[9..diesel_type.len()-1]; // Remove "Nullable<" and ">"
+                }
+                if is_array {
+                    if let Some(start) = core_type.find("Array<") {
+                        let end = core_type.rfind(">").unwrap_or(core_type.len());
+                        core_type = &core_type[start+6..end];
+                    }
+                }
+                
+                // Map to rust type
+                let base_rust_type = match core_type {
+                    "Text" => "String",
+                    "Int4" => "i32",
+                    "Int8" | "BigInt" => "i64",
+                    "Bool" => "bool",
+                    "Timestamp" | "Timestamptz" => "chrono::NaiveDateTime",
+                    "Jsonb" => "Value",
+                    "Inet" => "std::net::IpAddr",
+                    _ => "String", // Default fallback
+                };
+                
+                let rust_type = if is_array {
+                    if is_nullable {
+                        format!("Option<Vec<{}>>", base_rust_type)
+                    } else {
+                        format!("Vec<{}>", base_rust_type)
+                    }
+                } else if is_nullable {
+                    format!("Option<{}>", base_rust_type)
+                } else {
+                    base_rust_type.to_string()
+                };
+                
+                fields.push(crate::schema::generator::field_definition::ParsedField {
+                    name: field_name.to_string(),
+                    diesel_type: diesel_type.to_string(),
+                    rust_type,
+                    is_nullable,
+                    migration_nullable: is_nullable, // Assume same as nullable
+                    is_array,
+                    is_json,
+                    is_index: false, // Can't determine from schema.rs
+                    is_primary_key: false, // Can't determine from schema.rs
+                    foreign_key: None, // Can't determine from schema.rs
+                    default_value: None, // Can't determine from schema.rs
+                });
+            }
+        }
+        
+        Ok(fields)
+    }
+    
+    /// Order fields properly according to system fields macro and entity-specific fields
+    fn order_fields_properly(
+        existing_fields: &[crate::schema::generator::field_definition::ParsedField],
+        new_fields: &[crate::schema::generator::field_definition::ParsedField]
+    ) -> Result<Vec<crate::schema::generator::field_definition::ParsedField>, String> {
+        let system_field_names = Self::get_system_field_names()?;
+        let mut ordered_fields = Vec::new();
+        
+        // Combine all fields
+        let mut all_fields = existing_fields.to_vec();
+        all_fields.extend_from_slice(new_fields);
+        
+        // First, add system fields in the order defined by system_fields macro
+        for system_field_name in &system_field_names {
+            if let Some(field) = all_fields.iter().find(|f| f.name == *system_field_name) {
+                ordered_fields.push(field.clone());
+            }
+        }
+        
+        // Then, add non-system fields (entity-specific fields)
+        for field in &all_fields {
+            if !system_field_names.contains(&field.name) {
+                ordered_fields.push(field.clone());
+            }
+        }
+        
+        Ok(ordered_fields)
+    }
+    
     fn get_system_field_names() -> Result<Vec<String>, String> {
         let system_fields_path = "src/schema/generator/system_fields.rs";
         let content = fs::read_to_string(system_fields_path)
