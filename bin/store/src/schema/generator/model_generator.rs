@@ -23,13 +23,12 @@ impl ModelGenerator {
     /// Generate the actual model file content
     fn generate_model_content(table_name: &str, fields: &[ParsedField]) -> Result<String, String> {
         let singular_name = Self::to_singular(table_name);
-        let struct_name = Self::to_pascal_case(&singular_name);
+        let struct_name = format!("{}Model", Self::to_pascal_case(&singular_name));
         
         let mut content = String::new();
         
-        // Add imports
-        content.push_str(&format!("use crate::schema::schema::{};", table_name));
-        content.push_str("\nuse diesel::prelude::*;");
+        // Add imports (removed unused table import)
+        content.push_str("use diesel::prelude::*;");
         content.push_str("\nuse serde::{Deserialize, Serialize};");
         
         // Add additional imports based on field types
@@ -50,9 +49,13 @@ impl ModelGenerator {
         
         content.push_str("\n\n");
         
-        // Generate the struct
-        content.push_str(&format!("#[derive(Queryable, Insertable, Serialize, Deserialize, Debug, Clone)]\n"));
-        content.push_str(&format!("#[diesel(table_name = {})]\n", table_name));
+        // Generate the struct with all required traits
+        content.push_str(&format!("#[derive(\n"));
+        content.push_str(&format!("    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,\n"));
+        content.push_str(&format!(")]\n"));
+        content.push_str(&format!("#[diesel(table_name = crate::schema::schema::{})]\n", table_name));
+        content.push_str(&format!("#[diesel(check_for_backend(diesel::pg::Pg))]\n"));
+        content.push_str(&format!("#[serde(default)]\n"));
         content.push_str(&format!("pub struct {} {{\n", struct_name));
         
         // Add fields
@@ -180,15 +183,19 @@ mod tests {
                     field_name: "id".to_string(),
                     field_type: "Int4".to_string(),
                     is_index: true,
+                    is_primary_key: true,
                     joins_with: None,
                     default_value: None,
+                    migration_nullable: false,
                 },
                 FieldDefinition {
                     field_name: "name".to_string(),
                     field_type: "Text".to_string(),
                     is_index: false,
+                    is_primary_key: false,
                     joins_with: None,
                     default_value: None,
+                    migration_nullable: true,
                 },
             ],
         };

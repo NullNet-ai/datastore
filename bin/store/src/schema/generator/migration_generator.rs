@@ -123,9 +123,12 @@ impl MigrationGenerator {
         let mut sql = String::new();
         sql.push_str("-- Your SQL goes here\n\n");
         
-        // Group changes by type
+        // Group changes by table name and type
+        use std::collections::HashMap;
+        let mut tables_by_name: HashMap<String, &TableDefinition> = HashMap::new();
         let mut new_tables = Vec::new();
         let mut new_fields = Vec::new();
+        let mut removed_fields = Vec::new();
         let mut new_indexes = Vec::new();
         let mut new_foreign_keys = Vec::new();
         
@@ -133,6 +136,7 @@ impl MigrationGenerator {
             match change.change_type {
                 SchemaChangeType::NewTable => new_tables.push(change),
                 SchemaChangeType::NewField => new_fields.push(change),
+                SchemaChangeType::RemovedField => removed_fields.push(change),
                 SchemaChangeType::NewIndex => new_indexes.push(change),
                 SchemaChangeType::NewForeignKey => new_foreign_keys.push(change),
             }
@@ -145,6 +149,8 @@ impl MigrationGenerator {
             if !first_statement {
                 sql.push_str("--> statement-breakpoint\n");
             }
+            // For new tables, we need to find the correct table definition
+            // Since we're processing multiple tables, we'll use the table_def parameter as fallback
             let create_table_sql = Self::generate_create_table_sql(&change.table_name, table_def)?;
             sql.push_str(&create_table_sql);
             sql.push_str("\n");
@@ -157,8 +163,21 @@ impl MigrationGenerator {
                 if !first_statement {
                     sql.push_str("--> statement-breakpoint\n");
                 }
-                let alter_sql = Self::generate_add_column_sql(&change.table_name, field_name, field_definition)?;
+                let alter_sql = Self::generate_add_column_sql(&change.table_name, field_name, field_definition, true)?;
                 sql.push_str(&alter_sql);
+                sql.push_str("\n");
+                first_statement = false;
+            }
+        }
+        
+        // Generate ALTER TABLE DROP COLUMN statements
+        for change in removed_fields {
+            if let Some(field_name) = &change.field_name {
+                if !first_statement {
+                    sql.push_str("--> statement-breakpoint\n");
+                }
+                let drop_sql = Self::generate_drop_column_sql(&change.table_name, field_name)?;
+                sql.push_str(&drop_sql);
                 sql.push_str("\n");
                 first_statement = false;
             }
@@ -227,6 +246,16 @@ impl MigrationGenerator {
                         ));
                     }
                 },
+                SchemaChangeType::RemovedField => {
+                    if let (Some(field_name), Some(field_definition)) = (&change.field_name, &change.field_definition) {
+                        // For removed fields, the down migration should add the field back
+                        let postgres_type = Self::diesel_to_postgres_type(field_definition, true).unwrap_or_else(|_| "TEXT".to_string());
+                        sql.push_str(&format!(
+                            "ALTER TABLE \"{}\" ADD COLUMN \"{}\" {};\n",
+                            change.table_name, field_name, postgres_type
+                        ));
+                    }
+                },
                 SchemaChangeType::NewIndex => {
                     if let Some(field_name) = &change.field_name {
                         let index_name = format!("idx_{}_{}", change.table_name, field_name);
@@ -263,9 +292,16 @@ impl MigrationGenerator {
             }
         }
         
+        // Collect primary key fields
+        let primary_key_fields: Vec<&str> = table_def.fields
+            .iter()
+            .filter(|field| field.is_primary_key)
+            .map(|field| field.field_name.as_str())
+            .collect();
+        
         // Add fields
         for (i, field) in parsed_fields.iter().enumerate() {
-            let postgres_type = Self::diesel_to_postgres_type(&field.diesel_type)?;
+            let postgres_type = Self::diesel_to_postgres_type(&field.diesel_type, field.migration_nullable)?;
             let default_clause = if let Some(default) = &field.default_value {
                 format!(" DEFAULT {}", default)
             } else {
@@ -277,8 +313,24 @@ impl MigrationGenerator {
                 field.name, postgres_type, default_clause
             ));
             
-            if i < parsed_fields.len() - 1 {
+            // Add comma if not the last field or if we have primary keys to add
+            if i < parsed_fields.len() - 1 || !primary_key_fields.is_empty() {
                 sql.push(',');
+            }
+            sql.push('\n');
+        }
+        
+        // Add primary key constraint if any primary key fields exist
+        if !primary_key_fields.is_empty() {
+            if primary_key_fields.len() == 1 {
+                sql.push_str(&format!("    PRIMARY KEY (\"{}\")", primary_key_fields[0]));
+            } else {
+                let pk_columns = primary_key_fields
+                    .iter()
+                    .map(|field| format!("\"{}\"", field))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                sql.push_str(&format!("    PRIMARY KEY ({})", pk_columns));
             }
             sql.push('\n');
         }
@@ -289,11 +341,19 @@ impl MigrationGenerator {
     }
     
     /// Generate ALTER TABLE ADD COLUMN SQL
-    fn generate_add_column_sql(table_name: &str, field_name: &str, field_type: &str) -> Result<String, String> {
-        let postgres_type = Self::diesel_to_postgres_type(field_type)?;
+    fn generate_add_column_sql(table_name: &str, field_name: &str, field_type: &str, migration_nullable: bool) -> Result<String, String> {
+        let postgres_type = Self::diesel_to_postgres_type(field_type, migration_nullable)?;
         Ok(format!(
             "ALTER TABLE \"{}\" ADD COLUMN \"{}\" {};",
             table_name, field_name, postgres_type
+        ))
+    }
+    
+    /// Generate ALTER TABLE DROP COLUMN SQL
+    fn generate_drop_column_sql(table_name: &str, field_name: &str) -> Result<String, String> {
+        Ok(format!(
+            "ALTER TABLE \"{}\" DROP COLUMN \"{}\";",
+            table_name, field_name
         ))
     }
     
@@ -331,13 +391,11 @@ impl MigrationGenerator {
     }
     
     /// Convert Diesel type to PostgreSQL type
-    fn diesel_to_postgres_type(diesel_type: &str) -> Result<String, String> {
+    fn diesel_to_postgres_type(diesel_type: &str, migration_nullable: bool) -> Result<String, String> {
         let mut postgres_type = diesel_type;
-        let mut is_nullable = false;
         
-        // Handle Nullable wrapper
+        // Handle Nullable wrapper - extract the inner type
         if diesel_type.starts_with("Nullable<") && diesel_type.ends_with(">") {
-            is_nullable = true;
             postgres_type = &diesel_type[9..diesel_type.len()-1];
         }
         
@@ -369,7 +427,7 @@ impl MigrationGenerator {
             final_type = format!("{}[]", final_type);
         }
         
-        if !is_nullable {
+        if !migration_nullable {
             final_type.push_str(" NOT NULL");
         }
         
@@ -383,11 +441,16 @@ mod tests {
 
     #[test]
     fn test_diesel_to_postgres_type() {
-        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Text").unwrap(), "TEXT NOT NULL");
-        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Text>").unwrap(), "TEXT");
-        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Array<Text>>").unwrap(), "TEXT[]");
-        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Int4").unwrap(), "INTEGER NOT NULL");
-        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Jsonb>").unwrap(), "JSONB");
+        // Test with migration_nullable = false (NOT NULL)
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Text", false).unwrap(), "TEXT NOT NULL");
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Text>", false).unwrap(), "TEXT NOT NULL");
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Int4", false).unwrap(), "INTEGER NOT NULL");
+        
+        // Test with migration_nullable = true (nullable)
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Text", true).unwrap(), "TEXT");
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Text>", true).unwrap(), "TEXT");
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Array<Text>>", true).unwrap(), "TEXT[]");
+        assert_eq!(MigrationGenerator::diesel_to_postgres_type("Nullable<Jsonb>", true).unwrap(), "JSONB");
     }
 
     #[test]
@@ -405,7 +468,7 @@ mod tests {
 
     #[test]
     fn test_generate_add_column_sql() {
-        let result = MigrationGenerator::generate_add_column_sql("users", "email", "Nullable<Text>");
+        let result = MigrationGenerator::generate_add_column_sql("users", "email", "Nullable<Text>", true);
         assert!(result.is_ok());
         let sql = result.unwrap();
         assert_eq!(sql, "ALTER TABLE \"users\" ADD COLUMN \"email\" TEXT;");

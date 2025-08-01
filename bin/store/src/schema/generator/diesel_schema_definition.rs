@@ -27,6 +27,7 @@ pub struct DieselFieldDefinition {
     pub diesel_type: DieselType,
     pub is_primary_key: bool,
     pub is_nullable: bool,
+    pub migration_nullable: bool,
     pub default_value: Option<String>,
     pub is_indexed: bool,
 }
@@ -103,11 +104,11 @@ macro_rules! define_table_schema {
     (
         table_name: $table_name:literal,
         fields: {
-            $(
-                $field_name:ident: $field_type:expr
+            $(                $field_name:ident: $field_type:expr
                 $(, primary_key: $is_pk:expr)?
                 $(, indexed: $is_indexed:expr)?
                 $(, default: $default:expr)?
+                $(, migration_nullable: $migration_nullable:expr)?
             ),* $(,)?
         }
         $(, indexes: {
@@ -140,6 +141,7 @@ macro_rules! define_table_schema {
                             diesel_type: $field_type,
                             is_primary_key: $crate::define_table_schema!(@default_pk $($is_pk)?),
                             is_nullable: $crate::define_table_schema!(@is_nullable $field_type),
+                            migration_nullable: $crate::define_table_schema!(@default_migration_nullable $($migration_nullable)?),
                             default_value: $crate::define_table_schema!(@default_val $($default)?),
                             is_indexed: $crate::define_table_schema!(@default_indexed $($is_indexed)?),
                         },
@@ -186,6 +188,9 @@ macro_rules! define_table_schema {
     
     (@default_indexed) => { false };
     (@default_indexed $val:expr) => { $val };
+    
+    (@default_migration_nullable) => { true };
+    (@default_migration_nullable $val:expr) => { $val };
     
     (@default_val) => { None };
     (@default_val $val:expr) => { Some($val.to_string()) };
@@ -367,5 +372,6 @@ pub mod types {
     pub fn nullable_text_array() -> DieselType { nullable(array(text())) }
     pub fn nullable_integer_array() -> DieselType { nullable(array(integer())) }
 }
+
 
 // Note: From<DieselType> for DieselType is automatically implemented by Rust

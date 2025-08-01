@@ -81,20 +81,10 @@ impl GeneratorService {
         if !all_changes.is_empty() {
             println!("Generating migration for {} total changes", all_changes.len());
             
-            // For simplicity, we'll create one migration per table that has changes
-            // Group changes by table
-            let mut changes_by_table = std::collections::HashMap::new();
-            for change in all_changes {
-                changes_by_table.entry(change.table_name.clone())
-                    .or_insert_with(Vec::new)
-                    .push(change);
-            }
-            
-            // Generate migration for each table with changes
-            for (table_name, table_changes) in changes_by_table {
-                if let Some(table_def) = table_definitions.iter().find(|t| t.table_name == table_name) {
-                    MigrationGenerator::generate_migration(&table_changes, table_def)?;
-                }
+            // Create a single migration for all changes
+            // Use the first table definition for migration context
+            if let Some(first_table_def) = table_definitions.first() {
+                MigrationGenerator::generate_migration(&all_changes, first_table_def)?;
             }
         } else {
             println!("No changes detected across all tables. No migration needed.");
@@ -323,8 +313,10 @@ impl GeneratorService {
                     field_name: "id".to_string(),
                     field_type: "Int4".to_string(),
                     is_index: false, // Remove indexed: true from field level
+                    is_primary_key: true, // ID field should be primary key
                     joins_with: None,
                     default_value: None,
+                    migration_nullable: true, // Default to nullable for fallback
                 });
             }
             
@@ -392,7 +384,13 @@ impl GeneratorService {
             }
             
             if fields_end > 0 {
-                let fields_content = &after_fields[..fields_end];
+                let mut fields_content = after_fields[..fields_end].to_string();
+                
+                // Expand system_fields!() macro if present
+                if fields_content.contains("system_fields!()") {
+                    let system_fields_expansion = Self::get_system_fields_expansion()?;
+                    fields_content = fields_content.replace("system_fields!()", &system_fields_expansion);
+                }
                 
                 // Parse each field line
                 for line in fields_content.lines() {
@@ -406,40 +404,72 @@ impl GeneratorService {
                         let field_name = line[..colon_pos].trim().to_string();
                         let rest = &line[colon_pos + 1..];
                         
-                        // Extract type (simplified)
-                        let field_type = if rest.contains("integer()") {
+                        // Extract type (check nullable first to avoid false matches)
+                        let field_type = if rest.contains("nullable(") {
+                            // Extract inner type from nullable wrapper
+                            if rest.contains("nullable(text())") {
+                                "Nullable<Text>".to_string()
+                            } else if rest.contains("nullable(integer())") {
+                                "Nullable<Int4>".to_string()
+                            } else if rest.contains("nullable(boolean())") {
+                                "Nullable<Bool>".to_string()
+                            } else if rest.contains("nullable(jsonb())") {
+                                "Nullable<Jsonb>".to_string()
+                            } else if rest.contains("nullable(timestamp())") {
+                                "Nullable<Timestamp>".to_string()
+                            } else if rest.contains("nullable(timestamptz())") {
+                                "Nullable<Timestamptz>".to_string()
+                            } else if rest.contains("nullable(array(text()))") {
+                                "Nullable<Array<Text>>".to_string()
+                            } else if rest.contains("nullable(DieselType::VarChar") {
+                                "Nullable<Text>".to_string()
+                            } else {
+                                "Nullable<Text>".to_string() // default
+                            }
+                        } else if rest.contains("integer()") {
                             "Int4".to_string()
                         } else if rest.contains("text()") {
                             "Text".to_string()
                         } else if rest.contains("boolean()") {
                             "Bool".to_string()
+                        } else if rest.contains("timestamp()") {
+                            "Timestamp".to_string()
                         } else if rest.contains("timestamptz()") {
                             "Timestamptz".to_string()
-                        } else if rest.contains("nullable(") {
-                            // Extract inner type
-                            if rest.contains("nullable(text())") {
-                                "Nullable<Text>".to_string()
-                            } else if rest.contains("nullable(boolean())") {
-                                "Nullable<Bool>".to_string()
-                            } else if rest.contains("nullable(jsonb())") {
-                                "Nullable<Jsonb>".to_string()
-                            } else if rest.contains("nullable(array(text()))") {
-                                "Nullable<Array<Text>>".to_string()
-                            } else {
-                                "Nullable<Text>".to_string() // default
-                            }
                         } else {
                             "Text".to_string() // default
                         };
                         
-                        let is_index = rest.contains("primary_key: true"); // Remove indexed: true check
+                        let is_primary_key = rest.contains("primary_key: true");
+                        let is_index = rest.contains("indexed: true");
+                        
+                        // Extract migration_nullable value, default to true if not specified
+                        let migration_nullable = if rest.contains("migration_nullable: false") {
+                            false
+                        } else {
+                            true // Default to nullable
+                        };
+                        
+                        // Extract default value if specified
+                        let default_value = if let Some(default_start) = rest.find("default: ") {
+                            let default_part = &rest[default_start + 9..]; // Skip "default: "
+                            if let Some(comma_pos) = default_part.find(',') {
+                                Some(default_part[..comma_pos].trim().trim_matches('"').to_string())
+                            } else {
+                                Some(default_part.trim().trim_matches('"').to_string())
+                            }
+                        } else {
+                            None
+                        };
                         
                         fields.push(FieldDefinition {
                             field_name,
                             field_type,
                             is_index,
+                            is_primary_key,
                             joins_with: None,
-                            default_value: None,
+                            default_value,
+                            migration_nullable,
                         });
                     }
                 }
@@ -656,8 +686,10 @@ impl GeneratorService {
                     field_name,
                     field_type: String::new(),
                     is_index: false,
+                    is_primary_key: false,
                     joins_with: None,
                     default_value: None,
+                    migration_nullable: true, // Default to nullable for legacy parsing
                 });
             } else if line.starts_with("field_type:") {
                 if let Some(ref mut field) = current_field {
@@ -708,8 +740,54 @@ impl GeneratorService {
             fields,
         })
     }
-    
 
+    /// Dynamically reads the system_fields macro from system_fields.rs
+    fn get_system_fields_expansion() -> Result<String, String> {
+        let system_fields_path = "src/schema/generator/system_fields.rs";
+        let content = fs::read_to_string(system_fields_path)
+            .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
+        
+        // Find the macro definition
+        let macro_start = content.find("() => {")
+            .ok_or("Could not find system_fields macro definition")?;
+        let macro_content_start = macro_start + "() => {".len();
+        
+        // Find the closing brace of the macro
+        let mut brace_count = 1;
+        let mut macro_end = macro_content_start;
+        let chars: Vec<char> = content.chars().collect();
+        
+        for i in macro_content_start..chars.len() {
+            match chars[i] {
+                '{' => brace_count += 1,
+                '}' => {
+                    brace_count -= 1;
+                    if brace_count == 0 {
+                        macro_end = i;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        
+        if brace_count != 0 {
+            return Err("Could not find closing brace for system_fields macro".to_string());
+        }
+        
+        let macro_content = &content[macro_content_start..macro_end];
+        
+        // Clean up the content - remove extra whitespace and format for diesel schema
+        let cleaned_content = macro_content
+            .trim()
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .collect::<Vec<&str>>()
+            .join("\n        ");
+        
+        Ok(cleaned_content)
+    }
 }
 
 #[cfg(test)]

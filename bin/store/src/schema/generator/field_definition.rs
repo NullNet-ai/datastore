@@ -6,8 +6,10 @@ pub struct FieldDefinition {
     pub field_name: String,
     pub field_type: String, // e.g., "Nullable<Text>", "Nullable<Jsonb>"
     pub is_index: bool,
+    pub is_primary_key: bool,
     pub joins_with: Option<String>, // e.g., "devices.id"
     pub default_value: Option<String>,
+    pub migration_nullable: bool,
 }
 
 #[allow(dead_code)]
@@ -24,9 +26,11 @@ pub struct ParsedField {
     pub diesel_type: String,
     pub rust_type: String,
     pub is_nullable: bool,
+    pub migration_nullable: bool,
     pub is_array: bool,
     pub is_json: bool,
     pub is_index: bool,
+    pub is_primary_key: bool,
     pub foreign_key: Option<ForeignKey>,
     pub default_value: Option<String>,
 }
@@ -67,7 +71,7 @@ impl FieldDefinition {
             "BigInt" => "i64".to_string(),
             "Bool" => "bool".to_string(),
             "Timestamp" => "chrono::NaiveDateTime".to_string(),
-            "Timestamptz" => "DateTime<Utc>".to_string(),
+            "Timestamptz" => "chrono::NaiveDateTime".to_string(),
             "Jsonb" => {
                 is_json = true;
                 "Value".to_string()
@@ -109,9 +113,11 @@ impl FieldDefinition {
             diesel_type: self.field_type.clone(),
             rust_type: final_rust_type,
             is_nullable,
+            migration_nullable: self.migration_nullable,
             is_array,
             is_json,
             is_index: self.is_index,
+            is_primary_key: self.is_primary_key,
             foreign_key,
             default_value: self.default_value.clone(),
         })
@@ -179,8 +185,10 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
             field_name,
             field_type,
             is_index,
+            is_primary_key: false, // Default to not primary key for legacy parsing
             joins_with,
             default_value,
+            migration_nullable: true, // Default to nullable for legacy parsing
         });
     }
     
@@ -204,8 +212,10 @@ mod tests {
             field_name: "first_name".to_string(),
             field_type: "Nullable<Text>".to_string(),
             is_index: false,
+            is_primary_key: false,
             joins_with: None,
             default_value: None,
+            migration_nullable: true,
         };
         
         let parsed = field.parse().unwrap();
@@ -221,8 +231,10 @@ mod tests {
             field_name: "tags".to_string(),
             field_type: "Nullable<Array<Text>>".to_string(),
             is_index: false,
+            is_primary_key: false,
             joins_with: None,
             default_value: None,
+            migration_nullable: true,
         };
         
         let parsed = field.parse().unwrap();
@@ -237,8 +249,10 @@ mod tests {
             field_name: "device_id".to_string(),
             field_type: "Nullable<Text>".to_string(),
             is_index: true,
+            is_primary_key: false,
             joins_with: Some("devices.id".to_string()),
             default_value: None,
+            migration_nullable: true,
         };
         
         let parsed = field.parse().unwrap();
