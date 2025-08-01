@@ -22,7 +22,9 @@ export const table = pgTable(
     remote_access_type: text('remote_access_type'),
     remote_access_session: text('remote_access_session'),
     remote_access_status: text('remote_access_status'),
-
+    // Not a foreign key, cause instances are deleted on client
+    // disconnect, while session records are persistent. (for now ?)
+    instance_id: text('instance_id'),
     // ?????
     remote_access_category: text('remote_access_category'),
 
