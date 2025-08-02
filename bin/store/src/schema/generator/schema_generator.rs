@@ -751,6 +751,7 @@ mod tests {
     fn test_generate_table_definition() {
         let table_def = TableDefinition {
             table_name: "test_table".to_string(),
+            hypertable: false,
             fields: vec![
                 FieldDefinition {
                     field_name: "id".to_string(),

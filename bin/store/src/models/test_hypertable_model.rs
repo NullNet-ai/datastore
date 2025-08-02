@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::schema::schema::files)]
+#[diesel(table_name = crate::schema::schema::test_hypertable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct FileModel {
+pub struct TestHypertableModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -21,7 +21,6 @@ pub struct FileModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
@@ -29,20 +28,10 @@ pub struct FileModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub image_url: Option<String>,
-    pub fieldname: Option<String>,
-    pub originalname: Option<String>,
-    pub encoding: Option<String>,
-    pub mimetype: Option<String>,
-    pub destination: Option<String>,
-    pub filename: Option<String>,
-    pub path: Option<String>,
-    pub size: Option<i32>,
-    pub uploaded_by: Option<String>,
-    pub downloaded_by: Option<String>,
-    pub etag: Option<String>,
-    pub version_id: Option<String>,
-    pub download_path: Option<String>,
-    pub presigned_url: Option<String>,
-    pub presigned_url_expires: Option<i32>,
+    pub timestamp: chrono::NaiveDateTime,
+    pub hypertable_timestamp: String,
+    pub sensor_id: Option<String>,
+    pub temperature: Option<i32>,
+    pub humidity: Option<i32>,
+    pub location: Option<String>,
 }

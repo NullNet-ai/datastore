@@ -15,6 +15,7 @@ pub struct FilesTable;
 
 define_table_schema! {
     table_name: "files",
+    hypertable: false,
     fields: {
         // System fields - common across all tables
         system_fields!(),

@@ -188,6 +188,7 @@ async fn main() -> std::io::Result<()> {
         }
 
         println!("Code generation completed successfully!");
+        process::exit(0);
     }
 
     let background_sync_service = match background_sync::BackgroundSyncService::new().await {

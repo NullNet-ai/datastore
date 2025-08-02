@@ -27,23 +27,24 @@ impl ModelGenerator {
         
         let mut content = String::new();
         
-        // Add imports (removed unused table import)
+        // Add basic imports
         content.push_str("use diesel::prelude::*;");
         content.push_str("\nuse serde::{Deserialize, Serialize};");
         
-        // Add additional imports based on field types
-        let mut import_sets = std::collections::HashSet::new();
+        // Collect non-chrono imports only
+        let mut other_imports = std::collections::HashSet::new();
         
         for field in fields {
-            let type_dependencies = Self::extract_type_dependencies(&field.rust_type);
-            import_sets.extend(type_dependencies);
+            let field_type = &field.rust_type;
+            let other_deps = Self::extract_non_chrono_dependencies(field_type);
+            other_imports.extend(other_deps);
         }
         
-        // Add imports in a consistent order
-        let mut imports: Vec<_> = import_sets.into_iter().collect();
-        imports.sort();
+        // Add other imports in sorted order
+        let mut other_imports_vec: Vec<_> = other_imports.into_iter().collect();
+        other_imports_vec.sort();
         
-        for import in imports {
+        for import in other_imports_vec {
             content.push_str(&format!("\n{}", import));
         }
         
@@ -91,6 +92,46 @@ impl ModelGenerator {
                 }
             })
             .collect()
+    }
+    
+    fn extract_non_chrono_dependencies(rust_type: &str) -> Vec<String> {
+        let mut dependencies = Vec::new();
+        
+        // Handle serde_json types
+        if rust_type.contains("Value") || rust_type.contains("serde_json::") {
+            dependencies.push("use serde_json::Value;".to_string());
+        }
+        
+        // Handle std::net types
+        if rust_type.contains("IpAddr") || rust_type.contains("std::net::") {
+            dependencies.push("use std::net::IpAddr;".to_string());
+        }
+        
+        // Handle UUID types
+        if rust_type.contains("Uuid") || rust_type.contains("uuid::") {
+            dependencies.push("use uuid::Uuid;".to_string());
+        }
+        
+        // Handle BigDecimal types
+        if rust_type.contains("BigDecimal") || rust_type.contains("bigdecimal::") {
+            dependencies.push("use bigdecimal::BigDecimal;".to_string());
+        }
+        
+        // Handle collections
+        if rust_type.contains("HashMap") {
+            dependencies.push("use std::collections::HashMap;".to_string());
+        }
+        if rust_type.contains("HashSet") {
+            dependencies.push("use std::collections::HashSet;".to_string());
+        }
+        if rust_type.contains("BTreeMap") {
+            dependencies.push("use std::collections::BTreeMap;".to_string());
+        }
+        if rust_type.contains("BTreeSet") {
+            dependencies.push("use std::collections::BTreeSet;".to_string());
+        }
+        
+        dependencies
     }
     
     fn extract_type_dependencies(rust_type: &str) -> Vec<String> {
@@ -178,6 +219,7 @@ mod tests {
     fn test_generate_model() {
         let table_def = TableDefinition {
             table_name: "users".to_string(),
+            hypertable: false,
             fields: vec![
                 FieldDefinition {
                     field_name: "id".to_string(),

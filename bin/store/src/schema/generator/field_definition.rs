@@ -17,6 +17,7 @@ pub struct FieldDefinition {
 pub struct TableDefinition {
     pub table_name: String,
     pub fields: Vec<FieldDefinition>,
+    pub hypertable: bool,
 }
 
 #[allow(dead_code)]
@@ -199,6 +200,7 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
     Ok(TableDefinition {
         table_name,
         fields,
+        hypertable: false,
     })
 }
 

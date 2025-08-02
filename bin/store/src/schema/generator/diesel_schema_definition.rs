@@ -18,6 +18,11 @@ pub trait DieselTableDefinition {
     fn foreign_keys() -> Vec<ForeignKeyDefinition> {
         Vec::new()
     }
+    
+    /// Check if this table should be a hypertable
+    fn is_hypertable() -> bool {
+        false
+    }
 }
 
 /// Represents a field definition using Diesel's actual types
@@ -103,6 +108,7 @@ pub struct ForeignKeyDefinition {
 macro_rules! define_table_schema {
     (
         table_name: $table_name:literal,
+        $(hypertable: $is_hypertable:expr,)?
         fields: {
             $(                $field_name:ident: $field_type:expr
                 $(, primary_key: $is_pk:expr)?
@@ -131,6 +137,10 @@ macro_rules! define_table_schema {
         impl DieselTableDefinition for Self {
             fn table_name() -> &'static str {
                 $table_name
+            }
+            
+            fn is_hypertable() -> bool {
+                $crate::define_table_schema!(@default_hypertable $($is_hypertable)?)
             }
             
             fn field_definitions() -> Vec<DieselFieldDefinition> {
@@ -200,6 +210,9 @@ macro_rules! define_table_schema {
     
     (@fk_action) => { None };
     (@fk_action $val:expr) => { Some($val.to_string()) };
+    
+    (@default_hypertable) => { false };
+    (@default_hypertable $val:expr) => { $val };
     
     (@is_nullable DieselType::Nullable($_:expr)) => { true };
     (@is_nullable $_:expr) => { false };

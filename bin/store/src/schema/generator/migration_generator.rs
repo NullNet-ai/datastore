@@ -9,7 +9,7 @@ pub struct MigrationGenerator;
 
 impl MigrationGenerator {
     /// Generate migration files for the given changes
-    pub fn generate_migration(changes: &[SchemaChange], table_def: &TableDefinition) -> Result<(), String> {
+    pub fn generate_migration(changes: &[SchemaChange], table_definitions: &[TableDefinition]) -> Result<(), String> {
         if changes.is_empty() {
             println!("No changes detected, skipping migration generation");
             return Ok(());
@@ -35,8 +35,8 @@ impl MigrationGenerator {
         }
         
         // Generate up.sql and down.sql
-        let up_sql = Self::generate_up_sql(changes, table_def)?;
-        let down_sql = Self::generate_down_sql(changes, table_def)?;
+        let up_sql = Self::generate_up_sql(changes, table_definitions)?;
+        let down_sql = Self::generate_down_sql(changes, table_definitions)?;
         
         // Write migration files
         let up_file = format!("{}/up.sql", migration_dir);
@@ -119,7 +119,7 @@ impl MigrationGenerator {
     }
     
     /// Generate the up.sql content
-    pub fn generate_up_sql(changes: &[SchemaChange], table_def: &TableDefinition) -> Result<String, String> {
+    pub fn generate_up_sql(changes: &[SchemaChange], table_definitions: &[TableDefinition]) -> Result<String, String> {
         let mut sql = String::new();
         sql.push_str("-- Your SQL goes here\n\n");
         
@@ -149,11 +149,24 @@ impl MigrationGenerator {
             if !first_statement {
                 sql.push_str("--> statement-breakpoint\n");
             }
-            // For new tables, we need to find the correct table definition
-            // Since we're processing multiple tables, we'll use the table_def parameter as fallback
+            
+            // Find the correct table definition for this table
+            let table_def = table_definitions.iter()
+                .find(|def| def.table_name == change.table_name)
+                .ok_or_else(|| format!("Table definition not found for table: {}", change.table_name))?;
+            
             let create_table_sql = Self::generate_create_table_sql(&change.table_name, table_def)?;
             sql.push_str(&create_table_sql);
             sql.push_str("\n");
+            
+            // Add hypertable creation if this is a hypertable
+            if table_def.hypertable {
+                sql.push_str("--> statement-breakpoint\n");
+                let hypertable_sql = Self::generate_hypertable_sql(&change.table_name)?;
+                sql.push_str(&hypertable_sql);
+                sql.push_str("\n");
+            }
+            
             first_statement = false;
         }
         
@@ -220,7 +233,7 @@ impl MigrationGenerator {
     }
     
     /// Generate the down.sql content
-    fn generate_down_sql(changes: &[SchemaChange], _table_def: &TableDefinition) -> Result<String, String> {
+    fn generate_down_sql(changes: &[SchemaChange], _table_definitions: &[TableDefinition]) -> Result<String, String> {
         let mut sql = String::new();
         sql.push_str("-- This file should undo anything in `up.sql`\n\n");
         
@@ -432,6 +445,14 @@ impl MigrationGenerator {
         }
         
         Ok(final_type)
+    }
+    
+    /// Generate hypertable creation SQL
+    fn generate_hypertable_sql(table_name: &str) -> Result<String, String> {
+        Ok(format!(
+            "SELECT create_hypertable('{}', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);",
+            table_name
+        ))
     }
 }
 

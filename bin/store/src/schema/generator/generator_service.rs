@@ -21,11 +21,17 @@ impl GeneratorService {
         println!("Starting schema generation...");
         
         // Find and process all table definition files
-        let table_definitions = Self::discover_table_definitions()?;
+        let all_discovered_tables = Self::discover_table_definitions()?;
         
-        if table_definitions.is_empty() {
+        if all_discovered_tables.is_empty() {
             println!("No table definition files found. Skipping schema generation.");
             return Ok(());
+        }
+        
+        // Filter out invalid hypertables
+        let mut table_definitions = Vec::new();
+        for table_def in all_discovered_tables {
+            table_definitions.push(table_def);
         }
         
         let mut all_changes = Vec::new();
@@ -82,13 +88,14 @@ impl GeneratorService {
             println!("Generating migration for {} total changes", all_changes.len());
             
             // Create a single migration for all changes
-            // Use the first table definition for migration context
-            if let Some(first_table_def) = table_definitions.first() {
-                MigrationGenerator::generate_migration(&all_changes, first_table_def)?;
-            }
+            // Pass all table definitions for migration context
+            MigrationGenerator::generate_migration(&all_changes, &table_definitions)?
         } else {
             println!("No changes detected across all tables. No migration needed.");
         }
+        
+        // Update hypertables array based on current table definitions
+        Self::update_hypertables_array(&table_definitions)?;
         
         println!("Schema generation completed successfully!");
         Ok(())
@@ -230,6 +237,11 @@ impl GeneratorService {
                     // File doesn't contain table definition, skip
                     continue;
                 },
+                Err(e) if e.starts_with("Skipping table") => {
+                    // Table was skipped due to validation error, continue with other tables
+                    println!("Warning: {}", e);
+                    continue;
+                },
                 Err(e) => {
                     println!("Warning: Failed to parse {}: {}", path.display(), e);
                     continue;
@@ -302,6 +314,9 @@ impl GeneratorService {
             // Extract table name from macro or struct
             let table_name = Self::extract_table_name_from_diesel_def(content, file_name)?;
             
+            // Extract hypertable parameter
+            let hypertable = Self::extract_hypertable_from_macro(content)?;
+            
             let mut fields = Vec::new();
             
             // Try to extract field information from macro usage
@@ -330,9 +345,18 @@ impl GeneratorService {
                 }
             }
             
+            // Validate hypertable constraints if hypertable is enabled
+            if hypertable {
+                if let Err(validation_error) = Self::validate_hypertable_constraints(&table_name, &fields) {
+                    println!("Warning: Skipping hypertable '{}' due to validation error: {}", table_name, validation_error);
+                    return Err(format!("Skipping table '{}': {}", table_name, validation_error));
+                }
+            }
+            
             return Ok(TableDefinition {
                 table_name,
                 fields,
+                hypertable,
             });
         }
         
@@ -386,10 +410,24 @@ impl GeneratorService {
             if fields_end > 0 {
                 let mut fields_content = after_fields[..fields_end].to_string();
                 
-                // Expand system_fields!() macro if present
+                // First, collect all explicitly defined fields to track overrides
+                let mut explicit_fields = std::collections::HashSet::new();
+                for line in fields_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") || line.contains("system_fields!()") {
+                        continue;
+                    }
+                    if let Some(colon_pos) = line.find(':') {
+                        let field_name = line[..colon_pos].trim().to_string();
+                        explicit_fields.insert(field_name);
+                    }
+                }
+                
+                // Expand system_fields!() macro if present, but filter out overridden fields
                 if fields_content.contains("system_fields!()") {
                     let system_fields_expansion = Self::get_system_fields_expansion()?;
-                    fields_content = fields_content.replace("system_fields!()", &system_fields_expansion);
+                    let filtered_system_fields = Self::filter_system_fields(&system_fields_expansion, &explicit_fields)?;
+                    fields_content = fields_content.replace("system_fields!()", &filtered_system_fields);
                 }
                 
                 // Parse each field line
@@ -643,6 +681,122 @@ impl GeneratorService {
         Ok(foreign_keys)
     }
     
+    /// Extract hypertable parameter from macro definition
+    fn extract_hypertable_from_macro(content: &str) -> Result<bool, String> {
+        // Look for hypertable parameter in macro
+        if let Some(hypertable_start) = content.find("hypertable:") {
+            let after_hypertable = &content[hypertable_start + 11..]; // "hypertable:".len() = 11
+            let line = after_hypertable.lines().next().unwrap_or("").trim();
+            
+            if line.starts_with("true") {
+                return Ok(true);
+            } else if line.starts_with("false") {
+                return Ok(false);
+            }
+        }
+        
+        // Default to false if not specified
+        Ok(false)
+    }
+    
+    /// Update the hypertables array in hypertables.rs based on current table definitions
+    fn update_hypertables_array(table_definitions: &[TableDefinition]) -> Result<(), String> {
+        let hypertables_file_path = "src/schema/hypertables.rs";
+        
+        // Collect all hypertable names
+        let hypertable_names: Vec<&str> = table_definitions
+            .iter()
+            .filter(|def| def.hypertable)
+            .map(|def| def.table_name.as_str())
+            .collect();
+        
+        // Generate the new hypertables.rs content
+        let mut content = String::new();
+        content.push_str("#[allow(warnings)]\n");
+        content.push_str("pub const HYPERTABLES: &[&str] = &[\n");
+        
+        for table_name in &hypertable_names {
+            content.push_str(&format!("    \"{}\",\n", table_name));
+        }
+        
+        content.push_str("    // Add more hypertable names as needed\n");
+        content.push_str("];\n");
+        content.push_str("#[allow(warnings)]\n");
+        content.push_str("// Helper function to check if a table is a hypertable\n");
+        content.push_str("pub fn is_hypertable(table_name: &str) -> bool {\n");
+        content.push_str("    HYPERTABLES.contains(&table_name)\n");
+        content.push_str("}\n");
+        
+        // Write the updated content to the file
+        fs::write(hypertables_file_path, content)
+            .map_err(|e| format!("Failed to update hypertables.rs: {}", e))?;
+        
+        if !hypertable_names.is_empty() {
+            println!("Updated hypertables array with: {:?}", hypertable_names);
+        } else {
+            println!("Updated hypertables array (no hypertables found)");
+        }
+        
+        Ok(())
+    }
+    
+    /// Validate hypertable constraints
+    fn validate_hypertable_constraints(table_name: &str, fields: &[FieldDefinition]) -> Result<(), String> {
+        // Check for hypertable_timestamp field with text type
+        let has_hypertable_timestamp = fields.iter().any(|f| {
+            f.field_name == "hypertable_timestamp" && 
+            (f.field_type == "Text" || f.field_type == "Nullable<Text>")
+        });
+        
+        if !has_hypertable_timestamp {
+            return Err(format!(
+                "Hypertable '{}' must have a 'hypertable_timestamp' field of type 'Text'", 
+                table_name
+            ));
+        }
+        
+        // Check for composite primary key (id, timestamp)
+        let primary_key_fields: Vec<&str> = fields
+            .iter()
+            .filter(|f| f.is_primary_key)
+            .map(|f| f.field_name.as_str())
+            .collect();
+        
+        let has_id_pk = primary_key_fields.contains(&"id");
+        let has_timestamp_pk = primary_key_fields.contains(&"timestamp") || primary_key_fields.contains(&"hypertable_timestamp");
+        
+        if !has_id_pk {
+            return Err(format!(
+                "Hypertable '{}' must have 'id' as part of the primary key", 
+                table_name
+            ));
+        }
+        
+        if !has_timestamp_pk {
+            return Err(format!(
+                "Hypertable '{}' must have 'timestamp' or 'hypertable_timestamp' as part of the primary key", 
+                table_name
+            ));
+        }
+        
+        // Ensure timestamp field has timestamptz type
+        let timestamp_field = fields.iter().find(|f| 
+            (f.field_name == "timestamp" || f.field_name == "hypertable_timestamp") && f.is_primary_key
+        );
+        
+        if let Some(ts_field) = timestamp_field {
+            if ts_field.field_name == "timestamp" && 
+               !(ts_field.field_type == "Timestamptz" || ts_field.field_type == "Nullable<Timestamptz>") {
+                return Err(format!(
+                    "Hypertable '{}' timestamp field must have type 'Timestamptz'", 
+                    table_name
+                ));
+            }
+        }
+        
+        Ok(())
+    }
+    
     /// Parse Rust-style table definition
     fn parse_rust_table_definition(content: &str, _table_name: &str) -> Result<TableDefinition, String> {
         // Look for TableDefinition struct instantiation
@@ -738,6 +892,7 @@ impl GeneratorService {
         Ok(TableDefinition {
             table_name: table_name.to_string(),
             fields,
+            hypertable: false,
         })
     }
 
@@ -787,6 +942,29 @@ impl GeneratorService {
             .join("\n        ");
         
         Ok(cleaned_content)
+    }
+    
+    /// Filter system fields to exclude those that are explicitly overridden
+    fn filter_system_fields(system_fields_expansion: &str, explicit_fields: &std::collections::HashSet<String>) -> Result<String, String> {
+        let mut filtered_lines = Vec::new();
+        
+        for line in system_fields_expansion.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            
+            // Extract field name from line
+            if let Some(colon_pos) = line.find(':') {
+                let field_name = line[..colon_pos].trim();
+                // Only include system field if it's not explicitly overridden
+                if !explicit_fields.contains(field_name) {
+                    filtered_lines.push(line);
+                }
+            }
+        }
+        
+        Ok(filtered_lines.join("\n        "))
     }
 }
 

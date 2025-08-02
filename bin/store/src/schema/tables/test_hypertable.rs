@@ -1,0 +1,47 @@
+use crate::schema::generator::diesel_schema_definition::{
+    DieselTableDefinition, types::*
+};
+use crate::define_table_schema;
+use crate::system_fields;
+
+/// Test hypertable for time-series data
+pub struct TestHypertableTable;
+
+define_table_schema! {
+    table_name: "test_hypertable",
+    hypertable: true,
+    fields: {
+        // System fields - common across all tables
+        system_fields!(),
+        
+        // Override timestamp from system_fields with custom timestamptz type
+        timestamp: timestamptz(), primary_key: true,
+        
+        // Required hypertable timestamp field
+        hypertable_timestamp: text(), primary_key: false,
+        
+        // Additional fields for time-series data
+        sensor_id: nullable(text()),
+        temperature: nullable(integer()),
+        humidity: nullable(integer()),
+        location: nullable(text()),
+    }
+    indexes: {
+        idx_test_hypertable_sensor: {
+            columns: ["sensor_id"],
+            unique: false,
+            type: "btree"
+        },
+        idx_test_hypertable_location: {
+            columns: ["location"],
+            unique: false,
+            type: "btree"
+        }
+    }
+}
+
+impl DieselTableDefinition for TestHypertableTable {
+    fn is_hypertable() -> bool {
+        true
+    }
+}
