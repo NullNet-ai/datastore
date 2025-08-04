@@ -1307,8 +1307,24 @@ pub async fn upload_file(
                         // "version": 1,
                         // "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
                         // "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-                        // "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-                        // "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "updated_date": get_output.last_modified()
+                            .map(|dt| {
+                                // Convert AWS SDK DateTime to chrono DateTime
+                                let timestamp = dt.as_secs_f64();
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                    .unwrap_or_else(|| chrono::Utc::now());
+                                chrono_dt.format("%Y-%m-%d").to_string()
+                            })
+                            .unwrap_or_else(|| "Unknown".to_string()),
+                        "updated_time": get_output.last_modified()
+                            .map(|dt| {
+                                // Convert AWS SDK DateTime to chrono DateTime
+                                let timestamp = dt.as_secs_f64();
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                    .unwrap_or_else(|| chrono::Utc::now());
+                                chrono_dt.format("%H:%M:%S").to_string()
+                            })
+                            .unwrap_or_else(|| "Unknown".to_string()),
                         "organization_id": "", // TODO: Extract from auth context
                         "created_by": "", // TODO: Extract from auth context
                         "updated_by": "", // TODO: Extract from auth context
@@ -1325,16 +1341,16 @@ pub async fn upload_file(
                         "filename": actual_filename.clone(),
                         "path": format!("{}/{}", bucket_name, actual_filename),
                         "size": get_output.content_length().unwrap_or(0),
-                        "uploaded_by": "", // TODO: Extract from auth context
-                        "downloaded_by": "",
+                        // "uploaded_by": "", // TODO: Extract from auth context
+                        // "downloaded_by": "",
                         "etag": get_output.e_tag().unwrap_or("Unknown"),
                         "version_id": get_output.version_id().unwrap_or(""),
                         "download_path": format!("{}/{}", bucket_name, actual_filename),
                         "presigned_url": "", // TODO: Generate presigned URL if needed
                         "presigned_url_expire": 0, // TODO: Set expiration timestamp
-                        "last_modified": get_output.last_modified()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_else(|| "Unknown".to_string())
+                        // "last_modified": get_output.last_modified()
+                        //     .map(|dt| dt.to_string())
+                        //     .unwrap_or_else(|| "Unknown".to_string())
                     });
                     // For existing files, try to save to database (will handle duplicates gracefully)
                     let auth_data = _auth_data;
