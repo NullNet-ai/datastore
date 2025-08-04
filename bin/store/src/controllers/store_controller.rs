@@ -258,7 +258,6 @@ pub async fn create_record(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => {
-            log::error!("create_record error: {}", error);
             let status_code = http::StatusCode::from_u16(error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
