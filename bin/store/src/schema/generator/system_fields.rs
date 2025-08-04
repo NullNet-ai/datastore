@@ -11,7 +11,7 @@
 #[macro_export]
 macro_rules! system_fields {
     () => {
-        tombstone: nullable(integer()), migration_nullable: false, default: "0",
+        tombstone: nullable(integer()), default: "0",
         status: nullable(text()), default: "Active",
         previous_status: nullable(text()),
         version: nullable(integer()),
@@ -27,8 +27,8 @@ macro_rules! system_fields {
         timestamp: nullable(timestamp()),
         tags: nullable(array(text())),
         categories: nullable(array(text())),
-        code: nullable(text()), migration_nullable: false,
-        id: nullable(text()), primary_key: true, migration_nullable: false,
+        code: nullable(text()),
+        id: nullable(text()), primary_key: true,
         sensitivity_level: nullable(integer()),
         sync_status: nullable(text()), default: "in_process",
         is_batch: nullable(boolean()), default: "false"

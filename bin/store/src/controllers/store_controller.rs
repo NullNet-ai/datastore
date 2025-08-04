@@ -1299,22 +1299,22 @@ pub async fn upload_file(
                     // File already exists in MinIO, return comprehensive metadata
                     let metadata = serde_json::json!({
                         "id": actual_id.clone(),
-                        "categories": [],
-                        "code": "",
-                        "tombstone": false,
+                        // "categories": [],
+                        // "code": "",
+                        // "tombstone": false,
                         "status": "already_exists",
                         "previous_status": "",
-                        "version": 1,
-                        "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-                        "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-                        "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-                        "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        // "version": 1,
+                        // "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        // "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        // "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        // "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
                         "organization_id": "", // TODO: Extract from auth context
                         "created_by": "", // TODO: Extract from auth context
                         "updated_by": "", // TODO: Extract from auth context
                         "deleted_by": "",
                         "requested_by": "", // TODO: Extract from auth context
-                        "timestamp": chrono::Utc::now().timestamp(),
+                        // "timestamp": chrono::Utc::now().timestamp(),
                         "tags": [],
                         "image_url": format!("{}/{}", bucket_name, actual_filename),
                         "fieldname": field_name.clone(),
@@ -1328,10 +1328,10 @@ pub async fn upload_file(
                         "uploaded_by": "", // TODO: Extract from auth context
                         "downloaded_by": "",
                         "etag": get_output.e_tag().unwrap_or("Unknown"),
-                        "versionId": get_output.version_id().unwrap_or(""),
+                        "version_id": get_output.version_id().unwrap_or(""),
                         "download_path": format!("{}/{}", bucket_name, actual_filename),
-                        "presignedURL": "", // TODO: Generate presigned URL if needed
-                        "presignedURLExpires": 0, // TODO: Set expiration timestamp
+                        "presigned_url": "", // TODO: Generate presigned URL if needed
+                        "presigned_url_expire": 0, // TODO: Set expiration timestamp
                         "last_modified": get_output.last_modified()
                             .map(|dt| dt.to_string())
                             .unwrap_or_else(|| "Unknown".to_string())
@@ -1386,12 +1386,12 @@ pub async fn upload_file(
                     // File uploaded successfully to MinIO - add comprehensive metadata
                     let metadata = serde_json::json!({
                         "id": final_id.clone(),
-                        "categories": [],
-                        "code": "",
-                        "tombstone": false,
+                        // "categories": [],
+                        // "code": "",
+                        // "tombstone": false,
                         "status": "uploaded",
                         "previous_status": "",
-                        "version": 1,
+                        // "version": 1,
                         "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
                         "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
                         "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
@@ -1401,7 +1401,7 @@ pub async fn upload_file(
                         "updated_by": "", // TODO: Extract from auth context
                         "deleted_by": "",
                         "requested_by": "", // TODO: Extract from auth context
-                        "timestamp": chrono::Utc::now().timestamp(),
+                        // "timestamp": chrono::Utc::now().timestamp(),
                         "tags": [],
                         "image_url": format!("{}/{}", bucket_name, final_filename),
                         "fieldname": field_name,
@@ -1415,10 +1415,10 @@ pub async fn upload_file(
                         "uploaded_by": "", // TODO: Extract from auth context
                         "downloaded_by": "",
                         "etag": put_output.e_tag().unwrap_or("Unknown"),
-                        "versionId": put_output.version_id().unwrap_or(""),
+                        "version_id": put_output.version_id().unwrap_or(""),
                         "download_path": format!("{}/{}", bucket_name, final_filename),
-                        "presignedURL": "", // TODO: Generate presigned URL if needed
-                        "presignedURLExpires": 0 // TODO: Set expiration timestamp
+                        "presigned_url": "", // TODO: Generate presigned URL if needed
+                        "presigned_url_expire": 0 // TODO: Set expiration timestamp
                     });
                     dbg!(format!("Complete file metadata for uploaded file: {:?}", metadata));
                     // Save file metadata to the database using process_and_insert_record
