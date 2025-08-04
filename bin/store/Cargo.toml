@@ -9,6 +9,14 @@ authors = [
 ]
 
 [dependencies]
+http = "1.3.1"
+aws-smithy-http = "0.62.2"
+aws-config = { version = "1.1.7", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1.100.0"
+aws-smithy-runtime = { version = "1.8.5", features = ["client"] }
+rustls = { version = "0.21", features = ["dangerous_configuration"] }
+hyper-rustls = { version = "0.24", features = ["http1", "http2"] }
+webpki-roots = "0.25"
 actix-web = "4.3"
 diesel = { version = "2.1.0", features = ["postgres", "r2d2", "64-column-tables", "uuid", "chrono", "network-address", "serde_json"] }
 diesel-async = { version = "0.3.1", features = ["postgres", "deadpool"] }
@@ -25,6 +33,8 @@ hlc = { path = "../../libs/hlc" }
 merkle = { path = "../../libs/merkle" }
 jsonwebtoken = "8.3.0"
 log = "0.4"
+mime_guess = "2.0"
+actix-multipart = "0.6"
 tokio = { version = "1.44.2", features = ["full"] }
 async-stream = "0.3"
 reqwest = { version = "0.12.15", features = ["json"] }

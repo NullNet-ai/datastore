@@ -3,14 +3,15 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::db;
+use actix_web::test;
+use crate::{db, providers};
 use crate::db::create_connection;
-
+use aws_sdk_s3::primitives::ByteStream;
+use actix_multipart::Multipart;
 use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::structs::structs::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
-    UpsertRequestBody,
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GetFileById, QueryParams, RequestBody, UpsertRequestBody
 };
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
@@ -28,7 +29,7 @@ use std::fmt;
 use diesel_async::RunQueryDsl;
 
 use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
-
+use futures_util::stream::StreamExt; // For processing multipart stream
 #[derive(Serialize)]
 pub struct ApiError {
     pub message: String,
@@ -1123,3 +1124,245 @@ pub async fn aggregation_filter(
         data,
     })
 }
+
+// files implementation
+// Query
+// TODO: get file metadat from database
+pub async fn get_file_by_id(
+    _auth: HttpRequest,
+    request_body: web::Json<GetFileById>,
+) -> impl Responder {
+    dbg!("get_file_by_id");
+    let parameters = request_body.into_inner();
+    let file_id = parameters.id.clone();
+     return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: format!("File {} found", file_id),
+                count: 1,
+                data: vec![serde_json::json!({
+                    "id": file_id,
+                })],
+            })
+}
+// TODO: access to the database for file metadata and response stream from File storage
+pub async fn download_file_by_id(
+    _auth: HttpRequest,
+    request_body: web::Json<GetFileById>,
+) -> impl Responder {
+     let parameters = request_body.into_inner();
+    let file_id = parameters.id.clone();
+     return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: format!("File {} found", file_id),
+                count: 1,
+                data: vec![serde_json::json!({
+                    "id": file_id,
+                })],
+            })
+}
+
+pub async fn upload_file(
+    req: HttpRequest,
+    app_state: web::Data<providers::storage::AppState>,
+    mut multipart: Multipart,
+) -> impl Responder {
+    // Check for Auth data early and abort if missing
+    let extensions = req.extensions();
+    let _auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::error!("Auth data not found in request extensions - aborting upload process");
+            return HttpResponse::Unauthorized().json(ApiResponse {
+                success: false,
+                message: "Authentication required for file upload".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    if let Some(content_type_header) = req.headers().get(actix_web::http::header::CONTENT_TYPE) {
+        log::info!("Incoming Content-Type header: {:?}", content_type_header);
+    }
+    let name = "files";
+    let client = app_state.s3_client.clone();
+    let bucket_name = app_state.bucket_name.clone();
+    let mut uploaded_files_count = 0;
+    let mut file_metadata = Vec::new();
+    let pluck_fields = vec!["id".to_string()];
+    while let Some(field_result) = multipart.next().await {
+        let mut field = match field_result {
+            Ok(field) => field,
+            Err(e) => {
+                log::error!("Error getting field from multipart: {:?}", e);
+                return HttpResponse::InternalServerError()
+                    .body(format!("Multipart error: {}", e));
+            }
+        };
+
+        let content_disposition = field.content_disposition();
+        let fname = content_disposition.get_filename().map(|s| s.to_string());
+        let field_name = content_disposition.get_name().unwrap_or("file").to_string();
+        let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or("application/octet-stream".to_string());
+
+        if let Some(fname) = fname {
+            let object_name = format!("{}", fname);
+            
+            // ✅ Check if file already exists in MinIO using get_object
+            let get_result = client
+                .get_object()
+                .bucket(&bucket_name)
+                .key(&object_name)
+                .send()
+                .await;
+
+            match get_result {
+                Ok(get_output) => {
+                    // File already exists in MinIO, return comprehensive metadata
+                    let metadata = serde_json::json!({
+                        "fieldname": field_name.clone(),
+                        "originalname": fname.clone(),
+                        "encoding": "7bit", // Default encoding for multipart
+                        "mimetype": get_output.content_type().unwrap_or("application/octet-stream"),
+                        "destination": bucket_name.clone(),
+                        "filename": fname,
+                        "path": format!("{}/{}", bucket_name, object_name),
+                        "size": get_output.content_length().unwrap_or(0),
+                        "uploaded_by": "", // TODO: Extract from auth context
+                        "downloaded_by": "",
+                        "etag": get_output.e_tag().unwrap_or("Unknown"),
+                        "version_id": get_output.version_id().unwrap_or(""),
+                        "download_path": format!("{}/{}", bucket_name, object_name),
+                        "presigned_url": "", // TODO: Generate presigned URL if needed
+                        "presigned_url_expire": 0, // TODO: Set expiration timestamp
+                        "last_modified": get_output.last_modified()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_else(|| "Unknown".to_string()),
+                        "status": "already_exists"
+                    });
+                    
+                    // For existing files, try to save to database (will handle duplicates gracefully)
+                    let auth_data = _auth_data;
+                    
+                    // Use create_record function to save metadata
+                    let req = test::TestRequest::default()
+                        .insert_header(("content-type", "application/json"))
+                        .to_http_request();
+                    req.extensions_mut().insert(auth_data.clone());
+                    
+                    let table_path = web::Path::from(name.to_string());
+                    let body = web::Json(metadata.clone());
+                    let query = web::Query(QueryParams {
+                        pluck: pluck_fields.join(","),
+                    });
+                    
+                    let _response = create_record(req, table_path, body, query).await;
+                    // For existing files, add metadata regardless of database operation result
+                    file_metadata.push(metadata.clone());
+                    log::info!("File '{}' already exists in MinIO, skipping upload", fname);
+                    
+                    // Skip reading the field data since file already exists
+                    while let Some(_chunk) = field.next().await {
+                        // Consume the field data without processing
+                    }
+                    continue;
+                }
+                Err(_) => {
+                    // File doesn't exist in MinIO, proceed with upload
+                    log::info!("File '{}' doesn't exist in MinIO, proceeding with upload", fname);
+                }
+            }
+
+            // Read file data for upload
+            let mut file_data = Vec::new();
+            while let Some(chunk) = field.next().await {
+                if let Ok(bytes) = chunk {
+                    file_data.extend_from_slice(&bytes);
+                }
+            }
+
+            // ✅ Convert Vec<u8> -> ByteStream
+            let byte_stream = ByteStream::from(file_data.clone());
+
+            // ✅ Upload to AWS S3 first
+            let upload_result = client
+                .put_object()
+                .bucket(&bucket_name)
+                .key(&object_name)
+                .body(byte_stream)
+                .send()
+                .await;
+
+            match upload_result {
+                Ok(put_output) => {
+                    uploaded_files_count += 1;
+                    log::info!("Successfully uploaded '{}' to AWS S3.", fname);
+                    
+                    // File uploaded successfully to MinIO - add comprehensive metadata
+                    let metadata = serde_json::json!({
+                        "fieldname": field_name,
+                        "originalname": fname.clone(),
+                        "encoding": "7bit", // Default encoding for multipart
+                        "mimetype": content_type,
+                        "destination": bucket_name.clone(),
+                        "filename": fname,
+                        "path": format!("{}/{}", bucket_name, object_name),
+                        "size": file_data.len(),
+                        "uploaded_by": "", // TODO: Extract from auth context
+                        "downloaded_by": "",
+                        "etag": put_output.e_tag().unwrap_or("Unknown"),
+                        "version_id": put_output.version_id().unwrap_or(""),
+                        "download_path": format!("{}/{}", bucket_name, object_name),
+                        "presigned_url": "", // TODO: Generate presigned URL if needed
+                        "presigned_url_expire": 0, // TODO: Set expiration timestamp
+                        "status": "uploaded"
+                    });
+                    // Save file metadata to the database using process_and_insert_record
+                    let auth_data = _auth_data;
+                    
+                    // Use create_record function to save metadata
+                    let req = test::TestRequest::default()
+                        .insert_header(("content-type", "application/json"))
+                        .to_http_request();
+                    req.extensions_mut().insert(auth_data.clone());
+                    
+                    let table_path = web::Path::from(name.to_string());
+                    let body = web::Json(metadata.clone());
+                    let query = web::Query(QueryParams {
+                        pluck: pluck_fields.join(","),
+                    });
+                    
+                    let _response = create_record(req, table_path, body, query).await;
+                    log::info!("Attempted to save file metadata to database for '{}' using create_record", fname);
+                    // Add the metadata to response
+                    file_metadata.push(metadata);
+                }
+                Err(e) => {
+                    log::error!("AWS S3 upload error for '{}': {:?}", fname, e);
+                    return HttpResponse::InternalServerError()
+                        .body(format!("Upload failed: {}", e));
+                }
+            }
+        }
+    }
+
+    let existing_count = file_metadata.iter().filter(|m| m["status"] == "already_exists").count();
+    
+    let response_message = if existing_count > 0 {
+        if uploaded_files_count > 0 {
+            format!("Uploaded {} new file(s), {} file(s) already existed in MinIO", uploaded_files_count, existing_count)
+        } else {
+            format!("All {} file(s) already exist in MinIO", existing_count)
+        }
+    } else {
+        format!("Successfully uploaded {} file(s)", uploaded_files_count)
+    };
+
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: response_message,
+        count: (uploaded_files_count + existing_count) as i32,
+        data: file_metadata,
+    })
+}
+
