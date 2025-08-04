@@ -6,6 +6,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 use tokio_postgres::Client;
+use log::{info, warn, error};
 
 // Define a struct to hold the flags for each step
 pub struct DatabaseSetupFlags {
@@ -48,13 +49,13 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
 
     // Step 1: Run cleanup if requested
     if flags.run_cleanup {
-        println!("Step 1: Database cleanup requested...");
+        info!("Step 1: Database cleanup requested...");
 
         // Get the expected password from environment variable
         let expected_password = match env::var("CLEANUP_PASSWORD") {
             Ok(password) => password,
             Err(e) => {
-                println!("CLEANUP_PASSWORD environment variable error: {}", e);
+                error!("CLEANUP_PASSWORD environment variable error: {}", e);
                 return Err(format!("CLEANUP_PASSWORD environment variable error: {}", e).into());
             }
         };
@@ -67,7 +68,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         let entered_password = rpassword::read_password()?;
 
         if entered_password == expected_password {
-            println!("Password correct. Running database cleanup script...");
+            info!("Password correct. Running database cleanup script...");
 
             // Run cleanup.sql using database connection
             let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
@@ -77,16 +78,16 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
                 return Err(format!("Database cleanup failed: {}", e).into());
             }
 
-            println!("Database cleanup completed successfully!");
+            info!("Database cleanup completed successfully!");
         } else {
-            println!("Incorrect password. Skipping database cleanup.");
+            warn!("Incorrect password. Skipping database cleanup.");
             return Err("Cleanup password incorrect".into());
         }
     }
 
     // Step 2: Run migrations if requested
     if flags.run_migrations {
-        println!("Step 2: Running database migrations...");
+        info!("Step 2: Running database migrations...");
         let migration_result = Command::new("diesel")
             .env("DATABASE_URL", &database_url)
             .args(&["migration", "run"])
@@ -96,7 +97,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         if !migration_result.success() {
             return Err("Database migrations failed".into());
         }
-        println!("Database migrations completed successfully!");
+        info!("Database migrations completed successfully!");
         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
     }
 
@@ -104,7 +105,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     if flags.initialize_services {
         // First initialization with GLOBAL_ORGANIZATION_CONFIG
         if let Err(e) = initialize(EInitializer::GLOBAL_ORGANIZATION_CONFIG, None).await {
-            println!("Failed to initialize global organization: {}", e);
+            error!("Failed to initialize global organization: {}", e);
         } else {
             log::info!("Global organization initialized successfully");
 
@@ -114,14 +115,14 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
                 ..Default::default()
             });
             if let Err(e) = initialize(EInitializer::ROOT_ACCOUNT_CONFIG, root_params).await {
-                println!("Failed to initialize root account: {}", e);
+                error!("Failed to initialize root account: {}", e);
             } else {
                 log::info!("Root account initialized successfully");
             };
 
             // Initialize system device after root account
             if let Err(e) = initialize(EInitializer::SYSTEM_DEVICE_CONFIG, None).await {
-                println!("Failed to initialize system device: {}", e);
+                error!("Failed to initialize system device: {}", e);
             } else {
                 log::info!("System device initialized successfully");
             };
@@ -130,14 +131,14 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
 
     // Step 4: Run init.sql if requested
     if flags.run_init_sql {
-        println!("Step 4: Running database initialization script...");
+        info!("Step 4: Running database initialization script...");
         let init_path = Path::new(&current_dir).join("src/schema/init.sql");
         let init_sql = std::fs::read_to_string(&init_path)?;
 
         if let Err(e) = execute_sql_script(&db_client, &init_sql).await {
             return Err(format!("Database initialization failed: {}", e).into());
         }
-        println!("Database initialization completed successfully!");
+        info!("Database initialization completed successfully!");
     }
 
     Ok(())
@@ -153,7 +154,7 @@ async fn execute_sql_script(
     for statement in statements {
         if !statement.trim().is_empty() {
             if let Err(e) = client.execute(&statement, &[]).await {
-                eprintln!("Error executing SQL statement: {}", statement);
+                error!("Error executing SQL statement: {}", statement);
                 return Err(Box::new(e));
             }
         }

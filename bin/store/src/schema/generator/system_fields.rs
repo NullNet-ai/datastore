@@ -1,5 +1,3 @@
-use crate::schema::generator::diesel_schema_definition::types::*;
-
 /// System fields that are common across most tables
 /// These can be destructured into table definitions to avoid repetition
 /// 
@@ -27,7 +25,7 @@ macro_rules! system_fields {
         deleted_by: nullable(text()),
         requested_by: nullable(text()),
         timestamp: nullable(timestamp()),
-        tags: nullable(array(text()))
+        tags: nullable(array(text())),
         categories: nullable(array(text())),
         code: nullable(text()), migration_nullable: false,
         id: nullable(text()), primary_key: true, migration_nullable: false,

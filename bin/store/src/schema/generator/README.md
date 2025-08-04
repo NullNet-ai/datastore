@@ -1,6 +1,15 @@
-# Schema Generator
+# Schema Generator with Hypertable Support
 
-The Schema Generator automatically creates Rust models, updates `schema.rs`, and generates database migrations based on table definition files. It supports both comment-based definitions and modern struct-based definitions using actual Diesel types.
+The Schema Generator automatically creates Rust models, updates `schema.rs`, and generates database migrations based on table definition files. It provides a Diesel-based schema generator with built-in support for TimescaleDB hypertables, comprehensive validation, and supports both comment-based definitions and modern struct-based definitions using actual Diesel types.
+
+## Features
+
+- **Hypertable Support**: Define time-series tables with automatic validation
+- **Compile-time Validation**: Ensures hypertable requirements are met
+- **Migration Safety**: Prevents duplicate index and foreign key creation
+- **Type Safety**: Full Rust type system integration
+- **Smart Re-runs**: Only generates new migrations when actual schema changes are detected
+- **Automatic Generation**: Creates Rust models, schema definitions, and migrations
 
 ## How it Works
 
@@ -11,11 +20,58 @@ The Schema Generator automatically creates Rust models, updates `schema.rs`, and
    - Database migration files in `migrations/`
 3. **Smart Re-runs**: Only generates new migrations when actual schema changes are detected
 
+## Hypertable Requirements
+
+When `hypertable: true` is specified, the following requirements are enforced:
+
+1. **Required Fields**:
+   - `timestamp: timestamptz()` - The time dimension field
+   - `hypertable_timestamp: text()` - Additional timestamp metadata
+   - `id` - Unique identifier field
+
+2. **Primary Key**: Must be a composite key with `timestamp` and `id`
+
+3. **Validation**: Automatic validation occurs when `validate_schema()` is called
+
 ## Table Definition Formats
 
 ### Struct-Based with Diesel Types
 
 Use actual Diesel types for better type safety and IDE support:
+
+#### Basic Hypertable Example
+
+```rust
+// Example: metrics_table.rs
+use crate::schema::generator::diesel_schema_definition::{
+    DieselTableDefinition, types::*
+};
+use crate::define_table_schema;
+
+pub struct MetricsTable;
+
+define_table_schema! {
+    table_name: "metrics",
+    fields: {
+        id: uuid(), primary_key: true,
+        timestamp: timestamptz(), primary_key: true,  // Required
+        hypertable_timestamp: text(),                 // Required
+        metric_name: text(),
+        metric_value: DieselType::Numeric,
+        tags: nullable(jsonb())
+    },
+    hypertable: true,  // Enable validation
+    indexes: {
+        idx_metrics_name: {
+            columns: ["metric_name"],
+            unique: false,
+            type: "btree"
+        }
+    }
+}
+```
+
+#### Regular Table Example
 
 ```rust
 // Example: user_profile_struct.rs
@@ -51,6 +107,7 @@ define_table_schema! {
         created_at: timestamptz(), default: "CURRENT_TIMESTAMP",
         updated_at: timestamptz(), default: "CURRENT_TIMESTAMP"
     },
+    // hypertable: false (default)
     indexes: {
         idx_user_profiles_user_id: {
             columns: ["user_id"],
@@ -101,6 +158,19 @@ impl DieselTableDefinition for ComplexUserProfileTable {
             // ... more fields
         ]
     }
+}
+```
+
+## Validation
+
+```rust
+// Validate schema requirements
+MetricsTable::validate_schema();  // Panics if hypertable requirements not met
+UserProfileTable::validate_schema();    // Always succeeds for regular tables
+
+// Check if table is a hypertable
+if MetricsTable::is_hypertable() {
+    println!("This is a hypertable!");
 }
 ```
 
@@ -193,6 +263,105 @@ DieselType::Nullable(Box::new(DieselType::Text))
 ✅ **Better Tooling**: Works with Rust analyzers and formatters  
 ✅ **Extensible**: Easy to add custom validation and logic  
 ✅ **Documentation**: Self-documenting with proper Rust docs  
+
+## Migration Best Practices
+
+### Problem: Duplicate Index/Foreign Key Creation
+
+The issue about migrations recreating indexes and foreign keys can be solved with conditional SQL:
+
+### Solution 1: Conditional Index Creation
+
+```sql
+-- Instead of:
+CREATE INDEX idx_metrics_name ON metrics (metric_name);
+
+-- Use:
+CREATE INDEX IF NOT EXISTS idx_metrics_name ON metrics (metric_name);
+```
+
+### Solution 2: Conditional Foreign Key Creation
+
+```sql
+-- Check if foreign key exists before creating
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_metrics_device_id'
+          AND table_name = 'metrics'
+    ) THEN
+        ALTER TABLE metrics 
+        ADD CONSTRAINT fk_metrics_device_id 
+        FOREIGN KEY (device_id) REFERENCES devices(id) 
+        ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
+```
+
+### Solution 3: Migration State Tracking
+
+```sql
+-- Create a migration tracking table
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version VARCHAR(255) PRIMARY KEY,
+    applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Check before applying migrations
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM schema_migrations WHERE version = '001_create_metrics'
+    ) THEN
+        -- Apply migration
+        CREATE TABLE metrics (...);
+        CREATE INDEX idx_metrics_name ON metrics (metric_name);
+        
+        -- Mark as applied
+        INSERT INTO schema_migrations (version) VALUES ('001_create_metrics');
+    END IF;
+END $$;
+```
+
+### Solution 4: Incremental Schema Updates
+
+```rust
+// Instead of regenerating entire schema, use incremental updates
+pub fn apply_schema_changes() {
+    // Only validate new/changed tables
+    NewTable::validate_schema();
+    
+    // Generate only differential migrations
+    let changes = detect_schema_changes();
+    apply_incremental_migration(changes);
+}
+```
+
+## Error Handling
+
+The validation system provides clear error messages:
+
+```rust
+// This will panic with a descriptive message:
+// "Hypertable 'invalid_table' requires a 'timestamp' field of type Timestamptz"
+InvalidHypertable::validate_schema();
+```
+
+## Integration with TimescaleDB
+
+After creating the table structure, convert to hypertable:
+
+```sql
+-- Convert regular table to hypertable
+SELECT create_hypertable('metrics', 'timestamp', if_not_exists => TRUE);
+
+-- Set chunk time interval (optional)
+SELECT set_chunk_time_interval('metrics', INTERVAL '1 day');
+
+-- Enable compression (optional)
+ALTER TABLE metrics SET (timescaledb.compress = true);
+```
 
 ## Field Properties
 
@@ -336,6 +505,22 @@ DROP TABLE IF EXISTS "user_profiles";
 ### Debug Mode
 
 To see detailed output during generation, check the console logs when running with `CREATE_SCHEMA=true`.
+
+## Testing
+
+```bash
+# Run schema validation tests
+cargo test schema::tables::product_catalog::tests
+
+# Run hypertable example tests
+cargo test schema::examples::hypertable_usage::tests
+
+# Run schema generator tests
+cargo test schema::generator
+
+# Test hypertable validation
+cargo test hypertable_validation
+```
 
 ## Integration
 

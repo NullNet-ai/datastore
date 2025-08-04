@@ -1,0 +1,166 @@
+//! Utility functions and constants for the schema generator
+//! This module centralizes common functionality to reduce code duplication
+
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
+
+/// Centralized type mappings for field types
+pub static DIESEL_TYPE_MAPPINGS: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    
+    // Basic types
+    map.insert("text()", "Text");
+    map.insert("integer()", "Int4");
+    map.insert("boolean()", "Bool");
+    map.insert("timestamp()", "Timestamp");
+    map.insert("timestamptz()", "Timestamptz");
+    map.insert("jsonb()", "Jsonb");
+    map.insert("inet()", "Inet");
+    map.insert("bigint()", "BigInt");
+    map.insert("float()", "Float4");
+    map.insert("double()", "Float8");
+    
+    // Nullable variants
+    map.insert("nullable(text())", "Nullable<Text>");
+    map.insert("nullable(integer())", "Nullable<Int4>");
+    map.insert("nullable(boolean())", "Nullable<Bool>");
+    map.insert("nullable(timestamp())", "Nullable<Timestamp>");
+    map.insert("nullable(timestamptz())", "Nullable<Timestamptz>");
+    map.insert("nullable(jsonb())", "Nullable<Jsonb>");
+    map.insert("nullable(inet())", "Nullable<Inet>");
+    map.insert("nullable(bigint())", "Nullable<BigInt>");
+    map.insert("nullable(float())", "Nullable<Float4>");
+    map.insert("nullable(double())", "Nullable<Float8>");
+    
+    // Array types
+    map.insert("array(text())", "Array<Text>");
+    map.insert("nullable(array(text()))", "Nullable<Array<Text>>");
+    
+    map
+});
+
+/// Rust type mappings for model generation
+pub static RUST_TYPE_MAPPINGS: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    
+    map.insert("Text", "String");
+    map.insert("Int4", "i32");
+    map.insert("Int8", "i64");
+    map.insert("BigInt", "i64");
+    map.insert("Bool", "bool");
+    map.insert("Timestamp", "chrono::NaiveDateTime");
+    map.insert("Timestamptz", "chrono::DateTime<chrono::Utc>");
+    map.insert("Jsonb", "serde_json::Value");
+    map.insert("Inet", "std::net::IpAddr");
+    map.insert("Float4", "f32");
+    map.insert("Float8", "f64");
+    
+    map
+});
+
+/// String manipulation utilities
+pub struct StringUtils;
+
+impl StringUtils {
+    
+    /// Convert snake_case to PascalCase
+    pub fn to_pascal_case(snake_str: &str) -> String {
+        snake_str
+            .split('_')
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            })
+            .collect()
+    }
+    
+    }
+
+/// Field type parsing utilities
+pub struct FieldTypeParser;
+
+impl FieldTypeParser {
+    /// Parse a diesel field type string and return the corresponding diesel type
+    pub fn parse_diesel_type(type_str: &str) -> Result<String, String> {
+        let cleaned = type_str.trim();
+        
+        // Check direct mappings first
+        if let Some(&mapped_type) = DIESEL_TYPE_MAPPINGS.get(cleaned) {
+            return Ok(mapped_type.to_string());
+        }
+        
+        // Handle complex nested types
+        if cleaned.starts_with("nullable(") {
+            let inner = Self::extract_inner_type(cleaned, "nullable")?;
+            let inner_type = Self::parse_diesel_type(&inner)?;
+            return Ok(format!("Nullable<{}>", inner_type));
+        }
+        
+        if cleaned.starts_with("array(") {
+            let inner = Self::extract_inner_type(cleaned, "array")?;
+            let inner_type = Self::parse_diesel_type(&inner)?;
+            return Ok(format!("Array<{}>", inner_type));
+        }
+        
+        // Default fallback
+        Ok("Text".to_string())
+    }
+    
+    /// Convert diesel type to rust type for model generation
+    pub fn diesel_to_rust_type(diesel_type: &str) -> Result<String, String> {
+        // Handle nullable types
+        if diesel_type.starts_with("Nullable<") && diesel_type.ends_with(">") {
+            let inner = &diesel_type[9..diesel_type.len()-1];
+            let inner_rust = Self::diesel_to_rust_type(inner)?;
+            return Ok(format!("Option<{}>", inner_rust));
+        }
+        
+        // Handle array types
+        if diesel_type.starts_with("Array<") && diesel_type.ends_with(">") {
+            let inner = &diesel_type[6..diesel_type.len()-1];
+            let inner_rust = Self::diesel_to_rust_type(inner)?;
+            return Ok(format!("Vec<{}>", inner_rust));
+        }
+        
+        // Direct mapping
+        if let Some(&rust_type) = RUST_TYPE_MAPPINGS.get(diesel_type) {
+            Ok(rust_type.to_string())
+        } else {
+            Err(format!("Unknown diesel type: {}", diesel_type))
+        }
+    }
+    
+    /// Extract inner type from wrapper functions like nullable() or array()
+    fn extract_inner_type(type_str: &str, wrapper: &str) -> Result<String, String> {
+        let prefix = format!("{}(", wrapper);
+        if !type_str.starts_with(&prefix) || !type_str.ends_with(")") {
+            return Err(format!("Invalid {} type format: {}", wrapper, type_str));
+        }
+        
+        let inner = &type_str[prefix.len()..type_str.len()-1];
+        Ok(inner.to_string())
+    }
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_string_utils() {
+        assert_eq!(StringUtils::to_pascal_case("user_profile"), "UserProfile");
+    }
+    
+    #[test]
+    fn test_field_type_parser() {
+        assert_eq!(FieldTypeParser::parse_diesel_type("text()").unwrap(), "Text");
+        assert_eq!(FieldTypeParser::parse_diesel_type("nullable(text())").unwrap(), "Nullable<Text>");
+        assert_eq!(FieldTypeParser::diesel_to_rust_type("Text").unwrap(), "String");
+        assert_eq!(FieldTypeParser::diesel_to_rust_type("Nullable<Text>").unwrap(), "Option<String>");
+    }
+}

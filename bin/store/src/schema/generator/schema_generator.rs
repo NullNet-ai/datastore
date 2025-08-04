@@ -13,7 +13,7 @@ pub struct SchemaChange {
     pub field_definition: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SchemaChangeType {
     NewTable,
     NewField,
@@ -28,12 +28,12 @@ impl SchemaGenerator {
         let mut changes = Vec::new();
         
         // Check if table exists
-        let existing_fields = get_table_fields(&table_def.table_name);
+        let existing_fields = get_table_fields(&table_def.name);
         
         if existing_fields.is_none() {
             // Table doesn't exist, need to create it
             changes.push(SchemaChange {
-                table_name: table_def.table_name.clone(),
+                table_name: table_def.name.clone(),
                 change_type: SchemaChangeType::NewTable,
                 field_name: None,
                 field_definition: None,
@@ -43,53 +43,53 @@ impl SchemaGenerator {
             let existing_fields = existing_fields.unwrap();
             
             // Check if this table uses system fields and detect new system fields
-            let uses_system_fields = Self::table_uses_system_fields(&table_def.table_name);
+            let uses_system_fields = Self::table_uses_system_fields(&table_def.name);
             if uses_system_fields && Self::should_force_system_fields_update() {
                 // Only add system fields that don't already exist in the table
                 for field in &table_def.fields {
-                    if Self::is_system_field(&field.field_name) && !existing_fields.contains(&field.field_name) {
+                    if Self::is_system_field(&field.name) && !existing_fields.contains(&field.name) {
                         changes.push(SchemaChange {
-                            table_name: table_def.table_name.clone(),
+                            table_name: table_def.name.clone(),
                             change_type: SchemaChangeType::NewField,
-                            field_name: Some(field.field_name.clone()),
-                            field_definition: Some(field.field_type.clone()),
+                            field_name: Some(field.name.clone()),
+                            field_definition: Some(field.diesel_type.clone()),
                         });
                     }
                 }
             }
             
             for field in &table_def.fields {
-                if !existing_fields.contains(&field.field_name) {
+                if !existing_fields.contains(&field.name) {
                     // Skip system fields if they were already processed above
-                    if uses_system_fields && Self::should_force_system_fields_update() && Self::is_system_field(&field.field_name) {
+                    if uses_system_fields && Self::should_force_system_fields_update() && Self::is_system_field(&field.name) {
                         continue;
                     }
                     
                     changes.push(SchemaChange {
-                        table_name: table_def.table_name.clone(),
+                        table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::NewField,
-                        field_name: Some(field.field_name.clone()),
-                        field_definition: Some(field.field_type.clone()),
+                        field_name: Some(field.name.clone()),
+                        field_definition: Some(field.diesel_type.clone()),
                     });
                 }
             }
             
             // Check for removed fields (fields that exist in DB but not in table definition)
             let current_field_names: Vec<String> = table_def.fields.iter()
-                .map(|f| f.field_name.clone())
+                .map(|f| f.name.clone())
                 .collect();
             
             for existing_field in &existing_fields {
                 if !current_field_names.contains(existing_field) {
                     // Get field type information for the removed field
-                    let field_definition = if let Some(field_type_info) = field_type_in_table(&table_def.table_name, existing_field) {
+                    let field_definition = if let Some(field_type_info) = field_type_in_table(&table_def.name, existing_field) {
                         Some(Self::field_type_info_to_definition(&field_type_info))
                     } else {
                         None
                     };
                     
                     changes.push(SchemaChange {
-                        table_name: table_def.table_name.clone(),
+                        table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::RemovedField,
                         field_name: Some(existing_field.clone()),
                         field_definition,
@@ -112,7 +112,7 @@ impl SchemaGenerator {
         // Add index changes - only if they don't already exist
          for (index_name, columns, _is_unique, index_type) in indexes {
              // Check if index already exists by looking for it in existing schema
-             if !Self::index_exists_in_schema(&table_def.table_name, index_name) {
+             if !Self::index_exists_in_schema(&table_def.name, index_name) {
                  let field_def = if let Some(idx_type) = index_type {
                      format!("{}|{}", columns.join(","), idx_type)
                  } else {
@@ -120,7 +120,7 @@ impl SchemaGenerator {
                  };
                  
                  changes.push(SchemaChange {
-                     table_name: table_def.table_name.clone(),
+                     table_name: table_def.name.clone(),
                      change_type: SchemaChangeType::NewIndex,
                      field_name: Some(index_name.clone()),
                      field_definition: Some(field_def),
@@ -131,10 +131,10 @@ impl SchemaGenerator {
          // Add foreign key changes - only if they don't already exist
          for foreign_key in foreign_keys {
              // Generate constraint name: fk_tablename_columnname
-             let constraint_name = format!("fk_{}_{}", table_def.table_name, foreign_key.column);
+             let constraint_name = format!("fk_{}_{}", table_def.name, foreign_key.column);
              
              // Check if foreign key already exists
-             if !Self::foreign_key_exists_in_schema(&table_def.table_name, &constraint_name) {
+             if !Self::foreign_key_exists_in_schema(&table_def.name, &constraint_name) {
                  let field_def = format!("{}|{}|{}", 
                      foreign_key.column, 
                      foreign_key.references_table, 
@@ -142,7 +142,7 @@ impl SchemaGenerator {
                  );
                  
                  changes.push(SchemaChange {
-                     table_name: table_def.table_name.clone(),
+                     table_name: table_def.name.clone(),
                      change_type: SchemaChangeType::NewForeignKey,
                      field_name: Some(constraint_name),
                      field_definition: Some(field_def),
@@ -164,7 +164,7 @@ impl SchemaGenerator {
         };
         
         // Check if table already exists
-        if Self::table_exists_in_schema(&existing_content, &table_def.table_name) {
+        if Self::table_exists_in_schema(&existing_content, &table_def.name) {
             // Table exists, we need to handle field changes
             Self::update_existing_table_in_schema(&existing_content, table_def, schema_file_path)
         } else {
@@ -176,11 +176,11 @@ impl SchemaGenerator {
     /// Update an existing table in schema.rs by adding new fields and removing deleted fields
     fn update_existing_table_in_schema(existing_content: &str, table_def: &TableDefinition, file_path: &str) -> Result<(), String> {
         // Get current fields in schema.rs
-        let existing_fields = get_table_fields(&table_def.table_name).unwrap_or_default();
+        let existing_fields = get_table_fields(&table_def.name).unwrap_or_default();
         
         // Get current field names from table definition
         let current_field_names: Vec<String> = table_def.fields.iter()
-            .map(|f| f.field_name.clone())
+            .map(|f| f.name.clone())
             .collect();
         
         // Find fields to remove (exist in schema but not in table definition)
@@ -194,13 +194,12 @@ impl SchemaGenerator {
         
         // Remove fields that are no longer in the table definition
         if !fields_to_remove.is_empty() {
-            updated_content = Self::remove_fields_from_table(&updated_content, &table_def.table_name, &fields_to_remove)?;
-            println!("Removed {} fields from table '{}' in schema.rs", fields_to_remove.len(), table_def.table_name);
+            updated_content = Self::remove_fields_from_table(&updated_content, &table_def.name, &fields_to_remove)?
         }
         
         // Check if there are new fields to add
         let has_new_fields = table_def.fields.iter()
-            .any(|field| !field_exists_in_table(&table_def.table_name, &field.field_name));
+            .any(|field| !field_exists_in_table(&table_def.name, &field.name));
         
         if has_new_fields {
             // Add new fields
@@ -338,7 +337,7 @@ impl SchemaGenerator {
         for field in &table_def.fields {
             match field.parse() {
                 Ok(parsed) => parsed_fields.push(parsed),
-                Err(e) => return Err(format!("Error parsing field {}: {}", field.field_name, e)),
+                Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
             }
         }
         
@@ -359,7 +358,6 @@ impl SchemaGenerator {
             return Err(format!("Failed to write schema.rs: {}", e));
         }
         
-        println!("Added new table '{}' to schema.rs", table_def.table_name);
         Ok(())
     }
     
@@ -369,7 +367,7 @@ impl SchemaGenerator {
         // Find the table definition
         let table_pattern = format!(
             r"(?s)(table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{)(.*?)(\}}\s*\}})",
-            regex::escape(&table_def.table_name)
+            regex::escape(&table_def.name)
         );
         
         let table_regex = match Regex::new(&table_pattern) {
@@ -385,16 +383,15 @@ impl SchemaGenerator {
             // Parse new fields that don't exist
             let mut new_fields = Vec::new();
             for field in &table_def.fields {
-                if !field_exists_in_table(&table_def.table_name, &field.field_name) {
+                if !field_exists_in_table(&table_def.name, &field.name) {
                     match field.parse() {
                         Ok(parsed) => new_fields.push(parsed),
-                        Err(e) => return Err(format!("Error parsing field {}: {}", field.field_name, e)),
+                        Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
                     }
                 }
             }
             
             if new_fields.is_empty() {
-                println!("No new fields to add to table '{}'", table_def.table_name);
                 return Ok(());
             }
             
@@ -407,7 +404,7 @@ impl SchemaGenerator {
             // Generate the new table body with properly ordered fields
             let mut new_table_body = String::new();
             for field in &ordered_fields {
-                new_table_body.push_str(&format!("        {} -> {},\n", field.name, field.diesel_type));
+                new_table_body.push_str(&format!("        {} -> {},\n", field.name, field.field_type));
             }
             
             // Reconstruct the table with ordered fields
@@ -421,10 +418,9 @@ impl SchemaGenerator {
                 return Err(format!("Failed to write schema.rs: {}", e));
             }
             
-            println!("Added {} new fields to table '{}' in schema.rs with proper ordering", new_fields.len(), table_def.table_name);
             Ok(())
         } else {
-            Err(format!("Could not find table '{}' in schema.rs", table_def.table_name))
+            Err(format!("Could not find table '{}' in schema.rs", table_def.name))
         }
     }
     
@@ -508,7 +504,6 @@ impl SchemaGenerator {
                 // Parse the diesel type to determine other properties
                 let is_nullable = diesel_type.starts_with("Nullable<");
                 let is_array = diesel_type.contains("Array<");
-                let is_json = diesel_type.contains("Jsonb");
                 
                 // Extract core type for rust type mapping
                 let mut core_type = diesel_type;
@@ -534,7 +529,7 @@ impl SchemaGenerator {
                     _ => "String", // Default fallback
                 };
                 
-                let rust_type = if is_array {
+                let _rust_type = if is_array {
                     if is_nullable {
                         format!("Option<Vec<{}>>", base_rust_type)
                     } else {
@@ -548,15 +543,10 @@ impl SchemaGenerator {
                 
                 fields.push(crate::schema::generator::field_definition::ParsedField {
                     name: field_name.to_string(),
-                    diesel_type: diesel_type.to_string(),
-                    rust_type,
-                    is_nullable,
-                    migration_nullable: is_nullable, // Assume same as nullable
-                    is_array,
-                    is_json,
-                    is_index: false, // Can't determine from schema.rs
+                    field_type: diesel_type.to_string(),
                     is_primary_key: false, // Can't determine from schema.rs
-                    foreign_key: None, // Can't determine from schema.rs
+                    is_indexed: false, // Can't determine from schema.rs
+                    migration_nullable: is_nullable,
                     default_value: None, // Can't determine from schema.rs
                 });
             }
@@ -650,33 +640,7 @@ impl SchemaGenerator {
     }
     
     /// Replace an entire table definition in the schema
-    fn replace_table_definition(existing_content: &str, table_def: &TableDefinition, file_path: &str) -> Result<(), String> {
-        // Find the table definition
-        let table_pattern = format!(
-            r"(?s)table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{.*?\}}\s*\}}",
-            regex::escape(&table_def.table_name)
-        );
-        
-        let table_regex = match Regex::new(&table_pattern) {
-            Ok(re) => re,
-            Err(e) => return Err(format!("Failed to create table regex: {}", e)),
-        };
-        
-        // Generate new table definition
-        let new_table_definition = Self::generate_table_definition(table_def)?;
-        
-        // Replace the old table definition with the new one
-        let new_content = table_regex.replace(existing_content, new_table_definition.as_str());
-        
-        // Write the updated schema
-        if let Err(e) = fs::write(file_path, new_content.as_ref()) {
-            return Err(format!("Failed to write schema.rs: {}", e));
-        }
-        
-        println!("Replaced table '{}' definition in schema.rs with updated system fields", table_def.table_name);
-        Ok(())
-    }
-    
+
     /// Generate a complete table definition
     fn generate_table_definition(table_def: &TableDefinition) -> Result<String, String> {
         let mut definition = String::new();
@@ -686,7 +650,7 @@ impl SchemaGenerator {
         for field in &table_def.fields {
             match field.parse() {
                 Ok(parsed) => parsed_fields.push(parsed),
-                Err(e) => return Err(format!("Error parsing field {}: {}", field.field_name, e)),
+                Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
             }
         }
         
@@ -694,7 +658,7 @@ impl SchemaGenerator {
         let primary_key_fields: Vec<&str> = table_def.fields
             .iter()
             .filter(|field| field.is_primary_key)
-            .map(|field| field.field_name.as_str())
+            .map(|field| field.name.as_str())
             .collect();
         
         // Determine primary key for Diesel schema
@@ -714,11 +678,11 @@ impl SchemaGenerator {
                 .unwrap_or(&parsed_fields[0].name)
         };
         
-        definition.push_str(&format!("table! {{\n    {}({}) {{\n", table_def.table_name, primary_key));
+        definition.push_str(&format!("table! {{\n    {}({}) {{\n", table_def.name, primary_key));
         
         // Add all fields
         for field in &parsed_fields {
-            definition.push_str(&format!("        {} -> {},\n", field.name, field.diesel_type));
+            definition.push_str(&format!("        {} -> {},\n", field.name, field.field_type));
         }
         
         definition.push_str("    }\n}");
@@ -750,28 +714,34 @@ mod tests {
     #[test]
     fn test_generate_table_definition() {
         let table_def = TableDefinition {
-            table_name: "test_table".to_string(),
-            hypertable: false,
+            name: "test_table".to_string(),
             fields: vec![
                 FieldDefinition {
-                    field_name: "id".to_string(),
-                    field_type: "Text".to_string(),
-                    is_index: false,
+                    name: "id".to_string(),
+                    diesel_type: "Text".to_string(),
+                    rust_type: "String".to_string(),
                     is_primary_key: true,
-                    joins_with: None,
-                    default_value: None,
+                    is_indexed: false,
+                    is_nullable: false,
+                    is_array: false,
                     migration_nullable: true,
+                    default_value: None,
                 },
                 FieldDefinition {
-                    field_name: "name".to_string(),
-                    field_type: "Text".to_string(),
-                    is_index: false,
+                    name: "name".to_string(),
+                    diesel_type: "Text".to_string(),
+                    rust_type: "String".to_string(),
                     is_primary_key: false,
-                    joins_with: None,
-                    default_value: None,
+                    is_indexed: false,
+                    is_nullable: false,
+                    is_array: false,
                     migration_nullable: true,
+                    default_value: None,
                 },
             ],
+            indexes: vec![],
+            foreign_keys: vec![],
+            is_hypertable: false,
         };
         
         let result = SchemaGenerator::generate_table_definition(&table_def);

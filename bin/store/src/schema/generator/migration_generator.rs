@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::io::{self, Write};
 use chrono::{DateTime, Utc};
+use log::{info, debug};
 
 pub struct MigrationGenerator;
 
@@ -11,8 +12,17 @@ impl MigrationGenerator {
     /// Generate migration files for the given changes
     pub fn generate_migration(changes: &[SchemaChange], table_definitions: &[TableDefinition]) -> Result<(), String> {
         if changes.is_empty() {
-            println!("No changes detected, skipping migration generation");
             return Ok(());
+        }
+        
+        // Log migration summary
+        info!("Creating migration with {} change(s)", changes.len());
+        let mut change_summary = std::collections::HashMap::new();
+        for change in changes {
+            *change_summary.entry(&change.change_type).or_insert(0) += 1;
+        }
+        for (change_type, count) in &change_summary {
+            debug!("  - {:?}: {} change(s)", change_type, count);
         }
         
         // Get migration name from user
@@ -23,6 +33,7 @@ impl MigrationGenerator {
         
         // Create migration directory
         let migration_dir = format!("migrations/{}_{}", timestamp, migration_name);
+        info!("Creating migration directory: {}", migration_dir);
         
         // Check if migration already exists
         if Path::new(&migration_dir).exists() {
@@ -50,14 +61,16 @@ impl MigrationGenerator {
             return Err(format!("Failed to write down.sql: {}", e));
         }
         
-        println!("Generated migration: {}", migration_dir);
+        info!("Migration '{}' created successfully", migration_name);
+        debug!("Migration files written to: {}", migration_dir);
+        
         Ok(())
     }
     
     /// Get migration name from user input
     fn get_migration_name_from_user() -> Result<String, String> {
         loop {
-            print!("Enter migration name: ");
+            info!("Enter migration name: ");
             io::stdout().flush().map_err(|e| format!("Failed to flush stdout: {}", e))?;
             
             let mut input = String::new();
@@ -66,19 +79,16 @@ impl MigrationGenerator {
             let migration_name = input.trim().to_string();
             
             if migration_name.is_empty() {
-                println!("Migration name cannot be empty. Please try again.");
                 continue;
             }
             
             // Check if migration with this name already exists
             if Self::migration_exists(&migration_name)? {
-                println!("Migration already exists, please enter a different name.");
                 continue;
             }
             
             // Validate migration name (only alphanumeric and underscores)
             if !migration_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                println!("Migration name can only contain alphanumeric characters and underscores. Please try again.");
                 continue;
             }
             
@@ -125,7 +135,7 @@ impl MigrationGenerator {
         
         // Group changes by table name and type
         use std::collections::HashMap;
-        let mut tables_by_name: HashMap<String, &TableDefinition> = HashMap::new();
+        let _tables_by_name: HashMap<String, &TableDefinition> = HashMap::new();
         let mut new_tables = Vec::new();
         let mut new_fields = Vec::new();
         let mut removed_fields = Vec::new();
@@ -152,7 +162,7 @@ impl MigrationGenerator {
             
             // Find the correct table definition for this table
             let table_def = table_definitions.iter()
-                .find(|def| def.table_name == change.table_name)
+                .find(|def| def.name == change.table_name)
                 .ok_or_else(|| format!("Table definition not found for table: {}", change.table_name))?;
             
             let create_table_sql = Self::generate_create_table_sql(&change.table_name, table_def)?;
@@ -160,7 +170,7 @@ impl MigrationGenerator {
             sql.push_str("\n");
             
             // Add hypertable creation if this is a hypertable
-            if table_def.hypertable {
+            if table_def.is_hypertable {
                 sql.push_str("--> statement-breakpoint\n");
                 let hypertable_sql = Self::generate_hypertable_sql(&change.table_name)?;
                 sql.push_str(&hypertable_sql);
@@ -301,7 +311,7 @@ impl MigrationGenerator {
         for field in &table_def.fields {
             match field.parse() {
                 Ok(parsed) => parsed_fields.push(parsed),
-                Err(e) => return Err(format!("Error parsing field {}: {}", field.field_name, e)),
+                Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
             }
         }
         
@@ -309,12 +319,12 @@ impl MigrationGenerator {
         let primary_key_fields: Vec<&str> = table_def.fields
             .iter()
             .filter(|field| field.is_primary_key)
-            .map(|field| field.field_name.as_str())
+            .map(|field| field.name.as_str())
             .collect();
         
         // Add fields
         for (i, field) in parsed_fields.iter().enumerate() {
-            let postgres_type = Self::diesel_to_postgres_type(&field.diesel_type, field.migration_nullable)?;
+            let postgres_type = Self::diesel_to_postgres_type(&field.field_type, field.migration_nullable)?;
             let default_clause = if let Some(default) = &field.default_value {
                 format!(" DEFAULT {}", default)
             } else {

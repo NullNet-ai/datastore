@@ -767,7 +767,24 @@ table! {
 }
 
 table! {
-    files(id) {        tombstone -> Nullable<Int4>,
+    files(id) {
+        image_url -> Nullable<Text>,
+        fieldname -> Nullable<Text>,
+        originalname -> Nullable<Text>,
+        encoding -> Nullable<Text>,
+        mimetype -> Nullable<Text>,
+        destination -> Nullable<Text>,
+        filename -> Nullable<Text>,
+        path -> Nullable<Text>,
+        size -> Nullable<Int4>,
+        uploaded_by -> Nullable<Text>,
+        downloaded_by -> Nullable<Text>,
+        etag -> Nullable<Text>,
+        version_id -> Nullable<Text>,
+        download_path -> Nullable<Text>,
+        presigned_url -> Nullable<Text>,
+        presigned_url_expires -> Nullable<Int4>,
+        tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
         version -> Nullable<Int4>,
@@ -788,27 +805,17 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-        image_url -> Nullable<Text>,
-        fieldname -> Nullable<Text>,
-        originalname -> Nullable<Text>,
-        encoding -> Nullable<Text>,
-        mimetype -> Nullable<Text>,
-        destination -> Nullable<Text>,
-        filename -> Nullable<Text>,
-        path -> Nullable<Text>,
-        size -> Nullable<Int4>,
-        uploaded_by -> Nullable<Text>,
-        downloaded_by -> Nullable<Text>,
-        etag -> Nullable<Text>,
-        version_id -> Nullable<Text>,
-        download_path -> Nullable<Text>,
-        presigned_url -> Nullable<Text>,
-        presigned_url_expires -> Nullable<Int4>,
-}
+    }
 }
 
 table! {
-    test_hypertable(id) {
+    test_hypertable(timestamp) {
+        timestamp -> Timestamptz,
+        hypertable_timestamp -> Text,
+        sensor_id -> Nullable<Text>,
+        temperature -> Nullable<Int4>,
+        humidity -> Nullable<Int4>,
+        location -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -829,11 +836,5 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-        timestamp -> Timestamptz,
-        hypertable_timestamp -> Text,
-        sensor_id -> Nullable<Text>,
-        temperature -> Nullable<Int4>,
-        humidity -> Nullable<Int4>,
-        location -> Nullable<Text>,
     }
 }

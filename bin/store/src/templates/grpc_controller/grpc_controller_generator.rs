@@ -6,9 +6,10 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::process;
 use std::process::Command;
+use log::{info, warn, error};
 #[allow(warnings)]
 pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Result<()> {
-    println!("Generating gRPC controller from proto file: {}", proto_path);
+    info!("Generating gRPC controller from proto file: {}", proto_path);
 
     // Read the proto file
     let proto_content = fs::read_to_string(proto_path)?;
@@ -24,7 +25,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     let schema = match fs::read_to_string(schema_path) {
         Ok(content) => content,
         Err(e) => {
-            eprintln!("Error reading schema file: {}", e);
+            error!("Error reading schema file: {}", e);
             process::exit(1);
         }
     };
@@ -246,7 +247,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
 
     writeln!(file, "}}")?;
 
-    println!("Successfully generated gRPC controller at: {}", output_path);
+    info!("Successfully generated gRPC controller at: {}", output_path);
     Ok(())
 }
 #[allow(warnings)]
@@ -267,7 +268,7 @@ fn to_snake_case(name: &str) -> String {
 
 // Main function to run the generator as a standalone script
 pub fn run_generator() -> io::Result<()> {
-    println!("Starting gRPC controller generator");
+    info!("Starting gRPC controller generator");
 
     // Default paths
     let proto_path = "src/proto/store.proto";
@@ -276,19 +277,19 @@ pub fn run_generator() -> io::Result<()> {
     // Generate the controller
     match generate_grpc_controller(proto_path, output_path) {
         Ok(_) => {
-            println!("Successfully generated gRPC controller");
+            info!("Successfully generated gRPC controller");
 
             // Format the generated code with rustfmt
-            println!("Formatting generated code...");
+            info!("Formatting generated code...");
             match Command::new("rustfmt").arg(output_path).status() {
-                Ok(_) => println!("Code formatting completed"),
-                Err(e) => println!("Warning: Failed to format code: {}", e),
+                Ok(_) => info!("Code formatting completed"),
+                Err(e) => warn!("Failed to format code: {}", e),
             }
 
             Ok(())
         }
         Err(e) => {
-            eprintln!("Error generating gRPC controller: {}", e);
+            error!("Error generating gRPC controller: {}", e);
             Err(e)
         }
     }

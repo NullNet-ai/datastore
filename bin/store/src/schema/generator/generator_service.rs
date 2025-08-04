@@ -3,9 +3,12 @@ use crate::schema::generator::model_generator::ModelGenerator;
 use crate::schema::generator::schema_generator::SchemaGenerator;
 use crate::schema::generator::migration_generator::MigrationGenerator;
 use crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition;
+
+use crate::utils::utils::to_singular;
 use std::env;
 use std::fs;
 use std::path::Path;
+use log::{error, info, debug};
 
 pub struct GeneratorService;
 
@@ -14,17 +17,19 @@ impl GeneratorService {
     pub fn run() -> Result<(), String> {
         // Check if CREATE_SCHEMA flag is enabled
         if !Self::is_create_schema_enabled() {
-            println!("CREATE_SCHEMA flag is not enabled. Skipping schema generation.");
             return Ok(());
         }
-        
-        println!("Starting schema generation...");
         
         // Find and process all table definition files
         let all_discovered_tables = Self::discover_table_definitions()?;
         
+        info!("Discovered {} table definition(s)", all_discovered_tables.len());
+        for table_def in &all_discovered_tables {
+            debug!("Found table: {} with {} field(s)", table_def.name, table_def.fields.len());
+        }
+        
         if all_discovered_tables.is_empty() {
-            println!("No table definition files found. Skipping schema generation.");
+            info!("No table definitions found, skipping schema generation");
             return Ok(());
         }
         
@@ -38,11 +43,9 @@ impl GeneratorService {
         
         // Process each table definition
         for table_def in &table_definitions {
-            println!("Processing table: {}", table_def.table_name);
-            
             // Generate model
             let model_content = ModelGenerator::generate_model(&table_def)?;
-            Self::write_model_file(&table_def.table_name, &model_content)?;
+            Self::write_model_file(&table_def.name, &model_content)?;
             
             // Extract indexes and foreign keys from table definition file
             let (indexes, foreign_keys) = {
@@ -51,9 +54,9 @@ impl GeneratorService {
                 
                 // Try multiple possible file names for the table
                 let possible_files = vec![
-                    format!("{}/{}.rs", table_files_dir, table_def.table_name),
-                    format!("{}/{}_catalog.rs", table_files_dir, table_def.table_name.trim_end_matches('s')),
-                    format!("{}/{}_table.rs", table_files_dir, table_def.table_name),
+                    format!("{}/{}.rs", table_files_dir, table_def.name),
+                    format!("{}/{}_catalog.rs", table_files_dir, table_def.name.trim_end_matches('s')),
+                    format!("{}/{}_table.rs", table_files_dir, table_def.name),
                 ];
                 
                 let mut extracted_indexes = Vec::new();
@@ -74,30 +77,35 @@ impl GeneratorService {
             let changes = SchemaGenerator::analyze_changes_with_indexes_and_foreign_keys(&table_def, &indexes, &foreign_keys)?;
             
             if !changes.is_empty() {
+                info!("Table '{}': Found {} schema change(s)", table_def.name, changes.len());
+                for change in &changes {
+                    debug!("  - {:?} for table '{}'", change.change_type, change.table_name);
+                }
                 all_changes.extend(changes);
                 
                 // Update schema.rs
                 SchemaGenerator::update_schema_file(table_def)?;
             } else {
-                println!("No changes detected for table {}", table_def.table_name);
+                debug!("Table '{}': No schema changes detected", table_def.name);
             }
         }
         
         // Generate migration if there are any changes
         if !all_changes.is_empty() {
-            println!("Generating migration for {} total changes", all_changes.len());
-            
+            info!("Generating migration with {} total change(s) across {} table(s)", 
+                  all_changes.len(), 
+                  all_changes.iter().map(|c| &c.table_name).collect::<std::collections::HashSet<_>>().len());
             // Create a single migration for all changes
             // Pass all table definitions for migration context
             MigrationGenerator::generate_migration(&all_changes, &table_definitions)?
         } else {
-            println!("No changes detected across all tables. No migration needed.");
+            info!("No schema changes detected, skipping migration generation");
         }
         
         // Update hypertables array based on current table definitions
         Self::update_hypertables_array(&table_definitions)?;
         
-        println!("Schema generation completed successfully!");
+
         Ok(())
     }
     
@@ -123,7 +131,7 @@ impl GeneratorService {
         }
         
         // Convert table name to singular for model file name
-        let singular_name = Self::to_singular(table_name);
+        let singular_name = to_singular(table_name);
         let model_file_path = models_dir.join(format!("{}_model.rs", singular_name));
         
         // Write model content to file
@@ -133,20 +141,10 @@ impl GeneratorService {
         // Add module declaration to mod.rs
         Self::add_module_to_mod_rs(&singular_name)?;
         
-        println!("Generated model file: {}", model_file_path.display());
         Ok(())
     }
     
-    /// Convert table name to singular form (simple implementation)
-    fn to_singular(table_name: &str) -> String {
-        if table_name.ends_with("ies") {
-            format!("{}y", &table_name[..table_name.len()-3])
-        } else if table_name.ends_with("s") && !table_name.ends_with("ss") {
-            table_name[..table_name.len()-1].to_string()
-        } else {
-            table_name.to_string()
-        }
-    }
+
     
     /// Add module declaration to models/mod.rs
     fn add_module_to_mod_rs(singular_name: &str) -> Result<(), String> {
@@ -182,7 +180,7 @@ impl GeneratorService {
         fs::write(mod_file_path, new_content)
             .map_err(|e| format!("Failed to update mod.rs: {}", e))?;
         
-        println!("Added module declaration: {}", module_declaration);
+        
         Ok(())
     }
     
@@ -190,7 +188,10 @@ impl GeneratorService {
     fn discover_table_definitions() -> Result<Vec<TableDefinition>, String> {
         let tables_dir = "src/schema/tables";
         
+        debug!("Scanning directory: {}", tables_dir);
+        
         if !Path::new(tables_dir).exists() {
+            debug!("Tables directory does not exist: {}", tables_dir);
             return Ok(Vec::new());
         }
         
@@ -229,21 +230,24 @@ impl GeneratorService {
             }
             
             // Try to parse as table definition
+            debug!("Processing file: {:?}", path);
             match Self::parse_table_definition_file(&path) {
                 Ok(Some(table_def)) => {
+                    debug!("Successfully parsed table definition: {}", table_def.name);
                     table_definitions.push(table_def);
                 },
                 Ok(None) => {
                     // File doesn't contain table definition, skip
+                    debug!("File {:?} does not contain table definition, skipping", path);
                     continue;
                 },
                 Err(e) if e.starts_with("Skipping table") => {
                     // Table was skipped due to validation error, continue with other tables
-                    println!("Warning: {}", e);
+    
                     continue;
                 },
                 Err(e) => {
-                    println!("Warning: Failed to parse {}: {}", path.display(), e);
+                    error!("Failed to parse table definition: {}", e);
                     continue;
                 }
             }
@@ -324,39 +328,32 @@ impl GeneratorService {
                 fields = extracted_fields;
             } else {
                 // Fallback: create a placeholder field to indicate this is a valid table
-                fields.push(FieldDefinition {
-                    field_name: "id".to_string(),
-                    field_type: "Int4".to_string(),
-                    is_index: false, // Remove indexed: true from field level
-                    is_primary_key: true, // ID field should be primary key
-                    joins_with: None,
-                    default_value: None,
-                    migration_nullable: true, // Default to nullable for fallback
-                });
+                let id_field = FieldDefinition::new(
+                    "id".to_string(),
+                    "integer()".to_string()
+                ).map_err(|e| format!("Failed to create fallback field: {}", e))?
+                .with_attributes(true, false, true, None);
+                fields.push(id_field);
             }
             
-            // Extract foreign keys from macro and add to fields
-            if let Ok(foreign_keys) = Self::extract_foreign_keys_from_macro(content) {
-                for fk in foreign_keys {
-                    // Find the field and add foreign key info
-                    if let Some(field) = fields.iter_mut().find(|f| f.field_name == fk.column) {
-                        field.joins_with = Some(format!("{}.{}", fk.references_table, fk.references_column));
-                    }
-                }
-            }
+            // Extract foreign keys from macro (joins_with field removed from FieldDefinition)
+            // TODO: Handle foreign key relationships in a different way if needed
+            let _foreign_keys = Self::extract_foreign_keys_from_macro(content);
             
             // Validate hypertable constraints if hypertable is enabled
             if hypertable {
                 if let Err(validation_error) = Self::validate_hypertable_constraints(&table_name, &fields) {
-                    println!("Warning: Skipping hypertable '{}' due to validation error: {}", table_name, validation_error);
+    
                     return Err(format!("Skipping table '{}': {}", table_name, validation_error));
                 }
             }
             
             return Ok(TableDefinition {
-                table_name,
+                name: table_name,
                 fields,
-                hypertable,
+                indexes: Vec::new(),
+                foreign_keys: Vec::new(),
+                is_hypertable: hypertable,
             });
         }
         
@@ -419,19 +416,49 @@ impl GeneratorService {
                     }
                     if let Some(colon_pos) = line.find(':') {
                         let field_name = line[..colon_pos].trim().to_string();
-                        explicit_fields.insert(field_name);
+                        explicit_fields.insert(field_name.clone());
+
                     }
                 }
+
                 
                 // Expand system_fields!() macro if present, but filter out overridden fields
                 if fields_content.contains("system_fields!()") {
                     let system_fields_expansion = Self::get_system_fields_expansion()?;
+
                     let filtered_system_fields = Self::filter_system_fields(&system_fields_expansion, &explicit_fields)?;
+
                     fields_content = fields_content.replace("system_fields!()", &filtered_system_fields);
                 }
+
                 
-                // Parse each field line
+                // Parse each field line - process explicit fields first, then system fields
+                let mut explicit_field_lines = Vec::new();
+                let mut system_field_lines = Vec::new();
+                
                 for line in fields_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+                    
+                    // Check if this line defines an explicit field (has a colon and field name)
+                    if let Some(colon_pos) = line.find(':') {
+                        let field_name = line[..colon_pos].trim();
+                        if explicit_fields.contains(field_name) {
+
+                            explicit_field_lines.push(line);
+                        } else {
+
+                            system_field_lines.push(line);
+                        }
+                    }
+                }
+                
+                // Process explicit fields first, then system fields
+                let all_lines: Vec<&str> = explicit_field_lines.into_iter().chain(system_field_lines.into_iter()).collect();
+                
+                for line in all_lines {
                     let line = line.trim();
                     if line.is_empty() || line.starts_with("//") {
                         continue;
@@ -473,6 +500,7 @@ impl GeneratorService {
                         } else if rest.contains("timestamp()") {
                             "Timestamp".to_string()
                         } else if rest.contains("timestamptz()") {
+
                             "Timestamptz".to_string()
                         } else {
                             "Text".to_string() // default
@@ -500,15 +528,22 @@ impl GeneratorService {
                             None
                         };
                         
-                        fields.push(FieldDefinition {
-                            field_name,
-                            field_type,
-                            is_index,
-                            is_primary_key,
-                            joins_with: None,
-                            default_value,
-                            migration_nullable,
-                        });
+                        // Check for duplicate fields and replace if found
+                        if let Some(existing_index) = fields.iter().position(|f: &FieldDefinition| f.name == field_name) {
+
+                            if fields[existing_index].diesel_type != field_type {
+
+                                fields.remove(existing_index);
+                            } else {
+
+                                continue;
+                            }
+                        }
+
+                        let field_def = FieldDefinition::new_direct(field_name, field_type)
+                            .map_err(|e| format!("Failed to create field definition: {}", e))?
+                            .with_attributes(is_primary_key, is_index, migration_nullable, default_value);
+                        fields.push(field_def);
                     }
                 }
             }
@@ -706,8 +741,8 @@ impl GeneratorService {
         // Collect all hypertable names
         let hypertable_names: Vec<&str> = table_definitions
             .iter()
-            .filter(|def| def.hypertable)
-            .map(|def| def.table_name.as_str())
+            .filter(|def| def.is_hypertable)
+            .map(|def| def.name.as_str())
             .collect();
         
         // Generate the new hypertables.rs content
@@ -732,9 +767,9 @@ impl GeneratorService {
             .map_err(|e| format!("Failed to update hypertables.rs: {}", e))?;
         
         if !hypertable_names.is_empty() {
-            println!("Updated hypertables array with: {:?}", hypertable_names);
+
         } else {
-            println!("Updated hypertables array (no hypertables found)");
+
         }
         
         Ok(())
@@ -744,8 +779,8 @@ impl GeneratorService {
     fn validate_hypertable_constraints(table_name: &str, fields: &[FieldDefinition]) -> Result<(), String> {
         // Check for hypertable_timestamp field with text type
         let has_hypertable_timestamp = fields.iter().any(|f| {
-            f.field_name == "hypertable_timestamp" && 
-            (f.field_type == "Text" || f.field_type == "Nullable<Text>")
+            f.name == "hypertable_timestamp" && 
+            (f.diesel_type == "Text" || f.diesel_type == "Nullable<Text>")
         });
         
         if !has_hypertable_timestamp {
@@ -759,7 +794,7 @@ impl GeneratorService {
         let primary_key_fields: Vec<&str> = fields
             .iter()
             .filter(|f| f.is_primary_key)
-            .map(|f| f.field_name.as_str())
+            .map(|f| f.name.as_str())
             .collect();
         
         let has_id_pk = primary_key_fields.contains(&"id");
@@ -781,12 +816,11 @@ impl GeneratorService {
         
         // Ensure timestamp field has timestamptz type
         let timestamp_field = fields.iter().find(|f| 
-            (f.field_name == "timestamp" || f.field_name == "hypertable_timestamp") && f.is_primary_key
+            (f.name == "timestamp" || f.name == "hypertable_timestamp") && f.is_primary_key
         );
-        
         if let Some(ts_field) = timestamp_field {
-            if ts_field.field_name == "timestamp" && 
-               !(ts_field.field_type == "Timestamptz" || ts_field.field_type == "Nullable<Timestamptz>") {
+            if ts_field.name == "timestamp" && 
+               !(ts_field.diesel_type == "Timestamptz" || ts_field.diesel_type == "Nullable<Timestamptz>") {
                 return Err(format!(
                     "Hypertable '{}' timestamp field must have type 'Timestamptz'", 
                     table_name
@@ -814,7 +848,11 @@ impl GeneratorService {
         let mut fields = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         
-        let mut current_field: Option<FieldDefinition> = None;
+        let mut current_field_name: Option<String> = None;
+        let mut current_field_type: Option<String> = None;
+        let mut current_is_index = false;
+        // joins_with functionality removed
+        let mut current_default_value: Option<String> = None;
         
         for line in lines {
             let line = line.trim();
@@ -827,61 +865,45 @@ impl GeneratorService {
             // Parse field properties
             if line.starts_with("field_name:") {
                 // Save previous field if exists
-                if let Some(field) = current_field.take() {
+                if let (Some(name), Some(field_type)) = (current_field_name.take(), current_field_type.take()) {
+                    let field = FieldDefinition::new(name, field_type)
+                        .map_err(|e| format!("Failed to create field: {}", e))?
+                        .with_attributes(false, current_is_index, true, current_default_value.take());
                     fields.push(field);
+                    current_is_index = false;
                 }
                 
-                let field_name = line.split(':').nth(1)
+                current_field_name = Some(line.split(':').nth(1)
                     .ok_or("Invalid field_name format")?
                     .trim()
-                    .to_string();
-                
-                current_field = Some(FieldDefinition {
-                    field_name,
-                    field_type: String::new(),
-                    is_index: false,
-                    is_primary_key: false,
-                    joins_with: None,
-                    default_value: None,
-                    migration_nullable: true, // Default to nullable for legacy parsing
-                });
+                    .to_string());
             } else if line.starts_with("field_type:") {
-                if let Some(ref mut field) = current_field {
-                    field.field_type = line.split(':').nth(1)
-                        .ok_or("Invalid field_type format")?
-                        .trim()
-                        .to_string();
-                }
+                current_field_type = Some(line.split(':').nth(1)
+                    .ok_or("Invalid field_type format")?
+                    .trim()
+                    .to_string());
             } else if line.starts_with("is_index:") {
-                if let Some(ref mut field) = current_field {
-                    let value = line.split(':').nth(1)
-                        .ok_or("Invalid is_index format")?
-                        .trim();
-                    field.is_index = value == "true";
-                }
+                let value = line.split(':').nth(1)
+                    .ok_or("Invalid is_index format")?
+                    .trim();
+                current_is_index = value == "true";
             } else if line.starts_with("joins_with:") {
-                if let Some(ref mut field) = current_field {
-                    let value = line.split(':').nth(1)
-                        .ok_or("Invalid joins_with format")?
-                        .trim();
-                    if !value.is_empty() && value != "null" && value != "None" {
-                        field.joins_with = Some(value.to_string());
-                    }
-                }
+                // joins_with functionality removed - ignoring this attribute
             } else if line.starts_with("default_value:") {
-                if let Some(ref mut field) = current_field {
-                    let value = line.split(':').nth(1)
-                        .ok_or("Invalid default_value format")?
-                        .trim();
-                    if !value.is_empty() && value != "null" && value != "None" {
-                        field.default_value = Some(value.to_string());
-                    }
+                let value = line.split(':').nth(1)
+                    .ok_or("Invalid default_value format")?
+                    .trim();
+                if !value.is_empty() && value != "null" && value != "None" {
+                    current_default_value = Some(value.to_string());
                 }
             }
         }
         
         // Save last field
-        if let Some(field) = current_field {
+        if let (Some(name), Some(field_type)) = (current_field_name, current_field_type) {
+            let field = FieldDefinition::new(name, field_type)
+                .map_err(|e| format!("Failed to create field: {}", e))?
+                .with_attributes(false, current_is_index, true, current_default_value);
             fields.push(field);
         }
         
@@ -890,9 +912,11 @@ impl GeneratorService {
         }
         
         Ok(TableDefinition {
-            table_name: table_name.to_string(),
+            name: table_name.to_string(),
             fields,
-            hypertable: false,
+            indexes: Vec::new(),
+            foreign_keys: Vec::new(),
+            is_hypertable: false,
         })
     }
 
@@ -1020,13 +1044,13 @@ default_value:
         assert!(result.is_ok());
         
         let table_def = result.unwrap();
-        assert_eq!(table_def.table_name, "test_table");
+        assert_eq!(table_def.name, "test_table");
         assert_eq!(table_def.fields.len(), 2);
-        assert_eq!(table_def.fields[0].field_name, "id");
-        assert_eq!(table_def.fields[0].field_type, "Int4");
-        assert!(table_def.fields[0].is_index);
-        assert_eq!(table_def.fields[1].field_name, "name");
-        assert_eq!(table_def.fields[1].field_type, "Nullable<Text>");
-        assert!(!table_def.fields[1].is_index);
+        assert_eq!(table_def.fields[0].name, "id");
+        assert_eq!(table_def.fields[0].diesel_type, "Int4");
+        assert!(table_def.fields[0].is_indexed);
+        assert_eq!(table_def.fields[1].name, "name");
+        assert_eq!(table_def.fields[1].diesel_type, "Nullable<Text>");
+        assert!(!table_def.fields[1].is_indexed);
     }
 }

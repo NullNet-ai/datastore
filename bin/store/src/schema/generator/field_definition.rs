@@ -1,127 +1,157 @@
 use serde::{Deserialize, Serialize};
+use crate::schema::generator::utils::FieldTypeParser;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldDefinition {
-    pub field_name: String,
-    pub field_type: String, // e.g., "Nullable<Text>", "Nullable<Jsonb>"
-    pub is_index: bool,
-    pub is_primary_key: bool,
-    pub joins_with: Option<String>, // e.g., "devices.id"
-    pub default_value: Option<String>,
-    pub migration_nullable: bool,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TableDefinition {
-    pub table_name: String,
-    pub fields: Vec<FieldDefinition>,
-    pub hypertable: bool,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct ParsedField {
     pub name: String,
     pub diesel_type: String,
     pub rust_type: String,
-    pub is_nullable: bool,
-    pub migration_nullable: bool,
-    pub is_array: bool,
-    pub is_json: bool,
-    pub is_index: bool,
     pub is_primary_key: bool,
-    pub foreign_key: Option<ForeignKey>,
+    pub is_indexed: bool,
+    pub is_nullable: bool,
+    pub is_array: bool,
+    pub migration_nullable: bool,
     pub default_value: Option<String>,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableDefinition {
+    pub name: String,
+    pub fields: Vec<FieldDefinition>,
+    pub indexes: Vec<String>,
+    pub foreign_keys: Vec<ForeignKey>,
+    pub is_hypertable: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParsedField {
+    pub name: String,
+    pub field_type: String,
+    pub is_primary_key: bool,
+    pub is_indexed: bool,
+    pub migration_nullable: bool,
+    pub default_value: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForeignKey {
-    pub table: String,
-    pub column: String,
+    pub field: String,
+    pub references_table: String,
+    pub references_field: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
+pub enum DieselType {
+    Text,
+    Int4,
+    Int8,
+    BigInt,
+    Bool,
+    Timestamp,
+    Timestamptz,
+    Jsonb,
+    Inet,
+    Float4,
+    Float8,
+    Nullable(Box<DieselType>),
+    Array(Box<DieselType>),
+}
+
+#[allow(dead_code)]
+impl DieselType {
+    pub fn to_rust_type(&self) -> String {
+        let diesel_type_str = self.to_diesel_type();
+        FieldTypeParser::diesel_to_rust_type(&diesel_type_str)
+            .unwrap_or_else(|_| "String".to_string())
+    }
+
+    pub fn to_diesel_type(&self) -> String {
+        match self {
+            DieselType::Text => "Text".to_string(),
+            DieselType::Int4 => "Int4".to_string(),
+            DieselType::Int8 => "Int8".to_string(),
+            DieselType::BigInt => "BigInt".to_string(),
+            DieselType::Bool => "Bool".to_string(),
+            DieselType::Timestamp => "Timestamp".to_string(),
+            DieselType::Timestamptz => "Timestamptz".to_string(),
+            DieselType::Jsonb => "Jsonb".to_string(),
+            DieselType::Inet => "Inet".to_string(),
+            DieselType::Float4 => "Float4".to_string(),
+            DieselType::Float8 => "Float8".to_string(),
+            DieselType::Nullable(inner) => format!("Nullable<{}>", inner.to_diesel_type()),
+            DieselType::Array(inner) => format!("Array<{}>", inner.to_diesel_type()),
+        }
+    }
 }
 
 impl FieldDefinition {
+    /// Create a new FieldDefinition from a field type string
+    pub fn new(name: String, field_type: String) -> Result<Self, String> {
+        let diesel_type = FieldTypeParser::parse_diesel_type(&field_type)?;
+        let rust_type = FieldTypeParser::diesel_to_rust_type(&diesel_type)?;
+        
+        let is_nullable = diesel_type.contains("Nullable");
+        let is_array = diesel_type.contains("Array");
+        
+        Ok(FieldDefinition {
+            name,
+            diesel_type,
+            rust_type,
+            is_primary_key: false,
+            is_indexed: false,
+            is_nullable,
+            is_array,
+            migration_nullable: true,
+            default_value: None,
+        })
+    }
+    
+    /// Create a new FieldDefinition directly from diesel type (bypassing parsing)
+    pub fn new_direct(name: String, diesel_type: String) -> Result<Self, String> {
+        let rust_type = FieldTypeParser::diesel_to_rust_type(&diesel_type)?;
+        
+        let is_nullable = diesel_type.contains("Nullable");
+        let is_array = diesel_type.contains("Array");
+        
+        Ok(FieldDefinition {
+            name,
+            diesel_type,
+            rust_type,
+            is_primary_key: false,
+            is_indexed: false,
+            is_nullable,
+            is_array,
+            migration_nullable: true,
+            default_value: None,
+        })
+    }
+    
     /// Parse the diesel field type to extract information
     pub fn parse(&self) -> Result<ParsedField, String> {
-        let diesel_type = self.field_type.trim();
-        let mut is_nullable = false;
-        let mut is_array = false;
-        let mut is_json = false;
-        let mut core_type = diesel_type;
-
-        // Check if nullable
-        if diesel_type.starts_with("Nullable<") && diesel_type.ends_with(">") {
-            is_nullable = true;
-            core_type = &diesel_type[9..diesel_type.len()-1]; // Remove "Nullable<" and ">"
-        }
-
-        // Check if array
-        if core_type.starts_with("Array<") && core_type.ends_with(">") {
-            is_array = true;
-            core_type = &core_type[6..core_type.len()-1]; // Remove "Array<" and ">"
-        }
-
-        // Determine rust type and check for JSON
-        let rust_type = match core_type {
-            "Text" => "String".to_string(),
-            "Int4" => "i32".to_string(),
-            "Int8" => "i64".to_string(),
-            "BigInt" => "i64".to_string(),
-            "Bool" => "bool".to_string(),
-            "Timestamp" => "chrono::NaiveDateTime".to_string(),
-            "Timestamptz" => "chrono::NaiveDateTime".to_string(),
-            "Jsonb" => {
-                is_json = true;
-                "Value".to_string()
-            },
-            "Inet" => "std::net::IpAddr".to_string(),
-            _ => return Err(format!("Unsupported field type: {}", core_type)),
-        };
-
-        // Parse foreign key if present
-        let foreign_key = if let Some(ref joins_with) = self.joins_with {
-            let parts: Vec<&str> = joins_with.split('.').collect();
-            if parts.len() == 2 {
-                Some(ForeignKey {
-                    table: parts[0].to_string(),
-                    column: parts[1].to_string(),
-                })
-            } else {
-                return Err(format!("Invalid foreign key format: {}", joins_with));
-            }
-        } else {
-            None
-        };
-
-        // Adjust rust type for arrays and nullability
-        let final_rust_type = if is_array {
-            if is_nullable {
-                format!("Option<Vec<{}>>", rust_type)
-            } else {
-                format!("Vec<{}>", rust_type)
-            }
-        } else if is_nullable {
-            format!("Option<{}>", rust_type)
-        } else {
-            rust_type
-        };
-
         Ok(ParsedField {
-            name: self.field_name.clone(),
-            diesel_type: self.field_type.clone(),
-            rust_type: final_rust_type,
-            is_nullable,
-            migration_nullable: self.migration_nullable,
-            is_array,
-            is_json,
-            is_index: self.is_index,
+            name: self.name.clone(),
+            field_type: self.diesel_type.clone(),
             is_primary_key: self.is_primary_key,
-            foreign_key,
+            is_indexed: self.is_indexed,
+            migration_nullable: self.migration_nullable,
             default_value: self.default_value.clone(),
         })
+    }
+    
+    /// Set field attributes
+    pub fn with_attributes(
+        mut self,
+        is_primary_key: bool,
+        is_indexed: bool,
+        migration_nullable: bool,
+        default_value: Option<String>,
+    ) -> Self {
+        self.is_primary_key = is_primary_key;
+        self.is_indexed = is_indexed;
+        self.migration_nullable = migration_nullable;
+        self.default_value = default_value;
+        self
     }
 }
 
@@ -160,7 +190,7 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
         let field_type = parts[1].to_string();
         
         let mut is_index = false;
-        let mut joins_with = None;
+        // joins_with functionality removed
         let mut default_value = None;
         
         // Parse additional attributes
@@ -170,7 +200,7 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
             match remaining[i] {
                 "index" => is_index = true,
                 "joins_with:" if i + 1 < remaining.len() => {
-                    joins_with = Some(remaining[i + 1].to_string());
+                    // joins_with functionality removed - ignoring this attribute
                     i += 1;
                 },
                 "default:" if i + 1 < remaining.len() => {
@@ -182,15 +212,10 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
             i += 1;
         }
         
-        fields.push(FieldDefinition {
-            field_name,
-            field_type,
-            is_index,
-            is_primary_key: false, // Default to not primary key for legacy parsing
-            joins_with,
-            default_value,
-            migration_nullable: true, // Default to nullable for legacy parsing
-        });
+        let field_def = FieldDefinition::new(field_name, field_type)
+            .map_err(|e| format!("Failed to create field definition: {}", e))?
+            .with_attributes(false, is_index, true, default_value);
+        fields.push(field_def);
     }
     
     if table_name.is_empty() {
@@ -198,9 +223,11 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
     }
     
     Ok(TableDefinition {
-        table_name,
+        name: table_name,
         fields,
-        hypertable: false,
+        indexes: Vec::new(),
+        foreign_keys: Vec::new(),
+        is_hypertable: false,
     })
 }
 
@@ -210,57 +237,42 @@ mod tests {
 
     #[test]
     fn test_parse_field_definition() {
-        let field = FieldDefinition {
-            field_name: "first_name".to_string(),
-            field_type: "Nullable<Text>".to_string(),
-            is_index: false,
-            is_primary_key: false,
-            joins_with: None,
-            default_value: None,
-            migration_nullable: true,
-        };
+        let field = FieldDefinition::new(
+            "first_name".to_string(),
+            "nullable(text())".to_string()
+        ).unwrap();
         
         let parsed = field.parse().unwrap();
         assert_eq!(parsed.name, "first_name");
-        assert_eq!(parsed.rust_type, "Option<String>");
-        assert!(parsed.is_nullable);
-        assert!(!parsed.is_array);
+        assert_eq!(field.rust_type, "Option<String>");
+        assert!(field.is_nullable);
+        assert!(!field.is_array);
     }
 
     #[test]
     fn test_parse_array_field() {
-        let field = FieldDefinition {
-            field_name: "tags".to_string(),
-            field_type: "Nullable<Array<Text>>".to_string(),
-            is_index: false,
-            is_primary_key: false,
-            joins_with: None,
-            default_value: None,
-            migration_nullable: true,
-        };
+        let field = FieldDefinition::new(
+            "tags".to_string(),
+            "nullable(array(text()))".to_string()
+        ).unwrap();
         
         let parsed = field.parse().unwrap();
-        assert_eq!(parsed.rust_type, "Option<Vec<String>>");
-        assert!(parsed.is_nullable);
-        assert!(parsed.is_array);
+        assert_eq!(field.rust_type, "Option<Vec<String>>");
+        assert!(field.is_nullable);
+        assert!(field.is_array);
     }
 
     #[test]
-    fn test_parse_foreign_key() {
-        let field = FieldDefinition {
-            field_name: "device_id".to_string(),
-            field_type: "Nullable<Text>".to_string(),
-            is_index: true,
-            is_primary_key: false,
-            joins_with: Some("devices.id".to_string()),
-            default_value: None,
-            migration_nullable: true,
-        };
+    fn test_parse_indexed_field() {
+        let field = FieldDefinition::new(
+            "device_id".to_string(),
+            "nullable(text())".to_string()
+        ).unwrap()
+        .with_attributes(false, true, true, None);
         
         let parsed = field.parse().unwrap();
-        assert!(parsed.foreign_key.is_some());
-        let fk = parsed.foreign_key.unwrap();
-        assert_eq!(fk.table, "devices");
-        assert_eq!(fk.column, "id");
+        assert_eq!(parsed.name, "device_id");
+        assert!(parsed.is_indexed);
+        assert!(!parsed.is_primary_key);
     }
 }

@@ -64,6 +64,7 @@ use controllers::store_controller::{
     create_record, delete_record, get_by_filter, update_record, upsert,
 };
 use env_logger::Env;
+use log::{info, error};
 use std::process;
 use std::sync::Arc;
 use std::time::Duration;
@@ -72,14 +73,14 @@ use tokio::signal::unix::{signal, SignalKind};
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
 
-    println!("Running build script manually...");
+    info!("Running build script manually...");
 
     let output = Command::new("cargo").arg("build").arg("--quiet").output()?;
 
     if output.status.success() {
-        println!("Build script executed successfully");
+        info!("Build script executed successfully");
     } else {
-        eprintln!(
+        error!(
             "Build script failed: {}",
             String::from_utf8_lossy(&output.stderr)
         );
@@ -123,7 +124,7 @@ async fn main() -> std::io::Result<()> {
     let cleanup = args.contains(&"--cleanup".to_string());
     let init_db = args.contains(&"--init-db".to_string());
     if cleanup {
-        println!("Running cleanup operation only...");
+        info!("Running cleanup operation only...");
         match schema::database_setup::setup_database(DatabaseSetupFlags {
             run_cleanup: true,
             run_migrations: true,
@@ -133,10 +134,10 @@ async fn main() -> std::io::Result<()> {
         .await
         {
             Ok(_) => {
-                println!("Database cleanup completed successfully!");
+                info!("Database cleanup completed successfully!");
             }
             Err(e) => {
-                eprintln!("Error during database cleanup: {}", e);
+                error!("Error during database cleanup: {}", e);
             }
         }
     }
@@ -149,45 +150,45 @@ async fn main() -> std::io::Result<()> {
     TransactionService::initialize().await;
 
     if generate_proto || generate_grpc || generate_table_enum || create_schema {
-        println!("Starting code generation...");
+        info!("Starting code generation...");
 
         // Proto generation
         if generate_proto {
-            println!("Generating proto files");
+            info!("Generating proto files");
             proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
 
             if let Err(e) = run_build_script() {
-                eprintln!("Failed to run build script: {}", e);
+                error!("Failed to run build script: {}", e);
             }
         }
 
         // gRPC controller generation
         if generate_grpc {
-            println!("Generating gRPC controllers");
+            info!("Generating gRPC controllers");
             if let Err(e) = grpc_controller_generator::run_generator() {
-                eprintln!("Error: {}", e);
+                error!("Error: {}", e);
                 process::exit(1);
             }
         }
 
         // Table enum generation
         if generate_table_enum {
-            println!("Generating table enums");
+            info!("Generating table enums");
             if let Err(e) = table_enum_generator::run_generator() {
-                eprintln!("Failed to generate table enum: {}", e);
+                error!("Failed to generate table enum: {}", e);
             }
         }
 
         // Schema generation
         if create_schema {
-            println!("Running schema generator");
+            info!("Running schema generator");
             if let Err(e) = GeneratorService::run() {
-                eprintln!("Failed to generate schema: {}", e);
+                error!("Failed to generate schema: {}", e);
                 process::exit(1);
             }
         }
 
-        println!("Code generation completed successfully!");
+        info!("Code generation completed successfully!");
         process::exit(0);
     }
 
@@ -207,7 +208,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     //Pg listener service
-    println!("Starting PgListenerService...");
+    info!("Starting PgListenerService...");
     if let Err(e) = PgListenerService::initialize().await {
         log::error!("Failed to initialize PgListenerService: {}", e);
     } else {
@@ -220,7 +221,7 @@ async fn main() -> std::io::Result<()> {
     SENDER.set(arc_sender).expect("Failed to initialize sender");
 
     let pool = db::establish_async_pool();
-    println!("Database connected successfully.");
+    info!("Database connected successfully.");
 
     // init batch sync
     if let Err(e) = BatchSyncService::init().await {
@@ -232,11 +233,11 @@ async fn main() -> std::io::Result<()> {
     if let Err(e) = QueueService::init().await {
         log::error!("Failed to initialize queue: {}", e);
     } else {
-        println!("Queue initialized successfully");
+        info!("Queue initialized successfully");
     }
 
     if init_db {
-        println!("Running cleanup operation only...");
+        info!("Running cleanup operation only...");
         match schema::database_setup::setup_database(DatabaseSetupFlags {
             run_cleanup: false,
             run_migrations: false,
@@ -246,10 +247,10 @@ async fn main() -> std::io::Result<()> {
         .await
         {
             Ok(_) => {
-                println!("Database cleanup completed successfully!");
+                info!("Database cleanup completed successfully!");
             }
             Err(e) => {
-                eprintln!("Error during database cleanup: {}", e);
+                error!("Error during database cleanup: {}", e);
             }
         }
     }
@@ -263,15 +264,15 @@ async fn main() -> std::io::Result<()> {
 
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
-            Ok(_) => println!("gRPC server started successfully"),
-            Err(e) => eprintln!("Failed to start gRPC server: {}", e),
+            Ok(_) => info!("gRPC server started successfully"),
+            Err(e) => error!("Failed to start gRPC server: {}", e),
         }
     });
 
     //HTTPS config
 
     let server_url = format!("0.0.0.0:{}", port);
-    println!("Store is running on {}", server_url);
+    info!("Store is running on {}", server_url);
     tokio::spawn(async {
         if let Err(e) = bg_sync().await {
             log::error!("Error starting background sync: {}", e);
@@ -308,7 +309,7 @@ async fn main() -> std::io::Result<()> {
             .await
             .expect("Failed to bind Socket.IO server to port 3001");
 
-        println!("Socket.IO server running on http://0.0.0.0:3001");
+        info!("Socket.IO server running on http://0.0.0.0:3001");
 
         axum::serve(listener, app)
             .await
@@ -393,7 +394,7 @@ async fn main() -> std::io::Result<()> {
     tokio::select! {
         _ = server => {},
         _ = sigint.recv() => {
-            println!("SIGINT received, running custom shutdown...");
+            info!("SIGINT received, running custom shutdown...");
 
             // Set the shutdown flag
             shutdown_handler::request_shutdown();
@@ -406,10 +407,10 @@ async fn main() -> std::io::Result<()> {
             }
 
             // Wait for 5 seconds before proceeding with shutdown
-            println!("Waiting 5 seconds before final shutdown...");
+            info!("Waiting 5 seconds before final shutdown...");
             // tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
-            println!("Shutdown delay complete, exiting now");
+            info!("Shutdown delay complete, exiting now");
         },
     }
 

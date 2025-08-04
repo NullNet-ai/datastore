@@ -5,9 +5,10 @@ use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use log::{info, warn, error};
 
 pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<()> {
-    println!("Generating Table enum from schema file: {}", schema_path);
+    info!("Generating Table enum from schema file: {}", schema_path);
 
     // Read the schema file
     let schema = fs::read_to_string(schema_path)?;
@@ -305,18 +306,18 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "}}")?;
 
     // Format the generated code with rustfmt
-    println!("Formatting generated code...");
+    info!("Formatting generated code...");
     match Command::new("rustfmt").arg(output_path).status() {
-        Ok(_) => println!("Code formatting completed"),
-        Err(e) => println!("Warning: Failed to format code: {}", e),
+        Ok(_) => info!("Code formatting completed"),
+        Err(e) => warn!("Failed to format code: {}", e),
     }
 
-    println!("Successfully generated Table enum at: {}", output_path);
+    info!("Successfully generated Table enum at: {}", output_path);
     Ok(())
 }
 
 pub fn run_generator() -> io::Result<()> {
-    println!("Starting Table enum generator");
+    info!("Starting Table enum generator");
 
     // Default paths
     let schema_path = "src/schema/schema.rs";
@@ -325,19 +326,19 @@ pub fn run_generator() -> io::Result<()> {
     // Generate the Table enum
     match generate_table_enum(schema_path, output_path) {
         Ok(_) => {
-            println!("Successfully generated Table enum");
+            info!("Successfully generated Table enum");
 
             // Format the generated code with rustfmt
-            println!("Formatting generated code...");
+            info!("Formatting generated code...");
             match Command::new("rustfmt").arg(output_path).status() {
-                Ok(_) => println!("Code formatting completed"),
-                Err(e) => println!("Warning: Failed to format code: {}", e),
+                Ok(_) => info!("Code formatting completed"),
+                Err(e) => warn!("Failed to format code: {}", e),
             }
 
             Ok(())
         }
         Err(e) => {
-            eprintln!("Error generating Table enum: {}", e);
+            error!("Error generating Table enum: {}", e);
             Err(e)
         }
     }

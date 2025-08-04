@@ -9,6 +9,7 @@ use actix_web::http;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel_async::RunQueryDsl;
+use log::debug;
 use singularize::singularize;
 
 pub fn to_singular(table_name: &str) -> String {
@@ -63,13 +64,13 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
                     table_name = name_part.to_string();
 
                     if is_system_table(&table_name) {
-                        println!("Skipping system table: {}", table_name);
+                        debug!("Skipping system table: {}", table_name);
                         in_table_def = false;
                         table_name = String::new();
                         continue;
                     }
 
-                    println!("Found table: {}", table_name);
+                    debug!("Found table: {}", table_name);
                     current_table = Some(Table {
                         name: table_name.clone(),
                         fields: Vec::new(),
@@ -85,7 +86,7 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
                         let field_name = parts[0].trim().trim_end_matches(',');
                         let field_type = parts[1].trim().trim_end_matches(',');
 
-                        println!("Found field: {} -> {}", field_name, field_type);
+                        debug!("Found field: {} -> {}", field_name, field_type);
 
                         table.fields.push(Field {
                             name: field_name.to_string(),
@@ -102,7 +103,7 @@ pub fn parse_tables(schema: &str) -> Vec<Table> {
                 if let Some(table) = current_table.take() {
                     if !table.fields.is_empty() {
                         tables.push(table.clone());
-                        println!(
+                        debug!(
                             "Added table: {} with {} fields",
                             table_name,
                             table.fields.len()

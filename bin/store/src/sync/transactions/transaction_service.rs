@@ -4,6 +4,7 @@ use crate::schema::schema::transactions;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
+use log::error;
 use std::error::Error;
 use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -28,7 +29,7 @@ impl TransactionService {
     pub async fn initialize() {
         INIT.get_or_init(|| async {
             if let Err(e) = Self::init().await {
-                eprintln!("Failed to initialize transaction service: {}", e);
+                error!("Failed to initialize transaction service: {}", e);
             }
         })
         .await;

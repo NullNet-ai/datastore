@@ -2,6 +2,7 @@ use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use log::{info, warn};
 
 #[allow(warnings)]
 pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
@@ -17,7 +18,7 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
 
     // Only run cleanup if the flag is set
     if cleanup {
-        println!("Database cleanup requested...");
+        info!("Database cleanup requested...");
 
         // Prompt for password
         print!("Enter password for database cleanup: ");
@@ -31,7 +32,7 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
             env::var("CLEANUP_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
 
         if entered_password == expected_password {
-            println!("Password correct. Running database cleanup script...");
+            info!("Password correct. Running database cleanup script...");
 
             // Run cleanup.sql
             let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
@@ -55,11 +56,11 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
                 return Err("Database cleanup failed".into());
             }
         } else {
-            println!("Incorrect password. Skipping database cleanup.");
+            warn!("Incorrect password. Skipping database cleanup.");
         }
     }
 
-    println!("Running database initialization script...");
+    info!("Running database initialization script...");
 
     // Run init.sql to initialize the database
     let init_path = Path::new(&current_dir).join("src/schema/init.sql");
@@ -84,6 +85,6 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
         return Err("Database initialization failed".into());
     }
 
-    println!("Database initialization completed successfully!");
+    info!("Database initialization completed successfully!");
     Ok(())
 }

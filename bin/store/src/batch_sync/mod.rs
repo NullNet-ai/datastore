@@ -233,7 +233,7 @@ impl BatchSyncService {
             loop {
                 if let Some(message) = Self::get_next_code_assignment(&queue).await {
                     if Self::process_code_assignment_message(message.clone()).await {
-                        println!("{:?}", message);
+                        log::debug!("Processed code assignment message: {:?}", message);
                         log::debug!(
                             "Successfully processed code assignment for table: {}",
                             message.table_name

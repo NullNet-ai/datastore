@@ -12,6 +12,7 @@ use crate::middlewares::session_middleware::{GrpcSessionInterceptor, Interceptor
 use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
 use crate::providers::find::DynamicResult;
 use crate::providers::find::SQLConstructor;
+use log::info;
 
 use crate::structs::structs::RequestBody;
 use crate::sync::sync_service::update;
@@ -146,7 +147,7 @@ impl GrpcController {
     pub async fn init(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
         let addr: SocketAddr = addr.parse()?;
         let grpc_controller = GrpcController::new();
-        println!("gRPC Server listening on {}", addr);
+        info!("gRPC Server listening on {}", addr);
         // Create a chain of interceptors
         let session_interceptor = GrpcSessionInterceptor::new();
         let auth_interceptor = GrpcAuthInterceptor;

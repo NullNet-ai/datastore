@@ -1,4 +1,5 @@
 use futures::stream::{self, Stream};
+use log::debug;
 use reqwest::{Client, ClientBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -137,7 +138,7 @@ impl HttpTransportDriver {
                 items += messages.len();
 
                 if debug {
-                    println!(
+                    debug!(
                         "Got Chunk of client_id{} size:{}/{}",
                         client_id, items, size
                     );
@@ -145,7 +146,7 @@ impl HttpTransportDriver {
 
                 if messages.is_empty() {
                     if debug {
-                        println!("Got all chunks of client_id{} - deleting", client_id);
+                        debug!("Got all chunks of client_id{} - deleting", client_id);
                     }
 
                     // Delete the chunks
@@ -157,7 +158,7 @@ impl HttpTransportDriver {
                         .await;
 
                     if debug {
-                        println!("Got all chunks of client_id{} - deleted", client_id);
+                        debug!("Got all chunks of client_id{} - deleted", client_id);
                     }
 
                     return None;

@@ -16,7 +16,7 @@ use diesel_async::AsyncConnection;
 use diesel_async::AsyncPgConnection;
 use futures::Stream;
 use hlc;
-use log::debug;
+use log::{debug, info};
 use merkle::MerkleTree;
 use serde_json::Value;
 use std::time::Duration;
@@ -446,7 +446,7 @@ async fn sync(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_enabled = std::env::var("SYNC_ENABLED").unwrap_or_else(|_| "false".to_string());
     if sync_enabled != "true" {
-        println!("Sync is disabled");
+        info!("Sync is disabled");
         return Ok(());
     }
 

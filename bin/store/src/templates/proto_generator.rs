@@ -1,21 +1,22 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+use log::{info, warn, error};
 
 use crate::utils::utils::{parse_tables, to_singular, Table};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
-    println!("Starting proto generation from schema: {}", schema_path);
+    info!("Starting proto generation from schema: {}", schema_path);
 
     // Read schema file
     match fs::read_to_string(schema_path) {
         Ok(schema) => {
-            println!("Successfully read schema file");
+            info!("Successfully read schema file");
             let proto_file_path = Path::new(output_dir).join("store.proto");
             if proto_file_path.exists() {
-                println!("Deleting existing proto file: {:?}", proto_file_path);
+                info!("Deleting existing proto file: {:?}", proto_file_path);
                 if let Err(err) = fs::remove_file(&proto_file_path) {
-                    eprintln!(
+                    warn!(
                         "Warning: Failed to delete file '{}': {}",
                         proto_file_path.display(),
                         err
@@ -26,13 +27,13 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
 
             // Clean up existing proto files
             if let Err(err) = clean_output_directory(output_dir) {
-                eprintln!("Warning: Failed to clean output directory: {}", err);
+                warn!("Warning: Failed to clean output directory: {}", err);
                 // Continue despite cleanup errors
             }
 
             // Create output directory if it doesn't exist
             if let Err(err) = fs::create_dir_all(output_dir) {
-                eprintln!(
+                error!(
                     "Failed to create output directory '{}': {}",
                     output_dir, err
                 );
@@ -42,11 +43,11 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
             // Parse tables from schema
             let tables = parse_tables(&schema);
             if tables.is_empty() {
-                eprintln!("Error: No tables found in schema");
+                error!("Error: No tables found in schema");
                 return;
             }
 
-            println!("Successfully parsed {} tables from schema", tables.len());
+            info!("Successfully parsed {} tables from schema", tables.len());
 
             // Generate proto content
             let proto_content = generate_unified_proto(&tables);
@@ -55,22 +56,22 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
             let file_path = Path::new(output_dir).join("store.proto");
             match File::create(&file_path) {
                 Ok(mut file) => match file.write_all(proto_content.as_bytes()) {
-                    Ok(_) => println!("Successfully wrote proto content to file"),
-                    Err(err) => eprintln!("Failed to write proto content to file: {}", err),
+                    Ok(_) => info!("Successfully wrote proto content to file"),
+                    Err(err) => error!("Failed to write proto content to file: {}", err),
                 },
-                Err(err) => eprintln!("Failed to create proto file: {}", err),
+                Err(err) => error!("Failed to create proto file: {}", err),
             }
 
-            println!("Proto file generation completed!");
+            info!("Proto file generation completed!");
         }
         Err(err) => {
-            eprintln!("Failed to read schema file '{}': {}", schema_path, err);
+            error!("Failed to read schema file '{}': {}", schema_path, err);
         }
     }
 }
 
 fn clean_output_directory(output_dir: &str) -> std::io::Result<()> {
-    println!("Cleaning output directory: {}", output_dir);
+    info!("Cleaning output directory: {}", output_dir);
 
     if let Ok(entries) = fs::read_dir(output_dir) {
         for entry in entries {
@@ -78,9 +79,9 @@ fn clean_output_directory(output_dir: &str) -> std::io::Result<()> {
                 Ok(entry) => {
                     let path = entry.path();
                     if path.is_file() && path.extension().map_or(false, |ext| ext == "proto") {
-                        println!("Deleting existing proto file: {:?}", path);
+                        info!("Deleting existing proto file: {:?}", path);
                         if let Err(err) = fs::remove_file(&path) {
-                            eprintln!(
+                            warn!(
                                 "Warning: Failed to delete file '{}': {}",
                                 path.display(),
                                 err
@@ -90,7 +91,7 @@ fn clean_output_directory(output_dir: &str) -> std::io::Result<()> {
                     }
                 }
                 Err(err) => {
-                    eprintln!("Warning: Failed to read directory entry: {}", err);
+                    warn!("Warning: Failed to read directory entry: {}", err);
                     // Continue despite read errors
                 }
             }
@@ -694,7 +695,7 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     let mut file = File::create(build_path)?;
     file.write_all(build_content.as_bytes())?;
 
-    println!(
+    info!(
         "Generated build.rs file with {} proto files",
         proto_files.len()
     );

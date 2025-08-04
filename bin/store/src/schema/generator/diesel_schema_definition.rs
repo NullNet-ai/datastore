@@ -103,9 +103,119 @@ pub struct ForeignKeyDefinition {
     pub on_update: Option<String>,
 }
 
+/// Helper macro to extract filename from file path at compile time
+#[macro_export]
+macro_rules! extract_filename {
+    () => {{
+        // Get the file path using file!() macro
+        let file_path = file!();
+        // Find the last occurrence of '/' or '\' to get the filename
+        let filename = if let Some(pos) = file_path.rfind('/') {
+            &file_path[pos + 1..]
+        } else if let Some(pos) = file_path.rfind('\\') {
+            &file_path[pos + 1..]
+        } else {
+            file_path
+        };
+        // Remove the .rs extension
+        if filename.ends_with(".rs") {
+            &filename[..filename.len() - 3]
+        } else {
+            filename
+        }
+    }};
+}
+
 /// Macro to easily define table schemas
 #[macro_export]
 macro_rules! define_table_schema {
+    // Variant with auto-derived table name from filename
+    (
+        $(hypertable: $is_hypertable:expr,)?
+        fields: {
+            $(                $field_name:ident: $field_type:expr
+                $(, primary_key: $is_pk:expr)?
+                $(, indexed: $is_indexed:expr)?
+                $(, default: $default:expr)?
+                $(, migration_nullable: $migration_nullable:expr)?
+            ),* $(,)?
+        }
+        $(, indexes: {
+            $(
+                $index_name:ident: {
+                    columns: [$($col:literal),*],
+                    unique: $unique:expr
+                    $(, type: $index_type:literal)?
+                }
+            ),* $(,)?
+        })?
+        $(, foreign_keys: {
+            $(
+                $fk_column:ident -> $ref_table:literal.$ref_column:literal
+                $(, on_delete: $on_delete:literal)?
+                $(, on_update: $on_update:literal)?
+            ),* $(,)?
+        })?
+    ) => {
+        impl DieselTableDefinition for Self {
+            fn table_name() -> &'static str {
+                $crate::extract_filename!()
+            }
+            
+            fn is_hypertable() -> bool {
+                $crate::define_table_schema!(@default_hypertable $($is_hypertable)?)
+            }
+            
+            fn field_definitions() -> Vec<DieselFieldDefinition> {
+                vec![
+                    $(
+                        DieselFieldDefinition {
+                            name: stringify!($field_name).to_string(),
+                            diesel_type: $field_type,
+                            is_primary_key: $crate::define_table_schema!(@default_pk $($is_pk)?),
+                            is_nullable: $crate::define_table_schema!(@is_nullable $field_type),
+                            migration_nullable: $crate::define_table_schema!(@default_migration_nullable $($migration_nullable)?),
+                            default_value: $crate::define_table_schema!(@default_val $($default)?),
+                            is_indexed: $crate::define_table_schema!(@default_indexed $($is_indexed)?),
+                        },
+                    )*
+                ]
+            }
+            
+            $(
+                fn indexes() -> Vec<IndexDefinition> {
+                    vec![
+                        $(
+                            IndexDefinition {
+                                name: stringify!($index_name).to_string(),
+                                columns: vec![$($col.to_string()),*],
+                                is_unique: $unique,
+                                index_type: $crate::define_table_schema!(@index_type $($index_type)?),
+                            },
+                        )*
+                    ]
+                }
+            )?
+            
+            $(
+                fn foreign_keys() -> Vec<ForeignKeyDefinition> {
+                    vec![
+                        $(
+                            ForeignKeyDefinition {
+                                column: stringify!($fk_column).to_string(),
+                                references_table: $ref_table.to_string(),
+                                references_column: $ref_column.to_string(),
+                                on_delete: $crate::define_table_schema!(@fk_action $($on_delete)?),
+                                on_update: $crate::define_table_schema!(@fk_action $($on_update)?),
+                            },
+                        )*
+                    ]
+                }
+            )?
+        }
+    };
+    
+    // Original variant with explicit table name
     (
         table_name: $table_name:literal,
         $(hypertable: $is_hypertable:expr,)?
