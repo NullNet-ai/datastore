@@ -643,7 +643,208 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
     }
 }
 
-async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn get_account(
+    email: &str,
+    organization_id: Option<&str>,
+    account_organization_id: Option<&str>,
+    account_id: Option<&str>,
+) -> Result<Option<serde_json::Value>, ApiError> {
+    // Get database connection
+    let mut conn = db::get_async_connection().await;
+
+    // Define a struct to hold the JSON result
+    #[derive(QueryableByName, Debug)]
+    struct JsonResult {
+        #[diesel(sql_type = diesel::sql_types::Text)]
+        json_result: String,
+    }
+
+    // First attempt: Query account_organizations with all filters
+    let mut where_conditions = vec![
+        "ao.tombstone = 0".to_string(),
+        "ao.status = 'Active'".to_string(),
+        "ao.email = $1".to_string(),
+        "ao.account_id IS NOT NULL".to_string(),
+    ];
+    
+    let mut param_count = 1;
+    let mut params: Vec<String> = vec![email.to_string()];
+    
+    if let Some(org_id) = organization_id {
+        param_count += 1;
+        where_conditions.push(format!("ao.organization_id = ${}", param_count));
+        params.push(org_id.to_string());
+    }
+    
+    if let Some(acc_org_id) = account_organization_id {
+        param_count += 1;
+        where_conditions.push(format!("ao.id = ${}", param_count));
+        params.push(acc_org_id.to_string());
+    }
+    
+    if let Some(acc_id) = account_id {
+        param_count += 1;
+        where_conditions.push(format!("ao.account_id = ${}", param_count));
+        params.push(acc_id.to_string());
+    }
+    
+    let where_clause = where_conditions.join(" AND ");
+    
+    let query = format!(
+        "SELECT json_build_object(
+            'profile', CASE WHEN ap.id IS NOT NULL THEN json_build_object(
+                'id', ap.id,
+                'first_name', ap.first_name,
+                'last_name', ap.last_name,
+                'email', ap.email,
+                'account_id', ap.account_id,
+                'categories', ap.categories,
+                'code', ap.code,
+                'status', ap.status,
+                'organization_id', ap.organization_id
+            ) ELSE NULL END,
+            'contact', CASE WHEN c.id IS NOT NULL THEN json_build_object(
+                'id', c.id,
+                'first_name', c.first_name,
+                'last_name', c.last_name,
+                'account_id', c.account_id,
+                'code', c.code,
+                'categories', c.categories,
+                'status', c.status,
+                'organization_id', c.organization_id,
+                'date_of_birth', c.date_of_birth
+            ) ELSE NULL END,
+            'organization', CASE WHEN o.id IS NOT NULL THEN json_build_object(
+                'id', o.id,
+                'name', o.name,
+                'code', o.code,
+                'categories', o.categories,
+                'status', o.status,
+                'organization_id', o.organization_id,
+                'parent_organization_id', o.parent_organization_id
+            ) ELSE NULL END,
+            'id', a.id,
+            'account_id', a.account_id,
+            'organization_id', ao.organization_id,
+            'account_organization_id', ao.id,
+            'account_status', ao.account_organization_status,
+            'role_id', ao.role_id
+        ) as json_result
+        FROM account_organizations ao
+        LEFT JOIN accounts a ON a.id = ao.account_id
+        LEFT JOIN account_profiles ap ON ap.account_id = a.id
+        LEFT JOIN contacts c ON c.id = ao.contact_id
+        LEFT JOIN organizations o ON o.id = ao.organization_id
+        WHERE {}
+        LIMIT 1",
+        where_clause
+    );
+    
+    // Execute the first query
+    let result = match params.len() {
+        1 => sql_query(&query).bind::<Text, _>(&params[0]).get_result::<JsonResult>(&mut conn).await,
+        2 => sql_query(&query).bind::<Text, _>(&params[0]).bind::<Text, _>(&params[1]).get_result::<JsonResult>(&mut conn).await,
+        3 => sql_query(&query).bind::<Text, _>(&params[0]).bind::<Text, _>(&params[1]).bind::<Text, _>(&params[2]).get_result::<JsonResult>(&mut conn).await,
+        4 => sql_query(&query).bind::<Text, _>(&params[0]).bind::<Text, _>(&params[1]).bind::<Text, _>(&params[2]).bind::<Text, _>(&params[3]).get_result::<JsonResult>(&mut conn).await,
+        _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "Too many parameters")),
+    };
+    
+    match result {
+        Ok(json_result) => {
+            match serde_json::from_str::<serde_json::Value>(&json_result.json_result) {
+                Ok(parsed_json) => return Ok(Some(parsed_json)),
+                Err(e) => {
+                    log::error!("Failed to parse JSON result: {}", e);
+                    return Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse account data"));
+                }
+            }
+        },
+        Err(_) => {
+            // If first query fails and account_id is provided, try fallback query
+            if let Some(acc_id) = account_id {
+                let mut fallback_conditions = vec![
+                    "a.tombstone = 0".to_string(),
+                    "a.status = 'Active'".to_string(),
+                    "a.account_id = $1".to_string(),
+                ];
+                
+                let mut fallback_params = vec![acc_id.to_string()];
+                
+                if let Some(org_id) = organization_id {
+                    fallback_conditions.push("a.organization_id = $2".to_string());
+                    fallback_params.push(org_id.to_string());
+                }
+                
+                let fallback_where = fallback_conditions.join(" AND ");
+                
+                let fallback_query = format!(
+                    "SELECT json_build_object(
+                        'profile', CASE WHEN ap.id IS NOT NULL THEN json_build_object(
+                            'id', ap.id,
+                            'first_name', ap.first_name,
+                            'last_name', ap.last_name,
+                            'email', ap.email,
+                            'account_id', ap.account_id,
+                            'categories', ap.categories,
+                            'code', ap.code,
+                            'status', ap.status,
+                            'organization_id', ap.organization_id
+                        ) ELSE NULL END,
+                        'organization', CASE WHEN o.id IS NOT NULL THEN json_build_object(
+                            'id', o.id,
+                            'name', o.name,
+                            'code', o.code,
+                            'categories', o.categories,
+                            'status', o.status,
+                            'organization_id', o.organization_id,
+                            'parent_organization_id', o.parent_organization_id
+                        ) ELSE NULL END,
+                        'id', a.id,
+                        'account_id', a.account_id,
+                        'organization_id', a.organization_id,
+                        'account_status', a.account_status,
+                        'contact', '{{}}',
+                        'device', '{{}}',
+                        'account_organization_id', null,
+                        'role_id', null
+                    ) as json_result
+                    FROM accounts a
+                    LEFT JOIN account_profiles ap ON ap.account_id = a.id
+                    LEFT JOIN organizations o ON o.id = a.organization_id
+                    WHERE {}
+                    LIMIT 1",
+                    fallback_where
+                );
+                
+                let fallback_result = match fallback_params.len() {
+                    1 => sql_query(&fallback_query).bind::<Text, _>(&fallback_params[0]).get_result::<JsonResult>(&mut conn).await,
+                    2 => sql_query(&fallback_query).bind::<Text, _>(&fallback_params[0]).bind::<Text, _>(&fallback_params[1]).get_result::<JsonResult>(&mut conn).await,
+                    _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "Invalid fallback parameters")),
+                };
+                
+                match fallback_result {
+                    Ok(json_result) => {
+                        match serde_json::from_str::<serde_json::Value>(&json_result.json_result) {
+                            Ok(parsed_json) => return Ok(Some(parsed_json)),
+                            Err(e) => {
+                                log::error!("Failed to parse fallback JSON result: {}", e);
+                                return Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse fallback account data"));
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        log::error!("Database error in fallback query: {}", e);
+                        return Ok(None);
+                    }
+                }
+            } else {
+                return Ok(None);
+            }
+        }
+    }
+}
+
+pub async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
     let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "Ch@ng3m3Pl3@s3!!".to_string());
     let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
 

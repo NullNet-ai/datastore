@@ -2,7 +2,7 @@ use crate::schema::generator::diesel_schema_definition::{
     DieselTableDefinition, types::*
 };
 use crate::define_table_schema;
-use crate::system_fields;
+use crate::{system_fields, system_indexes};
 
 /// Test hypertable for time-series data
 pub struct TestHypertableTable;
@@ -24,6 +24,10 @@ define_table_schema! {
         location: nullable(text()),
     },
     indexes: {
+        // System field indexes
+        system_indexes!("test_hypertable"),
+        
+        // Custom table-specific indexes
         idx_test_hypertable_sensor: {
             columns: ["sensor_id"],
             unique: false,

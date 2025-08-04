@@ -18,7 +18,6 @@ pub mod entity_field_model;
 pub mod entity_model;
 pub mod external_contact_model;
 pub mod field_model;
-pub mod file_model;
 pub mod organization_account_model;
 pub mod organization_contact_model;
 pub mod organization_domain_model;
@@ -40,7 +39,6 @@ pub mod sync_endpoint_model;
 pub mod system_config_field_model;
 pub mod table_index_model;
 
-pub mod test_hypertable_model;
 pub mod transaction_model;
 pub mod user_role_model;
 

@@ -81,3 +81,10 @@ create_root_wrapper!(root_aggregation_filter => aggregation_filter,
     auth: HttpRequest,
     request_body: actix_web::web::Json<crate::structs::structs::AggregationFilter>
 );
+
+// Note: switch_account doesn't follow the standard pattern with HttpRequest
+pub async fn root_switch_account(
+    request_body: actix_web::web::Json<crate::structs::structs::SwitchAccountRequest>,
+) -> impl actix_web::Responder {
+    crate::controllers::store_controller::switch_account(request_body).await
+}

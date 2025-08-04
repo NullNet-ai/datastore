@@ -584,7 +584,14 @@ impl GeneratorService {
             }
             
             if indexes_end > 0 {
-                let indexes_content = &after_indexes[..indexes_end];
+                let mut indexes_content = after_indexes[..indexes_end].to_string();
+                
+                // Expand system_indexes!(table_name) macro if present
+                if let Some(table_name) = Self::extract_table_name_from_system_indexes(&indexes_content) {
+                    let system_indexes_expansion = Self::get_system_indexes_expansion(&table_name)?;
+                    let pattern = format!("system_indexes!(\"{}\")", table_name);
+                    indexes_content = indexes_content.replace(&pattern, &system_indexes_expansion);
+                }
                 
                 // Parse each index definition
                 let mut current_index: Option<(String, Vec<String>, bool, Option<String>)> = None;
@@ -966,6 +973,51 @@ impl GeneratorService {
             .join("\n        ");
         
         Ok(cleaned_content)
+    }
+    
+    /// Dynamically reads the system_indexes macro from system_fields.rs
+    fn extract_table_name_from_system_indexes(content: &str) -> Option<String> {
+        use regex::Regex;
+        let re = Regex::new(r#"system_indexes!\("([^"]+)"\)"#).ok()?;
+        if let Some(captures) = re.captures(content) {
+            captures.get(1).map(|m| m.as_str().to_string())
+        } else {
+            None
+        }
+    }
+
+    fn get_system_indexes_expansion(table_name: &str) -> Result<String, String> {
+        // Generate the expanded system indexes with table name prefixes
+        let indexes = vec![
+            ("tombstone", "tombstone"),
+            ("status", "status"),
+            ("previous_status", "previous_status"),
+            ("version", "version"),
+            ("created_date", "created_date"),
+            ("updated_date", "updated_date"),
+            ("organization_id", "organization_id"),
+            ("created_by", "created_by"),
+            ("updated_by", "updated_by"),
+            ("deleted_by", "deleted_by"),
+            ("requested_by", "requested_by"),
+            ("tags", "tags"),
+            ("categories", "categories"),
+            ("code", "code"),
+            ("sensitivity_level", "sensitivity_level"),
+        ];
+        
+        let mut result = String::new();
+        for (i, (field_suffix, column_name)) in indexes.iter().enumerate() {
+            if i > 0 {
+                result.push_str(",\n        ");
+            }
+            result.push_str(&format!(
+                "idx_{}_{}: {{\n            columns: [\"{}\"],\n            unique: false,\n            type: \"btree\"\n        }}",
+                table_name, field_suffix, column_name
+            ));
+        }
+        
+        Ok(result)
     }
     
     /// Filter system fields to exclude those that are explicitly overridden

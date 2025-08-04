@@ -26,7 +26,7 @@ impl MigrationGenerator {
         }
         
         // Get migration name from user
-        let migration_name = Self::get_migration_name_from_user()?;
+        let migration_name = Self::get_migration_name_from_user(changes.len())?;
         
         // Generate timestamp
         let timestamp = Self::generate_timestamp();
@@ -68,9 +68,9 @@ impl MigrationGenerator {
     }
     
     /// Get migration name from user input
-    fn get_migration_name_from_user() -> Result<String, String> {
+    fn get_migration_name_from_user(change_count: usize) -> Result<String, String> {
         loop {
-            info!("Enter migration name: ");
+            info!("Enter migration name for {} change(s): ", change_count);
             io::stdout().flush().map_err(|e| format!("Failed to flush stdout: {}", e))?;
             
             let mut input = String::new();
@@ -326,7 +326,12 @@ impl MigrationGenerator {
         for (i, field) in parsed_fields.iter().enumerate() {
             let postgres_type = Self::diesel_to_postgres_type(&field.field_type, field.migration_nullable)?;
             let default_clause = if let Some(default) = &field.default_value {
-                format!(" DEFAULT {}", default)
+                // Check if this is a TEXT field that needs quotes around string defaults
+                if postgres_type.contains("TEXT") && !default.starts_with("'") && !default.chars().all(|c| c.is_ascii_digit() || c == '.' || c == '-') {
+                    format!(" DEFAULT '{}'", default)
+                } else {
+                    format!(" DEFAULT {}", default)
+                }
             } else {
                 String::new()
             };
