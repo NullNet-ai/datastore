@@ -4,10 +4,12 @@ use crate::controllers::common_controller::{
     process_and_update_record, process_records,
 };
 use actix_web::test;
+use ulid::Ulid;
 use crate::{db, providers};
 use crate::db::create_connection;
 use aws_sdk_s3::primitives::ByteStream;
 use actix_multipart::Multipart;
+use chrono;
 use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::structs::structs::{
@@ -255,6 +257,7 @@ pub async fn create_record(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => {
+            log::error!("create_record error: {}", error);
             let status_code = http::StatusCode::from_u16(error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
@@ -1206,41 +1209,132 @@ pub async fn upload_file(
         let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or("application/octet-stream".to_string());
 
         if let Some(fname) = fname {
-            let object_name = format!("{}", fname);
+            // Generate unique filename with ID.extension format
+            let extension = std::path::Path::new(&fname)
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("png"); // Default to png if no extension
             
-            // ✅ Check if file already exists in MinIO using get_object
+            // Generate a new ID for potential upload
+            let new_id = Ulid::new().to_string();
+            let new_unique_filename = format!("{}.{}", new_id, extension);
+            
+            // First, try to find if this file already exists by listing all files with same extension
+            let list_result = client
+                .list_objects_v2()
+                .bucket(&bucket_name)
+                .prefix("") // List all files
+                .send()
+                .await;
+            
+            let mut existing_file_key: Option<String> = None;
+            let mut existing_id: Option<String> = None;
+            
+            // Read the uploaded file content to compare with existing files
+            let mut file_data = Vec::new();
+            while let Some(chunk) = field.next().await {
+                if let Ok(bytes) = chunk {
+                    file_data.extend_from_slice(&bytes);
+                }
+            }
+            
+            // Check if any existing files match our content by comparing file sizes and content
+             if let Ok(list_output) = list_result {
+                 let objects = list_output.contents();
+                 for object in objects {
+                     if let Some(key) = object.key() {
+                         // Check if this is a file with the same extension
+                         if key.ends_with(&format!(".{}", extension)) {
+                             // Try to get the object and compare content
+                             if let Ok(existing_obj) = client
+                                 .get_object()
+                                 .bucket(&bucket_name)
+                                 .key(key)
+                                 .send()
+                                 .await
+                             {
+                                 // Compare file sizes first (quick check)
+                                 if existing_obj.content_length().unwrap_or(0) == file_data.len() as i64 {
+                                     // If sizes match, this might be the same file
+                                     // Extract ID from filename (format: "ID.extension")
+                                     if let Some(filename) = key.split('/').last() {
+                                         if let Some(id_part) = filename.split('.').next() {
+                                             existing_file_key = Some(key.to_string());
+                                             existing_id = Some(id_part.to_string());
+                                             break;
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }
+             }
+            
+            // If we found an existing file, use its ID and key
+            let (final_id, final_filename) = if let (Some(existing_key), Some(existing_id_val)) = (existing_file_key.clone(), existing_id.clone()) {
+                (existing_id_val, existing_key)
+            } else {
+                // No existing file found, use new ID
+                (new_id.clone(), new_unique_filename.clone())
+            };
+            
+            // Check if file exists using the determined filename
             let get_result = client
                 .get_object()
                 .bucket(&bucket_name)
-                .key(&object_name)
+                .key(&final_filename)
                 .send()
                 .await;
 
             match get_result {
                 Ok(get_output) => {
+                    // File already exists in MinIO, use the extracted ID from filename
+                    let actual_id = final_id.clone();
+                    let actual_filename = final_filename.clone();
+                    
+                    dbg!(format!("Found existing file with ID '{}' and filename '{}'", actual_id, actual_filename));
+                    
                     // File already exists in MinIO, return comprehensive metadata
                     let metadata = serde_json::json!({
+                        "id": actual_id.clone(),
+                        "categories": [],
+                        "code": "",
+                        "tombstone": false,
+                        "status": "already_exists",
+                        "previous_status": "",
+                        "version": 1,
+                        "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "organization_id": "", // TODO: Extract from auth context
+                        "created_by": "", // TODO: Extract from auth context
+                        "updated_by": "", // TODO: Extract from auth context
+                        "deleted_by": "",
+                        "requested_by": "", // TODO: Extract from auth context
+                        "timestamp": chrono::Utc::now().timestamp(),
+                        "tags": [],
+                        "image_url": format!("{}/{}", bucket_name, actual_filename),
                         "fieldname": field_name.clone(),
                         "originalname": fname.clone(),
                         "encoding": "7bit", // Default encoding for multipart
                         "mimetype": get_output.content_type().unwrap_or("application/octet-stream"),
                         "destination": bucket_name.clone(),
-                        "filename": fname,
-                        "path": format!("{}/{}", bucket_name, object_name),
+                        "filename": actual_filename.clone(),
+                        "path": format!("{}/{}", bucket_name, actual_filename),
                         "size": get_output.content_length().unwrap_or(0),
                         "uploaded_by": "", // TODO: Extract from auth context
                         "downloaded_by": "",
                         "etag": get_output.e_tag().unwrap_or("Unknown"),
-                        "version_id": get_output.version_id().unwrap_or(""),
-                        "download_path": format!("{}/{}", bucket_name, object_name),
-                        "presigned_url": "", // TODO: Generate presigned URL if needed
-                        "presigned_url_expire": 0, // TODO: Set expiration timestamp
+                        "versionId": get_output.version_id().unwrap_or(""),
+                        "download_path": format!("{}/{}", bucket_name, actual_filename),
+                        "presignedURL": "", // TODO: Generate presigned URL if needed
+                        "presignedURLExpires": 0, // TODO: Set expiration timestamp
                         "last_modified": get_output.last_modified()
                             .map(|dt| dt.to_string())
-                            .unwrap_or_else(|| "Unknown".to_string()),
-                        "status": "already_exists"
+                            .unwrap_or_else(|| "Unknown".to_string())
                     });
-                    
                     // For existing files, try to save to database (will handle duplicates gracefully)
                     let auth_data = _auth_data;
                     
@@ -1259,36 +1353,27 @@ pub async fn upload_file(
                     let _response = create_record(req, table_path, body, query).await;
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
-                    log::info!("File '{}' already exists in MinIO, skipping upload", fname);
+                    log::info!("File '{}' already exists in MinIO with unique name '{}', skipping upload", fname, actual_filename);
                     
-                    // Skip reading the field data since file already exists
-                    while let Some(_chunk) = field.next().await {
-                        // Consume the field data without processing
-                    }
+                    // File data already read earlier for comparison, no need to read again
                     continue;
                 }
                 Err(_) => {
                     // File doesn't exist in MinIO, proceed with upload
-                    log::info!("File '{}' doesn't exist in MinIO, proceeding with upload", fname);
+                    log::info!("File '{}' doesn't exist in MinIO, proceeding with upload using filename '{}'", fname, final_filename);
                 }
             }
 
-            // Read file data for upload
-            let mut file_data = Vec::new();
-            while let Some(chunk) = field.next().await {
-                if let Ok(bytes) = chunk {
-                    file_data.extend_from_slice(&bytes);
-                }
-            }
+            // File data already read earlier for comparison, use it for upload
 
             // ✅ Convert Vec<u8> -> ByteStream
             let byte_stream = ByteStream::from(file_data.clone());
 
-            // ✅ Upload to AWS S3 first
+            // ✅ Upload to AWS S3 first with unique filename
             let upload_result = client
                 .put_object()
                 .bucket(&bucket_name)
-                .key(&object_name)
+                .key(&final_filename)
                 .body(byte_stream)
                 .send()
                 .await;
@@ -1296,27 +1381,45 @@ pub async fn upload_file(
             match upload_result {
                 Ok(put_output) => {
                     uploaded_files_count += 1;
-                    log::info!("Successfully uploaded '{}' to AWS S3.", fname);
-                    
+                    log::info!("Successfully uploaded '{}' to AWS S3 with unique name '{}'.", fname, final_filename);
                     // File uploaded successfully to MinIO - add comprehensive metadata
                     let metadata = serde_json::json!({
+                        "id": final_id.clone(),
+                        "categories": [],
+                        "code": "",
+                        "tombstone": false,
+                        "status": "uploaded",
+                        "previous_status": "",
+                        "version": 1,
+                        "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "organization_id": "", // TODO: Extract from auth context
+                        "created_by": "", // TODO: Extract from auth context
+                        "updated_by": "", // TODO: Extract from auth context
+                        "deleted_by": "",
+                        "requested_by": "", // TODO: Extract from auth context
+                        "timestamp": chrono::Utc::now().timestamp(),
+                        "tags": [],
+                        "image_url": format!("{}/{}", bucket_name, final_filename),
                         "fieldname": field_name,
                         "originalname": fname.clone(),
                         "encoding": "7bit", // Default encoding for multipart
                         "mimetype": content_type,
                         "destination": bucket_name.clone(),
-                        "filename": fname,
-                        "path": format!("{}/{}", bucket_name, object_name),
+                        "filename": final_filename.clone(),
+                        "path": format!("{}/{}", bucket_name, final_filename),
                         "size": file_data.len(),
                         "uploaded_by": "", // TODO: Extract from auth context
                         "downloaded_by": "",
                         "etag": put_output.e_tag().unwrap_or("Unknown"),
-                        "version_id": put_output.version_id().unwrap_or(""),
-                        "download_path": format!("{}/{}", bucket_name, object_name),
-                        "presigned_url": "", // TODO: Generate presigned URL if needed
-                        "presigned_url_expire": 0, // TODO: Set expiration timestamp
-                        "status": "uploaded"
+                        "versionId": put_output.version_id().unwrap_or(""),
+                        "download_path": format!("{}/{}", bucket_name, final_filename),
+                        "presignedURL": "", // TODO: Generate presigned URL if needed
+                        "presignedURLExpires": 0 // TODO: Set expiration timestamp
                     });
+                    dbg!(format!("Complete file metadata for uploaded file: {:?}", metadata));
                     // Save file metadata to the database using process_and_insert_record
                     let auth_data = _auth_data;
                     
@@ -1333,7 +1436,7 @@ pub async fn upload_file(
                     });
                     
                     let _response = create_record(req, table_path, body, query).await;
-                    log::info!("Attempted to save file metadata to database for '{}' using create_record", fname);
+                    log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);
                 }
