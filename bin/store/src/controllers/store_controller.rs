@@ -10,7 +10,7 @@ use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::structs::structs::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
-    UpsertRequestBody,
+    SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
 use actix_web::error::BlockingError;
@@ -1122,4 +1122,103 @@ pub async fn aggregation_filter(
         count: data.len() as i32,
         data,
     })
+}
+
+pub async fn switch_account(
+    request: web::Json<SwitchAccountRequest>,
+) -> impl Responder {
+    use crate::auth::auth_service;
+    use crate::organizations::auth_service as org_auth_service;
+    use serde_json::json;
+
+    // Verify the token
+    let claims = match auth_service::verify(&request.data.token) {
+        Ok(claims) => claims,
+        Err(e) => {
+            log::error!("Token verification failed: {}", e);
+            return HttpResponse::Unauthorized().json(json!({
+                "success": false,
+                "message": "Invalid token"
+            }));
+        }
+    };
+
+    // Extract account information from claims
+    let account = &claims.account;
+    let signed_in_account = claims.previously_logged_in.map(|s| json!({"account_id": s})).unwrap_or_else(|| json!({}));
+    let organization_id = &account.organization_id;
+    let account_id = &account.account_id;
+    let account_organization_id = Some(account.account_organization_id.as_str());
+
+    // Get the logged in account
+    let logged_account = match org_auth_service::get_account(
+        account_id,
+        Some(organization_id),
+        account_organization_id,
+        None, // account_id for lookup
+    ).await {
+        Ok(Some(account)) => account,
+        Ok(None) => {
+            return HttpResponse::BadRequest().json(json!({
+                "success": false,
+                "message": "[Switch Account]: Logged in account not found"
+            }));
+        }
+        Err(e) => {
+            log::error!("Error fetching logged account: {}", e);
+            return HttpResponse::InternalServerError().json(json!({
+                "success": false,
+                "message": "Internal server error"
+            }));
+        }
+    };
+
+    // Get the target account
+    let logged_account_id = logged_account.get("id").and_then(|v| v.as_str());
+    let target_account = match org_auth_service::get_account(
+        account_id,
+        Some(&request.data.organization_id),
+        None, // account_organization_id
+        logged_account_id,
+    ).await {
+        Ok(Some(account)) => account,
+        Ok(None) => {
+            return HttpResponse::BadRequest().json(json!({
+                "success": false,
+                "message": "[Switch Account]: Target account not found"
+            }));
+        }
+        Err(e) => {
+            log::error!("Error fetching target account: {}", e);
+            return HttpResponse::InternalServerError().json(json!({
+                "success": false,
+                "message": "Internal server error"
+            }));
+        }
+    };
+
+    // Create new token value
+    let new_token_value = json!({
+        "account": target_account,
+        "signed_in_account": signed_in_account,
+        "as_root": false
+    });
+
+    // Sign the new token
+    let token = match org_auth_service::sign(&new_token_value).await {
+        Ok(token) => token,
+        Err(e) => {
+            log::error!("Token generation failed: {}", e);
+            return HttpResponse::Forbidden().json(json!({
+                "success": false,
+                "message": "[Switch Account]: Token not generated"
+            }));
+        }
+    };
+
+    HttpResponse::Ok().json(json!({
+        "success": true,
+        "message": "Account switched successfully",
+        "token": token
+    }))
 }
