@@ -5,6 +5,28 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.28
+
+### Author
+Kashan Ali Khalid
+
+### Added
+- ***Switch Organization Feature***: Added ability for users to switch between organizations
+  - Implemented `switch_account` endpoint in `src/controllers/store_controller.rs`
+  - Added `SwitchAccountRequest` and `SwitchAccountData` structs in `src/structs/structs.rs`
+  - Added root controller endpoint `root_switch_account` in `src/controllers/root_controller.rs`
+  - Token verification and generation for organization switching
+
+### Fixed
+- ***System Indexes***: Updated system indexes to be prefixed with table names to prevent duplicate index conflicts
+  - Modified `system_indexes` macro to accept table name parameter
+  - Updated all table definitions to use parameterized macro syntax
+  - Enhanced migration generator to handle prefixed index names
+- ***Migration Generator***: Fixed default value quoting for TEXT fields in SQL migrations
+  - Added proper single quote wrapping for string default values
+  - Resolved "cannot use column reference in DEFAULT expression" errors
+---
+
 ## 0.1.27
 
 ### Author

@@ -69,6 +69,17 @@ pub struct BatchUpdateBody {
     pub updates: RequestBody,
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct SwitchAccountRequest {
+    pub data: SwitchAccountData,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct SwitchAccountData {
+    pub token: String,
+    pub organization_id: String,
+}
+
 #[derive(Debug)]
 pub struct SqlUpdate {
     pub sql: String,
