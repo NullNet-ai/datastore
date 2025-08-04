@@ -13,9 +13,9 @@ define_table_schema! {
         // System fields - common across all tables
         system_fields!(),
         
-        timestamp: timestamptz(), primary_key: true,
+        timestamp: nullable(timestamptz()), primary_key: true,
         
-        hypertable_timestamp: text(), primary_key: false,
+        hypertable_timestamp: nullable(text()), primary_key: false,
         
         // Additional fields for time-series data
         sensor_id: nullable(text()),

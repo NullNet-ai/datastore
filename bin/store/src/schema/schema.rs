@@ -497,11 +497,13 @@ table! {
         timestamp -> Nullable<Text>,
         tags -> Nullable<Array<Text>>,
         sensitivity_level -> Nullable<Int4>,
-
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
         account_id -> Nullable<Text>,
         account_secret -> Nullable<Text>,
         account_status -> Nullable<Text>,
         is_new_user -> Nullable<Bool>,
+
     }
 }
 
@@ -763,5 +765,78 @@ table! {
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,
         is_primary -> Nullable<Bool>
+    }
+}
+
+table! {
+    files(id) {
+        image_url -> Nullable<Text>,
+        fieldname -> Nullable<Text>,
+        originalname -> Nullable<Text>,
+        encoding -> Nullable<Text>,
+        mimetype -> Nullable<Text>,
+        destination -> Nullable<Text>,
+        filename -> Nullable<Text>,
+        path -> Nullable<Text>,
+        size -> Nullable<Int4>,
+        uploaded_by -> Nullable<Text>,
+        downloaded_by -> Nullable<Text>,
+        etag -> Nullable<Text>,
+        version_id -> Nullable<Text>,
+        download_path -> Nullable<Text>,
+        presigned_url -> Nullable<Text>,
+        presigned_url_expire -> Nullable<Int4>,
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+    }
+}
+
+table! {
+    test_hypertable(timestamp) {
+        timestamp -> Nullable<Timestamptz>,
+        hypertable_timestamp -> Nullable<Text>,
+        sensor_id -> Nullable<Text>,
+        temperature -> Nullable<Int4>,
+        humidity -> Nullable<Int4>,
+        location -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
     }
 }

@@ -308,10 +308,12 @@ message Accounts {
   optional string timestamp = 17;
   repeated string tags = 18;
   optional int32 sensitivity_level = 19;
-  optional string account_id = 20;
-  optional string account_secret = 21;
-  optional string account_status = 22;
-  optional bool is_new_user = 23;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string account_id = 22;
+  optional string account_secret = 23;
+  optional string account_status = 24;
+  optional bool is_new_user = 25;
 }
 
 // Addresses entity definition
@@ -527,6 +529,77 @@ message ContactEmails {
   optional string contact_id = 22;
   optional string email = 23;
   optional bool is_primary = 24;
+}
+
+// Files entity definition
+message Files {
+  optional string image_url = 1;
+  optional string fieldname = 2;
+  optional string originalname = 3;
+  optional string encoding = 4;
+  optional string mimetype = 5;
+  optional string destination = 6;
+  optional string filename = 7;
+  optional string path = 8;
+  optional int32 size = 9;
+  optional string uploaded_by = 10;
+  optional string downloaded_by = 11;
+  optional string etag = 12;
+  optional string version_id = 13;
+  optional string download_path = 14;
+  optional string presigned_url = 15;
+  optional int32 presigned_url_expire = 16;
+  optional int32 tombstone = 17;
+  optional string status = 18;
+  optional string previous_status = 19;
+  optional int32 version = 20;
+  optional string created_date = 21;
+  optional string created_time = 22;
+  optional string updated_date = 23;
+  optional string updated_time = 24;
+  optional string organization_id = 25;
+  optional string created_by = 26;
+  optional string updated_by = 27;
+  optional string deleted_by = 28;
+  optional string requested_by = 29;
+  optional string timestamp = 30;
+  repeated string tags = 31;
+  repeated string categories = 32;
+  optional string code = 33;
+  optional string id = 34;
+  optional int32 sensitivity_level = 35;
+  optional string sync_status = 36;
+  optional bool is_batch = 37;
+}
+
+// TestHypertable entity definition
+message TestHypertable {
+  optional string timestamp = 1;
+  optional string hypertable_timestamp = 2;
+  optional string sensor_id = 3;
+  optional int32 temperature = 4;
+  optional int32 humidity = 5;
+  optional string location = 6;
+  optional int32 tombstone = 7;
+  optional string status = 8;
+  optional string previous_status = 9;
+  optional int32 version = 10;
+  optional string created_date = 11;
+  optional string created_time = 12;
+  optional string updated_date = 13;
+  optional string updated_time = 14;
+  optional string organization_id = 15;
+  optional string created_by = 16;
+  optional string updated_by = 17;
+  optional string deleted_by = 18;
+  optional string requested_by = 19;
+  repeated string tags = 20;
+  repeated string categories = 21;
+  optional string code = 22;
+  optional string id = 23;
+  optional int32 sensitivity_level = 24;
+  optional string sync_status = 25;
+  optional bool is_batch = 26;
 }
 
 // Create ExternalContacts request
@@ -2335,6 +2408,264 @@ message UpsertContactEmailsResponse {
   repeated ContactEmails data = 4;
 }
 
+// Create Files request
+message CreateFilesRequest {
+  Files files = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create Files response
+message CreateFilesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Files data = 4;
+}
+
+// Get Files request
+message GetFilesRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get Files response
+message GetFilesResponse {
+  bool success = 1;
+  string message = 2;
+  Files data = 3;
+}
+
+// Update Files request
+message UpdateFilesRequest {
+  Files file = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update Files response
+message UpdateFilesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Files data = 4;
+}
+
+// BatchUpdate Files request
+message BatchUpdateFilesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  Files updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate Files response
+message BatchUpdateFilesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Files data = 4;
+}
+
+// BatchDelete Files request
+message BatchDeleteFilesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Files response
+message BatchDeleteFilesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Files data = 4;
+}
+
+// Delete Files request
+message DeleteFilesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete Files response
+message DeleteFilesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Files data = 4;
+}
+
+// BatchInsert Files request
+message BatchInsertFilesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated Files files = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Files response
+message BatchInsertFilesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Files data = 4;
+}
+
+// Upsert Files request
+message UpsertFilesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    Files data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert Files response
+message UpsertFilesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Files data = 4;
+}
+
+// Create TestHypertable request
+message CreateTestHypertableRequest {
+  TestHypertable test_hypertable = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create TestHypertable response
+message CreateTestHypertableResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  TestHypertable data = 4;
+}
+
+// Get TestHypertable request
+message GetTestHypertableRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get TestHypertable response
+message GetTestHypertableResponse {
+  bool success = 1;
+  string message = 2;
+  TestHypertable data = 3;
+}
+
+// Update TestHypertable request
+message UpdateTestHypertableRequest {
+  TestHypertable test_hypertable = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update TestHypertable response
+message UpdateTestHypertableResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  TestHypertable data = 4;
+}
+
+// BatchUpdate TestHypertable request
+message BatchUpdateTestHypertableRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  TestHypertable updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate TestHypertable response
+message BatchUpdateTestHypertableResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TestHypertable data = 4;
+}
+
+// BatchDelete TestHypertable request
+message BatchDeleteTestHypertableRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete TestHypertable response
+message BatchDeleteTestHypertableResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  TestHypertable data = 4;
+}
+
+// Delete TestHypertable request
+message DeleteTestHypertableRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete TestHypertable response
+message DeleteTestHypertableResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  TestHypertable data = 4;
+}
+
+// BatchInsert TestHypertable request
+message BatchInsertTestHypertableRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated TestHypertable test_hypertable = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert TestHypertable response
+message BatchInsertTestHypertableResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TestHypertable data = 4;
+}
+
+// Upsert TestHypertable request
+message UpsertTestHypertableRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    TestHypertable data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert TestHypertable response
+message UpsertTestHypertableResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TestHypertable data = 4;
+}
+
 // Enum for aggregation types
 enum AggregationType {
   SUM = 0;
@@ -2804,6 +3135,54 @@ service StoreService {
 
   // Upsert a ContactEmails (create if not exists, update if exists)
   rpc UpsertContactEmails(UpsertContactEmailsRequest) returns (UpsertContactEmailsResponse);
+
+  // Create a new Files
+  rpc CreateFiles(CreateFilesRequest) returns (CreateFilesResponse);
+
+  // Get a Files by ID
+  rpc GetFiles(GetFilesRequest) returns (GetFilesResponse);
+
+  // Update an existing Files
+  rpc UpdateFiles(UpdateFilesRequest) returns (UpdateFilesResponse);
+
+  // Delete a Files by ID
+  rpc DeleteFiles(DeleteFilesRequest) returns (DeleteFilesResponse);
+
+  // Batch insert multiple Filess
+  rpc BatchInsertFiles(BatchInsertFilesRequest) returns (BatchInsertFilesResponse);
+
+  // Batch update multiple Filess based on filters
+  rpc BatchUpdateFiles(BatchUpdateFilesRequest) returns (BatchUpdateFilesResponse);
+
+  // Batch delete multiple Filess based on filters
+  rpc BatchDeleteFiles(BatchDeleteFilesRequest) returns (BatchDeleteFilesResponse);
+
+  // Upsert a Files (create if not exists, update if exists)
+  rpc UpsertFiles(UpsertFilesRequest) returns (UpsertFilesResponse);
+
+  // Create a new TestHypertable
+  rpc CreateTestHypertable(CreateTestHypertableRequest) returns (CreateTestHypertableResponse);
+
+  // Get a TestHypertable by ID
+  rpc GetTestHypertable(GetTestHypertableRequest) returns (GetTestHypertableResponse);
+
+  // Update an existing TestHypertable
+  rpc UpdateTestHypertable(UpdateTestHypertableRequest) returns (UpdateTestHypertableResponse);
+
+  // Delete a TestHypertable by ID
+  rpc DeleteTestHypertable(DeleteTestHypertableRequest) returns (DeleteTestHypertableResponse);
+
+  // Batch insert multiple TestHypertables
+  rpc BatchInsertTestHypertable(BatchInsertTestHypertableRequest) returns (BatchInsertTestHypertableResponse);
+
+  // Batch update multiple TestHypertables based on filters
+  rpc BatchUpdateTestHypertable(BatchUpdateTestHypertableRequest) returns (BatchUpdateTestHypertableResponse);
+
+  // Batch delete multiple TestHypertables based on filters
+  rpc BatchDeleteTestHypertable(BatchDeleteTestHypertableRequest) returns (BatchDeleteTestHypertableResponse);
+
+  // Upsert a TestHypertable (create if not exists, update if exists)
+  rpc UpsertTestHypertable(UpsertTestHypertableRequest) returns (UpsertTestHypertableResponse);
 
   // Aggregation filter for advanced queries
   rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);

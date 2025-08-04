@@ -1,18 +1,19 @@
-use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::schema::schema::accounts)]
+#[diesel(table_name = crate::schema::schema::test_hypertable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct AccountModel {
-    // System fields
-    pub id: Option<String>,
-    pub categories: Option<Vec<String>>,
-    pub code: Option<String>,
+pub struct TestHypertableModel {
+    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
+    pub hypertable_timestamp: Option<String>,
+    pub sensor_id: Option<String>,
+    pub temperature: Option<i32>,
+    pub humidity: Option<i32>,
+    pub location: Option<String>,
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -26,16 +27,11 @@ pub struct AccountModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<String>,
     pub tags: Option<Vec<String>>,
-    #[serde(default = "default_sensitivity_level")]
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    
-    // Specific fields
-    pub account_id: Option<String>,
-    pub account_secret: Option<String>,
-    pub account_status: Option<String>,
-    pub is_new_user: Option<bool>,
 }

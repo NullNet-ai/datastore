@@ -457,7 +457,7 @@ pub async fn process_and_insert_record(
                 format!("Failed to process record: {}", e),
             )
         })?;
-
+        
     // Get table instance
     let table = Table::from_str(table_name).ok_or_else(|| {
         ApiError::new(
