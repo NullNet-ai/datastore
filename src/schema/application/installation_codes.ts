@@ -18,7 +18,8 @@ const fields = {
     () => devices.id as AnyPgColumn,
   ),
   device_code: text('device_code'),
-  redeemed: boolean("redeemed").default(false)
+  redeemed: boolean("redeemed").default(false),
+  auto_authorization: boolean("auto_authorization").default(false)
 }
 
 const config = (table) => ({
