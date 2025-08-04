@@ -1796,3 +1796,8 @@ ALTER TABLE "contact_emails"
 ADD COLUMN "sync_status" text DEFAULT 'in-process';
 ALTER TABLE "contact_emails" 
 ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "accounts" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "accounts" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
