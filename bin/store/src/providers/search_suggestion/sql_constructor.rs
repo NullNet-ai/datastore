@@ -81,7 +81,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
     ) -> Result<String, String> {
         let mut sql = String::new();
 
-        // TODO: construct per field (value and group) query
+        // construct per field (value and group) query
         let result = self.construct_field_query(
             filtered_fields,
             advance_filters,
@@ -91,17 +91,17 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         )?;
         let (field_query, field_query_names) = result;
         sql.push_str(&field_query);
-        // TODO: construct union clause
+        // construct union clause
         let union_clause = self.construct_union_clause(&field_query_names);
         sql.push_str(&union_clause);
-        // TODO: construct key score clause
+        // construct key score clause
         let key_score_clause = self.construct_key_score_clause(search_term);
         sql.push_str(&key_score_clause);
-        // TODO: construct entity score clause
+        // construct entity score clause
         let entity_score_clause = self.construct_entity_score_clause();
         sql.push_str(&entity_score_clause);
 
-        // TODO: construct final query string
+        // construct final query string
         let json_result_query = self.construct_json_result_query();
         sql.push_str(&json_result_query);
         println!("=====sql = {}", sql);
@@ -141,8 +141,6 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                 println!("Found: {}", field_expr.expression);
                                 entity_field = format!("{}", field_expr.expression)
                             }
-
-                            println!("=====entity_field===== = {:?}", entity_field);
 
                             let mut field_filter = None::<FilterCriteria>;
                             let mut all_field_filters: Vec<FilterCriteria> = Vec::new();
@@ -194,7 +192,6 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                 all_field_filters = _all_field_filters;
                                 field_filter = _field_filter;
                             }
-                            println!("=====field_filter = {:?}", field_filter);
 
                             let (values, parse_as, has_group_count) = match field_filter {
                                 Some(FilterCriteria::Criteria {
