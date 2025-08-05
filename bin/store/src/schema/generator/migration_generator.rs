@@ -412,9 +412,14 @@ impl MigrationGenerator {
         let referenced_table = parts[1];
         let referenced_column = parts[2];
         
+        // Clean up any potential quotes or commas in all fields
+        let clean_column_name = column_name.replace(",", "").replace("\"", "");
+        let clean_referenced_table = referenced_table.replace(",", "").replace("\"", "");
+        let clean_referenced_column = referenced_column.replace(",", "").replace("\"", "");
+        
         Ok(format!(
-            "ALTER TABLE \"{}\" ADD CONSTRAINT \"{}\" FOREIGN KEY (\"{}\") REFERENCES \"{}\" (\"{}\");",
-            table_name, constraint_name, column_name, referenced_table, referenced_column
+            "ALTER TABLE \"{}\" ADD CONSTRAINT \"{}\" FOREIGN KEY (\"{}\") REFERENCES \"public\".\"{}\"(\"{}\") ON DELETE no action ON UPDATE no action;",
+            table_name, constraint_name, clean_column_name, clean_referenced_table, clean_referenced_column
         ))
     }
     
