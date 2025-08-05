@@ -28,7 +28,17 @@ store-clean-setup:
 # Run the store in watch mode
 store-watch:
 	@echo "Starting store in watch mode..."
-	@cd bin/store && DEBUG=true cargo watch -x run
+	@cd bin/store && DEBUG=true RUST_BACKTRACE=full cargo watch -x run
+
+# Create store schema
+store-generate-migrate:
+	@echo "Generating and migrating store schema..."
+	@cd bin/store && CREATE_SCHEMA=true cargo run
+
+# Generate store proto
+store-generate-proto:
+	@echo "Generating store proto..."
+	@cd bin/store && GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true cargo run
 
 # Build the store
 store-build:
@@ -51,11 +61,15 @@ db-migrate-generate:
 	@cd bin/store && diesel migration generate $(NAME)
 	
 # Run migrations
-db-migrate-run:
+db-migrate-up:
 	@echo "Running database migrations..."
 	@cd bin/store && diesel migration run
+
+db-migrate-down:
+	@echo "Reverting database migrations..."
+	@cd bin/store && diesel migration revert
 
 # Revert last migration
 db-migrate-revert:
 	@echo "Reverting last migration..."
-	@cd bin/store && diesel migration revert
+	@cd bin/store && diesel migration revert 

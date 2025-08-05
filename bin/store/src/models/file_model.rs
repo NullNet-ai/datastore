@@ -24,7 +24,6 @@ pub struct FileModel {
     pub download_path: Option<String>,
     pub presigned_url: Option<String>,
     pub presigned_url_expire: Option<i32>,
-    pub parent_file_id: Option<i32>,
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,

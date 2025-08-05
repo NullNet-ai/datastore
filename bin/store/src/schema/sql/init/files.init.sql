@@ -38,10 +38,10 @@ DECLARE
         ROW('UploadedBy_uploaded_by_text', 'UploadedBy', 'uploaded_by', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
         ROW('DownloadedBy_downloaded_by_text', 'DownloadedBy', 'downloaded_by', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
         ROW('Etag_etag_text', 'Etag', 'etag', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
-        ROW('VersionId_versionId_text', 'VersionId', 'versionId', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
+        ROW('VersionId_versionId_text', 'VersionId', 'version_id', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
         ROW('DownloadPath_download_path_text', 'DownloadPath', 'download_path', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
-        ROW('PresignedURL_presignedURL_text', 'PresignedURL', 'presignedURL', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
-        ROW('PresignedURLExpires_presignedURLExpires_integer', 'PresignedURLExpires', 'presignedURLExpires', 'integer', record_email, false, false, true,'','',to_jsonb(ARRAY['']))::field_type
+        ROW('PresignedURL_presignedURL_text', 'PresignedURL', 'presigned_url', 'text', record_email, false, false, false,'','',to_jsonb(ARRAY['']))::field_type,
+        ROW('PresignedURLExpires_presignedURLExpires_integer', 'PresignedURLExpires', 'presigned_url_expire', 'integer', record_email, false, false, true,'','',to_jsonb(ARRAY['']))::field_type
 
     ];
     arr_permission permission_type;

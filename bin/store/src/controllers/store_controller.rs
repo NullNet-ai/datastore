@@ -3,13 +3,17 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::db;
+use actix_web::test;
+use ulid::Ulid;
+use crate::{db, providers};
 use crate::db::create_connection;
-
+use aws_sdk_s3::primitives::ByteStream;
+use actix_multipart::Multipart;
+use chrono;
 use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::structs::structs::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GetFileById, QueryParams, RequestBody,
     SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
@@ -28,7 +32,7 @@ use std::fmt;
 use diesel_async::RunQueryDsl;
 
 use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
-
+use futures_util::stream::StreamExt; // For processing multipart stream
 #[derive(Serialize)]
 pub struct ApiError {
     pub message: String,
@@ -1121,6 +1125,363 @@ pub async fn aggregation_filter(
         message: format!("Aggregation operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
+    })
+}
+
+// files implementation
+// Query
+// TODO: get file metadat from database
+pub async fn get_file_by_id(
+    _auth: HttpRequest,
+    request_body: web::Json<GetFileById>,
+) -> impl Responder {
+    dbg!("get_file_by_id");
+    let parameters = request_body.into_inner();
+    let file_id = parameters.id.clone();
+     return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: format!("File {} found", file_id),
+                count: 1,
+                data: vec![serde_json::json!({
+                    "id": file_id,
+                })],
+            })
+}
+// TODO: access to the database for file metadata and response stream from File storage
+pub async fn download_file_by_id(
+    _auth: HttpRequest,
+    request_body: web::Json<GetFileById>,
+) -> impl Responder {
+     let parameters = request_body.into_inner();
+    let file_id = parameters.id.clone();
+     return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: format!("File {} found", file_id),
+                count: 1,
+                data: vec![serde_json::json!({
+                    "id": file_id,
+                })],
+            })
+}
+
+pub async fn upload_file(
+    req: HttpRequest,
+    app_state: web::Data<providers::storage::AppState>,
+    mut multipart: Multipart,
+) -> impl Responder {
+    // Check for Auth data early and abort if missing
+    let extensions = req.extensions();
+    let _auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::error!("Auth data not found in request extensions - aborting upload process");
+            return HttpResponse::Unauthorized().json(ApiResponse {
+                success: false,
+                message: "Authentication required for file upload".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    if let Some(content_type_header) = req.headers().get(actix_web::http::header::CONTENT_TYPE) {
+        log::info!("Incoming Content-Type header: {:?}", content_type_header);
+    }
+    let name = "files";
+    let client = app_state.s3_client.clone();
+    let bucket_name = app_state.bucket_name.clone();
+    let mut uploaded_files_count = 0;
+    let mut file_metadata = Vec::new();
+    let pluck_fields = vec!["id".to_string()];
+    while let Some(field_result) = multipart.next().await {
+        let mut field = match field_result {
+            Ok(field) => field,
+            Err(e) => {
+                log::error!("Error getting field from multipart: {:?}", e);
+                return HttpResponse::InternalServerError()
+                    .body(format!("Multipart error: {}", e));
+            }
+        };
+
+        let content_disposition = field.content_disposition();
+        let fname = content_disposition.get_filename().map(|s| s.to_string());
+        let field_name = content_disposition.get_name().unwrap_or("file").to_string();
+        let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or("application/octet-stream".to_string());
+
+        if let Some(fname) = fname {
+            // Generate unique filename with ID.extension format
+            let extension = std::path::Path::new(&fname)
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("png"); // Default to png if no extension
+            
+            // Generate a new ID for potential upload
+            let new_id = Ulid::new().to_string();
+            let new_unique_filename = format!("{}.{}", new_id, extension);
+            
+            // First, try to find if this file already exists by listing all files with same extension
+            let list_result = client
+                .list_objects_v2()
+                .bucket(&bucket_name)
+                .prefix("") // List all files
+                .send()
+                .await;
+            
+            let mut existing_file_key: Option<String> = None;
+            let mut existing_id: Option<String> = None;
+            
+            // Read the uploaded file content to compare with existing files
+            let mut file_data = Vec::new();
+            while let Some(chunk) = field.next().await {
+                if let Ok(bytes) = chunk {
+                    file_data.extend_from_slice(&bytes);
+                }
+            }
+            
+            // Check if any existing files match our content by comparing file sizes and content
+             if let Ok(list_output) = list_result {
+                 let objects = list_output.contents();
+                 for object in objects {
+                     if let Some(key) = object.key() {
+                         // Check if this is a file with the same extension
+                         if key.ends_with(&format!(".{}", extension)) {
+                             // Try to get the object and compare content
+                             if let Ok(existing_obj) = client
+                                 .get_object()
+                                 .bucket(&bucket_name)
+                                 .key(key)
+                                 .send()
+                                 .await
+                             {
+                                 // Compare file sizes first (quick check)
+                                 if existing_obj.content_length().unwrap_or(0) == file_data.len() as i64 {
+                                     // If sizes match, this might be the same file
+                                     // Extract ID from filename (format: "ID.extension")
+                                     if let Some(filename) = key.split('/').last() {
+                                         if let Some(id_part) = filename.split('.').next() {
+                                             existing_file_key = Some(key.to_string());
+                                             existing_id = Some(id_part.to_string());
+                                             break;
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }
+             }
+            
+            // If we found an existing file, use its ID and key
+            let (final_id, final_filename) = if let (Some(existing_key), Some(existing_id_val)) = (existing_file_key.clone(), existing_id.clone()) {
+                (existing_id_val, existing_key)
+            } else {
+                // No existing file found, use new ID
+                (new_id.clone(), new_unique_filename.clone())
+            };
+            
+            // Check if file exists using the determined filename
+            let get_result = client
+                .get_object()
+                .bucket(&bucket_name)
+                .key(&final_filename)
+                .send()
+                .await;
+
+            match get_result {
+                Ok(get_output) => {
+                    // File already exists in MinIO, use the extracted ID from filename
+                    let actual_id = final_id.clone();
+                    let actual_filename = final_filename.clone();
+                    
+                    dbg!(format!("Found existing file with ID '{}' and filename '{}'", actual_id, actual_filename));
+                    
+                    // File already exists in MinIO, return comprehensive metadata
+                    let metadata = serde_json::json!({
+                        "id": actual_id.clone(),
+                        // "categories": [],
+                        // "code": "",
+                        // "tombstone": false,
+                        "status": "already_exists",
+                        "previous_status": "",
+                        // "version": 1,
+                        // "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        // "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "updated_date": get_output.last_modified()
+                            .map(|dt| {
+                                // Convert AWS SDK DateTime to chrono DateTime
+                                let timestamp = dt.as_secs_f64();
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                    .unwrap_or_else(|| chrono::Utc::now());
+                                chrono_dt.format("%Y-%m-%d").to_string()
+                            })
+                            .unwrap_or_else(|| "Unknown".to_string()),
+                        "updated_time": get_output.last_modified()
+                            .map(|dt| {
+                                // Convert AWS SDK DateTime to chrono DateTime
+                                let timestamp = dt.as_secs_f64();
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                    .unwrap_or_else(|| chrono::Utc::now());
+                                chrono_dt.format("%H:%M:%S").to_string()
+                            })
+                            .unwrap_or_else(|| "Unknown".to_string()),
+                        "organization_id": "", // TODO: Extract from auth context
+                        "created_by": "", // TODO: Extract from auth context
+                        "updated_by": "", // TODO: Extract from auth context
+                        "deleted_by": "",
+                        "requested_by": "", // TODO: Extract from auth context
+                        // "timestamp": chrono::Utc::now().timestamp(),
+                        "tags": [],
+                        "image_url": format!("{}/{}", bucket_name, actual_filename),
+                        "fieldname": field_name.clone(),
+                        "originalname": fname.clone(),
+                        "encoding": "7bit", // Default encoding for multipart
+                        "mimetype": get_output.content_type().unwrap_or("application/octet-stream"),
+                        "destination": bucket_name.clone(),
+                        "filename": actual_filename.clone(),
+                        "path": format!("{}/{}", bucket_name, actual_filename),
+                        "size": get_output.content_length().unwrap_or(0),
+                        // "uploaded_by": "", // TODO: Extract from auth context
+                        // "downloaded_by": "",
+                        "etag": get_output.e_tag().unwrap_or("Unknown"),
+                        "version_id": get_output.version_id().unwrap_or(""),
+                        "download_path": format!("{}/{}", bucket_name, actual_filename),
+                        "presigned_url": "", // TODO: Generate presigned URL if needed
+                        "presigned_url_expire": 0, // TODO: Set expiration timestamp
+                        // "last_modified": get_output.last_modified()
+                        //     .map(|dt| dt.to_string())
+                        //     .unwrap_or_else(|| "Unknown".to_string())
+                    });
+                    // For existing files, try to save to database (will handle duplicates gracefully)
+                    let auth_data = _auth_data;
+                    
+                    // Use create_record function to save metadata
+                    let req = test::TestRequest::default()
+                        .insert_header(("content-type", "application/json"))
+                        .to_http_request();
+                    req.extensions_mut().insert(auth_data.clone());
+                    
+                    let table_path = web::Path::from(name.to_string());
+                    let body = web::Json(metadata.clone());
+                    let query = web::Query(QueryParams {
+                        pluck: pluck_fields.join(","),
+                    });
+                    
+                    let _response = create_record(req, table_path, body, query).await;
+                    // For existing files, add metadata regardless of database operation result
+                    file_metadata.push(metadata.clone());
+                    log::info!("File '{}' already exists in MinIO with unique name '{}', skipping upload", fname, actual_filename);
+                    
+                    // File data already read earlier for comparison, no need to read again
+                    continue;
+                }
+                Err(_) => {
+                    // File doesn't exist in MinIO, proceed with upload
+                    log::info!("File '{}' doesn't exist in MinIO, proceeding with upload using filename '{}'", fname, final_filename);
+                }
+            }
+
+            // File data already read earlier for comparison, use it for upload
+
+            // ✅ Convert Vec<u8> -> ByteStream
+            let byte_stream = ByteStream::from(file_data.clone());
+
+            // ✅ Upload to AWS S3 first with unique filename
+            let upload_result = client
+                .put_object()
+                .bucket(&bucket_name)
+                .key(&final_filename)
+                .body(byte_stream)
+                .send()
+                .await;
+
+            match upload_result {
+                Ok(put_output) => {
+                    uploaded_files_count += 1;
+                    log::info!("Successfully uploaded '{}' to AWS S3 with unique name '{}'.", fname, final_filename);
+                    // File uploaded successfully to MinIO - add comprehensive metadata
+                    let metadata = serde_json::json!({
+                        "id": final_id.clone(),
+                        // "categories": [],
+                        // "code": "",
+                        // "tombstone": false,
+                        "status": "uploaded",
+                        "previous_status": "",
+                        // "version": 1,
+                        "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                        "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+                        "organization_id": "", // TODO: Extract from auth context
+                        "created_by": "", // TODO: Extract from auth context
+                        "updated_by": "", // TODO: Extract from auth context
+                        "deleted_by": "",
+                        "requested_by": "", // TODO: Extract from auth context
+                        // "timestamp": chrono::Utc::now().timestamp(),
+                        "tags": [],
+                        "image_url": format!("{}/{}", bucket_name, final_filename),
+                        "fieldname": field_name,
+                        "originalname": fname.clone(),
+                        "encoding": "7bit", // Default encoding for multipart
+                        "mimetype": content_type,
+                        "destination": bucket_name.clone(),
+                        "filename": final_filename.clone(),
+                        "path": format!("{}/{}", bucket_name, final_filename),
+                        "size": file_data.len(),
+                        "uploaded_by": "", // TODO: Extract from auth context
+                        "downloaded_by": "",
+                        "etag": put_output.e_tag().unwrap_or("Unknown"),
+                        "version_id": put_output.version_id().unwrap_or(""),
+                        "download_path": format!("{}/{}", bucket_name, final_filename),
+                        "presigned_url": "", // TODO: Generate presigned URL if needed
+                        "presigned_url_expire": 0 // TODO: Set expiration timestamp
+                    });
+                    dbg!(format!("Complete file metadata for uploaded file: {:?}", metadata));
+                    // Save file metadata to the database using process_and_insert_record
+                    let auth_data = _auth_data;
+                    
+                    // Use create_record function to save metadata
+                    let req = test::TestRequest::default()
+                        .insert_header(("content-type", "application/json"))
+                        .to_http_request();
+                    req.extensions_mut().insert(auth_data.clone());
+                    
+                    let table_path = web::Path::from(name.to_string());
+                    let body = web::Json(metadata.clone());
+                    let query = web::Query(QueryParams {
+                        pluck: pluck_fields.join(","),
+                    });
+                    
+                    let _response = create_record(req, table_path, body, query).await;
+                    log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
+                    // Add the metadata to response
+                    file_metadata.push(metadata);
+                }
+                Err(e) => {
+                    log::error!("AWS S3 upload error for '{}': {:?}", fname, e);
+                    return HttpResponse::InternalServerError()
+                        .body(format!("Upload failed: {}", e));
+                }
+            }
+        }
+    }
+
+    let existing_count = file_metadata.iter().filter(|m| m["status"] == "already_exists").count();
+    
+    let response_message = if existing_count > 0 {
+        if uploaded_files_count > 0 {
+            format!("Uploaded {} new file(s), {} file(s) already existed in MinIO", uploaded_files_count, existing_count)
+        } else {
+            format!("All {} file(s) already exist in MinIO", existing_count)
+        }
+    } else {
+        format!("Successfully uploaded {} file(s)", uploaded_files_count)
+    };
+
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: response_message,
+        count: (uploaded_files_count + existing_count) as i32,
+        data: file_metadata,
     })
 }
 

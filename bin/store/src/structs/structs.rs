@@ -667,3 +667,13 @@ pub enum FilterOperator {
     #[serde(rename = "has_no_value")]
     HasNoValue,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetFileById {
+    pub id: String,
+}
+
+#[derive(Deserialize)]
+pub struct UploadFile {
+    pub file: String,
+}

@@ -785,8 +785,6 @@ CREATE TABLE "dead_letter_queue" (
 -- device_heartbeats table removed
 --> statement-breakpoint
 
-
-
 --> statement-breakpoint
 CREATE TABLE "grid_filters" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -1446,6 +1444,7 @@ ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_cr
 ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
 ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1734,4 +1733,9 @@ ADD COLUMN "is_batch" boolean DEFAULT false;
 ALTER TABLE "contact_emails" 
 ADD COLUMN "sync_status" text DEFAULT 'in-process';
 ALTER TABLE "contact_emails" 
+ADD COLUMN "is_batch" boolean DEFAULT false;
+
+ALTER TABLE "accounts" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "accounts" 
 ADD COLUMN "is_batch" boolean DEFAULT false;

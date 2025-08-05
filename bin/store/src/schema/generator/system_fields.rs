@@ -28,7 +28,7 @@ macro_rules! system_fields {
         tags: nullable(array(text())),
         categories: nullable(array(text())),
         code: nullable(text()),
-        id: nullable(text()), primary_key: true, migration_nullable: false,
+        id: nullable(text()), primary_key: true,
         sensitivity_level: nullable(integer()),
         sync_status: nullable(text()), default: "in_process",
         is_batch: nullable(boolean()), default: "false"

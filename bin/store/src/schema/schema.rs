@@ -497,13 +497,13 @@ table! {
         timestamp -> Nullable<Text>,
         tags -> Nullable<Array<Text>>,
         sensitivity_level -> Nullable<Int4>,
-         sync_status -> Nullable<Text>,
+        sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-
         account_id -> Nullable<Text>,
         account_secret -> Nullable<Text>,
         account_status -> Nullable<Text>,
         is_new_user -> Nullable<Bool>,
+
     }
 }
 
@@ -786,7 +786,6 @@ table! {
         download_path -> Nullable<Text>,
         presigned_url -> Nullable<Text>,
         presigned_url_expire -> Nullable<Int4>,
-        parent_file_id -> Nullable<Int4>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,

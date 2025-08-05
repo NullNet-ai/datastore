@@ -41,6 +41,8 @@ pub mod sync_endpoint_model;
 pub mod system_config_field_model;
 pub mod table_index_model;
 
+pub mod test_hypertable_model;
+pub mod transaction_model;
 pub mod user_role_model;
 
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

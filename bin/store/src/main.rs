@@ -1,5 +1,5 @@
 #![recursion_limit = "2056"]
-use actix_web::{web, App, HttpServer};
+use actix_web::{mime,web, App, HttpServer};
 use batch_sync::background_sync;
 use dotenv::dotenv;
 use message_stream::gateway::{create_socket_io, set_streaming_service};
@@ -33,7 +33,6 @@ mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
 use crate::cache::{cache, CacheConfig}; // Add the cache function import
-use crate::controllers::store_controller::get_by_id;
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
 use crate::message_stream::pg_listener_service::PgListenerService;
@@ -62,6 +61,7 @@ use controllers::root_controller::{
 use controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
     create_record, delete_record, get_by_filter, switch_account, update_record, upsert,
+    upload_file,get_by_id
 };
 use env_logger::Env;
 use log::{info, error};
@@ -92,6 +92,15 @@ fn run_build_script() -> std::io::Result<()> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+
+    let (s3_client, bucket_name) = match providers::storage::initialize().await {
+        Ok((client, bucket)) => (client, bucket),
+        Err(e) => {
+            log::error!("Failed to initialize S3 client: {}", e);
+            std::process::exit(1);
+        }
+    };
+
     let generate_proto =
         env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string()) == "true";
     let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
@@ -385,7 +394,28 @@ async fn main() -> std::io::Result<()> {
                     .route("/function", web::post().to(create_pg_function))
                     .route("/test", web::post().to(test_pg_function_syntax))
                     .route("/{function_name}", web::delete().to(pg_listener_delete)),
+            ).service(
+                web::scope("/api/file")
+                    .app_data(web::Data::new(providers::storage::AppState {
+                        s3_client: s3_client.clone(),
+                        bucket_name: bucket_name.clone(),
+                    }))
+                    .wrap(ShutdownGuard)
+                    .wrap(Authentication) 
+                    .wrap(SessionMiddleware)
+                    .app_data(
+                        web::JsonConfig::default()
+                            .limit(1024 * 1024 * 10) // 10MB JSON payload limit
+                            .content_type(|mime| mime == mime::APPLICATION_JSON)
+                    )
+                    .app_data(web::FormConfig::default()
+                        .limit(1024 * 1024 * 100) // 10MB JSON payload limit
+                    )
+                    // .route("/{id}", web::get().to(get_file_by_id))
+                    // .route("/{id}/download", web::get().to(download_file_by_id))
+                    .route("/upload", web::post().to(upload_file))
             )
+
     })
     .disable_signals()
     .bind(server_url)?
