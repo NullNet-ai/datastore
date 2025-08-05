@@ -130,15 +130,26 @@ impl SchemaGenerator {
          
          // Add foreign key changes - only if they don't already exist
          for foreign_key in foreign_keys {
-             // Generate constraint name: fk_tablename_columnname
-             let constraint_name = format!("fk_{}_{}", table_def.name, foreign_key.column);
+             // Generate constraint name to match system_foreign_keys macro format: tablename_columnname_foreigntable_foreigncolumn_fk
+             let constraint_name = format!("{}_{}_{}_{}_{}", 
+                 table_def.name, 
+                 foreign_key.column, 
+                 foreign_key.references_table, 
+                 foreign_key.references_column,
+                 "fk"
+             ).replace(",", "").replace("\"", "");
              
              // Check if foreign key already exists
              if !Self::foreign_key_exists_in_schema(&table_def.name, &constraint_name) {
+                 // Clean up any potential quotes or commas in the referenced table and column
+                 let clean_column = foreign_key.column.replace(",", "").replace("\"", "");
+                 let clean_references_table = foreign_key.references_table.replace(",", "").replace("\"", "");
+                 let clean_references_column = foreign_key.references_column.replace(",", "").replace("\"", "");
+                 
                  let field_def = format!("{}|{}|{}", 
-                     foreign_key.column, 
-                     foreign_key.references_table, 
-                     foreign_key.references_column
+                     clean_column, 
+                     clean_references_table, 
+                     clean_references_column
                  );
                  
                  changes.push(SchemaChange {

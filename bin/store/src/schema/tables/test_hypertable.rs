@@ -2,7 +2,7 @@ use crate::schema::generator::diesel_schema_definition::{
     DieselTableDefinition, types::*
 };
 use crate::define_table_schema;
-use crate::{system_fields, system_indexes};
+use crate::{system_fields, system_indexes, system_foreign_keys};
 
 /// Test hypertable for time-series data
 pub struct TestHypertableTable;
@@ -13,9 +13,9 @@ define_table_schema! {
         // System fields - common across all tables
         system_fields!(),
         
-        timestamp: timestamptz(), primary_key: true,
+        timestamp: nullable(timestamptz()), primary_key: true,
         
-        hypertable_timestamp: text(), primary_key: false,
+        hypertable_timestamp: nullable(text()), primary_key: false,
         
         // Additional fields for time-series data
         sensor_id: nullable(text()),
@@ -38,6 +38,10 @@ define_table_schema! {
             unique: false,
             type: "btree"
         }
+    },
+    foreign_keys: {
+        // System field foreign keys
+        system_foreign_keys!("test_hypertable")
     }
 }
 

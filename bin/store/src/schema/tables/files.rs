@@ -8,7 +8,7 @@ use crate::schema::generator::diesel_schema_definition::{
     DieselTableDefinition, types::*
 };
 use crate::define_table_schema;
-use crate::{system_fields, system_indexes};
+use crate::{system_fields, system_indexes, system_foreign_keys};
 
 /// Files table for file storage and management
 pub struct FilesTable;
@@ -35,7 +35,7 @@ define_table_schema! {
         version_id: nullable(text()), 
         download_path: nullable(text()), 
         presigned_url: nullable(text()), 
-        presigned_url_expires: nullable(integer()),
+        presigned_url_expire: nullable(integer()),
     },
     indexes: {
         // System field indexes
@@ -62,5 +62,11 @@ define_table_schema! {
             unique: false,
             type: "btree"
         }
+    },
+    foreign_keys: {
+        // System field foreign keys
+        system_foreign_keys!("files"),
+        
+    
     }
 }

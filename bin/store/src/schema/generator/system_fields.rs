@@ -11,7 +11,7 @@
 #[macro_export]
 macro_rules! system_fields {
     () => {
-        tombstone: nullable(integer()), migration_nullable: false, default: "0",
+        tombstone: nullable(integer()), default: "0",
         status: nullable(text()), default: "Active",
         previous_status: nullable(text()),
         version: nullable(integer()),
@@ -27,7 +27,7 @@ macro_rules! system_fields {
         timestamp: nullable(timestamp()),
         tags: nullable(array(text())),
         categories: nullable(array(text())),
-        code: nullable(text()), migration_nullable: false,
+        code: nullable(text()),
         id: nullable(text()), primary_key: true, migration_nullable: false,
         sensitivity_level: nullable(integer()),
         sync_status: nullable(text()), default: "in_process",
@@ -115,6 +115,51 @@ macro_rules! system_indexes {
                 columns: ["sensitivity_level"],
                 unique: false,
                 type: "btree"
+            }
+        }
+    };
+}
+
+/// Macro to include common system field foreign keys in table definitions
+/// Usage: system_foreign_keys!(table_name) - e.g., system_foreign_keys!("users") creates foreign key constraints
+#[macro_export]
+macro_rules! system_foreign_keys {
+    ($table_name:expr) => {
+        paste::paste! {
+            [<$table_name _organization_id_organizations_id_fk>]: {
+                columns: ["organization_id"],
+                foreign_table: "organizations",
+                foreign_columns: ["id"],
+                on_delete: "no action",
+                on_update: "no action"
+            },
+            [<$table_name _created_by_account_organizations_id_fk>]: {
+                columns: ["created_by"],
+                foreign_table: "account_organizations",
+                foreign_columns: ["id"],
+                on_delete: "no action",
+                on_update: "no action"
+            },
+            [<$table_name _updated_by_account_organizations_id_fk>]: {
+                columns: ["updated_by"],
+                foreign_table: "account_organizations",
+                foreign_columns: ["id"],
+                on_delete: "no action",
+                on_update: "no action"
+            },
+            [<$table_name _deleted_by_account_organizations_id_fk>]: {
+                columns: ["deleted_by"],
+                foreign_table: "account_organizations",
+                foreign_columns: ["id"],
+                on_delete: "no action",
+                on_update: "no action"
+            },
+            [<$table_name _requested_by_account_organizations_id_fk>]: {
+                columns: ["requested_by"],
+                foreign_table: "account_organizations",
+                foreign_columns: ["id"],
+                on_delete: "no action",
+                on_update: "no action"
             }
         }
     };

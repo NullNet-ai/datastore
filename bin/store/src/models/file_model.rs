@@ -1,18 +1,30 @@
-use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::schema::schema::accounts)]
+#[diesel(table_name = crate::schema::schema::files)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct AccountModel {
-    // System fields
-    pub id: Option<String>,
-    pub categories: Option<Vec<String>>,
-    pub code: Option<String>,
+pub struct FileModel {
+    pub image_url: Option<String>,
+    pub fieldname: Option<String>,
+    pub originalname: Option<String>,
+    pub encoding: Option<String>,
+    pub mimetype: Option<String>,
+    pub destination: Option<String>,
+    pub filename: Option<String>,
+    pub path: Option<String>,
+    pub size: Option<i32>,
+    pub uploaded_by: Option<String>,
+    pub downloaded_by: Option<String>,
+    pub etag: Option<String>,
+    pub version_id: Option<String>,
+    pub download_path: Option<String>,
+    pub presigned_url: Option<String>,
+    pub presigned_url_expire: Option<i32>,
+    pub parent_file_id: Option<i32>,
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -26,16 +38,12 @@ pub struct AccountModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
     pub tags: Option<Vec<String>>,
-    #[serde(default = "default_sensitivity_level")]
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-
-    // Specific fields
-    pub account_id: Option<String>,
-    pub account_secret: Option<String>,
-    pub account_status: Option<String>,
-    pub is_new_user: Option<bool>,
 }

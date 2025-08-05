@@ -787,45 +787,6 @@ CREATE TABLE "dead_letter_queue" (
 
 
 
-
-
-
-CREATE TABLE "files" (
-	"id" text PRIMARY KEY NOT NULL,
-	"categories" text[] DEFAULT ARRAY[]::TEXT[],
-	"code" text,
-	"tombstone" integer DEFAULT 0,
-	"status" text DEFAULT 'Active',
-	"previous_status" text,
-	"version" integer DEFAULT 1,
-	"created_date" text,
-	"created_time" text,
-	"updated_date" text,
-	"updated_time" text,
-	"organization_id" text DEFAULT (null),
-	"created_by" text DEFAULT (null),
-	"updated_by" text DEFAULT (null),
-	"deleted_by" text DEFAULT (null),
-	"requested_by" text DEFAULT (null),
-	"timestamp" text,
-	"tags" text[] DEFAULT ARRAY[]::TEXT[],
-	"image_url" varchar(300),
-	"fieldname" text,
-	"originalname" text,
-	"encoding" text,
-	"mimetype" text,
-	"destination" text,
-	"filename" text,
-	"path" text,
-	"size" integer,
-	"uploaded_by" text,
-	"downloaded_by" text,
-	"etag" text,
-	"versionId" text,
-	"download_path" text,
-	"presignedURL" text,
-	"presignedURLExpires" integer
-);
 --> statement-breakpoint
 CREATE TABLE "grid_filters" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -1485,12 +1446,6 @@ ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_cr
 ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "communication_templates" ADD CONSTRAINT "communication_templates_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-
-ALTER TABLE "files" ADD CONSTRAINT "files_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "grid_filters" ADD CONSTRAINT "grid_filters_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1596,22 +1551,6 @@ CREATE INDEX "communication_templates_communication_template_status_idx" ON "com
 CREATE INDEX "communication_templates_event_idx" ON "communication_templates" USING btree ("event");--> statement-breakpoint
 CREATE INDEX "communication_templates_content_idx" ON "communication_templates" USING btree ("content");--> statement-breakpoint
 CREATE INDEX "communication_templates_subject_idx" ON "communication_templates" USING btree ("subject");--> statement-breakpoint
-CREATE INDEX "files_id_idx" ON "files" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "files_categories_idx" ON "files" USING btree ("categories");--> statement-breakpoint
-CREATE INDEX "files_code_idx" ON "files" USING btree ("code");--> statement-breakpoint
-CREATE INDEX "files_tombstone_idx" ON "files" USING btree ("tombstone");--> statement-breakpoint
-CREATE INDEX "files_status_idx" ON "files" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "files_previous_status_idx" ON "files" USING btree ("previous_status");--> statement-breakpoint
-CREATE INDEX "files_version_idx" ON "files" USING btree ("version");--> statement-breakpoint
-CREATE INDEX "files_created_date_idx" ON "files" USING btree ("created_date");--> statement-breakpoint
-CREATE INDEX "files_updated_date_idx" ON "files" USING btree ("updated_date");--> statement-breakpoint
-CREATE INDEX "files_organization_id_idx" ON "files" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "files_created_by_idx" ON "files" USING btree ("created_by");--> statement-breakpoint
-CREATE INDEX "files_updated_by_idx" ON "files" USING btree ("updated_by");--> statement-breakpoint
-CREATE INDEX "files_deleted_by_idx" ON "files" USING btree ("deleted_by");--> statement-breakpoint
-CREATE INDEX "files_requested_by_idx" ON "files" USING btree ("requested_by");--> statement-breakpoint
-CREATE INDEX "files_tags_idx" ON "files" USING btree ("tags");--> statement-breakpoint
-CREATE INDEX "files_image_url_idx" ON "files" USING btree ("image_url");--> statement-breakpoint
 CREATE INDEX "grid_filters_id_idx" ON "grid_filters" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "grid_filters_categories_idx" ON "grid_filters" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "grid_filters_code_idx" ON "grid_filters" USING btree ("code");--> statement-breakpoint
