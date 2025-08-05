@@ -31,6 +31,40 @@ impl rustls::client::ServerCertVerifier for NoCertificateVerification {
 
 
 pub async fn initialize() -> std::io::Result<(Client, String)> {
+    // Check if storage is disabled
+    let disable_storage = std::env::var("DISABLE_STORAGE")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse::<bool>()
+        .unwrap_or(false);
+    
+    if disable_storage {
+        println!("🚫 Storage is DISABLED via DISABLE_STORAGE environment variable");
+        println!("   Creating mock S3 client for testing/development purposes");
+        
+        // Create a minimal mock client configuration for disabled storage
+        let mock_credentials = Credentials::new(
+            "disabled",
+            "disabled", 
+            None,
+            None,
+            "mock-provider",
+        );
+        
+        let mock_config = Config::builder()
+            .behavior_version(BehaviorVersion::latest())
+            .region(Region::new("us-east-1"))
+            .endpoint_url("http://localhost:9000")
+            .credentials_provider(mock_credentials)
+            .force_path_style(true)
+            .build();
+        
+        let mock_client = Client::from_conf(mock_config);
+        let mock_bucket = "disabled-storage".to_string();
+        
+        println!("⚠️  WARNING: All storage operations will be no-ops!");
+        return Ok((mock_client, mock_bucket));
+    }
+    
     println!("Loading AWS config from environment");
     
     // Get MinIO/S3 configuration from environment
@@ -345,4 +379,12 @@ pub fn print_client_config(client: &Client) {
     println!("   Endpoint: Configured during client creation");
     
     println!("   Service: Amazon S3");
+}
+
+/// Check if storage is disabled via environment variable
+pub fn is_storage_disabled() -> bool {
+    std::env::var("DISABLE_STORAGE")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse::<bool>()
+        .unwrap_or(false)
 }

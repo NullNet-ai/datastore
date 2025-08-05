@@ -12,6 +12,7 @@ use actix_multipart::Multipart;
 use chrono;
 use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
+use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::structs::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GetFileById, QueryParams, RequestBody,
     SwitchAccountRequest, UpsertRequestBody,
@@ -1138,30 +1139,73 @@ pub async fn get_file_by_id(
     dbg!("get_file_by_id");
     let parameters = request_body.into_inner();
     let file_id = parameters.id.clone();
-     return HttpResponse::Ok().json(ApiResponse {
-                success: true,
-                message: format!("File {} found", file_id),
-                count: 1,
-                data: vec![serde_json::json!({
-                    "id": file_id,
-                })],
-            })
+    
+    // Check if storage is disabled
+    if is_storage_disabled() {
+        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock file metadata");
+        return HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: format!("Mock file {} found (storage disabled)", file_id),
+            count: 1,
+            data: vec![serde_json::json!({
+                "id": file_id,
+                "status": "mock_file",
+                "filename": format!("{}.png", file_id),
+                "size": 1024,
+                "mimetype": "image/png",
+                "path": format!("mock-bucket/{}.png", file_id),
+                "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+                "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+            })],
+        });
+    }
+    
+    // TODO: Implement actual file metadata retrieval from database and storage
+    return HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: format!("File {} found", file_id),
+        count: 1,
+        data: vec![serde_json::json!({
+            "id": file_id,
+        })],
+    })
 }
 // TODO: access to the database for file metadata and response stream from File storage
 pub async fn download_file_by_id(
     _auth: HttpRequest,
     request_body: web::Json<GetFileById>,
 ) -> impl Responder {
-     let parameters = request_body.into_inner();
+    let parameters = request_body.into_inner();
     let file_id = parameters.id.clone();
-     return HttpResponse::Ok().json(ApiResponse {
-                success: true,
-                message: format!("File {} found", file_id),
-                count: 1,
-                data: vec![serde_json::json!({
-                    "id": file_id,
-                })],
-            })
+    
+    // Check if storage is disabled
+    if is_storage_disabled() {
+        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock download response");
+        return HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: format!("Mock download for file {} (storage disabled)", file_id),
+            count: 1,
+            data: vec![serde_json::json!({
+                "id": file_id,
+                "status": "mock_download",
+                "download_url": format!("mock-bucket/{}.png", file_id),
+                "filename": format!("{}.png", file_id),
+                "size": 1024,
+                "mimetype": "image/png",
+                "message": "File download simulated (storage disabled)"
+            })],
+        });
+    }
+    
+    // TODO: Implement actual file download from storage
+    return HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: format!("File {} found", file_id),
+        count: 1,
+        data: vec![serde_json::json!({
+            "id": file_id,
+        })],
+    })
 }
 
 pub async fn upload_file(
@@ -1169,6 +1213,52 @@ pub async fn upload_file(
     app_state: web::Data<providers::storage::AppState>,
     mut multipart: Multipart,
 ) -> impl Responder {
+    // Check if storage is disabled
+    if is_storage_disabled() {
+        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock upload response");
+        
+        // Generate mock file metadata for disabled storage
+        let mock_id = Ulid::new().to_string();
+        let mock_metadata = serde_json::json!({
+            "id": mock_id,
+            "status": "mock_uploaded",
+            "previous_status": "",
+            "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+            "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+            "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
+            "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
+            "organization_id": "",
+            "created_by": "",
+            "updated_by": "",
+            "deleted_by": "",
+            "requested_by": "",
+            "tags": [],
+            "image_url": format!("mock-bucket/{}.png", mock_id),
+            "fieldname": "files",
+            "originalname": "mock-file.png",
+            "encoding": "7bit",
+            "mimetype": "image/png",
+            "destination": "mock-bucket",
+            "filename": format!("{}.png", mock_id),
+            "path": format!("mock-bucket/{}.png", mock_id),
+            "size": 1024,
+            "uploaded_by": "",
+            "downloaded_by": "",
+            "etag": "mock-etag",
+            "version_id": "",
+            "download_path": format!("mock-bucket/{}.png", mock_id),
+            "presigned_url": "",
+            "presigned_url_expire": 0
+        });
+        
+        return HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Mock upload successful (storage disabled)".to_string(),
+            count: 1,
+            data: vec![mock_metadata],
+        });
+    }
+    
     // Check for Auth data early and abort if missing
     let extensions = req.extensions();
     let _auth_data = match extensions.get::<Auth>() {
@@ -1310,7 +1400,7 @@ pub async fn upload_file(
                             .map(|dt| {
                                 // Convert AWS SDK DateTime to chrono DateTime
                                 let timestamp = dt.as_secs_f64();
-                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, (timestamp.fract() * 1_000_000_000.0) as u32)
                                     .unwrap_or_else(|| chrono::Utc::now());
                                 chrono_dt.format("%Y-%m-%d").to_string()
                             })
@@ -1319,7 +1409,7 @@ pub async fn upload_file(
                             .map(|dt| {
                                 // Convert AWS SDK DateTime to chrono DateTime
                                 let timestamp = dt.as_secs_f64();
-                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, (timestamp.fract() * 1_000_000_000.0) as u32)
                                     .unwrap_or_else(|| chrono::Utc::now());
                                 chrono_dt.format("%H:%M:%S").to_string()
                             })
