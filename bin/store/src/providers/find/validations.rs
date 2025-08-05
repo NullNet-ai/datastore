@@ -638,13 +638,31 @@ impl<'a, 'b> Validation<'a, 'b> {
          for (filter_index, filter) in self.request_body.advance_filters.iter().enumerate() {
              match filter {
                  FilterCriteria::Criteria { field, entity, operator, values, .. } => {
+                     // Skip validation if entity is None
+                     let entity_str = match entity {
+                         Some(e) => e,
+                         None => continue,
+                     };
+                     
+                     // Check if this field is a concatenated field and skip validation if it is
+                     let is_concatenated_field = self.request_body.concatenate_fields.iter().any(|concat_field| {
+                         concat_field.field_name == *field && 
+                         (concat_field.entity == *entity_str || 
+                          concat_field.aliased_entity.as_ref() == Some(entity_str))
+                     });
+                     
+                     if is_concatenated_field {
+                         // Skip validation for concatenated fields as they are virtual fields
+                         continue;
+                     }
+                     
                      // Validate field exists in schema
-                     if !field_exists_in_table(entity, field) {
+                     if !field_exists_in_table(entity_str, field) {
                          return ApiResponse {
                              success: false,
                              message: format!(
                                  "advance_filters[{}] > field > Filter field '{}' does not exist in entity '{}'",
-                                 filter_index, field, entity
+                                 filter_index, field, entity_str
                              ),
                              count: 0,
                              data: vec![],
@@ -689,13 +707,31 @@ impl<'a, 'b> Validation<'a, 'b> {
              for (filter_index, filter) in filters.iter().enumerate() {
                  match filter {
                      FilterCriteria::Criteria { field, entity, operator, values, .. } => {
+                         // Skip validation if entity is None
+                         let entity_str = match entity {
+                             Some(e) => e,
+                             None => continue,
+                         };
+                         
+                         // Check if this field is a concatenated field and skip validation if it is
+                         let is_concatenated_field = self.request_body.concatenate_fields.iter().any(|concat_field| {
+                             concat_field.field_name == *field && 
+                             (concat_field.entity == *entity_str || 
+                              concat_field.aliased_entity.as_ref() == Some(entity_str))
+                         });
+                         
+                         if is_concatenated_field {
+                             // Skip validation for concatenated fields as they are virtual fields
+                             continue;
+                         }
+                         
                          // Validate field exists in schema
-                         if !field_exists_in_table(entity, field) {
+                         if !field_exists_in_table(entity_str, field) {
                              return ApiResponse {
                                  success: false,
                                  message: format!(
                                      "group_advance_filters[{}] > filters[{}] > field > Group filter field '{}' does not exist in entity '{}'",
-                                     group_index, filter_index, field, entity
+                                     group_index, filter_index, field, entity_str
                                  ),
                                  count: 0,
                                  data: vec![],

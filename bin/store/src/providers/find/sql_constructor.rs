@@ -204,6 +204,53 @@ impl<T: QueryFilter> SQLConstructor<T> {
             base_field
         }
     }
+
+    fn get_field_with_concatenation(
+        &self,
+        table: &str,
+        field: &str,
+        format_str: &str,
+        parse_as: Option<&str>,
+    ) -> String {
+        // Check if this field is defined as a concatenated field
+        for concat_field in self.request_body.get_concatenate_fields() {
+            // Match by field name and entity/aliased_entity
+            if concat_field.field_name == field {
+                let target_table = if let Some(aliased_entity) = &concat_field.aliased_entity {
+                    aliased_entity.as_str()
+                } else {
+                    concat_field.entity.as_str()
+                };
+                
+                // Check if the table matches
+                if target_table == table {
+                    // Generate concatenated expression
+                    let concatenated_expression = concat_field
+                        .fields
+                        .iter()
+                        .map(|f| Self::get_field_with_parse_as(table, f, format_str, None))
+                        .collect::<Vec<_>>()
+                        .join(&format!(" || '{}' || ", concat_field.separator));
+                    
+                    // Apply parse_as type casting if provided and not empty
+                    let base_expression = format!("({})", concatenated_expression);
+                    return if let Some(cast_type) = parse_as {
+                        if !cast_type.is_empty() {
+                            format!("{}::{}", base_expression, cast_type)
+                        } else {
+                            base_expression
+                        }
+                    } else {
+                        base_expression
+                    };
+                }
+            }
+        }
+        
+        // Fall back to regular field handling if not a concatenated field
+        Self::get_field_with_parse_as(table, field, format_str, parse_as)
+    }
+
     fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
         let format = format_str.unwrap_or("mm/dd/YYYY");
         format!(
@@ -212,15 +259,23 @@ impl<T: QueryFilter> SQLConstructor<T> {
         )
     }
     fn time_format_wrapper(field: &str, timezone: Option<&str>) -> String {
-        let timezone_query = format!(
-            " AT TIME ZONE {} AT TIME ZONE '{}'",
-            std::env::var("TZ").unwrap_or("UTC".to_string()),
-            timezone.unwrap_or("UTC")
-        );
-        format!("({} {})::time", field, timezone_query)
+        // Convert from stored timezone to target timezone
+        // PostgreSQL AT TIME ZONE converts from the specified timezone to UTC, then to local
+        let target_timezone = timezone.unwrap_or("Asia/Manila");
+        let timezone_query = format!(" AT TIME ZONE '{}'", target_timezone);
+        format!("({}::time {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
+        
+        // Check if there are existing join selections that would handle concatenated fields
+        let has_join_selections = !self.request_body.get_joins().is_empty()
+            && !self.request_body.get_pluck_object().is_empty()
+            && self
+                .request_body
+                .get_pluck_object()
+                .iter()
+                .any(|(_, fields)| !fields.is_empty());
         
         // Handle concatenated fields for main table and joins
         if !self.request_body.get_concatenate_fields().is_empty() {
@@ -230,13 +285,23 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     if aliased_entity == &self.table || field.entity == self.table {
                         aliased_entity
                     } else {
-                        continue; // Skip if not for main table - join selections handled elsewhere
+                        // Skip if there's an existing join selection for this alias
+                        if has_join_selections && self.request_body.get_pluck_object().contains_key(aliased_entity) {
+                            continue; // Join selections will handle this concatenated field
+                        }
+                        continue; // Skip if not for main table
                     }
                 } else if field.entity == self.table {
                     field.entity.as_str()
                 } else {
                     continue; // Skip if not for main table
                 };
+
+                // Skip if there's an existing join selection for this entity/alias
+                let entity_alias = field.aliased_entity.as_ref().unwrap_or(&field.entity);
+                if has_join_selections && self.request_body.get_pluck_object().contains_key(entity_alias) {
+                    continue; // Join selections will handle this concatenated field
+                }
 
                 let concatenated_expression = field
                     .fields
@@ -245,10 +310,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .collect::<Vec<_>>()
                     .join(&format!(" || '{}' || ", field.separator));
                 
+                // Use the field name directly instead of combining with table name
+                // since we're avoiding duplicates with join selections
+                let alias = &field.field_name;
+                
                 selections.push(format!(
                     "({}) AS \"{}\"",
                     concatenated_expression,
-                    field.field_name
+                    alias
                 ));
             }
         }
@@ -363,9 +432,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
+                    
+                    // Create unique alias by combining table_name and field_name to avoid duplicates
+                    let unique_alias = if let Some(aliased_entity) = &field.aliased_entity {
+                        format!("{}_{}", aliased_entity, field.field_name)
+                    } else {
+                        field.field_name.clone()
+                    };
+                    
                     pluck_fields.push(format!(
                         "({}) AS {}",
-                        concatenated_expression, field.field_name
+                        concatenated_expression, unique_alias
                     ));
                 }
             }
@@ -787,8 +864,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 match_pattern,
             } = &filters[0]
             {
-                let field_name = Self::get_field_with_parse_as(
-                    entity,
+                let field_name = self.get_field_with_concatenation(
+                    entity.as_deref().unwrap_or(&self.table),
                     field,
                     self.request_body.get_date_format(),
                     Some(parse_as),
@@ -828,8 +905,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     parse_as,
                     match_pattern,
                 } => {
-                    let field_name = Self::get_field_with_parse_as(
-                        entity,
+                    let field_name = self.get_field_with_concatenation(
+                        entity.as_deref().unwrap_or(&self.table),
                         field,
                         self.request_body.get_date_format(),
                         Some(parse_as),
