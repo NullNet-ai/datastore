@@ -3,6 +3,7 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
+use crate::providers::storage::get_valid_bucket_name;
 use actix_web::test;
 use ulid::Ulid;
 use crate::{db, providers};
@@ -1279,7 +1280,17 @@ pub async fn upload_file(
     }
     let name = "files";
     let client = app_state.s3_client.clone();
-    let bucket_name = app_state.bucket_name.clone();
+     // Get organization ID from environment variables with fallback logic
+    let org_id = std::env::var("DEFAULT_ORGANIZATION_ID")
+        .unwrap_or_else(|_| "".to_string());
+    
+    let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME")
+        .unwrap_or_else(|_| {
+            println!("STORAGE_BUCKET_NAME not set, using app_state bucket_name");
+            app_state.bucket_name.clone()
+        });
+    dbg!(format!("_auth_data {:?}", _auth_data));
+    let bucket_name = get_valid_bucket_name(&base_bucket_name, Some(&org_id));
     let mut uploaded_files_count = 0;
     let mut file_metadata = Vec::new();
     let pluck_fields = vec!["id".to_string()];

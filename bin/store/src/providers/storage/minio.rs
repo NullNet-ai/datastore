@@ -158,11 +158,18 @@ pub async fn initialize() -> std::io::Result<(Client, String)> {
     }
     
     println!("Reading bucket name from environment");
-    let bucket_name = std::env::var("STORAGE_BUCKET_NAME")
+    
+    // Get organization ID from environment variables with fallback logic
+    let org_id = std::env::var("DEFAULT_ORGANIZATION_ID")
+        .unwrap_or_else(|_| "".to_string());
+    
+    let base_bucket_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
         .unwrap_or_else(|_| {
-            println!("STORAGE_BUCKET_NAME not set, using default: 'store'");
-            "store".to_string()
+            println!("DEFAULT_ORGANIZATION_NAME not set, using STORAGE_BUCKET_NAME");
+            std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| "store".to_string())
         });
+    
+    let bucket_name = get_valid_bucket_name(&base_bucket_name, Some(&org_id));
     
     println!("S3 client initialization complete with bucket: {}", bucket_name);
 
@@ -387,4 +394,61 @@ pub fn is_storage_disabled() -> bool {
         .unwrap_or_else(|_| "false".to_string())
         .parse::<bool>()
         .unwrap_or(false)
+}
+
+/// Generate a valid bucket name from bucket name and optional organization ID
+/// This function creates S3-compatible bucket names following AWS naming conventions
+pub fn get_valid_bucket_name(bucket_name: &str, org_id: Option<&str>) -> String {
+    // Process organization ID if provided
+    let org_pattern = if let Some(org_id) = org_id {
+        if org_id.is_empty() {
+            String::new()
+        } else {
+            let org_len = org_id.len();
+            let mut pattern = String::new();
+            
+            // Get first 2 characters
+            if org_len >= 2 {
+                pattern.push_str(&org_id[0..2]);
+            } else {
+                pattern.push_str(org_id);
+            }
+            
+            // Get middle characters (floor(length/2) - 1 to floor(length/2) + 1)
+            if org_len >= 3 {
+                let mid_start = (org_len / 2).saturating_sub(1);
+                let mid_end = std::cmp::min(mid_start + 2, org_len);
+                pattern.push_str(&org_id[mid_start..mid_end]);
+            }
+            
+            // Get last 2 characters
+            if org_len >= 2 {
+                pattern.push_str(&org_id[org_len.saturating_sub(2)..]);
+            }
+            
+            // Remove non-alphabetic characters and convert to lowercase
+            pattern
+                .chars()
+                .filter(|c| c.is_ascii_alphabetic())
+                .collect::<String>()
+                .to_lowercase()
+        }
+    } else {
+        String::new()
+    };
+    
+    // Process bucket name
+    let bucket_name_processed = bucket_name
+        .trim()
+        .split_whitespace()
+        .filter_map(|word| word.chars().next()) // Get first character of each word
+        .collect::<String>()
+        .to_lowercase()
+        .chars()
+        .filter(|c| c.is_ascii_lowercase() || *c == '-') // Keep only lowercase letters and hyphens
+        .take(20) // Limit to 20 characters
+        .collect::<String>();
+    
+    // Combine prefix, processed bucket name, and org pattern
+    format!("bckt{}{}", bucket_name_processed, org_pattern)
 }
