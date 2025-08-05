@@ -465,6 +465,7 @@ impl SchemaGenerator {
             "bool" | "boolean" => "Bool",
             "text" | "varchar" | "char" => "Text",
             "integer" | "int4" => "Int4",
+            "bigint" | "int8" => "Int8",
             "float" | "float4" => "Float4",
             "float8" | "double" => "Float8",
             "timestamp" | "timestamptz" => "Timestamp",
