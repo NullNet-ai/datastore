@@ -411,8 +411,8 @@ async fn main() -> std::io::Result<()> {
                     .app_data(web::FormConfig::default()
                         .limit(1024 * 1024 * 100) // 10MB JSON payload limit
                     )
-                    // .route("/{id}", web::get().to(get_file_by_id))
-                    // .route("/{id}/download", web::get().to(download_file_by_id))
+                    .route("/{id}", web::get().to(get_file_by_id))
+                    .route("/{id}/download", web::get().to(download_file_by_id))
                     .route("/upload", web::post().to(upload_file))
             )
 
