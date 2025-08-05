@@ -37,3 +37,6 @@ Thumbs.db
 # Generated documentation
 /doc/
 /docs/
+
+# Test files
+/tests/*.test.*
