@@ -4,7 +4,7 @@ use crate::controllers::common_controller::{
     process_and_update_record, process_records,
 };
 use crate::providers::storage::get_valid_bucket_name;
-
+use actix_web::test;
 use ulid::Ulid;
 use crate::{db, providers};
 use crate::db::create_connection;
@@ -15,7 +15,7 @@ use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::structs::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GetFileById, QueryParams, RequestBody,
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
     SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
@@ -1135,36 +1135,17 @@ pub async fn aggregation_filter(
 // TODO: get file metadat from database
 pub async fn get_file_by_id(
     auth: HttpRequest,
-    request_body: web::Json<GetFileById>,
+    path_params: web::Path<String>,
+    query: web::Query<QueryParams>,
 ) -> impl Responder {
-    let parameters = request_body.into_inner();
-    let file_id = parameters.id.clone();
-    
-    // Check if storage is disabled
-    if is_storage_disabled() {
-        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock file metadata");
-        return HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: format!("Mock file {} found (storage disabled)", file_id),
-            count: 1,
-            data: vec![serde_json::json!({
-                "id": file_id,
-                "status": "mock_file",
-                "filename": format!("{}.png", file_id),
-                "size": 1024,
-                "mimetype": "image/png",
-                "path": format!("mock-bucket/{}.png", file_id),
-                "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-                "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-            })],
-        });
-    }
+    let file_id = path_params.into_inner();
     
     // Extract auth data for organization context
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
+            log::warn!("Auth data not found in request extensions");
             return HttpResponse::Unauthorized().json(ApiResponse {
                 success: false,
                 message: "Authentication required".to_string(),
@@ -1173,49 +1154,64 @@ pub async fn get_file_by_id(
             });
         }
     };
+    dbg!(format!("authdata {:?} file_id {:?}", auth_data, file_id));
+    // Check if this is a root controller call
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
     
-    // Determine if this is a root account
-    let is_root_account = auth_data.organization_id.is_empty() || 
-        auth_data.organization_id == std::env::var("DEFAULT_ORGANIZATION_ID").unwrap_or_default();
-    
-    // Get organization ID for database query
-    let org_id = if !auth_data.organization_id.is_empty() {
-        auth_data.organization_id.clone()
+    // Log the operation
+    if is_root_controller {
+        log::info!("Processing get_file_by_id via root controller for file_id: {}", file_id);
     } else {
-        std::env::var("DEFAULT_ORGANIZATION_ID")
-            .unwrap_or_else(|_| String::new())
+        log::info!("Processing get_file_by_id via simple controller for file_id: {}", file_id);
+    }
+    
+    // Parse pluck fields from query parameters or use default file fields
+    let pluck_fields: Vec<String> = if query.pluck.is_empty() {
+        vec![
+            "id".to_string(),
+            "image_url".to_string(), 
+            "filename".to_string(),
+            "mimetype".to_string(),
+            "size".to_string(),
+            "download_path".to_string(),
+            "presigned_url".to_string(),
+            "created_date".to_string(),
+            "created_time".to_string(),
+            "updated_date".to_string(),
+            "updated_time".to_string(),
+            "organization_id".to_string(),
+        ]
+    } else {
+        query
+            .pluck
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect()
     };
     
-    // Use the common controller to get file metadata from database
-    // Following the files schema: id, image_url, filename, mimetype, size, download_path, presigned_url
-    let pluck_fields = vec![
-        "id".to_string(),
-        "image_url".to_string(), 
-        "filename".to_string(),
-        "mimetype".to_string(),
-        "size".to_string(),
-        "download_path".to_string(),
-        "presigned_url".to_string(),
-        "created_date".to_string(),
-        "created_time".to_string(),
-        "updated_date".to_string(),
-        "updated_time".to_string(),
-        "organization_id".to_string(),
-    ];
+    // Extract organization_id from auth_data
+    let organization_id = Some(auth_data.organization_id.as_str());
     
+    // Use the common controller to get file metadata from database
     match process_and_get_record_by_id(
         "files",
         &file_id,
         Some(pluck_fields),
-        is_root_account,
-        Some(&org_id),
+        is_root_controller,
+        organization_id,
     ).await {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => {
-            log::error!("Error retrieving file {}: {:?}", file_id, e);
-            HttpResponse::InternalServerError().json(ApiResponse {
+        Err(error) => {
+            log::error!("Error retrieving file {}: {:?}", file_id, error);
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
                 success: false,
-                message: format!("Failed to retrieve file: {}", e),
+                message: error.message,
                 count: 0,
                 data: vec![],
             })
@@ -1225,11 +1221,10 @@ pub async fn get_file_by_id(
 // Download file by ID with streaming response for client preview
 pub async fn download_file_by_id(
     auth: HttpRequest,
-    request_body: web::Json<GetFileById>,
+    path_params: web::Path<String>,
     app_state: web::Data<providers::storage::AppState>,
 ) -> impl Responder {
-    let parameters = request_body.into_inner();
-    let file_id = parameters.id.clone();
+    let file_id = path_params.into_inner();
     
     // Check if storage is disabled
     if is_storage_disabled() {
@@ -1245,6 +1240,7 @@ pub async fn download_file_by_id(
     let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
+            log::warn!("Auth data not found in request extensions");
             return HttpResponse::Unauthorized().json(ApiResponse {
                 success: false,
                 message: "Authentication required".to_string(),
@@ -1254,17 +1250,19 @@ pub async fn download_file_by_id(
         }
     };
     
-    // Determine if this is a root account
-    let is_root_account = auth_data.organization_id.is_empty() || 
-        auth_data.organization_id == std::env::var("DEFAULT_ORGANIZATION_ID").unwrap_or_default();
+    // Check if this is a root controller call
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
     
-    // Get organization ID for database query
-    let org_id = if !auth_data.organization_id.is_empty() {
-        auth_data.organization_id.clone()
+    // Log the operation
+    if is_root_controller {
+        log::info!("Processing download_file_by_id via root controller for file_id: {}", file_id);
     } else {
-        std::env::var("DEFAULT_ORGANIZATION_ID")
-            .unwrap_or_else(|_| String::new())
-    };
+        log::info!("Processing download_file_by_id via simple controller for file_id: {}", file_id);
+    }
     
     // First, get file metadata from database
     let pluck_fields = vec![
@@ -1274,12 +1272,15 @@ pub async fn download_file_by_id(
         "size".to_string(),
     ];
     
+    // Extract organization_id from auth_data
+    let organization_id = Some(auth_data.organization_id.as_str());
+    
     let file_metadata = match process_and_get_record_by_id(
         "files",
         &file_id,
         Some(pluck_fields),
-        is_root_account,
-        Some(&org_id),
+        is_root_controller,
+        organization_id,
     ).await {
         Ok(response) => {
             if response.success && !response.data.is_empty() {
@@ -1318,7 +1319,7 @@ pub async fn download_file_by_id(
     // Get bucket name with organization context
     let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME")
         .unwrap_or_else(|_| app_state.bucket_name.clone());
-    let bucket_name = get_valid_bucket_name(&base_bucket_name, Some(&org_id));
+    let bucket_name = get_valid_bucket_name(&base_bucket_name, organization_id);
     
     // Stream file from S3
     let s3_client = &app_state.s3_client;
@@ -1442,21 +1443,9 @@ pub async fn upload_file(
     if let Some(content_type_header) = req.headers().get(actix_web::http::header::CONTENT_TYPE) {
         log::info!("Incoming Content-Type header: {:?}", content_type_header);
     }
-
     let name = "files";
     let client = app_state.s3_client.clone();
-     // Get organization ID from auth data with fallback to environment variable
-    let org_id = if !_auth_data.organization_id.is_empty() {
-        _auth_data.organization_id.clone()
-    } else {
-        std::env::var("DEFAULT_ORGANIZATION_ID")
-            .unwrap_or_else(|_| String::new())
-    };
-    
-    // Get bucket name from app state or environment variable with fallback
-    let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME")
-        .unwrap_or_else(|_| app_state.bucket_name.clone());
-    let bucket_name = get_valid_bucket_name(&base_bucket_name, Some(&org_id));
+    let bucket_name = app_state.bucket_name.clone();
     let mut uploaded_files_count = 0;
     let mut file_metadata = Vec::new();
     let pluck_fields = vec!["id".to_string()];
@@ -1622,7 +1611,9 @@ pub async fn upload_file(
                     let auth_data = _auth_data;
                     
                     // Use create_record function to save metadata
-                    let req = req.clone();
+                    let req = test::TestRequest::default()
+                        .insert_header(("content-type", "application/json"))
+                        .to_http_request();
                     req.extensions_mut().insert(auth_data.clone());
                     
                     let table_path = web::Path::from(name.to_string());
@@ -1705,7 +1696,9 @@ pub async fn upload_file(
                     let auth_data = _auth_data;
                     
                     // Use create_record function to save metadata
-                    let req = req.clone();
+                    let req = test::TestRequest::default()
+                        .insert_header(("content-type", "application/json"))
+                        .to_http_request();
                     req.extensions_mut().insert(auth_data.clone());
                     
                     let table_path = web::Path::from(name.to_string());
@@ -1747,6 +1740,7 @@ pub async fn upload_file(
         data: file_metadata,
     })
 }
+
 
 pub async fn switch_account(
     request: web::Json<SwitchAccountRequest>,

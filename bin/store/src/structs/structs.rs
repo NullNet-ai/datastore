@@ -673,8 +673,3 @@ pub enum FilterOperator {
 pub struct GetFileById {
     pub id: String,
 }
-
-#[derive(Deserialize)]
-pub struct UploadFile {
-    pub file: String,
-}
