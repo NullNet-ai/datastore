@@ -63,8 +63,25 @@ where
             .headers()
             .get(header::AUTHORIZATION)
             .and_then(|h| h.to_str().ok());
-
-        let token = extract_token(auth_header);
+        let query_token = auth.uri().query()
+            .and_then(|query_str| {
+                query_str.split('&')
+                    .find_map(|param| {
+                        let mut parts = param.split('=');
+                        if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+                            if key == "t" {
+                                Some(value.to_string())
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+            });
+        let token = extract_token(auth_header)
+            .or(query_token)
+            .filter(|t| !t.is_empty());
 
         // Use unified authentication with path context
         let auth_result = authenticate_with_context(token, None, Some(auth.path()));

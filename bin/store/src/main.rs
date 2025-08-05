@@ -28,7 +28,8 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
-
+#[cfg(test)]
+mod tests;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
@@ -397,7 +398,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/{function_name}", web::delete().to(pg_listener_delete)),
             )
             .service(
-                web::scope("/api/files")
+                web::scope("/api/file")
                     .app_data(web::Data::new(providers::storage::AppState {
                         s3_client: s3_client.clone(),
                         bucket_name: bucket_name.clone(),

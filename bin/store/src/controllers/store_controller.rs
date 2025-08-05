@@ -35,6 +35,7 @@ use diesel_async::RunQueryDsl;
 
 use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
+use mime_guess; // For MIME type detection from file extensions
 #[derive(Serialize, Debug)]
 pub struct ApiError {
     pub message: String,
@@ -1222,18 +1223,10 @@ pub async fn get_file_by_id(
 pub async fn download_file_by_id(
     auth: HttpRequest,
     path_params: web::Path<String>,
+    _query: web::Query<std::collections::HashMap<String, String>>,
     app_state: web::Data<providers::storage::AppState>,
-) -> impl Responder {
+) -> HttpResponse {
     let file_id = path_params.into_inner();
-    
-    // Check if storage is disabled
-    if is_storage_disabled() {
-        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock download response");
-        return HttpResponse::Ok()
-            .content_type("image/png")
-            .insert_header(("Content-Disposition", format!("inline; filename=\"{}.png\"", file_id)))
-            .body("Mock file content (storage disabled)");
-    }
     
     // Extract auth data for organization context
     let extensions = auth.extensions();
@@ -1241,9 +1234,9 @@ pub async fn download_file_by_id(
         Some(data) => data,
         None => {
             log::warn!("Auth data not found in request extensions");
-            return HttpResponse::Unauthorized().json(ApiResponse {
+            return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: "Authentication required".to_string(),
+                message: "Authentication information not available".to_string(),
                 count: 0,
                 data: vec![],
             });
@@ -1266,7 +1259,6 @@ pub async fn download_file_by_id(
     
     // First, get file metadata from database
     let pluck_fields = vec![
-        "filename".to_string(),
         "mimetype".to_string(),
         "download_path".to_string(),
         "size".to_string(),
@@ -1274,7 +1266,6 @@ pub async fn download_file_by_id(
     
     // Extract organization_id from auth_data
     let organization_id = Some(auth_data.organization_id.as_str());
-    
     let file_metadata = match process_and_get_record_by_id(
         "files",
         &file_id,
@@ -1306,9 +1297,6 @@ pub async fn download_file_by_id(
     };
     
     // Extract file information from metadata
-    let filename = file_metadata.get("filename")
-        .and_then(|v| v.as_str())
-        .unwrap_or(&file_id);
     let mimetype = file_metadata.get("mimetype")
         .and_then(|v| v.as_str())
         .unwrap_or("application/octet-stream");
@@ -1321,46 +1309,73 @@ pub async fn download_file_by_id(
         .unwrap_or_else(|_| app_state.bucket_name.clone());
     let bucket_name = get_valid_bucket_name(&base_bucket_name, organization_id);
     
+    // Extract just the filename from download_path (remove bucket name if present)
+    let s3_key = if download_path.contains('/') {
+        // If download_path contains '/', take the part after the last '/'
+        download_path.split('/').last().unwrap_or(&file_id)
+    } else {
+        // If no '/', use the download_path as is (it's just the filename)
+        download_path
+    };
+    
     // Stream file from S3
     let s3_client = &app_state.s3_client;
     
     match s3_client
         .get_object()
         .bucket(&bucket_name)
-        .key(download_path)
+        .key(s3_key)
         .send()
         .await
     {
         Ok(output) => {
-            // Convert the S3 body stream to bytes
-            match output.body.collect().await {
-                Ok(data) => {
-                    let bytes = data.into_bytes();
-                    
-                    // Determine if this is an image for inline display
-                    let content_disposition = if mimetype.starts_with("image/") {
-                        format!("inline; filename=\"{}\"", filename)
-                    } else {
-                        format!("attachment; filename=\"{}\"", filename)
-                    };
-                    
-                    HttpResponse::Ok()
-                        .content_type(mimetype)
-                        .insert_header(("Content-Disposition", content_disposition))
-                        .insert_header(("Content-Length", bytes.len().to_string()))
-                        .insert_header(("Cache-Control", "public, max-age=3600"))
-                        .body(bytes)
-                }
-                Err(e) => {
-                    log::error!("Error reading S3 object body for file {}: {:?}", file_id, e);
-                    HttpResponse::InternalServerError().json(ApiResponse {
-                        success: false,
-                        message: "Failed to read file content".to_string(),
-                        count: 0,
-                        data: vec![],
-                    })
-                }
-            }
+            // Use the mimetype from database for proper content type handling
+            // This ensures correct MIME type detection for preview functionality
+            let actual_content_type = mimetype.to_string();
+            
+            // Capture content length before consuming the body
+             let content_length = output.content_length().unwrap_or(0);
+             
+             // Convert the S3 body stream to bytes and create a streaming response
+             match output.body.collect().await {
+                 Ok(data) => {
+                     let bytes = data.into_bytes();
+                     
+                     // Create a stream from the bytes for efficient streaming
+                     use futures_util::stream;
+                     let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                     
+                     // Determine if this is an image for inline display
+                      let is_image = actual_content_type.starts_with("image/");
+                      let filename = s3_key.split('/').last().unwrap_or("file");
+                      
+                      // Set Content-Disposition for proper preview behavior
+                      let content_disposition = if is_image {
+                          // For images, use inline disposition to enable preview in browsers/Postman
+                          format!("inline; filename=\"{}\"", filename)
+                      } else {
+                          // For non-images, use attachment to trigger download
+                          format!("attachment; filename=\"{}\"", filename)
+                      };
+                      
+                      HttpResponse::Ok()
+                          .content_type(actual_content_type)
+                          .insert_header(("Content-Length", content_length.to_string()))
+                          .insert_header(("Cache-Control", "public, max-age=3600"))
+                          .insert_header(("Accept-Ranges", "bytes"))
+                          .insert_header(("Content-Disposition", content_disposition))
+                          .streaming(byte_stream)
+                 }
+                 Err(e) => {
+                     log::error!("Error reading S3 object body for file {}: {:?}", file_id, e);
+                     HttpResponse::InternalServerError().json(ApiResponse {
+                         success: false,
+                         message: "Failed to read file content".to_string(),
+                         count: 0,
+                         data: vec![],
+                     })
+                 }
+             }
         }
         Err(e) => {
             log::error!("Error downloading file {} from S3: {:?}", file_id, e);
@@ -1462,7 +1477,34 @@ pub async fn upload_file(
         let content_disposition = field.content_disposition();
         let fname = content_disposition.get_filename().map(|s| s.to_string());
         let field_name = content_disposition.get_name().unwrap_or("file").to_string();
-        let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or("application/octet-stream".to_string());
+        
+        // Get content type from multipart field
+        let field_content_type = field.content_type().map(|ct| ct.to_string());
+        
+        // Determine the best content type using multiple sources
+        let content_type = if let Some(fname_ref) = &fname {
+            // First try to detect MIME type from file extension
+            let mime_from_extension = mime_guess::from_path(fname_ref).first_or_octet_stream();
+            let detected_mime = mime_from_extension.to_string();
+            
+            log::info!("MIME type detection for '{}': detected='{}', field_provided={:?}", 
+                fname_ref, detected_mime, field_content_type);
+            
+            // Use detected MIME type if it's not generic, otherwise fall back to field content type
+            if detected_mime != "application/octet-stream" {
+                log::info!("Using detected MIME type: {}", detected_mime);
+                detected_mime
+            } else {
+                let fallback = field_content_type.unwrap_or("application/octet-stream".to_string());
+                log::info!("Using fallback MIME type: {}", fallback);
+                fallback
+            }
+        } else {
+            // No filename available, use field content type
+            let fallback = field_content_type.unwrap_or("application/octet-stream".to_string());
+            log::info!("No filename available, using field content type: {}", fallback);
+            fallback
+        };
 
         if let Some(fname) = fname {
             // Generate unique filename with ID.extension format
@@ -1591,7 +1633,7 @@ pub async fn upload_file(
                         "fieldname": field_name.clone(),
                         "originalname": fname.clone(),
                         "encoding": "7bit", // Default encoding for multipart
-                        "mimetype": get_output.content_type().unwrap_or("application/octet-stream"),
+                        "mimetype": content_type.clone(),
                         "destination": bucket_name.clone(),
                         "filename": actual_filename.clone(),
                         "path": format!("{}/{}", bucket_name, actual_filename),
@@ -1637,7 +1679,6 @@ pub async fn upload_file(
             }
 
             // File data already read earlier for comparison, use it for upload
-
             // ✅ Convert Vec<u8> -> ByteStream
             let byte_stream = ByteStream::from(file_data.clone());
 
@@ -1678,7 +1719,7 @@ pub async fn upload_file(
                         "fieldname": field_name,
                         "originalname": fname.clone(),
                         "encoding": "7bit", // Default encoding for multipart
-                        "mimetype": content_type,
+                        "mimetype": content_type.clone(),
                         "destination": bucket_name.clone(),
                         "filename": final_filename.clone(),
                         "path": format!("{}/{}", bucket_name, final_filename),
