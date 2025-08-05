@@ -61,7 +61,7 @@ use controllers::root_controller::{
 use controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
     create_record, delete_record, get_by_filter, switch_account, update_record, upsert,
-    upload_file,get_by_id
+    upload_file,get_by_id, search_suggestions
 };
 use env_logger::Env;
 use log::{info, error};
@@ -383,7 +383,8 @@ async fn main() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records))
-                    .route("/switch_account", web::post().to(switch_account)),
+                    .route("/switch_account", web::post().to(switch_account))
+                    .route("/{table}/filter/suggestions", web::post().to(search_suggestions)),
             )
             .service(
                 web::scope("/api/listener")

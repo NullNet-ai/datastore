@@ -53,6 +53,8 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
                 case_sensitive: criteria.case_sensitive,
                 parse_as: criteria.parse_as.clone().unwrap_or_default(),
                 match_pattern,
+                is_search: criteria.is_search,
+                has_group_count: criteria.has_group_count,
             })
         }
         Some(FilterType::LogicalOperator(logical_op)) => {

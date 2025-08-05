@@ -7,7 +7,7 @@ use diesel::AsExpression;
 use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 use ulid::Ulid;
 use uuid::Uuid;
 
@@ -595,6 +595,9 @@ pub enum FilterCriteria {
         parse_as: String,
         #[serde(default)]
         match_pattern: Option<MatchPattern>,
+        is_search: Option<bool>,
+        #[serde(default)]
+        has_group_count: Option<bool>,
     },
     #[serde(rename = "operator")]
     LogicalOperator { operator: LogicalOperator },
@@ -676,4 +679,32 @@ pub struct GetFileById {
 #[derive(Deserialize)]
 pub struct UploadFile {
     pub file: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SearchSuggestionParams {
+    #[serde(default)]
+    pub advance_filters: Vec<FilterCriteria>,
+
+    #[serde(default)]
+    pub concatenate_fields: Vec<ConcatenateField>,
+
+    #[serde(default = "default_date_format")]
+    pub date_format: String,
+    
+    #[serde(default)]
+    pub group_advance_filters: Vec<GroupAdvanceFilter>,
+
+    #[serde(default)]
+    pub joins: Vec<Join>,
+
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+
+    #[serde(default = "default_offset")]
+    pub offset: usize,
+
+    #[serde(default)]
+    pub pluck_object: BTreeMap<String, Vec<String>>,
 }

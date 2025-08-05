@@ -5177,6 +5177,10 @@ pub struct CriteriaFilter {
     pub parse_as: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "MatchPattern", optional, tag = "7")]
     pub match_pattern: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "8")]
+    pub is_search: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "9")]
+    pub has_group_count: ::core::option::Option<bool>,
 }
 /// Logical operator filter
 #[derive(serde::Serialize, serde::Deserialize)]

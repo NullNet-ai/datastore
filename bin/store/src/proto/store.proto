@@ -2767,6 +2767,8 @@ message CriteriaFilter {
   optional bool case_sensitive = 5;
   optional string parse_as = 6;
   optional MatchPattern match_pattern = 7;
+  optional bool is_search = 8;
+  optional bool has_group_count = 9;
 }
 
 // Logical operator filter
