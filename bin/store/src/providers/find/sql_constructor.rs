@@ -280,45 +280,41 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Handle concatenated fields for main table and joins
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                let table_name = if let Some(aliased_entity) = &field.aliased_entity {
-                    // Check if this is for the main table or a joined table
-                    if aliased_entity == &self.table || field.entity == self.table {
+                let entity_alias = field.aliased_entity.as_ref().unwrap_or(&field.entity);
+                
+                // Check if this concatenated field is for the main table
+                let is_main_table = field.entity == self.table || 
+                    field.aliased_entity.as_ref() == Some(&self.table);
+                
+                // Check if this concatenated field is for a joined table that has pluck_object
+                let is_joined_table_with_pluck = has_join_selections && 
+                    self.request_body.get_pluck_object().contains_key(entity_alias) &&
+                    !is_main_table;
+                
+                // Only create selection for main table concatenated fields
+                // Join selections will handle concatenated fields for joined tables
+                if is_main_table && !is_joined_table_with_pluck {
+                    let table_name = if let Some(aliased_entity) = &field.aliased_entity {
                         aliased_entity
                     } else {
-                        // Skip if there's an existing join selection for this alias
-                        if has_join_selections && self.request_body.get_pluck_object().contains_key(aliased_entity) {
-                            continue; // Join selections will handle this concatenated field
-                        }
-                        continue; // Skip if not for main table
-                    }
-                } else if field.entity == self.table {
-                    field.entity.as_str()
-                } else {
-                    continue; // Skip if not for main table
-                };
+                        field.entity.as_str()
+                    };
 
-                // Skip if there's an existing join selection for this entity/alias
-                let entity_alias = field.aliased_entity.as_ref().unwrap_or(&field.entity);
-                if has_join_selections && self.request_body.get_pluck_object().contains_key(entity_alias) {
-                    continue; // Join selections will handle this concatenated field
+                    let concatenated_expression = field
+                        .fields
+                        .iter()
+                        .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
+                        .collect::<Vec<_>>()
+                        .join(&format!(" || '{}' || ", field.separator));
+                    
+                    let alias = &field.field_name;
+                    
+                    selections.push(format!(
+                        "({}) AS \"{}\"",
+                        concatenated_expression,
+                        alias
+                    ));
                 }
-
-                let concatenated_expression = field
-                    .fields
-                    .iter()
-                    .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
-                    .collect::<Vec<_>>()
-                    .join(&format!(" || '{}' || ", field.separator));
-                
-                // Use the field name directly instead of combining with table name
-                // since we're avoiding duplicates with join selections
-                let alias = &field.field_name;
-                
-                selections.push(format!(
-                    "({}) AS \"{}\"",
-                    concatenated_expression,
-                    alias
-                ));
             }
         }
         
