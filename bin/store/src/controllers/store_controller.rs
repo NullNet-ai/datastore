@@ -3,6 +3,7 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
+use crate::providers::storage::get_valid_bucket_name;
 use actix_web::test;
 use ulid::Ulid;
 use crate::{db, providers};
@@ -14,7 +15,7 @@ use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::structs::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GetFileById, QueryParams, RequestBody,
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
     SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
@@ -34,7 +35,8 @@ use diesel_async::RunQueryDsl;
 
 use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
-#[derive(Serialize)]
+use mime_guess; // For MIME type detection from file extensions
+#[derive(Serialize, Debug)]
 pub struct ApiError {
     pub message: String,
     pub status: u16,
@@ -1133,79 +1135,258 @@ pub async fn aggregation_filter(
 // Query
 // TODO: get file metadat from database
 pub async fn get_file_by_id(
-    _auth: HttpRequest,
-    request_body: web::Json<GetFileById>,
+    auth: HttpRequest,
+    path_params: web::Path<String>,
+    query: web::Query<QueryParams>,
 ) -> impl Responder {
-    dbg!("get_file_by_id");
-    let parameters = request_body.into_inner();
-    let file_id = parameters.id.clone();
+    let file_id = path_params.into_inner();
     
-    // Check if storage is disabled
-    if is_storage_disabled() {
-        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock file metadata");
-        return HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: format!("Mock file {} found (storage disabled)", file_id),
-            count: 1,
-            data: vec![serde_json::json!({
-                "id": file_id,
-                "status": "mock_file",
-                "filename": format!("{}.png", file_id),
-                "size": 1024,
-                "mimetype": "image/png",
-                "path": format!("mock-bucket/{}.png", file_id),
-                "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-                "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-            })],
-        });
+    // Extract auth data for organization context
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            return HttpResponse::Unauthorized().json(ApiResponse {
+                success: false,
+                message: "Authentication required".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    dbg!(format!("authdata {:?} file_id {:?}", auth_data, file_id));
+    // Check if this is a root controller call
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    
+    // Log the operation
+    if is_root_controller {
+        log::info!("Processing get_file_by_id via root controller for file_id: {}", file_id);
+    } else {
+        log::info!("Processing get_file_by_id via simple controller for file_id: {}", file_id);
     }
     
-    // TODO: Implement actual file metadata retrieval from database and storage
-    return HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        message: format!("File {} found", file_id),
-        count: 1,
-        data: vec![serde_json::json!({
-            "id": file_id,
-        })],
-    })
+    // Parse pluck fields from query parameters or use default file fields
+    let pluck_fields: Vec<String> = if query.pluck.is_empty() {
+        vec![
+            "id".to_string(),
+            "image_url".to_string(), 
+            "filename".to_string(),
+            "mimetype".to_string(),
+            "size".to_string(),
+            "download_path".to_string(),
+            "presigned_url".to_string(),
+            "created_date".to_string(),
+            "created_time".to_string(),
+            "updated_date".to_string(),
+            "updated_time".to_string(),
+            "organization_id".to_string(),
+        ]
+    } else {
+        query
+            .pluck
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect()
+    };
+    
+    // Extract organization_id from auth_data
+    let organization_id = Some(auth_data.organization_id.as_str());
+    
+    // Use the common controller to get file metadata from database
+    match process_and_get_record_by_id(
+        "files",
+        &file_id,
+        Some(pluck_fields),
+        is_root_controller,
+        organization_id,
+    ).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => {
+            log::error!("Error retrieving file {}: {:?}", file_id, error);
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
+                success: false,
+                message: error.message,
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
 }
-// TODO: access to the database for file metadata and response stream from File storage
+// Download file by ID with streaming response for client preview
 pub async fn download_file_by_id(
-    _auth: HttpRequest,
-    request_body: web::Json<GetFileById>,
-) -> impl Responder {
-    let parameters = request_body.into_inner();
-    let file_id = parameters.id.clone();
+    auth: HttpRequest,
+    path_params: web::Path<String>,
+    _query: web::Query<std::collections::HashMap<String, String>>,
+    app_state: web::Data<providers::storage::AppState>,
+) -> HttpResponse {
+    let file_id = path_params.into_inner();
     
-    // Check if storage is disabled
-    if is_storage_disabled() {
-        log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock download response");
-        return HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: format!("Mock download for file {} (storage disabled)", file_id),
-            count: 1,
-            data: vec![serde_json::json!({
-                "id": file_id,
-                "status": "mock_download",
-                "download_url": format!("mock-bucket/{}.png", file_id),
-                "filename": format!("{}.png", file_id),
-                "size": 1024,
-                "mimetype": "image/png",
-                "message": "File download simulated (storage disabled)"
-            })],
-        });
+    // Extract auth data for organization context
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    
+    // Check if this is a root controller call
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    
+    // Log the operation
+    if is_root_controller {
+        log::info!("Processing download_file_by_id via root controller for file_id: {}", file_id);
+    } else {
+        log::info!("Processing download_file_by_id via simple controller for file_id: {}", file_id);
     }
     
-    // TODO: Implement actual file download from storage
-    return HttpResponse::Ok().json(ApiResponse {
-        success: true,
-        message: format!("File {} found", file_id),
-        count: 1,
-        data: vec![serde_json::json!({
-            "id": file_id,
-        })],
-    })
+    // First, get file metadata from database
+    let pluck_fields = vec![
+        "mimetype".to_string(),
+        "download_path".to_string(),
+        "size".to_string(),
+    ];
+    
+    // Extract organization_id from auth_data
+    let organization_id = Some(auth_data.organization_id.as_str());
+    let file_metadata = match process_and_get_record_by_id(
+        "files",
+        &file_id,
+        Some(pluck_fields),
+        is_root_controller,
+        organization_id,
+    ).await {
+        Ok(response) => {
+            if response.success && !response.data.is_empty() {
+                response.data[0].clone()
+            } else {
+                return HttpResponse::NotFound().json(ApiResponse {
+                    success: false,
+                    message: "File not found".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+        Err(e) => {
+            log::error!("Error retrieving file metadata {}: {:?}", file_id, e);
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to retrieve file metadata: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    
+    // Extract file information from metadata
+    let mimetype = file_metadata.get("mimetype")
+        .and_then(|v| v.as_str())
+        .unwrap_or("application/octet-stream");
+    let download_path = file_metadata.get("download_path")
+        .and_then(|v| v.as_str())
+        .unwrap_or(&file_id);
+    
+    // Get bucket name with organization context
+    let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME")
+        .unwrap_or_else(|_| app_state.bucket_name.clone());
+    let bucket_name = get_valid_bucket_name(&base_bucket_name, organization_id);
+    
+    // Extract just the filename from download_path (remove bucket name if present)
+    let s3_key = if download_path.contains('/') {
+        // If download_path contains '/', take the part after the last '/'
+        download_path.split('/').last().unwrap_or(&file_id)
+    } else {
+        // If no '/', use the download_path as is (it's just the filename)
+        download_path
+    };
+    
+    // Stream file from S3
+    let s3_client = &app_state.s3_client;
+    
+    match s3_client
+        .get_object()
+        .bucket(&bucket_name)
+        .key(s3_key)
+        .send()
+        .await
+    {
+        Ok(output) => {
+            // Use the mimetype from database for proper content type handling
+            // This ensures correct MIME type detection for preview functionality
+            let actual_content_type = mimetype.to_string();
+            
+            // Capture content length before consuming the body
+             let content_length = output.content_length().unwrap_or(0);
+             
+             // Convert the S3 body stream to bytes and create a streaming response
+             match output.body.collect().await {
+                 Ok(data) => {
+                     let bytes = data.into_bytes();
+                     
+                     // Create a stream from the bytes for efficient streaming
+                     use futures_util::stream;
+                     let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                     
+                     // Determine if this is an image for inline display
+                      let is_image = actual_content_type.starts_with("image/");
+                      let filename = s3_key.split('/').last().unwrap_or("file");
+                      
+                      // Set Content-Disposition for proper preview behavior
+                      let content_disposition = if is_image {
+                          // For images, use inline disposition to enable preview in browsers/Postman
+                          format!("inline; filename=\"{}\"", filename)
+                      } else {
+                          // For non-images, use attachment to trigger download
+                          format!("attachment; filename=\"{}\"", filename)
+                      };
+                      
+                      HttpResponse::Ok()
+                          .content_type(actual_content_type)
+                          .insert_header(("Content-Length", content_length.to_string()))
+                          .insert_header(("Cache-Control", "public, max-age=3600"))
+                          .insert_header(("Accept-Ranges", "bytes"))
+                          .insert_header(("Content-Disposition", content_disposition))
+                          .streaming(byte_stream)
+                 }
+                 Err(e) => {
+                     log::error!("Error reading S3 object body for file {}: {:?}", file_id, e);
+                     HttpResponse::InternalServerError().json(ApiResponse {
+                         success: false,
+                         message: "Failed to read file content".to_string(),
+                         count: 0,
+                         data: vec![],
+                     })
+                 }
+             }
+        }
+        Err(e) => {
+            log::error!("Error downloading file {} from S3: {:?}", file_id, e);
+            HttpResponse::NotFound().json(ApiResponse {
+                success: false,
+                message: "File not found in storage".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
 }
 
 pub async fn upload_file(
@@ -1296,7 +1477,34 @@ pub async fn upload_file(
         let content_disposition = field.content_disposition();
         let fname = content_disposition.get_filename().map(|s| s.to_string());
         let field_name = content_disposition.get_name().unwrap_or("file").to_string();
-        let content_type = field.content_type().map(|ct| ct.to_string()).unwrap_or("application/octet-stream".to_string());
+        
+        // Get content type from multipart field
+        let field_content_type = field.content_type().map(|ct| ct.to_string());
+        
+        // Determine the best content type using multiple sources
+        let content_type = if let Some(fname_ref) = &fname {
+            // First try to detect MIME type from file extension
+            let mime_from_extension = mime_guess::from_path(fname_ref).first_or_octet_stream();
+            let detected_mime = mime_from_extension.to_string();
+            
+            log::info!("MIME type detection for '{}': detected='{}', field_provided={:?}", 
+                fname_ref, detected_mime, field_content_type);
+            
+            // Use detected MIME type if it's not generic, otherwise fall back to field content type
+            if detected_mime != "application/octet-stream" {
+                log::info!("Using detected MIME type: {}", detected_mime);
+                detected_mime
+            } else {
+                let fallback = field_content_type.unwrap_or("application/octet-stream".to_string());
+                log::info!("Using fallback MIME type: {}", fallback);
+                fallback
+            }
+        } else {
+            // No filename available, use field content type
+            let fallback = field_content_type.unwrap_or("application/octet-stream".to_string());
+            log::info!("No filename available, using field content type: {}", fallback);
+            fallback
+        };
 
         if let Some(fname) = fname {
             // Generate unique filename with ID.extension format
@@ -1425,7 +1633,7 @@ pub async fn upload_file(
                         "fieldname": field_name.clone(),
                         "originalname": fname.clone(),
                         "encoding": "7bit", // Default encoding for multipart
-                        "mimetype": get_output.content_type().unwrap_or("application/octet-stream"),
+                        "mimetype": content_type.clone(),
                         "destination": bucket_name.clone(),
                         "filename": actual_filename.clone(),
                         "path": format!("{}/{}", bucket_name, actual_filename),
@@ -1471,7 +1679,6 @@ pub async fn upload_file(
             }
 
             // File data already read earlier for comparison, use it for upload
-
             // ✅ Convert Vec<u8> -> ByteStream
             let byte_stream = ByteStream::from(file_data.clone());
 
@@ -1512,7 +1719,7 @@ pub async fn upload_file(
                         "fieldname": field_name,
                         "originalname": fname.clone(),
                         "encoding": "7bit", // Default encoding for multipart
-                        "mimetype": content_type,
+                        "mimetype": content_type.clone(),
                         "destination": bucket_name.clone(),
                         "filename": final_filename.clone(),
                         "path": format!("{}/{}", bucket_name, final_filename),
@@ -1574,6 +1781,7 @@ pub async fn upload_file(
         data: file_metadata,
     })
 }
+
 
 pub async fn switch_account(
     request: web::Json<SwitchAccountRequest>,

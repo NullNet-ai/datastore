@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.33
+### Author
+Bert
+
+### Added
+- ***get file by id***: Added endpoint to retrieve file content by file ID
+  - Endpoint: `GET /file/:id`
+  - Returns file content with appropriate content type and disposition
+- ***download file by id***: Added endpoint to download file content by file ID
+  - Endpoint: `GET /file/:id/download`
+  - Returns file content with appropriate content type and disposition which behaves like a preview
+  - add token as query 't' to provide token
+---
+
 ## 0.1.32
 ### Author
 Bert
