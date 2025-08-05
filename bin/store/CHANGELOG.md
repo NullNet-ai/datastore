@@ -5,7 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.31
+### Author
+Bert
+
+### Fixes
+- ***Timezone Handling***: Fixed timezone conversion issue in `sql_constructor.rs`
+  - Adjusted timestamp conversion logic to handle timezone offsets correctly
+  - Ensured consistent timezone handling across all database operations
+  - revise the cast `_time` field text type cast to time type
+  - Concatenated fields can now be filtered
+  - Duplicate concatenated fields are now handled correctly
+
+---
+
 ## 0.1.30
+### Author
 Bert
 
 ### Added 
