@@ -213,9 +213,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn time_format_wrapper(field: &str, timezone: Option<&str>) -> String {
         let timezone_query = format!(
-            " AT TIME ZONE {} AT TIME ZONE '{}'",
-            std::env::var("TZ").unwrap_or("UTC".to_string()),
-            timezone.unwrap_or("UTC")
+            " AT TIME ZONE '{}' AT TIME ZONE '{}'",
+            std::env::var("TZ").unwrap_or("America/Los_Angeles".to_string()),
+            timezone.unwrap_or("Asia/Manila")
         );
         format!("({} {})::time", field, timezone_query)
     }

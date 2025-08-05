@@ -638,6 +638,18 @@ impl<'a, 'b> Validation<'a, 'b> {
          for (filter_index, filter) in self.request_body.advance_filters.iter().enumerate() {
              match filter {
                  FilterCriteria::Criteria { field, entity, operator, values, .. } => {
+                     // Check if this field is a concatenated field and skip validation if it is
+                     let is_concatenated_field = self.request_body.concatenate_fields.iter().any(|concat_field| {
+                         concat_field.field_name == *field && 
+                         (concat_field.entity == *entity || 
+                          concat_field.aliased_entity.as_ref() == Some(entity))
+                     });
+                     
+                     if is_concatenated_field {
+                         // Skip validation for concatenated fields as they are virtual fields
+                         continue;
+                     }
+                     
                      // Validate field exists in schema
                      if !field_exists_in_table(entity, field) {
                          return ApiResponse {
@@ -689,6 +701,18 @@ impl<'a, 'b> Validation<'a, 'b> {
              for (filter_index, filter) in filters.iter().enumerate() {
                  match filter {
                      FilterCriteria::Criteria { field, entity, operator, values, .. } => {
+                         // Check if this field is a concatenated field and skip validation if it is
+                         let is_concatenated_field = self.request_body.concatenate_fields.iter().any(|concat_field| {
+                             concat_field.field_name == *field && 
+                             (concat_field.entity == *entity || 
+                              concat_field.aliased_entity.as_ref() == Some(entity))
+                         });
+                         
+                         if is_concatenated_field {
+                             // Skip validation for concatenated fields as they are virtual fields
+                             continue;
+                         }
+                         
                          // Validate field exists in schema
                          if !field_exists_in_table(entity, field) {
                              return ApiResponse {
