@@ -1,4 +1,4 @@
-use crate::schema::generator::field_definition::{FieldDefinition, TableDefinition};
+use crate::schema::generator::field_definition::{FieldDefinition, TableDefinition, ForeignKey};
 use crate::schema::generator::model_generator::ModelGenerator;
 use crate::schema::generator::schema_generator::SchemaGenerator;
 use crate::schema::generator::migration_generator::MigrationGenerator;
@@ -336,9 +336,17 @@ impl GeneratorService {
                 fields.push(id_field);
             }
             
-            // Extract foreign keys from macro (joins_with field removed from FieldDefinition)
-            // TODO: Handle foreign key relationships in a different way if needed
-            let _foreign_keys = Self::extract_foreign_keys_from_macro(content);
+            // Extract foreign keys from macro
+            let foreign_key_definitions = Self::extract_foreign_keys_from_macro(content).unwrap_or_else(|_| Vec::new());
+            
+            // Convert ForeignKeyDefinition to ForeignKey
+            let foreign_keys: Vec<ForeignKey> = foreign_key_definitions.into_iter().map(|fk_def| {
+                ForeignKey {
+                    field: fk_def.column,
+                    references_table: fk_def.references_table,
+                    references_field: fk_def.references_column,
+                }
+            }).collect();
             
             // Validate hypertable constraints if hypertable is enabled
             if hypertable {
@@ -352,7 +360,7 @@ impl GeneratorService {
                 name: table_name,
                 fields,
                 indexes: Vec::new(),
-                foreign_keys: Vec::new(),
+                foreign_keys,
                 is_hypertable: hypertable,
             });
         }
@@ -614,7 +622,7 @@ impl GeneratorService {
                         current_index = Some((index_name, Vec::new(), false, None));
                         in_index_def = true;
                     } else if in_index_def {
-                        if line.contains("columns:") {
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
                             // Extract columns
                             if let Some(bracket_start) = line.find('[') {
                                 if let Some(bracket_end) = line.find(']') {
@@ -685,16 +693,88 @@ impl GeneratorService {
             }
             
             if fk_end > 0 {
-                let fk_content = &after_fk[..fk_end];
+                let mut fk_content = after_fk[..fk_end].to_string();
                 
-                // Parse each foreign key line
+                // Expand system_foreign_keys!(table_name) macro if present
+                if let Some(table_name) = Self::extract_table_name_from_system_foreign_keys(&fk_content) {
+                    let system_foreign_keys_expansion = Self::get_system_foreign_keys_expansion(&table_name)?;
+                    let pattern = format!("system_foreign_keys!(\"{}\")", table_name);
+                    fk_content = fk_content.replace(&pattern, &system_foreign_keys_expansion);
+                }
+                
+                // Parse each foreign key definition
+                let mut current_fk: Option<ForeignKeyDefinition> = None;
+                let mut in_fk_def = false;
+                
                 for line in fk_content.lines() {
                     let line = line.trim();
                     if line.is_empty() || line.starts_with("//") {
                         continue;
                     }
+
                     
-                    // Parse foreign key like: "category_id -> "categories"."id""
+                    // Check for foreign key constraint name
+                    if line.contains(": {") {
+                        // Save previous foreign key if exists
+                        if let Some(fk) = current_fk.take() {
+                            foreign_keys.push(fk);
+                        }
+                        
+                        current_fk = Some(ForeignKeyDefinition {
+                            column: String::new(),
+                            references_table: String::new(),
+                            references_column: String::new(),
+                            on_delete: None,
+                            on_update: None,
+                        });
+                        in_fk_def = true;
+                    } else if in_fk_def {
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            // Extract columns - this is the local table column
+                            if let Some(bracket_start) = line.find('[') {
+                                if let Some(bracket_end) = line.find(']') {
+                                    let columns_str = &line[bracket_start + 1..bracket_end];
+                                    let column = columns_str.trim().trim_matches('"').replace(",", "").replace("\"", "").to_string();
+
+                                    if let Some(ref mut fk) = current_fk {
+                                        fk.column = column;
+                                    }
+                                }
+                            }
+                        } else if line.contains("foreign_table:") {
+                            let table_val = line.split(':').nth(1).unwrap().trim().trim_matches('"').replace(",", "").replace("\"", "").to_string();
+                            if let Some(ref mut fk) = current_fk {
+                                fk.references_table = table_val.replace(",", "").replace("\"", "");
+                            }
+                        } else if line.contains("foreign_columns:") {
+                            // Extract foreign_columns - this is the referenced table column
+                            if let Some(bracket_start) = line.find('[') {
+                                if let Some(bracket_end) = line.find(']') {
+                                    let columns_str = &line[bracket_start + 1..bracket_end];
+                                    let column = columns_str.trim().trim_matches('"').replace(",", "").replace("\"", "").to_string();
+
+                                    if let Some(ref mut fk) = current_fk {
+                                        fk.references_column = column;
+                                    }
+                                }
+                            }
+                        } else if line.contains("on_delete:") {
+                            let delete_val = line.split(':').nth(1).unwrap().trim().trim_matches('"').to_string();
+                            if let Some(ref mut fk) = current_fk {
+                                fk.on_delete = Some(delete_val);
+                            }
+                        } else if line.contains("on_update:") {
+                            let update_val = line.split(':').nth(1).unwrap().trim().trim_matches('"').to_string();
+                            if let Some(ref mut fk) = current_fk {
+                                fk.on_update = Some(update_val);
+                            }
+                        } else if line == "}" {
+                            in_fk_def = false;
+
+                        }
+                    }
+                    
+                    // Also handle old format: "category_id -> "categories"."id""
                     if line.contains(" -> ") {
                         let parts: Vec<&str> = line.split(" -> ").collect();
                         if parts.len() == 2 {
@@ -716,6 +796,11 @@ impl GeneratorService {
                             }
                         }
                     }
+                }
+                
+                // Save last foreign key if exists
+                if let Some(fk) = current_fk {
+                    foreign_keys.push(fk);
                 }
             }
         }
@@ -1016,6 +1101,36 @@ impl GeneratorService {
                 table_name, field_suffix, column_name
             ));
         }
+        
+        Ok(result)
+    }
+    
+    /// Extract table name from system_foreign_keys macro call
+    fn extract_table_name_from_system_foreign_keys(content: &str) -> Option<String> {
+        use regex::Regex;
+        let re = Regex::new(r#"system_foreign_keys!\("([^"]+)"\)"#).ok()?;
+        if let Some(captures) = re.captures(content) {
+            captures.get(1).map(|m| m.as_str().to_string())
+        } else {
+            None
+        }
+    }
+
+    /// Get system foreign keys expansion for a given table name
+    fn get_system_foreign_keys_expansion(table_name: &str) -> Result<String, String> {
+        // Use the system_foreign_keys macro to generate the foreign key definitions
+        // This ensures consistency with the macro definition in system_fields.rs
+        // Clean the table name to avoid issues with quotes or commas
+        let clean_table_name = table_name.replace(",", "").replace("\"", "");
+        
+        let result = format!(
+            "{}_organization_id_organizations_id_fk: {{\n            columns: [\"organization_id\"],\n            foreign_table: \"organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_created_by_account_organizations_id_fk: {{\n            columns: [\"created_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_updated_by_account_organizations_id_fk: {{\n            columns: [\"updated_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_deleted_by_account_organizations_id_fk: {{\n            columns: [\"deleted_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_requested_by_account_organizations_id_fk: {{\n            columns: [\"requested_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }}",
+            clean_table_name,
+            clean_table_name,
+            clean_table_name,
+            clean_table_name,
+            clean_table_name
+        );
         
         Ok(result)
     }
