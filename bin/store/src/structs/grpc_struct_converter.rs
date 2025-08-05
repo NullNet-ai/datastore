@@ -47,7 +47,7 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
 
             Some(FilterCriteria::Criteria {
                 field: criteria.field.clone(),
-                entity: criteria.entity.clone(),
+                entity: Some(criteria.entity.clone()),
                 operator,
                 values,
                 case_sensitive: criteria.case_sensitive,

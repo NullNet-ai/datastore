@@ -586,7 +586,8 @@ pub enum FilterCriteria {
     #[serde(rename = "criteria")]
     Criteria {
         field: String,
-        entity: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        entity: Option<String>,
         operator: FilterOperator,
         values: Vec<serde_json::Value>,
         #[serde(default = "default_case_sensitive")]

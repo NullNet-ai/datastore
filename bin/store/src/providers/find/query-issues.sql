@@ -1,16 +1,4 @@
-SELECT    ("created_by"."first_name" 
-                    || ' ' 
-                    || "created_by"."last_name") AS "full_name", 
-          ("updated_by"."first_name" 
-                    || ' ' 
-                    || "updated_by"."last_name") AS "full_name", 
-          (COALESCE(To_char("contacts"."created_date"::date, 'mm/dd/YYYY'), '') 
-                    || ' ' 
-                    || ("contacts"."created_time" at time zone 'America/Los_Angeles' at time zone 'Asia/Manila')::time) AS "created_date_time",
-          (COALESCE(To_char("contacts"."updated_date"::date, 'mm/dd/YYYY'), '') 
-                    || ' ' 
-                    || ("contacts"."updated_time" at time zone 'America/Los_Angeles' at time zone 'Asia/Manila')::time) AS "updated_date_time",
-          "contacts"."code", 
+SELECT    "contacts"."code", 
           "contacts"."categories", 
           "contacts"."organization_id", 
           "contacts"."first_name", 
@@ -19,8 +7,8 @@ SELECT    ("created_by"."first_name"
           "contacts"."status", 
           COALESCE(To_char("contacts"."created_date"::date, 'mm/dd/YYYY'), ''), 
           COALESCE(To_char("contacts"."updated_date"::date, 'mm/dd/YYYY'), ''), 
-          ("contacts"."created_time" at time zone 'America/Los_Angeles' at time zone 'Asia/Manila')::time,
-          ("contacts"."updated_time" at time zone 'America/Los_Angeles' at time zone 'Asia/Manila')::time,
+          ("contacts"."created_time" AT TIME ZONE 'Asia/Manila')::time, 
+          ("contacts"."updated_time" AT TIME ZONE 'Asia/Manila')::time, 
           "contacts"."created_by", 
           "contacts"."updated_by", 
           "contacts"."previous_status", 
