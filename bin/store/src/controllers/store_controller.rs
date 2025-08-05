@@ -1310,7 +1310,7 @@ pub async fn upload_file(
                             .map(|dt| {
                                 // Convert AWS SDK DateTime to chrono DateTime
                                 let timestamp = dt.as_secs_f64();
-                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, (timestamp.fract() * 1_000_000_000.0) as u32)
                                     .unwrap_or_else(|| chrono::Utc::now());
                                 chrono_dt.format("%Y-%m-%d").to_string()
                             })
@@ -1319,7 +1319,7 @@ pub async fn upload_file(
                             .map(|dt| {
                                 // Convert AWS SDK DateTime to chrono DateTime
                                 let timestamp = dt.as_secs_f64();
-                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, ((timestamp.fract() * 1_000_000_000.0) as u32))
+                                let chrono_dt = chrono::DateTime::from_timestamp(timestamp as i64, (timestamp.fract() * 1_000_000_000.0) as u32)
                                     .unwrap_or_else(|| chrono::Utc::now());
                                 chrono_dt.format("%H:%M:%S").to_string()
                             })
