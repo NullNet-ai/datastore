@@ -1278,18 +1278,20 @@ pub async fn upload_file(
     if let Some(content_type_header) = req.headers().get(actix_web::http::header::CONTENT_TYPE) {
         log::info!("Incoming Content-Type header: {:?}", content_type_header);
     }
+
     let name = "files";
     let client = app_state.s3_client.clone();
-     // Get organization ID from environment variables with fallback logic
-    let org_id = std::env::var("DEFAULT_ORGANIZATION_ID")
-        .unwrap_or_else(|_| "".to_string());
+     // Get organization ID from auth data with fallback to environment variable
+    let org_id = if !_auth_data.organization_id.is_empty() {
+        _auth_data.organization_id.clone()
+    } else {
+        std::env::var("DEFAULT_ORGANIZATION_ID")
+            .unwrap_or_else(|_| String::new())
+    };
     
+    // Get bucket name from app state or environment variable with fallback
     let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME")
-        .unwrap_or_else(|_| {
-            println!("STORAGE_BUCKET_NAME not set, using app_state bucket_name");
-            app_state.bucket_name.clone()
-        });
-    dbg!(format!("_auth_data {:?}", _auth_data));
+        .unwrap_or_else(|_| app_state.bucket_name.clone());
     let bucket_name = get_valid_bucket_name(&base_bucket_name, Some(&org_id));
     let mut uploaded_files_count = 0;
     let mut file_metadata = Vec::new();

@@ -161,7 +161,7 @@ pub async fn initialize() -> std::io::Result<(Client, String)> {
     
     // Get organization ID from environment variables with fallback logic
     let org_id = std::env::var("DEFAULT_ORGANIZATION_ID")
-        .unwrap_or_else(|_| "".to_string());
+        .unwrap_or_else(|_| String::new());
     
     let base_bucket_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
         .unwrap_or_else(|_| {
