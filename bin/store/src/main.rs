@@ -28,11 +28,13 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
-
+#[cfg(test)]
+mod tests;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
-use crate::cache::{cache, CacheConfig}; // Add the cache function import
+use crate::cache::{cache, CacheConfig}; use crate::controllers::store_controller::{download_file_by_id, get_file_by_id};
+// Add the cache function import
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
 use crate::message_stream::pg_listener_service::PgListenerService;
@@ -395,25 +397,26 @@ async fn main() -> std::io::Result<()> {
                     .route("/function", web::post().to(create_pg_function))
                     .route("/test", web::post().to(test_pg_function_syntax))
                     .route("/{function_name}", web::delete().to(pg_listener_delete)),
-            ).service(
+            )
+            .service(
                 web::scope("/api/file")
                     .app_data(web::Data::new(providers::storage::AppState {
                         s3_client: s3_client.clone(),
                         bucket_name: bucket_name.clone(),
                     }))
                     .wrap(ShutdownGuard)
-                    .wrap(Authentication) 
+                    .wrap(Authentication)
                     .wrap(SessionMiddleware)
+                    .route("/{id}", web::get().to(get_file_by_id))
+                    .route("/{id}/download", web::get().to(download_file_by_id))
                     .app_data(
                         web::JsonConfig::default()
                             .limit(1024 * 1024 * 10) // 10MB JSON payload limit
                             .content_type(|mime| mime == mime::APPLICATION_JSON)
                     )
                     .app_data(web::FormConfig::default()
-                        .limit(1024 * 1024 * 100) // 10MB JSON payload limit
+                        .limit(1024 * 1024 * 100) // 100MB form payload limit
                     )
-                    // .route("/{id}", web::get().to(get_file_by_id))
-                    // .route("/{id}/download", web::get().to(download_file_by_id))
                     .route("/upload", web::post().to(upload_file))
             )
 
