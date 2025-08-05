@@ -484,6 +484,8 @@ impl GeneratorService {
                                 "Nullable<Text>".to_string()
                             } else if rest.contains("nullable(integer())") {
                                 "Nullable<Int4>".to_string()
+                            } else if rest.contains("nullable(bigint())") {
+                                "Nullable<Int8>".to_string()
                             } else if rest.contains("nullable(boolean())") {
                                 "Nullable<Bool>".to_string()
                             } else if rest.contains("nullable(jsonb())") {
@@ -501,6 +503,8 @@ impl GeneratorService {
                             }
                         } else if rest.contains("integer()") {
                             "Int4".to_string()
+                        } else if rest.contains("bigint()") {
+                            "Int8".to_string()
                         } else if rest.contains("text()") {
                             "Text".to_string()
                         } else if rest.contains("boolean()") {
@@ -508,7 +512,6 @@ impl GeneratorService {
                         } else if rest.contains("timestamp()") {
                             "Timestamp".to_string()
                         } else if rest.contains("timestamptz()") {
-
                             "Timestamptz".to_string()
                         } else {
                             "Text".to_string() // default
