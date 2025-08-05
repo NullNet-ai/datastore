@@ -7,7 +7,9 @@ use crate::providers::search_suggestion::{
     structs::{ConcatenatedExpressions, FieldFiltersResult},
     utils::get_field_filters,
 };
-use crate::structs::structs::{FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams};
+use crate::structs::structs::{
+    ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
+};
 pub trait QuerySearchSuggestion {
     fn get_pluck_object(&self) -> &BTreeMap<String, Vec<String>> {
         use std::collections::BTreeMap;
@@ -42,6 +44,10 @@ impl QueryFilter for SearchSuggestionParams {
 
     fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
         &self.group_advance_filters
+    }
+
+    fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+        &self.concatenate_fields
     }
 }
 

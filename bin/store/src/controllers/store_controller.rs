@@ -1741,10 +1741,10 @@ pub async fn search_suggestions(
         };
         return HttpResponse::Ok().json(ApiResponse {
             success: true,
-            message: format!("Filter operation completed for table: {}", &table),
+            message: format!("Search suggestions operation completed for table: {}", &table),
             count: data.len() as i32,
             data,
-        })
+        });
     }
     // get the aliased entities
     let mut aliased_joined_entities = Vec::new();
@@ -1758,15 +1758,12 @@ pub async fn search_suggestions(
         } else {
             (
                 join.field_relation.to.entity.clone(),
-                join.field_relation.to.alias.clone()
+                join.field_relation.to.alias.clone(),
             )
         };
 
         if let Some(alias) = to_alias {
-            aliased_joined_entities.push(AliasedJoinedEntity {
-                to_entity,
-                alias,
-            });
+            aliased_joined_entities.push(AliasedJoinedEntity { to_entity, alias });
         }
     }
 
@@ -1778,20 +1775,20 @@ pub async fn search_suggestions(
     if !group_advance_filters.is_empty() {
         for grouped_filters in group_advance_filters {
             let filters = match grouped_filters {
-                GroupAdvanceFilter::Criteria { filters, ..} => filters.clone(),
-                GroupAdvanceFilter::Operator { filters, ..} => filters.clone()
+                GroupAdvanceFilter::Criteria { filters, .. } => filters.clone(),
+                GroupAdvanceFilter::Operator { filters, .. } => filters.clone(),
             };
 
             let FormatFilterResponse {
                 formatted_filters,
                 search_term: _search_term,
-                filtered_fields: _filtered_fields
+                filtered_fields: _filtered_fields,
             } = format_filters(
                 filters,
                 Some(&aliased_joined_entities),
                 &table,
                 filtered_fields.clone(),
-                search_term.clone()
+                search_term.clone(),
             );
 
             // Update the outer scope variables
@@ -1800,28 +1797,25 @@ pub async fn search_suggestions(
 
              // Create a new GroupAdvanceFilter with the formatted filters
             let updated_group_filter = match grouped_filters {
-                GroupAdvanceFilter::Criteria { operator, .. } => {
-                    GroupAdvanceFilter::Criteria {
+                GroupAdvanceFilter::Criteria { operator, .. } => GroupAdvanceFilter::Criteria {
                         operator: operator.clone(),
                         filters: formatted_filters
                             .into_iter()
                             .filter_map(|v| serde_json::from_value(v).ok())
                             .collect(),
-                    }
-                }
-                GroupAdvanceFilter::Operator { operator, .. } => {
-                    GroupAdvanceFilter::Operator {
+                },
+                GroupAdvanceFilter::Operator { operator, .. } => GroupAdvanceFilter::Operator {
                         operator: operator.clone(),
                         filters: formatted_filters
                             .into_iter()
                             .filter_map(|v| serde_json::from_value(v).ok())
                             .collect(),
-                    }
-                }
+                },
             };
 
             // Convert to Value for the final result
-            formatted_group_advance_filters.push(serde_json::to_value(updated_group_filter).unwrap_or(Value::Null));
+            formatted_group_advance_filters
+                .push(serde_json::to_value(updated_group_filter).unwrap_or(Value::Null));
         }
     } else {
         let FormatFilterResponse {
@@ -1833,7 +1827,7 @@ pub async fn search_suggestions(
             Some(&aliased_joined_entities),
             &table,
             filtered_fields,
-            search_term
+            search_term,
         );
         search_term = _search_term;
         filtered_fields = _filtered_fields;
@@ -1841,25 +1835,26 @@ pub async fn search_suggestions(
     }
 
     // generate concatenated fields
-    let concatenated_expressions = generate_concatenated_expressions(
-        concatenate_fields.clone(),
-        Some(date_format.as_str()),
-    );
+    let concatenated_expressions =
+        generate_concatenated_expressions(concatenate_fields.clone(), Some(date_format.as_str()));
     
     // get connection to Diesel
     let mut conn = db::get_async_connection().await;
     let is_root = false;
     // generate json build object query
-    let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> = SearchSQLContructor::new(
-        parameters,
-        table.clone(),
-        is_root,
-    );
+    let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> =
+        SearchSQLContructor::new(parameters, table.clone(), is_root);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
 
-    let query = match sql_constructor.construct(&filtered_fields, &formatted_advance_filters, &formatted_group_advance_filters, &search_term.clone(), &concatenated_expressions.clone()) {
+    let query = match sql_constructor.construct(
+        &filtered_fields,
+        &formatted_advance_filters,
+        &formatted_group_advance_filters,
+        &search_term.clone(),
+        &concatenated_expressions.clone(),
+    ) {
         Ok(sql) => sql,
         Err(e) => {
             return HttpResponse::BadRequest().json(ApiResponse {
@@ -1892,14 +1887,25 @@ pub async fn search_suggestions(
     let data: Vec<serde_json::Value> = results
         .into_iter()
         .filter_map(|result| result.row_to_json)
+        .map(|data| {
+            if let Some(data) = data.get("results").and_then(|v| v.get("data")) {
+                data.clone()
+            } else {
+                data
+            }
+        })
+        .filter(|item| !item.is_null())
         .collect();
 
     let _ = SearchSuggestionCache::set_cache(&query_sha, serde_json::Value::Array(data.clone()));
 
     HttpResponse::Ok().json(ApiResponse {
             success: true,
-            message: format!("Search suggestions operation completed for table: {}", &table),
+        message: format!(
+            "Search suggestions operation completed for table: {}",
+            &table
+        ),
             count: data.len() as i32,
-            data,
+        data: if data.len() > 0 { data } else { vec![] },
         })
 }

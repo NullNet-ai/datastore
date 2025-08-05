@@ -53,10 +53,9 @@ pub fn format_filters(
                 }
 
                 // Determine filtered_entity
-                let mut filtered_entity = if entity.is_empty() {
-                    table.to_string()
-                } else {
-                    entity.clone()
+                let mut filtered_entity = match entity {
+                    Some(ref e) if !e.is_empty() => e.clone(),
+                    _ => table.to_string(),
                 };
 
                 // Check if entity is aliased
@@ -97,7 +96,7 @@ pub fn format_filters(
 
                 let criteria = FilterCriteria::Criteria {
                     field,
-                    entity: filtered_entity,
+                    entity: Some(filtered_entity),
                     operator,
                     values,
                     case_sensitive,
@@ -169,7 +168,7 @@ pub fn get_field_filters(
             ..
         } = filter
         {
-            if e == entity && f == field && is_search.unwrap_or(false) {
+            if e.as_deref() == Some(entity) && f == field && is_search.unwrap_or(false) {
                 field_filter = Some(filter.clone());
                 all_field_filters.push(filter.clone());
             } else if filter_value != search_term_value && !is_search.unwrap_or(false) {
