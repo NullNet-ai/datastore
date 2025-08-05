@@ -204,6 +204,53 @@ impl<T: QueryFilter> SQLConstructor<T> {
             base_field
         }
     }
+
+    fn get_field_with_concatenation(
+        &self,
+        table: &str,
+        field: &str,
+        format_str: &str,
+        parse_as: Option<&str>,
+    ) -> String {
+        // Check if this field is defined as a concatenated field
+        for concat_field in self.request_body.get_concatenate_fields() {
+            // Match by field name and entity/aliased_entity
+            if concat_field.field_name == field {
+                let target_table = if let Some(aliased_entity) = &concat_field.aliased_entity {
+                    aliased_entity.as_str()
+                } else {
+                    concat_field.entity.as_str()
+                };
+                
+                // Check if the table matches
+                if target_table == table {
+                    // Generate concatenated expression
+                    let concatenated_expression = concat_field
+                        .fields
+                        .iter()
+                        .map(|f| Self::get_field_with_parse_as(table, f, format_str, None))
+                        .collect::<Vec<_>>()
+                        .join(&format!(" || '{}' || ", concat_field.separator));
+                    
+                    // Apply parse_as type casting if provided and not empty
+                    let base_expression = format!("({})", concatenated_expression);
+                    return if let Some(cast_type) = parse_as {
+                        if !cast_type.is_empty() {
+                            format!("{}::{}", base_expression, cast_type)
+                        } else {
+                            base_expression
+                        }
+                    } else {
+                        base_expression
+                    };
+                }
+            }
+        }
+        
+        // Fall back to regular field handling if not a concatenated field
+        Self::get_field_with_parse_as(table, field, format_str, parse_as)
+    }
+
     fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
         let format = format_str.unwrap_or("mm/dd/YYYY");
         format!(
@@ -216,7 +263,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // PostgreSQL AT TIME ZONE converts from the specified timezone to UTC, then to local
         let target_timezone = timezone.unwrap_or("Asia/Manila");
         let timezone_query = format!(" AT TIME ZONE '{}'", target_timezone);
-        format!("({} {})::time", field, timezone_query)
+        format!("({}::time {})::time", field, timezone_query)
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
@@ -817,7 +864,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 match_pattern,
             } = &filters[0]
             {
-                let field_name = Self::get_field_with_parse_as(
+                let field_name = self.get_field_with_concatenation(
                     entity.as_deref().unwrap_or(&self.table),
                     field,
                     self.request_body.get_date_format(),
@@ -858,7 +905,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     parse_as,
                     match_pattern,
                 } => {
-                    let field_name = Self::get_field_with_parse_as(
+                    let field_name = self.get_field_with_concatenation(
                         entity.as_deref().unwrap_or(&self.table),
                         field,
                         self.request_body.get_date_format(),
