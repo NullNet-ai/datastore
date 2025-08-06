@@ -206,6 +206,7 @@ pub async fn create_record(
     table: web::Path<String>,
     body: web::Json<serde_json::Value>,
     query: web::Query<QueryParams>,
+    app_state: web::Data<providers::storage::AppState>,
 ) -> impl Responder {
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
@@ -243,6 +244,46 @@ pub async fn create_record(
             table_name
         );
         // Add any simple controller-specific logic here
+    }
+
+    // Special handling for organizations table - create bucket
+    if table_name == "organizations" {
+        log::info!("Creating organization record - will create corresponding bucket");
+        
+        // Extract organization name from the request body for bucket creation
+        if let Some(org_name) = body.get("name").and_then(|v| v.as_str()) {
+            log::info!("Creating bucket for organization: {}", org_name);
+            
+            // Generate valid bucket name using the organization name and ID
+            let org_id = auth_data.organization_id.as_str();
+            let bucket_name = providers::storage::minio::get_valid_bucket_name(org_name, Some(org_id));
+            
+            log::info!("Generated bucket name: {} for organization: {}", bucket_name, org_name);
+            
+            // Create bucket using S3 client
+            let s3_client = &app_state.s3_client;
+            match s3_client
+                .create_bucket()
+                .bucket(&bucket_name)
+                .send()
+                .await
+            {
+                Ok(_) => {
+                    log::info!("Successfully created bucket '{}' for organization '{}'", bucket_name, org_name);
+                }
+                Err(e) => {
+                    // Check if error is because bucket already exists
+                    let error_message = format!("{:?}", e);
+                    if error_message.contains("BucketAlreadyExists") || error_message.contains("BucketAlreadyOwnedByYou") {
+                        log::info!("Bucket '{}' already exists for organization '{}'", bucket_name, org_name);
+                    } else {
+                        log::error!("Failed to create bucket '{}' for organization '{}': {:?}", bucket_name, org_name, e);
+                    }
+                }
+            }
+        } else {
+            log::warn!("Organization name not found in request body for bucket creation");
+        }
     }
     let pluck_fields: Vec<String> = query
         .pluck
@@ -1664,7 +1705,7 @@ pub async fn upload_file(
                         pluck: pluck_fields.join(","),
                     });
                     
-                    let _response = create_record(req, table_path, body, query).await;
+                    let _response = create_record(req, table_path, body, query, app_state.clone()).await;
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
                     log::info!("File '{}' already exists in MinIO with unique name '{}', skipping upload", fname, actual_filename);
@@ -1748,7 +1789,7 @@ pub async fn upload_file(
                         pluck: pluck_fields.join(","),
                     });
                     
-                    let _response = create_record(req, table_path, body, query).await;
+                    let _response = create_record(req, table_path, body, query, app_state.clone()).await;
                     log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);

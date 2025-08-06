@@ -47,10 +47,8 @@ pub trait QueryFilter {
     fn get_multiple_sort(&self) -> &[SortOption] {
         &[]
     }
-    fn get_group_by(&self) -> &GroupBy {
-        static EMPTY: std::sync::LazyLock<GroupBy> =
-            std::sync::LazyLock::new(|| GroupBy::default());
-        &EMPTY
+    fn get_group_by(&self) -> Option<&GroupBy> {
+        None
     }
     fn get_distinct_by(&self) -> Option<&str> {
         None
@@ -114,8 +112,8 @@ impl QueryFilter for GetByFilter {
         &self.multiple_sort
     }
 
-    fn get_group_by(&self) -> &GroupBy {
-        &self.group_by
+    fn get_group_by(&self) -> Option<&GroupBy> {
+        self.group_by.as_ref()
     }
 
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
@@ -319,23 +317,27 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
         
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
-            return if distinct_by == "id" {
-                format!("DISTINCT \"{}\".\"{}\"", self.table, distinct_by)
+            if distinct_by.is_empty() {
+                // Skip if distinct_by is empty string
+            } else if distinct_by == "id" {
+                return format!("DISTINCT \"{}\".\"{}\"", self.table, distinct_by);
             } else {
                 let parts: Vec<&str> = distinct_by.split('.').collect();
-                if parts.len() == 2 {
+                return if parts.len() == 2 {
                     format!("DISTINCT \"{}\".\"{}\"", parts[0], parts[1])
                 } else {
                     format!("DISTINCT \"{}\".\"{}\"", self.table, distinct_by)
-                }
-            };
+                };
+            }
         }
 
         let group_by = self.request_body.get_group_by();
         
-        // If group_by is not empty, replace all selections with group by aggregations
-        if !group_by.fields.is_empty() {
-            return self.construct_group_by_selections();
+        // If group_by is present and not empty, replace all selections with group by aggregations
+        if let Some(group_by) = group_by {
+            if !group_by.fields.is_empty() {
+                return self.construct_group_by_selections();
+            }
         }
 
         
@@ -380,16 +382,18 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let group_by = self.request_body.get_group_by();
         let mut selections = Vec::new();
 
-        // Add count aggregation if has_count is true
-        if group_by.has_count {
-            selections.push("COUNT(*) AS count".to_string());
-            selections.push("COUNT(*) OVER () AS total_group_count".to_string());
-        }
+        if let Some(group_by) = group_by {
+            // Add count aggregation if has_count is true
+            if group_by.has_count {
+                selections.push("COUNT(*) AS count".to_string());
+                selections.push("COUNT(*) OVER () AS total_group_count".to_string());
+            }
 
-        // Add unique fields from group_by.fields
-        for field in &group_by.fields {
-            let field_selection = Self::get_field(&self.table, field, self.request_body.get_date_format());
-            selections.push(field_selection);
+            // Add unique fields from group_by.fields
+            for field in &group_by.fields {
+                let field_selection = Self::get_field(&self.table, field, self.request_body.get_date_format());
+                selections.push(field_selection);
+            }
         }
 
         if selections.is_empty() {
@@ -680,9 +684,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
         // Fallback to single field sorting using trait methods
         else if !self.request_body.get_order_by().is_empty() {
+            // Skip ORDER BY if using default values (id field with asc direction)
+            let order_by = self.request_body.get_order_by();
+            let order_direction = self.request_body.get_order_direction();
+            
+            if order_by == "id" && order_direction == "asc" {
+                return String::new();
+            }
+            
             let field_expression = Self::get_field(
                 table_alias,
-                self.request_body.get_order_by(),
+                order_by,
                 self.request_body.get_date_format(),
             );
 
@@ -700,7 +712,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             format!(
                 " ORDER BY {} {}",
                 final_field,
-                self.request_body.get_order_direction().to_uppercase()
+                order_direction.to_uppercase()
             )
         } else {
             String::new()
@@ -1319,6 +1331,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
     fn construct_order_by(&self) -> String {
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
+            if distinct_by.is_empty() {
+                return String::new();
+            }
+            
             let fields: Vec<String> = distinct_by
                 .split(',')
                 .map(|field| {
@@ -1371,9 +1387,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
         // Fallback to single field sorting using trait methods
         else if !self.request_body.get_order_by().is_empty() {
+            // Skip ORDER BY if using default values (id field with asc direction)
+            let order_by = self.request_body.get_order_by();
+            let order_direction = self.request_body.get_order_direction();
+            
+            if order_by == "id" && order_direction == "asc" {
+                return String::from("");
+            }
+            
             let field_expression = Self::get_field(
                 &self.table,
-                self.request_body.get_order_by(),
+                order_by,
                 self.request_body.get_date_format(),
             );
 
@@ -1391,7 +1415,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             format!(
                 " ORDER BY {} {}",
                 final_field,
-                self.request_body.get_order_direction().to_uppercase()
+                order_direction.to_uppercase()
             )
         } else {
             String::from("")
@@ -1399,20 +1423,21 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn construct_group_by(&self) -> String {
         let group_by = self.request_body.get_group_by();
-        if !group_by.fields.is_empty() {
-            // Get all fields from the group_by fields and create GROUP BY clause
-            let group_fields: Vec<String> = group_by
-                .fields
-                .iter()
-                .map(|field| {
-                    Self::get_field(&self.table, field, self.request_body.get_date_format())
-                })
-                .collect();
+        if let Some(group_by) = group_by {
+            if !group_by.fields.is_empty() {
+                // Get all fields from the group_by fields and create GROUP BY clause
+                let group_fields: Vec<String> = group_by
+                    .fields
+                    .iter()
+                    .map(|field| {
+                        Self::get_field(&self.table, field, self.request_body.get_date_format())
+                    })
+                    .collect();
 
-            format!(" GROUP BY {}", group_fields.join(", "))
-        } else {
-            String::from("")
+                return format!(" GROUP BY {}", group_fields.join(", "));
+            }
         }
+        String::from("")
     }
     fn construct_offset(&self) -> String {
         if self.request_body.get_offset() > 0 {
