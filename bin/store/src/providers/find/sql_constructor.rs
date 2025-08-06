@@ -207,11 +207,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
         for concat_field in self.request_body.get_concatenate_fields() {
             // Match by field name and entity/aliased_entity
             if concat_field.field_name == field {
-                let target_table = if let Some(aliased_entity) = &concat_field.aliased_entity {
-                    aliased_entity.as_str()
-                } else {
-                    concat_field.entity.as_str()
-                };
+                // Priority: aliased_entity takes precedence over entity
+                let target_table = concat_field.aliased_entity.as_deref().unwrap_or(&concat_field.entity);
 
                 // Check if the table matches
                 if target_table == table {
@@ -271,11 +268,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Handle concatenated fields for main table and joins
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                let entity_alias = field.aliased_entity.as_ref().unwrap_or(&field.entity);
+                // Priority: aliased_entity takes precedence over entity
+                let entity_alias = field.aliased_entity.as_deref().unwrap_or(&field.entity);
 
                 // Check if this concatenated field is for the main table
-                let is_main_table = field.entity == self.table
-                    || field.aliased_entity.as_ref() == Some(&self.table);
+                // Priority check: aliased_entity first, then entity
+                let is_main_table = field.aliased_entity.as_deref() == Some(&self.table)
+                    || (field.aliased_entity.is_none() && field.entity == self.table);
 
                 // Check if this concatenated field is for a joined table that has pluck_object
                 let is_joined_table_with_pluck = has_join_selections
@@ -288,11 +287,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 // Only create selection for main table concatenated fields
                 // Join selections will handle concatenated fields for joined tables
                 if is_main_table && !is_joined_table_with_pluck {
-                    let table_name = if let Some(aliased_entity) = &field.aliased_entity {
-                        aliased_entity
-                    } else {
-                        field.entity.as_str()
-                    };
+                    // Priority: aliased_entity takes precedence over entity
+                    let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
 
                     let concatenated_expression = field
                         .fields
@@ -362,7 +358,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 selections.push(pluck_group_object);
             }
         }
-        dbg!(format!("selections: {:?}", selections));
+        
         if selections.is_empty() {
             "id".to_string()
         } else {
@@ -411,13 +407,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Add concatenated fields that match the main table
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                if field.aliased_entity.as_deref() == Some(&self.table) || field.entity == self.table
-                {
-                    let table_name = if let Some(aliased_entity) = &field.aliased_entity {
-                        aliased_entity
-                    } else {
-                        field.entity.as_str()
-                    };
+                // Priority check: aliased_entity first, then entity
+                let matches_main_table = field.aliased_entity.as_deref() == Some(&self.table)
+                    || (field.aliased_entity.is_none() && field.entity == self.table);
+
+                if matches_main_table {
+                    // Priority: aliased_entity takes precedence over entity
+                    let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
+                    
                     let concatenated_expression = field
                         .fields
                         .iter()
@@ -428,6 +425,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .join(&format!(" || '{}' || ", field.separator));
 
                     // Create unique alias by combining table_name and field_name to avoid duplicates
+                    // Priority: use aliased_entity if present, otherwise use field_name only
                     let unique_alias = if let Some(aliased_entity) = &field.aliased_entity {
                         format!("{}_{}", aliased_entity, field.field_name)
                     } else {
