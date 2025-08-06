@@ -208,7 +208,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Match by field name and entity/aliased_entity
             if concat_field.field_name == field {
                 // Priority: aliased_entity takes precedence over entity
-                let target_table = concat_field.aliased_entity.as_deref().unwrap_or(&concat_field.entity);
+                let target_table = concat_field
+                    .aliased_entity
+                    .as_deref()
+                    .unwrap_or(&concat_field.entity);
 
                 // Check if the table matches
                 if target_table == table {
@@ -216,7 +219,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     let concatenated_expression = concat_field
                         .fields
                         .iter()
-                        .map(|f| format!("COALESCE({}, '')", Self::get_field_with_parse_as(table, f, format_str, None)))
+                        .map(|f| {
+                            format!(
+                                "COALESCE({}, '')",
+                                Self::get_field_with_parse_as(table, f, format_str, None)
+                            )
+                        })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", concat_field.separator));
 
@@ -294,7 +302,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
+                            format!(
+                                "COALESCE({}, '')",
+                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                            )
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
@@ -358,7 +369,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 selections.push(pluck_group_object);
             }
         }
-        
+
         if selections.is_empty() {
             "id".to_string()
         } else {
@@ -414,12 +425,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 if matches_main_table {
                     // Priority: aliased_entity takes precedence over entity
                     let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
-                    
+
                     let concatenated_expression = field
                         .fields
                         .iter()
                         .map(|f| {
-                            format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
+                            format!(
+                                "COALESCE({}, '')",
+                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                            )
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
@@ -472,7 +486,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             .fields
                             .iter()
                             .map(|f| {
-                                format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
+                                format!(
+                                    "COALESCE({}, '')",
+                                    Self::get_field(
+                                        table_name,
+                                        f,
+                                        self.request_body.get_date_format()
+                                    )
+                                )
                             })
                             .collect::<Vec<_>>()
                             .join(&format!(" || '{}' || ", field.separator));
@@ -612,7 +633,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
+                            format!(
+                                "COALESCE({}, '')",
+                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                            )
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));

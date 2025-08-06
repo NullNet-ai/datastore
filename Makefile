@@ -73,3 +73,18 @@ db-migrate-down:
 db-migrate-revert:
 	@echo "Reverting last migration..."
 	@cd bin/store && diesel migration revert 
+
+# Format Rust code
+fmt:
+	@echo "Formatting Rust code..."
+	@cargo fmt --all
+	@echo "✅ Code formatting complete!"
+
+# Check code formatting
+fmt-check:
+	@echo "Checking code formatting..."
+	@cargo fmt --all -- --check
+
+# Setup git hooks
+setup-hooks:
+	@./scripts/setup-hooks.sh
