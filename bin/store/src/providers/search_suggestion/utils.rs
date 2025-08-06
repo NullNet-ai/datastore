@@ -168,10 +168,11 @@ pub fn get_field_filters(
             ..
         } = filter
         {
-            if e.as_deref() == Some(entity) && f == field && is_search.unwrap_or(false) {
+            let is_search = is_search.unwrap_or(false);
+            if e.as_deref() == Some(entity) && f == field && is_search {
                 field_filter = Some(filter.clone());
                 all_field_filters.push(filter.clone());
-            } else if filter_value != search_term_value && !is_search.unwrap_or(false) {
+            } else if filter_value != search_term_value && !is_search {
                 all_field_filters.push(filter.clone());
             }
         }

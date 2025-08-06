@@ -16,7 +16,7 @@ impl SearchSuggestionCache {
         let expiry_ms: u64 = env::var("SEARCH_SUGGESTION_CACHE_TTL_MS")
             .unwrap_or_else(|_| "30000".to_string()) // Default 30 seconds
             .parse()
-            .expect("Invalid SEARCH_SUGGESTION_CACHE_TTL_MS value");
+            .unwrap_or(30000);
         cache.insert_with_ttl(key.to_string(), value, Duration::from_millis(expiry_ms));
     }
     

@@ -88,3 +88,9 @@ pub async fn root_switch_account(
 ) -> impl actix_web::Responder {
     crate::controllers::store_controller::switch_account(request_body).await
 }
+
+create_root_wrapper!(root_search_suggestions => search_suggestions,
+    auth: HttpRequest,
+    table: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<crate::structs::structs::SearchSuggestionParams>
+);

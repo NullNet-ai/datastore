@@ -521,6 +521,8 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  optional bool case_sensitive = 5;\n");
     proto.push_str("  optional string parse_as = 6;\n");
     proto.push_str("  optional MatchPattern match_pattern = 7;\n");
+    proto.push_str("  optional bool is_search = 8;\n");
+    proto.push_str("  optional bool has_group_count = 9;\n");
     proto.push_str("}\n\n");
 
     // Logical operator filter

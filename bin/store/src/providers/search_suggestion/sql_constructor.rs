@@ -110,8 +110,6 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         // construct final query string
         let json_result_query = self.construct_json_result_query();
         sql.push_str(&json_result_query);
-        println!("=====sql = {}", sql);
-
         Ok(sql)
     }
 
@@ -144,7 +142,6 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                 .get(entity)
                                 .and_then(|fields| fields.get(field))
                             {
-                                println!("Found: {}", field_expr.expression);
                                 entity_field = format!("{}", field_expr.expression)
                             }
 
@@ -216,8 +213,8 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                 .join(",")
                                 .replace('\'', "\"");
                             let parse_string = if parse_as == "text" { "::text" } else { "" };
-
-                            if has_group_count.unwrap_or(false) {
+                            let has_group_count = has_group_count.unwrap_or(false);
+                            if has_group_count {
                                 let query_field_name = format!("{}_{}_group", entity, field);
                                 let field_group_query = self.construct_per_field_query(
                                     entity,
@@ -225,7 +222,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                     entity_field.as_str(),
                                     parse_string,
                                     values_flat.as_str(),
-                                    has_group_count.unwrap_or(false),
+                                    has_group_count,
                                     &all_field_filters,
                                     &all_field_group_filters,
                                     concatenated_expressions,
@@ -657,13 +654,10 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         field: &str,
         concatenated_expressions: &ConcatenatedExpressions,
     ) -> String {
-        println!("entity: {}, field: {}", entity, field);
-        println!("concatenated_expressions: {:?}", concatenated_expressions);
         if let Some(field_expr) = concatenated_expressions
             .get(entity)
             .and_then(|fields| fields.get(field))
         {
-            println!("Found: {}", field_expr.expression);
             format!(" GROUP BY {}", field_expr.expression.clone())
         } else if !entity.is_empty() && !field.is_empty() {
             let field = FindSQLConstructor::<SearchSuggestionParams>::get_field(

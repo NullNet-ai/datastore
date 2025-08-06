@@ -1896,6 +1896,41 @@ pub async fn search_suggestions(
 ) -> impl Responder {
     let table = path_params.into_inner();
     let parameters: SearchSuggestionParams = request_body.into_inner();
+    let is_root = auth
+        .extensions()
+        .get::<Auth>()
+        .map_or(false, |auth_data| auth_data.is_root_account);
+
+    // Extract organization_id from auth context
+    let extensions = auth.extensions();
+    let organization_id = match extensions.get::<Auth>() {
+        Some(auth_data) => Some(auth_data.organization_id.clone()),
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            None
+        }
+    };
+
+    // Check if this is a root controller call
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+
+    if is_root_controller {
+        log::info!(
+            "Processing get_by_filter via root controller for table: {}",
+            table
+        );
+        // Add any root-specific logic here
+    } else {
+        log::info!(
+            "Processing get_by_filter via simple controller for table: {}",
+            table
+        );
+        // Add any simple controller-specific logic here
+    }
 
     let SearchSuggestionParams {
         advance_filters, 
@@ -1924,20 +1959,12 @@ pub async fn search_suggestions(
             serde_json::to_string(&parameters).unwrap()
         }
     };
-    // Extract organization_id from auth context
-    let extensions = auth.extensions();
-    let organization_id = match extensions.get::<Auth>() {
-        Some(auth_data) => Some(auth_data.organization_id.clone()),
-        None => {
-            log::warn!("Auth data not found in request extensions");
-            None
-        }
-    };
+    
     let query_sha = SearchSuggestionCache::hash_string(&json_params_string);
-
     let cached_data = SearchSuggestionCache::get_cache_by_key(&query_sha);
 
     if let Some(cached_value) = cached_data {
+        log::debug!("Search Suggestion: Cached data found.");
         let data = if let Some(arr) = cached_value.as_array() {
             if let Some(first_value) = arr.get(0) {
                 vec![first_value.clone()]
@@ -1949,7 +1976,10 @@ pub async fn search_suggestions(
         };
         return HttpResponse::Ok().json(ApiResponse {
             success: true,
-            message: format!("Search suggestions operation completed for table: {}", &table),
+            message: format!(
+                "Search suggestions operation completed for table: {}",
+                &table
+            ),
             count: data.len() as i32,
             data,
         });
@@ -2048,7 +2078,6 @@ pub async fn search_suggestions(
     
     // get connection to Diesel
     let mut conn = db::get_async_connection().await;
-    let is_root = false;
     // generate json build object query
     let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> =
         SearchSQLContructor::new(parameters, table.clone(), is_root);
@@ -2075,6 +2104,7 @@ pub async fn search_suggestions(
     };
 
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    log::debug!("Search Suggestion Query: {}", final_query);
 
     // execute query
     let results = match diesel::dsl::sql_query(&final_query)
