@@ -473,6 +473,9 @@ table! {
         last_name -> Nullable<Text>,
         email -> Nullable<Text>,
         account_id -> Nullable<Text>,
+        date_of_birth -> Nullable<Timestamp>,
+        middle_name -> Nullable<Text>,
+        auth_preference -> Nullable<Text>,
     }
 }
 

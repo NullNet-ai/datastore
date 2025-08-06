@@ -38,4 +38,7 @@ pub struct AccountProfileModel {
     pub last_name: Option<String>,
     pub email: Option<String>,
     pub account_id: Option<String>,
+    pub date_of_birth: Option<chrono::NaiveDateTime>,
+    pub middle_name: Option<String>,
+    pub auth_preference: Option<String>,
 }
