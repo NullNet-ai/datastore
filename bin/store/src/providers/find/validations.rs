@@ -89,6 +89,15 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
     pub fn validate_distinct_by(&self) -> ApiResponse {
         if let Some(distinct_by) = &self.request_body.distinct_by {
+            if distinct_by.is_empty() {
+                return ApiResponse {
+                    success: true,
+                    message: "Successfully validated distinct_by field".to_string(),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+            
             if !field_exists_in_table(self.table, distinct_by) {
                 return ApiResponse {
                     success: false,
@@ -207,18 +216,21 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
 
     pub fn validate_group_by(&self) -> ApiResponse {
-        // Validate that all fields in group_by exist in the main table
-        for (field_index, field) in self.request_body.group_by.fields.iter().enumerate() {
-            if !field_exists_in_table(self.table, field) {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "group_by > fields[{}] > Field '{}' does not exist in table '{}'",
-                        field_index, field, self.table
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
+        // If group_by is None, validation passes
+        if let Some(group_by) = &self.request_body.group_by {
+            // Validate that all fields in group_by exist in the main table
+            for (field_index, field) in group_by.fields.iter().enumerate() {
+                if !field_exists_in_table(self.table, field) {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "group_by > fields[{}] > Field '{}' does not exist in table '{}'",
+                            field_index, field, self.table
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
             }
         }
 

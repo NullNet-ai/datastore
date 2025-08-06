@@ -311,8 +311,8 @@ pub struct GetByFilter {
     #[serde(default)]
     pub joins: Vec<Join>,
 
-    #[serde(default)]
-    pub group_by: GroupBy,
+    #[serde(default = "default_group_by")]
+    pub group_by: Option<GroupBy>,
 
     #[serde(default)]
     pub concatenate_fields: Vec<ConcatenateField>,
@@ -337,7 +337,7 @@ pub struct GetByFilter {
 
     #[serde(default = "default_limit")]
     pub limit: usize,
-
+    
     pub distinct_by: Option<String>,
 }
 
@@ -515,6 +515,13 @@ pub struct SortOption {
     pub by_direction: String,
     #[serde(default)]
     pub is_case_sensitive_sorting: Option<bool>,
+}
+
+fn default_group_by() -> Option<GroupBy> {
+    Some(GroupBy {
+        fields: Vec::new(),
+        has_count: false,
+    })
 }
 
 fn default_date_format() -> String {
