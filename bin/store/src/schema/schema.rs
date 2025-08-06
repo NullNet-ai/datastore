@@ -847,11 +847,6 @@ table! {
 
 table! {
     account_phone_numbers(id) {
-        account_profile_id -> Nullable<Text>,
-        raw_phone_number -> Nullable<Text>,
-        is_primary -> Nullable<Bool>,
-        iso_code -> Nullable<Text>,
-        country_code -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -873,11 +868,17 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        account_profile_id -> Nullable<Text>,
+        raw_phone_number -> Nullable<Text>,
+        is_primary -> Nullable<Bool>,
+        iso_code -> Nullable<Text>,
+        country_code -> Nullable<Text>,
     }
 }
 
 table! {
-    account_signatures(id) {        tombstone -> Nullable<Int4>,
+    account_signatures(id) {        
+        tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
         version -> Nullable<Int4>,
