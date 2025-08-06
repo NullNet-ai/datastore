@@ -457,49 +457,6 @@ impl SchemaGenerator {
             .contains(&field_name.to_string())
     }
 
-    /// Dynamically extracts system field names from the system_fields macro
-    /// Convert FieldTypeInfo to a field definition string for schema generation (converts VARCHAR to Text)
-    fn field_type_info_to_definition(field_type_info: &FieldTypeInfo) -> String {
-        // Convert database types to Diesel types
-        let diesel_type = match field_type_info.field_type.to_lowercase().as_str() {
-            "bool" | "boolean" => "Bool",
-            "text" => "Text",
-            "char" => "Text",
-            "integer" | "int4" => "Int4",
-            "bigint" | "int8" => "Int8",
-            "float" | "float4" => "Float4",
-            "float8" | "double" => "Float8",
-            "timestamp" | "timestamptz" => "Timestamp",
-            "jsonb" => "Jsonb",
-            "json" => "Json",
-            "inet" => "Inet",
-            "uuid" => "Uuid",
-            "bytea" => "Bytea",
-            "numeric" | "decimal" => "Numeric",
-            // Handle VARCHAR with length constraints - convert to Text for schema
-            t if t.starts_with("varchar(") => {
-                // Convert all VARCHAR types to Text for schema
-                "Text"
-            },
-            "varchar" => "Text", // varchar without length - convert to Text
-            _ => &field_type_info.field_type, // fallback to original
-        };
-        
-        let mut definition = diesel_type.to_string();
-        
-        // Handle nullable wrapper
-        if field_type_info.nullable {
-            definition = format!("Nullable<{}>", definition);
-        }
-        
-        // Handle array wrapper
-        if field_type_info.is_array {
-            definition = format!("Array<{}>", definition);
-        }
-        
-        definition
-    }
-
     /// Convert FieldTypeInfo to a field definition string for migration generation (preserves VARCHAR)
     fn field_type_info_to_migration_definition(field_type_info: &FieldTypeInfo) -> String {
         // Convert database types to Diesel types, preserving VARCHAR for migrations
