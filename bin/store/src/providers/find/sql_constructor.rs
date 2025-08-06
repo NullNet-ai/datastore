@@ -216,7 +216,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     let concatenated_expression = concat_field
                         .fields
                         .iter()
-                        .map(|f| Self::get_field_with_parse_as(table, f, format_str, None))
+                        .map(|f| format!("COALESCE({}, '')", Self::get_field_with_parse_as(table, f, format_str, None)))
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", concat_field.separator));
 
@@ -294,7 +294,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            Self::get_field(table_name, f, self.request_body.get_date_format())
+                            format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
@@ -419,7 +419,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            Self::get_field(table_name, f, self.request_body.get_date_format())
+                            format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
@@ -472,7 +472,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             .fields
                             .iter()
                             .map(|f| {
-                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                                format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
                             })
                             .collect::<Vec<_>>()
                             .join(&format!(" || '{}' || ", field.separator));
@@ -612,7 +612,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            Self::get_field(table_name, f, self.request_body.get_date_format())
+                            format!("COALESCE({}, '')", Self::get_field(table_name, f, self.request_body.get_date_format()))
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
