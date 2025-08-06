@@ -840,3 +840,4 @@ table! {
         is_batch -> Nullable<Bool>,
     }
 }
+

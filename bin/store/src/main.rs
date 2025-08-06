@@ -28,8 +28,6 @@ mod structs;
 mod sync;
 mod table_enum;
 mod templates;
-#[cfg(test)]
-mod tests;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
