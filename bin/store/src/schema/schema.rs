@@ -844,7 +844,6 @@ table! {
     }
 }
 
-
 table! {
     account_phone_numbers(id) {
         tombstone -> Nullable<Int4>,
@@ -873,11 +872,12 @@ table! {
         is_primary -> Nullable<Bool>,
         iso_code -> Nullable<Text>,
         country_code -> Nullable<Text>,
-    }
+
+}
 }
 
 table! {
-    account_signatures(id) {        
+    account_signatures(id) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -902,5 +902,5 @@ table! {
         account_profile_id -> Nullable<Text>,
         name -> Nullable<Text>,
         signature -> Nullable<Text>,
-}
+    }
 }

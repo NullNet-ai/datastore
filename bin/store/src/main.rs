@@ -1,5 +1,5 @@
 #![recursion_limit = "2056"]
-use actix_web::{mime,web, App, HttpServer};
+use actix_web::{mime, web, App, HttpServer};
 use batch_sync::background_sync;
 use dotenv::dotenv;
 use message_stream::gateway::{create_socket_io, set_streaming_service};
@@ -31,7 +31,8 @@ mod templates;
 mod utils;
 use crate::batch_sync::BatchSyncService;
 use crate::cache::cache_factory::CacheType;
-use crate::cache::{cache, CacheConfig}; use crate::controllers::store_controller::{download_file_by_id, get_file_by_id};
+use crate::cache::{cache, CacheConfig};
+use crate::controllers::store_controller::{download_file_by_id, get_file_by_id};
 // Add the cache function import
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
@@ -60,11 +61,11 @@ use controllers::root_controller::{
 };
 use controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
-    create_record, delete_record, get_by_filter, switch_account, update_record, upsert,
-    upload_file,get_by_id
+    create_record, delete_record, get_by_filter, get_by_id, switch_account, update_record,
+    upload_file, upsert,
 };
 use env_logger::Env;
-use log::{info, error};
+use log::{error, info};
 use std::process;
 use std::sync::Arc;
 use std::time::Duration;
@@ -106,8 +107,7 @@ async fn main() -> std::io::Result<()> {
     let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
     let generate_table_enum =
         env::var("GENERATE_TABLE_ENUM").unwrap_or_else(|_| "false".to_string()) == "true";
-    let create_schema =
-        env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true";
+    let create_schema = env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true";
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
@@ -343,11 +343,10 @@ async fn main() -> std::io::Result<()> {
                     .route("/auth", web::post().to(OrganizationsController::auth))
                     .route("/logout", web::post().to(OrganizationsController::logout)),
             )
-            .service(
-                web::scope("/api/token")
-                    .wrap(SessionMiddleware)
-                    .route("/verify", web::post().to(OrganizationsController::verify_token)),
-            )
+            .service(web::scope("/api/token").wrap(SessionMiddleware).route(
+                "/verify",
+                web::post().to(OrganizationsController::verify_token),
+            ))
             .service(
                 web::scope("/api/store/root")
                     .wrap(ShutdownGuard)
@@ -409,14 +408,13 @@ async fn main() -> std::io::Result<()> {
                     .app_data(
                         web::JsonConfig::default()
                             .limit(1024 * 1024 * 10) // 10MB JSON payload limit
-                            .content_type(|mime| mime == mime::APPLICATION_JSON)
+                            .content_type(|mime| mime == mime::APPLICATION_JSON),
                     )
-                    .app_data(web::FormConfig::default()
-                        .limit(1024 * 1024 * 100) // 100MB form payload limit
+                    .app_data(
+                        web::FormConfig::default().limit(1024 * 1024 * 100), // 100MB form payload limit
                     )
-                    .route("/upload", web::post().to(upload_file))
+                    .route("/upload", web::post().to(upload_file)),
             )
-
     })
     .disable_signals()
     .bind(server_url)?

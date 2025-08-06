@@ -26,7 +26,6 @@ pub const SYSTEM_TABLES: &[&str] = &[
     "stream_queue",
     "stream_queue_items",
     "test",
-
 ];
 
 // Function to check if a table is a system table

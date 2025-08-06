@@ -49,7 +49,11 @@ impl SessionManager {
     }
 
     /// Extract session ID from various sources (header, cookie, etc.)
-    pub fn extract_session_id(&self, header_value: Option<&str>, cookie_value: Option<&str>) -> String {
+    pub fn extract_session_id(
+        &self,
+        header_value: Option<&str>,
+        cookie_value: Option<&str>,
+    ) -> String {
         header_value
             .map(|s| s.to_string())
             .or_else(|| cookie_value.map(|s| s.to_string()))
@@ -81,11 +85,10 @@ impl SessionManager {
             .await?;
 
         // Parse the session data from JSON
-        serde_json::from_value::<Session>(session_model.sess)
-            .map_err(|err| {
-                log::error!("Error parsing session to json: {:?}", err);
-                diesel::result::Error::DeserializationError(Box::new(err))
-            })
+        serde_json::from_value::<Session>(session_model.sess).map_err(|err| {
+            log::error!("Error parsing session to json: {:?}", err);
+            diesel::result::Error::DeserializationError(Box::new(err))
+        })
     }
 
     pub fn create_new_session(&self, session_id: &str, token: &str) -> Session {
@@ -95,7 +98,8 @@ impl SessionManager {
             Err(err) => {
                 log::error!(
                     "Error converting cookie expiry time '{}' to milliseconds: {}",
-                    self.config.cookie_max_age, err
+                    self.config.cookie_max_age,
+                    err
                 );
                 86400000 // Default to 1 day (86400000 ms) on error
             }
@@ -125,14 +129,15 @@ impl SessionManager {
     pub async fn save_session(&self, session: &Session) -> Result<(), diesel::result::Error> {
         let mut conn = db::get_async_connection().await;
 
-        let session_expires = std::env::var("SESSION_EXPIRES_IN")
-            .unwrap_or_else(|_| "1d".to_string());
+        let session_expires =
+            std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
         let expiry_ms = match time_string_to_ms(&session_expires) {
             Ok(ms) => ms,
             Err(err) => {
                 log::warn!(
                     "Error converting session expiry time '{}' to milliseconds: {}",
-                    session_expires, err
+                    session_expires,
+                    err
                 );
                 86400000 // Default to 1 day (86400000 ms) on error
             }

@@ -1,12 +1,12 @@
 use crate::templates::proto_generator::{Case, CaseConvert};
 use crate::utils::utils::{parse_tables, to_singular};
+use log::{error, info, warn};
 use regex::Regex;
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
 use std::process::Command;
-use log::{info, warn, error};
 #[allow(warnings)]
 pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Result<()> {
     info!("Generating gRPC controller from proto file: {}", proto_path);
@@ -58,15 +58,27 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
 
     // Write imports
     writeln!(file, "use super::common_controller::{{")?;
-    writeln!(file, "    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,")?;
-    writeln!(file, "    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,")?;
-    writeln!(file, "    process_record_for_update, process_records, sanitize_updates,")?;
+    writeln!(
+        file,
+        "    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,"
+    )?;
+    writeln!(
+        file,
+        "    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,"
+    )?;
+    writeln!(
+        file,
+        "    process_record_for_update, process_records, sanitize_updates,"
+    )?;
     writeln!(file, "}};")?;
     writeln!(file, "use crate::with_session_management;")?;
     writeln!(file, "use crate::db;")?;
     writeln!(file, "use crate::db::create_connection;")?;
     writeln!(file, "use crate::{{generate_create_method, generate_update_method, generate_batch_insert_method,")?;
-    writeln!(file, "    generate_batch_update_method, generate_get_method, generate_delete_method,")?;
+    writeln!(
+        file,
+        "    generate_batch_update_method, generate_get_method, generate_delete_method,"
+    )?;
     writeln!(file, "    generate_batch_delete_method, generate_upsert_method, generate_aggregation_filter_method}};")?;
 
     writeln!(
@@ -190,14 +202,20 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         "        println!(\"gRPC Server listening on {{}}\", addr);"
     )?;
     writeln!(file, "        // Create a chain of interceptors")?;
-    writeln!(file, "        let session_interceptor = GrpcSessionInterceptor::new();")?;
+    writeln!(
+        file,
+        "        let session_interceptor = GrpcSessionInterceptor::new();"
+    )?;
     writeln!(file, "        let auth_interceptor = GrpcAuthInterceptor;")?;
     writeln!(
         file,
         "        let shutdown_interceptor = GrpcShutdownInterceptor;"
     )?;
     writeln!(file, "        ")?;
-    writeln!(file, "        // Chain interceptors: shutdown -> session -> auth")?;
+    writeln!(
+        file,
+        "        // Chain interceptors: shutdown -> session -> auth"
+    )?;
     writeln!(file, "        let session_auth_chain = InterceptorChain::new(session_interceptor, auth_interceptor);")?;
     writeln!(
         file,

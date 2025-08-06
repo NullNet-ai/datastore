@@ -1,11 +1,9 @@
 use crate::{
-    providers::find::{SQLConstructor, sql_constructor::QueryFilter},
+    providers::find::{sql_constructor::QueryFilter, SQLConstructor},
     structs::grpc_struct_converter::{
         convert_aggregation, convert_aggregation_order, convert_filter_criteria, convert_join,
     },
-    structs::structs::{
-        Aggregation, AggregationFilter, AggregationOrder, FilterCriteria, Join,
-    },
+    structs::structs::{Aggregation, AggregationFilter, AggregationOrder, FilterCriteria, Join},
 };
 
 // Trait specifically for aggregation query filters
@@ -59,8 +57,10 @@ where
 
     pub fn construct_aggregation(&mut self) -> Result<String, String> {
         // Validate required parameters for aggregation
-        let aggregations = AggregationQueryFilter::get_aggregations(&self.sql_constructor.request_body);
-        let bucket_size = AggregationQueryFilter::get_bucket_size(&self.sql_constructor.request_body);
+        let aggregations =
+            AggregationQueryFilter::get_aggregations(&self.sql_constructor.request_body);
+        let bucket_size =
+            AggregationQueryFilter::get_bucket_size(&self.sql_constructor.request_body);
         let entity = AggregationQueryFilter::get_entity(&self.sql_constructor.request_body);
 
         if aggregations.is_empty() {
@@ -77,7 +77,8 @@ where
 
         let bucket_size = bucket_size.unwrap();
         let entity = entity.unwrap();
-        let timezone = AggregationQueryFilter::get_timezone(&self.sql_constructor.request_body).unwrap_or("UTC");
+        let timezone = AggregationQueryFilter::get_timezone(&self.sql_constructor.request_body)
+            .unwrap_or("UTC");
 
         // Generate the SELECT clause with time bucket and aggregations
         let mut sql = String::from("SELECT ");
@@ -121,14 +122,19 @@ where
         sql.push_str(" GROUP BY bucket");
 
         // Add ORDER BY clause
-        if let Some(order) = AggregationQueryFilter::get_aggregation_order(&self.sql_constructor.request_body) {
+        if let Some(order) =
+            AggregationQueryFilter::get_aggregation_order(&self.sql_constructor.request_body)
+        {
             let order_direction = order.order_direction.to_uppercase();
             sql.push_str(&format!(" ORDER BY {} {}", order.order_by, order_direction));
         }
 
         // Add LIMIT clause
         if AggregationQueryFilter::get_limit(&self.sql_constructor.request_body) > 0 {
-            sql.push_str(&format!(" LIMIT {}", AggregationQueryFilter::get_limit(&self.sql_constructor.request_body)));
+            sql.push_str(&format!(
+                " LIMIT {}",
+                AggregationQueryFilter::get_limit(&self.sql_constructor.request_body)
+            ));
         }
 
         Ok(sql)
