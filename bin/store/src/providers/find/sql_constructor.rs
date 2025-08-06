@@ -411,7 +411,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Add concatenated fields that match the main table
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                if field.aliased_entity.as_ref() == Some(&self.table) || field.entity == self.table
+                if field.aliased_entity.as_deref() == Some(&self.table) || field.entity == self.table
                 {
                     let table_name = if let Some(aliased_entity) = &field.aliased_entity {
                         aliased_entity
@@ -462,7 +462,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Add concatenated fields that match this table alias
             if !self.request_body.get_concatenate_fields().is_empty() {
                 for field in self.request_body.get_concatenate_fields() {
-                    if field.aliased_entity.as_ref() == Some(table_alias)
+                    if field.aliased_entity.as_deref() == Some(table_alias)
                         || field.entity == *table_alias
                     {
                         let table_name = if let Some(aliased_entity) = &field.aliased_entity {
@@ -497,6 +497,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn construct_join_selections(&self) -> Vec<String> {
         let mut join_selections = Vec::new();
+
+        // Handle main table fields if present in pluck_object
         if let Some(fields) = self.request_body.get_pluck_object().get(&self.table) {
             // Get concatenated field names to filter out
             let concatenated_field_names: Vec<String> = self
@@ -515,135 +517,167 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     }),
             );
         }
-        // Only construct selections if joins are present
+
+        // Return early if no joins present
         if self.request_body.get_joins().is_empty() {
             return join_selections;
         }
-        // Iterate through each alias in pluck_object
+
+        // Process each join
         for join in self.request_body.get_joins() {
-            let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(&join.field_relation.to.entity);
+            let to_alias = join
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&join.field_relation.to.entity);
+
+            // Handle fields for this join
             if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
                 let target_table = &join.field_relation.to.entity;
-                // Fixed: Look for a join whose target entity matches this join's source entity
-                    let previous_join = self.request_body.get_joins().iter().find(|j| {
-                        // Get the target reference (prioritize alias over entity)
-                        let j_to_reference = j.field_relation.to.alias.as_deref().unwrap_or(&j.field_relation.to.entity);
-                        // Get the current join's from reference (prioritize alias over entity)
-                        let current_from_reference = join.field_relation.from.alias.as_deref().unwrap_or(&join.field_relation.from.entity);
-                        
-                        // Find a join where the target reference matches this join's from reference
-                        j_to_reference == current_from_reference
-                    });
-                    let join_condition =
-                        self.build_join_condition_for_alias(to_alias, join, previous_join);
 
-                    // Build JSONB_BUILD_OBJECT field pairs
-                    let mut field_pairs: Vec<String> = fields
-                        .iter()
-                        .map(|field| {
-                            format!(
-                                "'{}', {}",
-                                field,
-                                Self::get_field(
-                                    to_alias,
-                                    field,
-                                    self.request_body.get_date_format()
-                                )
-                            )
-                        })
-                        .collect();
+                // Find previous join in chain if exists
+                let previous_join = self.request_body.get_joins().iter().find(|j| {
+                    let j_to_ref = j
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&j.field_relation.to.entity);
+                    let current_from_ref = join
+                        .field_relation
+                        .from
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&join.field_relation.from.entity);
+                    j_to_ref == current_from_ref
+                });
 
-                    if !self.request_body.get_concatenate_fields().is_empty() {
-                        self.request_body
-                            .get_concatenate_fields()
-                            .iter()
-                            .for_each(|field| {
-                                // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
-                                if field.aliased_entity.as_ref() == Some(to_alias)
-                                    || field.entity == *to_alias
-                                {
-                                    let table_name =
-                                        if let Some(aliased_entity) = &field.aliased_entity {
-                                            aliased_entity
-                                        } else {
-                                            field.entity.as_str()
-                                        };
-                                    let concatenated_expression = field
-                                        .fields
-                                        .iter()
-                                        .map(|f| {
-                                            Self::get_field(
-                                                table_name,
-                                                f,
-                                                self.request_body.get_date_format(),
-                                            )
-                                        })
-                                        .collect::<Vec<_>>()
-                                        .join(&format!(" || '{}' || ", field.separator));
-                                    field_pairs.push(format!(
-                                        "'{}', ({})",
-                                        field.field_name, concatenated_expression
-                                    ));
-                                }
-                            });
-                    }
+                let join_condition =
+                    self.build_join_condition_for_alias(to_alias, join, previous_join);
 
-                    let standard_where = match self.build_system_where_clause(to_alias) {
-                        Ok(clause) => clause,
-                        Err(_) => format!("({}.tombstone = 0)", to_alias),
-                    };
+                // Build field pairs for JSONB_BUILD_OBJECT
+                let mut field_pairs = self.build_field_pairs(fields, to_alias);
 
-                    let order_by_clause = self.build_jsonb_agg_order_by(to_alias);
-                    let mut selection = format!(
-                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
-                        field_pairs.join(", "),
-                        order_by_clause,
-                        target_table,
-                        to_alias,
-                        standard_where,
-                        join_condition,
-                        to_alias
-                    );
+                // Add concatenated fields if any match this alias
+                self.add_concatenated_field_pairs(&mut field_pairs, to_alias);
 
-                    if join.nested {
-                        let prev_join_to_alias = previous_join
-                            .unwrap()
-                            .field_relation
-                            .to
-                            .alias
-                            .as_deref()
-                            .unwrap_or(&previous_join.unwrap().field_relation.to.entity);
-                        selection = format!(
-                        "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
-                        // JSON_BUILD OBJECT
-                        field_pairs.join(", "),
-                        // ORDER BY
-                        order_by_clause,
-                        // FROM
-                        previous_join.unwrap().field_relation.to.entity,
-                        prev_join_to_alias,
-                        // LEFT JOIN
-                        target_table,
-                        to_alias,
-                        // ON
-                        self.build_join_condition_for_alias(to_alias, join, Some(join)),
-                        // WHERE
-                        standard_where,
-                        // ADDITIONAL WHERE
-                        join_condition,
-                        // selection alias
-                        to_alias
-                    );
-                    }
+                // Build the selection
+                let selection = self.build_join_selection(
+                    join,
+                    previous_join,
+                    to_alias,
+                    target_table,
+                    &field_pairs,
+                    &join_condition,
+                );
 
-                    join_selections.push(selection);
-                } else {
-                    // Handle case where no fields are specified for this alias
-                    join_selections.push(format!("\"{}\".\"id\"", to_alias));
-                }
+                join_selections.push(selection);
+            } else {
+                // Default to ID if no fields specified
+                join_selections.push(format!("\"{}\".\"id\"", to_alias));
+            }
         }
 
         join_selections
+    }
+
+    // Helper method to build field pairs for JSONB_BUILD_OBJECT
+    fn build_field_pairs(&self, fields: &[String], to_alias: &str) -> Vec<String> {
+        fields
+            .iter()
+            .map(|field| {
+                format!(
+                    "'{}', {}",
+                    field,
+                    Self::get_field(to_alias, field, self.request_body.get_date_format())
+                )
+            })
+            .collect()
+    }
+
+    // Helper method to add concatenated field pairs
+    fn add_concatenated_field_pairs(&self, field_pairs: &mut Vec<String>, to_alias: &str) {
+        if !self.request_body.get_concatenate_fields().is_empty() {
+            self.request_body
+                .get_concatenate_fields()
+                .iter()
+                .filter(|field| {
+                    field.aliased_entity.as_deref() == Some(to_alias) || field.entity == to_alias
+                })
+                .for_each(|field| {
+                    let table_name = field
+                        .aliased_entity
+                        .as_deref()
+                        .unwrap_or(field.entity.as_str());
+                    let concatenated_expression = field
+                        .fields
+                        .iter()
+                        .map(|f| {
+                            Self::get_field(table_name, f, self.request_body.get_date_format())
+                        })
+                        .collect::<Vec<_>>()
+                        .join(&format!(" || '{}' || ", field.separator));
+
+                    field_pairs.push(format!(
+                        "'{}', ({})",
+                        field.field_name, concatenated_expression
+                    ));
+                });
+        }
+    }
+
+    // Helper method to build the final join selection
+    fn build_join_selection(
+        &self,
+        join: &Join,
+        previous_join: Option<&Join>,
+        to_alias: &str,
+        target_table: &str,
+        field_pairs: &[String],
+        join_condition: &str,
+    ) -> String {
+        let standard_where = match self.build_system_where_clause(to_alias) {
+            Ok(clause) => clause,
+            Err(_) => format!("({}.tombstone = 0)", to_alias),
+        };
+
+        let order_by_clause = self.build_jsonb_agg_order_by(to_alias);
+
+        if join.nested {
+            let prev_join = previous_join.unwrap();
+            let prev_join_to_alias = prev_join
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&prev_join.field_relation.to.entity);
+
+            format!(
+                "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
+                field_pairs.join(", "),
+                order_by_clause,
+                prev_join.field_relation.to.entity,
+                prev_join_to_alias,
+                target_table,
+                to_alias,
+                self.build_join_condition_for_alias(to_alias, join, Some(join)),
+                standard_where,
+                join_condition,
+                to_alias
+            )
+        } else {
+            format!(
+                "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
+                field_pairs.join(", "),
+                order_by_clause,
+                target_table,
+                to_alias,
+                standard_where,
+                join_condition,
+                to_alias
+            )
+        }
     }
 
     /// Builds ORDER BY clause for JSONB_AGG based on multiple_sort or fallback to order_by/order_direction
