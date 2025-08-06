@@ -36,6 +36,10 @@ pub static DIESEL_TYPE_MAPPINGS: Lazy<HashMap<&'static str, &'static str>> = Laz
     map.insert("array(text())", "Array<Text>");
     map.insert("nullable(array(text()))", "Nullable<Array<Text>>");
     
+    // VarChar types - basic patterns
+         map.insert("varchar()", "Text");
+        map.insert("nullable(varchar())", "Nullable<Text>");
+    
     map
 });
 
@@ -54,6 +58,9 @@ pub static RUST_TYPE_MAPPINGS: Lazy<HashMap<&'static str, &'static str>> = Lazy:
     map.insert("Inet", "std::net::IpAddr");
     map.insert("Float4", "f32");
     map.insert("Float8", "f64");
+    
+    // VarChar types (now converted to Text)
+        // map.insert("Varchar", "String"); // Removed since we convert VarChar to Text
     
     map
 });
@@ -92,6 +99,11 @@ impl FieldTypeParser {
             return Ok(mapped_type.to_string());
         }
         
+        // Handle VarChar with length constraints - convert all to Text
+        if cleaned.starts_with("varchar(") {
+            return Ok("Text".to_string());
+        }
+        
         // Handle complex nested types
         if cleaned.starts_with("nullable(") {
             let inner = Self::extract_inner_type(cleaned, "nullable")?;
@@ -123,6 +135,16 @@ impl FieldTypeParser {
             let inner = &diesel_type[6..diesel_type.len()-1];
             let inner_rust = Self::diesel_to_rust_type(inner)?;
             return Ok(format!("Vec<{}>", inner_rust));
+        }
+        
+        // Handle Varchar with length constraints - convert to String
+        if diesel_type.starts_with("Varchar<") && diesel_type.ends_with(">") {
+            return Ok("String".to_string());
+        }
+        
+        // Handle standalone Varchar
+        if diesel_type == "Varchar" {
+            return Ok("String".to_string());
         }
         
         // Direct mapping

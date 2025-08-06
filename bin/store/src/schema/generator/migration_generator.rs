@@ -309,7 +309,7 @@ impl MigrationGenerator {
         
         let mut parsed_fields = Vec::new();
         for field in &table_def.fields {
-            match field.parse() {
+            match field.parse_for_context(true) { // Use migration context to preserve VARCHAR
                 Ok(parsed) => parsed_fields.push(parsed),
                 Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
             }
@@ -440,21 +440,41 @@ impl MigrationGenerator {
         }
         
         // Convert core type
-        let core_type = match postgres_type {
-            "Text" => "TEXT",
-            "Int4" => "INTEGER",
-            "Int8" => "BIGINT",
-            "BigInt" => "BIGINT",
-            "Bool" => "BOOLEAN",
-            "Timestamp" => "TIMESTAMP",
-            "Timestamptz" => "TIMESTAMPTZ",
-            "Jsonb" => "JSONB",
-            "Inet" => "INET",
-            _ => return Err(format!("Unsupported Diesel type: {}", postgres_type)),
+        let core_type = if postgres_type.contains('<') && postgres_type.ends_with('>') {
+            // Handle generic types with parameters like "Varchar<300>", "Decimal<10,2>", etc.
+            if let Some(angle_pos) = postgres_type.find('<') {
+                let base_type = &postgres_type[..angle_pos];
+                let params = &postgres_type[angle_pos+1..postgres_type.len()-1];
+                
+                match base_type {
+                    "Varchar" => format!("VARCHAR({})", params),
+                    "Char" => format!("CHAR({})", params),
+                    "Decimal" | "Numeric" => format!("DECIMAL({})", params),
+                    _ => return Err(format!("Unsupported generic Diesel type: {}", postgres_type)),
+                }
+            } else {
+                return Err(format!("Invalid generic type format: {}", postgres_type));
+            }
+        } else {
+            match postgres_type {
+                "Text" => "TEXT".to_string(),
+                "Varchar" => "VARCHAR".to_string(),
+                "Char" => "CHAR".to_string(),
+                "Int4" => "INTEGER".to_string(),
+                "Int8" => "BIGINT".to_string(),
+                "BigInt" => "BIGINT".to_string(),
+                "Bool" => "BOOLEAN".to_string(),
+                "Timestamp" => "TIMESTAMP".to_string(),
+                "Timestamptz" => "TIMESTAMPTZ".to_string(),
+                "Jsonb" => "JSONB".to_string(),
+                "Inet" => "INET".to_string(),
+                "Decimal" | "Numeric" => "DECIMAL".to_string(),
+                _ => return Err(format!("Unsupported Diesel type: {}", postgres_type)),
+            }
         };
         
         // Build final type
-        let mut final_type = core_type.to_string();
+        let mut final_type = core_type;
         
         if is_array {
             final_type = format!("{}[]", final_type);
