@@ -43,10 +43,6 @@ impl GeneratorService {
         
         // Process each table definition
         for table_def in &table_definitions {
-            // Generate model
-            let model_content = ModelGenerator::generate_model(&table_def)?;
-            Self::write_model_file(&table_def.name, &model_content)?;
-            
             // Extract indexes and foreign keys from table definition file
             let (indexes, foreign_keys) = {
                 // Find the table definition file to read its content
@@ -83,10 +79,32 @@ impl GeneratorService {
                 }
                 all_changes.extend(changes);
                 
+                // Generate model only when there are schema changes
+                let model_content = ModelGenerator::generate_model(&table_def)?;
+                Self::write_model_file(&table_def.name, &model_content)?;
+                info!("Regenerated model for table '{}' due to schema changes", table_def.name);
+                
                 // Update schema.rs
                 SchemaGenerator::update_schema_file(table_def)?;
             } else {
-                debug!("Table '{}': No schema changes detected", table_def.name);
+                // Check if model file exists, if not, create it (for new tables)
+                let singular_name = to_singular(&table_def.name);
+                let model_file_path = Path::new("src/models").join(format!("{}_model.rs", singular_name));
+                
+                if !model_file_path.exists() {
+                    let model_content = ModelGenerator::generate_model(&table_def)?;
+                    Self::write_model_file(&table_def.name, &model_content)?;
+                    info!("Created initial model for new table '{}'", table_def.name);
+                } else {
+                    // Check if field ordering has changed between schema and model
+                    if Self::has_field_ordering_changed(&table_def)? {
+                        let model_content = ModelGenerator::generate_model(&table_def)?;
+                        Self::write_model_file(&table_def.name, &model_content)?;
+                        info!("Regenerated model for table '{}' due to field ordering mismatch with schema", table_def.name);
+                    } else {
+                        debug!("Table '{}': Schema and model field ordering match, skipping regeneration", table_def.name);
+                    }
+                }
             }
         }
         
@@ -118,6 +136,127 @@ impl GeneratorService {
             },
             Err(_) => false,
         }
+    }
+    
+    /// Check if field ordering has changed by comparing current model with expected ordering
+    fn has_field_ordering_changed(table_def: &TableDefinition) -> Result<bool, String> {
+        let singular_name = to_singular(&table_def.name);
+        let model_file_path = Path::new("src/models").join(format!("{}_model.rs", singular_name));
+        
+        if !model_file_path.exists() {
+            return Ok(true); // Model doesn't exist, needs to be created
+        }
+        
+        // Read existing model file
+        let existing_content = fs::read_to_string(&model_file_path)
+            .map_err(|e| format!("Failed to read existing model file: {}", e))?;
+        
+        // Get expected field ordering using the same logic as generators
+        let expected_fields = Self::get_expected_field_order(table_def)?;
+        let model_fields = Self::extract_field_order_from_model(&existing_content);
+        
+        // Compare expected field order with current model field order
+        Ok(expected_fields != model_fields)
+    }
+    
+    /// Get expected field ordering using the same logic as generators (system fields first, then entity fields)
+    fn get_expected_field_order(table_def: &TableDefinition) -> Result<Vec<String>, String> {
+        let system_field_names = Self::get_system_field_names()?;
+        let mut ordered_fields = Vec::new();
+        
+        // Parse all fields from table definition
+        let mut parsed_fields = Vec::new();
+        for field in &table_def.fields {
+            match field.parse() {
+                Ok(parsed) => parsed_fields.push(parsed),
+                Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
+            }
+        }
+        
+        // First, add system fields in the order defined by system_fields macro
+        for system_field_name in &system_field_names {
+            if let Some(field) = parsed_fields.iter().find(|f| f.name == *system_field_name) {
+                ordered_fields.push(field.name.clone());
+            }
+        }
+        
+        // Then, add non-system fields (entity-specific fields)
+        for field in &parsed_fields {
+            if !system_field_names.contains(&field.name) {
+                ordered_fields.push(field.name.clone());
+            }
+        }
+        
+        Ok(ordered_fields)
+    }
+    
+    /// Get system field names from the system_fields macro
+    fn get_system_field_names() -> Result<Vec<String>, String> {
+        let system_fields_path = "src/schema/generator/system_fields.rs";
+        let content = fs::read_to_string(system_fields_path)
+            .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
+        
+        // Find the macro definition
+        let macro_start = content.find("() => {")
+            .ok_or("Could not find system_fields macro definition")?;
+        let macro_content_start = macro_start + "() => {".len();
+        
+        // Find the closing brace of the macro
+        let mut brace_count = 1;
+        let mut macro_end = macro_content_start;
+        let chars: Vec<char> = content.chars().collect();
+        
+        for i in macro_content_start..chars.len() {
+            match chars[i] {
+                '{' => brace_count += 1,
+                '}' => {
+                    brace_count -= 1;
+                    if brace_count == 0 {
+                        macro_end = i;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        
+        let macro_content = &content[macro_content_start..macro_end];
+        let mut field_names = Vec::new();
+        
+        for line in macro_content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with("//") {
+                continue;
+            }
+            
+            // Look for field definitions (field_name: type)
+            if let Some(colon_pos) = line.find(':') {
+                let field_name = line[..colon_pos].trim();
+                if !field_name.is_empty() {
+                    field_names.push(field_name.to_string());
+                }
+            }
+        }
+        
+        Ok(field_names)
+    }
+    
+    /// Extract field order from model content for comparison
+    fn extract_field_order_from_model(content: &str) -> Vec<String> {
+        let mut fields = Vec::new();
+        
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with("pub ") && line.contains(":") && !line.contains("struct") {
+                if let Some(field_name) = line.split_whitespace().nth(1) {
+                    if let Some(name_only) = field_name.split(':').next() {
+                        fields.push(name_only.to_string());
+                    }
+                }
+            }
+        }
+        
+        fields
     }
     
     /// Write model file to the models directory
@@ -511,11 +650,11 @@ impl GeneratorService {
                                 "Nullable<Timestamptz>".to_string()
                             } else if rest.contains("nullable(array(text()))") {
                                 "Nullable<Array<Text>>".to_string()
-                            } else if rest.contains("nullable(DieselType::VarChar") {
-                                // Parse VarChar with length for migrations, convert to Text for schema
-                                if let Some(start) = rest.find("VarChar(Some(") {
+                            } else if rest.contains("nullable(varchar(Some(") {
+                                // Parse varchar(Some(300)) format
+                                if let Some(start) = rest.find("varchar(Some(") {
                                     if let Some(end) = rest[start..].find("))") {
-                                        let length_part = &rest[start + 13..start + end]; // Skip "VarChar(Some("
+                                        let length_part = &rest[start + 13..start + end]; // Skip "varchar(Some("
                                         format!("Nullable<Varchar<{}>>", length_part)
                                     } else {
                                         "Nullable<Varchar>".to_string()
@@ -525,6 +664,18 @@ impl GeneratorService {
                                 }
                             } else {
                                 "Nullable<Text>".to_string() // default
+                            }
+                        } else if rest.contains("varchar(Some(") {
+                            // Parse varchar(Some(300)) format for non-nullable
+                            if let Some(start) = rest.find("varchar(Some(") {
+                                if let Some(end) = rest[start..].find("))") {
+                                    let length_part = &rest[start + 13..start + end]; // Skip "varchar(Some("
+                                    format!("Varchar<{}>", length_part)
+                                } else {
+                                    "Varchar".to_string()
+                                }
+                            } else {
+                                "Varchar".to_string()
                             }
                         } else if rest.contains("integer()") {
                             "Int4".to_string()

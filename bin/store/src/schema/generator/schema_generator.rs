@@ -49,11 +49,11 @@ impl SchemaGenerator {
                 for field in &table_def.fields {
                     if Self::is_system_field(&field.name) && !existing_fields.contains(&field.name) {
                         changes.push(SchemaChange {
-                            table_name: table_def.name.clone(),
-                            change_type: SchemaChangeType::NewField,
-                            field_name: Some(field.name.clone()),
-                            field_definition: Some(field.diesel_type.clone()),
-                        });
+                        table_name: table_def.name.clone(),
+                        change_type: SchemaChangeType::NewField,
+                        field_name: Some(field.name.clone()),
+                        field_definition: Some(field.migration_type.as_ref().unwrap_or(&field.diesel_type).clone()),
+                    });
                     }
                 }
             }
@@ -69,7 +69,7 @@ impl SchemaGenerator {
                         table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::NewField,
                         field_name: Some(field.name.clone()),
-                        field_definition: Some(field.diesel_type.clone()),
+                        field_definition: Some(field.migration_type.as_ref().unwrap_or(&field.diesel_type).clone()),
                     });
                 }
             }
@@ -457,49 +457,6 @@ impl SchemaGenerator {
             .contains(&field_name.to_string())
     }
 
-    /// Dynamically extracts system field names from the system_fields macro
-    /// Convert FieldTypeInfo to a field definition string for schema generation (converts VARCHAR to Text)
-    fn field_type_info_to_definition(field_type_info: &FieldTypeInfo) -> String {
-        // Convert database types to Diesel types
-        let diesel_type = match field_type_info.field_type.to_lowercase().as_str() {
-            "bool" | "boolean" => "Bool",
-            "text" => "Text",
-            "char" => "Text",
-            "integer" | "int4" => "Int4",
-            "bigint" | "int8" => "Int8",
-            "float" | "float4" => "Float4",
-            "float8" | "double" => "Float8",
-            "timestamp" | "timestamptz" => "Timestamp",
-            "jsonb" => "Jsonb",
-            "json" => "Json",
-            "inet" => "Inet",
-            "uuid" => "Uuid",
-            "bytea" => "Bytea",
-            "numeric" | "decimal" => "Numeric",
-            // Handle VARCHAR with length constraints - convert to Text for schema
-            t if t.starts_with("varchar(") => {
-                // Convert all VARCHAR types to Text for schema
-                "Text"
-            },
-            "varchar" => "Text", // varchar without length - convert to Text
-            _ => &field_type_info.field_type, // fallback to original
-        };
-        
-        let mut definition = diesel_type.to_string();
-        
-        // Handle nullable wrapper
-        if field_type_info.nullable {
-            definition = format!("Nullable<{}>", definition);
-        }
-        
-        // Handle array wrapper
-        if field_type_info.is_array {
-            definition = format!("Array<{}>", definition);
-        }
-        
-        definition
-    }
-
     /// Convert FieldTypeInfo to a field definition string for migration generation (preserves VARCHAR)
     fn field_type_info_to_migration_definition(field_type_info: &FieldTypeInfo) -> String {
         // Convert database types to Diesel types, preserving VARCHAR for migrations
@@ -721,6 +678,9 @@ impl SchemaGenerator {
             }
         }
         
+        // Order fields properly (system fields first, then entity fields)
+        let ordered_fields = Self::order_fields_properly(&[], &parsed_fields)?;
+        
         // Collect primary key fields
         let primary_key_fields: Vec<&str> = table_def.fields
             .iter()
@@ -739,16 +699,16 @@ impl SchemaGenerator {
             }
         } else {
             // Fallback: assume 'id' if present, otherwise first field
-            parsed_fields.iter()
+            ordered_fields.iter()
                 .find(|f| f.name == "id")
                 .map(|f| f.name.as_str())
-                .unwrap_or(&parsed_fields[0].name)
+                .unwrap_or(&ordered_fields[0].name)
         };
         
         definition.push_str(&format!("table! {{\n    {}({}) {{\n", table_def.name, primary_key));
         
-        // Add all fields
-        for field in &parsed_fields {
+        // Add all fields in proper order
+        for field in &ordered_fields {
             definition.push_str(&format!("        {} -> {},\n", field.name, field.field_type));
         }
         

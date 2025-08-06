@@ -1,6 +1,7 @@
 use crate::schema::generator::field_definition::{ParsedField, TableDefinition};
 use crate::schema::generator::utils::{FieldTypeParser, StringUtils};
 use crate::utils::utils::to_singular;
+use std::fs;
 
 pub struct ModelGenerator;
 
@@ -17,8 +18,11 @@ impl ModelGenerator {
             }
         }
         
+        // Order fields properly (system fields first, then entity-specific fields)
+        let ordered_fields = Self::order_fields_properly(&parsed_fields)?;
+        
         // Generate the model content
-        let model_content = Self::generate_model_content(&table_def.name, &parsed_fields)?;
+        let model_content = Self::generate_model_content(&table_def.name, &ordered_fields)?;
         Ok(model_content)
     }
     
@@ -75,8 +79,84 @@ impl ModelGenerator {
         Ok(content)
     }
     
-
+    /// Order fields properly according to system fields macro and entity-specific fields
+    fn order_fields_properly(fields: &[ParsedField]) -> Result<Vec<ParsedField>, String> {
+        let system_field_names = Self::get_system_field_names()?;
+        let mut ordered_fields = Vec::new();
+        
+        // First, add system fields in the order defined by system_fields macro
+        for system_field_name in &system_field_names {
+            if let Some(field) = fields.iter().find(|f| f.name == *system_field_name) {
+                ordered_fields.push(field.clone());
+            }
+        }
+        
+        // Then, add non-system fields (entity-specific fields)
+        for field in fields {
+            if !system_field_names.contains(&field.name) {
+                ordered_fields.push(field.clone());
+            }
+        }
+        
+        Ok(ordered_fields)
+    }
     
+    /// Get system field names from the system_fields macro
+    fn get_system_field_names() -> Result<Vec<String>, String> {
+        let system_fields_path = "src/schema/generator/system_fields.rs";
+        let content = fs::read_to_string(system_fields_path)
+            .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
+        
+        // Find the macro definition
+        let macro_start = content.find("() => {")
+            .ok_or("Could not find system_fields macro definition")?;
+        let macro_content_start = macro_start + "() => {".len();
+        
+        // Find the closing brace of the macro
+        let mut brace_count = 1;
+        let mut macro_end = macro_content_start;
+        let chars: Vec<char> = content.chars().collect();
+        
+        for i in macro_content_start..chars.len() {
+            match chars[i] {
+                '{' => brace_count += 1,
+                '}' => {
+                    brace_count -= 1;
+                    if brace_count == 0 {
+                        macro_end = i;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        
+        if brace_count != 0 {
+            return Err("Could not find closing brace for system_fields macro".to_string());
+        }
+        
+        let macro_content = &content[macro_content_start..macro_end];
+        
+        // Extract field names from the macro content
+        let mut field_names = Vec::new();
+        for line in macro_content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with("//") {
+                continue;
+            }
+            
+            // Look for field definitions (field_name: type)
+            if let Some(colon_pos) = line.find(':') {
+                let field_name = line[..colon_pos].trim();
+                if !field_name.is_empty() {
+                    field_names.push(field_name.to_string());
+                }
+            }
+        }
+        
+        Ok(field_names)
+    }
+
     fn extract_non_chrono_dependencies(rust_type: &str) -> Vec<String> {
         let mut dependencies = Vec::new();
         

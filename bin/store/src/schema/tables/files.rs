@@ -1,9 +1,3 @@
-
-
-
-
-
-
 use crate::schema::generator::diesel_schema_definition::{
     DieselTableDefinition, types::*
 };
@@ -20,7 +14,7 @@ define_table_schema! {
         system_fields!(),
         
         // File-specific fields
-        image_url: nullable(DieselType::VarChar(Some(300))),
+        image_url: nullable(varchar(Some(300))),
         fieldname: nullable(text()), 
         originalname: nullable(text()), 
         encoding: nullable(text()), 

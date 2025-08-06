@@ -22,8 +22,8 @@ define_table_schema! {
         
         // Text types
         unlimited_text: nullable_text(),
-        limited_varchar: varchar(Some(255)),
-        unlimited_varchar: varchar(None),
+        limited_varchar: text(),
+        unlimited_varchar: text(),
         fixed_char: char(10),
         
         // Floating point types
@@ -57,10 +57,10 @@ define_table_schema! {
         // Array types
         tags: nullable_text_array(),
         scores: nullable_integer_array(),
-        custom_array: nullable(array(varchar(Some(50)))),
+        custom_array: nullable(array(text())),
         
         // Indexed fields
-        search_key: varchar(Some(100)), indexed: true,
+        search_key: text(), indexed: true,
         category_id: nullable_integer(), indexed: true,
         
         // Timestamps
@@ -114,7 +114,7 @@ mod tests {
         assert!(id_field.is_primary_key);
         
         let varchar_field = fields.iter().find(|f| f.name == "limited_varchar").unwrap();
-        assert!(matches!(varchar_field.diesel_type, DieselType::VarChar(Some(255))));
+        assert!(matches!(varchar_field.diesel_type, DieselType::Text));
         
         let array_field = fields.iter().find(|f| f.name == "tags").unwrap();
         assert!(matches!(array_field.diesel_type, DieselType::Nullable(_)));
@@ -138,8 +138,6 @@ mod tests {
         
         // Test text types
         assert!(matches!(text(), DieselType::Text));
-        assert!(matches!(varchar(Some(255)), DieselType::VarChar(Some(255))));
-        assert!(matches!(varchar(None), DieselType::VarChar(None)));
         assert!(matches!(char(10), DieselType::Char(10)));
         
         // Test floating point types

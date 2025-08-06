@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.37
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator***: Fixed field ordering in schema and model generation
+  - System fields now correctly appear first in generated schemas
+  - Fixed VARCHAR parsing issue causing double parentheses in migrations
+  - Manually corrected field order in `files` and `test_hypertable` schemas
+---
+
 ## 0.1.36
 ### Author
 Kashan

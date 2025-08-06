@@ -47,7 +47,6 @@ pub enum DieselType {
     
     // Text types
     Text,
-    VarChar(Option<u32>),
     Char(u32),
     
     // Floating point
@@ -337,8 +336,7 @@ impl DieselType {
             DieselType::Integer => "Int4".to_string(),
             DieselType::BigInt => "Int8".to_string(),
             DieselType::Text => "Text".to_string(),
-            DieselType::VarChar(Some(len)) => format!("Varchar<{}>" , len),
-            DieselType::VarChar(None) => "Varchar".to_string(),
+
             DieselType::Char(len) => format!("Char<{}>", len),
             DieselType::Float => "Float4".to_string(),
             DieselType::Double => "Float8".to_string(),
@@ -367,7 +365,7 @@ impl DieselType {
             DieselType::SmallInt => "i16".to_string(),
             DieselType::Integer => "i32".to_string(),
             DieselType::BigInt => "i64".to_string(),
-            DieselType::Text | DieselType::VarChar(_) | DieselType::Char(_) => "String".to_string(),
+            DieselType::Text | DieselType::Char(_) => "String".to_string(),
             DieselType::Float => "f32".to_string(),
             DieselType::Double => "f64".to_string(),
             DieselType::Numeric => "bigdecimal::BigDecimal".to_string(),
@@ -395,8 +393,7 @@ impl DieselType {
             DieselType::Integer => "INTEGER".to_string(),
             DieselType::BigInt => "BIGINT".to_string(),
             DieselType::Text => "TEXT".to_string(),
-            DieselType::VarChar(Some(len)) => format!("VARCHAR({})", len),
-            DieselType::VarChar(None) => "VARCHAR".to_string(),
+
             DieselType::Char(len) => format!("CHAR({})", len),
             DieselType::Float => "REAL".to_string(),
             DieselType::Double => "DOUBLE PRECISION".to_string(),
@@ -446,7 +443,7 @@ pub mod types {
     
     // Text types
     pub fn text() -> DieselType { DieselType::Text }
-    pub fn varchar(length: Option<u32>) -> DieselType { DieselType::VarChar(length) }
+
     pub fn char(length: u32) -> DieselType { DieselType::Char(length) }
     
     // Floating point types

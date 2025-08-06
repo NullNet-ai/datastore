@@ -16,7 +16,8 @@ define_table_schema! {
         // Account signatures specific fields
         account_profile_id: nullable(text()),
         name: nullable(text()),
-        signature: nullable(DieselType::VarChar(Some(300))),
+        signature: nullable(varchar(Some(300))),
+
     },
     indexes: {
         // System field indexes
