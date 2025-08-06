@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.39
+### Author
+Kashan
+
+### Features
+- ***Git Hooks***: Implemented automatic code formatting enforcement
+  - Added pre-push hook that runs `cargo fmt --check` before every push
+  - Added post-checkout hook for automatic setup on clone/branch switch
+  - Created setup script for easy hook installation
+  - Added Makefile targets: `fmt`, `fmt-check`, and `setup-hooks`
+  - Self-sustaining system ensures all developers get formatting enforcement automatically
+---
+
 ## 0.1.38
 ### Author
 Kashan
