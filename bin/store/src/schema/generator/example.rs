@@ -85,8 +85,13 @@ define_table_schema! {
         }
     },
     foreign_keys: {
-        category_id -> "categories"."id",
-        on_delete: "SET NULL"
+        fk_comprehensive_category_id: {
+            columns: ["category_id"],
+            foreign_table: "categories",
+            foreign_columns: ["id"],
+            on_delete: "SET NULL",
+            on_update: "no action"
+        }
     }
 }
 
