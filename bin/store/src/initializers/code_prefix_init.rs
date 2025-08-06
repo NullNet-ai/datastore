@@ -41,7 +41,7 @@ impl CodePrefixInitializer {
 
         CodePrefixInitializer { prefixes }
     }
-    
+
     /// Inserts all prefix configurations into the counter table in the database
     /// If a record with the same entity already exists, it will update the prefix and default_code
     pub async fn initialize(&self) -> Result<(), ApiError> {
@@ -56,7 +56,8 @@ impl CodePrefixInitializer {
                 .do_update()
                 .set((
                     schema::counters::prefix.eq(diesel::upsert::excluded(schema::counters::prefix)),
-                    schema::counters::default_code.eq(diesel::upsert::excluded(schema::counters::default_code)),
+                    schema::counters::default_code
+                        .eq(diesel::upsert::excluded(schema::counters::default_code)),
                 ))
                 .execute(&mut conn)
                 .await

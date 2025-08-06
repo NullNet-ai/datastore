@@ -1,6 +1,6 @@
 /// System fields that are common across most tables
 /// These can be destructured into table definitions to avoid repetition
-/// 
+///
 /// Default values:
 /// - tombstone: 0 (not deleted)
 /// - status: "Active"

@@ -559,7 +559,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             .iter()
                             .for_each(|field| {
                                 // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
-                                if field.aliased_entity.as_deref() == Some(to_alias)
+                                if field.aliased_entity.as_ref() == Some(to_alias)
                                     || field.entity == *to_alias
                                 {
                                     let table_name =

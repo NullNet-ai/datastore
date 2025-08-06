@@ -1,11 +1,11 @@
 use crate::proto_generator::{Case, CaseConvert};
 use crate::schema::verify::field_exists_in_table;
 use crate::utils::utils::{parse_tables, to_singular};
+use log::{error, info, warn};
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
-use log::{info, warn, error};
 
 pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<()> {
     info!("Generating Table enum from schema file: {}", schema_path);
@@ -253,10 +253,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "    default_code_param: i32,")?;
     writeln!(file, ") -> Result<String, DieselError> {{")?;
     writeln!(file, "")?;
-    writeln!(
-        file,
-        "    let mut conn = db::get_async_connection().await;"
-    )?;
+    writeln!(file, "    let mut conn = db::get_async_connection().await;")?;
     writeln!(file, "")?;
     writeln!(file, "    let new_counter = CounterModel {{")?;
     writeln!(file, "        entity: table.to_string(),")?;

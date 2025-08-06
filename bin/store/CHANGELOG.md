@@ -5,6 +5,42 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.38
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator***: Fixed formatting issues in schema generation
+  - Enhanced `detect_field_indentation` function to properly detect existing indentation patterns
+  - Fixed `add_fields_to_existing_table` to ensure proper table structure reconstruction
+  - Corrected closing brace indentation in table definitions
+  - Resolved formatting issues when adding new fields to existing tables
+  - All table fields now consistently use 8-space indentation with proper 4-space closing braces
+---
+
+## 0.1.37
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator***: Fixed field ordering in schema and model generation
+  - System fields now correctly appear first in generated schemas
+  - Fixed VARCHAR parsing issue causing double parentheses in migrations
+  - Manually corrected field order in `files` and `test_hypertable` schemas
+---
+
+## 0.1.36
+### Author
+Kashan
+
+### Added
+- ***Schema Generator***: Enhanced VARCHAR type handling in schema generation
+  - Added support for preserving VARCHAR lengths in migrations while converting to Text in schema
+  - New tables: `account_phone_numbers`, `account_signatures`
+  - Added fields to `account_profile`: phone number and signature support
+  - Improved field type conversion for better Diesel compatibility
+---
+
 ## 0.1.35
 ### Author
 Bert

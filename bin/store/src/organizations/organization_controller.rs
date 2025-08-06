@@ -1,4 +1,4 @@
-use actix_web::{web, HttpRequest, HttpResponse, Responder, HttpMessage};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
 use crate::auth::auth_service::verify;
@@ -159,7 +159,10 @@ impl OrganizationsController {
                     let updated = crate::auth::structs::Session {
                         token: token.clone(),
                         origin: Some(Origin {
-                            user_agent: req.headers().get("user-agent").map(|v| v.to_str().unwrap_or_default().to_string()),
+                            user_agent: req
+                                .headers()
+                                .get("user-agent")
+                                .map(|v| v.to_str().unwrap_or_default().to_string()),
                             host: req.connection_info().host().to_string(),
                             url: req.path().to_string(),
                         }),
@@ -210,35 +213,33 @@ impl OrganizationsController {
             .headers()
             .get("authorization")
             .and_then(|h| h.to_str().ok());
-        
+
         let token_from_header = extract_token(auth_header);
         let token_from_query = query.get("t").cloned();
-        
+
         let token = token_from_query.or(token_from_header);
-        
+
         match token {
-            Some(t) => {
-                match verify(&t) {
-                    Ok(result) => {
-                        let success_response = ApiResponse {
-                            success: true,
-                            message: "Token Verified".to_string(),
-                            count: 1,
-                            data: vec![serde_json::to_value(result).unwrap_or_default()],
-                        };
-                        HttpResponse::Ok().json(success_response)
-                    }
-                    Err(err) => {
-                        let error_response = ApiResponse {
-                            success: false,
-                            message: format!("Token Verification Failed: {}", err),
-                            count: 0,
-                            data: vec![],
-                        };
-                        HttpResponse::BadRequest().json(error_response)
-                    }
+            Some(t) => match verify(&t) {
+                Ok(result) => {
+                    let success_response = ApiResponse {
+                        success: true,
+                        message: "Token Verified".to_string(),
+                        count: 1,
+                        data: vec![serde_json::to_value(result).unwrap_or_default()],
+                    };
+                    HttpResponse::Ok().json(success_response)
                 }
-            }
+                Err(err) => {
+                    let error_response = ApiResponse {
+                        success: false,
+                        message: format!("Token Verification Failed: {}", err),
+                        count: 0,
+                        data: vec![],
+                    };
+                    HttpResponse::BadRequest().json(error_response)
+                }
+            },
             None => {
                 let error_response = ApiResponse {
                     success: false,

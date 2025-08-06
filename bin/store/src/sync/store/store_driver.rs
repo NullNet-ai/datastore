@@ -7,7 +7,6 @@ use pluralizer::pluralize;
 use serde_json::json;
 use serde_json::{Map, Value};
 
-
 pub async fn apply(
     tx: &mut AsyncPgConnection,
     message: &CrdtMessageModel,
@@ -29,8 +28,6 @@ pub async fn apply(
         }
     };
 
-
-    
     // Convert message value directly to JSON
     let json_value = parse_message_value_to_json(
         &message.value,
@@ -39,7 +36,7 @@ pub async fn apply(
         field_type.is_json,
         column,
     )?;
-    
+
     // Handle hypertable timestamp
     let mut json_obj = serde_json::Map::new();
     let clean_id = row.trim_matches('"').to_string();
@@ -73,7 +70,6 @@ pub async fn apply(
         json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
 
         let json_values = serde_json::Value::Object(json_obj);
-
 
         match table.upsert_record_with_id_timestamp(tx, json_values).await {
             Ok(_) => return Ok(()),
@@ -125,7 +121,10 @@ fn parse_message_value_to_json(
                     // Fallback to PostgreSQL array format
                     let processed_array = process_pg_array(value)?;
                     serde_json::Value::Array(
-                        processed_array.into_iter().map(serde_json::Value::String).collect()
+                        processed_array
+                            .into_iter()
+                            .map(serde_json::Value::String)
+                            .collect(),
                     )
                 }
             }
@@ -133,7 +132,10 @@ fn parse_message_value_to_json(
             // PostgreSQL array format
             let processed_array = process_pg_array(value)?;
             serde_json::Value::Array(
-                processed_array.into_iter().map(serde_json::Value::String).collect()
+                processed_array
+                    .into_iter()
+                    .map(serde_json::Value::String)
+                    .collect(),
             )
         } else {
             // Single value as array
@@ -151,11 +153,11 @@ fn parse_message_value_to_json(
                 Err(_) => {
                     // If it's a quoted string, try to unquote it
                     if value.starts_with('"') && value.ends_with('"') && value.len() > 1 {
-                        let unquoted = &value[1..value.len()-1];
+                        let unquoted = &value[1..value.len() - 1];
                         // Try parsing the unquoted value
                         match serde_json::from_str::<serde_json::Value>(unquoted) {
                             Ok(parsed) => parsed,
-                            Err(_) => serde_json::Value::String(unquoted.to_string())
+                            Err(_) => serde_json::Value::String(unquoted.to_string()),
                         }
                     } else {
                         serde_json::Value::String(value.to_string())
@@ -209,10 +211,6 @@ fn parse_message_value_to_json(
     // For all other types, return the JSON value as-is
     Ok(json_value)
 }
-
-
-
-
 
 pub fn clean_extra_quotes(mut map: Map<String, Value>) -> Map<String, Value> {
     for (_key, value) in map.iter_mut() {

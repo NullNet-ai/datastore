@@ -9,9 +9,9 @@ use futures::future::{ok, Ready};
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
 
-use crate::auth::structs::{Session, Claims, Origin};
-use crate::utils::utils::time_string_to_ms;
 use super::session_core::SessionManager;
+use crate::auth::structs::{Claims, Origin, Session};
+use crate::utils::utils::time_string_to_ms;
 
 // Just a marker type
 pub struct SessionMiddleware;
@@ -99,7 +99,7 @@ where
                 .headers()
                 .get(session_manager.session_header())
                 .and_then(|h| h.to_str().ok());
-            
+
             let cookie_value = req
                 .cookie(session_manager.cookie_name())
                 .map(|c| c.value().to_string());
@@ -137,11 +137,14 @@ where
                     .http_only(cookie_http_only);
 
                 // Set cookie expiration if max_age is provided
-                let cookie = if let Ok(max_age) = time_string_to_ms(session_manager.cookie_max_age()) {
-                    cookie.max_age(actix_web::cookie::time::Duration::milliseconds(max_age as i64))
-                } else {
-                    cookie
-                };
+                let cookie =
+                    if let Ok(max_age) = time_string_to_ms(session_manager.cookie_max_age()) {
+                        cookie.max_age(actix_web::cookie::time::Duration::milliseconds(
+                            max_age as i64,
+                        ))
+                    } else {
+                        cookie
+                    };
 
                 res.response_mut().add_cookie(&cookie.finish())?;
             }
@@ -194,26 +197,32 @@ impl Default for GrpcSessionInterceptor {
 impl Interceptor for GrpcSessionInterceptor {
     fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
         let metadata = request.metadata();
-        
+
         // Log all headers for debugging
         log::debug!("gRPC Request headers: {:?}", metadata);
-        
+
         // Extract session ID from header
         let session_header_value = metadata
             .get(self.session_manager.session_header())
             .and_then(|v| v.to_str().ok());
-        
-        log::debug!("Session header '{}' value: {:?}", self.session_manager.session_header(), session_header_value);
-        
+
+        log::debug!(
+            "Session header '{}' value: {:?}",
+            self.session_manager.session_header(),
+            session_header_value
+        );
+
         // For gRPC, we don't have cookies, so we only check headers
-        let session_id = self.session_manager.extract_session_id(session_header_value, None);
-        
+        let session_id = self
+            .session_manager
+            .extract_session_id(session_header_value, None);
+
         log::debug!("Extracted/Generated session ID: {}", session_id);
-        
+
         // Store session ID in request extensions for later async loading
         // This avoids the runtime panic from calling block_on in an async context
         request.extensions_mut().insert(session_id);
-        
+
         Ok(request)
     }
 }
@@ -279,31 +288,31 @@ pub fn populate_session_with_auth_data(
 ) {
     // Update session with token
     session.token = token.to_string();
-    
+
     // Update session with user data from claims
     session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
     session.user.is_root_user = claims.account.is_root_account;
     session.user.account_id = claims.account.account_id.clone();
-    
+
     // Set origin
     session.origin = Some(origin);
 }
 
 /// Load and populate session with auth data for gRPC requests
 /// This function centralizes session management logic similar to HTTP middleware
-pub async fn load_and_populate_session_for_grpc<T>(
-    request: &tonic::Request<T>,
-) -> Option<Session> {
+pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) -> Option<Session> {
     // Extract session ID from interceptor
     let session_id = request.extensions().get::<String>().cloned()?;
-    
+
     let session_manager = SessionManager::with_default_config();
     let mut session = session_manager.get_or_create_session(&session_id).await;
-    
+
     // Update session with auth data if available (similar to HTTP middleware)
     if let (Some(auth_token), Some(claims)) = (
-        request.extensions().get::<crate::middlewares::auth_middleware::AuthToken>(),
-        request.extensions().get::<Claims>()
+        request
+            .extensions()
+            .get::<crate::middlewares::auth_middleware::AuthToken>(),
+        request.extensions().get::<Claims>(),
     ) {
         // Create gRPC-specific origin
         let origin = Origin {
@@ -311,10 +320,10 @@ pub async fn load_and_populate_session_for_grpc<T>(
             host: "grpc".to_string(),
             url: "grpc://".to_string(),
         };
-        
+
         // Use common function to populate session
         populate_session_with_auth_data(&mut session, &auth_token.0, claims, origin);
     }
-    
+
     Some(session)
 }

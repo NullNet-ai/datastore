@@ -5,20 +5,20 @@ use serde::{Deserialize, Serialize};
 pub trait DieselTableDefinition {
     /// Get the table name
     fn table_name() -> &'static str;
-    
+
     /// Get all field definitions for this table
     fn field_definitions() -> Vec<DieselFieldDefinition>;
-    
+
     /// Get indexes for this table
     fn indexes() -> Vec<IndexDefinition> {
         Vec::new()
     }
-    
+
     /// Get foreign key constraints
     fn foreign_keys() -> Vec<ForeignKeyDefinition> {
         Vec::new()
     }
-    
+
     /// Check if this table should be a hypertable
     fn is_hypertable() -> bool {
         false
@@ -44,44 +44,43 @@ pub enum DieselType {
     SmallInt,
     Integer,
     BigInt,
-    
+
     // Text types
     Text,
-    VarChar(Option<u32>),
     Char(u32),
-    
+
     // Floating point
     Float,
     Double,
     Numeric,
-    
+
     // Boolean
     Bool,
-    
+
     // Date/Time types
     Date,
     Time,
     Timestamp,
     Timestamptz,
-    
+
     // JSON types
     Json,
     Jsonb,
-    
+
     // Network types
     Inet,
     Cidr,
     MacAddr,
-    
+
     // Array types
     Array(Box<DieselType>),
-    
+
     // Binary
     Binary,
-    
+
     // UUID
     Uuid,
-    
+
     // Nullable wrapper
     Nullable(Box<DieselType>),
 }
@@ -161,11 +160,11 @@ macro_rules! define_table_schema {
             fn table_name() -> &'static str {
                 $crate::extract_filename!()
             }
-            
+
             fn is_hypertable() -> bool {
                 $crate::define_table_schema!(@default_hypertable $($is_hypertable)?)
             }
-            
+
             fn field_definitions() -> Vec<DieselFieldDefinition> {
                 vec![
                     $(
@@ -181,7 +180,7 @@ macro_rules! define_table_schema {
                     )*
                 ]
             }
-            
+
             $(
                 fn indexes() -> Vec<IndexDefinition> {
                     vec![
@@ -196,7 +195,7 @@ macro_rules! define_table_schema {
                     ]
                 }
             )?
-            
+
             $(
                 fn foreign_keys() -> Vec<ForeignKeyDefinition> {
                     vec![
@@ -214,7 +213,7 @@ macro_rules! define_table_schema {
             )?
         }
     };
-    
+
     // Original variant with explicit table name
     (
         table_name: $table_name:literal,
@@ -248,11 +247,11 @@ macro_rules! define_table_schema {
             fn table_name() -> &'static str {
                 $table_name
             }
-            
+
             fn is_hypertable() -> bool {
                 $crate::define_table_schema!(@default_hypertable $($is_hypertable)?)
             }
-            
+
             fn field_definitions() -> Vec<DieselFieldDefinition> {
                 vec![
                     $(
@@ -268,7 +267,7 @@ macro_rules! define_table_schema {
                     )*
                 ]
             }
-            
+
             $(
                 fn indexes() -> Vec<IndexDefinition> {
                     vec![
@@ -283,7 +282,7 @@ macro_rules! define_table_schema {
                     ]
                 }
             )?
-            
+
             $(
                 fn foreign_keys() -> Vec<ForeignKeyDefinition> {
                     vec![
@@ -301,29 +300,29 @@ macro_rules! define_table_schema {
             )?
         }
     };
-    
+
     // Helper macros for default values
     (@default_pk) => { false };
     (@default_pk $val:expr) => { $val };
-    
+
     (@default_indexed) => { false };
     (@default_indexed $val:expr) => { $val };
-    
+
     (@default_migration_nullable) => { true };
     (@default_migration_nullable $val:expr) => { $val };
-    
+
     (@default_val) => { None };
     (@default_val $val:expr) => { Some($val.to_string()) };
-    
+
     (@index_type) => { None };
     (@index_type $val:expr) => { Some($val.to_string()) };
-    
+
     (@fk_action) => { None };
     (@fk_action $val:expr) => { Some($val.to_string()) };
-    
+
     (@default_hypertable) => { false };
     (@default_hypertable $val:expr) => { $val };
-    
+
     (@is_nullable DieselType::Nullable($_:expr)) => { true };
     (@is_nullable $_:expr) => { false };
 }
@@ -337,8 +336,7 @@ impl DieselType {
             DieselType::Integer => "Int4".to_string(),
             DieselType::BigInt => "Int8".to_string(),
             DieselType::Text => "Text".to_string(),
-            DieselType::VarChar(Some(len)) => format!("Varchar<{}>" , len),
-            DieselType::VarChar(None) => "Varchar".to_string(),
+
             DieselType::Char(len) => format!("Char<{}>", len),
             DieselType::Float => "Float4".to_string(),
             DieselType::Double => "Float8".to_string(),
@@ -359,7 +357,7 @@ impl DieselType {
             DieselType::Nullable(inner) => format!("Nullable<{}>", inner.to_diesel_schema_type()),
         }
     }
-    
+
     /// Convert to Rust type for model generation
     #[allow(dead_code)]
     pub fn to_rust_type(&self) -> String {
@@ -367,7 +365,7 @@ impl DieselType {
             DieselType::SmallInt => "i16".to_string(),
             DieselType::Integer => "i32".to_string(),
             DieselType::BigInt => "i64".to_string(),
-            DieselType::Text | DieselType::VarChar(_) | DieselType::Char(_) => "String".to_string(),
+            DieselType::Text | DieselType::Char(_) => "String".to_string(),
             DieselType::Float => "f32".to_string(),
             DieselType::Double => "f64".to_string(),
             DieselType::Numeric => "bigdecimal::BigDecimal".to_string(),
@@ -386,7 +384,7 @@ impl DieselType {
             DieselType::Nullable(inner) => format!("Option<{}>", inner.to_rust_type()),
         }
     }
-    
+
     /// Get SQL type for migration
     #[allow(dead_code)]
     pub fn to_sql_type(&self) -> String {
@@ -395,8 +393,7 @@ impl DieselType {
             DieselType::Integer => "INTEGER".to_string(),
             DieselType::BigInt => "BIGINT".to_string(),
             DieselType::Text => "TEXT".to_string(),
-            DieselType::VarChar(Some(len)) => format!("VARCHAR({})", len),
-            DieselType::VarChar(None) => "VARCHAR".to_string(),
+
             DieselType::Char(len) => format!("CHAR({})", len),
             DieselType::Float => "REAL".to_string(),
             DieselType::Double => "DOUBLE PRECISION".to_string(),
@@ -423,78 +420,143 @@ impl DieselType {
 #[allow(dead_code)]
 pub mod types {
     use super::DieselType;
-    
+
     // Wrapper functions
-    pub fn nullable<T>(inner: T) -> DieselType 
-    where 
-        T: Into<DieselType>
+    pub fn nullable<T>(inner: T) -> DieselType
+    where
+        T: Into<DieselType>,
     {
         DieselType::Nullable(Box::new(inner.into()))
     }
-    
-    pub fn array<T>(inner: T) -> DieselType 
-    where 
-        T: Into<DieselType>
+
+    pub fn array<T>(inner: T) -> DieselType
+    where
+        T: Into<DieselType>,
     {
         DieselType::Array(Box::new(inner.into()))
     }
-    
-    // Integer types
-    pub fn smallint() -> DieselType { DieselType::SmallInt }
-    pub fn integer() -> DieselType { DieselType::Integer }
-    pub fn bigint() -> DieselType { DieselType::BigInt }
-    
-    // Text types
-    pub fn text() -> DieselType { DieselType::Text }
-    pub fn varchar(length: Option<u32>) -> DieselType { DieselType::VarChar(length) }
-    pub fn char(length: u32) -> DieselType { DieselType::Char(length) }
-    
-    // Floating point types
-    pub fn float() -> DieselType { DieselType::Float }
-    pub fn double() -> DieselType { DieselType::Double }
-    pub fn numeric() -> DieselType { DieselType::Numeric }
-    
-    // Boolean type
-    pub fn boolean() -> DieselType { DieselType::Bool }
-    
-    // Date and time types
-    pub fn date() -> DieselType { DieselType::Date }
-    pub fn time() -> DieselType { DieselType::Time }
-    pub fn timestamp() -> DieselType { DieselType::Timestamp }
-    pub fn timestamptz() -> DieselType { DieselType::Timestamptz }
-    
-    // JSON types
-    pub fn json() -> DieselType { DieselType::Json }
-    pub fn jsonb() -> DieselType { DieselType::Jsonb }
-    
-    // Network types
-    pub fn inet() -> DieselType { DieselType::Inet }
-    pub fn cidr() -> DieselType { DieselType::Cidr }
-    pub fn macaddr() -> DieselType { DieselType::MacAddr }
-    
-    // Binary type
-    pub fn binary() -> DieselType { DieselType::Binary }
-    
-    // UUID type
-    pub fn uuid() -> DieselType { DieselType::Uuid }
-    
-    // Convenience functions for common nullable types
-    pub fn nullable_text() -> DieselType { nullable(text()) }
-    pub fn nullable_integer() -> DieselType { nullable(integer()) }
-    pub fn nullable_bigint() -> DieselType { nullable(bigint()) }
-    pub fn nullable_boolean() -> DieselType { nullable(boolean()) }
-    pub fn nullable_timestamp() -> DieselType { nullable(timestamp()) }
-    pub fn nullable_timestamptz() -> DieselType { nullable(timestamptz()) }
-    pub fn nullable_jsonb() -> DieselType { nullable(jsonb()) }
-    pub fn nullable_uuid() -> DieselType { nullable(uuid()) }
-    pub fn nullable_inet() -> DieselType { nullable(inet()) }
-    
-    // Convenience functions for common array types
-    pub fn text_array() -> DieselType { array(text()) }
-    pub fn integer_array() -> DieselType { array(integer()) }
-    pub fn nullable_text_array() -> DieselType { nullable(array(text())) }
-    pub fn nullable_integer_array() -> DieselType { nullable(array(integer())) }
-}
 
+    // Integer types
+    pub fn smallint() -> DieselType {
+        DieselType::SmallInt
+    }
+    pub fn integer() -> DieselType {
+        DieselType::Integer
+    }
+    pub fn bigint() -> DieselType {
+        DieselType::BigInt
+    }
+
+    // Text types
+    pub fn text() -> DieselType {
+        DieselType::Text
+    }
+
+    pub fn char(length: u32) -> DieselType {
+        DieselType::Char(length)
+    }
+
+    // Floating point types
+    pub fn float() -> DieselType {
+        DieselType::Float
+    }
+    pub fn double() -> DieselType {
+        DieselType::Double
+    }
+    pub fn numeric() -> DieselType {
+        DieselType::Numeric
+    }
+
+    // Boolean type
+    pub fn boolean() -> DieselType {
+        DieselType::Bool
+    }
+
+    // Date and time types
+    pub fn date() -> DieselType {
+        DieselType::Date
+    }
+    pub fn time() -> DieselType {
+        DieselType::Time
+    }
+    pub fn timestamp() -> DieselType {
+        DieselType::Timestamp
+    }
+    pub fn timestamptz() -> DieselType {
+        DieselType::Timestamptz
+    }
+
+    // JSON types
+    pub fn json() -> DieselType {
+        DieselType::Json
+    }
+    pub fn jsonb() -> DieselType {
+        DieselType::Jsonb
+    }
+
+    // Network types
+    pub fn inet() -> DieselType {
+        DieselType::Inet
+    }
+    pub fn cidr() -> DieselType {
+        DieselType::Cidr
+    }
+    pub fn macaddr() -> DieselType {
+        DieselType::MacAddr
+    }
+
+    // Binary type
+    pub fn binary() -> DieselType {
+        DieselType::Binary
+    }
+
+    // UUID type
+    pub fn uuid() -> DieselType {
+        DieselType::Uuid
+    }
+
+    // Convenience functions for common nullable types
+    pub fn nullable_text() -> DieselType {
+        nullable(text())
+    }
+    pub fn nullable_integer() -> DieselType {
+        nullable(integer())
+    }
+    pub fn nullable_bigint() -> DieselType {
+        nullable(bigint())
+    }
+    pub fn nullable_boolean() -> DieselType {
+        nullable(boolean())
+    }
+    pub fn nullable_timestamp() -> DieselType {
+        nullable(timestamp())
+    }
+    pub fn nullable_timestamptz() -> DieselType {
+        nullable(timestamptz())
+    }
+    pub fn nullable_jsonb() -> DieselType {
+        nullable(jsonb())
+    }
+    pub fn nullable_uuid() -> DieselType {
+        nullable(uuid())
+    }
+    pub fn nullable_inet() -> DieselType {
+        nullable(inet())
+    }
+
+    // Convenience functions for common array types
+    pub fn text_array() -> DieselType {
+        array(text())
+    }
+    pub fn integer_array() -> DieselType {
+        array(integer())
+    }
+    pub fn nullable_text_array() -> DieselType {
+        nullable(array(text()))
+    }
+    pub fn nullable_integer_array() -> DieselType {
+        nullable(array(integer()))
+    }
+}
 
 // Note: From<DieselType> for DieselType is automatically implemented by Rust

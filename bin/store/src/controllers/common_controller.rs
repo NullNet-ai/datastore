@@ -199,7 +199,6 @@ pub fn convert_params_to_sql_types(
     DatabaseTypeConverter::values_to_sql_params(params)
 }
 
-
 pub fn process_result_rows(
     rows: &[tokio_postgres::Row],
     update_fields: &[(&String, &serde_json::Value)],
@@ -457,7 +456,7 @@ pub async fn process_and_insert_record(
                 format!("Failed to process record: {}", e),
             )
         })?;
-        
+
     // Get table instance
     let table = Table::from_str(table_name).ok_or_else(|| {
         ApiError::new(
@@ -655,7 +654,12 @@ pub async fn process_and_get_record_by_id(
 
     // Get record by ID
     let record = table
-        .get_by_id(&mut conn, id, is_root_account, organization_id.map(|s| s.to_string()))
+        .get_by_id(
+            &mut conn,
+            id,
+            is_root_account,
+            organization_id.map(|s| s.to_string()),
+        )
         .await
         .map_err(|e| {
             ApiError::new(
@@ -703,8 +707,12 @@ pub async fn perform_upsert(
 
     // Build SQL filter
     let SqlFilter { sql, params } = build_sql_filter(&filters.clone());
-    let converted_params = convert_params_to_sql_types(&params)
-        .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, format!("Failed to convert parameters: {}", e)))?;
+    let converted_params = convert_params_to_sql_types(&params).map_err(|e| {
+        ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Failed to convert parameters: {}", e),
+        )
+    })?;
     let query = format!("SELECT id FROM {} WHERE {} LIMIT 1", table_name, sql);
     let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_params
         .iter()
