@@ -41,3 +41,6 @@ BUCKET_CAPACITY=20
 #Data initialize
 INITIALIZE_ENTITY_DATA=true
 INITIALIZE_DEVICE=true
+
+#Protocol Buffers
+PROTOC=/opt/homebrew/opt/protobuf@3/bin/protoc

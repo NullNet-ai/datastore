@@ -52,7 +52,6 @@ impl MessageStreamingService {
                 main_stream.on_message_available().notified().await;
 
                 while let Some(message) = main_stream.emit_message().await {
-
                     let (channel_name, organization_id) =
                         if let Ok(payload) = serde_json::from_value::<Value>(message.0.clone()) {
                             let event_name = payload.get("event_name").and_then(|v| v.as_str());
@@ -146,7 +145,11 @@ impl MessageStreamingService {
                         Ok(has_messages) => {
                             if has_messages {
                                 // Try to acquire processing lock for this channel
-                                if service.shared_state.mark_processing(&channel_name_clone).await {
+                                if service
+                                    .shared_state
+                                    .mark_processing(&channel_name_clone)
+                                    .await
+                                {
                                     if let Err(e) =
                                         service.process_queued_messages(&channel_name_clone).await
                                     {
@@ -156,7 +159,10 @@ impl MessageStreamingService {
                                         );
                                     }
                                     // Always remove processing lock when done
-                                    service.shared_state.remove_processing(&channel_name_clone).await;
+                                    service
+                                        .shared_state
+                                        .remove_processing(&channel_name_clone)
+                                        .await;
                                 } else {
                                     // Channel is already being processed, skip for now
                                     info!("Channel {} already being processed by another task, skipping drain processing", channel_name_clone);
@@ -221,7 +227,10 @@ impl MessageStreamingService {
                             service.shared_state.remove_processing(&channel_name).await;
                         } else {
                             // Channel is already being processed, re-queue it for later
-                            service.shared_state.queue_for_processing(&channel_name).await;
+                            service
+                                .shared_state
+                                .queue_for_processing(&channel_name)
+                                .await;
                         }
                     }
                 } else {
@@ -256,52 +265,54 @@ impl MessageStreamingService {
                     return Err(e);
                 }
             };
-            
+
             let sample_items = self
                 .queue_service
                 .dequeue_batch_from_channel(&mut conn, channel_name, 1)
                 .await?;
-                
+
             if let Some(item) = sample_items.first() {
                 if let Some(org_id) = item.content.get("organization_id").and_then(|v| v.as_str()) {
                     info!(
                         "Found organization {} for unregistered channel {}, registering channel",
                         org_id, channel_name
                     );
-                    
+
                     // Create and register the channel
                     let bucket_capacity = std::env::var("BUCKET_CAPACITY")
                         .ok()
                         .and_then(|s| s.parse::<usize>().ok())
                         .unwrap_or(1000);
-                    
-                    let new_bucket = crate::message_stream::token_bucket::TokenBucket::new_without_consumer(
-                        channel_name,
-                        bucket_capacity,
-                    );
-                    
+
+                    let new_bucket =
+                        crate::message_stream::token_bucket::TokenBucket::new_without_consumer(
+                            channel_name,
+                            bucket_capacity,
+                        );
+
                     let actual_bucket = self
                         .shared_state
-                        .register_channel(
-                            channel_name,
-                            org_id,
-                            new_bucket.clone(),
-                            bucket_capacity,
-                        )
+                        .register_channel(channel_name, org_id, new_bucket.clone(), bucket_capacity)
                         .await;
-                    
+
                     if Arc::ptr_eq(&new_bucket, &actual_bucket) {
                         actual_bucket.start_consumer();
                         // Note: drain listener will be started by the main routing task
-                        crate::message_stream::gateway::add_channel_to_organization(org_id, channel_name);
-                        info!("Channel {} registered and initialized for organization {}", channel_name, org_id);
+                        crate::message_stream::gateway::add_channel_to_organization(
+                            org_id,
+                            channel_name,
+                        );
+                        info!(
+                            "Channel {} registered and initialized for organization {}",
+                            channel_name, org_id
+                        );
                     }
-                    
+
                     // Put the message back in the queue
                     self.queue_service
                         .insert_to_queue(&mut conn, channel_name, item.content.clone())
                         .await?;
-                    
+
                     org_id.to_string()
                 } else {
                     warn!(
@@ -364,8 +375,6 @@ impl MessageStreamingService {
 
             for item in queued_items {
                 let msg = Message(item.content.clone());
-                
-
 
                 let has_capacity = bucket.receive_message(msg).await;
 
@@ -419,7 +428,6 @@ impl MessageStreamingService {
         organization_id: &str,
         message: Value,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-
         if let Some(_org_clients) =
             crate::message_stream::gateway::get_organization_clients(organization_id)
         {
@@ -494,8 +502,6 @@ impl MessageStreamingService {
             };
 
             let msg = Message(message.clone());
-            
-
 
             let has_capacity = bucket.receive_message(msg).await;
 

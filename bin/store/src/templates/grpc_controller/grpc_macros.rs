@@ -5,22 +5,22 @@ macro_rules! with_session_management {
         {
             // Load and populate session using centralized function (similar to HTTP middleware)
             let session = crate::middlewares::session_middleware::load_and_populate_session_for_grpc(&$request).await;
-            
+
             // Store session in request extensions for use in business logic before consuming the request
             if let Some(ref session) = session {
                 $request.extensions_mut().insert(session.clone());
             }
-            
+
             // Execute the business logic
             let result = $body;
-            
+
             // Save session after processing if it was modified
             if let Some(session) = session {
                 if let Err(e) = crate::middlewares::session_middleware::save_session_after_request(&session).await {
                     log::warn!("Failed to save session: {}", e);
                 }
             }
-            
+
             result
         }
     };
@@ -46,16 +46,16 @@ macro_rules! generate_create_method {
                         Some(ref p) => p.clone(),
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
-                    
+
                     // Use common validation function
                     let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                    
+
                     let request_inner = request.into_inner();
                     let query = match request_inner.query {
                         Some(q) => q,
                         None => return Err(Status::invalid_argument("Query is required")),
                     };
-                    
+
                     let table_name = params.table;
                     let record = match request_inner.[<$table:lower>] {
                         Some(r) => r,
@@ -115,10 +115,10 @@ macro_rules! generate_aggregation_filter_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         let request = request.into_inner();
 
                     // Get table from body.entity instead of params.table
@@ -203,16 +203,16 @@ macro_rules! generate_update_method {
                         Some(ref p) => p.clone(),
                         None => return Err(Status::invalid_argument("Params are required")),
                     };
-                    
+
                     // Use common validation function
                     let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                    
+
                     let request_inner = request.into_inner();
                     let query = match request_inner.query {
                         Some(q) => q,
                         None => return Err(Status::invalid_argument("Query is required")),
                     };
-                    
+
                     let table_name = params.table;
                     let record_id = params.id;
                     let record = match request_inner.[<$table_singular:lower>] {
@@ -285,10 +285,10 @@ macro_rules! generate_batch_insert_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         let request = request.into_inner();
                     let table_name = params.table;
 
@@ -424,12 +424,12 @@ macro_rules! generate_batch_update_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         let request_inner = request.into_inner();
-                    
+
                     let body = request_inner
                         .body
                         .ok_or_else(|| Status::invalid_argument("Body is required"))?;
@@ -535,10 +535,10 @@ macro_rules! generate_get_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         // Extract request parameters
                         let request = request.into_inner();
                     let id = params.id;
@@ -547,7 +547,7 @@ macro_rules! generate_get_method {
                     let query = request
                         .query
                         .ok_or_else(|| Status::invalid_argument("Query is required"))?;
-                    
+
                     let pluck_fields = if !query.pluck.is_empty() {
                         Some(query.pluck.split(',').map(|s| s.trim().to_string()).collect())
                     } else {
@@ -617,10 +617,10 @@ macro_rules! generate_upsert_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         let request_inner = request.into_inner();
 
                     let query = request_inner
@@ -694,10 +694,10 @@ macro_rules! generate_delete_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         let request_inner = request.into_inner();
 
                     let _query = request_inner
@@ -768,10 +768,10 @@ macro_rules! generate_batch_delete_method {
                             Some(ref p) => p.clone(),
                             None => return Err(Status::invalid_argument("Params are required")),
                         };
-                        
+
                         // Use common validation function
                         let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
-                        
+
                         let request = request.into_inner();
 
                     // Extract type from params to determine if it's a root request

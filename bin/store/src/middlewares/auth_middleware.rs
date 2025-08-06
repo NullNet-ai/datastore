@@ -1,5 +1,5 @@
 use crate::auth::auth_service::verify;
-use crate::auth::structs::{Origin, Session, Claims};
+use crate::auth::structs::{Claims, Origin, Session};
 use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
@@ -63,73 +63,73 @@ where
             .headers()
             .get(header::AUTHORIZATION)
             .and_then(|h| h.to_str().ok());
-        let query_token = auth.uri().query()
-            .and_then(|query_str| {
-                query_str.split('&')
-                    .find_map(|param| {
-                        let mut parts = param.split('=');
-                        if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
-                            if key == "t" {
-                                Some(value.to_string())
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
-                        }
-                    })
-            });
+        let query_token = auth.uri().query().and_then(|query_str| {
+            query_str.split('&').find_map(|param| {
+                let mut parts = param.split('=');
+                if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+                    if key == "t" {
+                        Some(value.to_string())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+        });
         let token = extract_token(auth_header)
             .or(query_token)
             .filter(|t| !t.is_empty());
 
         // Use unified authentication with path context
         let auth_result = authenticate_with_context(token, None, Some(auth.path()));
-        
+
         match auth_result {
-            AuthResult::Success { auth_data, token: t, claims } => {
+            AuthResult::Success {
+                auth_data,
+                token: t,
+                claims,
+            } => {
+                // Store the Auth object in request extensions
+                auth.extensions_mut().insert(auth_data);
 
-                        // Store the Auth object in request extensions
-                        auth.extensions_mut().insert(auth_data);
+                // Early return if EXPERIMENTAL_PERMISSIONS is not enabled
+                if env::var("EXPERIMENTAL_PERMISSIONS").unwrap_or_else(|_| "false".to_string())
+                    != "true"
+                {
+                    let fut = self.service.call(auth);
+                    return Box::pin(async move {
+                        let res = fut.await?;
+                        Ok(res)
+                    });
+                }
+                let maybe_session = auth.extensions().get::<Session>().cloned();
+                if let Some(mut session) = maybe_session {
+                    // Create HTTP-specific origin
+                    let host = auth.connection_info().host().to_string();
+                    let url = auth.uri().to_string();
+                    let user_agent = auth
+                        .headers()
+                        .get(header::USER_AGENT)
+                        .and_then(|h| h.to_str().ok())
+                        .map(|s| s.to_string());
 
-                        // Early return if EXPERIMENTAL_PERMISSIONS is not enabled
-                        if env::var("EXPERIMENTAL_PERMISSIONS")
-                            .unwrap_or_else(|_| "false".to_string())
-                            != "true"
-                        {
-                            let fut = self.service.call(auth);
-                            return Box::pin(async move {
-                                let res = fut.await?;
-                                Ok(res)
-                            });
-                        }
-                        let maybe_session = auth.extensions().get::<Session>().cloned();
-                        if let Some(mut session) = maybe_session {
-                            // Create HTTP-specific origin
-                            let host = auth.connection_info().host().to_string();
-                            let url = auth.uri().to_string();
-                            let user_agent = auth
-                                .headers()
-                                .get(header::USER_AGENT)
-                                .and_then(|h| h.to_str().ok())
-                                .map(|s| s.to_string());
+                    let origin = Origin {
+                        user_agent,
+                        host,
+                        url,
+                    };
 
-                            let origin = Origin {
-                                user_agent,
-                                host,
-                                url,
-                            };
+                    // Use common function to populate session
+                    crate::middlewares::session_middleware::populate_session_with_auth_data(
+                        &mut session,
+                        &t,
+                        &claims,
+                        origin,
+                    );
 
-                            // Use common function to populate session
-                            crate::middlewares::session_middleware::populate_session_with_auth_data(
-                                &mut session,
-                                &t,
-                                &claims,
-                                origin,
-                            );
-
-                            auth.extensions_mut().insert(session);
-                        }
+                    auth.extensions_mut().insert(session);
+                }
 
                 let fut = self.service.call(auth);
                 Box::pin(async move {
@@ -149,17 +149,17 @@ where
                     let json_error = actix_web::HttpResponse::Forbidden()
                         .content_type("application/json")
                         .json(error_response);
-                    Err(actix_web::error::InternalError::from_response(
-                        "Forbidden",
-                        json_error,
+                    Err(
+                        actix_web::error::InternalError::from_response("Forbidden", json_error)
+                            .into(),
                     )
-                    .into())
                 })
             }
             AuthResult::InvalidRootUsage => {
                 let error_response = ApiResponse {
                     success: false,
-                    message: "Invalid Authorization: Using Root Account on a non-root request".to_string(),
+                    message: "Invalid Authorization: Using Root Account on a non-root request"
+                        .to_string(),
                     count: 0,
                     data: vec![],
                 };
@@ -168,11 +168,10 @@ where
                     let json_error = actix_web::HttpResponse::Forbidden()
                         .content_type("application/json")
                         .json(error_response);
-                    Err(actix_web::error::InternalError::from_response(
-                        "Forbidden",
-                        json_error,
+                    Err(
+                        actix_web::error::InternalError::from_response("Forbidden", json_error)
+                            .into(),
                     )
-                    .into())
                 })
             }
             AuthResult::TokenVerificationFailed(error_message) => {
@@ -188,11 +187,8 @@ where
                         .content_type("application/json")
                         .json(error_response);
                     let error: actix_web::Error =
-                        actix_web::error::InternalError::from_response(
-                            "Unauthorized",
-                            json_error,
-                        )
-                        .into();
+                        actix_web::error::InternalError::from_response("Unauthorized", json_error)
+                            .into();
 
                     // Store the error in request extensions
                     auth.extensions_mut().insert(AuthFailedMarker);
@@ -311,17 +307,21 @@ pub fn determine_root_request(request_type: Option<&str>, path: Option<&str>) ->
     if let Some(req_type) = request_type {
         return req_type == "root";
     }
-    
+
     // For HTTP: check the path
     if let Some(p) = path {
         return p.contains("/root/");
     }
-    
+
     false
 }
 
 // Unified authentication function that handles both HTTP and gRPC
-pub fn authenticate_with_context(token: Option<String>, request_type: Option<&str>, path: Option<&str>) -> AuthResult {
+pub fn authenticate_with_context(
+    token: Option<String>,
+    request_type: Option<&str>,
+    path: Option<&str>,
+) -> AuthResult {
     let is_root_request = determine_root_request(request_type, path);
     authenticate_request(token, is_root_request)
 }
@@ -388,24 +388,22 @@ pub fn validate_grpc_request_with_root_access<T>(
     let claims = match request.extensions().get::<crate::auth::structs::Claims>() {
         Some(claims) => claims.clone(),
         None => {
-            return Err(tonic::Status::internal(
-                "Claims not available",
-            ));
+            return Err(tonic::Status::internal("Claims not available"));
         }
     };
 
     // Determine if this is a root request and validate access
     let is_root_request = determine_root_request(Some(request_type), None);
-    
+
     if let Err(auth_error) = validate_root_access(&claims, is_root_request) {
         return match auth_error {
-            AuthResult::RootAccessDenied => {
-                Err(tonic::Status::permission_denied("Access denied: Root access required"))
-            }
-            AuthResult::InvalidRootUsage => {
-                Err(tonic::Status::permission_denied("Invalid Authorization: Using Root Account on a non-root request"))
-            }
-            _ => Err(tonic::Status::internal("Unexpected authentication error"))
+            AuthResult::RootAccessDenied => Err(tonic::Status::permission_denied(
+                "Access denied: Root access required",
+            )),
+            AuthResult::InvalidRootUsage => Err(tonic::Status::permission_denied(
+                "Invalid Authorization: Using Root Account on a non-root request",
+            )),
+            _ => Err(tonic::Status::internal("Unexpected authentication error")),
         };
     }
 
@@ -432,7 +430,11 @@ impl Interceptor for GrpcAuthInterceptor {
         // Only validate token at interceptor level
         // Root access validation will be handled in gRPC macros where request params are available
         match authenticate_token_only(token) {
-            AuthResult::Success { auth_data, token: t, claims } => {
+            AuthResult::Success {
+                auth_data,
+                token: t,
+                claims,
+            } => {
                 // Insert auth data into request extensions
                 request.extensions_mut().insert(auth_data);
                 request.extensions_mut().insert(AuthToken(t));
@@ -448,19 +450,19 @@ impl Interceptor for GrpcAuthInterceptor {
             AuthResult::TokenVerificationFailed(error_message) => {
                 // Store the error marker in request extensions
                 request.extensions_mut().insert(AuthFailedMarker);
-                
+
                 Err(Status::unauthenticated(error_message))
             }
             AuthResult::MissingToken => {
                 // Store the error marker in request extensions
                 request.extensions_mut().insert(AuthFailedMarker);
-                
+
                 Err(Status::unauthenticated("Authorization required"))
             }
             // Root access errors should not occur at interceptor level
-            AuthResult::RootAccessDenied | AuthResult::InvalidRootUsage => {
-                Err(Status::internal("Unexpected root access validation at interceptor level"))
-            }
+            AuthResult::RootAccessDenied | AuthResult::InvalidRootUsage => Err(Status::internal(
+                "Unexpected root access validation at interceptor level",
+            )),
         }
     }
 }

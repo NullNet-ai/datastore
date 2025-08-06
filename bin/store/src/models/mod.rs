@@ -1,6 +1,8 @@
 pub mod account_model;
 pub mod account_organization_model;
+pub mod account_phone_number_model;
 pub mod account_profile_model;
+pub mod account_signature_model;
 pub mod address_model;
 
 pub mod contact_email_model;
@@ -30,7 +32,6 @@ pub mod postgres_channel_model;
 pub mod queue_item_model;
 pub mod queue_model;
 pub mod record_permission_model;
-pub mod transaction_model;
 pub mod role_permission_model;
 pub mod sample_model;
 pub mod session_model;
@@ -39,6 +40,7 @@ pub mod stream_queue_model;
 pub mod sync_endpoint_model;
 pub mod system_config_field_model;
 pub mod table_index_model;
+pub mod transaction_model;
 
 pub mod test_hypertable_model;
 pub mod user_role_model;

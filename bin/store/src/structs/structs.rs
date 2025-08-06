@@ -1,5 +1,5 @@
-use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::schema::forbidden_tables;
+use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
 use diesel::sql_types::Text;
@@ -7,7 +7,7 @@ use diesel::AsExpression;
 use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 use ulid::Ulid;
 use uuid::Uuid;
 
@@ -88,7 +88,13 @@ pub struct SqlUpdate {
 
 impl RequestBody {
     // Process record with common fields and return a Value directly
-    pub fn process_record(&mut self, operation: &str, auth: &Auth, is_root_account: bool, table: &str) {
+    pub fn process_record(
+        &mut self,
+        operation: &str,
+        auth: &Auth,
+        is_root_account: bool,
+        table: &str,
+    ) {
         // // Add common fields to the record
         self.add_common_fields(operation, auth, is_root_account, table);
 
@@ -119,7 +125,13 @@ impl RequestBody {
     }
 
     // Helper method to add common fields
-    fn add_common_fields(&mut self, operation: &str, auth: &Auth, is_root_account: bool, table: &str) {
+    fn add_common_fields(
+        &mut self,
+        operation: &str,
+        auth: &Auth,
+        is_root_account: bool,
+        table: &str,
+    ) {
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
@@ -144,11 +156,15 @@ impl RequestBody {
                 self.record["updated_time"] = json!(time_str);
                 self.record["updated_by"] = json!(auth.responsible_account);
                 self.record["version"] = json!(0); // ! don't change this, it gets discarded in the end, it's just a placeholder
-                
+
                 // Add organization_id if conditions are met
-                if !self.record.get("organization_id").is_some_and(|v| !v.is_null()) 
-                    && !is_root_account 
-                    && !forbidden_tables::is_forbidden_table(table) {
+                if !self
+                    .record
+                    .get("organization_id")
+                    .is_some_and(|v| !v.is_null())
+                    && !is_root_account
+                    && !forbidden_tables::is_forbidden_table(table)
+                {
                     self.record["organization_id"] = json!(auth.organization_id);
                 }
             }
@@ -311,8 +327,8 @@ pub struct GetByFilter {
     #[serde(default)]
     pub joins: Vec<Join>,
 
-    #[serde(default)]
-    pub group_by: GroupBy,
+    #[serde(default = "default_group_by")]
+    pub group_by: Option<GroupBy>,
 
     #[serde(default)]
     pub concatenate_fields: Vec<ConcatenateField>,
@@ -517,6 +533,13 @@ pub struct SortOption {
     pub is_case_sensitive_sorting: Option<bool>,
 }
 
+fn default_group_by() -> Option<GroupBy> {
+    Some(GroupBy {
+        fields: Vec::new(),
+        has_count: false,
+    })
+}
+
 fn default_date_format() -> String {
     "mm/dd/YYYY".to_string()
 }
@@ -682,7 +705,6 @@ pub struct UploadFile {
     pub file: String,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SearchSuggestionParams {
     #[serde(default)]
@@ -693,7 +715,7 @@ pub struct SearchSuggestionParams {
 
     #[serde(default = "default_date_format")]
     pub date_format: String,
-    
+
     #[serde(default)]
     pub group_advance_filters: Vec<GroupAdvanceFilter>,
 

@@ -3,38 +3,38 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::providers::storage::get_valid_bucket_name;
-use actix_web::test;
-use ulid::Ulid;
-use crate::{db, providers};
 use crate::db::create_connection;
-use aws_sdk_s3::primitives::ByteStream;
-use actix_multipart::Multipart;
-use chrono;
-use crate::providers::find::{DynamicResult, Validation, SQLConstructor};
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
-use crate::providers::storage::minio::is_storage_disabled;
+use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
 use crate::providers::search_suggestion::{
-    structs::{SearchSuggestionCache, AliasedJoinedEntity, FormatFilterResponse},
+    sql_constructor::SQLConstructor as SearchSQLContructor,
+    structs::{AliasedJoinedEntity, FormatFilterResponse, SearchSuggestionCache},
     utils::{format_filters, generate_concatenated_expressions},
-    sql_constructor::SQLConstructor as SearchSQLContructor
 };
+use crate::providers::storage::get_valid_bucket_name;
+use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::structs::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter, QueryParams, RequestBody,
-    SwitchAccountRequest, UpsertRequestBody, SearchSuggestionParams
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
+    QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
+use crate::{db, providers};
+use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
+use actix_web::test;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use actix_web::{HttpMessage, HttpRequest};
+use aws_sdk_s3::primitives::ByteStream;
+use chrono;
 use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use ulid::Ulid;
 // use std::collections::HashMap;
 // use diesel::prelude::*;
-use std::fmt;
 use std::collections::BTreeMap;
+use std::fmt;
 // use diesel::sql_types::*;
 // use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
@@ -212,6 +212,7 @@ pub async fn create_record(
     table: web::Path<String>,
     body: web::Json<serde_json::Value>,
     query: web::Query<QueryParams>,
+    app_state: web::Data<providers::storage::AppState>,
 ) -> impl Responder {
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
@@ -249,6 +250,61 @@ pub async fn create_record(
             table_name
         );
         // Add any simple controller-specific logic here
+    }
+
+    // Special handling for organizations table - create bucket
+    if table_name == "organizations" {
+        log::info!("Creating organization record - will create corresponding bucket");
+
+        // Extract organization name from the request body for bucket creation
+        if let Some(org_name) = body.get("name").and_then(|v| v.as_str()) {
+            log::info!("Creating bucket for organization: {}", org_name);
+
+            // Generate valid bucket name using the organization name and ID
+            let org_id = auth_data.organization_id.as_str();
+            let bucket_name =
+                providers::storage::minio::get_valid_bucket_name(org_name, Some(org_id));
+
+            log::info!(
+                "Generated bucket name: {} for organization: {}",
+                bucket_name,
+                org_name
+            );
+
+            // Create bucket using S3 client
+            let s3_client = &app_state.s3_client;
+            match s3_client.create_bucket().bucket(&bucket_name).send().await {
+                Ok(_) => {
+                    log::info!(
+                        "Successfully created bucket '{}' for organization '{}'",
+                        bucket_name,
+                        org_name
+                    );
+                }
+                Err(e) => {
+                    // Check if error is because bucket already exists
+                    let error_message = format!("{:?}", e);
+                    if error_message.contains("BucketAlreadyExists")
+                        || error_message.contains("BucketAlreadyOwnedByYou")
+                    {
+                        log::info!(
+                            "Bucket '{}' already exists for organization '{}'",
+                            bucket_name,
+                            org_name
+                        );
+                    } else {
+                        log::error!(
+                            "Failed to create bucket '{}' for organization '{}': {:?}",
+                            bucket_name,
+                            org_name,
+                            e
+                        );
+                    }
+                }
+            }
+        } else {
+            log::warn!("Organization name not found in request body for bucket creation");
+        }
     }
     let pluck_fields: Vec<String> = query
         .pluck
@@ -1146,7 +1202,7 @@ pub async fn get_file_by_id(
     query: web::Query<QueryParams>,
 ) -> impl Responder {
     let file_id = path_params.into_inner();
-    
+
     // Extract auth data for organization context
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
@@ -1168,19 +1224,25 @@ pub async fn get_file_by_id(
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Log the operation
     if is_root_controller {
-        log::info!("Processing get_file_by_id via root controller for file_id: {}", file_id);
+        log::info!(
+            "Processing get_file_by_id via root controller for file_id: {}",
+            file_id
+        );
     } else {
-        log::info!("Processing get_file_by_id via simple controller for file_id: {}", file_id);
+        log::info!(
+            "Processing get_file_by_id via simple controller for file_id: {}",
+            file_id
+        );
     }
-    
+
     // Parse pluck fields from query parameters or use default file fields
     let pluck_fields: Vec<String> = if query.pluck.is_empty() {
         vec![
             "id".to_string(),
-            "image_url".to_string(), 
+            "image_url".to_string(),
             "filename".to_string(),
             "mimetype".to_string(),
             "size".to_string(),
@@ -1199,10 +1261,10 @@ pub async fn get_file_by_id(
             .map(|s| s.trim().to_string())
             .collect()
     };
-    
+
     // Extract organization_id from auth_data
     let organization_id = Some(auth_data.organization_id.as_str());
-    
+
     // Use the common controller to get file metadata from database
     match process_and_get_record_by_id(
         "files",
@@ -1210,7 +1272,9 @@ pub async fn get_file_by_id(
         Some(pluck_fields),
         is_root_controller,
         organization_id,
-    ).await {
+    )
+    .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => {
             log::error!("Error retrieving file {}: {:?}", file_id, error);
@@ -1233,7 +1297,7 @@ pub async fn download_file_by_id(
     app_state: web::Data<providers::storage::AppState>,
 ) -> HttpResponse {
     let file_id = path_params.into_inner();
-    
+
     // Extract auth data for organization context
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
@@ -1248,28 +1312,34 @@ pub async fn download_file_by_id(
             });
         }
     };
-    
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
-    
+
     // Log the operation
     if is_root_controller {
-        log::info!("Processing download_file_by_id via root controller for file_id: {}", file_id);
+        log::info!(
+            "Processing download_file_by_id via root controller for file_id: {}",
+            file_id
+        );
     } else {
-        log::info!("Processing download_file_by_id via simple controller for file_id: {}", file_id);
+        log::info!(
+            "Processing download_file_by_id via simple controller for file_id: {}",
+            file_id
+        );
     }
-    
+
     // First, get file metadata from database
     let pluck_fields = vec![
         "mimetype".to_string(),
         "download_path".to_string(),
         "size".to_string(),
     ];
-    
+
     // Extract organization_id from auth_data
     let organization_id = Some(auth_data.organization_id.as_str());
     let file_metadata = match process_and_get_record_by_id(
@@ -1278,7 +1348,9 @@ pub async fn download_file_by_id(
         Some(pluck_fields),
         is_root_controller,
         organization_id,
-    ).await {
+    )
+    .await
+    {
         Ok(response) => {
             if response.success && !response.data.is_empty() {
                 response.data[0].clone()
@@ -1301,20 +1373,22 @@ pub async fn download_file_by_id(
             });
         }
     };
-    
+
     // Extract file information from metadata
-    let mimetype = file_metadata.get("mimetype")
+    let mimetype = file_metadata
+        .get("mimetype")
         .and_then(|v| v.as_str())
         .unwrap_or("application/octet-stream");
-    let download_path = file_metadata.get("download_path")
+    let download_path = file_metadata
+        .get("download_path")
         .and_then(|v| v.as_str())
         .unwrap_or(&file_id);
-    
+
     // Get bucket name with organization context
-    let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME")
-        .unwrap_or_else(|_| app_state.bucket_name.clone());
+    let base_bucket_name =
+        std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| app_state.bucket_name.clone());
     let bucket_name = get_valid_bucket_name(&base_bucket_name, organization_id);
-    
+
     // Extract just the filename from download_path (remove bucket name if present)
     let s3_key = if download_path.contains('/') {
         // If download_path contains '/', take the part after the last '/'
@@ -1323,10 +1397,10 @@ pub async fn download_file_by_id(
         // If no '/', use the download_path as is (it's just the filename)
         download_path
     };
-    
+
     // Stream file from S3
     let s3_client = &app_state.s3_client;
-    
+
     match s3_client
         .get_object()
         .bucket(&bucket_name)
@@ -1338,50 +1412,50 @@ pub async fn download_file_by_id(
             // Use the mimetype from database for proper content type handling
             // This ensures correct MIME type detection for preview functionality
             let actual_content_type = mimetype.to_string();
-            
+
             // Capture content length before consuming the body
-             let content_length = output.content_length().unwrap_or(0);
-             
-             // Convert the S3 body stream to bytes and create a streaming response
-             match output.body.collect().await {
-                 Ok(data) => {
-                     let bytes = data.into_bytes();
-                     
-                     // Create a stream from the bytes for efficient streaming
-                     use futures_util::stream;
-                     let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(bytes) });
-                     
-                     // Determine if this is an image for inline display
-                      let is_image = actual_content_type.starts_with("image/");
-                      let filename = s3_key.split('/').last().unwrap_or("file");
-                      
-                      // Set Content-Disposition for proper preview behavior
-                      let content_disposition = if is_image {
-                          // For images, use inline disposition to enable preview in browsers/Postman
-                          format!("inline; filename=\"{}\"", filename)
-                      } else {
-                          // For non-images, use attachment to trigger download
-                          format!("attachment; filename=\"{}\"", filename)
-                      };
-                      
-                      HttpResponse::Ok()
-                          .content_type(actual_content_type)
-                          .insert_header(("Content-Length", content_length.to_string()))
-                          .insert_header(("Cache-Control", "public, max-age=3600"))
-                          .insert_header(("Accept-Ranges", "bytes"))
-                          .insert_header(("Content-Disposition", content_disposition))
-                          .streaming(byte_stream)
-                 }
-                 Err(e) => {
-                     log::error!("Error reading S3 object body for file {}: {:?}", file_id, e);
-                     HttpResponse::InternalServerError().json(ApiResponse {
-                         success: false,
-                         message: "Failed to read file content".to_string(),
-                         count: 0,
-                         data: vec![],
-                     })
-                 }
-             }
+            let content_length = output.content_length().unwrap_or(0);
+
+            // Convert the S3 body stream to bytes and create a streaming response
+            match output.body.collect().await {
+                Ok(data) => {
+                    let bytes = data.into_bytes();
+
+                    // Create a stream from the bytes for efficient streaming
+                    use futures_util::stream;
+                    let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+
+                    // Determine if this is an image for inline display
+                    let is_image = actual_content_type.starts_with("image/");
+                    let filename = s3_key.split('/').last().unwrap_or("file");
+
+                    // Set Content-Disposition for proper preview behavior
+                    let content_disposition = if is_image {
+                        // For images, use inline disposition to enable preview in browsers/Postman
+                        format!("inline; filename=\"{}\"", filename)
+                    } else {
+                        // For non-images, use attachment to trigger download
+                        format!("attachment; filename=\"{}\"", filename)
+                    };
+
+                    HttpResponse::Ok()
+                        .content_type(actual_content_type)
+                        .insert_header(("Content-Length", content_length.to_string()))
+                        .insert_header(("Cache-Control", "public, max-age=3600"))
+                        .insert_header(("Accept-Ranges", "bytes"))
+                        .insert_header(("Content-Disposition", content_disposition))
+                        .streaming(byte_stream)
+                }
+                Err(e) => {
+                    log::error!("Error reading S3 object body for file {}: {:?}", file_id, e);
+                    HttpResponse::InternalServerError().json(ApiResponse {
+                        success: false,
+                        message: "Failed to read file content".to_string(),
+                        count: 0,
+                        data: vec![],
+                    })
+                }
+            }
         }
         Err(e) => {
             log::error!("Error downloading file {} from S3: {:?}", file_id, e);
@@ -1403,7 +1477,7 @@ pub async fn upload_file(
     // Check if storage is disabled
     if is_storage_disabled() {
         log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock upload response");
-        
+
         // Generate mock file metadata for disabled storage
         let mock_id = Ulid::new().to_string();
         let mock_metadata = serde_json::json!({
@@ -1437,7 +1511,7 @@ pub async fn upload_file(
             "presigned_url": "",
             "presigned_url_expire": 0
         });
-        
+
         return HttpResponse::Ok().json(ApiResponse {
             success: true,
             message: "Mock upload successful (storage disabled)".to_string(),
@@ -1445,7 +1519,7 @@ pub async fn upload_file(
             data: vec![mock_metadata],
         });
     }
-    
+
     // Check for Auth data early and abort if missing
     let extensions = req.extensions();
     let _auth_data = match extensions.get::<Auth>() {
@@ -1475,27 +1549,30 @@ pub async fn upload_file(
             Ok(field) => field,
             Err(e) => {
                 log::error!("Error getting field from multipart: {:?}", e);
-                return HttpResponse::InternalServerError()
-                    .body(format!("Multipart error: {}", e));
+                return HttpResponse::InternalServerError().body(format!("Multipart error: {}", e));
             }
         };
 
         let content_disposition = field.content_disposition();
         let fname = content_disposition.get_filename().map(|s| s.to_string());
         let field_name = content_disposition.get_name().unwrap_or("file").to_string();
-        
+
         // Get content type from multipart field
         let field_content_type = field.content_type().map(|ct| ct.to_string());
-        
+
         // Determine the best content type using multiple sources
         let content_type = if let Some(fname_ref) = &fname {
             // First try to detect MIME type from file extension
             let mime_from_extension = mime_guess::from_path(fname_ref).first_or_octet_stream();
             let detected_mime = mime_from_extension.to_string();
-            
-            log::info!("MIME type detection for '{}': detected='{}', field_provided={:?}", 
-                fname_ref, detected_mime, field_content_type);
-            
+
+            log::info!(
+                "MIME type detection for '{}': detected='{}', field_provided={:?}",
+                fname_ref,
+                detected_mime,
+                field_content_type
+            );
+
             // Use detected MIME type if it's not generic, otherwise fall back to field content type
             if detected_mime != "application/octet-stream" {
                 log::info!("Using detected MIME type: {}", detected_mime);
@@ -1508,7 +1585,10 @@ pub async fn upload_file(
         } else {
             // No filename available, use field content type
             let fallback = field_content_type.unwrap_or("application/octet-stream".to_string());
-            log::info!("No filename available, using field content type: {}", fallback);
+            log::info!(
+                "No filename available, using field content type: {}",
+                fallback
+            );
             fallback
         };
 
@@ -1518,11 +1598,11 @@ pub async fn upload_file(
                 .extension()
                 .and_then(|ext| ext.to_str())
                 .unwrap_or("png"); // Default to png if no extension
-            
+
             // Generate a new ID for potential upload
             let new_id = Ulid::new().to_string();
             let new_unique_filename = format!("{}.{}", new_id, extension);
-            
+
             // First, try to find if this file already exists by listing all files with same extension
             let list_result = client
                 .list_objects_v2()
@@ -1530,10 +1610,10 @@ pub async fn upload_file(
                 .prefix("") // List all files
                 .send()
                 .await;
-            
+
             let mut existing_file_key: Option<String> = None;
             let mut existing_id: Option<String> = None;
-            
+
             // Read the uploaded file content to compare with existing files
             let mut file_data = Vec::new();
             while let Some(chunk) = field.next().await {
@@ -1541,48 +1621,52 @@ pub async fn upload_file(
                     file_data.extend_from_slice(&bytes);
                 }
             }
-            
+
             // Check if any existing files match our content by comparing file sizes and content
-             if let Ok(list_output) = list_result {
-                 let objects = list_output.contents();
-                 for object in objects {
-                     if let Some(key) = object.key() {
-                         // Check if this is a file with the same extension
-                         if key.ends_with(&format!(".{}", extension)) {
-                             // Try to get the object and compare content
-                             if let Ok(existing_obj) = client
-                                 .get_object()
-                                 .bucket(&bucket_name)
-                                 .key(key)
-                                 .send()
-                                 .await
-                             {
-                                 // Compare file sizes first (quick check)
-                                 if existing_obj.content_length().unwrap_or(0) == file_data.len() as i64 {
-                                     // If sizes match, this might be the same file
-                                     // Extract ID from filename (format: "ID.extension")
-                                     if let Some(filename) = key.split('/').last() {
-                                         if let Some(id_part) = filename.split('.').next() {
-                                             existing_file_key = Some(key.to_string());
-                                             existing_id = Some(id_part.to_string());
-                                             break;
-                                         }
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                 }
-             }
-            
+            if let Ok(list_output) = list_result {
+                let objects = list_output.contents();
+                for object in objects {
+                    if let Some(key) = object.key() {
+                        // Check if this is a file with the same extension
+                        if key.ends_with(&format!(".{}", extension)) {
+                            // Try to get the object and compare content
+                            if let Ok(existing_obj) = client
+                                .get_object()
+                                .bucket(&bucket_name)
+                                .key(key)
+                                .send()
+                                .await
+                            {
+                                // Compare file sizes first (quick check)
+                                if existing_obj.content_length().unwrap_or(0)
+                                    == file_data.len() as i64
+                                {
+                                    // If sizes match, this might be the same file
+                                    // Extract ID from filename (format: "ID.extension")
+                                    if let Some(filename) = key.split('/').last() {
+                                        if let Some(id_part) = filename.split('.').next() {
+                                            existing_file_key = Some(key.to_string());
+                                            existing_id = Some(id_part.to_string());
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // If we found an existing file, use its ID and key
-            let (final_id, final_filename) = if let (Some(existing_key), Some(existing_id_val)) = (existing_file_key.clone(), existing_id.clone()) {
+            let (final_id, final_filename) = if let (Some(existing_key), Some(existing_id_val)) =
+                (existing_file_key.clone(), existing_id.clone())
+            {
                 (existing_id_val, existing_key)
             } else {
                 // No existing file found, use new ID
                 (new_id.clone(), new_unique_filename.clone())
             };
-            
+
             // Check if file exists using the determined filename
             let get_result = client
                 .get_object()
@@ -1596,9 +1680,12 @@ pub async fn upload_file(
                     // File already exists in MinIO, use the extracted ID from filename
                     let actual_id = final_id.clone();
                     let actual_filename = final_filename.clone();
-                    
-                    dbg!(format!("Found existing file with ID '{}' and filename '{}'", actual_id, actual_filename));
-                    
+
+                    dbg!(format!(
+                        "Found existing file with ID '{}' and filename '{}'",
+                        actual_id, actual_filename
+                    ));
+
                     // File already exists in MinIO, return comprehensive metadata
                     let metadata = serde_json::json!({
                         "id": actual_id.clone(),
@@ -1657,24 +1744,29 @@ pub async fn upload_file(
                     });
                     // For existing files, try to save to database (will handle duplicates gracefully)
                     let auth_data = _auth_data;
-                    
+
                     // Use create_record function to save metadata
                     let req = test::TestRequest::default()
                         .insert_header(("content-type", "application/json"))
                         .to_http_request();
                     req.extensions_mut().insert(auth_data.clone());
-                    
+
                     let table_path = web::Path::from(name.to_string());
                     let body = web::Json(metadata.clone());
                     let query = web::Query(QueryParams {
                         pluck: pluck_fields.join(","),
                     });
-                    
-                    let _response = create_record(req, table_path, body, query).await;
+
+                    let _response =
+                        create_record(req, table_path, body, query, app_state.clone()).await;
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
-                    log::info!("File '{}' already exists in MinIO with unique name '{}', skipping upload", fname, actual_filename);
-                    
+                    log::info!(
+                        "File '{}' already exists in MinIO with unique name '{}', skipping upload",
+                        fname,
+                        actual_filename
+                    );
+
                     // File data already read earlier for comparison, no need to read again
                     continue;
                 }
@@ -1700,7 +1792,11 @@ pub async fn upload_file(
             match upload_result {
                 Ok(put_output) => {
                     uploaded_files_count += 1;
-                    log::info!("Successfully uploaded '{}' to AWS S3 with unique name '{}'.", fname, final_filename);
+                    log::info!(
+                        "Successfully uploaded '{}' to AWS S3 with unique name '{}'.",
+                        fname,
+                        final_filename
+                    );
                     // File uploaded successfully to MinIO - add comprehensive metadata
                     let metadata = serde_json::json!({
                         "id": final_id.clone(),
@@ -1738,23 +1834,27 @@ pub async fn upload_file(
                         "presigned_url": "", // TODO: Generate presigned URL if needed
                         "presigned_url_expire": 0 // TODO: Set expiration timestamp
                     });
-                    dbg!(format!("Complete file metadata for uploaded file: {:?}", metadata));
+                    dbg!(format!(
+                        "Complete file metadata for uploaded file: {:?}",
+                        metadata
+                    ));
                     // Save file metadata to the database using process_and_insert_record
                     let auth_data = _auth_data;
-                    
+
                     // Use create_record function to save metadata
                     let req = test::TestRequest::default()
                         .insert_header(("content-type", "application/json"))
                         .to_http_request();
                     req.extensions_mut().insert(auth_data.clone());
-                    
+
                     let table_path = web::Path::from(name.to_string());
                     let body = web::Json(metadata.clone());
                     let query = web::Query(QueryParams {
                         pluck: pluck_fields.join(","),
                     });
-                    
-                    let _response = create_record(req, table_path, body, query).await;
+
+                    let _response =
+                        create_record(req, table_path, body, query, app_state.clone()).await;
                     log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);
@@ -1768,11 +1868,17 @@ pub async fn upload_file(
         }
     }
 
-    let existing_count = file_metadata.iter().filter(|m| m["status"] == "already_exists").count();
-    
+    let existing_count = file_metadata
+        .iter()
+        .filter(|m| m["status"] == "already_exists")
+        .count();
+
     let response_message = if existing_count > 0 {
         if uploaded_files_count > 0 {
-            format!("Uploaded {} new file(s), {} file(s) already existed in MinIO", uploaded_files_count, existing_count)
+            format!(
+                "Uploaded {} new file(s), {} file(s) already existed in MinIO",
+                uploaded_files_count, existing_count
+            )
         } else {
             format!("All {} file(s) already exist in MinIO", existing_count)
         }
@@ -1788,10 +1894,7 @@ pub async fn upload_file(
     })
 }
 
-
-pub async fn switch_account(
-    request: web::Json<SwitchAccountRequest>,
-) -> impl Responder {
+pub async fn switch_account(request: web::Json<SwitchAccountRequest>) -> impl Responder {
     use crate::auth::auth_service;
     use crate::organizations::auth_service as org_auth_service;
     use serde_json::json;
@@ -1810,7 +1913,10 @@ pub async fn switch_account(
 
     // Extract account information from claims
     let account = &claims.account;
-    let signed_in_account = claims.previously_logged_in.map(|s| json!({"account_id": s})).unwrap_or_else(|| json!({}));
+    let signed_in_account = claims
+        .previously_logged_in
+        .map(|s| json!({"account_id": s}))
+        .unwrap_or_else(|| json!({}));
     let organization_id = &account.organization_id;
     let account_id = &account.account_id;
     let account_organization_id = Some(account.account_organization_id.as_str());
@@ -1821,7 +1927,9 @@ pub async fn switch_account(
         Some(organization_id),
         account_organization_id,
         None, // account_id for lookup
-    ).await {
+    )
+    .await
+    {
         Ok(Some(account)) => account,
         Ok(None) => {
             return HttpResponse::BadRequest().json(json!({
@@ -1845,7 +1953,9 @@ pub async fn switch_account(
         Some(&request.data.organization_id),
         None, // account_organization_id
         logged_account_id,
-    ).await {
+    )
+    .await
+    {
         Ok(Some(account)) => account,
         Ok(None) => {
             return HttpResponse::BadRequest().json(json!({
@@ -1887,7 +1997,6 @@ pub async fn switch_account(
         "token": token
     }))
 }
-
 
 pub async fn search_suggestions(
     auth: HttpRequest,
@@ -1933,8 +2042,8 @@ pub async fn search_suggestions(
     }
 
     let SearchSuggestionParams {
-        advance_filters, 
-        group_advance_filters, 
+        advance_filters,
+        group_advance_filters,
         joins,
         concatenate_fields,
         date_format,
@@ -1959,7 +2068,7 @@ pub async fn search_suggestions(
             serde_json::to_string(&parameters).unwrap()
         }
     };
-    
+
     let query_sha = SearchSuggestionCache::hash_string(&json_params_string);
     let cached_data = SearchSuggestionCache::get_cache_by_key(&query_sha);
 
@@ -2033,21 +2142,21 @@ pub async fn search_suggestions(
             filtered_fields = _filtered_fields;
             search_term = _search_term;
 
-             // Create a new GroupAdvanceFilter with the formatted filters
+            // Create a new GroupAdvanceFilter with the formatted filters
             let updated_group_filter = match grouped_filters {
                 GroupAdvanceFilter::Criteria { operator, .. } => GroupAdvanceFilter::Criteria {
-                        operator: operator.clone(),
-                        filters: formatted_filters
-                            .into_iter()
-                            .filter_map(|v| serde_json::from_value(v).ok())
-                            .collect(),
+                    operator: operator.clone(),
+                    filters: formatted_filters
+                        .into_iter()
+                        .filter_map(|v| serde_json::from_value(v).ok())
+                        .collect(),
                 },
                 GroupAdvanceFilter::Operator { operator, .. } => GroupAdvanceFilter::Operator {
-                        operator: operator.clone(),
-                        filters: formatted_filters
-                            .into_iter()
-                            .filter_map(|v| serde_json::from_value(v).ok())
-                            .collect(),
+                    operator: operator.clone(),
+                    filters: formatted_filters
+                        .into_iter()
+                        .filter_map(|v| serde_json::from_value(v).ok())
+                        .collect(),
                 },
             };
 
@@ -2075,7 +2184,7 @@ pub async fn search_suggestions(
     // generate concatenated fields
     let concatenated_expressions =
         generate_concatenated_expressions(concatenate_fields.clone(), Some(date_format.as_str()));
-    
+
     // get connection to Diesel
     let mut conn = db::get_async_connection().await;
     // generate json build object query
@@ -2138,12 +2247,12 @@ pub async fn search_suggestions(
     let _ = SearchSuggestionCache::set_cache(&query_sha, serde_json::Value::Array(data.clone()));
 
     HttpResponse::Ok().json(ApiResponse {
-            success: true,
+        success: true,
         message: format!(
             "Search suggestions operation completed for table: {}",
             &table
         ),
-            count: data.len() as i32,
+        count: data.len() as i32,
         data: if data.len() > 0 { data } else { vec![] },
-        })
+    })
 }

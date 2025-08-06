@@ -33,7 +33,6 @@ impl InitialEntityDataInitializer {
         //     }
         // }
 
-
         if entity_data.is_empty() {
             log::warn!("No entity data could be loaded, initialization completed with no changes");
             return Ok(());

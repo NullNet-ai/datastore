@@ -5,13 +5,11 @@ use dotenv::dotenv;
 use once_cell::sync::Lazy;
 use std::env;
 
-use tokio_postgres::{Client, NoTls};
+use base64::prelude::*;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use tokio_postgres::types::Type;
-use base64::prelude::*;
-
-
+use tokio_postgres::{Client, NoTls};
 
 // -- Async Types --
 pub type AsyncDbPool = PoolAsync<AsyncPgConnection>;
@@ -103,7 +101,8 @@ impl DatabaseTypeConverter {
     pub fn values_to_sql_params(
         params: &[Value],
     ) -> Result<Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>>, String> {
-        let mut converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> = Vec::new();
+        let mut converted_values: Vec<Box<dyn tokio_postgres::types::ToSql + Sync + Send>> =
+            Vec::new();
 
         for (index, param) in params.iter().enumerate() {
             let boxed_value = Self::value_to_sql_param(param)
@@ -200,11 +199,10 @@ impl DatabaseTypeConverter {
     ) -> Result<Option<Value>, String> {
         let value = match column_type {
             // String types
-            &Type::VARCHAR | &Type::TEXT | &Type::BPCHAR | &Type::NAME | &Type::CHAR => {
-                row.try_get::<_, Option<String>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v))
-            }
+            &Type::VARCHAR | &Type::TEXT | &Type::BPCHAR | &Type::NAME | &Type::CHAR => row
+                .try_get::<_, Option<String>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
 
             // Integer types
             &Type::INT2 => row
@@ -243,48 +241,40 @@ impl DatabaseTypeConverter {
                 .map(|v| json!(v)),
 
             // Date and time types
-            &Type::DATE => {
-                row.try_get::<_, Option<chrono::NaiveDate>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v.to_string()))
-            }
-            &Type::TIME => {
-                row.try_get::<_, Option<chrono::NaiveTime>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v.to_string()))
-            }
-            &Type::TIMESTAMP => {
-                row.try_get::<_, Option<chrono::NaiveDateTime>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v.to_string()))
-            }
-            &Type::TIMESTAMPTZ => {
-                row.try_get::<_, Option<chrono::DateTime<chrono::Utc>>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v.to_rfc3339()))
-            }
-            &Type::TIMETZ => {
-                row.try_get::<_, Option<String>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v))
-            }
+            &Type::DATE => row
+                .try_get::<_, Option<chrono::NaiveDate>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v.to_string())),
+            &Type::TIME => row
+                .try_get::<_, Option<chrono::NaiveTime>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v.to_string())),
+            &Type::TIMESTAMP => row
+                .try_get::<_, Option<chrono::NaiveDateTime>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v.to_string())),
+            &Type::TIMESTAMPTZ => row
+                .try_get::<_, Option<chrono::DateTime<chrono::Utc>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v.to_rfc3339())),
+            &Type::TIMETZ => row
+                .try_get::<_, Option<String>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
 
             // Network types
-            &Type::INET => {
-                row.try_get::<_, Option<std::net::IpAddr>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v.to_string()))
-            }
-            &Type::CIDR => {
-                row.try_get::<_, Option<String>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v))
-            }
-            &Type::MACADDR | &Type::MACADDR8 => {
-                row.try_get::<_, Option<String>>(column_index)
-                    .map_err(|e| e.to_string())?
-                    .map(|v| json!(v))
-            }
+            &Type::INET => row
+                .try_get::<_, Option<std::net::IpAddr>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v.to_string())),
+            &Type::CIDR => row
+                .try_get::<_, Option<String>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
+            &Type::MACADDR | &Type::MACADDR8 => row
+                .try_get::<_, Option<String>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
 
             // JSON types
             &Type::JSON | &Type::JSONB => {
@@ -359,15 +349,24 @@ impl DatabaseTypeConverter {
             }
 
             // Geometric types
-            &Type::POINT | &Type::LINE | &Type::LSEG | &Type::BOX | &Type::PATH
-            | &Type::POLYGON | &Type::CIRCLE => row
+            &Type::POINT
+            | &Type::LINE
+            | &Type::LSEG
+            | &Type::BOX
+            | &Type::PATH
+            | &Type::POLYGON
+            | &Type::CIRCLE => row
                 .try_get::<_, Option<String>>(column_index)
                 .map_err(|e| e.to_string())?
                 .map(|v| json!(v)),
 
             // Range types
-            &Type::INT4_RANGE | &Type::INT8_RANGE | &Type::NUM_RANGE | &Type::TS_RANGE
-            | &Type::TSTZ_RANGE | &Type::DATE_RANGE => row
+            &Type::INT4_RANGE
+            | &Type::INT8_RANGE
+            | &Type::NUM_RANGE
+            | &Type::TS_RANGE
+            | &Type::TSTZ_RANGE
+            | &Type::DATE_RANGE => row
                 .try_get::<_, Option<String>>(column_index)
                 .map_err(|e| e.to_string())?
                 .map(|v| json!(v)),
@@ -385,8 +384,14 @@ impl DatabaseTypeConverter {
                 .map(|v| json!(v)),
 
             // OID types
-            &Type::OID | &Type::REGPROC | &Type::REGPROCEDURE | &Type::REGOPER
-            | &Type::REGOPERATOR | &Type::REGCLASS | &Type::REGTYPE | &Type::REGCONFIG
+            &Type::OID
+            | &Type::REGPROC
+            | &Type::REGPROCEDURE
+            | &Type::REGOPER
+            | &Type::REGOPERATOR
+            | &Type::REGCLASS
+            | &Type::REGTYPE
+            | &Type::REGCONFIG
             | &Type::REGDICTIONARY => row
                 .try_get::<_, Option<String>>(column_index)
                 .map_err(|e| e.to_string())?
@@ -406,7 +411,9 @@ impl DatabaseTypeConverter {
 
             // HSTORE type
             _ if column_type.name() == "hstore" => {
-                if let Ok(Some(hstore)) = row.try_get::<_, Option<HashMap<String, Option<String>>>>(column_index) {
+                if let Ok(Some(hstore)) =
+                    row.try_get::<_, Option<HashMap<String, Option<String>>>>(column_index)
+                {
                     let mut obj = serde_json::Map::new();
                     for (key, value) in hstore {
                         if let Some(v) = value {
@@ -430,6 +437,4 @@ impl DatabaseTypeConverter {
 
         Ok(value)
     }
-
-
 }

@@ -285,6 +285,9 @@ message AccountProfiles {
   optional string last_name = 23;
   optional string email = 24;
   optional string account_id = 25;
+  optional string date_of_birth = 26;
+  optional string middle_name = 27;
+  optional string auth_preference = 28;
 }
 
 // Accounts entity definition
@@ -533,73 +536,131 @@ message ContactEmails {
 
 // Files entity definition
 message Files {
-  optional string image_url = 1;
-  optional string fieldname = 2;
-  optional string originalname = 3;
-  optional string encoding = 4;
-  optional string mimetype = 5;
-  optional string destination = 6;
-  optional string filename = 7;
-  optional string path = 8;
-  optional int32 size = 9;
-  optional string uploaded_by = 10;
-  optional string downloaded_by = 11;
-  optional string etag = 12;
-  optional string version_id = 13;
-  optional string download_path = 14;
-  optional string presigned_url = 15;
-  optional int32 presigned_url_expire = 16;
-  optional int32 tombstone = 17;
-  optional string status = 18;
-  optional string previous_status = 19;
-  optional int32 version = 20;
-  optional string created_date = 21;
-  optional string created_time = 22;
-  optional string updated_date = 23;
-  optional string updated_time = 24;
-  optional string organization_id = 25;
-  optional string created_by = 26;
-  optional string updated_by = 27;
-  optional string deleted_by = 28;
-  optional string requested_by = 29;
-  optional string timestamp = 30;
-  repeated string tags = 31;
-  repeated string categories = 32;
-  optional string code = 33;
-  optional string id = 34;
-  optional int32 sensitivity_level = 35;
-  optional string sync_status = 36;
-  optional bool is_batch = 37;
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string image_url = 22;
+  optional string fieldname = 23;
+  optional string originalname = 24;
+  optional string encoding = 25;
+  optional string mimetype = 26;
+  optional string destination = 27;
+  optional string filename = 28;
+  optional string path = 29;
+  optional int32 size = 30;
+  optional string uploaded_by = 31;
+  optional string downloaded_by = 32;
+  optional string etag = 33;
+  optional string version_id = 34;
+  optional string download_path = 35;
+  optional string presigned_url = 36;
+  optional int32 presigned_url_expire = 37;
 }
 
 // TestHypertable entity definition
 message TestHypertable {
-  optional string timestamp = 1;
-  optional string hypertable_timestamp = 2;
-  optional string sensor_id = 3;
-  optional int32 temperature = 4;
-  optional int32 humidity = 5;
-  optional string location = 6;
-  optional int32 tombstone = 7;
-  optional string status = 8;
-  optional string previous_status = 9;
-  optional int32 version = 10;
-  optional string created_date = 11;
-  optional string created_time = 12;
-  optional string updated_date = 13;
-  optional string updated_time = 14;
-  optional string organization_id = 15;
-  optional string created_by = 16;
-  optional string updated_by = 17;
-  optional string deleted_by = 18;
-  optional string requested_by = 19;
-  repeated string tags = 20;
-  repeated string categories = 21;
-  optional string code = 22;
-  optional string id = 23;
-  optional int32 sensitivity_level = 24;
-  optional string sync_status = 25;
-  optional bool is_batch = 26;
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string hypertable_timestamp = 22;
+  optional string sensor_id = 23;
+  optional int32 temperature = 24;
+  optional int32 humidity = 25;
+  optional string location = 26;
+}
+
+// AccountPhoneNumbers entity definition
+message AccountPhoneNumbers {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string account_profile_id = 22;
+  optional string raw_phone_number = 23;
+  optional bool is_primary = 24;
+  optional string iso_code = 25;
+  optional string country_code = 26;
+}
+
+// AccountSignatures entity definition
+message AccountSignatures {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string account_profile_id = 22;
+  optional string name = 23;
+  optional string signature = 24;
 }
 
 // Create ExternalContacts request
@@ -2666,6 +2727,264 @@ message UpsertTestHypertableResponse {
   repeated TestHypertable data = 4;
 }
 
+// Create AccountPhoneNumbers request
+message CreateAccountPhoneNumbersRequest {
+  AccountPhoneNumbers account_phone_numbers = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create AccountPhoneNumbers response
+message CreateAccountPhoneNumbersResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  AccountPhoneNumbers data = 4;
+}
+
+// Get AccountPhoneNumbers request
+message GetAccountPhoneNumbersRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get AccountPhoneNumbers response
+message GetAccountPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  AccountPhoneNumbers data = 3;
+}
+
+// Update AccountPhoneNumbers request
+message UpdateAccountPhoneNumbersRequest {
+  AccountPhoneNumbers account_phone_number = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update AccountPhoneNumbers response
+message UpdateAccountPhoneNumbersResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  AccountPhoneNumbers data = 4;
+}
+
+// BatchUpdate AccountPhoneNumbers request
+message BatchUpdateAccountPhoneNumbersRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  AccountPhoneNumbers updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate AccountPhoneNumbers response
+message BatchUpdateAccountPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AccountPhoneNumbers data = 4;
+}
+
+// BatchDelete AccountPhoneNumbers request
+message BatchDeleteAccountPhoneNumbersRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete AccountPhoneNumbers response
+message BatchDeleteAccountPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  AccountPhoneNumbers data = 4;
+}
+
+// Delete AccountPhoneNumbers request
+message DeleteAccountPhoneNumbersRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete AccountPhoneNumbers response
+message DeleteAccountPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  AccountPhoneNumbers data = 4;
+}
+
+// BatchInsert AccountPhoneNumbers request
+message BatchInsertAccountPhoneNumbersRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated AccountPhoneNumbers account_phone_numbers = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert AccountPhoneNumbers response
+message BatchInsertAccountPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AccountPhoneNumbers data = 4;
+}
+
+// Upsert AccountPhoneNumbers request
+message UpsertAccountPhoneNumbersRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    AccountPhoneNumbers data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert AccountPhoneNumbers response
+message UpsertAccountPhoneNumbersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AccountPhoneNumbers data = 4;
+}
+
+// Create AccountSignatures request
+message CreateAccountSignaturesRequest {
+  AccountSignatures account_signatures = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create AccountSignatures response
+message CreateAccountSignaturesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  AccountSignatures data = 4;
+}
+
+// Get AccountSignatures request
+message GetAccountSignaturesRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get AccountSignatures response
+message GetAccountSignaturesResponse {
+  bool success = 1;
+  string message = 2;
+  AccountSignatures data = 3;
+}
+
+// Update AccountSignatures request
+message UpdateAccountSignaturesRequest {
+  AccountSignatures account_signature = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update AccountSignatures response
+message UpdateAccountSignaturesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  AccountSignatures data = 4;
+}
+
+// BatchUpdate AccountSignatures request
+message BatchUpdateAccountSignaturesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated AdvanceFilter advance_filters = 1;
+  AccountSignatures updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate AccountSignatures response
+message BatchUpdateAccountSignaturesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AccountSignatures data = 4;
+}
+
+// BatchDelete AccountSignatures request
+message BatchDeleteAccountSignaturesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated AdvanceFilter advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete AccountSignatures response
+message BatchDeleteAccountSignaturesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  AccountSignatures data = 4;
+}
+
+// Delete AccountSignatures request
+message DeleteAccountSignaturesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete AccountSignatures response
+message DeleteAccountSignaturesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  AccountSignatures data = 4;
+}
+
+// BatchInsert AccountSignatures request
+message BatchInsertAccountSignaturesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated AccountSignatures account_signatures = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert AccountSignatures response
+message BatchInsertAccountSignaturesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AccountSignatures data = 4;
+}
+
+// Upsert AccountSignatures request
+message UpsertAccountSignaturesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    AccountSignatures data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert AccountSignatures response
+message UpsertAccountSignaturesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated AccountSignatures data = 4;
+}
+
 // Enum for aggregation types
 enum AggregationType {
   SUM = 0;
@@ -3185,6 +3504,54 @@ service StoreService {
 
   // Upsert a TestHypertable (create if not exists, update if exists)
   rpc UpsertTestHypertable(UpsertTestHypertableRequest) returns (UpsertTestHypertableResponse);
+
+  // Create a new AccountPhoneNumbers
+  rpc CreateAccountPhoneNumbers(CreateAccountPhoneNumbersRequest) returns (CreateAccountPhoneNumbersResponse);
+
+  // Get a AccountPhoneNumbers by ID
+  rpc GetAccountPhoneNumbers(GetAccountPhoneNumbersRequest) returns (GetAccountPhoneNumbersResponse);
+
+  // Update an existing AccountPhoneNumbers
+  rpc UpdateAccountPhoneNumbers(UpdateAccountPhoneNumbersRequest) returns (UpdateAccountPhoneNumbersResponse);
+
+  // Delete a AccountPhoneNumbers by ID
+  rpc DeleteAccountPhoneNumbers(DeleteAccountPhoneNumbersRequest) returns (DeleteAccountPhoneNumbersResponse);
+
+  // Batch insert multiple AccountPhoneNumberss
+  rpc BatchInsertAccountPhoneNumbers(BatchInsertAccountPhoneNumbersRequest) returns (BatchInsertAccountPhoneNumbersResponse);
+
+  // Batch update multiple AccountPhoneNumberss based on filters
+  rpc BatchUpdateAccountPhoneNumbers(BatchUpdateAccountPhoneNumbersRequest) returns (BatchUpdateAccountPhoneNumbersResponse);
+
+  // Batch delete multiple AccountPhoneNumberss based on filters
+  rpc BatchDeleteAccountPhoneNumbers(BatchDeleteAccountPhoneNumbersRequest) returns (BatchDeleteAccountPhoneNumbersResponse);
+
+  // Upsert a AccountPhoneNumbers (create if not exists, update if exists)
+  rpc UpsertAccountPhoneNumbers(UpsertAccountPhoneNumbersRequest) returns (UpsertAccountPhoneNumbersResponse);
+
+  // Create a new AccountSignatures
+  rpc CreateAccountSignatures(CreateAccountSignaturesRequest) returns (CreateAccountSignaturesResponse);
+
+  // Get a AccountSignatures by ID
+  rpc GetAccountSignatures(GetAccountSignaturesRequest) returns (GetAccountSignaturesResponse);
+
+  // Update an existing AccountSignatures
+  rpc UpdateAccountSignatures(UpdateAccountSignaturesRequest) returns (UpdateAccountSignaturesResponse);
+
+  // Delete a AccountSignatures by ID
+  rpc DeleteAccountSignatures(DeleteAccountSignaturesRequest) returns (DeleteAccountSignaturesResponse);
+
+  // Batch insert multiple AccountSignaturess
+  rpc BatchInsertAccountSignatures(BatchInsertAccountSignaturesRequest) returns (BatchInsertAccountSignaturesResponse);
+
+  // Batch update multiple AccountSignaturess based on filters
+  rpc BatchUpdateAccountSignatures(BatchUpdateAccountSignaturesRequest) returns (BatchUpdateAccountSignaturesResponse);
+
+  // Batch delete multiple AccountSignaturess based on filters
+  rpc BatchDeleteAccountSignatures(BatchDeleteAccountSignaturesRequest) returns (BatchDeleteAccountSignaturesResponse);
+
+  // Upsert a AccountSignatures (create if not exists, update if exists)
+  rpc UpsertAccountSignatures(UpsertAccountSignaturesRequest) returns (UpsertAccountSignaturesResponse);
 
   // Aggregation filter for advanced queries
   rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);

@@ -74,7 +74,17 @@ db-migrate-revert:
 	@echo "Reverting last migration..."
 	@cd bin/store && diesel migration revert 
 
-# Run the store in watch mode with PG library configurations
-local-store-watch:
-	@echo "Starting store in watch mode..."
-	@cd bin/store && PQ_LIB_DIR=/opt/homebrew/opt/postgresql@14/lib/postgresql@14 LIBRARY_PATH=/opt/homebrew/opt/postgresql@14/lib/postgresql@14 cargo watch -x run
+# Format Rust code
+fmt:
+	@echo "Formatting Rust code..."
+	@cargo fmt --all
+	@echo "✅ Code formatting complete!"
+
+# Check code formatting
+fmt-check:
+	@echo "Checking code formatting..."
+	@cargo fmt --all -- --check
+
+# Setup git hooks
+setup-hooks:
+	@./scripts/setup-hooks.sh

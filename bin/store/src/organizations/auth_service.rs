@@ -169,7 +169,10 @@ pub async fn auth(
         return Ok(LoginResponse {
             message: "Authenticated".to_string(),
             token: Some(new_token),
-            role_id: signed_in_account["role_id"].as_str().unwrap_or_default().to_string(),
+            role_id: signed_in_account["role_id"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
         });
     }
 
@@ -367,7 +370,10 @@ pub async fn root_auth(
     Ok(LoginResponse {
         message: "Authenticated".to_string(),
         token: Some(new_token),
-        role_id: account_organization["role_id"].as_str().unwrap_or_default().to_string(),
+        role_id: account_organization["role_id"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
     })
 }
 #[allow(warnings)]
@@ -666,30 +672,30 @@ pub async fn get_account(
         "ao.email = $1".to_string(),
         "ao.account_id IS NOT NULL".to_string(),
     ];
-    
+
     let mut param_count = 1;
     let mut params: Vec<String> = vec![email.to_string()];
-    
+
     if let Some(org_id) = organization_id {
         param_count += 1;
         where_conditions.push(format!("ao.organization_id = ${}", param_count));
         params.push(org_id.to_string());
     }
-    
+
     if let Some(acc_org_id) = account_organization_id {
         param_count += 1;
         where_conditions.push(format!("ao.id = ${}", param_count));
         params.push(acc_org_id.to_string());
     }
-    
+
     if let Some(acc_id) = account_id {
         param_count += 1;
         where_conditions.push(format!("ao.account_id = ${}", param_count));
         params.push(acc_id.to_string());
     }
-    
+
     let where_clause = where_conditions.join(" AND ");
-    
+
     let query = format!(
         "SELECT json_build_object(
             'profile', CASE WHEN ap.id IS NOT NULL THEN json_build_object(
@@ -739,26 +745,60 @@ pub async fn get_account(
         LIMIT 1",
         where_clause
     );
-    
+
     // Execute the first query
     let result = match params.len() {
-        1 => sql_query(&query).bind::<Text, _>(&params[0]).get_result::<JsonResult>(&mut conn).await,
-        2 => sql_query(&query).bind::<Text, _>(&params[0]).bind::<Text, _>(&params[1]).get_result::<JsonResult>(&mut conn).await,
-        3 => sql_query(&query).bind::<Text, _>(&params[0]).bind::<Text, _>(&params[1]).bind::<Text, _>(&params[2]).get_result::<JsonResult>(&mut conn).await,
-        4 => sql_query(&query).bind::<Text, _>(&params[0]).bind::<Text, _>(&params[1]).bind::<Text, _>(&params[2]).bind::<Text, _>(&params[3]).get_result::<JsonResult>(&mut conn).await,
-        _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "Too many parameters")),
+        1 => {
+            sql_query(&query)
+                .bind::<Text, _>(&params[0])
+                .get_result::<JsonResult>(&mut conn)
+                .await
+        }
+        2 => {
+            sql_query(&query)
+                .bind::<Text, _>(&params[0])
+                .bind::<Text, _>(&params[1])
+                .get_result::<JsonResult>(&mut conn)
+                .await
+        }
+        3 => {
+            sql_query(&query)
+                .bind::<Text, _>(&params[0])
+                .bind::<Text, _>(&params[1])
+                .bind::<Text, _>(&params[2])
+                .get_result::<JsonResult>(&mut conn)
+                .await
+        }
+        4 => {
+            sql_query(&query)
+                .bind::<Text, _>(&params[0])
+                .bind::<Text, _>(&params[1])
+                .bind::<Text, _>(&params[2])
+                .bind::<Text, _>(&params[3])
+                .get_result::<JsonResult>(&mut conn)
+                .await
+        }
+        _ => {
+            return Err(ApiError::new(
+                StatusCode::BAD_REQUEST,
+                "Too many parameters",
+            ))
+        }
     };
-    
+
     match result {
         Ok(json_result) => {
             match serde_json::from_str::<serde_json::Value>(&json_result.json_result) {
                 Ok(parsed_json) => return Ok(Some(parsed_json)),
                 Err(e) => {
                     log::error!("Failed to parse JSON result: {}", e);
-                    return Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse account data"));
+                    return Err(ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to parse account data",
+                    ));
                 }
             }
-        },
+        }
         Err(_) => {
             // If first query fails and account_id is provided, try fallback query
             if let Some(acc_id) = account_id {
@@ -767,16 +807,16 @@ pub async fn get_account(
                     "a.status = 'Active'".to_string(),
                     "a.account_id = $1".to_string(),
                 ];
-                
+
                 let mut fallback_params = vec![acc_id.to_string()];
-                
+
                 if let Some(org_id) = organization_id {
                     fallback_conditions.push("a.organization_id = $2".to_string());
                     fallback_params.push(org_id.to_string());
                 }
-                
+
                 let fallback_where = fallback_conditions.join(" AND ");
-                
+
                 let fallback_query = format!(
                     "SELECT json_build_object(
                         'profile', CASE WHEN ap.id IS NOT NULL THEN json_build_object(
@@ -815,23 +855,42 @@ pub async fn get_account(
                     LIMIT 1",
                     fallback_where
                 );
-                
+
                 let fallback_result = match fallback_params.len() {
-                    1 => sql_query(&fallback_query).bind::<Text, _>(&fallback_params[0]).get_result::<JsonResult>(&mut conn).await,
-                    2 => sql_query(&fallback_query).bind::<Text, _>(&fallback_params[0]).bind::<Text, _>(&fallback_params[1]).get_result::<JsonResult>(&mut conn).await,
-                    _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "Invalid fallback parameters")),
+                    1 => {
+                        sql_query(&fallback_query)
+                            .bind::<Text, _>(&fallback_params[0])
+                            .get_result::<JsonResult>(&mut conn)
+                            .await
+                    }
+                    2 => {
+                        sql_query(&fallback_query)
+                            .bind::<Text, _>(&fallback_params[0])
+                            .bind::<Text, _>(&fallback_params[1])
+                            .get_result::<JsonResult>(&mut conn)
+                            .await
+                    }
+                    _ => {
+                        return Err(ApiError::new(
+                            StatusCode::BAD_REQUEST,
+                            "Invalid fallback parameters",
+                        ))
+                    }
                 };
-                
+
                 match fallback_result {
                     Ok(json_result) => {
                         match serde_json::from_str::<serde_json::Value>(&json_result.json_result) {
                             Ok(parsed_json) => return Ok(Some(parsed_json)),
                             Err(e) => {
                                 log::error!("Failed to parse fallback JSON result: {}", e);
-                                return Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "Failed to parse fallback account data"));
+                                return Err(ApiError::new(
+                                    StatusCode::INTERNAL_SERVER_ERROR,
+                                    "Failed to parse fallback account data",
+                                ));
                             }
                         }
-                    },
+                    }
                     Err(e) => {
                         log::error!("Database error in fallback query: {}", e);
                         return Ok(None);

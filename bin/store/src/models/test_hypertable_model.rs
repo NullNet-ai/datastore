@@ -8,12 +8,6 @@ use serde::{Deserialize, Serialize};
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
 pub struct TestHypertableModel {
-    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
-    pub hypertable_timestamp: Option<String>,
-    pub sensor_id: Option<String>,
-    pub temperature: Option<i32>,
-    pub humidity: Option<i32>,
-    pub location: Option<String>,
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -27,6 +21,7 @@ pub struct TestHypertableModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
+    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
@@ -34,4 +29,9 @@ pub struct TestHypertableModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
+    pub hypertable_timestamp: Option<String>,
+    pub sensor_id: Option<String>,
+    pub temperature: Option<i32>,
+    pub humidity: Option<i32>,
+    pub location: Option<String>,
 }

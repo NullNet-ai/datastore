@@ -1,10 +1,11 @@
 use crate::providers::search_suggestion::structs::{
-    AliasedJoinedEntity, FieldFiltersResult, FormatFilterResponse, FieldExpression, ConcatenatedExpressions
+    AliasedJoinedEntity, ConcatenatedExpressions, FieldExpression, FieldFiltersResult,
+    FormatFilterResponse,
 };
-use crate::structs::structs::{FilterCriteria, MatchPattern, ConcatenateField};
+use crate::structs::structs::{ConcatenateField, FilterCriteria, MatchPattern};
 use pluralizer::pluralize;
 use serde_json::Value;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::env;
 
 fn get_default_search_pattern() -> MatchPattern {
@@ -184,23 +185,24 @@ pub fn get_field_filters(
     }
 }
 
-
 pub fn generate_concatenated_expressions(
     concatenate_fields: Vec<ConcatenateField>,
     date_format: Option<&str>,
 ) -> ConcatenatedExpressions {
     let default_date_format = "mm/dd/YYYY";
     let date_fmt = date_format.unwrap_or(default_date_format);
-    
-    concatenate_fields.into_iter().fold(
-        HashMap::new(),
-        |mut acc, field| {
-            let entity = field.aliased_entity
+
+    concatenate_fields
+        .into_iter()
+        .fold(HashMap::new(), |mut acc, field| {
+            let entity = field
+                .aliased_entity
                 .unwrap_or_else(|| pluralize(&field.entity, 2, false));
-            
+
             let concatenated_expression = format!(
                 "({})",
-                field.fields
+                field
+                    .fields
                     .iter()
                     .map(|f| {
                         if f.ends_with("_date") {
@@ -209,23 +211,22 @@ pub fn generate_concatenated_expressions(
                                 entity, f, date_fmt
                             )
                         } else {
-                            format!("COALESCE(\"{}\".\"{}\" , '')" , entity, f)
+                            format!("COALESCE(\"{}\".\"{}\" , '')", entity, f)
                         }
                     })
                     .collect::<Vec<_>>()
                     .join(&format!(" || '{}' || ", field.separator))
             );
-            
+
             let field_expr = FieldExpression {
                 expression: concatenated_expression,
                 fields: field.fields.clone(),
             };
-            
+
             acc.entry(entity)
                 .or_insert_with(HashMap::new)
                 .insert(field.field_name, field_expr);
-            
+
             acc
-        },
-    )
+        })
 }

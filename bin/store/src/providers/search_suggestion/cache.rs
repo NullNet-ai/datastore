@@ -19,7 +19,7 @@ impl SearchSuggestionCache {
             .unwrap_or(30000);
         cache.insert_with_ttl(key.to_string(), value, Duration::from_millis(expiry_ms));
     }
-    
+
     pub fn hash_string(input: &str) -> String {
         let mut hasher = Sha1::new();
         hasher.update(input.as_bytes());

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Pre-push hook to ensure code is formatted before pushing
+
+echo "Running cargo fmt check..."
+
+# Run cargo fmt in check mode
+if ! cargo fmt --all -- --check; then
+    echo "❌ Code formatting check failed!"
+    echo "Please run 'make fmt' or 'cargo fmt --all' to fix formatting issues."
+    echo "Then commit the changes and try pushing again."
+    exit 1
+fi
+
+echo "✅ Code formatting check passed!"
+exit 0

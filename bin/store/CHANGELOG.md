@@ -5,6 +5,69 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.39
+### Author
+Kashan
+
+### Features
+- ***Git Hooks***: Implemented automatic code formatting enforcement
+  - Added pre-push hook that runs `cargo fmt --check` before every push
+  - Added post-checkout hook for automatic setup on clone/branch switch
+  - Created setup script for easy hook installation
+  - Added Makefile targets: `fmt`, `fmt-check`, and `setup-hooks`
+  - Self-sustaining system ensures all developers get formatting enforcement automatically
+---
+
+## 0.1.38
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator***: Fixed formatting issues in schema generation
+  - Enhanced `detect_field_indentation` function to properly detect existing indentation patterns
+  - Fixed `add_fields_to_existing_table` to ensure proper table structure reconstruction
+  - Corrected closing brace indentation in table definitions
+  - Resolved formatting issues when adding new fields to existing tables
+  - All table fields now consistently use 8-space indentation with proper 4-space closing braces
+---
+
+## 0.1.37
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator***: Fixed field ordering in schema and model generation
+  - System fields now correctly appear first in generated schemas
+  - Fixed VARCHAR parsing issue causing double parentheses in migrations
+  - Manually corrected field order in `files` and `test_hypertable` schemas
+---
+
+## 0.1.36
+### Author
+Kashan
+
+### Added
+- ***Schema Generator***: Enhanced VARCHAR type handling in schema generation
+  - Added support for preserving VARCHAR lengths in migrations while converting to Text in schema
+  - New tables: `account_phone_numbers`, `account_signatures`
+  - Added fields to `account_profile`: phone number and signature support
+  - Improved field type conversion for better Diesel compatibility
+---
+
+## 0.1.35
+### Author
+Bert
+### Fixes
+- ***Order By***: Fixed issue with empty order by fields
+  - Added check for empty order by fields
+  - Skipped order by construction if fields are empty
+- ***Group By***: Fixed issue with empty group by fields
+  - Added check for empty group by fields
+  - Skipped group by construction if fields are empty
+- ***Distinct By***: Fixed issue with empty distinct by fields
+  - Added check for empty distinct by fields
+  - Skipped distinct by construction if fields are empty
+---
 ## 0.1.34
 ### Author
 Kashan

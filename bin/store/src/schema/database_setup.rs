@@ -1,12 +1,12 @@
 use crate::db::create_connection;
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
+use log::{error, info, warn};
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 use tokio_postgres::Client;
-use log::{info, warn, error};
 
 // Define a struct to hold the flags for each step
 pub struct DatabaseSetupFlags {
