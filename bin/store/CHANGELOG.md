@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.35
+### Author
+Bert
+### Fixes
+- ***Order By***: Fixed issue with empty order by fields
+  - Added check for empty order by fields
+  - Skipped order by construction if fields are empty
+- ***Group By***: Fixed issue with empty group by fields
+  - Added check for empty group by fields
+  - Skipped group by construction if fields are empty
+- ***Distinct By***: Fixed issue with empty distinct by fields
+  - Added check for empty distinct by fields
+  - Skipped distinct by construction if fields are empty
+---
 ## 0.1.34
 ### Author
 Kashan
