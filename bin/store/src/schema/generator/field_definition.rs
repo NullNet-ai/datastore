@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::schema::generator::utils::FieldTypeParser;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FieldDefinition {
@@ -94,10 +94,10 @@ impl FieldDefinition {
     pub fn new(name: String, field_type: String) -> Result<Self, String> {
         let diesel_type = FieldTypeParser::parse_diesel_type(&field_type)?;
         let rust_type = FieldTypeParser::diesel_to_rust_type(&diesel_type)?;
-        
+
         let is_nullable = diesel_type.contains("Nullable");
         let is_array = diesel_type.contains("Array");
-        
+
         Ok(FieldDefinition {
             name,
             diesel_type,
@@ -111,14 +111,14 @@ impl FieldDefinition {
             migration_type: None,
         })
     }
-    
+
     /// Create a new FieldDefinition directly from diesel type (bypassing parsing)
     pub fn new_direct(name: String, diesel_type: String) -> Result<Self, String> {
         let rust_type = FieldTypeParser::diesel_to_rust_type(&diesel_type)?;
-        
+
         let is_nullable = diesel_type.contains("Nullable");
         let is_array = diesel_type.contains("Array");
-        
+
         Ok(FieldDefinition {
             name,
             diesel_type,
@@ -132,22 +132,25 @@ impl FieldDefinition {
             migration_type: None,
         })
     }
-    
+
     /// Parse the diesel field type to extract information
     pub fn parse(&self) -> Result<ParsedField, String> {
         self.parse_for_context(false) // Default to schema generation
     }
-    
+
     /// Parse the diesel field type to extract information with context
     pub fn parse_for_context(&self, for_migration: bool) -> Result<ParsedField, String> {
         // For migrations, use migration_type if available, otherwise diesel_type
         // For schema, always use diesel_type (which has VARCHAR converted to Text)
         let field_type = if for_migration {
-            self.migration_type.as_ref().unwrap_or(&self.diesel_type).clone()
+            self.migration_type
+                .as_ref()
+                .unwrap_or(&self.diesel_type)
+                .clone()
         } else {
             self.diesel_type.clone()
         };
-        
+
         Ok(ParsedField {
             name: self.name.clone(),
             field_type,
@@ -157,7 +160,7 @@ impl FieldDefinition {
             default_value: self.default_value.clone(),
         })
     }
-    
+
     /// Set field attributes
     pub fn with_attributes(
         mut self,
@@ -186,32 +189,32 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
     // This allows for a more user-friendly format
     let mut fields = Vec::new();
     let mut table_name = String::new();
-    
+
     for line in content.lines() {
         let line = line.trim();
         if line.is_empty() || line.starts_with("//") {
             continue;
         }
-        
+
         if line.starts_with("table_name:") {
             table_name = line.replace("table_name:", "").trim().to_string();
             continue;
         }
-        
+
         // Parse field definition
         // Expected format: field_name: field_type [index] [joins_with: table.column] [default: value]
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 2 {
             continue;
         }
-        
+
         let field_name = parts[0].trim_end_matches(':').to_string();
         let field_type = parts[1].to_string();
-        
+
         let mut is_index = false;
         // joins_with functionality removed
         let mut default_value = None;
-        
+
         // Parse additional attributes
         let remaining = &parts[2..];
         let mut i = 0;
@@ -221,26 +224,26 @@ pub fn parse_table_definition_file(content: &str) -> Result<TableDefinition, Str
                 "joins_with:" if i + 1 < remaining.len() => {
                     // joins_with functionality removed - ignoring this attribute
                     i += 1;
-                },
+                }
                 "default:" if i + 1 < remaining.len() => {
                     default_value = Some(remaining[i + 1].to_string());
                     i += 1;
-                },
-                _ => {},
+                }
+                _ => {}
             }
             i += 1;
         }
-        
+
         let field_def = FieldDefinition::new(field_name, field_type)
             .map_err(|e| format!("Failed to create field definition: {}", e))?
             .with_attributes(false, is_index, true, default_value);
         fields.push(field_def);
     }
-    
+
     if table_name.is_empty() {
         return Err("Table name not specified".to_string());
     }
-    
+
     Ok(TableDefinition {
         name: table_name,
         fields,
@@ -256,11 +259,9 @@ mod tests {
 
     #[test]
     fn test_parse_field_definition() {
-        let field = FieldDefinition::new(
-            "first_name".to_string(),
-            "nullable(text())".to_string()
-        ).unwrap();
-        
+        let field =
+            FieldDefinition::new("first_name".to_string(), "nullable(text())".to_string()).unwrap();
+
         let parsed = field.parse().unwrap();
         assert_eq!(parsed.name, "first_name");
         assert_eq!(field.rust_type, "Option<String>");
@@ -270,11 +271,9 @@ mod tests {
 
     #[test]
     fn test_parse_array_field() {
-        let field = FieldDefinition::new(
-            "tags".to_string(),
-            "nullable(array(text()))".to_string()
-        ).unwrap();
-        
+        let field = FieldDefinition::new("tags".to_string(), "nullable(array(text()))".to_string())
+            .unwrap();
+
         let parsed = field.parse().unwrap();
         assert_eq!(field.rust_type, "Option<Vec<String>>");
         assert!(field.is_nullable);
@@ -283,12 +282,10 @@ mod tests {
 
     #[test]
     fn test_parse_indexed_field() {
-        let field = FieldDefinition::new(
-            "device_id".to_string(),
-            "nullable(text())".to_string()
-        ).unwrap()
-        .with_attributes(false, true, true, None);
-        
+        let field = FieldDefinition::new("device_id".to_string(), "nullable(text())".to_string())
+            .unwrap()
+            .with_attributes(false, true, true, None);
+
         let parsed = field.parse().unwrap();
         assert_eq!(parsed.name, "device_id");
         assert!(parsed.is_indexed);

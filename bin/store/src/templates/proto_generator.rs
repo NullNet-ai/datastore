@@ -1,7 +1,7 @@
+use log::{error, info, warn};
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
-use log::{info, warn, error};
 
 use crate::utils::utils::{parse_tables, to_singular, Table};
 

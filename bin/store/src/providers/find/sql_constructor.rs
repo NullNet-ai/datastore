@@ -1,9 +1,6 @@
-use crate::{
-    structs::structs::{
-        ConcatenateField, FilterCriteria,
-        FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy, Join, LogicalOperator, MatchPattern,
-        SortOption,
-    },
+use crate::structs::structs::{
+    ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
+    Join, LogicalOperator, MatchPattern, SortOption,
 };
 use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
@@ -125,8 +122,6 @@ impl QueryFilter for GetByFilter {
     }
 }
 
-
-
 #[derive(Debug, Clone)]
 enum Token {
     Condition(String),
@@ -170,8 +165,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
         dbg!(&sql);
         Ok(sql)
     }
-
-
 
     fn get_field(table: &str, field: &str, format_str: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None)
@@ -219,7 +212,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 } else {
                     concat_field.entity.as_str()
                 };
-                
+
                 // Check if the table matches
                 if target_table == table {
                     // Generate concatenated expression
@@ -229,7 +222,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| Self::get_field_with_parse_as(table, f, format_str, None))
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", concat_field.separator));
-                    
+
                     // Apply parse_as type casting if provided and not empty
                     let base_expression = format!("({})", concatenated_expression);
                     return if let Some(cast_type) = parse_as {
@@ -244,7 +237,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             }
         }
-        
+
         // Fall back to regular field handling if not a concatenated field
         Self::get_field_with_parse_as(table, field, format_str, parse_as)
     }
@@ -265,7 +258,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
-        
+
         // Check if there are existing join selections that would handle concatenated fields
         let has_join_selections = !self.request_body.get_joins().is_empty()
             && !self.request_body.get_pluck_object().is_empty()
@@ -274,21 +267,24 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 .get_pluck_object()
                 .iter()
                 .any(|(_, fields)| !fields.is_empty());
-        
+
         // Handle concatenated fields for main table and joins
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
                 let entity_alias = field.aliased_entity.as_ref().unwrap_or(&field.entity);
-                
+
                 // Check if this concatenated field is for the main table
-                let is_main_table = field.entity == self.table || 
-                    field.aliased_entity.as_ref() == Some(&self.table);
-                
+                let is_main_table = field.entity == self.table
+                    || field.aliased_entity.as_ref() == Some(&self.table);
+
                 // Check if this concatenated field is for a joined table that has pluck_object
-                let is_joined_table_with_pluck = has_join_selections && 
-                    self.request_body.get_pluck_object().contains_key(entity_alias) &&
-                    !is_main_table;
-                
+                let is_joined_table_with_pluck = has_join_selections
+                    && self
+                        .request_body
+                        .get_pluck_object()
+                        .contains_key(entity_alias)
+                    && !is_main_table;
+
                 // Only create selection for main table concatenated fields
                 // Join selections will handle concatenated fields for joined tables
                 if is_main_table && !is_joined_table_with_pluck {
@@ -301,21 +297,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     let concatenated_expression = field
                         .fields
                         .iter()
-                        .map(|f| Self::get_field(table_name, f, self.request_body.get_date_format()))
+                        .map(|f| {
+                            Self::get_field(table_name, f, self.request_body.get_date_format())
+                        })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
-                    
+
                     let alias = &field.field_name;
-                    
-                    selections.push(format!(
-                        "({}) AS \"{}\"",
-                        concatenated_expression,
-                        alias
-                    ));
+
+                    selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
                 }
             }
         }
-        
+
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
             if distinct_by.is_empty() {
                 // Skip if distinct_by is empty string
@@ -332,15 +326,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
 
         let group_by = self.request_body.get_group_by();
-        
+
         // If group_by is present and not empty, replace all selections with group by aggregations
         if let Some(group_by) = group_by {
             if !group_by.fields.is_empty() {
                 return self.construct_group_by_selections();
             }
         }
-
-        
 
         // Add join selections from pluck_object if joins are present
         if !self.request_body.get_joins().is_empty()
@@ -391,7 +383,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
             // Add unique fields from group_by.fields
             for field in &group_by.fields {
-                let field_selection = Self::get_field(&self.table, field, self.request_body.get_date_format());
+                let field_selection =
+                    Self::get_field(&self.table, field, self.request_body.get_date_format());
                 selections.push(field_selection);
             }
         }
@@ -418,7 +411,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Add concatenated fields that match the main table
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                if field.aliased_entity.as_ref() == Some(&self.table) || field.entity == self.table {
+                if field.aliased_entity.as_ref() == Some(&self.table) || field.entity == self.table
+                {
                     let table_name = if let Some(aliased_entity) = &field.aliased_entity {
                         aliased_entity
                     } else {
@@ -432,18 +426,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
-                    
+
                     // Create unique alias by combining table_name and field_name to avoid duplicates
                     let unique_alias = if let Some(aliased_entity) = &field.aliased_entity {
                         format!("{}_{}", aliased_entity, field.field_name)
                     } else {
                         field.field_name.clone()
                     };
-                    
-                    pluck_fields.push(format!(
-                        "({}) AS {}",
-                        concatenated_expression, unique_alias
-                    ));
+
+                    pluck_fields.push(format!("({}) AS {}", concatenated_expression, unique_alias));
                 }
             }
         }
@@ -471,7 +462,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Add concatenated fields that match this table alias
             if !self.request_body.get_concatenate_fields().is_empty() {
                 for field in self.request_body.get_concatenate_fields() {
-                    if field.aliased_entity.as_ref() == Some(table_alias) || field.entity == *table_alias {
+                    if field.aliased_entity.as_ref() == Some(table_alias)
+                        || field.entity == *table_alias
+                    {
                         let table_name = if let Some(aliased_entity) = &field.aliased_entity {
                             aliased_entity
                         } else {
@@ -506,17 +499,21 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let mut join_selections = Vec::new();
         if let Some(fields) = self.request_body.get_pluck_object().get(&self.table) {
             // Get concatenated field names to filter out
-            let concatenated_field_names: Vec<String> = self.request_body
+            let concatenated_field_names: Vec<String> = self
+                .request_body
                 .get_concatenate_fields()
                 .iter()
                 .map(|f| f.field_name.clone())
                 .collect();
 
-            join_selections.extend(fields.iter()
-                .filter(|field| *field != "id" && !concatenated_field_names.contains(field))
-                .map(|field| {
-                    Self::get_field(&self.table, field, self.request_body.get_date_format())
-                }));
+            join_selections.extend(
+                fields
+                    .iter()
+                    .filter(|field| *field != "id" && !concatenated_field_names.contains(field))
+                    .map(|field| {
+                        Self::get_field(&self.table, field, self.request_body.get_date_format())
+                    }),
+            );
         }
         // Only construct selections if joins are present
         if self.request_body.get_joins().is_empty() {
@@ -562,12 +559,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             .iter()
                             .for_each(|field| {
                                 // Check if this concatenate field matches the current alias (either by entity or aliased_entity)
-                                if field.aliased_entity.as_ref() == Some(to_alias) || field.entity == *to_alias {
-                                    let table_name = if let Some(aliased_entity) = &field.aliased_entity {
-                                        aliased_entity
-                                    } else {
-                                        field.entity.as_str()
-                                    };
+                                if field.aliased_entity.as_ref() == Some(to_alias)
+                                    || field.entity == *to_alias
+                                {
+                                    let table_name =
+                                        if let Some(aliased_entity) = &field.aliased_entity {
+                                            aliased_entity
+                                        } else {
+                                            field.entity.as_str()
+                                        };
                                     let concatenated_expression = field
                                         .fields
                                         .iter()
@@ -592,7 +592,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         Ok(clause) => clause,
                         Err(_) => format!("({}.tombstone = 0)", to_alias),
                     };
-                  
+
                     let order_by_clause = self.build_jsonb_agg_order_by(to_alias);
                     let mut selection = format!(
                         "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
@@ -670,13 +670,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     );
 
                     // Handle case sensitivity
-                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
-                         field_expression
-                     } else {
-                         format!("LOWER({})", field_expression)
-                     };
+                    let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
+                        field_expression
+                    } else {
+                        format!("LOWER({})", field_expression)
+                    };
 
-                    format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
+                    format!(
+                        "{} {}",
+                        final_field,
+                        sort_option.by_direction.to_uppercase()
+                    )
                 })
                 .collect();
 
@@ -687,16 +691,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Skip ORDER BY if using default values (id field with asc direction)
             let order_by = self.request_body.get_order_by();
             let order_direction = self.request_body.get_order_direction();
-            
+
             if order_by == "id" && order_direction == "asc" {
                 return String::new();
             }
-            
-            let field_expression = Self::get_field(
-                table_alias,
-                order_by,
-                self.request_body.get_date_format(),
-            );
+
+            let field_expression =
+                Self::get_field(table_alias, order_by, self.request_body.get_date_format());
 
             // Handle case sensitivity
             let final_field = if self
@@ -983,13 +984,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         } else {
             &join.field_relation.to.entity
         };
-        
+
         let to_alias = if is_self_join {
-            join.field_relation.to.alias.as_deref().unwrap_or(&self.table)
+            join.field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&self.table)
         } else {
             join.field_relation.to.alias.as_deref().unwrap_or(to_entity)
         };
-        
+
         let to_field = &join.field_relation.to.field;
         let from_entity = if is_self_join {
             &self.table
@@ -1007,7 +1012,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
                 fields
                     .iter()
-                    .map(|field| format!("\"{}\".\"{}\"" , lateral_alias, field))
+                    .map(|field| format!("\"{}\".\"{}\"", lateral_alias, field))
                     .collect::<Vec<_>>()
                     .join(", ")
             } else {
@@ -1018,7 +1023,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let standard_where = self
             .build_system_where_clause(&lateral_alias)
             .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
-        
+
         if is_nested {
             return format!(
                 "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
@@ -1029,13 +1034,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 to_alias
             );
         }
-        
+
         let from_table_ref = if is_self_join {
             &self.table
         } else {
             &self.table
         };
-        
+
         format!(
             "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
             selected_fields,
@@ -1334,7 +1339,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             if distinct_by.is_empty() {
                 return String::new();
             }
-            
+
             let fields: Vec<String> = distinct_by
                 .split(',')
                 .map(|field| {
@@ -1390,16 +1395,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Skip ORDER BY if using default values (id field with asc direction)
             let order_by = self.request_body.get_order_by();
             let order_direction = self.request_body.get_order_direction();
-            
+
             if order_by == "id" && order_direction == "asc" {
                 return String::from("");
             }
-            
-            let field_expression = Self::get_field(
-                &self.table,
-                order_by,
-                self.request_body.get_date_format(),
-            );
+
+            let field_expression =
+                Self::get_field(&self.table, order_by, self.request_body.get_date_format());
 
             // Handle case sensitivity
             let final_field = if self

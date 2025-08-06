@@ -1,5 +1,5 @@
-use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::schema::forbidden_tables;
+use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
 use diesel::sql_types::Text;
@@ -88,7 +88,13 @@ pub struct SqlUpdate {
 
 impl RequestBody {
     // Process record with common fields and return a Value directly
-    pub fn process_record(&mut self, operation: &str, auth: &Auth, is_root_account: bool, table: &str) {
+    pub fn process_record(
+        &mut self,
+        operation: &str,
+        auth: &Auth,
+        is_root_account: bool,
+        table: &str,
+    ) {
         // // Add common fields to the record
         self.add_common_fields(operation, auth, is_root_account, table);
 
@@ -119,7 +125,13 @@ impl RequestBody {
     }
 
     // Helper method to add common fields
-    fn add_common_fields(&mut self, operation: &str, auth: &Auth, is_root_account: bool, table: &str) {
+    fn add_common_fields(
+        &mut self,
+        operation: &str,
+        auth: &Auth,
+        is_root_account: bool,
+        table: &str,
+    ) {
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
@@ -144,11 +156,15 @@ impl RequestBody {
                 self.record["updated_time"] = json!(time_str);
                 self.record["updated_by"] = json!(auth.responsible_account);
                 self.record["version"] = json!(0); // ! don't change this, it gets discarded in the end, it's just a placeholder
-                
+
                 // Add organization_id if conditions are met
-                if !self.record.get("organization_id").is_some_and(|v| !v.is_null()) 
-                    && !is_root_account 
-                    && !forbidden_tables::is_forbidden_table(table) {
+                if !self
+                    .record
+                    .get("organization_id")
+                    .is_some_and(|v| !v.is_null())
+                    && !is_root_account
+                    && !forbidden_tables::is_forbidden_table(table)
+                {
                     self.record["organization_id"] = json!(auth.organization_id);
                 }
             }
@@ -337,7 +353,7 @@ pub struct GetByFilter {
 
     #[serde(default = "default_limit")]
     pub limit: usize,
-    
+
     pub distinct_by: Option<String>,
 }
 

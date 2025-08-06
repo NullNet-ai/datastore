@@ -121,8 +121,6 @@ impl SharedStreamingState {
         let mut processing = self.processing_channels.lock().await;
         processing.remove(channel_name);
     }
-
-
 }
 
 static SHARED_STATE: std::sync::OnceLock<Arc<SharedStreamingState>> = std::sync::OnceLock::new();

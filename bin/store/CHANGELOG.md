@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.38
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator***: Fixed formatting issues in schema generation
+  - Enhanced `detect_field_indentation` function to properly detect existing indentation patterns
+  - Fixed `add_fields_to_existing_table` to ensure proper table structure reconstruction
+  - Corrected closing brace indentation in table definitions
+  - Resolved formatting issues when adding new fields to existing tables
+  - All table fields now consistently use 8-space indentation with proper 4-space closing braces
+---
+
 ## 0.1.37
 ### Author
 Kashan
