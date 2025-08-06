@@ -246,7 +246,6 @@ nullable_integer_array()   // Nullable<Array<Int4>>
 DieselType::Integer
 DieselType::BigInt
 DieselType::Text
-DieselType::VarChar(Some(255))
 DieselType::Bool
 DieselType::Timestamptz
 DieselType::Jsonb

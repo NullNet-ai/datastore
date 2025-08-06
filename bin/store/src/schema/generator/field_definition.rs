@@ -45,7 +45,6 @@ pub struct ForeignKey {
 #[allow(dead_code)]
 pub enum DieselType {
     Text,
-    VarChar(Option<u32>),
     Char(u32),
     Int4,
     Int8,
@@ -72,8 +71,7 @@ impl DieselType {
     pub fn to_diesel_type(&self) -> String {
         match self {
             DieselType::Text => "Text".to_string(),
-            DieselType::VarChar(Some(len)) => format!("Varchar<{}>", len),
-            DieselType::VarChar(None) => "Varchar".to_string(),
+
             DieselType::Char(len) => format!("Char<{}>", len),
             DieselType::Int4 => "Int4".to_string(),
             DieselType::Int8 => "Int8".to_string(),

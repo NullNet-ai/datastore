@@ -773,22 +773,6 @@ table! {
 
 table! {
     files(id) {
-        image_url -> Nullable<Text>,
-        fieldname -> Nullable<Text>,
-        originalname -> Nullable<Text>,
-        encoding -> Nullable<Text>,
-        mimetype -> Nullable<Text>,
-        destination -> Nullable<Text>,
-        filename -> Nullable<Text>,
-        path -> Nullable<Text>,
-        size -> Nullable<Int4>,
-        uploaded_by -> Nullable<Text>,
-        downloaded_by -> Nullable<Text>,
-        etag -> Nullable<Text>,
-        version_id -> Nullable<Text>,
-        download_path -> Nullable<Text>,
-        presigned_url -> Nullable<Text>,
-        presigned_url_expire -> Nullable<Int4>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -810,17 +794,27 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
+        fieldname -> Nullable<Text>,
+        originalname -> Nullable<Text>,
+        encoding -> Nullable<Text>,
+        mimetype -> Nullable<Text>,
+        destination -> Nullable<Text>,
+        filename -> Nullable<Text>,
+        path -> Nullable<Text>,
+        size -> Nullable<Int4>,
+        uploaded_by -> Nullable<Text>,
+        downloaded_by -> Nullable<Text>,
+        etag -> Nullable<Text>,
+        version_id -> Nullable<Text>,
+        download_path -> Nullable<Text>,
+        presigned_url -> Nullable<Text>,
+        presigned_url_expire -> Nullable<Int4>,
     }
 }
 
 table! {
     test_hypertable(timestamp) {
-        timestamp -> Nullable<Timestamptz>,
-        hypertable_timestamp -> Nullable<Text>,
-        sensor_id -> Nullable<Text>,
-        temperature -> Nullable<Int4>,
-        humidity -> Nullable<Int4>,
-        location -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -834,6 +828,7 @@ table! {
         updated_by -> Nullable<Text>,
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamptz>,
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
@@ -841,6 +836,11 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        hypertable_timestamp -> Nullable<Text>,
+        sensor_id -> Nullable<Text>,
+        temperature -> Nullable<Int4>,
+        humidity -> Nullable<Int4>,
+        location -> Nullable<Text>,
     }
 }
 
@@ -877,11 +877,7 @@ table! {
 }
 
 table! {
-    account_signatures(id) {
-        account_profile_id -> Nullable<Text>,
-        name -> Nullable<Text>,
-        signature -> Nullable<Text>,
-        tombstone -> Nullable<Int4>,
+    account_signatures(id) {        tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
         version -> Nullable<Int4>,
@@ -902,5 +898,8 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-    }
+        account_profile_id -> Nullable<Text>,
+        name -> Nullable<Text>,
+        signature -> Nullable<Text>,
+}
 }
