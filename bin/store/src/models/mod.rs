@@ -1,6 +1,8 @@
 pub mod account_model;
 pub mod account_organization_model;
+pub mod account_phone_number_model;
 pub mod account_profile_model;
+pub mod account_signature_model;
 pub mod address_model;
 
 pub mod contact_email_model;

@@ -385,6 +385,21 @@ impl GeneratorService {
         Ok(file_name.replace("_struct", "").replace("_table", ""))
     }
     
+    /// Convert field type for schema generation (VarChar -> Text)
+    fn convert_field_type_for_schema(field_type: &str) -> String {
+        if field_type.starts_with("Nullable<Varchar<") {
+            "Nullable<Text>".to_string()
+        } else if field_type.starts_with("Varchar<") {
+            "Text".to_string()
+        } else if field_type == "Nullable<Varchar>" {
+            "Nullable<Text>".to_string()
+        } else if field_type == "Varchar" {
+            "Text".to_string()
+        } else {
+            field_type.to_string()
+        }
+    }
+
     /// Extract fields from macro definition
     fn extract_fields_from_macro(content: &str) -> Result<Vec<FieldDefinition>, String> {
         let mut fields = Vec::new();
@@ -497,7 +512,17 @@ impl GeneratorService {
                             } else if rest.contains("nullable(array(text()))") {
                                 "Nullable<Array<Text>>".to_string()
                             } else if rest.contains("nullable(DieselType::VarChar") {
-                                "Nullable<Text>".to_string()
+                                // Parse VarChar with length for migrations, convert to Text for schema
+                                if let Some(start) = rest.find("VarChar(Some(") {
+                                    if let Some(end) = rest[start..].find("))") {
+                                        let length_part = &rest[start + 13..start + end]; // Skip "VarChar(Some("
+                                        format!("Nullable<Varchar<{}>>", length_part)
+                                    } else {
+                                        "Nullable<Varchar>".to_string()
+                                    }
+                                } else {
+                                    "Nullable<Varchar>".to_string()
+                                }
                             } else {
                                 "Nullable<Text>".to_string() // default
                             }
@@ -551,9 +576,15 @@ impl GeneratorService {
                             }
                         }
 
-                        let field_def = FieldDefinition::new_direct(field_name, field_type)
+                        // Create field definition with original type for migrations
+                        let mut field_def = FieldDefinition::new_direct(field_name.clone(), field_type.clone())
                             .map_err(|e| format!("Failed to create field definition: {}", e))?
-                            .with_attributes(is_primary_key, is_index, migration_nullable, default_value);
+                            .with_attributes(is_primary_key, is_index, migration_nullable, default_value.clone());
+                        
+                        // Store the original type for migrations and converted type for schema
+                        field_def.migration_type = Some(field_type.clone());
+                        field_def.diesel_type = Self::convert_field_type_for_schema(&field_type);
+                        
                         fields.push(field_def);
                     }
                 }

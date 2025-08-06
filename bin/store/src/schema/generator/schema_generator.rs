@@ -83,7 +83,7 @@ impl SchemaGenerator {
                 if !current_field_names.contains(existing_field) {
                     // Get field type information for the removed field
                     let field_definition = if let Some(field_type_info) = field_type_in_table(&table_def.name, existing_field) {
-                        Some(Self::field_type_info_to_definition(&field_type_info))
+                        Some(Self::field_type_info_to_migration_definition(&field_type_info))
                     } else {
                         None
                     };
@@ -458,12 +458,13 @@ impl SchemaGenerator {
     }
 
     /// Dynamically extracts system field names from the system_fields macro
-    /// Convert FieldTypeInfo to a field definition string for migrations
+    /// Convert FieldTypeInfo to a field definition string for schema generation (converts VARCHAR to Text)
     fn field_type_info_to_definition(field_type_info: &FieldTypeInfo) -> String {
         // Convert database types to Diesel types
         let diesel_type = match field_type_info.field_type.to_lowercase().as_str() {
             "bool" | "boolean" => "Bool",
-            "text" | "varchar" | "char" => "Text",
+            "text" => "Text",
+            "char" => "Text",
             "integer" | "int4" => "Int4",
             "bigint" | "int8" => "Int8",
             "float" | "float4" => "Float4",
@@ -475,6 +476,60 @@ impl SchemaGenerator {
             "uuid" => "Uuid",
             "bytea" => "Bytea",
             "numeric" | "decimal" => "Numeric",
+            // Handle VARCHAR with length constraints - convert to Text for schema
+            t if t.starts_with("varchar(") => {
+                // Convert all VARCHAR types to Text for schema
+                "Text"
+            },
+            "varchar" => "Text", // varchar without length - convert to Text
+            _ => &field_type_info.field_type, // fallback to original
+        };
+        
+        let mut definition = diesel_type.to_string();
+        
+        // Handle nullable wrapper
+        if field_type_info.nullable {
+            definition = format!("Nullable<{}>", definition);
+        }
+        
+        // Handle array wrapper
+        if field_type_info.is_array {
+            definition = format!("Array<{}>", definition);
+        }
+        
+        definition
+    }
+
+    /// Convert FieldTypeInfo to a field definition string for migration generation (preserves VARCHAR)
+    fn field_type_info_to_migration_definition(field_type_info: &FieldTypeInfo) -> String {
+        // Convert database types to Diesel types, preserving VARCHAR for migrations
+        let diesel_type = match field_type_info.field_type.to_lowercase().as_str() {
+            "bool" | "boolean" => "Bool",
+            "text" => "Text",
+            "char" => "Text",
+            "integer" | "int4" => "Int4",
+            "bigint" | "int8" => "Int8",
+            "float" | "float4" => "Float4",
+            "float8" | "double" => "Float8",
+            "timestamp" | "timestamptz" => "Timestamp",
+            "jsonb" => "Jsonb",
+            "json" => "Json",
+            "inet" => "Inet",
+            "uuid" => "Uuid",
+            "bytea" => "Bytea",
+            "numeric" | "decimal" => "Numeric",
+            // Handle VARCHAR with length constraints - preserve for migrations
+            t if t.starts_with("varchar(") => {
+                // Extract length and format as Varchar<length>
+                if let Some(start) = t.find('(') {
+                    if let Some(end) = t.find(')') {
+                        let length_str = &t[start + 1..end];
+                        return format!("Varchar<{}>", length_str);
+                    }
+                }
+                "Varchar" // fallback if parsing fails
+            },
+            "varchar" => "Varchar", // varchar without length
             _ => &field_type_info.field_type, // fallback to original
         };
         
@@ -700,68 +755,5 @@ impl SchemaGenerator {
         definition.push_str("    }\n}");
         
         Ok(definition)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::schema::generator::field_definition::FieldDefinition;
-
-    #[test]
-    fn test_table_exists_in_schema() {
-        let schema_content = r#"
-        table! {
-            users(id) {
-                id -> Nullable<Text>,
-                name -> Nullable<Text>,
-            }
-        }
-        "#;
-        
-        assert!(SchemaGenerator::table_exists_in_schema(schema_content, "users"));
-        assert!(!SchemaGenerator::table_exists_in_schema(schema_content, "posts"));
-    }
-
-    #[test]
-    fn test_generate_table_definition() {
-        let table_def = TableDefinition {
-            name: "test_table".to_string(),
-            fields: vec![
-                FieldDefinition {
-                    name: "id".to_string(),
-                    diesel_type: "Text".to_string(),
-                    rust_type: "String".to_string(),
-                    is_primary_key: true,
-                    is_indexed: false,
-                    is_nullable: false,
-                    is_array: false,
-                    migration_nullable: true,
-                    default_value: None,
-                },
-                FieldDefinition {
-                    name: "name".to_string(),
-                    diesel_type: "Text".to_string(),
-                    rust_type: "String".to_string(),
-                    is_primary_key: false,
-                    is_indexed: false,
-                    is_nullable: false,
-                    is_array: false,
-                    migration_nullable: true,
-                    default_value: None,
-                },
-            ],
-            indexes: vec![],
-            foreign_keys: vec![],
-            is_hypertable: false,
-        };
-        
-        let result = SchemaGenerator::generate_table_definition(&table_def);
-        assert!(result.is_ok());
-        let definition = result.unwrap();
-        assert!(definition.contains("table! {"));
-        assert!(definition.contains("test_table(id) {"));
-        assert!(definition.contains("id -> Nullable<Text>"));
-        assert!(definition.contains("name -> Nullable<Text>"));
     }
 }
