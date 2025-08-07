@@ -141,7 +141,9 @@ impl RequestBody {
 
         match operation {
             "create" => {
-                self.record["status"] = json!("Active");
+                if !self.record.as_object().unwrap().contains_key("status") {
+                    self.record["status"] = json!("Active");
+                }
                 self.record["created_date"] = json!(date_str);
                 self.record["created_time"] = json!(time_str);
                 self.record["updated_date"] = json!(date_str);

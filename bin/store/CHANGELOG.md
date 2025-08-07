@@ -5,6 +5,34 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.41
+### Author
+Kashan
+
+### Fixes
+- ***Record Status Assignment***: Fixed conditional status field assignment in record creation
+  - Modified `add_common_fields` function to only set status to "Active" if the record doesn't already contain a status field
+  - Preserves existing status values from incoming records while providing default "Active" status for records without status
+  - Prevents overwriting of explicitly provided status values during record creation
+---
+
+## 0.1.40
+### Author
+Kashan
+
+### Improvements
+- ***Error Logging***: Enhanced error logging across all controller functions
+  - Added comprehensive error logging to `get_by_id` function with table name and record ID context
+  - Enhanced `batch_insert_records` with detailed error logs for record processing, CSV conversion, database connection, and COPY command failures
+  - Added error logging to `batch_update_records` for batch update operation failures
+  - Enhanced `batch_delete_records` with error logging for batch delete operation failures
+  - Added error logging to `upsert` function for upsert operation failures with table context
+  - Enhanced `delete_record` with error logging including table name and record ID context
+  - Added error logging to `get_by_filter` function for query execution failures
+  - Enhanced `aggregation_filter` with error logging for aggregation query execution failures
+  - All error logs now include relevant context (table names, record IDs) and use consistent formatting for better debugging and monitoring
+---
+
 ## 0.1.39
 ### Author
 Kashan

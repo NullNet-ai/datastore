@@ -195,6 +195,12 @@ pub async fn update_record(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => {
+            log::error!(
+                "Error updating record in table '{}' with ID '{}': {:?}",
+                table_name,
+                record_id,
+                error
+            );
             let status_code = http::StatusCode::from_u16(error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
@@ -212,7 +218,6 @@ pub async fn create_record(
     table: web::Path<String>,
     body: web::Json<serde_json::Value>,
     query: web::Query<QueryParams>,
-    app_state: web::Data<providers::storage::AppState>,
 ) -> impl Responder {
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
@@ -272,36 +277,37 @@ pub async fn create_record(
             );
 
             // Create bucket using S3 client
-            let s3_client = &app_state.s3_client;
-            match s3_client.create_bucket().bucket(&bucket_name).send().await {
-                Ok(_) => {
-                    log::info!(
-                        "Successfully created bucket '{}' for organization '{}'",
-                        bucket_name,
-                        org_name
-                    );
-                }
-                Err(e) => {
-                    // Check if error is because bucket already exists
-                    let error_message = format!("{:?}", e);
-                    if error_message.contains("BucketAlreadyExists")
-                        || error_message.contains("BucketAlreadyOwnedByYou")
-                    {
-                        log::info!(
-                            "Bucket '{}' already exists for organization '{}'",
-                            bucket_name,
-                            org_name
-                        );
-                    } else {
-                        log::error!(
-                            "Failed to create bucket '{}' for organization '{}': {:?}",
-                            bucket_name,
-                            org_name,
-                            e
-                        );
-                    }
-                }
-            }
+
+            // let s3_client = &app_state.s3_client;
+            // match s3_client.create_bucket().bucket(&bucket_name).send().await {
+            //     Ok(_) => {
+            //         log::info!(
+            //             "Successfully created bucket '{}' for organization '{}'",
+            //             bucket_name,
+            //             org_name
+            //         );
+            //     }
+            //     Err(e) => {
+            //         // Check if error is because bucket already exists
+            //         let error_message = format!("{:?}", e);
+            //         if error_message.contains("BucketAlreadyExists")
+            //             || error_message.contains("BucketAlreadyOwnedByYou")
+            //         {
+            //             log::info!(
+            //                 "Bucket '{}' already exists for organization '{}'",
+            //                 bucket_name,
+            //                 org_name
+            //             );
+            //         } else {
+            //             log::error!(
+            //                 "Failed to create bucket '{}' for organization '{}': {:?}",
+            //                 bucket_name,
+            //                 org_name,
+            //                 e
+            //             );
+            //         }
+            //     }
+            // }
         } else {
             log::warn!("Organization name not found in request body for bucket creation");
         }
@@ -323,6 +329,11 @@ pub async fn create_record(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => {
+            log::error!(
+                "Error creating record in table '{}': {:?}",
+                table_name,
+                error
+            );
             let status_code = http::StatusCode::from_u16(error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
@@ -407,6 +418,12 @@ pub async fn get_by_id(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(_error) => {
+            log::error!(
+                "Error getting record from table '{}' with ID '{}': {:?}",
+                table_name,
+                record_id,
+                _error
+            );
             let status_code = http::StatusCode::from_u16(_error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
@@ -504,36 +521,51 @@ pub async fn batch_insert_records(
     ) {
         Ok((records, cols)) => (records, cols),
         Err(e) => {
+            log::error!(
+                "Error processing records for batch insert in table '{}': {}",
+                table_name,
+                e
+            );
             return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,
                 message: format!("Error processing records: {}", e),
                 count: 0,
                 data: vec![],
-            })
+            });
         }
     };
 
     let csv_data = match convert_json_to_csv(&processed_records, &columns) {
         Ok(data) => data,
         Err(e) => {
+            log::error!(
+                "Error converting records to CSV for batch insert in table '{}': {:?}",
+                table_name,
+                e
+            );
             return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,
                 message: format!("Error converting records to CSV: {:?}", e),
                 count: 0,
                 data: vec![],
-            })
+            });
         }
     };
 
     let client = match create_connection().await {
         Ok(client) => client,
         Err(e) => {
+            log::error!(
+                "Error creating database connection for batch insert in table '{}': {:?}",
+                table_name,
+                e
+            );
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("Error creating database connection: {:?}", e),
                 count: 0,
                 data: vec![],
-            })
+            });
         }
     };
 
@@ -542,12 +574,17 @@ pub async fn batch_insert_records(
     match execute_copy(&client, &table_name, &column_refs, csv_data).await {
         Ok(_) => processed_records.clone(),
         Err(e) => {
+            log::error!(
+                "Error executing COPY command for batch insert in table '{}': {:?}",
+                table_name,
+                e
+            );
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("Error executing COPY command: {:?}", e),
                 count: 0,
                 data: vec![],
-            })
+            });
         }
     };
 
@@ -676,12 +713,19 @@ pub async fn batch_update_records(
             count: count as i32,
             data: vec![],
         }),
-        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
-            success: false,
-            message: e,
-            count: 0,
-            data: vec![],
-        }),
+        Err(e) => {
+            log::error!(
+                "Error performing batch update in table '{}': {}",
+                table_name,
+                e
+            );
+            HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: e,
+                count: 0,
+                data: vec![],
+            })
+        }
     }
 
     //use the below code if you want to return the updated fields to the user, can be inefficient if the updated fields are large
@@ -814,12 +858,19 @@ pub async fn batch_delete_records(
             count: count as i32,
             data: vec![],
         }),
-        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
-            success: false,
-            message: e,
-            count: 0,
-            data: vec![],
-        }),
+        Err(e) => {
+            log::error!(
+                "Error performing batch delete in table '{}': {}",
+                table_name,
+                e
+            );
+            HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: e,
+                count: 0,
+                data: vec![],
+            })
+        }
     }
 }
 
@@ -896,6 +947,11 @@ pub async fn upsert(
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(error) => {
+            log::error!(
+                "Error performing upsert in table '{}': {}",
+                table_name,
+                error.message
+            );
             let status_code = http::StatusCode::from_u16(error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
@@ -991,6 +1047,12 @@ pub async fn delete_record(
             HttpResponse::Ok().json(response_value)
         }
         Err(error) => {
+            log::error!(
+                "Error deleting record from table '{}' with ID '{}': {}",
+                table_name,
+                record_id,
+                error.message
+            );
             let status_code = http::StatusCode::from_u16(error.status)
                 .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
             HttpResponse::build(status_code).json(ApiResponse {
@@ -1097,6 +1159,7 @@ pub async fn get_by_filter(
     {
         Ok(results) => results,
         Err(e) => {
+            log::error!("Error executing query for table '{}': {:?}", table, e);
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("Query execution error: {}", e),
@@ -1170,6 +1233,11 @@ pub async fn aggregation_filter(
     {
         Ok(results) => results,
         Err(e) => {
+            log::error!(
+                "Error executing aggregation query for table '{}': {:?}",
+                table,
+                e
+            );
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("Query execution error: {}", e),
@@ -1757,8 +1825,7 @@ pub async fn upload_file(
                         pluck: pluck_fields.join(","),
                     });
 
-                    let _response =
-                        create_record(req, table_path, body, query, app_state.clone()).await;
+                    let _response = create_record(req, table_path, body, query).await;
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
                     log::info!(
@@ -1853,8 +1920,7 @@ pub async fn upload_file(
                         pluck: pluck_fields.join(","),
                     });
 
-                    let _response =
-                        create_record(req, table_path, body, query, app_state.clone()).await;
+                    let _response = create_record(req, table_path, body, query).await;
                     log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);
