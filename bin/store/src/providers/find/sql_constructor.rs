@@ -1,7 +1,10 @@
-use crate::{schema::hypertables::is_hypertable, structs::structs::{
-    ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
-    Join, LogicalOperator, MatchPattern, SortOption,
-}};
+use crate::{
+    schema::hypertables::is_hypertable,
+    structs::structs::{
+        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
+        Join, LogicalOperator, MatchPattern, SortOption,
+    },
+};
 use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
@@ -1491,7 +1494,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         Self::get_field(&self.table, field, self.request_body.get_date_format())
                     })
                     .collect();
-                
+
                 if is_hypertable(self.table.as_str()) {
                     group_fields.push("timestamp".to_string());
                 }
