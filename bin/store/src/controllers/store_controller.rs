@@ -212,7 +212,6 @@ pub async fn create_record(
     table: web::Path<String>,
     body: web::Json<serde_json::Value>,
     query: web::Query<QueryParams>,
-    app_state: web::Data<providers::storage::AppState>,
 ) -> impl Responder {
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
@@ -272,36 +271,38 @@ pub async fn create_record(
             );
 
             // Create bucket using S3 client
-            let s3_client = &app_state.s3_client;
-            match s3_client.create_bucket().bucket(&bucket_name).send().await {
-                Ok(_) => {
-                    log::info!(
-                        "Successfully created bucket '{}' for organization '{}'",
-                        bucket_name,
-                        org_name
-                    );
-                }
-                Err(e) => {
-                    // Check if error is because bucket already exists
-                    let error_message = format!("{:?}", e);
-                    if error_message.contains("BucketAlreadyExists")
-                        || error_message.contains("BucketAlreadyOwnedByYou")
-                    {
-                        log::info!(
-                            "Bucket '{}' already exists for organization '{}'",
-                            bucket_name,
-                            org_name
-                        );
-                    } else {
-                        log::error!(
-                            "Failed to create bucket '{}' for organization '{}': {:?}",
-                            bucket_name,
-                            org_name,
-                            e
-                        );
-                    }
-                }
-            }
+
+            
+            // let s3_client = &app_state.s3_client;
+            // match s3_client.create_bucket().bucket(&bucket_name).send().await {
+            //     Ok(_) => {
+            //         log::info!(
+            //             "Successfully created bucket '{}' for organization '{}'",
+            //             bucket_name,
+            //             org_name
+            //         );
+            //     }
+            //     Err(e) => {
+            //         // Check if error is because bucket already exists
+            //         let error_message = format!("{:?}", e);
+            //         if error_message.contains("BucketAlreadyExists")
+            //             || error_message.contains("BucketAlreadyOwnedByYou")
+            //         {
+            //             log::info!(
+            //                 "Bucket '{}' already exists for organization '{}'",
+            //                 bucket_name,
+            //                 org_name
+            //             );
+            //         } else {
+            //             log::error!(
+            //                 "Failed to create bucket '{}' for organization '{}': {:?}",
+            //                 bucket_name,
+            //                 org_name,
+            //                 e
+            //             );
+            //         }
+            //     }
+            // }
         } else {
             log::warn!("Organization name not found in request body for bucket creation");
         }
@@ -1820,7 +1821,7 @@ pub async fn upload_file(
                     });
 
                     let _response =
-                        create_record(req, table_path, body, query, app_state.clone()).await;
+                        create_record(req, table_path, body, query).await;
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
                     log::info!(
@@ -1916,7 +1917,7 @@ pub async fn upload_file(
                     });
 
                     let _response =
-                        create_record(req, table_path, body, query, app_state.clone()).await;
+                        create_record(req, table_path, body, query).await;
                     log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);
