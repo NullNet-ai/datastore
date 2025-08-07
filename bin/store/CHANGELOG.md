@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.41
+### Author
+Kashan
+
+### Fixes
+- ***Record Status Assignment***: Fixed conditional status field assignment in record creation
+  - Modified `add_common_fields` function to only set status to "Active" if the record doesn't already contain a status field
+  - Preserves existing status values from incoming records while providing default "Active" status for records without status
+  - Prevents overwriting of explicitly provided status values during record creation
+---
+
 ## 0.1.40
 ### Author
 Kashan

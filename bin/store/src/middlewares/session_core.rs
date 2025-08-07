@@ -69,7 +69,7 @@ impl SessionManager {
         match self.load_session(session_id).await {
             Ok(session) => session,
             Err(err) => {
-                log::error!("Error loading session: {:?}", err);
+                log::warn!("Error loading session, will create a new session: {:?}", err);
                 self.create_new_session(session_id, "")
             }
         }
