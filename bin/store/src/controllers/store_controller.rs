@@ -272,7 +272,6 @@ pub async fn create_record(
 
             // Create bucket using S3 client
 
-            
             // let s3_client = &app_state.s3_client;
             // match s3_client.create_bucket().bucket(&bucket_name).send().await {
             //     Ok(_) => {
@@ -1820,8 +1819,7 @@ pub async fn upload_file(
                         pluck: pluck_fields.join(","),
                     });
 
-                    let _response =
-                        create_record(req, table_path, body, query).await;
+                    let _response = create_record(req, table_path, body, query).await;
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
                     log::info!(
@@ -1916,8 +1914,7 @@ pub async fn upload_file(
                         pluck: pluck_fields.join(","),
                     });
 
-                    let _response =
-                        create_record(req, table_path, body, query).await;
+                    let _response = create_record(req, table_path, body, query).await;
                     log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);
