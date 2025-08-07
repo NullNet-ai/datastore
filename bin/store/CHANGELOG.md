@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.42
+### Author
+Bert
+
+### Fixes
+- ***create_record*** controller
+  - Added an Optional app_state for storage bucket creation
+  - Fixed bucket creation condition check
+---
+
 ## 0.1.41
 ### Author
 Kashan
