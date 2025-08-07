@@ -25,8 +25,8 @@ create_root_wrapper!(root_create_record => create_record,
     auth: HttpRequest,
     table: actix_web::web::Path<String>,
     body: actix_web::web::Json<serde_json::Value>,
-    query: actix_web::web::Query<crate::structs::structs::QueryParams>,
-    app_state: actix_web::web::Data<crate::providers::storage::AppState>
+    query: actix_web::web::Query<crate::structs::structs::QueryParams>
+    // app_state: actix_web::web::Data<crate::providers::storage::AppState>
 );
 
 create_root_wrapper!(root_update_record => update_record,
