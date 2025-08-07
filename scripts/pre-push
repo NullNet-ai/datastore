@@ -4,13 +4,24 @@
 
 echo "Running cargo fmt check..."
 
-# Run cargo fmt in check mode
-if ! cargo fmt --all -- --check; then
-    echo "❌ Code formatting check failed!"
-    echo "Please run 'make fmt' or 'cargo fmt --all' to fix formatting issues."
-    echo "Then commit the changes and try pushing again."
-    exit 1
+# Get the repository root
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Find all Rust files excluding the generated folder
+RUST_FILES=$(find "$REPO_ROOT" -name ".rs" -not -path "/src/generated/*" | tr '\n' ' ')
+
+# Run cargo fmt in check mode on specific files
+if [ -n "$RUST_FILES" ]; then
+    if ! cargo fmt --check $RUST_FILES; then
+        echo "❌  Code formatting check failed!"
+        echo "Please run 'make fmt' or 'cargo fmt --all' to fix formatting issues."
+        echo "Note: Generated files in src/generated/ are excluded from formatting checks."
+        echo "Then commit the changes and try pushing again."
+        exit 1
+    fi
+else
+    echo "No Rust files found to check."
 fi
 
-echo "✅ Code formatting check passed!"
+echo "✅  Code formatting check passed!"
 exit 0
