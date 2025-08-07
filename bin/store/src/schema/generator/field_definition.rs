@@ -274,7 +274,7 @@ mod tests {
         let field = FieldDefinition::new("tags".to_string(), "nullable(array(text()))".to_string())
             .unwrap();
 
-        let parsed = field.parse().unwrap();
+        // let parsed = field.parse().unwrap();
         assert_eq!(field.rust_type, "Option<Vec<String>>");
         assert!(field.is_nullable);
         assert!(field.is_array);

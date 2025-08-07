@@ -1,7 +1,7 @@
-use crate::structs::structs::{
+use crate::{schema::hypertables::is_hypertable, structs::structs::{
     ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
     Join, LogicalOperator, MatchPattern, SortOption,
-};
+}};
 use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
@@ -1484,14 +1484,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         if let Some(group_by) = group_by {
             if !group_by.fields.is_empty() {
                 // Get all fields from the group_by fields and create GROUP BY clause
-                let group_fields: Vec<String> = group_by
+                let mut group_fields: Vec<String> = group_by
                     .fields
                     .iter()
                     .map(|field| {
                         Self::get_field(&self.table, field, self.request_body.get_date_format())
                     })
                     .collect();
-
+                
+                if is_hypertable(self.table.as_str()) {
+                    group_fields.push("timestamp".to_string());
+                }
                 return format!(" GROUP BY {}", group_fields.join(", "));
             }
         }

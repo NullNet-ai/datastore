@@ -41,6 +41,7 @@ use crate::message_stream::streaming_service::MessageStreamingService;
 use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::organizations::organization_controller::OrganizationsController;
+use crate::providers::storage::AppState;
 use crate::schema::database_setup::DatabaseSetupFlags;
 use crate::schema::generator::generator_service::GeneratorService;
 use crate::sync::controllers::sync_endpoints_controller;
@@ -373,6 +374,10 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/api/store")
+                    .app_data(web::Data::new(AppState {
+                        s3_client: s3_client.clone(),
+                        bucket_name: bucket_name.clone(),
+                    }))
                     .wrap(ShutdownGuard)
                     .wrap(Authentication)
                     .wrap(SessionMiddleware)
