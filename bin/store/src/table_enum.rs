@@ -1,29 +1,24 @@
-use crate::db;
-use crate::models::account_model::AccountModel;
+use crate::{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_with_timestamp_match};
+use crate::models::external_contact_model::ExternalContactModel;
+use crate::models::organization_model::OrganizationModel;
+use crate::models::organization_contact_model::OrganizationContactModel;
+use crate::models::organization_account_model::OrganizationAccountModel;
 use crate::models::account_organization_model::AccountOrganizationModel;
-use crate::models::account_phone_number_model::AccountPhoneNumberModel;
 use crate::models::account_profile_model::AccountProfileModel;
-use crate::models::account_signature_model::AccountSignatureModel;
+use crate::models::account_model::AccountModel;
 use crate::models::address_model::AddressModel;
-use crate::models::contact_email_model::ContactEmailModel;
+use crate::models::sample_model::SampleModel;
+use crate::models::device_model::DeviceModel;
+use crate::models::postgres_channel_model::PostgresChannelModel;
 use crate::models::contact_model::ContactModel;
 use crate::models::contact_phone_number_model::ContactPhoneNumberModel;
-use crate::models::counter_model::CounterModel;
-use crate::models::device_model::DeviceModel;
-use crate::models::external_contact_model::ExternalContactModel;
+use crate::models::contact_email_model::ContactEmailModel;
 use crate::models::file_model::FileModel;
-use crate::models::organization_account_model::OrganizationAccountModel;
-use crate::models::organization_contact_model::OrganizationContactModel;
-use crate::models::organization_model::OrganizationModel;
-use crate::models::postgres_channel_model::PostgresChannelModel;
-use crate::models::sample_model::SampleModel;
 use crate::models::test_hypertable_model::TestHypertableModel;
+use crate::models::account_phone_number_model::AccountPhoneNumberModel;
+use crate::models::account_signature_model::AccountSignatureModel;
 use crate::schema::schema;
 use crate::structs::structs::{Auth, RequestBody};
-use crate::{
-    generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,
-    generate_upsert_record_match, generate_upsert_record_with_timestamp_match,
-};
 use actix_web::web;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
@@ -31,6 +26,8 @@ use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::{Map, Value};
+use crate::db;
+use crate::models::counter_model::CounterModel;
 
 #[derive(Debug)]
 pub enum Table {
@@ -123,42 +120,7 @@ impl Table {
             conn,
             record,
             request,
-            ExternalContacts,
-            ExternalContactModel,
-            Organizations,
-            OrganizationModel,
-            OrganizationContacts,
-            OrganizationContactModel,
-            OrganizationAccounts,
-            OrganizationAccountModel,
-            AccountOrganizations,
-            AccountOrganizationModel,
-            AccountProfiles,
-            AccountProfileModel,
-            Accounts,
-            AccountModel,
-            Addresses,
-            AddressModel,
-            Samples,
-            SampleModel,
-            Devices,
-            DeviceModel,
-            PostgresChannels,
-            PostgresChannelModel,
-            Contacts,
-            ContactModel,
-            ContactPhoneNumbers,
-            ContactPhoneNumberModel,
-            ContactEmails,
-            ContactEmailModel,
-            Files,
-            FileModel,
-            TestHypertable,
-            TestHypertableModel,
-            AccountPhoneNumbers,
-            AccountPhoneNumberModel,
-            AccountSignatures,
-            AccountSignatureModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 
@@ -175,42 +137,7 @@ impl Table {
             id,
             is_root_account,
             organization_id,
-            ExternalContacts,
-            ExternalContactModel,
-            Organizations,
-            OrganizationModel,
-            OrganizationContacts,
-            OrganizationContactModel,
-            OrganizationAccounts,
-            OrganizationAccountModel,
-            AccountOrganizations,
-            AccountOrganizationModel,
-            AccountProfiles,
-            AccountProfileModel,
-            Accounts,
-            AccountModel,
-            Addresses,
-            AddressModel,
-            Samples,
-            SampleModel,
-            Devices,
-            DeviceModel,
-            PostgresChannels,
-            PostgresChannelModel,
-            Contacts,
-            ContactModel,
-            ContactPhoneNumbers,
-            ContactPhoneNumberModel,
-            ContactEmails,
-            ContactEmailModel,
-            Files,
-            FileModel,
-            TestHypertable,
-            TestHypertableModel,
-            AccountPhoneNumbers,
-            AccountPhoneNumberModel,
-            AccountSignatures,
-            AccountSignatureModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 
@@ -223,42 +150,7 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts,
-            ExternalContactModel,
-            Organizations,
-            OrganizationModel,
-            OrganizationContacts,
-            OrganizationContactModel,
-            OrganizationAccounts,
-            OrganizationAccountModel,
-            AccountOrganizations,
-            AccountOrganizationModel,
-            AccountProfiles,
-            AccountProfileModel,
-            Accounts,
-            AccountModel,
-            Addresses,
-            AddressModel,
-            Samples,
-            SampleModel,
-            Devices,
-            DeviceModel,
-            PostgresChannels,
-            PostgresChannelModel,
-            Contacts,
-            ContactModel,
-            ContactPhoneNumbers,
-            ContactPhoneNumberModel,
-            ContactEmails,
-            ContactEmailModel,
-            Files,
-            FileModel,
-            TestHypertable,
-            TestHypertableModel,
-            AccountPhoneNumbers,
-            AccountPhoneNumberModel,
-            AccountSignatures,
-            AccountSignatureModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 
@@ -271,42 +163,7 @@ impl Table {
             self,
             conn,
             record,
-            ExternalContacts,
-            ExternalContactModel,
-            Organizations,
-            OrganizationModel,
-            OrganizationContacts,
-            OrganizationContactModel,
-            OrganizationAccounts,
-            OrganizationAccountModel,
-            AccountOrganizations,
-            AccountOrganizationModel,
-            AccountProfiles,
-            AccountProfileModel,
-            Accounts,
-            AccountModel,
-            Addresses,
-            AddressModel,
-            Samples,
-            SampleModel,
-            Devices,
-            DeviceModel,
-            PostgresChannels,
-            PostgresChannelModel,
-            Contacts,
-            ContactModel,
-            ContactPhoneNumbers,
-            ContactPhoneNumberModel,
-            ContactEmails,
-            ContactEmailModel,
-            Files,
-            FileModel,
-            TestHypertable,
-            TestHypertableModel,
-            AccountPhoneNumbers,
-            AccountPhoneNumberModel,
-            AccountSignatures,
-            AccountSignatureModel // Add other tables and their models here as needed
+            ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 }
@@ -315,6 +172,7 @@ pub async fn generate_code(
     prefix_param: &str,
     default_code_param: i32,
 ) -> Result<String, DieselError> {
+
     let mut conn = db::get_async_connection().await;
 
     let new_counter = CounterModel {
@@ -324,28 +182,27 @@ pub async fn generate_code(
         default_code: default_code_param,
         digits_number: 1,
     };
-
+    
     // Attempt the insert with conflict handling
     let result = diesel::insert_into(schema::counters::dsl::counters::table())
-        .values(&new_counter)
+    .values(&new_counter)
         .on_conflict(schema::counters::entity)
         .do_update()
         .set(schema::counters::counter.eq(schema::counters::counter + 1))
-        .returning((
-            schema::counters::prefix,
-            schema::counters::default_code,
-            schema::counters::counter,
-        ))
-        .get_result::<(String, i32, i32)>(&mut conn)
-        .await
+        .returning((schema::counters::prefix, schema::counters::default_code, schema::counters::counter))
+        .get_result::<(String, i32, i32)>(&mut conn).await
         .map_err(|e| {
             log::error!("Error generating code: {}", e);
             e
         })?;
-
+    
     // Format the code
     let (prefix_val, default_code_val, counter_val) = result;
-    let code = format!("{}{}", prefix_val, default_code_val + counter_val);
-
+    let code = format!(
+        "{}{}",
+        prefix_val,
+        default_code_val + counter_val
+    );
+    
     Ok(code)
 }

@@ -233,33 +233,16 @@ impl SchemaGenerator {
             .cloned()
             .collect();
 
-        // Start with existing content
-        let mut updated_content = existing_content.to_string();
-
-        // Remove fields that are no longer in the table definition
-        if !fields_to_remove.is_empty() {
-            updated_content = Self::remove_fields_from_table(
-                &updated_content,
-                &table_def.name,
-                &fields_to_remove,
-            )?
-        }
-
         // Check if there are new fields to add
         let has_new_fields = table_def
             .fields
             .iter()
             .any(|field| !field_exists_in_table(&table_def.name, &field.name));
 
-        if has_new_fields {
-            // Add new fields
-            Self::add_fields_to_existing_table(&updated_content, table_def, file_path)
-        } else if !fields_to_remove.is_empty() {
-            // Only removed fields, write the updated content
-            if let Err(e) = fs::write(file_path, updated_content) {
-                return Err(format!("Failed to write schema.rs: {}", e));
-            }
-            Ok(())
+        // If there are both removals and additions (like field rename), or any changes at all,
+        // use rebuild_entire_table_in_schema to ensure proper field ordering
+        if !fields_to_remove.is_empty() || has_new_fields {
+            Self::rebuild_entire_table_in_schema(existing_content, table_def, file_path)
         } else {
             // No changes needed
             Ok(())
@@ -668,9 +651,23 @@ impl SchemaGenerator {
         let system_field_names = Self::get_system_field_names()?;
         let mut ordered_fields = Vec::new();
 
-        // Combine all fields
-        let mut all_fields = existing_fields.to_vec();
-        all_fields.extend_from_slice(new_fields);
+        // Combine all fields and deduplicate by name (prefer new_fields over existing_fields)
+        let mut all_fields = Vec::new();
+        let mut field_names_seen = std::collections::HashSet::new();
+        
+        // First add new_fields (they take precedence)
+        for field in new_fields {
+            if field_names_seen.insert(field.name.clone()) {
+                all_fields.push(field.clone());
+            }
+        }
+        
+        // Then add existing_fields that aren't already present
+        for field in existing_fields {
+            if field_names_seen.insert(field.name.clone()) {
+                all_fields.push(field.clone());
+            }
+        }
 
         // First, add system fields in the order defined by system_fields macro
         for system_field_name in &system_field_names {
@@ -765,6 +762,76 @@ impl SchemaGenerator {
     }
 
     /// Replace an entire table definition in the schema
+    pub fn rebuild_entire_table_in_schema(
+        existing_content: &str,
+        table_def: &TableDefinition,
+        file_path: &str,
+    ) -> Result<(), String> {
+        // Find the table definition
+        let table_pattern = format!(
+            r"(?s)(table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{)(.*?)(\}}\s*\}})",
+            regex::escape(&table_def.name)
+        );
+
+        let table_regex = match Regex::new(&table_pattern) {
+            Ok(re) => re,
+            Err(e) => return Err(format!("Failed to create table regex: {}", e)),
+        };
+
+        if let Some(captures) = table_regex.captures(existing_content) {
+            let table_start = captures.get(1).unwrap().as_str();
+            let table_body = captures.get(2).unwrap().as_str();
+            let table_end = captures.get(3).unwrap().as_str();
+
+            // Parse all fields from table definition (only use fields from the model, not existing schema)
+            let mut parsed_fields = Vec::new();
+            for field in &table_def.fields {
+                match field.parse() {
+                    Ok(parsed) => parsed_fields.push(parsed),
+                    Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
+                }
+            }
+
+            // Order fields properly (system fields first, then entity fields)
+            // Pass empty existing_fields to ensure only table_def fields are used
+            let ordered_fields = Self::order_fields_properly(&[], &parsed_fields)?;
+
+            // Detect existing indentation from the original table body
+            let field_indentation = "        "; // Standard 8-space indentation
+
+            // Generate the new table body with properly ordered fields
+            let mut new_table_body = String::new();
+            for field in &ordered_fields {
+                new_table_body.push_str(&format!(
+                    "{}{}{}-> {},\n",
+                    field_indentation, field.name, " ", field.field_type
+                ));
+            }
+
+            // Ensure proper formatting: add newline after opening brace if not present
+            let formatted_table_start = if table_start.trim_end().ends_with("{") {
+                format!("{}\n", table_start.trim_end())
+            } else {
+                table_start.to_string()
+            };
+
+            // Reconstruct the table with ordered fields
+            let new_table_definition =
+                format!("{}{}{}", formatted_table_start, new_table_body, table_end);
+
+            // Replace the old table definition with the new one
+            let new_content = table_regex.replace(existing_content, new_table_definition.as_str());
+
+            // Write the updated schema
+            if let Err(e) = fs::write(file_path, new_content.as_ref()) {
+                return Err(format!("Failed to write schema.rs: {}", e));
+            }
+
+            Ok(())
+        } else {
+            Err(format!("Table '{}' not found in schema", table_def.name))
+        }
+    }
 
     /// Generate a complete table definition
     fn generate_table_definition(table_def: &TableDefinition) -> Result<String, String> {

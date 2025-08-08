@@ -77,13 +77,23 @@ db-migrate-revert:
 # Format Rust code
 fmt:
 	@echo "Formatting Rust code..."
-	@cargo fmt --all
-	@echo "✅ Code formatting complete!"
+	@RUST_FILES=$$(find . -name "*.rs" -not -path "*/src/generated/*" | tr '\n' ' '); \
+	if [ -n "$$RUST_FILES" ]; then \
+		cargo fmt $$RUST_FILES; \
+	else \
+		echo "No Rust files found to format."; \
+	fi
+	@echo "✅ Code formatting complete! (Generated files in src/generated/ excluded)"
 
 # Check code formatting
 fmt-check:
 	@echo "Checking code formatting..."
-	@cargo fmt --all -- --check
+	@RUST_FILES=$$(find . -name "*.rs" -not -path "*/src/generated/*" | tr '\n' ' '); \
+	if [ -n "$$RUST_FILES" ]; then \
+		cargo fmt --check $$RUST_FILES; \
+	else \
+		echo "No Rust files found to check."; \
+	fi
 
 # Setup git hooks
 setup-hooks:

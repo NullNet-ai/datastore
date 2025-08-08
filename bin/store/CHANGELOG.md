@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.45
+### Author
+Kashan
+
+### Fixes
+- ***Schema Generator Field Ordering***: Fixed field ordering issue in schema generator
+  - Modified `rebuild_entire_table_in_schema` function to use proper field ordering logic
+  - Ensures system fields appear before application fields in generated schema
+  - Maintains consistency between schema.rs and model definitions during field rename operations
+---
+
 ## 0.1.44
 ### Author
 Bert
