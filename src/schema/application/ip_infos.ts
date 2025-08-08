@@ -23,7 +23,6 @@ export const table = pgTable(
     region: text('region'),
     postal: text('postal'),
     timezone: text('timezone'),
-    blacklist: boolean('blacklist'),
   },
   config,
 );

@@ -49,8 +49,6 @@ export { table as http_requests } from '../application/http_requests';
 export { table as http_responses } from '../application/http_responses';
 export { table as smtp_requests } from '../application/smtp_requests';
 export { table as smtp_responses } from '../application/smtp_responses';
-export { table as temp_ip_blacklists } from './temp_ip_blacklists';
-export { table as ip_blacklists } from './ip_blacklists';
 export { table as postgres_channels } from '../application/postgres_channels';
 export { table as resolutions } from '../application/resolutions'; // new entity
 export { table as device_ssh_keys } from '../application/device_ssh_keys';
