@@ -249,69 +249,7 @@ impl SchemaGenerator {
         }
     }
 
-    /// Remove specified fields from a table in schema.rs
-    fn remove_fields_from_table(
-        existing_content: &str,
-        table_name: &str,
-        fields_to_remove: &[String],
-    ) -> Result<String, String> {
-        // Find the table definition
-        let table_pattern = format!(
-            r"(?s)(table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{)(.*?)(\}}\s*\}})",
-            regex::escape(table_name)
-        );
 
-        let table_regex = match Regex::new(&table_pattern) {
-            Ok(re) => re,
-            Err(e) => return Err(format!("Failed to create table regex: {}", e)),
-        };
-
-        if let Some(captures) = table_regex.captures(existing_content) {
-            let table_start = captures.get(1).unwrap().as_str();
-            let table_body = captures.get(2).unwrap().as_str();
-            let table_end = captures.get(3).unwrap().as_str();
-
-            // Remove specified fields from table body
-            let mut new_table_body = String::new();
-            for line in table_body.lines() {
-                let trimmed_line = line.trim();
-
-                // Skip empty lines and comments
-                if trimmed_line.is_empty() || trimmed_line.starts_with("//") {
-                    new_table_body.push_str(line);
-                    new_table_body.push('\n');
-                    continue;
-                }
-
-                // Check if this line defines a field to remove
-                let mut should_remove = false;
-                for field_to_remove in fields_to_remove {
-                    if trimmed_line.starts_with(&format!("{} ->", field_to_remove)) {
-                        should_remove = true;
-                        break;
-                    }
-                }
-
-                if !should_remove {
-                    new_table_body.push_str(line);
-                    new_table_body.push('\n');
-                }
-            }
-
-            // Reconstruct the table definition
-            let new_table_definition = format!("{}{}{}", table_start, new_table_body, table_end);
-
-            // Replace the old table definition with the new one
-            let new_content = table_regex.replace(existing_content, new_table_definition.as_str());
-
-            Ok(new_content.to_string())
-        } else {
-            Err(format!(
-                "Could not find table '{}' in schema.rs",
-                table_name
-            ))
-        }
-    }
 
     /// Check if a table exists in the schema content
     fn table_exists_in_schema(content: &str, table_name: &str) -> bool {
@@ -411,88 +349,7 @@ impl SchemaGenerator {
         Ok(())
     }
 
-    /// Add fields to an existing table in the schema with proper field ordering
-    fn add_fields_to_existing_table(
-        existing_content: &str,
-        table_def: &TableDefinition,
-        file_path: &str,
-    ) -> Result<(), String> {
-        // Find the table definition
-        let table_pattern = format!(
-            r"(?s)(table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{)(.*?)(\}}\s*\}})",
-            regex::escape(&table_def.name)
-        );
 
-        let table_regex = match Regex::new(&table_pattern) {
-            Ok(re) => re,
-            Err(e) => return Err(format!("Failed to create table regex: {}", e)),
-        };
-
-        if let Some(captures) = table_regex.captures(existing_content) {
-            let table_start = captures.get(1).unwrap().as_str();
-            let table_body = captures.get(2).unwrap().as_str();
-            let table_end = captures.get(3).unwrap().as_str();
-
-            // Parse new fields that don't exist
-            let mut new_fields = Vec::new();
-            for field in &table_def.fields {
-                if !field_exists_in_table(&table_def.name, &field.name) {
-                    match field.parse() {
-                        Ok(parsed) => new_fields.push(parsed),
-                        Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
-                    }
-                }
-            }
-
-            if new_fields.is_empty() {
-                return Ok(());
-            }
-
-            // Get existing fields from the table body
-            let existing_fields = Self::parse_existing_fields_from_table_body(table_body)?;
-
-            // Combine existing and new fields with proper ordering
-            let ordered_fields = Self::order_fields_properly(&existing_fields, &new_fields)?;
-
-            // Detect existing indentation from the table body
-            let field_indentation = Self::detect_field_indentation(table_body);
-
-            // Generate the new table body with properly ordered fields
-            let mut new_table_body = String::new();
-            for field in &ordered_fields {
-                new_table_body.push_str(&format!(
-                    "{}{} -> {},\n",
-                    field_indentation, field.name, field.field_type
-                ));
-            }
-
-            // Ensure proper formatting: add newline after opening brace if not present
-            let formatted_table_start = if table_start.trim_end().ends_with("{") {
-                format!("{}\n", table_start.trim_end())
-            } else {
-                table_start.to_string()
-            };
-
-            // Reconstruct the table with ordered fields
-            let new_table_definition =
-                format!("{}{}{}", formatted_table_start, new_table_body, table_end);
-
-            // Replace the old table definition with the new one
-            let new_content = table_regex.replace(existing_content, new_table_definition.as_str());
-
-            // Write the updated schema
-            if let Err(e) = fs::write(file_path, new_content.as_ref()) {
-                return Err(format!("Failed to write schema.rs: {}", e));
-            }
-
-            Ok(())
-        } else {
-            Err(format!(
-                "Could not find table '{}' in schema.rs",
-                table_def.name
-            ))
-        }
-    }
 
     /// Check if a table uses system fields by reading its definition file
     fn table_uses_system_fields(table_name: &str) -> bool {
@@ -567,81 +424,7 @@ impl SchemaGenerator {
         definition
     }
 
-    /// Parse existing fields from table body in schema.rs
-    fn parse_existing_fields_from_table_body(
-        table_body: &str,
-    ) -> Result<Vec<crate::schema::generator::field_definition::ParsedField>, String> {
-        let mut fields = Vec::new();
 
-        for line in table_body.lines() {
-            let line = line.trim();
-            if line.is_empty() || !line.contains(" -> ") {
-                continue;
-            }
-
-            // Parse field definition: "field_name -> Type,"
-            if let Some(arrow_pos) = line.find(" -> ") {
-                let field_name = line[..arrow_pos].trim();
-                let rest = &line[arrow_pos + 4..];
-                let diesel_type = if let Some(comma_pos) = rest.find(',') {
-                    rest[..comma_pos].trim()
-                } else {
-                    rest.trim()
-                };
-
-                // Parse the diesel type to determine other properties
-                let is_nullable = diesel_type.starts_with("Nullable<");
-                let is_array = diesel_type.contains("Array<");
-
-                // Extract core type for rust type mapping
-                let mut core_type = diesel_type;
-                if is_nullable {
-                    core_type = &diesel_type[9..diesel_type.len() - 1]; // Remove "Nullable<" and ">"
-                }
-                if is_array {
-                    if let Some(start) = core_type.find("Array<") {
-                        let end = core_type.rfind(">").unwrap_or(core_type.len());
-                        core_type = &core_type[start + 6..end];
-                    }
-                }
-
-                // Map to rust type
-                let base_rust_type = match core_type {
-                    "Text" => "String",
-                    "Int4" => "i32",
-                    "Int8" | "BigInt" => "i64",
-                    "Bool" => "bool",
-                    "Timestamp" | "Timestamptz" => "chrono::NaiveDateTime",
-                    "Jsonb" => "Value",
-                    "Inet" => "std::net::IpAddr",
-                    _ => "String", // Default fallback
-                };
-
-                let _rust_type = if is_array {
-                    if is_nullable {
-                        format!("Option<Vec<{}>>", base_rust_type)
-                    } else {
-                        format!("Vec<{}>", base_rust_type)
-                    }
-                } else if is_nullable {
-                    format!("Option<{}>", base_rust_type)
-                } else {
-                    base_rust_type.to_string()
-                };
-
-                fields.push(crate::schema::generator::field_definition::ParsedField {
-                    name: field_name.to_string(),
-                    field_type: diesel_type.to_string(),
-                    is_primary_key: false, // Can't determine from schema.rs
-                    is_indexed: false,     // Can't determine from schema.rs
-                    migration_nullable: is_nullable,
-                    default_value: None, // Can't determine from schema.rs
-                });
-            }
-        }
-
-        Ok(fields)
-    }
 
     /// Order fields properly according to system fields macro and entity-specific fields
     fn order_fields_properly(
@@ -742,24 +525,7 @@ impl SchemaGenerator {
         Ok(field_names)
     }
 
-    /// Detect the indentation pattern used for fields in the existing table body
-    fn detect_field_indentation(table_body: &str) -> String {
-        for line in table_body.lines() {
-            let trimmed = line.trim();
-            // Look for field definitions (lines with -> pattern)
-            // Skip lines that start with table name (malformed first field)
-            if trimmed.contains(" -> ") && !trimmed.is_empty() && !trimmed.contains("(") {
-                // Extract the leading whitespace from this line
-                let leading_whitespace = line.len() - line.trim_start().len();
-                // Only use lines that have proper indentation (more than 0 spaces)
-                if leading_whitespace > 0 {
-                    return " ".repeat(leading_whitespace);
-                }
-            }
-        }
-        // Default to 8 spaces if no pattern is found
-        "        ".to_string()
-    }
+
 
     /// Replace an entire table definition in the schema
     pub fn rebuild_entire_table_in_schema(
@@ -780,7 +546,6 @@ impl SchemaGenerator {
 
         if let Some(captures) = table_regex.captures(existing_content) {
             let table_start = captures.get(1).unwrap().as_str();
-            let table_body = captures.get(2).unwrap().as_str();
             let table_end = captures.get(3).unwrap().as_str();
 
             // Parse all fields from table definition (only use fields from the model, not existing schema)
