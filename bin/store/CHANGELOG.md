@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.44
+### Author
+Bert
+### Fixes
+- ***Timezone Conversion***: Fixed timezone conversion issue in `time_format_wrapper`
+  - Added explicit handling of field aliases to avoid confusion with table names
+  - Ensured correct timezone conversion for time fields in SQL queries
+  - ensure checking main table for time fields
+- ***Date Formatting***: Fixed date formatting issue in `date_format_wrapper`
+  - Added explicit handling of field aliases to avoid confusion with table names
+  - Ensured correct date formatting for date fields in SQL queries
+---
+
 ## 0.1.43
 ### Author
 Bert
