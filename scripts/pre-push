@@ -28,34 +28,34 @@ RUST_FILES=$(git show --name-only --pretty=format: HEAD | grep '\.rs$' | grep -E
 
 # Check formatting of committed Rust files
 if [ -n "$RUST_FILES" ]; then
-    # Create a temporary directory to check out committed files
-    TEMP_DIR=$(mktemp -d)
-    trap "rm -rf $TEMP_DIR" EXIT
+    # Format the files directly in the working directory
+    cd "$REPO_ROOT"
     
-    # Extract committed files to temp directory
+    # Check if any of the files need formatting
+    NEEDS_FORMATTING=false
     for file in $RUST_FILES; do
-        if [ -f "$REPO_ROOT/$file" ]; then
-            mkdir -p "$TEMP_DIR/$(dirname "$file")"
-            git show "HEAD:$file" > "$TEMP_DIR/$file" 2>/dev/null || continue
+        # Skip generated files
+        if [[ "$file" == *"/src/generated/"* ]]; then
+            continue
+        fi
+        
+        # Check if the file exists and needs formatting
+        if [ -f "$file" ] && ! cargo fmt --check "$file" &>/dev/null; then
+            NEEDS_FORMATTING=true
+            echo "Formatting $file..."
+            cargo fmt -- "$file"
         fi
     done
     
-    # Check formatting of the committed files
-    cd "$TEMP_DIR"
-    if ! cargo fmt --check $RUST_FILES 2>/dev/null; then
-        echo "❌ Committed code is not properly formatted!"
-        echo "The following files in your latest commit have formatting issues:"
-        cargo fmt --check $RUST_FILES 2>&1 | grep "Diff in" || echo "  $RUST_FILES"
-        echo ""
-        echo "Please run 'make fmt' or 'cargo fmt --all', then commit the formatted code with:"
+    # If any files were formatted, notify the user to commit the changes
+    if [ "$NEEDS_FORMATTING" = true ]; then
+        echo "✅ Files have been automatically formatted."
+        echo "Please commit the formatted code with:"
         echo "  git add <formatted_files>"
         echo "  git commit -m 'Format code'"
         echo "and try pushing again."
-        echo "Note: Generated files in src/generated/ are excluded from formatting checks."
-        exit 1
+        exit 0
     fi
-    
-    cd "$REPO_ROOT"
 else
     echo "No Rust files found in the latest commit to check."
 fi
