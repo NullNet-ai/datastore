@@ -6,8 +6,11 @@ echo "Checking formatting of committed code..."
 
 # Check if there are any uncommitted changes in tracked files
 if ! git diff --quiet; then
-    echo "⚠️  Warning: You have uncommitted changes in tracked files."
-    echo "Please commit all changes before pushing to ensure formatting consistency."
+    echo "❌ Error: You have uncommitted changes in tracked files."
+    echo "Please commit all changes before pushing:"
+    echo "  git add <changed_files>"
+    echo "  git commit -m 'Your commit message'"
+    echo "This ensures that all code is properly formatted and committed before pushing."
     exit 1
 fi
 
@@ -20,8 +23,8 @@ fi
 # Get the repository root
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Get list of Rust files from the latest commit, excluding generated files
-RUST_FILES=$(git show --name-only --pretty=format: HEAD | grep '\.rs$' | grep -v '/src/generated/' | tr '\n' ' ')
+# Get list of Rust files from the latest commit, but only from bin/store and bin/server directories, excluding generated files
+RUST_FILES=$(git show --name-only --pretty=format: HEAD | grep '\.rs$' | grep -E '^bin/(store|server)/' | grep -v '/src/generated/' | tr '\n' ' ')
 
 # Check formatting of committed Rust files
 if [ -n "$RUST_FILES" ]; then
@@ -44,7 +47,10 @@ if [ -n "$RUST_FILES" ]; then
         echo "The following files in your latest commit have formatting issues:"
         cargo fmt --check $RUST_FILES 2>&1 | grep "Diff in" || echo "  $RUST_FILES"
         echo ""
-        echo "Please run 'make fmt' or 'cargo fmt --all', commit the changes, and try again."
+        echo "Please run 'make fmt' or 'cargo fmt --all', then commit the formatted code with:"
+        echo "  git add <formatted_files>"
+        echo "  git commit -m 'Format code'"
+        echo "and try pushing again."
         echo "Note: Generated files in src/generated/ are excluded from formatting checks."
         exit 1
     fi
