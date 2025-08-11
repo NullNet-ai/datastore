@@ -1,7 +1,7 @@
-use serde_json::{json, Value};
-use std::io::{self, BufRead, Write};
 use convert_case::{Case, Casing};
 use regex::Regex;
+use serde_json::{json, Value};
+use std::io::{self, BufRead, Write};
 
 #[derive(Debug, Clone)]
 struct Field {
@@ -41,7 +41,7 @@ impl MCPServer {
             "notifications/initialized" => {
                 // This is a notification, no response needed
                 None
-            },
+            }
             _ => Some(json!({
                 "jsonrpc": "2.0",
                 "id": id,
@@ -49,7 +49,7 @@ impl MCPServer {
                     "code": -32601,
                     "message": "Method not found"
                 }
-            }))
+            })),
         }
     }
 
@@ -113,7 +113,7 @@ impl MCPServer {
                     "code": -32602,
                     "message": "Invalid tool name"
                 }
-            })
+            }),
         }
     }
 
@@ -132,9 +132,7 @@ impl MCPServer {
             }
         };
 
-        let package_name = arguments["package_name"]
-            .as_str()
-            .unwrap_or("generated");
+        let package_name = arguments["package_name"].as_str().unwrap_or("generated");
 
         match self.parse_and_generate_proto(schema_content, package_name) {
             Ok(proto_content) => {
@@ -164,7 +162,11 @@ impl MCPServer {
         }
     }
 
-    fn parse_and_generate_proto(&self, schema_content: &str, package_name: &str) -> Result<String, String> {
+    fn parse_and_generate_proto(
+        &self,
+        schema_content: &str,
+        package_name: &str,
+    ) -> Result<String, String> {
         let tables = self.parse_tables(schema_content)?;
         if tables.is_empty() {
             return Err("No tables found in schema".to_string());
@@ -174,38 +176,39 @@ impl MCPServer {
 
     fn parse_tables(&self, schema: &str) -> Result<Vec<Table>, String> {
         let mut tables = Vec::new();
-        
+
         // Regex to match Diesel table! macro definitions
-        let table_regex = Regex::new(r"table!\s*\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{([^}]+)\}\s*\}")
-            .map_err(|e| format!("Regex error: {}", e))?;
-        
+        let table_regex =
+            Regex::new(r"table!\s*\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{([^}]+)\}\s*\}")
+                .map_err(|e| format!("Regex error: {}", e))?;
+
         for cap in table_regex.captures_iter(schema) {
             let table_name = cap[1].to_string();
             let columns_str = &cap[2];
-            
+
             let fields = self.parse_diesel_columns(columns_str)?;
-            
+
             tables.push(Table {
                 name: table_name,
                 fields,
             });
         }
-        
+
         Ok(tables)
     }
 
     fn parse_diesel_columns(&self, columns_str: &str) -> Result<Vec<Field>, String> {
         let mut fields = Vec::new();
-        
+
         // Split by commas and parse Diesel column definitions
         let lines: Vec<&str> = columns_str.split(',').collect();
-        
+
         for line in lines {
             let line = line.trim();
             if line.is_empty() {
                 continue;
             }
-            
+
             // Parse Diesel column definition: column_name -> Type,
             // Example: id -> Integer,
             // Example: name -> Nullable<Text>,
@@ -213,28 +216,30 @@ impl MCPServer {
             if parts.len() != 2 {
                 continue;
             }
-            
+
             let column_name = parts[0].trim().to_string();
             let column_type = parts[1].trim().trim_end_matches(',').to_string();
-            
+
             let is_optional = column_type.starts_with("Nullable<");
             let is_array = column_type.contains("Array<");
-            
+
             // Extract the inner type if it's wrapped in Nullable<> or Array<>
             let inner_type = if is_optional {
-                column_type.strip_prefix("Nullable<")
+                column_type
+                    .strip_prefix("Nullable<")
                     .and_then(|s| s.strip_suffix(">"))
                     .unwrap_or(&column_type)
             } else if is_array {
-                column_type.strip_prefix("Array<")
+                column_type
+                    .strip_prefix("Array<")
                     .and_then(|s| s.strip_suffix(">"))
                     .unwrap_or(&column_type)
             } else {
                 &column_type
             };
-            
+
             let proto_type = self.diesel_type_to_proto_type(inner_type);
-            
+
             fields.push(Field {
                 name: column_name,
                 proto_type,
@@ -242,7 +247,7 @@ impl MCPServer {
                 is_array,
             });
         }
-        
+
         Ok(fields)
     }
 
@@ -445,7 +450,10 @@ impl MCPServer {
 
         // Generate unified service with full CRUD operations
         proto.push_str("// Store service definition with CRUD operations\n");
-        proto.push_str(&format!("service {}Service {{\n", package_name.to_case(Case::Pascal)));
+        proto.push_str(&format!(
+            "service {}Service {{\n",
+            package_name.to_case(Case::Pascal)
+        ));
 
         for table in tables {
             let pascal_name = table.name.to_case(Case::Pascal);
