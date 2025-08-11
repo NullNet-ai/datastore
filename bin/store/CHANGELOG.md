@@ -7,14 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.1.45
 ### Author
-Kashan
+Bert
 
 ### Fixes
-- ***Schema Generator Field Ordering***: Fixed field ordering issue in schema generator
-  - Modified `rebuild_entire_table_in_schema` function to use proper field ordering logic
-  - Ensures system fields appear before application fields in generated schema
-  - Maintains consistency between schema.rs and model definitions during field rename operations
----
+- ***sql_constructor***: Fixed issue with like operator for pluralized fields
+  - CONTAINS, LIKE
+--- 
 
 ## 0.1.44
 ### Author
