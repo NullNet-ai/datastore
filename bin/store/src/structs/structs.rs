@@ -80,8 +80,6 @@ pub struct SwitchAccountData {
     pub organization_id: String,
 }
 
-
-
 impl RequestBody {
     // Process record with common fields and return a Value directly
     pub fn process_record(

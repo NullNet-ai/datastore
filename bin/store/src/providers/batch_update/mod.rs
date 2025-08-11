@@ -1,5 +1,3 @@
 pub mod sql_constructor;
 
-pub use sql_constructor::{
-    BatchUpdateSQLConstructor,
-};
+pub use sql_constructor::BatchUpdateSQLConstructor;

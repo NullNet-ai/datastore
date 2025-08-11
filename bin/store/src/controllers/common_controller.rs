@@ -210,7 +210,7 @@ pub fn convert_params_to_sql_types(
 //     is_root: bool,
 //     organization_id: Option<String>,
 // ) -> Result<(usize, Vec<Value>), String> {
-//     let filter_criteria: Vec<crate::structs::structs::FilterCriteria> = 
+//     let filter_criteria: Vec<crate::structs::structs::FilterCriteria> =
 //         serde_json::from_value(Value::Array(filters))
 //             .map_err(|e| format!("Failed to parse filters: {}", e))?;
 //
@@ -221,11 +221,11 @@ pub fn convert_params_to_sql_types(
 //
 //     // Option 1: Use simple approach (same as current implementation)
 //     let update_result = build_sql_update(&updates, 1);
-//     let (return_fields, update_sql, mut params) = 
+//     let (return_fields, update_sql, mut params) =
 //         build_update_statement(update_result, &updates, table_name, vec![])
 //             .map_err(|e| e.message)?;
 //
-//     let SqlFilter { sql: where_clause, params: where_params } = 
+//     let SqlFilter { sql: where_clause, params: where_params } =
 //         batch_constructor.construct_where_clauses_simple(&filter_criteria);
 //     params.extend(where_params);
 //
@@ -244,8 +244,6 @@ pub fn convert_params_to_sql_types(
 //
 //     // ... rest of the function remains the same
 // }
-
-
 
 pub fn sanitize_updates(mut record: serde_json::Map<String, Value>) -> Option<Value> {
     record.remove("version");

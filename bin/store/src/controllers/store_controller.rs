@@ -702,11 +702,9 @@ pub async fn batch_update_records(
     }
 
     // Use the new batch_update provider
-    let batch_constructor = BatchUpdateSQLConstructor::new(
-        table_name.clone(),
-        is_root_controller,
-    ).with_organization_id(auth_data.organization_id.clone());
-    
+    let batch_constructor = BatchUpdateSQLConstructor::new(table_name.clone(), is_root_controller)
+        .with_organization_id(auth_data.organization_id.clone());
+
     // Convert updates_value to SET clause string
     let set_clause = if let Some(obj) = updates_value.as_object() {
         obj.iter()
@@ -718,17 +716,24 @@ pub async fn batch_update_records(
                     Value::Null => "NULL".to_string(),
                     Value::Array(arr) => {
                         // Convert JSON array to PostgreSQL array format
-                        let array_elements: Vec<String> = arr.iter()
+                        let array_elements: Vec<String> = arr
+                            .iter()
                             .map(|item| match item {
                                 Value::String(s) => format!("'{}'", s.replace("'", "''")),
-                                 _ => serde_json::to_string(item).unwrap_or_else(|_| "NULL".to_string())
+                                _ => serde_json::to_string(item)
+                                    .unwrap_or_else(|_| "NULL".to_string()),
                             })
                             .collect();
                         format!("ARRAY[{}]", array_elements.join(", "))
-                    },
+                    }
                     Value::Object(_) => {
                         // For objects, use JSONB casting
-                        format!("'{}'::jsonb", serde_json::to_string(v).unwrap_or_else(|_| "NULL".to_string()).replace("'", "''"))
+                        format!(
+                            "'{}'::jsonb",
+                            serde_json::to_string(v)
+                                .unwrap_or_else(|_| "NULL".to_string())
+                                .replace("'", "''")
+                        )
                     }
                 };
                 format!("{} = {}", k, value_str)
@@ -743,18 +748,20 @@ pub async fn batch_update_records(
             data: vec![],
         });
     };
-    
+
     let sql_result = batch_constructor.construct_batch_update_advanced(&set_clause, &filters);
-    log::debug!("SQL Query for batch updates: {}", sql_result.clone().unwrap_or_else(|e| format!("Failed to construct SQL query: {}", e)));
-    
+    log::debug!(
+        "SQL Query for batch updates: {}",
+        sql_result
+            .clone()
+            .unwrap_or_else(|e| format!("Failed to construct SQL query: {}", e))
+    );
+
     match sql_result {
         Ok(sql_query) => {
             let mut conn = db::get_async_connection().await;
-            
-            match diesel::sql_query(&sql_query)
-                .execute(&mut conn)
-                .await
-            {
+
+            match diesel::sql_query(&sql_query).execute(&mut conn).await {
                 Ok(count) => HttpResponse::Ok().json(ApiResponse {
                     success: true,
                     message: format!("Updated {} records in '{}'", count, table_name),
@@ -775,7 +782,7 @@ pub async fn batch_update_records(
                     })
                 }
             }
-        },
+        }
         Err(e) => {
             log::error!(
                 "Error constructing batch update SQL for table '{}': {}",
@@ -915,15 +922,19 @@ pub async fn batch_delete_records(
     let updates_value = delete_updates.record;
 
     // Use the new batch_update provider for delete operations
-    let batch_constructor = BatchUpdateSQLConstructor::new(
-        table_name.clone(),
-        is_root_controller,
-    ).with_organization_id(auth_data.organization_id.clone());
-    
+    let batch_constructor = BatchUpdateSQLConstructor::new(table_name.clone(), is_root_controller)
+        .with_organization_id(auth_data.organization_id.clone());
+
     // Convert updates_value to SET clause string
     let set_clause = if let Some(obj) = updates_value.as_object() {
         obj.iter()
-            .map(|(k, v)| format!("{} = {}", k, serde_json::to_string(v).unwrap_or_else(|_| "NULL".to_string())))
+            .map(|(k, v)| {
+                format!(
+                    "{} = {}",
+                    k,
+                    serde_json::to_string(v).unwrap_or_else(|_| "NULL".to_string())
+                )
+            })
             .collect::<Vec<_>>()
             .join(", ")
     } else {
@@ -934,17 +945,14 @@ pub async fn batch_delete_records(
             data: vec![],
         });
     };
-    
+
     let sql_result = batch_constructor.construct_batch_update_advanced(&set_clause, &filters);
-    
+
     match sql_result {
         Ok(sql_query) => {
             let mut conn = db::get_async_connection().await;
-            
-            match diesel::sql_query(&sql_query)
-                .execute(&mut conn)
-                .await
-            {
+
+            match diesel::sql_query(&sql_query).execute(&mut conn).await {
                 Ok(count) => HttpResponse::Ok().json(ApiResponse {
                     success: true,
                     message: format!("Deleted {} records in '{}'", count, table_name),
@@ -965,7 +973,7 @@ pub async fn batch_delete_records(
                     })
                 }
             }
-        },
+        }
         Err(e) => {
             log::error!(
                 "Error constructing batch delete SQL for table '{}': {}",

@@ -443,7 +443,7 @@ macro_rules! generate_batch_update_method {
                         .into_iter()
                         .filter_map(|filter| crate::structs::grpc_struct_converter::convert_filter_criteria(&filter))
                         .collect();
-                    
+
                     // Debug log to verify filter criteria conversion
                     log::info!("Converted filter criteria: {:?}", filter_criteria);
 

@@ -46,7 +46,8 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
                 .map(|v| {
                     log::info!("Processing value: {}", v);
                     // First try to parse as JSON, if that fails treat as a plain string
-                    let parsed = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
+                    let parsed = serde_json::from_str(v)
+                        .unwrap_or_else(|_| serde_json::Value::String(v.clone()));
                     log::info!("Parsed value: {:?}", parsed);
                     parsed
                 })
@@ -65,9 +66,9 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
         "operator" => {
             let operator_value = proto_filter.operator.unwrap_or(16); // Default to 'and'
             let operator = match operator_value {
-                16 => LogicalOperator::And,  // 'and' in FilterOperator enum
-                17 => LogicalOperator::Or,   // 'or' in FilterOperator enum
-                _ => LogicalOperator::And,   // Default fallback
+                16 => LogicalOperator::And, // 'and' in FilterOperator enum
+                17 => LogicalOperator::Or,  // 'or' in FilterOperator enum
+                _ => LogicalOperator::And,  // Default fallback
             };
             Some(FilterCriteria::LogicalOperator { operator })
         }

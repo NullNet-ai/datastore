@@ -438,8 +438,6 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  or = 17;\n");
     proto.push_str("}\n\n");
 
-
-
     // Enum for match patterns
     proto.push_str("// Enum for match patterns\n");
     proto.push_str("enum MatchPattern {\n");
