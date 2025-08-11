@@ -27,6 +27,8 @@ export { table as device_rules } from '../application/device_rules';
 export { table as temp_device_rules } from '../application/temp_device_rules';
 export { table as device_aliases } from '../application/device_aliases';
 export { table as temp_device_aliases } from '../application/temp_device_aliases';
+export { table as device_aliases_values } from '../application/device_aliases_values';
+export { table as temp_device_aliases_values } from '../application/temp_device_aliases_values';
 export { table as device_interfaces } from '../application/device_interfaces';
 export { table as temp_device_interfaces } from '../application/temp_device_interfaces';
 export { table as dead_letter_queue } from '../application/dead_letter_queue';

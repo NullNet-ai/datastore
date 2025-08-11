@@ -7,19 +7,16 @@ import {
   getConfigDefaults,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
-import { table as device_configurations } from './device_configurations';
+import { table as device_aliases } from './device_aliases';
 
-const table_name = 'device_aliases';
+const table_name = 'device_aliases_values';
 
 const fields = {
-  device_configuration_id: text('device_configuration_id').references(
-    () => device_configurations.id as AnyPgColumn,
+  device_alias_id: text('device_alias_id').references(
+    () => device_aliases.id as AnyPgColumn,
   ),
-  type: text('type'),
-  name: text('name'),
-  description: text('description'),
+  value: text('value'),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
-  device_alias_status: text('device_alias_status'),
 }
 
 const config = getConfigDefaults.byIndex(table_name);
