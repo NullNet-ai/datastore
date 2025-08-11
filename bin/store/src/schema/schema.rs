@@ -810,7 +810,7 @@ table! {
         download_path -> Nullable<Text>,
         presigned_url -> Nullable<Text>,
         presigned_url_expire -> Nullable<Int4>,
-    }
+}
 }
 
 table! {

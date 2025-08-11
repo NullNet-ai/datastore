@@ -77,13 +77,21 @@ db-migrate-revert:
 # Format Rust code
 fmt:
 	@echo "Formatting Rust code..."
-	@cargo fmt --all
-	@echo "✅ Code formatting complete!"
+	@cd bin/store && cargo fmt --all
+	@cd bin/server && cargo fmt --all
+	@cd libs/hlc && cargo fmt --all
+	@cd libs/merkle && cargo fmt --all
+	@if [ -d "mcp-proto-generator" ]; then cd mcp-proto-generator && cargo fmt --all; fi
+	@echo "✅ Code formatting complete! (Generated files in src/generated/ excluded)"
 
 # Check code formatting
 fmt-check:
 	@echo "Checking code formatting..."
-	@cargo fmt --all -- --check
+	@cd bin/store && cargo fmt --all --check
+	@cd bin/server && cargo fmt --all --check
+	@cd libs/hlc && cargo fmt --all --check
+	@cd libs/merkle && cargo fmt --all --check
+	@if [ -d "mcp-proto-generator" ]; then cd mcp-proto-generator && cargo fmt --all --check; fi
 
 # Setup git hooks
 setup-hooks:

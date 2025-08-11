@@ -1,7 +1,7 @@
 use super::common_controller::{
-    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,
-    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
-    process_record_for_update, process_records, sanitize_updates,
+    convert_json_to_csv, execute_copy, perform_upsert, process_and_get_record_by_id,
+    process_and_insert_record, process_and_update_record, process_record_for_update,
+    process_records, sanitize_updates,
 };
 use crate::db;
 use crate::db::create_connection;
@@ -20,6 +20,7 @@ use crate::{
     generate_batch_update_method, generate_create_method, generate_delete_method,
     generate_get_method, generate_update_method, generate_upsert_method,
 };
+use diesel_async::RunQueryDsl;
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::pin::Pin;

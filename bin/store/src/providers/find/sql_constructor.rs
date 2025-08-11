@@ -1285,7 +1285,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             }
             FilterOperator::GreaterThan => format!("{} > {}", field_with_table, values_str[0]),
-            FilterOperator::GreaterThanOrEqual => format!("{} >= {}", field_with_table, values_str[0]),
+            FilterOperator::GreaterThanOrEqual => {
+                format!("{} >= {}", field_with_table, values_str[0])
+            }
             FilterOperator::LessThan => format!("{} < {}", field_with_table, values_str[0]),
             FilterOperator::LessThanOrEqual => format!("{} <= {}", field_with_table, values_str[0]),
             FilterOperator::IsNull => format!("{} IS NULL", field_with_table),
@@ -1384,7 +1386,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     )
                 } else {
                     // For regular fields: check if empty string or null
-                    format!("({} = '' OR {} IS NULL)", field_with_table, field_with_table)
+                    format!(
+                        "({} = '' OR {} IS NULL)",
+                        field_with_table, field_with_table
+                    )
                 }
             }
         }

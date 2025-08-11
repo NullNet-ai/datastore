@@ -1,7 +1,7 @@
-use crate::batch_sync::BatchSyncService;
-use crate::db::{self, create_connection, DatabaseTypeConverter};
+use crate::db::{self, DatabaseTypeConverter};
+
 use crate::schema::verify::field_exists_in_table;
-use crate::structs::structs::{ApiResponse, Auth, RequestBody, SqlUpdate};
+use crate::structs::structs::{ApiResponse, Auth, RequestBody};
 use crate::sync::sync_service::{insert, update};
 use crate::table_enum::{generate_code, Table};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
@@ -199,187 +199,51 @@ pub fn convert_params_to_sql_types(
     DatabaseTypeConverter::values_to_sql_params(params)
 }
 
-pub fn process_result_rows(
-    rows: &[tokio_postgres::Row],
-    update_fields: &[(&String, &serde_json::Value)],
-    is_hypertable: bool,
-) -> Vec<serde_json::Value> {
-    let mut result_rows: Vec<serde_json::Value> = Vec::new();
-
-    for row in rows {
-        let mut obj = serde_json::Map::new();
-
-        if let Ok(id) = row.try_get::<_, String>("id") {
-            obj.insert("id".to_string(), serde_json::Value::String(id));
-        }
-
-        if let Ok(version) = row.try_get::<_, i32>("version") {
-            obj.insert(
-                "version".to_string(),
-                serde_json::Value::Number(version.into()),
-            );
-        }
-
-        if is_hypertable {
-            if let Ok(timestamp) = row.try_get::<_, String>("hypertable_timestamp") {
-                obj.insert(
-                    "hypertable_timestamp".to_string(),
-                    serde_json::Value::String(timestamp),
-                );
-            }
-        }
-
-        for (key, value) in update_fields.iter() {
-            obj.insert(key.to_string(), (*value).clone());
-        }
-
-        result_rows.push(serde_json::Value::Object(obj));
-    }
-
-    result_rows
-}
-
-pub fn build_update_statement(
-    update_result: Result<SqlUpdate, String>,
-    updates: &serde_json::Value,
-    table_name: &str,
-    params: Vec<Value>,
-) -> Result<(String, String, Vec<Value>), ApiResponse> {
-    // Handle the update result
-    let (mut update_sql, update_params) = match update_result {
-        Ok(SqlUpdate { sql, params }) => (sql, params),
-        Err(e) => {
-            return Err(ApiResponse {
-                success: false,
-                message: e,
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-
-    // Add version increment
-    update_sql = format!("{}, \"version\" = \"version\" + 1", update_sql);
-    let mut params = params;
-    params.extend(update_params);
-
-    // Define return fields
-    let return_fields = "id, version, updated_date, updated_time, updated_by";
-
-    // Check for hypertable
-    let is_hypertable = field_exists_in_table(table_name, "hypertable_timestamp");
-    let hypertable_check = if is_hypertable {
-        ", hypertable_timestamp"
-    } else {
-        ""
-    };
-
-    // Build updated fields list
-    let updated_fields = if let Some(update_obj) = updates.as_object() {
-        let fields: Vec<String> = update_obj
-            .keys()
-            .filter(|&k| k != "record")
-            .map(|k| format!("\"{k}\""))
-            .collect();
-
-        if !fields.is_empty() {
-            format!(", {}", fields.join(", "))
-        } else {
-            String::new()
-        }
-    } else {
-        String::new()
-    };
-
-    Ok((
-        return_fields.to_string() + hypertable_check + &updated_fields,
-        update_sql,
-        params,
-    ))
-}
-
-pub fn build_sql_update(
-    updates: &serde_json::Value,
-    param_start_index: usize,
-) -> Result<SqlUpdate, String> {
-    let mut set_clauses = Vec::new();
-    let mut params = Vec::new();
-    let mut param_index = param_start_index;
-
-    if let Some(update_map) = updates.as_object() {
-        if update_map.is_empty() {
-            return Err("No update fields provided".to_string());
-        }
-
-        for (key, value) in update_map {
-            // Sanitize field name to prevent SQL injection
-            let field = format!("\"{}\"", key.replace('\"', "\"\""));
-
-            set_clauses.push(format!("{} = ${}", field, param_index));
-            params.push(value.clone());
-            param_index += 1;
-        }
-
-        Ok(SqlUpdate {
-            sql: set_clauses.join(", "),
-            params,
-        })
-    } else {
-        Err("Updates must be an object".to_string())
-    }
-}
-
-pub async fn perform_batch_update(
-    table_name: &str,
-    updates: Value,
-    filters: Vec<Value>,
-) -> Result<(usize, Vec<Value>), String> {
-    let filter_criteria: Vec<FilterCriteria> = serde_json::from_value(Value::Array(filters))
-        .map_err(|e| format!("Failed to parse filters: {}", e))?;
-
-    let is_hypertable = field_exists_in_table(table_name, "hypertable_timestamp");
-    let SqlFilter { sql, params } = build_sql_filter(&filter_criteria);
-    let update_result = build_sql_update(&updates, params.len() + 1);
-    let (return_fields, update_sql, params) =
-        build_update_statement(update_result, &updates, table_name, params)
-            .map_err(|e| e.message)?;
-
-    let sql = format!(
-        "UPDATE {} SET {} WHERE {} RETURNING {}",
-        table_name, update_sql, sql, return_fields
-    );
-
-    let client = create_connection()
-        .await
-        .map_err(|e| format!("DB connection failed: {:?}", e))?;
-
-    let converted_values = convert_params_to_sql_types(&params)
-        .map_err(|e| format!("Failed to convert parameters: {}", e))?;
-    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_values
-        .iter()
-        .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
-        .collect();
-
-    let rows = client
-        .query(&sql, &pg_params[..])
-        .await
-        .map_err(|e| format!("Failed to execute query: {}", e))?;
-
-    let update_fields = updates
-        .as_object()
-        .map(|o| o.iter().filter(|(k, _)| *k != "record").collect::<Vec<_>>())
-        .unwrap_or_default();
-
-    let result_rows = process_result_rows(&rows, &update_fields, is_hypertable);
-
-    for record in result_rows.iter() {
-        BatchSyncService::send_update_message(table_name.to_string(), record.clone())
-            .await
-            .map_err(|e| format!("Sync error: {e}"))?;
-    }
-
-    Ok((rows.len(), result_rows))
-}
+// Alternative implementation using the new batch_update provider:
+// This demonstrates how to use the BatchUpdateSQLConstructor to reuse
+// WHERE clause logic from find/sql_constructor.rs, avoiding code duplication
+//
+// pub async fn perform_batch_update_with_provider(
+//     table_name: &str,
+//     updates: Value,
+//     filters: Vec<Value>,
+//     is_root: bool,
+//     organization_id: Option<String>,
+// ) -> Result<(usize, Vec<Value>), String> {
+//     let filter_criteria: Vec<crate::structs::structs::FilterCriteria> =
+//         serde_json::from_value(Value::Array(filters))
+//             .map_err(|e| format!("Failed to parse filters: {}", e))?;
+//
+//     let mut batch_constructor = BatchUpdateSQLConstructor::new(table_name.to_string(), is_root);
+//     if let Some(org_id) = organization_id {
+//         batch_constructor = batch_constructor.with_organization_id(org_id);
+//     }
+//
+//     // Option 1: Use simple approach (same as current implementation)
+//     let update_result = build_sql_update(&updates, 1);
+//     let (return_fields, update_sql, mut params) =
+//         build_update_statement(update_result, &updates, table_name, vec![])
+//             .map_err(|e| e.message)?;
+//
+//     let SqlFilter { sql: where_clause, params: where_params } =
+//         batch_constructor.construct_where_clauses_simple(&filter_criteria);
+//     params.extend(where_params);
+//
+//     let sql = format!(
+//         "UPDATE {} SET {} WHERE {} RETURNING {}",
+//         table_name, update_sql, where_clause, return_fields
+//     );
+//
+//     // Option 2: Use advanced approach (leverages find/sql_constructor.rs logic)
+//     // let where_clause = batch_constructor.construct_where_clauses_advanced(&filter_criteria)
+//     //     .map_err(|e| format!("Failed to construct WHERE clause: {}", e))?;
+//     // let sql = format!(
+//     //     "UPDATE {} SET {}{} RETURNING {}",
+//     //     table_name, update_sql, where_clause, return_fields
+//     // );
+//
+//     // ... rest of the function remains the same
+// }
 
 pub fn sanitize_updates(mut record: serde_json::Map<String, Value>) -> Option<Value> {
     record.remove("version");

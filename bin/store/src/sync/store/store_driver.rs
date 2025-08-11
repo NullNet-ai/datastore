@@ -138,8 +138,11 @@ fn parse_message_value_to_json(
                     .collect(),
             )
         } else {
-            // Single value as array
-            serde_json::Value::Array(vec![serde_json::Value::String(value.to_string())])
+            // Reject single values for array fields - they must be in proper array format
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Field '{}' expects an array format (e.g., [\"value1\", \"value2\"]) but received a simple string: '{}'", column, value),
+            )));
         }
     } else {
         // For text fields, especially long ones like PostgreSQL functions,
@@ -176,6 +179,12 @@ fn parse_message_value_to_json(
     if is_array || is_plural_column(column) {
         if let serde_json::Value::Array(arr) = json_value {
             return Ok(serde_json::Value::Array(arr));
+        } else {
+            // If field is marked as array but value is not an array, reject it
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Field '{}' is an array field but received non-array value. Expected format: [\"value1\", \"value2\"]", column),
+            )));
         }
     }
 

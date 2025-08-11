@@ -24,13 +24,8 @@ message CreateQuery {
 }
 
 // Common parameter structure for AdvanceFilter requests
-message AdvanceFilter {
-  string entity = 1; // Table name
-  string type = 2; // Filter type criteria or operator
-  string field = 3; // Column name
-  string operator = 4; // Equal, not equal etc
-  string values = 5; // JSON string of values
-}
+// AdvanceFilter has been replaced with FilterCriteria for consistency
+// across all filter operations (batch updates, aggregation filters, etc.)
 
 // Common parameter structure for BatchUpdate requests
 message BatchUpdateParams {
@@ -710,7 +705,7 @@ message UpdateExternalContactsResponse {
 message BatchUpdateExternalContactsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   ExternalContacts updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -728,7 +723,7 @@ message BatchUpdateExternalContactsResponse {
 message BatchDeleteExternalContactsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -839,7 +834,7 @@ message UpdateOrganizationsResponse {
 message BatchUpdateOrganizationsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Organizations updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -857,7 +852,7 @@ message BatchUpdateOrganizationsResponse {
 message BatchDeleteOrganizationsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -968,7 +963,7 @@ message UpdateOrganizationContactsResponse {
 message BatchUpdateOrganizationContactsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   OrganizationContacts updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -986,7 +981,7 @@ message BatchUpdateOrganizationContactsResponse {
 message BatchDeleteOrganizationContactsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1097,7 +1092,7 @@ message UpdateOrganizationAccountsResponse {
 message BatchUpdateOrganizationAccountsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   OrganizationAccounts updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1115,7 +1110,7 @@ message BatchUpdateOrganizationAccountsResponse {
 message BatchDeleteOrganizationAccountsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1226,7 +1221,7 @@ message UpdateAccountOrganizationsResponse {
 message BatchUpdateAccountOrganizationsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   AccountOrganizations updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1244,7 +1239,7 @@ message BatchUpdateAccountOrganizationsResponse {
 message BatchDeleteAccountOrganizationsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1355,7 +1350,7 @@ message UpdateAccountProfilesResponse {
 message BatchUpdateAccountProfilesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   AccountProfiles updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1373,7 +1368,7 @@ message BatchUpdateAccountProfilesResponse {
 message BatchDeleteAccountProfilesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1484,7 +1479,7 @@ message UpdateAccountsResponse {
 message BatchUpdateAccountsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Accounts updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1502,7 +1497,7 @@ message BatchUpdateAccountsResponse {
 message BatchDeleteAccountsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1613,7 +1608,7 @@ message UpdateAddressesResponse {
 message BatchUpdateAddressesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Addresses updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1631,7 +1626,7 @@ message BatchUpdateAddressesResponse {
 message BatchDeleteAddressesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1742,7 +1737,7 @@ message UpdateSamplesResponse {
 message BatchUpdateSamplesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Samples updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1760,7 +1755,7 @@ message BatchUpdateSamplesResponse {
 message BatchDeleteSamplesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -1871,7 +1866,7 @@ message UpdateDevicesResponse {
 message BatchUpdateDevicesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Devices updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -1889,7 +1884,7 @@ message BatchUpdateDevicesResponse {
 message BatchDeleteDevicesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2000,7 +1995,7 @@ message UpdatePostgresChannelsResponse {
 message BatchUpdatePostgresChannelsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   PostgresChannels updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2018,7 +2013,7 @@ message BatchUpdatePostgresChannelsResponse {
 message BatchDeletePostgresChannelsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2129,7 +2124,7 @@ message UpdateContactsResponse {
 message BatchUpdateContactsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Contacts updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2147,7 +2142,7 @@ message BatchUpdateContactsResponse {
 message BatchDeleteContactsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2258,7 +2253,7 @@ message UpdateContactPhoneNumbersResponse {
 message BatchUpdateContactPhoneNumbersRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   ContactPhoneNumbers updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2276,7 +2271,7 @@ message BatchUpdateContactPhoneNumbersResponse {
 message BatchDeleteContactPhoneNumbersRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2387,7 +2382,7 @@ message UpdateContactEmailsResponse {
 message BatchUpdateContactEmailsRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   ContactEmails updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2405,7 +2400,7 @@ message BatchUpdateContactEmailsResponse {
 message BatchDeleteContactEmailsRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2516,7 +2511,7 @@ message UpdateFilesResponse {
 message BatchUpdateFilesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   Files updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2534,7 +2529,7 @@ message BatchUpdateFilesResponse {
 message BatchDeleteFilesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2645,7 +2640,7 @@ message UpdateTestHypertableResponse {
 message BatchUpdateTestHypertableRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   TestHypertable updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2663,7 +2658,7 @@ message BatchUpdateTestHypertableResponse {
 message BatchDeleteTestHypertableRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2774,7 +2769,7 @@ message UpdateAccountPhoneNumbersResponse {
 message BatchUpdateAccountPhoneNumbersRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   AccountPhoneNumbers updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2792,7 +2787,7 @@ message BatchUpdateAccountPhoneNumbersResponse {
 message BatchDeleteAccountPhoneNumbersRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2903,7 +2898,7 @@ message UpdateAccountSignaturesResponse {
 message BatchUpdateAccountSignaturesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   AccountSignatures updates = 2;
   }
   BatchUpdateBody body = 2;
@@ -2921,7 +2916,7 @@ message BatchUpdateAccountSignaturesResponse {
 message BatchDeleteAccountSignaturesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
-    repeated AdvanceFilter advance_filters = 1;
+    repeated FilterCriteria advance_filters = 1;
   }
   BatchDeleteBody body = 2;
 }
@@ -2999,29 +2994,28 @@ enum AggregationType {
 
 // Enum for filter operators
 enum FilterOperator {
-  EQUAL = 0;
-  NOT_EQUAL = 1;
-  GREATER_THAN = 2;
-  GREATER_THAN_OR_EQUAL = 3;
-  LESS_THAN = 4;
-  LESS_THAN_OR_EQUAL = 5;
-  IS_NULL = 6;
-  IS_NOT_NULL = 7;
-  CONTAINS = 8;
-  NOT_CONTAINS = 9;
-  LIKE = 10;
-  IS_BETWEEN = 11;
-  IS_NOT_BETWEEN = 12;
-  IS_EMPTY = 13;
-  IS_NOT_EMPTY = 14;
-  HAS_NO_VALUE = 15;
+  equal = 0;
+  not_equal = 1;
+  greater_than = 2;
+  greater_than_or_equal = 3;
+  less_than = 4;
+  less_than_or_equal = 5;
+  is_null = 6;
+  is_not_null = 7;
+  contains = 8;
+  not_contains = 9;
+  like = 10;
+  is_between = 11;
+  is_not_between = 12;
+  is_empty = 13;
+  is_not_empty = 14;
+  has_no_value = 15;
+  and = 16;
+  or = 17;
 }
 
 // Enum for logical operators
-enum LogicalOperator {
-  AND = 0;
-  OR = 1;
-}
+
 
 // Enum for match patterns
 enum MatchPattern {
@@ -3069,28 +3063,16 @@ message Join {
   optional bool nested = 3;
 }
 
-// Filter criteria (can be a criteria or logical operator)
+// Simplified filter criteria with type field
 message FilterCriteria {
-  oneof filter_type {
-    CriteriaFilter criteria = 1;
-    LogicalOperatorFilter logical_operator = 2;
-  }
-}
-
-// Actual filter criteria
-message CriteriaFilter {
-  string field = 1;
-  string entity = 2;
-  FilterOperator operator = 3;
-  repeated string values = 4;  // JSON values as strings
-  optional bool case_sensitive = 5;
-  optional string parse_as = 6;
-  optional MatchPattern match_pattern = 7;
-}
-
-// Logical operator filter
-message LogicalOperatorFilter {
-  LogicalOperator operator = 1;
+  string type = 1;  // "criteria" or "operator"
+  optional string field = 2;
+  optional string entity = 3;
+  optional FilterOperator operator = 4;  // Can be filter operator or logical operator (and/or)
+  repeated string values = 5;  // JSON values as strings
+  optional bool case_sensitive = 6;
+  optional string parse_as = 7;
+  optional MatchPattern match_pattern = 8;
 }
 
 // Main aggregation filter request

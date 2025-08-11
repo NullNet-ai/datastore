@@ -127,9 +127,22 @@ impl GeneratorService {
                 } else {
                     // Check if field ordering has changed between schema and model
                     if Self::has_field_ordering_changed(&table_def)? {
+                        // Rebuild the entire table in schema with proper field ordering
+                        let schema_file_path = "src/schema/schema.rs";
+                        let existing_content = match fs::read_to_string(schema_file_path) {
+                            Ok(content) => content,
+                            Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
+                        };
+
+                        SchemaGenerator::rebuild_entire_table_in_schema(
+                            &existing_content,
+                            &table_def,
+                            schema_file_path,
+                        )?;
+
                         let model_content = ModelGenerator::generate_model(&table_def)?;
                         Self::write_model_file(&table_def.name, &model_content)?;
-                        info!("Regenerated model for table '{}' due to field ordering mismatch with schema", table_def.name);
+                        info!("Regenerated schema and model for table '{}' due to field ordering mismatch", table_def.name);
                     } else {
                         debug!("Table '{}': Schema and model field ordering match, skipping regeneration", table_def.name);
                     }
