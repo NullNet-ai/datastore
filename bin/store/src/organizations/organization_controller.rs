@@ -30,7 +30,6 @@ pub struct RegisterDto {
 pub struct OrganizationsController;
 
 impl OrganizationsController {
-
     pub async fn register(data: web::Json<RegisterDto>) -> impl Responder {
         if data.0.data.account_id.is_empty() || data.0.data.account_secret.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid Input"}));
