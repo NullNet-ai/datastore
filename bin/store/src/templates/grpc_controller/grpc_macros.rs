@@ -132,8 +132,8 @@ macro_rules! generate_aggregation_filter_method {
 
                     // Create AggregationSQLConstructor with organization_id if available
                     let wrapper = crate::providers::aggregation_filter::AggregationFilterWrapper::new(request);
-                    let mut sql_constructor = crate::providers::aggregation_filter::AggregationSQLConstructor::new(wrapper, table.clone(), is_root_request);
-                    sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
+                    let mut sql_constructor = crate::providers::aggregation_filter::AggregationSQLConstructor::new(wrapper, table.clone(), is_root_request)
+                        .with_organization_id(auth_data.organization_id.clone());
 
                     let query = match sql_constructor.construct_aggregation() {
                         Ok(sql) => sql,
@@ -437,26 +437,15 @@ macro_rules! generate_batch_update_method {
                         .updates
                         .ok_or_else(|| Status::invalid_argument("Updates are required"))?;
 
-                    let filters: Vec<Value> = body
+                    // Convert FilterCriteria proto messages to internal FilterCriteria structs
+                    let filter_criteria: Vec<crate::structs::structs::FilterCriteria> = body
                         .advance_filters
                         .into_iter()
-                        .map(|filter| {
-    let mut value = serde_json::to_value(filter).unwrap_or_default();
-    if let Value::Object(ref mut map) = value {
-        if let Some(Value::String(s)) = map.get_mut("values") {
-            if let Ok(parsed) = serde_json::from_str::<Value>(s) {
-                if parsed.is_array() {
-                    // Safe approach: use the mutable reference we already have
-                    if let Some(values_field) = map.get_mut("values") {
-                        *values_field = parsed;
-                    }
-                }
-            }
-        }
-    }
-    value
-})
+                        .filter_map(|filter| crate::structs::grpc_struct_converter::convert_filter_criteria(&filter))
                         .collect();
+                    
+                    // Debug log to verify filter criteria conversion
+                    log::info!("Converted filter criteria: {:?}", filter_criteria);
 
                     // Process the updates through common processing logic
                     let mut request_body = RequestBody {
@@ -497,9 +486,64 @@ macro_rules! generate_batch_update_method {
                         }
                     }
 
-                    let (count, _) = perform_batch_update(&params.table, updates_value, filters)
+                    // FilterCriteria conversion is already handled above
+
+                    // Use the new batch_update provider
+                    let sql_constructor = crate::providers::batch_update::BatchUpdateSQLConstructor::new(
+                        params.table.clone(),
+                        params.r#type == "root"
+                    ).with_organization_id(auth_data.organization_id.clone());
+
+                    // Convert updates_value to set_clause string
+                    let set_clause = if let Value::Object(ref map) = updates_value {
+                        map.iter()
+                            .map(|(key, value)| {
+                                let value_str = match value {
+                                    Value::String(s) => format!("'{}'", s.replace("'", "''")),
+                                    Value::Number(n) => n.to_string(),
+                                    Value::Bool(b) => b.to_string(),
+                                    Value::Null => "NULL".to_string(),
+                                    Value::Array(arr) => {
+                                        // Convert JSON array to PostgreSQL array format
+                                        let array_elements: Vec<String> = arr.iter()
+                                            .map(|item| match item {
+                                                Value::String(s) => format!("'{}'", s.replace("'", "''")),
+                                                _ => serde_json::to_string(item).unwrap_or_else(|_| "NULL".to_string())
+                                            })
+                                            .collect();
+                                        format!("ARRAY[{}]", array_elements.join(", "))
+                                    },
+                                    Value::Object(_) => {
+                                        // For objects, use JSONB casting
+                                        format!("'{}'::jsonb", serde_json::to_string(value).unwrap_or_default().replace("'", "''"))
+                                    }
+                                };
+                                format!("{} = {}", key, value_str)
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    } else {
+                        return Err(Status::invalid_argument("Updates must be a JSON object"));
+                    };
+
+                    println!("filter criteria {:?}", filter_criteria);
+
+                    let sql_query = match sql_constructor.construct_batch_update_advanced(&set_clause, &filter_criteria) {
+                        Ok(sql) => sql,
+                        Err(e) => return Err(Status::internal(format!("Failed to construct SQL: {}", e)))
+                    };
+                    log::info!("SQL Query for batch update: {}", sql_query);
+
+                    // Execute the query
+                    let mut conn = crate::db::get_async_connection().await;
+
+                    let count = match diesel::sql_query(&sql_query)
+                        .execute(&mut conn)
                         .await
-                        .map_err(Status::internal)?;
+                    {
+                        Ok(rows_affected) => rows_affected,
+                        Err(e) => return Err(Status::internal(format!("Database error: {}", e)))
+                    };
 
                     let response = [<BatchUpdate $table:camel Response>] {
                         success: true,
@@ -794,25 +838,12 @@ macro_rules! generate_batch_delete_method {
 
                     let updates = delete_updates.record;
 
-                    let filters: Vec<Value> = body
-                    .advance_filters
-                    .into_iter()
-                    .map(|filter| {
-                        let mut value = serde_json::to_value(filter).unwrap_or_default();
-                        if let Value::Object(ref mut map) = value {
-                        if let Some(Value::String(s)) = map.get_mut("values") {
-                        if let Ok(parsed) = serde_json::from_str::<Value>(s) {
-                            if parsed.is_array() {
-                                if let Some(values_field) = map.get_mut("values") {
-                                    *values_field = parsed;
-                                }
-                            }
-                        }
-                    }
-        }
-        value
-    })
-    .collect();
+                    // Convert FilterCriteria directly using the converter
+                    let filter_criteria: Vec<crate::structs::structs::FilterCriteria> = body
+                        .advance_filters
+                        .into_iter()
+                        .filter_map(|filter| crate::structs::grpc_struct_converter::convert_filter_criteria(&filter))
+                        .collect();
 
                     let updates_map = match serde_json::to_value(&updates) {
                         Ok(Value::Object(map)) => map,
@@ -828,9 +859,46 @@ macro_rules! generate_batch_delete_method {
                     let updates_value = sanitize_updates(updates_map)
                         .ok_or_else(|| Status::invalid_argument("No valid fields to update"))?;
 
-                    let (count, _) = perform_batch_update(&params.table, updates_value, filters)
+                    // Use the new batch_update provider
+                    let sql_constructor = crate::providers::batch_update::BatchUpdateSQLConstructor::new(
+                        params.table.clone(),
+                        params.r#type == "root"
+                    ).with_organization_id(auth_data.organization_id.clone());
+
+                    // Convert updates_value to set_clause string
+                    let set_clause = if let Value::Object(ref map) = updates_value {
+                        map.iter()
+                            .map(|(key, value)| {
+                                let value_str = match value {
+                                    Value::String(s) => format!("'{}'", s.replace("'", "''")),
+                                    Value::Number(n) => n.to_string(),
+                                    Value::Bool(b) => b.to_string(),
+                                    Value::Null => "NULL".to_string(),
+                                    _ => format!("'{}'", serde_json::to_string(value).unwrap_or_default().replace("'", "''"))
+                                };
+                                format!("{} = {}", key, value_str)
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    } else {
+                        return Err(Status::invalid_argument("Updates must be a JSON object"));
+                    };
+
+                    let sql_query = match sql_constructor.construct_batch_update_advanced(&set_clause, &filter_criteria) {
+                        Ok(sql) => sql,
+                        Err(e) => return Err(Status::internal(format!("Failed to construct SQL: {}", e)))
+                    };
+
+                    // Execute the query
+                    let mut conn = crate::db::get_async_connection().await;
+
+                    let count = match diesel::sql_query(&sql_query)
+                        .execute(&mut conn)
                         .await
-                        .map_err(Status::internal)?;
+                    {
+                        Ok(rows_affected) => rows_affected,
+                        Err(e) => return Err(Status::internal(format!("Database error: {}", e)))
+                    };
 
                     let response = [<BatchDelete $table:camel Response>] {
                         success: true,

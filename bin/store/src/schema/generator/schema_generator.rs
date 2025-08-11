@@ -249,8 +249,6 @@ impl SchemaGenerator {
         }
     }
 
-
-
     /// Check if a table exists in the schema content
     fn table_exists_in_schema(content: &str, table_name: &str) -> bool {
         let pattern = format!(r"table!\s*\{{\s*{}\s*\(", regex::escape(table_name));
@@ -349,8 +347,6 @@ impl SchemaGenerator {
         Ok(())
     }
 
-
-
     /// Check if a table uses system fields by reading its definition file
     fn table_uses_system_fields(table_name: &str) -> bool {
         let table_file_path = format!("src/schema/tables/{}.rs", table_name);
@@ -424,8 +420,6 @@ impl SchemaGenerator {
         definition
     }
 
-
-
     /// Order fields properly according to system fields macro and entity-specific fields
     fn order_fields_properly(
         existing_fields: &[crate::schema::generator::field_definition::ParsedField],
@@ -437,14 +431,14 @@ impl SchemaGenerator {
         // Combine all fields and deduplicate by name (prefer new_fields over existing_fields)
         let mut all_fields = Vec::new();
         let mut field_names_seen = std::collections::HashSet::new();
-        
+
         // First add new_fields (they take precedence)
         for field in new_fields {
             if field_names_seen.insert(field.name.clone()) {
                 all_fields.push(field.clone());
             }
         }
-        
+
         // Then add existing_fields that aren't already present
         for field in existing_fields {
             if field_names_seen.insert(field.name.clone()) {
@@ -524,8 +518,6 @@ impl SchemaGenerator {
 
         Ok(field_names)
     }
-
-
 
     /// Replace an entire table definition in the schema
     pub fn rebuild_entire_table_in_schema(

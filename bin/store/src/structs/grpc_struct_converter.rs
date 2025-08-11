@@ -6,11 +6,12 @@ use crate::structs::structs::{
 
 /// Convert protobuf FilterCriteria to internal FilterCriteria struct
 pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<FilterCriteria> {
-    use store::filter_criteria::FilterType;
+    // Debug log to see what we're receiving
+    log::info!("Converting filter criteria: {:?}", proto_filter);
 
-    match &proto_filter.filter_type {
-        Some(FilterType::Criteria(criteria)) => {
-            let operator = match criteria.operator {
+    match proto_filter.r#type.as_str() {
+        "criteria" => {
+            let operator = match proto_filter.operator.unwrap_or(0) {
                 0 => FilterOperator::Equal,
                 1 => FilterOperator::NotEqual,
                 2 => FilterOperator::GreaterThan,
@@ -30,7 +31,7 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
                 _ => FilterOperator::Equal, // Default fallback
             };
 
-            let match_pattern = criteria.match_pattern.and_then(|mp| match mp {
+            let match_pattern = proto_filter.match_pattern.and_then(|mp| match mp {
                 0 => Some(MatchPattern::Exact),
                 1 => Some(MatchPattern::Prefix),
                 2 => Some(MatchPattern::Suffix),
@@ -39,31 +40,42 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
                 _ => None,
             });
 
-            let values: Vec<serde_json::Value> = criteria
+            let values: Vec<serde_json::Value> = proto_filter
                 .values
                 .iter()
-                .filter_map(|v| serde_json::from_str(v).ok())
+                .map(|v| {
+                    log::info!("Processing value: {}", v);
+                    // First try to parse as JSON, if that fails treat as a plain string
+                    let parsed = serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()));
+                    log::info!("Parsed value: {:?}", parsed);
+                    parsed
+                })
                 .collect();
 
             Some(FilterCriteria::Criteria {
-                field: criteria.field.clone(),
-                entity: Some(criteria.entity.clone()),
+                field: proto_filter.field.clone().unwrap_or_default(),
+                entity: proto_filter.entity.clone(),
                 operator,
                 values,
-                case_sensitive: criteria.case_sensitive,
-                parse_as: criteria.parse_as.clone().unwrap_or_default(),
+                case_sensitive: Some(proto_filter.case_sensitive.unwrap_or(false)),
+                parse_as: proto_filter.parse_as.clone().unwrap_or_default(),
                 match_pattern,
             })
         }
-        Some(FilterType::LogicalOperator(logical_op)) => {
-            let operator = match logical_op.operator {
-                0 => LogicalOperator::And,
-                1 => LogicalOperator::Or,
-                _ => LogicalOperator::And, // Default fallback
+        "operator" => {
+            let operator_value = proto_filter.operator.unwrap_or(16); // Default to 'and'
+            let operator = match operator_value {
+                16 => LogicalOperator::And,  // 'and' in FilterOperator enum
+                17 => LogicalOperator::Or,   // 'or' in FilterOperator enum
+                _ => LogicalOperator::And,   // Default fallback
             };
             Some(FilterCriteria::LogicalOperator { operator })
         }
-        None => None,
+        _ => {
+            log::warn!("FilterCriteria received with invalid type: '{}'. Expected 'criteria' or 'operator'.", proto_filter.r#type);
+            log::warn!("Expected structure: {{ type: 'criteria', field: 'field_name', entity: 'entity_name', operator: 0, values: ['value'] }}");
+            None
+        }
     }
 }
 

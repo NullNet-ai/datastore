@@ -1,11 +1,12 @@
 use super::common_controller::{
-    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,
+    convert_json_to_csv, execute_copy, perform_upsert,
     process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
     process_record_for_update, process_records, sanitize_updates,
 };
 use crate::with_session_management;
 use crate::db;
 use crate::db::create_connection;
+use diesel_async::RunQueryDsl;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
 use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
 use crate::middlewares::session_middleware::{GrpcSessionInterceptor, InterceptorChain};

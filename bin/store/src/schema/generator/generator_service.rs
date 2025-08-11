@@ -133,9 +133,13 @@ impl GeneratorService {
                             Ok(content) => content,
                             Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
                         };
-                        
-                        SchemaGenerator::rebuild_entire_table_in_schema(&existing_content, &table_def, schema_file_path)?;
-                        
+
+                        SchemaGenerator::rebuild_entire_table_in_schema(
+                            &existing_content,
+                            &table_def,
+                            schema_file_path,
+                        )?;
+
                         let model_content = ModelGenerator::generate_model(&table_def)?;
                         Self::write_model_file(&table_def.name, &model_content)?;
                         info!("Regenerated schema and model for table '{}' due to field ordering mismatch", table_def.name);

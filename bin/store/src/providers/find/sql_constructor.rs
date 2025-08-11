@@ -1,7 +1,10 @@
-use crate::{schema::hypertables::is_hypertable, structs::structs::{
-    ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
-    Join, LogicalOperator, MatchPattern, SortOption,
-}};
+use crate::{
+    schema::hypertables::is_hypertable,
+    structs::structs::{
+        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
+        Join, LogicalOperator, MatchPattern, SortOption,
+    },
+};
 use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
@@ -223,7 +226,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field_with_parse_as(table, f, format_str, None, self.table.as_str())
+                                Self::get_field_with_parse_as(
+                                    table,
+                                    f,
+                                    format_str,
+                                    None,
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -272,7 +281,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
         } else {
             field.to_string()
         };
-        format!("({}::time {})::time AS {}", field, timezone_query, field_name)
+        format!(
+            "({}::time {})::time AS {}",
+            field, timezone_query, field_name
+        )
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
@@ -317,7 +329,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field_with_parse_as(table_name, f, self.request_body.get_date_format(), None, self.table.as_str())
+                                Self::get_field_with_parse_as(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    None,
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -403,8 +421,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
             // Add unique fields from group_by.fields
             for field in &group_by.fields {
-                let field_selection =
-                    Self::get_field(&self.table, field, self.request_body.get_date_format(), self.table.as_str());
+                let field_selection = Self::get_field(
+                    &self.table,
+                    field,
+                    self.request_body.get_date_format(),
+                    self.table.as_str(),
+                );
                 selections.push(field_selection);
             }
         }
@@ -446,7 +468,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field(table_name, f, self.request_body.get_date_format(), self.table.as_str())
+                                Self::get_field(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -547,7 +574,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .iter()
                     .filter(|field| *field != "id" && !concatenated_field_names.contains(field))
                     .map(|field| {
-                        Self::get_field(&self.table, field, self.request_body.get_date_format(), self.table.as_str())
+                        Self::get_field(
+                            &self.table,
+                            field,
+                            self.request_body.get_date_format(),
+                            self.table.as_str(),
+                        )
                     }),
             );
         }
@@ -624,7 +656,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 format!(
                     "'{}', {}",
                     field,
-                    Self::get_field(to_alias, field, self.request_body.get_date_format(), self.table.as_str())
+                    Self::get_field(
+                        to_alias,
+                        field,
+                        self.request_body.get_date_format(),
+                        self.table.as_str()
+                    )
                 )
             })
             .collect()
@@ -650,7 +687,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field(table_name, f, self.request_body.get_date_format(), self.table.as_str())
+                                Self::get_field(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -767,8 +809,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 return String::new();
             }
 
-            let field_expression =
-                Self::get_field(table_alias, order_by, self.request_body.get_date_format(), &self.table);
+            let field_expression = Self::get_field(
+                table_alias,
+                order_by,
+                self.request_body.get_date_format(),
+                &self.table,
+            );
 
             // Handle case sensitivity
             let final_field = if self
@@ -1472,8 +1518,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 return String::from("");
             }
 
-            let field_expression =
-                Self::get_field(&self.table, order_by, self.request_body.get_date_format(), self.table.as_str());
+            let field_expression = Self::get_field(
+                &self.table,
+                order_by,
+                self.request_body.get_date_format(),
+                self.table.as_str(),
+            );
 
             // Handle case sensitivity
             let final_field = if self
@@ -1504,10 +1554,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .fields
                     .iter()
                     .map(|field| {
-                        Self::get_field(&self.table, field, self.request_body.get_date_format(), self.table.as_str())
+                        Self::get_field(
+                            &self.table,
+                            field,
+                            self.request_body.get_date_format(),
+                            self.table.as_str(),
+                        )
                     })
                     .collect();
-                
+
                 if is_hypertable(self.table.as_str()) {
                     group_fields.push("timestamp".to_string());
                 }
