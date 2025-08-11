@@ -13,7 +13,6 @@ Kashan
 - ***Register API Enhancement***: Added support for nested JSON data structure in register endpoint
   - Modified organization controller to accept data wrapped in a `data` field
   - Created RegisterDto struct to handle the nested structure
-  - Maintained backward compatibility with existing Register struct
 ---
 
 ## 0.1.46
