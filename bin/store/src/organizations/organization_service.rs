@@ -117,7 +117,7 @@ pub async fn register(
     let is_contact_account = account_type == AccountType::Contact;
     let mut team_organization_id: Option<String> = None;
 
-    let existing_account = accounts::table
+    let query_result = accounts::table
         .filter(
             accounts::account_id
                 .eq(account_id)
@@ -125,7 +125,9 @@ pub async fn register(
         )
         .first::<AccountModel>(&mut conn)
         .await
-        .optional()?;
+        .optional();
+
+    let existing_account = query_result?;
 
     // Query for organizations counter
     let organizations_counter = counters::table

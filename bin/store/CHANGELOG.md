@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.48
+### Author
+Kashan
+
+### Fixes
+- ***Account Model Schema Alignment***: Fixed UTF-8 deserialization errors in account queries
+  - Added missing `image_url` field to `AccountModel` struct to match database schema
+  - Updated `timestamp` field type from `Option<String>` to `Option<chrono::NaiveDateTime>` for proper type alignment
+  - Added `use chrono::NaiveDateTime;` import to support the corrected timestamp field type
+  - Resolved `DeserializationError(Utf8Error)` issues during account registration and queries
+- ***gRPC Controller Generator Enhancement***: Added diesel async imports
+  - Added `use diesel_async::RunQueryDsl;` import to grpc controller generator to support batch update and batch delete
+---
+
 ## 0.1.47
 ### Author
 Kashan
