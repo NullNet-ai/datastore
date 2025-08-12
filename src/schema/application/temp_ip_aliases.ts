@@ -8,23 +8,25 @@ import {
   getConfigDefaults,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
-import { table as device_aliases } from './device_aliases';
+import { table as aliases } from './aliases';
+import { inet, integer } from 'drizzle-orm/pg-core';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
-  ...getConfigDefaults.defaultIndexes('temp_device_aliases_values', table),
+  ...getConfigDefaults.defaultIndexes('temp_ip_aliases', table),
 });
 
 export const table = pgTable(
-  'temp_device_aliases_values',
+  'temp_ip_aliases',
   {
     ...system_fields,
     id: text('id'),
     // timestamp: timestamp('timestamp', { withTimezone: true }),
-    device_alias_id: text('device_alias_id').references(
-      () => device_aliases.id as AnyPgColumn,
+    alias_id: text('alias_id').references(
+      () => aliases.id as AnyPgColumn,
     ),
-    value: text('value'),
+    ip: inet('ip'),
+    prefix: integer('prefix').default(32),
   },
   config,
 );

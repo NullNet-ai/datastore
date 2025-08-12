@@ -1,5 +1,5 @@
 import {
-  AnyPgColumn,
+  AnyPgColumn, integer,
   pgTable,
   text,
 } from 'drizzle-orm/pg-core';
@@ -7,19 +7,17 @@ import {
   getConfigDefaults,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
-import { table as device_configurations } from './device_configurations';
+import { table as aliases } from './aliases';
 
-const table_name = 'device_aliases';
+const table_name = 'port_aliases';
 
 const fields = {
-  device_configuration_id: text('device_configuration_id').references(
-    () => device_configurations.id as AnyPgColumn,
+  alias_id: text('alias_id').references(
+    () => aliases.id as AnyPgColumn,
   ),
-  type: text('type'),
-  name: text('name'),
-  description: text('description'),
+  lower_port: integer('lower_port'),
+  upper_port: integer('upper_port'),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
-  device_alias_status: text('device_alias_status'),
 }
 
 const config = getConfigDefaults.byIndex(table_name);

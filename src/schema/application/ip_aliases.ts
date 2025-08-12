@@ -1,5 +1,5 @@
 import {
-  AnyPgColumn,
+  AnyPgColumn, inet, integer,
   pgTable,
   text,
 } from 'drizzle-orm/pg-core';
@@ -7,15 +7,16 @@ import {
   getConfigDefaults,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
-import { table as device_aliases } from './device_aliases';
+import { table as aliases } from './aliases';
 
-const table_name = 'device_aliases_values';
+const table_name = 'ip_aliases';
 
 const fields = {
-  device_alias_id: text('device_alias_id').references(
-    () => device_aliases.id as AnyPgColumn,
+  alias_id: text('alias_id').references(
+    () => aliases.id as AnyPgColumn,
   ),
-  value: text('value'),
+  ip: inet('ip'),
+  prefix: integer('prefix').default(32),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
 }
 

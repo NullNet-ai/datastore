@@ -12,11 +12,11 @@ import { table as device_configurations } from './device_configurations';
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
-  ...getConfigDefaults.defaultIndexes('temp_device_aliases', table),
+  ...getConfigDefaults.defaultIndexes('temp_aliases', table),
 });
 
 export const table = pgTable(
-  'temp_device_aliases',
+  'temp_aliases',
   {
     ...system_fields,
     id: text('id'),
@@ -27,7 +27,7 @@ export const table = pgTable(
     type: text('type'),
     name: text('name'),
     description: text('description'),
-    device_alias_status: text('device_alias_status'),
+    alias_status: text('alias_status'),
   },
   config,
 );

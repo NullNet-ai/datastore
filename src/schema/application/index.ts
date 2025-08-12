@@ -25,10 +25,12 @@ export { table as device_heartbeats } from '../application/device_heartbeats'; /
 export { table as device_configurations } from '../application/device_configurations';
 export { table as device_rules } from '../application/device_rules';
 export { table as temp_device_rules } from '../application/temp_device_rules';
-export { table as device_aliases } from '../application/device_aliases';
-export { table as temp_device_aliases } from '../application/temp_device_aliases';
-export { table as device_aliases_values } from '../application/device_aliases_values';
-export { table as temp_device_aliases_values } from '../application/temp_device_aliases_values';
+export { table as aliases } from '../application/aliases';
+export { table as temp_aliases } from '../application/temp_aliases';
+export { table as ip_aliases } from '../application/ip_aliases';
+export { table as temp_ip_aliases } from '../application/temp_ip_aliases';
+export { table as port_aliases } from '../application/port_aliases';
+export { table as temp_port_aliases } from '../application/temp_port_aliases';
 export { table as device_interfaces } from '../application/device_interfaces';
 export { table as temp_device_interfaces } from '../application/temp_device_interfaces';
 export { table as dead_letter_queue } from '../application/dead_letter_queue';
