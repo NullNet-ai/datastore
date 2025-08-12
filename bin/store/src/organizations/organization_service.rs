@@ -77,10 +77,13 @@ pub async fn register(
     is_request: Option<bool>,
     _account_organization_id: Option<String>,
 ) -> Result<Value, ApiError> {
+    println!("[DEBUG] Starting register function");
     // Changed return type to use diesel::result::Error
     let mut conn = db::get_async_connection().await;
+    println!("[DEBUG] Database connection established");
 
     let is_request = is_request.unwrap_or(false);
+    println!("[DEBUG] is_request: {}", is_request);
     let (_, _, _, _, _, _, _, super_admin_id, system_device_ulid) = get_defaults();
 
     let account_type = params.account_type.clone().unwrap_or(AccountType::Contact);
@@ -117,7 +120,11 @@ pub async fn register(
     let is_contact_account = account_type == AccountType::Contact;
     let mut team_organization_id: Option<String> = None;
 
-    let existing_account = accounts::table
+    println!("[DEBUG] Querying for existing account with account_id: {}", account_id);
+    println!("[DEBUG] account_id bytes: {:?}", account_id.as_bytes());
+    println!("[DEBUG] account_id length: {}", account_id.len());
+    
+    let query_result = accounts::table
         .filter(
             accounts::account_id
                 .eq(account_id)
@@ -125,7 +132,12 @@ pub async fn register(
         )
         .first::<AccountModel>(&mut conn)
         .await
-        .optional()?;
+        .optional();
+    
+    println!("[DEBUG] Query result: {:?}", query_result.as_ref().map(|r| r.is_some()).unwrap_or_else(|e| { println!("[DEBUG] Query error: {:?}", e); false }));
+    
+    let existing_account = query_result?;
+    println!("[DEBUG] Existing account query completed. Found: {}", existing_account.is_some());
 
     // Query for organizations counter
     let organizations_counter = counters::table
@@ -306,7 +318,10 @@ pub async fn register(
                         format!("Failed to serialize contact: {}", e)
                     ))?;
 
+                println!("[DEBUG] About to insert contact into sync_service");
+                println!("[DEBUG] Contact JSON: {}", serde_json::to_string_pretty(&contact_json).unwrap_or_else(|e| format!("Failed to serialize: {}", e)));
                 sync_service::insert(&"contacts".to_string(), contact_json).await?;
+                println!("[DEBUG] Contact inserted successfully");
 
                 // Create Contact Email using ContactEmailModel
                 let contact_email = ContactEmailModel {
@@ -331,8 +346,13 @@ pub async fn register(
                         StatusCode::INTERNAL_SERVER_ERROR,
                         format!("Failed to serialize contact email: {}", e)
                     ))?;
+                
+                
 
+                println!("[DEBUG] About to insert contact_email into sync_service");
+                println!("[DEBUG] Contact Email JSON: {}", serde_json::to_string_pretty(&contact_email_json).unwrap_or_else(|e| format!("Failed to serialize: {}", e)));
                 sync_service::insert(&"contact_emails".to_string(), contact_email_json).await?;
+                println!("[DEBUG] Contact email inserted successfully");
 
                 // Create Account Organization using AccountOrganizationModel
                 let account_organization = AccountOrganizationModel {
@@ -367,7 +387,10 @@ pub async fn register(
                         format!("Failed to serialize account organization: {}", e)
                     ))?;
 
+                println!("[DEBUG] About to insert account_organization into sync_service");
+                println!("[DEBUG] Account Organization JSON: {}", serde_json::to_string_pretty(&account_organization_json).unwrap_or_else(|e| format!("Failed to serialize: {}", e)));
                 sync_service::insert(&"account_organizations".to_string(), account_organization_json.clone()).await?;
+                println!("[DEBUG] Account organization inserted successfully");
 
                 log::info!(
                     "Signed up Account ({}) {} with email: {} successfully linked to Team Organization {}",
