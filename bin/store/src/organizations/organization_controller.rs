@@ -22,21 +22,23 @@ pub struct AuthData {
     pub password: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RegisterDto {
+    pub data: Register,
+}
+
 pub struct OrganizationsController;
 
 impl OrganizationsController {
-    // pub fn new() -> Self {
-    //     Self
-    // }
-
-    pub async fn register(data: web::Json<Register>) -> impl Responder {
-        if data.0.account_id.is_empty() || data.0.account_secret.is_empty() {
+    pub async fn register(data: web::Json<RegisterDto>) -> impl Responder {
+        if data.0.data.account_id.is_empty() || data.0.data.account_secret.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid Input"}));
         }
 
         let is_request = Some(true);
+        println!("{:?}", data.0.data);
 
-        match register(&data.0, is_request, None).await {
+        match register(&data.0.data, is_request, None).await {
             Ok(result) => HttpResponse::Ok().json(result),
             Err(e) => {
                 log::error!("Registration error: {}", e);
@@ -46,10 +48,10 @@ impl OrganizationsController {
     }
 
     pub async fn reregister_existing_account(
-        data: web::Json<Register>,
+        data: web::Json<RegisterDto>,
         id: web::Path<String>,
     ) -> impl Responder {
-        if data.0.account_id.is_empty() || data.0.account_secret.is_empty() {
+        if data.0.data.account_id.is_empty() || data.0.data.account_secret.is_empty() {
             return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid Input"}));
         }
 
@@ -57,7 +59,7 @@ impl OrganizationsController {
         let param = id.to_string();
 
         // Call the organization service register function with the id parameter
-        match register(&data.0, is_request, Some(param)).await {
+        match register(&data.0.data, is_request, Some(param)).await {
             Ok(result) => HttpResponse::Ok().json(result),
             Err(e) => {
                 log::error!("Registration error: {}", e);

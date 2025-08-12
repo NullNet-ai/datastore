@@ -153,6 +153,10 @@ impl DatabaseTypeConverter {
                 }
             }
             Value::Array(arr) => {
+                // Validate that this is actually a proper JSON array
+                if !value.is_array() {
+                    return Err("Expected array format for array field".to_string());
+                }
                 // Convert array elements to Vec<String>
                 let string_array: Vec<String> = arr
                     .iter()
@@ -164,6 +168,10 @@ impl DatabaseTypeConverter {
                 Box::new(string_array)
             }
             Value::Object(_) => {
+                // Validate that this is actually a proper JSON object
+                if !value.is_object() {
+                    return Err("Expected object format for object field".to_string());
+                }
                 // For objects, serialize to JSON string
                 Box::new(value.to_string())
             }

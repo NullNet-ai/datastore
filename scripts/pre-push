@@ -1,27 +1,64 @@
 #!/bin/bash
 
-# Pre-push hook to ensure code is formatted before pushing
+# Pre-push hook to ensure committed code is formatted before pushing
 
-echo "Running cargo fmt check..."
+echo "Checking formatting of committed code..."
+
+# Check if there are any uncommitted changes in tracked files
+if ! git diff --quiet; then
+    echo "❌ Error: You have uncommitted changes in tracked files."
+    echo "Please commit all changes before pushing:"
+    echo "  git add <changed_files>"
+    echo "  git commit -m 'Your commit message'"
+    echo "This ensures that all code is properly formatted and committed before pushing."
+    exit 1
+fi
+
+# Check if there are any staged changes that need to be committed
+if ! git diff --cached --quiet; then
+    echo "❌ You have staged changes. Please commit them before pushing."
+    exit 1
+fi
 
 # Get the repository root
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Find all Rust files excluding the generated folder
-RUST_FILES=$(find "$REPO_ROOT" -name ".rs" -not -path "/src/generated/*" | tr '\n' ' ')
+# Get list of Rust files from the latest commit, but only from bin/store and bin/server directories, excluding generated files
+RUST_FILES=$(git show --name-only --pretty=format: HEAD | grep '\.rs$' | grep -E '^bin/(store|server)/' | grep -v '/src/generated/' | tr '\n' ' ')
 
-# Run cargo fmt in check mode on specific files
+# Check formatting of committed Rust files
 if [ -n "$RUST_FILES" ]; then
-    if ! cargo fmt --check $RUST_FILES; then
-        echo "❌  Code formatting check failed!"
-        echo "Please run 'make fmt' or 'cargo fmt --all' to fix formatting issues."
-        echo "Note: Generated files in src/generated/ are excluded from formatting checks."
-        echo "Then commit the changes and try pushing again."
-        exit 1
+    # Format the files directly in the working directory
+    cd "$REPO_ROOT"
+    
+    # Check if any of the files need formatting
+    NEEDS_FORMATTING=false
+    for file in $RUST_FILES; do
+        # Skip generated files
+        if [[ "$file" == *"/src/generated/"* ]]; then
+            continue
+        fi
+        
+        # Check if the file exists and needs formatting
+        if [ -f "$file" ] && ! cargo fmt --check "$file" &>/dev/null; then
+            NEEDS_FORMATTING=true
+            echo "Formatting $file..."
+            cargo fmt -- "$file"
+        fi
+    done
+    
+    # If any files were formatted, notify the user to commit the changes
+    if [ "$NEEDS_FORMATTING" = true ]; then
+        echo "✅ Files have been automatically formatted."
+        echo "Please commit the formatted code with:"
+        echo "  git add <formatted_files>"
+        echo "  git commit -m 'Format code'"
+        echo "and try pushing again."
+        exit 0
     fi
 else
-    echo "No Rust files found to check."
+    echo "No Rust files found in the latest commit to check."
 fi
 
-echo "✅  Code formatting check passed!"
+echo "✅ Committed code formatting check passed!"
 exit 0

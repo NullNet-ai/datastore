@@ -169,8 +169,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
         Ok(sql)
     }
 
-    pub fn get_field(table: &str, field: &str, format_str: &str) -> String {
-        Self::get_field_with_parse_as(table, field, format_str, None)
+    fn get_field(table: &str, field: &str, format_str: &str, main_table: &str) -> String {
+        Self::get_field_with_parse_as(table, field, format_str, None, main_table)
     }
 
     fn get_field_with_parse_as(
@@ -178,12 +178,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
         field: &str,
         format_str: &str,
         parse_as: Option<&str>,
+        main_table: &str,
     ) -> String {
         // TODO: apply permissions
         let base_field = if field.ends_with("_date") {
             Self::date_format_wrapper(table, field, Some(format_str))
         } else if field.ends_with("_time") {
-            Self::time_format_wrapper(&format!("\"{}\".\"{}\"", table, field), None)
+            Self::time_format_wrapper(&format!("\"{}\".\"{}\"", table, field), None, main_table)
         } else {
             format!("\"{}\".\"{}\"", table, field)
         };
@@ -225,7 +226,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field_with_parse_as(table, f, format_str, None)
+                                Self::get_field_with_parse_as(
+                                    table,
+                                    f,
+                                    format_str,
+                                    None,
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -247,22 +254,37 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
 
         // Fall back to regular field handling if not a concatenated field
-        Self::get_field_with_parse_as(table, field, format_str, parse_as)
+        Self::get_field_with_parse_as(table, field, format_str, parse_as, &self.table)
     }
 
     fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
         let format = format_str.unwrap_or("mm/dd/YYYY");
         format!(
-            "Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '')",
-            table, field, format
+            "Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '') AS \"{}\"",
+            table, field, format, field
         )
     }
-    fn time_format_wrapper(field: &str, timezone: Option<&str>) -> String {
+    fn time_format_wrapper(field: &str, timezone: Option<&str>, main_table: &str) -> String {
         // Convert from stored timezone to target timezone
         // PostgreSQL AT TIME ZONE converts from the specified timezone to UTC, then to local
         let target_timezone = timezone.unwrap_or("Asia/Manila");
         let timezone_query = format!(" AT TIME ZONE '{}'", target_timezone);
-        format!("({}::time {})::time", field, timezone_query)
+        let field_parts: Vec<&str> = field.split('.').collect();
+        let table_name = field_parts[0].replace("\"", "");
+        let partial_field_name = field_parts[1].replace("\"", "");
+        let field_name = if field_parts.len() == 2 {
+            if table_name != main_table {
+                format!("{}_{}", table_name, partial_field_name)
+            } else {
+                partial_field_name
+            }
+        } else {
+            field.to_string()
+        };
+        format!(
+            "({}::time {})::time AS {}",
+            field, timezone_query, field_name
+        )
     }
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
@@ -307,7 +329,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                                Self::get_field_with_parse_as(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    None,
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -393,8 +421,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
             // Add unique fields from group_by.fields
             for field in &group_by.fields {
-                let field_selection =
-                    Self::get_field(&self.table, field, self.request_body.get_date_format());
+                let field_selection = Self::get_field(
+                    &self.table,
+                    field,
+                    self.request_body.get_date_format(),
+                    self.table.as_str(),
+                );
                 selections.push(field_selection);
             }
         }
@@ -415,6 +447,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 &self.table,
                 field,
                 self.request_body.get_date_format(),
+                self.table.as_str(),
             ));
         }
 
@@ -435,7 +468,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                                Self::get_field(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -494,7 +532,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                     Self::get_field(
                                         table_name,
                                         f,
-                                        self.request_body.get_date_format()
+                                        self.request_body.get_date_format(),
+                                        self.table.as_str()
                                     )
                                 )
                             })
@@ -535,7 +574,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .iter()
                     .filter(|field| *field != "id" && !concatenated_field_names.contains(field))
                     .map(|field| {
-                        Self::get_field(&self.table, field, self.request_body.get_date_format())
+                        Self::get_field(
+                            &self.table,
+                            field,
+                            self.request_body.get_date_format(),
+                            self.table.as_str(),
+                        )
                     }),
             );
         }
@@ -612,7 +656,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 format!(
                     "'{}', {}",
                     field,
-                    Self::get_field(to_alias, field, self.request_body.get_date_format())
+                    Self::get_field(
+                        to_alias,
+                        field,
+                        self.request_body.get_date_format(),
+                        self.table.as_str()
+                    )
                 )
             })
             .collect()
@@ -638,7 +687,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field(table_name, f, self.request_body.get_date_format())
+                                Self::get_field(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    self.table.as_str()
+                                )
                             )
                         })
                         .collect::<Vec<_>>()
@@ -725,6 +779,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         sort_table_alias,
                         field_name,
                         self.request_body.get_date_format(),
+                        &self.table,
                     );
 
                     // Handle case sensitivity
@@ -754,8 +809,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 return String::new();
             }
 
-            let field_expression =
-                Self::get_field(table_alias, order_by, self.request_body.get_date_format());
+            let field_expression = Self::get_field(
+                table_alias,
+                order_by,
+                self.request_body.get_date_format(),
+                &self.table,
+            );
 
             // Handle case sensitivity
             let final_field = if self
@@ -1190,6 +1249,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
         case_sensitive: Option<bool>,
         match_pattern: Option<&MatchPattern>,
     ) -> String {
+        let mut parts = field_name.split(".");
+        let table_name = parts.next().unwrap_or("").replace("\"", "");
+        let field_name = parts.next().unwrap_or("").replace("\"", "");
+        let field_with_table = format!("{}.{}", table_name, field_name);
+        let plural_form = pluralizer::pluralize(&field_name, 2, false);
+        let is_plural = plural_form == field_name;
         let values_str = values
             .iter()
             .map(|v| match v {
@@ -1197,45 +1262,57 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 serde_json::Value::Number(n) => n.to_string(),
                 serde_json::Value::Bool(b) => b.to_string(),
                 serde_json::Value::Null => "NULL".to_string(),
-                _ => format!("'{}'", v.to_string().replace("'", "''")),
+                _ => format!("'{}'", v.to_string().trim().replace("'", "''")),
             })
             .collect::<Vec<_>>();
 
         match operator {
             FilterOperator::Equal => {
                 if values_str.len() == 1 {
-                    format!("{} = {}", field_name, values_str[0])
+                    format!("{} = {}", field_with_table, values_str[0])
                 } else {
-                    format!("{} IN ({})", field_name, values_str.join(", "))
+                    format!("{} IN ({})", field_with_table, values_str.join(", "))
                 }
             }
             FilterOperator::NotEqual => {
                 if values_str.len() == 1 {
-                    format!("{} != {}", field_name, values_str[0])
+                    format!("{} != {}", field_with_table, values_str[0])
                 } else {
                     // Use AND for each item: field != value1 AND field != value2 AND ...
                     let conditions: Vec<String> = values_str
                         .iter()
-                        .map(|value| format!("{} != {}", field_name, value))
+                        .map(|value| format!("{} != {}", field_with_table, value))
                         .collect();
                     format!("({})", conditions.join(" AND "))
                 }
             }
-            FilterOperator::GreaterThan => format!("{} > {}", field_name, values_str[0]),
-            FilterOperator::GreaterThanOrEqual => format!("{} >= {}", field_name, values_str[0]),
-            FilterOperator::LessThan => format!("{} < {}", field_name, values_str[0]),
-            FilterOperator::LessThanOrEqual => format!("{} <= {}", field_name, values_str[0]),
-            FilterOperator::IsNull => format!("{} IS NULL", field_name),
-            FilterOperator::IsNotNull => format!("{} IS NOT NULL", field_name),
+            FilterOperator::GreaterThan => format!("{} > {}", field_with_table, values_str[0]),
+            FilterOperator::GreaterThanOrEqual => {
+                format!("{} >= {}", field_with_table, values_str[0])
+            }
+            FilterOperator::LessThan => format!("{} < {}", field_with_table, values_str[0]),
+            FilterOperator::LessThanOrEqual => format!("{} <= {}", field_with_table, values_str[0]),
+            FilterOperator::IsNull => format!("{} IS NULL", field_with_table),
+            FilterOperator::IsNotNull => format!("{} IS NOT NULL", field_with_table),
             FilterOperator::Contains => {
                 let like_op = if case_sensitive.unwrap_or(true) {
                     "LIKE"
                 } else {
                     "ILIKE"
                 };
+
+                if is_plural {
+                    return format!(
+                        "{}::text {} '%{}%'",
+                        field_with_table,
+                        like_op,
+                        values_str[0].trim_matches('\'')
+                    );
+                }
+
                 format!(
                     "{} {} '%{}%'",
-                    field_name,
+                    field_with_table,
                     like_op,
                     values_str[0].trim_matches('\'')
                 )
@@ -1246,9 +1323,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 } else {
                     "NOT ILIKE"
                 };
+
+                if is_plural {
+                    return format!(
+                        "{}::text {} '%{}%'",
+                        field_with_table,
+                        like_op,
+                        values_str[0].trim_matches('\'')
+                    );
+                }
+
                 format!(
                     "{} {} '%{}%'",
-                    field_name,
+                    field_with_table,
                     like_op,
                     values_str[0].trim_matches('\'')
                 )
@@ -1257,24 +1344,24 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 if values_str.len() >= 2 {
                     format!(
                         "{} BETWEEN {} AND {}",
-                        field_name, values_str[0], values_str[1]
+                        field_with_table, values_str[0], values_str[1]
                     )
                 } else {
-                    format!("{} = {}", field_name, values_str[0])
+                    format!("{} = {}", field_with_table, values_str[0])
                 }
             }
             FilterOperator::IsNotBetween => {
                 if values_str.len() >= 2 {
                     format!(
                         "{} NOT BETWEEN {} AND {}",
-                        field_name, values_str[0], values_str[1]
+                        field_with_table, values_str[0], values_str[1]
                     )
                 } else {
-                    format!("{} != {}", field_name, values_str[0])
+                    format!("{} != {}", field_with_table, values_str[0])
                 }
             }
-            FilterOperator::IsEmpty => format!("{} = ''", field_name),
-            FilterOperator::IsNotEmpty => format!("{} != ''", field_name),
+            FilterOperator::IsEmpty => format!("{} = ''", field_with_table),
+            FilterOperator::IsNotEmpty => format!("{} != ''", field_with_table),
             FilterOperator::Like => {
                 let like_op = if case_sensitive.unwrap_or(true) {
                     "LIKE"
@@ -1282,23 +1369,29 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     "ILIKE"
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
-                format!("{} {} {}", field_name, like_op, pattern)
+                if is_plural {
+                    return format!("{}::text {} {}", field_with_table, like_op, pattern);
+                }
+                format!("{} {} {}", field_with_table, like_op, pattern)
             }
             FilterOperator::HasNoValue => {
                 // Check if field is an array by looking for array indicators
-                let is_array_field = field_name.contains("[]")
-                    || field_name.ends_with("_array")
-                    || field_name.ends_with("s");
+                let is_array_field = field_with_table.contains("[]")
+                    || field_with_table.ends_with("_array")
+                    || field_with_table.ends_with("s");
 
                 if is_array_field {
                     // For array fields: check if array length is null or 0
                     format!(
                         "(ARRAY_LENGTH({}, 1) IS NULL OR ARRAY_LENGTH({}, 1) = 0 OR {} IS NULL)",
-                        field_name, field_name, field_name
+                        field_with_table, field_with_table, field_with_table
                     )
                 } else {
                     // For regular fields: check if empty string or null
-                    format!("({} = '' OR {} IS NULL)", field_name, field_name)
+                    format!(
+                        "({} = '' OR {} IS NULL)",
+                        field_with_table, field_with_table
+                    )
                 }
             }
         }
@@ -1430,6 +1523,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         table_alias,
                         field_name,
                         self.request_body.get_date_format(),
+                        &self.table,
                     );
 
                     // Handle case sensitivity
@@ -1459,8 +1553,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 return String::from("");
             }
 
-            let field_expression =
-                Self::get_field(&self.table, order_by, self.request_body.get_date_format());
+            let field_expression = Self::get_field(
+                &self.table,
+                order_by,
+                self.request_body.get_date_format(),
+                self.table.as_str(),
+            );
 
             // Handle case sensitivity
             let final_field = if self
@@ -1491,7 +1589,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .fields
                     .iter()
                     .map(|field| {
-                        Self::get_field(&self.table, field, self.request_body.get_date_format())
+                        Self::get_field(
+                            &self.table,
+                            field,
+                            self.request_body.get_date_format(),
+                            self.table.as_str(),
+                        )
                     })
                     .collect();
 

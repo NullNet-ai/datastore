@@ -65,7 +65,7 @@ pub struct UpsertRequestBody {
 
 #[derive(Deserialize)]
 pub struct BatchUpdateBody {
-    pub advance_filters: Vec<Value>,
+    pub advance_filters: Vec<FilterCriteria>,
     pub updates: RequestBody,
 }
 
@@ -78,12 +78,6 @@ pub struct SwitchAccountRequest {
 pub struct SwitchAccountData {
     pub token: String,
     pub organization_id: String,
-}
-
-#[derive(Debug)]
-pub struct SqlUpdate {
-    pub sql: String,
-    pub params: Vec<serde_json::Value>,
 }
 
 impl RequestBody {

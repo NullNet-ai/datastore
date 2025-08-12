@@ -26,7 +26,7 @@ pub struct AccountModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
@@ -35,6 +35,7 @@ pub struct AccountModel {
 
     // Specific fields
     pub account_id: Option<String>,
+    pub image_url: Option<String>,
     pub account_secret: Option<String>,
     pub account_status: Option<String>,
     pub is_new_user: Option<bool>,

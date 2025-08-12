@@ -1739,3 +1739,9 @@ ALTER TABLE "accounts"
 ADD COLUMN "sync_status" text DEFAULT 'in-process';
 ALTER TABLE "accounts" 
 ADD COLUMN "is_batch" boolean DEFAULT false;
+
+
+ALTER TABLE "samples" 
+ADD COLUMN "sync_status" text DEFAULT 'in-process';
+ALTER TABLE "samples" 
+ADD COLUMN "is_batch" boolean DEFAULT false;

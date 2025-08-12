@@ -30,6 +30,8 @@ define_table_schema! {
         download_path: nullable(text()), 
         presigned_url: nullable(text()), 
         presigned_url_expire: nullable(integer()),
+
+
     },
     indexes: {
         // System field indexes

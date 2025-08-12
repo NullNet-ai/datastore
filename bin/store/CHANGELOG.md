@@ -5,6 +5,75 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.48
+### Author
+Kashan
+
+### Fixes
+- ***Account Model Schema Alignment***: Fixed UTF-8 deserialization errors in account queries
+  - Added missing `image_url` field to `AccountModel` struct to match database schema
+  - Updated `timestamp` field type from `Option<String>` to `Option<chrono::NaiveDateTime>` for proper type alignment
+  - Added `use chrono::NaiveDateTime;` import to support the corrected timestamp field type
+  - Resolved `DeserializationError(Utf8Error)` issues during account registration and queries
+- ***gRPC Controller Generator Enhancement***: Added diesel async imports
+  - Added `use diesel_async::RunQueryDsl;` import to grpc controller generator to support batch update and batch delete
+---
+
+## 0.1.47
+### Author
+Kashan
+
+### Features
+- ***Register API Enhancement***: Added support for nested JSON data structure in register endpoint
+  - Modified organization controller to accept data wrapped in a `data` field
+  - Created RegisterDto struct to handle the nested structure
+---
+
+## 0.1.46
+### Author
+Bert
+
+### Fixes
+- ***Schema Generator Field Ordering***: Fixed field ordering issue in schema generator
+  - Modified `rebuild_entire_table_in_schema` function to use proper field ordering logic
+  - Ensures system fields appear before application fields in generated schema
+  - Maintains consistency between schema.rs and model definitions during field rename operations
+- ***Field Validation***: Enhanced data type validation for arrays and objects
+  - Added validation in `store_driver.rs` to reject invalid array formats
+  - Added validation in `db.rs` DatabaseTypeConverter for proper type formatting
+  - Prevents automatic conversion of simple strings into arrays or objects
+  - Returns proper error messages for invalid data type formats
+- ***Batch Update Standardization***: Moved batch update functionality to providers
+  - Standardized filter handling approach consistent with find operations
+  - Updated proto FilterOperator definitions
+  - Changed operators to lowercase for consistency
+- ***Code Cleanup***: Removed unused methods and resolved compilation warnings
+  - Cleaned up unused code in common_controller.rs, sql_constructor.rs, and batch_update modules
+  - Reduced compilation warnings from 19 to minimal proto-related warnings
+---
+
+## 0.1.45
+### Author
+Bert
+
+### Fixes
+- ***sql_constructor***: Fixed issue with like operator for pluralized fields
+  - CONTAINS, LIKE
+--- 
+
+## 0.1.44
+### Author
+Bert
+### Fixes
+- ***Timezone Conversion***: Fixed timezone conversion issue in `time_format_wrapper`
+  - Added explicit handling of field aliases to avoid confusion with table names
+  - Ensured correct timezone conversion for time fields in SQL queries
+  - ensure checking main table for time fields
+- ***Date Formatting***: Fixed date formatting issue in `date_format_wrapper`
+  - Added explicit handling of field aliases to avoid confusion with table names
+  - Ensured correct date formatting for date fields in SQL queries
+---
+
 ## 0.1.43
 ### Author
 Bert

@@ -60,7 +60,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(file, "use super::common_controller::{{")?;
     writeln!(
         file,
-        "    convert_json_to_csv, execute_copy, perform_batch_update, perform_upsert,"
+        "    convert_json_to_csv, execute_copy, perform_upsert,"
     )?;
     writeln!(
         file,
@@ -74,6 +74,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(file, "use crate::with_session_management;")?;
     writeln!(file, "use crate::db;")?;
     writeln!(file, "use crate::db::create_connection;")?;
+    writeln!(file, "use diesel_async::RunQueryDsl;")?;
     writeln!(file, "use crate::{{generate_create_method, generate_update_method, generate_batch_insert_method,")?;
     writeln!(
         file,

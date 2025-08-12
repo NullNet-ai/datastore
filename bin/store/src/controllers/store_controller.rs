@@ -5,6 +5,7 @@ use crate::controllers::common_controller::{
 };
 use crate::db::create_connection;
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
+use crate::providers::batch_update::BatchUpdateSQLConstructor;
 use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
 use crate::providers::search_suggestion::{
     sql_constructor::SQLConstructor as SearchSQLContructor,
@@ -39,7 +40,7 @@ use std::fmt;
 // use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
 
-use super::common_controller::{perform_batch_update, perform_upsert, sanitize_updates};
+use super::common_controller::{perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
 use mime_guess; // For MIME type detection from file extensions
 #[derive(Serialize, Debug)]
@@ -706,22 +707,97 @@ pub async fn batch_update_records(
         });
     }
 
-    match perform_batch_update(&table_name, updates_value, filters).await {
-        Ok((count, _)) => HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: format!("Updated {} records in '{}'", count, table_name),
-            count: count as i32,
+    // Use the new batch_update provider
+    let batch_constructor = BatchUpdateSQLConstructor::new(table_name.clone(), is_root_controller)
+        .with_organization_id(auth_data.organization_id.clone());
+
+    // Convert updates_value to SET clause string
+    let set_clause = if let Some(obj) = updates_value.as_object() {
+        obj.iter()
+            .map(|(k, v)| {
+                let value_str = match v {
+                    Value::String(s) => format!("'{}'", s.replace("'", "''")),
+                    Value::Number(n) => n.to_string(),
+                    Value::Bool(b) => b.to_string(),
+                    Value::Null => "NULL".to_string(),
+                    Value::Array(arr) => {
+                        // Convert JSON array to PostgreSQL array format
+                        let array_elements: Vec<String> = arr
+                            .iter()
+                            .map(|item| match item {
+                                Value::String(s) => format!("'{}'", s.replace("'", "''")),
+                                _ => serde_json::to_string(item)
+                                    .unwrap_or_else(|_| "NULL".to_string()),
+                            })
+                            .collect();
+                        format!("ARRAY[{}]", array_elements.join(", "))
+                    }
+                    Value::Object(_) => {
+                        // For objects, use JSONB casting
+                        format!(
+                            "'{}'::jsonb",
+                            serde_json::to_string(v)
+                                .unwrap_or_else(|_| "NULL".to_string())
+                                .replace("'", "''")
+                        )
+                    }
+                };
+                format!("{} = {}", k, value_str)
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    } else {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid update data format".to_string(),
+            count: 0,
             data: vec![],
-        }),
+        });
+    };
+
+    let sql_result = batch_constructor.construct_batch_update_advanced(&set_clause, &filters);
+    log::debug!(
+        "SQL Query for batch updates: {}",
+        sql_result
+            .clone()
+            .unwrap_or_else(|e| format!("Failed to construct SQL query: {}", e))
+    );
+
+    match sql_result {
+        Ok(sql_query) => {
+            let mut conn = db::get_async_connection().await;
+
+            match diesel::sql_query(&sql_query).execute(&mut conn).await {
+                Ok(count) => HttpResponse::Ok().json(ApiResponse {
+                    success: true,
+                    message: format!("Updated {} records in '{}'", count, table_name),
+                    count: count as i32,
+                    data: vec![],
+                }),
+                Err(e) => {
+                    log::error!(
+                        "Error executing batch update in table '{}': {}",
+                        table_name,
+                        e
+                    );
+                    HttpResponse::InternalServerError().json(ApiResponse {
+                        success: false,
+                        message: format!("Database error: {}", e),
+                        count: 0,
+                        data: vec![],
+                    })
+                }
+            }
+        }
         Err(e) => {
             log::error!(
-                "Error performing batch update in table '{}': {}",
+                "Error constructing batch update SQL for table '{}': {}",
                 table_name,
                 e
             );
             HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: e,
+                message: format!("SQL construction error: {}", e),
                 count: 0,
                 data: vec![],
             })
@@ -851,22 +927,68 @@ pub async fn batch_delete_records(
 
     let updates_value = delete_updates.record;
 
-    match perform_batch_update(&table_name, updates_value, filters).await {
-        Ok((count, _)) => HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: format!("Deleted {} records in '{}'", count, table_name),
-            count: count as i32,
+    // Use the new batch_update provider for delete operations
+    let batch_constructor = BatchUpdateSQLConstructor::new(table_name.clone(), is_root_controller)
+        .with_organization_id(auth_data.organization_id.clone());
+
+    // Convert updates_value to SET clause string
+    let set_clause = if let Some(obj) = updates_value.as_object() {
+        obj.iter()
+            .map(|(k, v)| {
+                format!(
+                    "{} = {}",
+                    k,
+                    serde_json::to_string(v).unwrap_or_else(|_| "NULL".to_string())
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    } else {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid delete data format".to_string(),
+            count: 0,
             data: vec![],
-        }),
+        });
+    };
+
+    let sql_result = batch_constructor.construct_batch_update_advanced(&set_clause, &filters);
+
+    match sql_result {
+        Ok(sql_query) => {
+            let mut conn = db::get_async_connection().await;
+
+            match diesel::sql_query(&sql_query).execute(&mut conn).await {
+                Ok(count) => HttpResponse::Ok().json(ApiResponse {
+                    success: true,
+                    message: format!("Deleted {} records in '{}'", count, table_name),
+                    count: count as i32,
+                    data: vec![],
+                }),
+                Err(e) => {
+                    log::error!(
+                        "Error executing batch delete in table '{}': {}",
+                        table_name,
+                        e
+                    );
+                    HttpResponse::InternalServerError().json(ApiResponse {
+                        success: false,
+                        message: format!("Database error: {}", e),
+                        count: 0,
+                        data: vec![],
+                    })
+                }
+            }
+        }
         Err(e) => {
             log::error!(
-                "Error performing batch delete in table '{}': {}",
+                "Error constructing batch delete SQL for table '{}': {}",
                 table_name,
                 e
             );
             HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: e,
+                message: format!("SQL construction error: {}", e),
                 count: 0,
                 data: vec![],
             })

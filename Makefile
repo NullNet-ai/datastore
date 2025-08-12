@@ -112,28 +112,22 @@ db-migrate-revert:
 
 # Format Rust code
 fmt:
-	@echo "🎨 Formatting Rust code..."
-	@RUST_FILES=$$(find . -name "*.rs" -not -path "*/src/generated/*" | tr '\n' ' '); \
-		if [ -n "$$RUST_FILES" ]; then \
-			cargo fmt $$RUST_FILES; \
-		else \
-			echo "No Rust files found to format."; \
-		fi
+	@echo "Formatting Rust code..."
+	@cd bin/store && cargo fmt --all
+	@cd bin/server && cargo fmt --all
+	@cd libs/hlc && cargo fmt --all
+	@cd libs/merkle && cargo fmt --all
+	@if [ -d "mcp-proto-generator" ]; then cd mcp-proto-generator && cargo fmt --all; fi
 	@echo "✅ Code formatting complete! (Generated files in src/generated/ excluded)"
 
 # Check code formatting
 fmt-check:
-	@echo "🔍 Checking code formatting..."
-	@RUST_FILES=$$(find . -name "*.rs" -not -path "*/src/generated/*" | tr '\n' ' '); \
-		if [ -n "$$RUST_FILES" ]; then \
-			cargo fmt --check $$RUST_FILES; \
-		else \
-			echo "No Rust files found to check."; \
-		fi
-
-# =============================================================================
-# Setup and maintenance targets
-# =============================================================================
+	@echo "Checking code formatting..."
+	@cd bin/store && cargo fmt --all --check
+	@cd bin/server && cargo fmt --all --check
+	@cd libs/hlc && cargo fmt --all --check
+	@cd libs/merkle && cargo fmt --all --check
+	@if [ -d "mcp-proto-generator" ]; then cd mcp-proto-generator && cargo fmt --all --check; fi
 
 # Setup git hooks
 setup-hooks:

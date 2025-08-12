@@ -35,27 +35,6 @@ pub struct CreateQuery {
     #[prost(string, tag = "2")]
     pub durability: ::prost::alloc::string::String,
 }
-/// Common parameter structure for AdvanceFilter requests
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct AdvanceFilter {
-    /// Table name
-    #[prost(string, tag = "1")]
-    pub entity: ::prost::alloc::string::String,
-    /// Filter type criteria or operator
-    #[prost(string, tag = "2")]
-    pub r#type: ::prost::alloc::string::String,
-    /// Column name
-    #[prost(string, tag = "3")]
-    pub field: ::prost::alloc::string::String,
-    /// Equal, not equal etc
-    #[prost(string, tag = "4")]
-    pub operator: ::prost::alloc::string::String,
-    /// JSON string of values
-    #[prost(string, tag = "5")]
-    pub values: ::prost::alloc::string::String,
-}
 /// Common parameter structure for BatchUpdate requests
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -1364,7 +1343,7 @@ pub mod batch_update_external_contacts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::ExternalContacts>,
     }
@@ -1402,7 +1381,7 @@ pub mod batch_delete_external_contacts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete ExternalContacts response
@@ -1610,7 +1589,7 @@ pub mod batch_update_organizations_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Organizations>,
     }
@@ -1648,7 +1627,7 @@ pub mod batch_delete_organizations_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Organizations response
@@ -1856,7 +1835,7 @@ pub mod batch_update_organization_contacts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::OrganizationContacts>,
     }
@@ -1894,7 +1873,7 @@ pub mod batch_delete_organization_contacts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete OrganizationContacts response
@@ -2104,7 +2083,7 @@ pub mod batch_update_organization_accounts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::OrganizationAccounts>,
     }
@@ -2142,7 +2121,7 @@ pub mod batch_delete_organization_accounts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete OrganizationAccounts response
@@ -2352,7 +2331,7 @@ pub mod batch_update_account_organizations_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::AccountOrganizations>,
     }
@@ -2390,7 +2369,7 @@ pub mod batch_delete_account_organizations_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete AccountOrganizations response
@@ -2600,7 +2579,7 @@ pub mod batch_update_account_profiles_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::AccountProfiles>,
     }
@@ -2638,7 +2617,7 @@ pub mod batch_delete_account_profiles_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete AccountProfiles response
@@ -2844,7 +2823,7 @@ pub mod batch_update_accounts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Accounts>,
     }
@@ -2880,7 +2859,7 @@ pub mod batch_delete_accounts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Accounts response
@@ -3086,7 +3065,7 @@ pub mod batch_update_addresses_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Addresses>,
     }
@@ -3122,7 +3101,7 @@ pub mod batch_delete_addresses_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Addresses response
@@ -3328,7 +3307,7 @@ pub mod batch_update_samples_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Samples>,
     }
@@ -3364,7 +3343,7 @@ pub mod batch_delete_samples_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Samples response
@@ -3570,7 +3549,7 @@ pub mod batch_update_devices_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Devices>,
     }
@@ -3606,7 +3585,7 @@ pub mod batch_delete_devices_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Devices response
@@ -3814,7 +3793,7 @@ pub mod batch_update_postgres_channels_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::PostgresChannels>,
     }
@@ -3852,7 +3831,7 @@ pub mod batch_delete_postgres_channels_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete PostgresChannels response
@@ -4058,7 +4037,7 @@ pub mod batch_update_contacts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Contacts>,
     }
@@ -4094,7 +4073,7 @@ pub mod batch_delete_contacts_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Contacts response
@@ -4302,7 +4281,7 @@ pub mod batch_update_contact_phone_numbers_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::ContactPhoneNumbers>,
     }
@@ -4340,7 +4319,7 @@ pub mod batch_delete_contact_phone_numbers_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete ContactPhoneNumbers response
@@ -4550,7 +4529,7 @@ pub mod batch_update_contact_emails_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::ContactEmails>,
     }
@@ -4588,7 +4567,7 @@ pub mod batch_delete_contact_emails_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete ContactEmails response
@@ -4794,7 +4773,7 @@ pub mod batch_update_files_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::Files>,
     }
@@ -4830,7 +4809,7 @@ pub mod batch_delete_files_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete Files response
@@ -5038,7 +5017,7 @@ pub mod batch_update_test_hypertable_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::TestHypertable>,
     }
@@ -5076,7 +5055,7 @@ pub mod batch_delete_test_hypertable_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete TestHypertable response
@@ -5284,7 +5263,7 @@ pub mod batch_update_account_phone_numbers_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::AccountPhoneNumbers>,
     }
@@ -5322,7 +5301,7 @@ pub mod batch_delete_account_phone_numbers_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete AccountPhoneNumbers response
@@ -5532,7 +5511,7 @@ pub mod batch_update_account_signatures_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchUpdateBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
         pub updates: ::core::option::Option<super::AccountSignatures>,
     }
@@ -5570,7 +5549,7 @@ pub mod batch_delete_account_signatures_request {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchDeleteBody {
         #[prost(message, repeated, tag = "1")]
-        pub advance_filters: ::prost::alloc::vec::Vec<super::AdvanceFilter>,
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
 /// BatchDelete AccountSignatures response
@@ -5750,57 +5729,34 @@ pub struct Join {
     #[prost(bool, optional, tag = "3")]
     pub nested: ::core::option::Option<bool>,
 }
-/// Filter criteria (can be a criteria or logical operator)
+/// Simplified filter criteria with type field
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FilterCriteria {
-    #[prost(oneof = "filter_criteria::FilterType", tags = "1, 2")]
-    pub filter_type: ::core::option::Option<filter_criteria::FilterType>,
-}
-/// Nested message and enum types in `FilterCriteria`.
-pub mod filter_criteria {
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[derive(Clone, PartialEq, ::prost::Oneof)]
-    pub enum FilterType {
-        #[prost(message, tag = "1")]
-        Criteria(super::CriteriaFilter),
-        #[prost(message, tag = "2")]
-        LogicalOperator(super::LogicalOperatorFilter),
-    }
-}
-/// Actual filter criteria
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CriteriaFilter {
+    /// "criteria" or "operator"
     #[prost(string, tag = "1")]
-    pub field: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub entity: ::prost::alloc::string::String,
-    #[prost(enumeration = "FilterOperator", tag = "3")]
-    pub operator: i32,
+    pub r#type: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub field: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub entity: ::core::option::Option<::prost::alloc::string::String>,
+    /// Can be filter operator or logical operator (and/or)
+    #[prost(enumeration = "FilterOperator", optional, tag = "4")]
+    pub operator: ::core::option::Option<i32>,
     /// JSON values as strings
-    #[prost(string, repeated, tag = "4")]
+    #[prost(string, repeated, tag = "5")]
     pub values: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "5")]
+    #[prost(bool, optional, tag = "6")]
     pub case_sensitive: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "6")]
+    #[prost(string, optional, tag = "7")]
     pub parse_as: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(enumeration = "MatchPattern", optional, tag = "7")]
+    #[prost(enumeration = "MatchPattern", optional, tag = "8")]
     pub match_pattern: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "8")]
     pub is_search: ::core::option::Option<bool>,
     #[prost(bool, optional, tag = "9")]
     pub has_group_count: ::core::option::Option<bool>,
-}
-/// Logical operator filter
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct LogicalOperatorFilter {
-    #[prost(enumeration = "LogicalOperator", tag = "1")]
-    pub operator: i32,
 }
 /// Main aggregation filter request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -5918,6 +5874,8 @@ pub enum FilterOperator {
     IsEmpty = 13,
     IsNotEmpty = 14,
     HasNoValue = 15,
+    And = 16,
+    Or = 17,
 }
 impl FilterOperator {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -5926,71 +5884,47 @@ impl FilterOperator {
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::Equal => "EQUAL",
-            Self::NotEqual => "NOT_EQUAL",
-            Self::GreaterThan => "GREATER_THAN",
-            Self::GreaterThanOrEqual => "GREATER_THAN_OR_EQUAL",
-            Self::LessThan => "LESS_THAN",
-            Self::LessThanOrEqual => "LESS_THAN_OR_EQUAL",
-            Self::IsNull => "IS_NULL",
-            Self::IsNotNull => "IS_NOT_NULL",
-            Self::Contains => "CONTAINS",
-            Self::NotContains => "NOT_CONTAINS",
-            Self::Like => "LIKE",
-            Self::IsBetween => "IS_BETWEEN",
-            Self::IsNotBetween => "IS_NOT_BETWEEN",
-            Self::IsEmpty => "IS_EMPTY",
-            Self::IsNotEmpty => "IS_NOT_EMPTY",
-            Self::HasNoValue => "HAS_NO_VALUE",
+            Self::Equal => "equal",
+            Self::NotEqual => "not_equal",
+            Self::GreaterThan => "greater_than",
+            Self::GreaterThanOrEqual => "greater_than_or_equal",
+            Self::LessThan => "less_than",
+            Self::LessThanOrEqual => "less_than_or_equal",
+            Self::IsNull => "is_null",
+            Self::IsNotNull => "is_not_null",
+            Self::Contains => "contains",
+            Self::NotContains => "not_contains",
+            Self::Like => "like",
+            Self::IsBetween => "is_between",
+            Self::IsNotBetween => "is_not_between",
+            Self::IsEmpty => "is_empty",
+            Self::IsNotEmpty => "is_not_empty",
+            Self::HasNoValue => "has_no_value",
+            Self::And => "and",
+            Self::Or => "or",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "EQUAL" => Some(Self::Equal),
-            "NOT_EQUAL" => Some(Self::NotEqual),
-            "GREATER_THAN" => Some(Self::GreaterThan),
-            "GREATER_THAN_OR_EQUAL" => Some(Self::GreaterThanOrEqual),
-            "LESS_THAN" => Some(Self::LessThan),
-            "LESS_THAN_OR_EQUAL" => Some(Self::LessThanOrEqual),
-            "IS_NULL" => Some(Self::IsNull),
-            "IS_NOT_NULL" => Some(Self::IsNotNull),
-            "CONTAINS" => Some(Self::Contains),
-            "NOT_CONTAINS" => Some(Self::NotContains),
-            "LIKE" => Some(Self::Like),
-            "IS_BETWEEN" => Some(Self::IsBetween),
-            "IS_NOT_BETWEEN" => Some(Self::IsNotBetween),
-            "IS_EMPTY" => Some(Self::IsEmpty),
-            "IS_NOT_EMPTY" => Some(Self::IsNotEmpty),
-            "HAS_NO_VALUE" => Some(Self::HasNoValue),
-            _ => None,
-        }
-    }
-}
-/// Enum for logical operators
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum LogicalOperator {
-    And = 0,
-    Or = 1,
-}
-impl LogicalOperator {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            Self::And => "AND",
-            Self::Or => "OR",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "AND" => Some(Self::And),
-            "OR" => Some(Self::Or),
+            "equal" => Some(Self::Equal),
+            "not_equal" => Some(Self::NotEqual),
+            "greater_than" => Some(Self::GreaterThan),
+            "greater_than_or_equal" => Some(Self::GreaterThanOrEqual),
+            "less_than" => Some(Self::LessThan),
+            "less_than_or_equal" => Some(Self::LessThanOrEqual),
+            "is_null" => Some(Self::IsNull),
+            "is_not_null" => Some(Self::IsNotNull),
+            "contains" => Some(Self::Contains),
+            "not_contains" => Some(Self::NotContains),
+            "like" => Some(Self::Like),
+            "is_between" => Some(Self::IsBetween),
+            "is_not_between" => Some(Self::IsNotBetween),
+            "is_empty" => Some(Self::IsEmpty),
+            "is_not_empty" => Some(Self::IsNotEmpty),
+            "has_no_value" => Some(Self::HasNoValue),
+            "and" => Some(Self::And),
+            "or" => Some(Self::Or),
             _ => None,
         }
     }

@@ -133,15 +133,8 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  string durability = 2; // Durability level (e.g., \"soft\")\n");
     proto.push_str("}\n\n");
 
-    //Common structure for AdvanceFilter
-    proto.push_str("// Common parameter structure for AdvanceFilter requests\n");
-    proto.push_str("message AdvanceFilter {\n");
-    proto.push_str("  string entity = 1; // Table name\n");
-    proto.push_str("  string type = 2; // Filter type criteria or operator\n");
-    proto.push_str("  string field = 3; // Column name\n");
-    proto.push_str("  string operator = 4; // Equal, not equal etc\n");
-    proto.push_str("  string values = 5; // JSON string of values\n");
-    proto.push_str("}\n\n");
+    // AdvanceFilter has been replaced with FilterCriteria for consistency
+    // across all filter operations (batch updates, aggregation, etc.)
 
     // Add BatchUpdate common structures
     proto.push_str("// Common parameter structure for BatchUpdate requests\n");
@@ -316,7 +309,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str(&format!("message BatchUpdate{}Request {{\n", pascal_name));
         proto.push_str("  BatchUpdateParams params = 1;\n");
         proto.push_str("  message BatchUpdateBody {\n");
-        proto.push_str("    repeated AdvanceFilter advance_filters = 1;\n");
+        proto.push_str("    repeated FilterCriteria advance_filters = 1;\n");
         proto.push_str(&format!("  {} updates = 2;\n", pascal_name));
         proto.push_str("  }\n");
         proto.push_str("  BatchUpdateBody body = 2;\n");
@@ -335,7 +328,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
         proto.push_str(&format!("message BatchDelete{}Request {{\n", pascal_name));
         proto.push_str("  BatchDeleteParams params = 1;\n");
         proto.push_str("  message BatchDeleteBody {\n");
-        proto.push_str("    repeated AdvanceFilter advance_filters = 1;\n");
+        proto.push_str("    repeated FilterCriteria advance_filters = 1;\n");
         proto.push_str("  }\n");
         proto.push_str("  BatchDeleteBody body = 2;\n");
         proto.push_str("}\n\n");
@@ -425,29 +418,24 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     // Enum for filter operators
     proto.push_str("// Enum for filter operators\n");
     proto.push_str("enum FilterOperator {\n");
-    proto.push_str("  EQUAL = 0;\n");
-    proto.push_str("  NOT_EQUAL = 1;\n");
-    proto.push_str("  GREATER_THAN = 2;\n");
-    proto.push_str("  GREATER_THAN_OR_EQUAL = 3;\n");
-    proto.push_str("  LESS_THAN = 4;\n");
-    proto.push_str("  LESS_THAN_OR_EQUAL = 5;\n");
-    proto.push_str("  IS_NULL = 6;\n");
-    proto.push_str("  IS_NOT_NULL = 7;\n");
-    proto.push_str("  CONTAINS = 8;\n");
-    proto.push_str("  NOT_CONTAINS = 9;\n");
-    proto.push_str("  LIKE = 10;\n");
-    proto.push_str("  IS_BETWEEN = 11;\n");
-    proto.push_str("  IS_NOT_BETWEEN = 12;\n");
-    proto.push_str("  IS_EMPTY = 13;\n");
-    proto.push_str("  IS_NOT_EMPTY = 14;\n");
-    proto.push_str("  HAS_NO_VALUE = 15;\n");
-    proto.push_str("}\n\n");
-
-    // Enum for logical operators
-    proto.push_str("// Enum for logical operators\n");
-    proto.push_str("enum LogicalOperator {\n");
-    proto.push_str("  AND = 0;\n");
-    proto.push_str("  OR = 1;\n");
+    proto.push_str("  equal = 0;\n");
+    proto.push_str("  not_equal = 1;\n");
+    proto.push_str("  greater_than = 2;\n");
+    proto.push_str("  greater_than_or_equal = 3;\n");
+    proto.push_str("  less_than = 4;\n");
+    proto.push_str("  less_than_or_equal = 5;\n");
+    proto.push_str("  is_null = 6;\n");
+    proto.push_str("  is_not_null = 7;\n");
+    proto.push_str("  contains = 8;\n");
+    proto.push_str("  not_contains = 9;\n");
+    proto.push_str("  like = 10;\n");
+    proto.push_str("  is_between = 11;\n");
+    proto.push_str("  is_not_between = 12;\n");
+    proto.push_str("  is_empty = 13;\n");
+    proto.push_str("  is_not_empty = 14;\n");
+    proto.push_str("  has_no_value = 15;\n");
+    proto.push_str("  and = 16;\n");
+    proto.push_str("  or = 17;\n");
     proto.push_str("}\n\n");
 
     // Enum for match patterns
@@ -502,33 +490,17 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  optional bool nested = 3;\n");
     proto.push_str("}\n\n");
 
-    // Filter criteria (can be a criteria or logical operator)
-    proto.push_str("// Filter criteria (can be a criteria or logical operator)\n");
+    // Simplified filter criteria with type field
+    proto.push_str("// Simplified filter criteria with type field\n");
     proto.push_str("message FilterCriteria {\n");
-    proto.push_str("  oneof filter_type {\n");
-    proto.push_str("    CriteriaFilter criteria = 1;\n");
-    proto.push_str("    LogicalOperatorFilter logical_operator = 2;\n");
-    proto.push_str("  }\n");
-    proto.push_str("}\n\n");
-
-    // Actual filter criteria
-    proto.push_str("// Actual filter criteria\n");
-    proto.push_str("message CriteriaFilter {\n");
-    proto.push_str("  string field = 1;\n");
-    proto.push_str("  string entity = 2;\n");
-    proto.push_str("  FilterOperator operator = 3;\n");
-    proto.push_str("  repeated string values = 4;  // JSON values as strings\n");
-    proto.push_str("  optional bool case_sensitive = 5;\n");
-    proto.push_str("  optional string parse_as = 6;\n");
-    proto.push_str("  optional MatchPattern match_pattern = 7;\n");
-    proto.push_str("  optional bool is_search = 8;\n");
-    proto.push_str("  optional bool has_group_count = 9;\n");
-    proto.push_str("}\n\n");
-
-    // Logical operator filter
-    proto.push_str("// Logical operator filter\n");
-    proto.push_str("message LogicalOperatorFilter {\n");
-    proto.push_str("  LogicalOperator operator = 1;\n");
+    proto.push_str("  string type = 1;  // \"criteria\" or \"operator\"\n");
+    proto.push_str("  optional string field = 2;\n");
+    proto.push_str("  optional string entity = 3;\n");
+    proto.push_str("  optional FilterOperator operator = 4;  // Can be filter operator or logical operator (and/or)\n");
+    proto.push_str("  repeated string values = 5;  // JSON values as strings\n");
+    proto.push_str("  optional bool case_sensitive = 6;\n");
+    proto.push_str("  optional string parse_as = 7;\n");
+    proto.push_str("  optional MatchPattern match_pattern = 8;\n");
     proto.push_str("}\n\n");
 
     // Main aggregation filter request
