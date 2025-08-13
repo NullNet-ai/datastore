@@ -1407,7 +1407,6 @@ pub async fn get_file_by_id(
             });
         }
     };
-    dbg!(format!("authdata {:?} file_id {:?}", auth_data, file_id));
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
