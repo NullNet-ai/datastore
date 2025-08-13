@@ -35,7 +35,7 @@ CREATE TABLE "signed_in_activity" (
 	"user_is_root_user" boolean,
 	"token" text,
 	"cookie_path" text,
-	"cookie_expires" text,
+	"cookie_expire" text,
 	"cookie_http_only" boolean,
 	"cookie_original_max_age" bigint,
 	"origin_url" text,

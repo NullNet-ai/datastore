@@ -11,12 +11,11 @@ use std::str::FromStr;
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
 
+pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
 use crate::auth::structs::{Claims, Origin, Session};
 use crate::structs::structs::Auth;
 use crate::utils::utils::time_string_to_ms;
-pub use super::session_core::prune_expired_sessions;
-
 
 pub struct SessionMiddleware;
 
@@ -106,13 +105,21 @@ where
 
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
-            let session = if let Some(session_id) = session_id {
-                session_manager.get_or_create_session(&session_id, "").await
+            let (session, is_new_session) = if let Some(session_id) = session_id {
+                // Try to load existing session first
+                match session_manager.load_session(&session_id).await {
+                    Ok(session) => (session, false),
+                    Err(_) => {
+                        // Session doesn't exist, create new one
+                        let new_session = session_manager.create_new_session(&session_id, "");
+                        (new_session, true)
+                    }
+                }
             } else {
+                // No session ID provided, create new session
                 let new_session_id = session_manager.extract_session_id(None, None);
-                session_manager
-                    .get_or_create_session(&new_session_id, "")
-                    .await
+                let new_session = session_manager.create_new_session(&new_session_id, "");
+                (new_session, true)
             };
 
             req.extensions_mut().insert(session.clone());
@@ -126,19 +133,17 @@ where
                 let account_profile_id = auth
                     .as_ref()
                     .and_then(|a| a.account_organization_id.parse::<i32>().ok());
-                
+
                 // Extract app_id from query parameters
-                let app_id = res.request().query_string()
-                    .split('&')
-                    .find_map(|param| {
-                        let mut parts = param.split('=');
-                        if parts.next() == Some("app_id") {
-                            parts.next().map(|s| s.to_string())
-                        } else {
-                            None
-                        }
-                    });
-                
+                let app_id = res.request().query_string().split('&').find_map(|param| {
+                    let mut parts = param.split('=');
+                    if parts.next() == Some("app_id") {
+                        parts.next().map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                });
+
                 if let Err(e) = session_manager
                     .save_session(
                         &session,
@@ -160,6 +165,7 @@ where
                         }),
                         auth.as_ref(),
                         app_id,
+                        is_new_session,
                     )
                     .await
                 {
@@ -188,7 +194,6 @@ where
         })
     }
 }
-
 
 pub fn get_session(req: &ServiceRequest) -> Option<Session> {
     req.extensions().get::<Session>().cloned()
@@ -279,7 +284,7 @@ pub async fn save_session_after_request(session: &Session) -> Result<(), String>
     let session_manager = SessionManager::with_default_config();
     let account_profile_id = Some(1);
     session_manager
-        .save_session(session, account_profile_id, None, None, None)
+        .save_session(session, account_profile_id, None, None, None, false)
         .await
         .map_err(|e| format!("Failed to save session: {:?}", e))
 }
@@ -291,7 +296,7 @@ pub fn populate_session_with_auth_data(
     origin: Origin,
     req: &ServiceRequest,
 ) {
-    session.token = "none".to_string();
+    session.token = "".to_string();
     session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
     session.user.is_root_user = claims.account.is_root_account;
     session.user.account_id = claims.account.account_id.clone();

@@ -41,7 +41,7 @@ pub struct SignedInActivityModel {
     pub user_is_root_user: Option<bool>,
     pub token: Option<String>,
     pub cookie_path: Option<String>,
-    pub cookie_expires: Option<String>,
+    pub cookie_expire: Option<String>,
     pub cookie_http_only: Option<bool>,
     pub cookie_original_max_age: Option<i64>,
     pub origin_url: Option<String>,

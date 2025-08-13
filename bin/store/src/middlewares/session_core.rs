@@ -93,7 +93,7 @@ impl SessionManager {
     }
 
     /// Load existing session from database
-    async fn load_session(&self, session_id: &str) -> Result<Session, diesel::result::Error> {
+    pub async fn load_session(&self, session_id: &str) -> Result<Session, diesel::result::Error> {
         let mut conn = db::get_async_connection().await;
 
         let session_model = sessions::table
@@ -133,7 +133,7 @@ impl SessionManager {
             token: session_model.token.unwrap_or_default(),
             cookie: Cookie {
                 path: session_model.cookie_path.unwrap_or("/".to_string()),
-                expires: session_model.cookie_expires.unwrap_or_default(),
+                expires: session_model.cookie_expire.unwrap_or_default(),
                 originalMaxAge: session_model.cookie_original_max_age.unwrap_or(86400000),
                 httpOnly: session_model.cookie_http_only.unwrap_or(true),
             },
@@ -196,6 +196,7 @@ impl SessionManager {
         device_info: Option<DeviceInfo>,
         auth: Option<&Auth>,
         app_id: Option<String>,
+        is_new: bool,
     ) -> Result<(), diesel::result::Error> {
         let session_expires =
             std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
@@ -213,25 +214,13 @@ impl SessionManager {
 
         let expires = Utc::now().naive_utc() + Duration::milliseconds(expiry_ms as i64);
 
-        // Check if session already exists to determine if this is create or update
-        let existing_session = {
-            let mut conn = db::get_async_connection().await;
-            sessions::table
-                .filter(sessions::id.eq(&session.session_id))
-                .first::<SessionModel>(&mut conn)
-                .await
-                .optional()
-                .map_err(|e| diesel::result::Error::DatabaseError(
-                    diesel::result::DatabaseErrorKind::Unknown,
-                    Box::new(format!("Failed to query existing session: {}", e)),
-                ))?
-        };
-
-        let is_update = existing_session.is_some();
+        let is_update = !is_new;
 
         // Create base session model data
         let mut session_json = json!({
             "id": session.session_id.clone(),
+            "tombstone": 0,
+            "status": "Active",
             "sensitivity_level": 1000,
             "is_batch": false,
             "account_profile_id": account_profile_id,
@@ -239,41 +228,12 @@ impl SessionManager {
             "browser_name": device_info.as_ref().map(|d| d.browser_name.clone()),
             "operating_system": device_info.as_ref().map(|d| d.operating_system.clone()),
             "authentication_method": device_info.as_ref().map(|d| d.authentication_method.clone()),
+            "location": device_info.as_ref().map(|d| d.location.clone()),
+            "ip_address": device_info.as_ref().map(|d| d.ip_address.clone()),
         });
 
-        // If updating, preserve fields that shouldn't change
-        if is_update {
-            if let Some(existing) = &existing_session {
-                // Preserve fields that shouldn't change during update
-                if let Some(created_date) = &existing.created_date {
-                    session_json["created_date"] = json!(created_date);
-                }
-                if let Some(created_time) = &existing.created_time {
-                    session_json["created_time"] = json!(created_time);
-                }
-                if let Some(expire) = &existing.expire {
-                    session_json["expire"] = json!(expire.format("%Y-%m-%d %H:%M:%S%.f").to_string());
-                }
-                if let Some(code) = &existing.code {
-                    session_json["code"] = json!(code);
-                }
-                if let Some(sensitivity_level) = existing.sensitivity_level {
-                    session_json["sensitivity_level"] = json!(sensitivity_level);
-                }
-                if let Some(timestamp) = &existing.timestamp {
-                    session_json["timestamp"] = json!(timestamp.format("%Y-%m-%d %H:%M:%S%.f").to_string());
-                }
-                if let Some(session_started) = &existing.session_started {
-                    session_json["session_started"] = json!(session_started.format("%Y-%m-%d %H:%M:%S%.f").to_string());
-                }
-                if let Some(cookie_original_max_age) = existing.cookie_original_max_age {
-                    session_json["cookie_original_max_age"] = json!(cookie_original_max_age);
-                }
-                if let Some(cookie_expires) = &existing.cookie_expires {
-                    session_json["cookie_expires"] = json!(cookie_expires);
-                }
-            }
-        } else {
+        // For new sessions, add creation timestamps
+        if !is_update {
             // For new sessions, set expire field
             session_json["expire"] = json!(expires.format("%Y-%m-%d %H:%M:%S%.f").to_string());
         }
@@ -286,9 +246,16 @@ impl SessionManager {
 
             // Use "update" for existing sessions, "create" for new ones
             let operation = if is_update { "update" } else { "create" };
-            request_body.process_record(operation, auth_data, auth_data.is_root_account, "sessions");
+
+            request_body.process_record(
+                operation,
+                auth_data,
+                auth_data.is_root_account,
+                "sessions",
+            );
             session_json = request_body.record;
         }
+
 
         // Extract values back to SessionModel
         let session_model = SessionModel {
@@ -310,7 +277,13 @@ impl SessionManager {
             updated_by: session_json["updated_by"].as_str().map(|s| s.to_string()),
             deleted_by: session_json["deleted_by"].as_str().map(|s| s.to_string()),
             requested_by: session_json["requested_by"].as_str().map(|s| s.to_string()),
-            timestamp: Some(Utc::now().naive_utc()),
+            timestamp: if is_update {
+                None // Don't update timestamp for existing sessions
+            } else {
+                session_json["timestamp"].as_str().and_then(|s| {
+                    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.6f").ok()
+                })
+            },
             tags: session_json["tags"].as_array().map(|arr| {
                 arr.iter()
                     .filter_map(|v| v.as_str().map(|s| s.to_string()))
@@ -336,13 +309,10 @@ impl SessionManager {
             authentication_method: session_json["authentication_method"]
                 .as_str()
                 .map(|s| s.to_string()),
-            location: device_info.as_ref().map(|d| d.location.clone()),
-            ip_address: device_info.as_ref().map(|d| d.ip_address.clone()),
+            location: session_json["location"].as_str().map(|s| s.to_string()),
+            ip_address: session_json["ip_address"].as_str().map(|s| s.to_string()),
             session_started: if is_update {
-                // Preserve existing session_started for updates
-                session_json["session_started"].as_str()
-                    .and_then(|s| chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f").ok())
-                    .or_else(|| existing_session.as_ref().and_then(|e| e.session_started))
+                None // Don't update session_started for existing sessions
             } else {
                 Some(Utc::now().naive_utc())
             },
@@ -351,20 +321,16 @@ impl SessionManager {
             user_role_id: Some(session.user.role_id.clone()),
             user_account_id: Some(session.user.account_id.clone()),
             user_is_root_user: Some(session.user.is_root_user),
-            token: Some(session.token.clone()),
+            token: None,
             cookie_path: Some(session.cookie.path.clone()),
-            cookie_expires: if is_update {
-                // Preserve existing cookie_expires for updates
-                session_json["cookie_expires"].as_str().map(|s| s.to_string())
-                    .or_else(|| existing_session.as_ref().and_then(|e| e.cookie_expires.clone()))
+            cookie_expire: if is_update {
+                None // Don't update cookie_expire for existing sessions
             } else {
                 Some(session.cookie.expires.clone())
             },
             cookie_http_only: Some(session.cookie.httpOnly),
             cookie_original_max_age: if is_update {
-                // Preserve existing cookie_original_max_age for updates
-                session_json["cookie_original_max_age"].as_i64()
-                    .or_else(|| existing_session.as_ref().and_then(|e| e.cookie_original_max_age))
+                None // Don't update cookie_original_max_age for existing sessions
             } else {
                 Some(session.cookie.originalMaxAge)
             },
@@ -388,10 +354,7 @@ impl SessionManager {
                 .as_ref()
                 .and_then(|v| serde_json::to_string(v).ok()),
             expire: if is_update {
-                // Use preserved expire value from session_json for updates
-                session_json["expire"].as_str()
-                    .and_then(|s| chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f").ok())
-                    .or_else(|| existing_session.as_ref().and_then(|e| e.expire))
+                None // Don't update expire for existing sessions
             } else {
                 Some(expires)
             },
@@ -400,17 +363,15 @@ impl SessionManager {
         };
 
         // Convert session model to JSON for sync service
-        let session_json = serde_json::to_value(&session_model)
-            .map_err(|e| {
-                diesel::result::Error::DatabaseError(
-                    diesel::result::DatabaseErrorKind::Unknown,
-                    Box::new(format!("Failed to serialize session model: {}", e)),
-                )
-            })?;
+        let session_json = serde_json::to_value(&session_model).map_err(|e| {
+            diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::Unknown,
+                Box::new(format!("Failed to serialize session model: {}", e)),
+            )
+        })?;
 
         // Use sync service to insert/update session for synchronization
-        crate::sync::sync_service::insert(&"sessions".to_string(), session_json)
-            .await?;
+        crate::sync::sync_service::insert(&"sessions".to_string(), session_json).await?;
 
         Ok(())
     }
@@ -454,13 +415,12 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
     for session in expired_sessions {
         if let Some(_session_id) = &session.id {
             // Create updated session data for soft deletion
-            let updated_session = serde_json::to_value(&session)
-                .map_err(|e| {
-                    diesel::result::Error::DatabaseError(
-                        diesel::result::DatabaseErrorKind::Unknown,
-                        Box::new(format!("Failed to serialize session: {}", e)),
-                    )
-                })?;
+            let updated_session = serde_json::to_value(&session).map_err(|e| {
+                diesel::result::Error::DatabaseError(
+                    diesel::result::DatabaseErrorKind::Unknown,
+                    Box::new(format!("Failed to serialize session: {}", e)),
+                )
+            })?;
 
             // Create a RequestBody wrapper to use process_record
             let mut request_body = crate::structs::structs::RequestBody {
@@ -498,8 +458,7 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
             request_body.process_record("delete", &auth, true, "sessions");
 
             // Use sync service to update the session
-            crate::sync::sync_service::insert(&"sessions".to_string(), request_body.record)
-                .await?;
+            crate::sync::sync_service::insert(&"sessions".to_string(), request_body.record).await?;
 
             updated_count += 1;
         }

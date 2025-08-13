@@ -23,10 +23,6 @@ message CreateQuery {
   string durability = 2; // Durability level (e.g., "soft")
 }
 
-// Common parameter structure for AdvanceFilter requests
-// AdvanceFilter has been replaced with FilterCriteria for consistency
-// across all filter operations (batch updates, aggregation filters, etc.)
-
 // Common parameter structure for BatchUpdate requests
 message BatchUpdateParams {
   string table = 1; // Table name
@@ -104,6 +100,109 @@ message GetQuery {
 // Common parameter structure for AggregationFilter requests
 message AggregationFilterParams {
   string type = 1; // request type
+}
+
+// Sessions entity definition
+message Sessions {
+  optional string id = 1;
+  optional int32 tombstone = 2;
+  optional string status = 3;
+  optional string previous_status = 4;
+  optional int32 version = 5;
+  optional string created_date = 6;
+  optional string created_time = 7;
+  optional string updated_date = 8;
+  optional string updated_time = 9;
+  optional string organization_id = 10;
+  optional string created_by = 11;
+  optional string updated_by = 12;
+  optional string deleted_by = 13;
+  optional string requested_by = 14;
+  optional string timestamp = 15;
+  repeated string tags = 16;
+  repeated string categories = 17;
+  optional string code = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional int32 account_profile_id = 22;
+  optional string device_name = 23;
+  optional string browser_name = 24;
+  optional string operating_system = 25;
+  optional string authentication_method = 26;
+  optional string location = 27;
+  optional string ip_address = 28;
+  optional string session_started = 29;
+  optional string remarks = 30;
+  optional string user_role_id = 31;
+  optional string user_account_id = 32;
+  optional bool user_is_root_user = 33;
+  optional string token = 34;
+  optional string cookie_path = 35;
+  optional string cookie_expires = 36;
+  optional bool cookie_http_only = 37;
+  optional string cookie_original_max_age = 38;
+  optional string origin_url = 39;
+  optional string origin_host = 40;
+  optional string origin_user_agent = 41;
+  optional string valid_pass_key = 42;
+  optional string role_permission = 43;
+  optional string field_permission = 44;
+  optional string record_permission = 45;
+  optional string expire = 46;
+  optional string application_accessed = 47;
+  optional string last_accessed = 48;
+}
+
+// SignedInActivity entity definition
+message SignedInActivity {
+  optional string id = 1;
+  optional int32 tombstone = 2;
+  optional string status = 3;
+  optional string previous_status = 4;
+  optional int32 version = 5;
+  optional string created_date = 6;
+  optional string created_time = 7;
+  optional string updated_date = 8;
+  optional string updated_time = 9;
+  optional string organization_id = 10;
+  optional string created_by = 11;
+  optional string updated_by = 12;
+  optional string deleted_by = 13;
+  optional string requested_by = 14;
+  optional string timestamp = 15;
+  repeated string tags = 16;
+  repeated string categories = 17;
+  optional string code = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional int32 account_profile_id = 22;
+  optional string device_name = 23;
+  optional string browser_name = 24;
+  optional string operating_system = 25;
+  optional string authentication_method = 26;
+  optional string location = 27;
+  optional string ip_address = 28;
+  optional string session_started = 29;
+  optional string remarks = 30;
+  optional string user_role_id = 31;
+  optional string user_account_id = 32;
+  optional bool user_is_root_user = 33;
+  optional string token = 34;
+  optional string cookie_path = 35;
+  optional string cookie_expires = 36;
+  optional bool cookie_http_only = 37;
+  optional string cookie_original_max_age = 38;
+  optional string origin_url = 39;
+  optional string origin_host = 40;
+  optional string origin_user_agent = 41;
+  optional string valid_pass_key = 42;
+  optional string role_permission = 43;
+  optional string field_permission = 44;
+  optional string record_permission = 45;
+  optional string expire = 46;
+  optional string last_accessed = 47;
 }
 
 // ExternalContacts entity definition
@@ -309,9 +408,10 @@ message Accounts {
   optional string sync_status = 20;
   optional bool is_batch = 21;
   optional string account_id = 22;
-  optional string account_secret = 23;
-  optional string account_status = 24;
-  optional bool is_new_user = 25;
+  optional string image_url = 23;
+  optional string account_secret = 24;
+  optional string account_status = 25;
+  optional bool is_new_user = 26;
 }
 
 // Addresses entity definition
@@ -656,6 +756,264 @@ message AccountSignatures {
   optional string account_profile_id = 22;
   optional string name = 23;
   optional string signature = 24;
+}
+
+// Create Sessions request
+message CreateSessionsRequest {
+  Sessions sessions = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create Sessions response
+message CreateSessionsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Sessions data = 4;
+}
+
+// Get Sessions request
+message GetSessionsRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get Sessions response
+message GetSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  Sessions data = 3;
+}
+
+// Update Sessions request
+message UpdateSessionsRequest {
+  Sessions session = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update Sessions response
+message UpdateSessionsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  Sessions data = 4;
+}
+
+// BatchUpdate Sessions request
+message BatchUpdateSessionsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  Sessions updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate Sessions response
+message BatchUpdateSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Sessions data = 4;
+}
+
+// BatchDelete Sessions request
+message BatchDeleteSessionsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete Sessions response
+message BatchDeleteSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Sessions data = 4;
+}
+
+// Delete Sessions request
+message DeleteSessionsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete Sessions response
+message DeleteSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  Sessions data = 4;
+}
+
+// BatchInsert Sessions request
+message BatchInsertSessionsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated Sessions sessions = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert Sessions response
+message BatchInsertSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Sessions data = 4;
+}
+
+// Upsert Sessions request
+message UpsertSessionsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    Sessions data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert Sessions response
+message UpsertSessionsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated Sessions data = 4;
+}
+
+// Create SignedInActivity request
+message CreateSignedInActivityRequest {
+  SignedInActivity signed_in_activity = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create SignedInActivity response
+message CreateSignedInActivityResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  SignedInActivity data = 4;
+}
+
+// Get SignedInActivity request
+message GetSignedInActivityRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get SignedInActivity response
+message GetSignedInActivityResponse {
+  bool success = 1;
+  string message = 2;
+  SignedInActivity data = 3;
+}
+
+// Update SignedInActivity request
+message UpdateSignedInActivityRequest {
+  SignedInActivity signed_in_activity = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update SignedInActivity response
+message UpdateSignedInActivityResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  SignedInActivity data = 4;
+}
+
+// BatchUpdate SignedInActivity request
+message BatchUpdateSignedInActivityRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  SignedInActivity updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate SignedInActivity response
+message BatchUpdateSignedInActivityResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SignedInActivity data = 4;
+}
+
+// BatchDelete SignedInActivity request
+message BatchDeleteSignedInActivityRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete SignedInActivity response
+message BatchDeleteSignedInActivityResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SignedInActivity data = 4;
+}
+
+// Delete SignedInActivity request
+message DeleteSignedInActivityRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete SignedInActivity response
+message DeleteSignedInActivityResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SignedInActivity data = 4;
+}
+
+// BatchInsert SignedInActivity request
+message BatchInsertSignedInActivityRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated SignedInActivity signed_in_activity = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert SignedInActivity response
+message BatchInsertSignedInActivityResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SignedInActivity data = 4;
+}
+
+// Upsert SignedInActivity request
+message UpsertSignedInActivityRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    SignedInActivity data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert SignedInActivity response
+message UpsertSignedInActivityResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SignedInActivity data = 4;
 }
 
 // Create ExternalContacts request
@@ -3014,9 +3372,6 @@ enum FilterOperator {
   or = 17;
 }
 
-// Enum for logical operators
-
-
 // Enum for match patterns
 enum MatchPattern {
   EXACT = 0;
@@ -3101,6 +3456,54 @@ message AggregationFilterResponse {
 
 // Store service definition with CRUD operations
 service StoreService {
+  // Create a new Sessions
+  rpc CreateSessions(CreateSessionsRequest) returns (CreateSessionsResponse);
+
+  // Get a Sessions by ID
+  rpc GetSessions(GetSessionsRequest) returns (GetSessionsResponse);
+
+  // Update an existing Sessions
+  rpc UpdateSessions(UpdateSessionsRequest) returns (UpdateSessionsResponse);
+
+  // Delete a Sessions by ID
+  rpc DeleteSessions(DeleteSessionsRequest) returns (DeleteSessionsResponse);
+
+  // Batch insert multiple Sessionss
+  rpc BatchInsertSessions(BatchInsertSessionsRequest) returns (BatchInsertSessionsResponse);
+
+  // Batch update multiple Sessionss based on filters
+  rpc BatchUpdateSessions(BatchUpdateSessionsRequest) returns (BatchUpdateSessionsResponse);
+
+  // Batch delete multiple Sessionss based on filters
+  rpc BatchDeleteSessions(BatchDeleteSessionsRequest) returns (BatchDeleteSessionsResponse);
+
+  // Upsert a Sessions (create if not exists, update if exists)
+  rpc UpsertSessions(UpsertSessionsRequest) returns (UpsertSessionsResponse);
+
+  // Create a new SignedInActivity
+  rpc CreateSignedInActivity(CreateSignedInActivityRequest) returns (CreateSignedInActivityResponse);
+
+  // Get a SignedInActivity by ID
+  rpc GetSignedInActivity(GetSignedInActivityRequest) returns (GetSignedInActivityResponse);
+
+  // Update an existing SignedInActivity
+  rpc UpdateSignedInActivity(UpdateSignedInActivityRequest) returns (UpdateSignedInActivityResponse);
+
+  // Delete a SignedInActivity by ID
+  rpc DeleteSignedInActivity(DeleteSignedInActivityRequest) returns (DeleteSignedInActivityResponse);
+
+  // Batch insert multiple SignedInActivitys
+  rpc BatchInsertSignedInActivity(BatchInsertSignedInActivityRequest) returns (BatchInsertSignedInActivityResponse);
+
+  // Batch update multiple SignedInActivitys based on filters
+  rpc BatchUpdateSignedInActivity(BatchUpdateSignedInActivityRequest) returns (BatchUpdateSignedInActivityResponse);
+
+  // Batch delete multiple SignedInActivitys based on filters
+  rpc BatchDeleteSignedInActivity(BatchDeleteSignedInActivityRequest) returns (BatchDeleteSignedInActivityResponse);
+
+  // Upsert a SignedInActivity (create if not exists, update if exists)
+  rpc UpsertSignedInActivity(UpsertSignedInActivityRequest) returns (UpsertSignedInActivityResponse);
+
   // Create a new ExternalContacts
   rpc CreateExternalContacts(CreateExternalContactsRequest) returns (CreateExternalContactsResponse);
 
