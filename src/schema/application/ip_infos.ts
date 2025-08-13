@@ -1,4 +1,4 @@
-import { boolean, pgTable, text } from 'drizzle-orm/pg-core';
+import { pgTable, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,

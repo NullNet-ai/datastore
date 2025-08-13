@@ -1,8 +1,4 @@
-import {
-  AnyPgColumn,
-  pgTable,
-  text,
-} from 'drizzle-orm/pg-core';
+import { AnyPgColumn, pgTable, primaryKey, text } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -20,16 +16,19 @@ const fields = {
   description: text('description'),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
   alias_status: text('alias_status'),
-}
+};
 
-const config = getConfigDefaults.byIndex(table_name);
+const config = (table) => ({
+  pk: primaryKey({ columns: [table.id] }),
+  ...getConfigDefaults.defaultIndexes('aliases', table),
+});
 
 export const table = pgTable(
   table_name,
   {
     ...system_fields,
     ...fields,
-    id: text('id')
+    id: text('id'),
   },
   config,
 );

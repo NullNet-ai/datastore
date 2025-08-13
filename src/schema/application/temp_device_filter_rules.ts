@@ -13,31 +13,35 @@ import {
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { table as device_configurations } from './device_configurations';
 
-const table_name = 'device_rules';
+const table_name = 'temp_device_filter_rules';
 
 const fields = {
   device_configuration_id: text('device_configuration_id').references(
     () => device_configurations.id as AnyPgColumn,
   ),
   disabled: boolean('disabled'),
-  type: text('type'),
+
   policy: text('policy'),
   protocol: text('protocol'),
 
+  source_inversed: boolean('source_inversed'),
   source_port: text('source_port'),
   source_addr: text('source_addr'),
   source_type: text('source_type'),
 
+  destination_inversed: boolean('destination_inversed'),
   destination_port: text('destination_port'),
   destination_addr: text('destination_addr'),
-  
-  description: text('description'),
-  device_rule_status: text('device_rule_status'),
-  interface: text('interface'),
-  order: integer('order'),
-  // timestamp: timestamp('timestamp', { withTimezone: true }),
+  destination_type: text('destination_type'),
 
-}
+  description: text('description'),
+  interface: text('interface'),
+
+  order: integer('order'),
+  id: integer('id'),
+
+  assosiated_rule_id: text('assosiated_rule_id').default(''),
+};
 
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
@@ -57,9 +61,6 @@ export const table = pgTable(
     ...system_fields,
     ...fields,
     id: text('id'),
-    destination_inversed: boolean('destination_inversed'),
-    destination_type: text('destination_type'),
-    source_inversed: boolean('source_inversed'),
   },
   config,
 );

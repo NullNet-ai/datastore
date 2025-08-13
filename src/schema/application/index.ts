@@ -23,8 +23,13 @@ export { table as device_group_settings } from '../application/device_group_sett
 export { table as device_groups } from '../application/device_groups';
 export { table as device_heartbeats } from '../application/device_heartbeats'; //hypertable
 export { table as device_configurations } from '../application/device_configurations';
-export { table as device_rules } from '../application/device_rules';
-export { table as temp_device_rules } from '../application/temp_device_rules';
+
+export { table as device_filter_rules } from '../application/device_filter_rules';
+export { table as temp_device_filter_rules } from '../application/temp_device_filter_rules';
+
+export { table as device_nat_rules } from '../application/device_nat_rules';
+export { table as temp_device_nat_rules } from '../application/temp_device_nat_rules';
+
 export { table as aliases } from '../application/aliases';
 export { table as temp_aliases } from '../application/temp_aliases';
 export { table as ip_aliases } from '../application/ip_aliases';
