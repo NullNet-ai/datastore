@@ -1,7 +1,7 @@
 use crate::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-
+use chrono::{DateTime, Utc};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
@@ -26,7 +26,7 @@ pub struct AccountModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub timestamp: Option<DateTime<Utc>>,
     pub tags: Option<Vec<String>>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
