@@ -2248,13 +2248,24 @@ pub async fn search_suggestions(
         });
     }
 
-    let json_params_string = {
-        let value: Value = serde_json::to_value(&parameters).unwrap();
+    let json_params_string = match (|| -> Result<String, serde_json::Error> {
+        let value: Value = serde_json::to_value(&parameters)?;
         if let Value::Object(map) = value {
             let sorted: BTreeMap<String, Value> = map.into_iter().collect();
-            serde_json::to_string(&sorted).unwrap()
+            serde_json::to_string(&sorted)
         } else {
-            serde_json::to_string(&parameters).unwrap()
+            serde_json::to_string(&parameters)
+        }
+    })() {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("Failed to serialize parameters to JSON: {}", e);
+            return HttpResponse::UnprocessableEntity().json(ApiResponse {
+                success: false,
+                message: format!("JSON parameters processing error: {}", e),
+                count: 0,
+                data: vec![],
+            });
         }
     };
 
