@@ -102,4 +102,8 @@ pub struct Session {
     pub role_permissions: Option<SessionPermissionCache>,
     pub record_permissions: Option<SessionPermissionCache>,
     pub valid_pass_keys: Option<SessionPermissionCache>,
+    #[serde(default)]
+    pub ip_address: Option<String>,
+    #[serde(default)]
+    pub location: Option<String>,
 }

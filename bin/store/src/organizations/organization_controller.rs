@@ -36,7 +36,7 @@ impl OrganizationsController {
         }
 
         let is_request = Some(true);
-        println!("{:?}", data.0.data);
+
 
         match register(&data.0.data, is_request, None).await {
             Ok(result) => HttpResponse::Ok().json(result),
@@ -70,13 +70,19 @@ impl OrganizationsController {
 
     pub async fn auth(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
         let query_string = req.query_string();
+        
         let session_option = req
             .extensions()
             .get::<crate::auth::structs::Session>()
             .cloned();
+
+        
         let session = match session_option {
-            Some(session) => session,
+            Some(session) => {
+                session
+            },
             None => {
+
                 return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
                     success: false,
                     message: "Session doesn't exist in the login request".to_string(),
@@ -85,6 +91,7 @@ impl OrganizationsController {
                 })
             }
         };
+
 
         let query_params: Vec<(String, String)> = query_string
             .split('&')
@@ -106,11 +113,13 @@ impl OrganizationsController {
             .map(|(_, v)| v == "true")
             .unwrap_or(false);
 
+
         let t = query_params
             .iter()
             .find(|(k, _)| k == "t")
             .map(|(_, v)| v.clone())
             .unwrap_or_default();
+
 
         // Get account_id and account_secret from the request body
         let account_id = data
@@ -119,14 +128,17 @@ impl OrganizationsController {
             .clone()
             .unwrap_or_else(|| data.data.email.clone().unwrap_or_default());
 
+
         let account_secret = data
             .data
             .account_secret
             .clone()
             .unwrap_or_else(|| data.data.password.clone().unwrap_or_default());
 
+
         // Authenticate based on is_root parameter
         let result = if is_root {
+
             // Root authentication
             root_auth(
                 &account_id,
@@ -136,10 +148,12 @@ impl OrganizationsController {
             )
             .await
             .map_err(|err| {
+
                 log::error!("Root authentication error: {}", err);
                 (err.message, None::<String>)
             })
         } else {
+
             // Regular authentication
             auth(
                 &account_id,
@@ -149,15 +163,19 @@ impl OrganizationsController {
             )
             .await
             .map_err(|err| {
+
                 log::error!("Authentication error: {}", err);
                 (err.message, None)
             })
         };
 
+
         // Handle the authentication result
         match result {
             Ok(login_response) => {
+
                 if let Some(token) = login_response.token {
+
                     let updated = crate::auth::structs::Session {
                         token: token.clone(),
                         origin: Some(Origin {
@@ -177,6 +195,7 @@ impl OrganizationsController {
                     };
                     req.extensions_mut().insert(updated);
 
+
                     // Set cookie and return token
                     HttpResponse::Ok()
                         .cookie(
@@ -186,6 +205,7 @@ impl OrganizationsController {
                         )
                         .json(serde_json::json!({ "token": token }))
                 } else {
+
                     // Authentication failed but no error was thrown
                     HttpResponse::Forbidden().json(serde_json::json!({
                         "message": login_response.message
@@ -193,6 +213,7 @@ impl OrganizationsController {
                 }
             }
             Err((message, _)) => {
+
                 // Authentication error
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "message": message

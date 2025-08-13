@@ -1,14 +1,27 @@
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use serde_json::json;
+
 use ulid::Ulid;
 
 use crate::auth::structs::{Cookie, Session, User};
+use crate::structs::structs::{Auth, RequestBody};
+use serde_json::json;
 use crate::db;
 use crate::models::session_model::SessionModel;
 use crate::schema::schema::sessions;
 use crate::utils::utils::time_string_to_ms;
+
+#[derive(Clone, Debug)]
+pub struct DeviceInfo {
+    pub device_name: String,
+    pub browser_name: String,
+    pub operating_system: String,
+    pub authentication_method: String,
+    pub location: String,
+    pub ip_address: String,
+    pub remarks: Option<String>,
+}
 
 #[derive(Clone)]
 pub struct SessionConfig {
@@ -65,7 +78,7 @@ impl SessionManager {
     }
 
     /// Load or create a session
-    pub async fn get_or_create_session(&self, session_id: &str) -> Session {
+    pub async fn get_or_create_session(&self, session_id: &str, token: &str) -> Session {
         match self.load_session(session_id).await {
             Ok(session) => session,
             Err(err) => {
@@ -73,7 +86,7 @@ impl SessionManager {
                     "Error loading session, will create a new session: {:?}",
                     err
                 );
-                self.create_new_session(session_id, "")
+                self.create_new_session(session_id, token)
             }
         }
     }
@@ -83,14 +96,42 @@ impl SessionManager {
         let mut conn = db::get_async_connection().await;
 
         let session_model = sessions::table
-            .filter(sessions::sid.eq(session_id))
+            .filter(sessions::id.eq(session_id))
+            .filter(sessions::status.eq("Active"))
+            .filter(sessions::tombstone.eq(0))
             .first::<SessionModel>(&mut conn)
             .await?;
 
-        // Parse the session data from JSON
-        serde_json::from_value::<Session>(session_model.sess).map_err(|err| {
-            log::error!("Error parsing session to json: {:?}", err);
-            diesel::result::Error::DeserializationError(Box::new(err))
+        // Convert SessionModel back to Session struct
+        Ok(Session {
+            user: User {
+                role_id: session_model.user_role_id.unwrap_or_default(),
+                account_id: session_model.user_account_id.unwrap_or_default(),
+                is_root_user: session_model.user_is_root_user.unwrap_or(false),
+            },
+            session_id: session_model.id.unwrap_or_default(),
+            origin: if session_model.origin_url.is_some() || session_model.origin_host.is_some() || session_model.origin_user_agent.is_some() {
+                Some(crate::auth::structs::Origin {
+                    url: session_model.origin_url.unwrap_or_default(),
+                    host: session_model.origin_host.unwrap_or_default(),
+                    user_agent: session_model.origin_user_agent,
+                })
+            } else {
+                None
+            },
+            token: session_model.token.unwrap_or_default(),
+            cookie: Cookie {
+                path: session_model.cookie_path.unwrap_or("/".to_string()),
+                expires: session_model.cookie_expires.unwrap_or_default(),
+                originalMaxAge: session_model.cookie_original_max_age.unwrap_or(86400000),
+                httpOnly: session_model.cookie_http_only.unwrap_or(true),
+            },
+            valid_pass_keys: session_model.valid_pass_key.and_then(|v| serde_json::from_str(&v).ok()),
+            role_permissions: session_model.role_permission.and_then(|v| serde_json::from_str(&v).ok()),
+            field_permissions: session_model.field_permission.and_then(|v| serde_json::from_str(&v).ok()),
+            record_permissions: session_model.record_permission.and_then(|v| serde_json::from_str(&v).ok()),
+            ip_address: session_model.ip_address,
+            location: session_model.location,
         })
     }
 
@@ -129,7 +170,7 @@ impl SessionManager {
     }
 
     /// Save session to database
-    pub async fn save_session(&self, session: &Session) -> Result<(), diesel::result::Error> {
+    pub async fn save_session(&self, session: &Session, account_profile_id: Option<i32>, device_info: Option<DeviceInfo>, auth: Option<&Auth>) -> Result<(), diesel::result::Error> {
         let mut conn = db::get_async_connection().await;
 
         let session_expires =
@@ -148,15 +189,86 @@ impl SessionManager {
 
         let expires = Utc::now().naive_utc() + Duration::milliseconds(expiry_ms as i64);
 
+        // Create base session model data
+        let mut session_json = json!({
+            "id": session.session_id.clone(),
+            "sensitivity_level": 1000,
+            "is_batch": false,
+            "account_profile_id": account_profile_id,
+            "device_name": device_info.as_ref().map(|d| d.device_name.clone()),
+            "browser_name": device_info.as_ref().map(|d| d.browser_name.clone()),
+            "operating_system": device_info.as_ref().map(|d| d.operating_system.clone()),
+            "authentication_method": device_info.as_ref().map(|d| d.authentication_method.clone()),
+        });
+
+        // Apply common fields using the add_common_fields pattern if auth is available
+        if let Some(auth_data) = auth {
+            let mut request_body = RequestBody {
+                record: session_json.clone(),
+            };
+            
+            request_body.process_record("create", auth_data, auth_data.is_root_account, "sessions");
+            session_json = request_body.record;
+        }
+
+        // Extract values back to SessionModel
         let session_model = SessionModel {
-            sid: session.session_id.clone(),
-            sess: json!(session),
-            expire: expires,
+            id: session_json["id"].as_str().map(|s| s.to_string()),
+            tombstone: session_json["tombstone"].as_i64().map(|v| v as i32),
+            status: session_json["status"].as_str().map(|s| s.to_string()),
+            previous_status: session_json["previous_status"].as_str().map(|s| s.to_string()),
+            version: session_json["version"].as_i64().map(|v| v as i32),
+            created_date: session_json["created_date"].as_str().map(|s| s.to_string()),
+            created_time: session_json["created_time"].as_str().map(|s| s.to_string()),
+            updated_date: session_json["updated_date"].as_str().map(|s| s.to_string()),
+            updated_time: session_json["updated_time"].as_str().map(|s| s.to_string()),
+            organization_id: session_json["organization_id"].as_str().map(|s| s.to_string()),
+            created_by: session_json["created_by"].as_str().map(|s| s.to_string()),
+            updated_by: session_json["updated_by"].as_str().map(|s| s.to_string()),
+            deleted_by: session_json["deleted_by"].as_str().map(|s| s.to_string()),
+            requested_by: session_json["requested_by"].as_str().map(|s| s.to_string()),
+            timestamp: Some(Utc::now().naive_utc()),
+            tags: session_json["tags"].as_array().map(|arr| {
+                arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
+            }),
+            categories: session_json["categories"].as_array().map(|arr| {
+                arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
+            }),
+            code: session_json["code"].as_str().map(|s| s.to_string()),
+            sensitivity_level: session_json["sensitivity_level"].as_i64().map(|v| v as i32),
+            sync_status: session_json["sync_status"].as_str().map(|s| s.to_string()),
+            is_batch: session_json["is_batch"].as_bool(),
+            account_profile_id: session_json["account_profile_id"].as_i64().map(|v| v as i32),
+            device_name: session_json["device_name"].as_str().map(|s| s.to_string()),
+            browser_name: session_json["browser_name"].as_str().map(|s| s.to_string()),
+            operating_system: session_json["operating_system"].as_str().map(|s| s.to_string()),
+            authentication_method: session_json["authentication_method"].as_str().map(|s| s.to_string()),
+            location: device_info.as_ref().map(|d| d.location.clone()),
+            ip_address: device_info.as_ref().map(|d| d.ip_address.clone()),
+            session_started: Some(Utc::now().naive_utc()),
+            remarks: device_info.as_ref().and_then(|d| d.remarks.clone()),
+
+            user_role_id: Some(session.user.role_id.clone()),
+            user_account_id: Some(session.user.account_id.clone()),
+            user_is_root_user: Some(session.user.is_root_user),
+            token: Some(session.token.clone()),
+            cookie_path: Some(session.cookie.path.clone()),
+            cookie_expires: Some(session.cookie.expires.clone()),
+            cookie_http_only: Some(session.cookie.httpOnly),
+            cookie_original_max_age: Some(session.cookie.originalMaxAge),
+            origin_url: session.origin.as_ref().map(|o| o.url.clone()),
+            origin_host: session.origin.as_ref().map(|o| o.host.clone()),
+            origin_user_agent: session.origin.as_ref().and_then(|o| o.user_agent.clone()),
+            valid_pass_key: session.valid_pass_keys.as_ref().and_then(|v| serde_json::to_string(v).ok()),
+            role_permission: session.role_permissions.as_ref().and_then(|v| serde_json::to_string(v).ok()),
+            field_permission: session.field_permissions.as_ref().and_then(|v| serde_json::to_string(v).ok()),
+            record_permission: session.record_permissions.as_ref().and_then(|v| serde_json::to_string(v).ok()),
+            expire: Some(expires),
         };
 
         diesel::insert_into(sessions::table)
             .values(&session_model)
-            .on_conflict(sessions::sid)
+            .on_conflict(sessions::id)
             .do_update()
             .set(&session_model)
             .execute(&mut conn)
@@ -190,7 +302,7 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
     let now = Utc::now().naive_utc();
 
     diesel::delete(sessions::table)
-        .filter(sessions::expire.lt(now))
+        .filter(sessions::expire.lt(now).and(sessions::expire.is_not_null()))
         .execute(&mut conn)
         .await
 }
