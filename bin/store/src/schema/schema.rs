@@ -497,7 +497,8 @@ table! {
         updated_by -> Nullable<Text>,
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
+        
+        timestamp -> Nullable<Timestamptz>,
         tags -> Nullable<Array<Text>>,
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
