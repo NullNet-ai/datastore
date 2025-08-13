@@ -237,7 +237,63 @@ table! {
         field_permission -> Nullable<Text>,
         record_permission -> Nullable<Text>,
         expire -> Nullable<Timestamp>,
-    
+        application_accessed -> Nullable<Text>,
+        last_accessed -> Nullable<Timestamptz>,
+
+    }
+}
+
+table! {
+    signed_in_activity(id) {
+        id -> Nullable<Text>,
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        account_profile_id -> Nullable<Int4>,
+        device_name -> Nullable<Text>,
+        browser_name -> Nullable<Text>,
+        operating_system -> Nullable<Text>,
+        authentication_method -> Nullable<Text>,
+        location -> Nullable<Text>,
+        ip_address -> Nullable<Text>,
+        session_started -> Nullable<Timestamp>,
+        remarks -> Nullable<Text>,
+
+        user_role_id -> Nullable<Text>,
+        user_account_id -> Nullable<Text>,
+        user_is_root_user -> Nullable<Bool>,
+        token -> Nullable<Text>,
+        cookie_path -> Nullable<Text>,
+        cookie_expires -> Nullable<Text>,
+        cookie_http_only -> Nullable<Bool>,
+        cookie_original_max_age -> Nullable<Int8>,
+        origin_url -> Nullable<Text>,
+        origin_host -> Nullable<Text>,
+        origin_user_agent -> Nullable<Text>,
+        valid_pass_key -> Nullable<Text>,
+        role_permission -> Nullable<Text>,
+        field_permission -> Nullable<Text>,
+        record_permission -> Nullable<Text>,
+        expire -> Nullable<Timestamp>,
+        last_accessed -> Nullable<Timestamptz>,
+
     }
 }
 

@@ -6,20 +6,19 @@ use actix_web::{
     Error, HttpMessage,
 };
 use futures::future::{ok, Ready};
-use tonic::service::Interceptor;
-use tonic::{Request, Status};
 use std::net::IpAddr;
 use std::str::FromStr;
+use tonic::service::Interceptor;
+use tonic::{Request, Status};
 
 use super::session_core::{DeviceInfo, SessionManager};
 use crate::auth::structs::{Claims, Origin, Session};
 use crate::structs::structs::Auth;
 use crate::utils::utils::time_string_to_ms;
+pub use super::session_core::prune_expired_sessions;
 
 
 pub struct SessionMiddleware;
-
-
 
 struct HttpSessionConfig {
     session_manager: SessionManager,
@@ -27,7 +26,6 @@ struct HttpSessionConfig {
     cookie_secure: bool,
     cookie_http_only: bool,
 }
-
 
 pub struct SessionMiddlewareService<S> {
     service: Rc<S>,
@@ -97,7 +95,6 @@ where
                 return service.call(req).await;
             }
 
-
             let header_value = req
                 .headers()
                 .get(session_manager.session_header())
@@ -109,26 +106,39 @@ where
 
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
-
             let session = if let Some(session_id) = session_id {
                 session_manager.get_or_create_session(&session_id, "").await
             } else {
                 let new_session_id = session_manager.extract_session_id(None, None);
-                session_manager.get_or_create_session(&new_session_id, "").await
+                session_manager
+                    .get_or_create_session(&new_session_id, "")
+                    .await
             };
-
 
             req.extensions_mut().insert(session.clone());
 
-
             let mut res = service.call(req).await?;
-
 
             let updated_session = res.request().extensions().get::<Session>().cloned();
 
             if let Some(session) = updated_session {
                 let auth = res.request().extensions().get::<Auth>().cloned();
-                let account_profile_id = auth.as_ref().and_then(|a| a.account_organization_id.parse::<i32>().ok());
+                let account_profile_id = auth
+                    .as_ref()
+                    .and_then(|a| a.account_organization_id.parse::<i32>().ok());
+                
+                // Extract app_id from query parameters
+                let app_id = res.request().query_string()
+                    .split('&')
+                    .find_map(|param| {
+                        let mut parts = param.split('=');
+                        if parts.next() == Some("app_id") {
+                            parts.next().map(|s| s.to_string())
+                        } else {
+                            None
+                        }
+                    });
+                
                 if let Err(e) = session_manager
                     .save_session(
                         &session,
@@ -138,24 +148,29 @@ where
                             browser_name: "Unknown".to_string(),
                             operating_system: "Unknown".to_string(),
                             authentication_method: "Unknown".to_string(),
-                            location: session.location.clone().unwrap_or_else(|| "Unknown".to_string()),
-                            ip_address: session.ip_address.clone().unwrap_or_else(|| "Unknown".to_string()),
+                            location: session
+                                .location
+                                .clone()
+                                .unwrap_or_else(|| "Unknown".to_string()),
+                            ip_address: session
+                                .ip_address
+                                .clone()
+                                .unwrap_or_else(|| "Unknown".to_string()),
                             remarks: None,
                         }),
                         auth.as_ref(),
+                        app_id,
                     )
                     .await
                 {
                     log::error!("Failed to save session: {:?}", e);
                 }
 
-
                 let cookie = ActixCookie::build(session_manager.cookie_name(), session.session_id)
                     .path("/")
                     .same_site(cookie_same_site)
                     .secure(cookie_secure)
                     .http_only(cookie_http_only);
-
 
                 let cookie =
                     if let Ok(max_age) = time_string_to_ms(session_manager.cookie_max_age()) {
@@ -173,9 +188,6 @@ where
         })
     }
 }
-
-
-pub use super::session_core::prune_expired_sessions;
 
 
 pub fn get_session(req: &ServiceRequest) -> Option<Session> {
@@ -220,13 +232,11 @@ impl Interceptor for GrpcSessionInterceptor {
             .session_manager
             .extract_session_id(session_header_value, None);
 
-
         request.extensions_mut().insert(session_id);
 
         Ok(request)
     }
 }
-
 
 #[derive(Clone)]
 pub struct InterceptorChain<A, B> {
@@ -246,10 +256,8 @@ where
     B: Interceptor + Clone,
 {
     fn call(&mut self, request: Request<()>) -> Result<Request<()>, Status> {
-
         let mut first = self.first.clone();
         let request = first.call(request)?;
-
 
         let mut second = self.second.clone();
         second.call(request)
@@ -271,11 +279,10 @@ pub async fn save_session_after_request(session: &Session) -> Result<(), String>
     let session_manager = SessionManager::with_default_config();
     let account_profile_id = Some(1);
     session_manager
-        .save_session(session, account_profile_id, None, None)
+        .save_session(session, account_profile_id, None, None, None)
         .await
         .map_err(|e| format!("Failed to save session: {:?}", e))
 }
-
 
 pub fn populate_session_with_auth_data(
     session: &mut Session,
@@ -284,13 +291,12 @@ pub fn populate_session_with_auth_data(
     origin: Origin,
     req: &ServiceRequest,
 ) {
-    session.token="none".to_string();
+    session.token = "none".to_string();
     session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
     session.user.is_root_user = claims.account.is_root_account;
     session.user.account_id = claims.account.account_id.clone();
 
     session.origin = Some(origin);
-
 
     let ip_address = extract_client_ip(req);
 
@@ -299,7 +305,6 @@ pub fn populate_session_with_auth_data(
     session.ip_address = Some(ip_address);
     session.location = location;
 }
-
 
 fn extract_client_ip(req: &ServiceRequest) -> String {
     // First try to get IP directly from TCP connection
@@ -330,11 +335,11 @@ fn extract_client_ip(req: &ServiceRequest) -> String {
     }
 
     // Final fallback
-    req.connection_info().realip_remote_addr()
+    req.connection_info()
+        .realip_remote_addr()
         .unwrap_or("unknown")
         .to_string()
 }
-
 
 fn get_location_from_ip(ip_address: &str) -> Option<String> {
     if let Ok(ip) = IpAddr::from_str(ip_address) {
@@ -357,14 +362,11 @@ fn get_location_from_ip(ip_address: &str) -> Option<String> {
     }
 }
 
-
 pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) -> Option<Session> {
-
     let session_id = request.extensions().get::<String>().cloned()?;
 
     let session_manager = SessionManager::with_default_config();
     let mut session = session_manager.get_or_create_session(&session_id, "").await;
-
 
     if let (Some(auth_token), Some(claims)) = (
         request
@@ -372,13 +374,11 @@ pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) 
             .get::<crate::middlewares::auth_middleware::AuthToken>(),
         request.extensions().get::<Claims>(),
     ) {
-
         let origin = Origin {
             user_agent: Some("gRPC-client".to_string()),
             host: "grpc".to_string(),
             url: "grpc://".to_string(),
         };
-
 
         populate_session_with_auth_data_grpc(&mut session, &auth_token.0, claims, origin);
     }
@@ -386,24 +386,19 @@ pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) 
     Some(session)
 }
 
-
 pub fn populate_session_with_auth_data_grpc(
     session: &mut Session,
     token: &str,
     claims: &Claims,
     origin: Origin,
 ) {
-
     session.token = token.to_string();
-
 
     session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
     session.user.is_root_user = claims.account.is_root_account;
     session.user.account_id = claims.account.account_id.clone();
 
-
     session.origin = Some(origin);
-
 
     session.ip_address = Some("grpc-client".to_string());
     session.location = Some("gRPC".to_string());

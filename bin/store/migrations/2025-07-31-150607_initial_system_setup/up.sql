@@ -561,7 +561,9 @@ CREATE TABLE "sessions" (
 	"role_permission" text,
 	"field_permission" text,
 	"record_permission" text,
-	"expire" timestamp
+	"expire" timestamp,
+	"application_accessed" text,
+	"last_accessed" timestamp with time zone
 );
 
 CREATE TABLE "table_indexes" (
@@ -1797,3 +1799,19 @@ ALTER TABLE "samples"
 ADD COLUMN "sync_status" text DEFAULT 'in-process';
 ALTER TABLE "samples" 
 ADD COLUMN "is_batch" boolean DEFAULT false;
+
+-- Add required indexes for sessions table
+CREATE INDEX "idx_sessions_tombstone" ON "sessions" USING btree ("tombstone");
+CREATE INDEX "idx_sessions_previous_status" ON "sessions" USING btree ("previous_status");
+CREATE INDEX "idx_sessions_version" ON "sessions" USING btree ("version");
+CREATE INDEX "idx_sessions_created_date" ON "sessions" USING btree ("created_date");
+CREATE INDEX "idx_sessions_updated_date" ON "sessions" USING btree ("updated_date");
+CREATE INDEX "idx_sessions_organization_id" ON "sessions" USING btree ("organization_id");
+CREATE INDEX "idx_sessions_created_by" ON "sessions" USING btree ("created_by");
+CREATE INDEX "idx_sessions_updated_by" ON "sessions" USING btree ("updated_by");
+CREATE INDEX "idx_sessions_deleted_by" ON "sessions" USING btree ("deleted_by");
+CREATE INDEX "idx_sessions_requested_by" ON "sessions" USING btree ("requested_by");
+CREATE INDEX "idx_sessions_tags" ON "sessions" USING btree ("tags");
+CREATE INDEX "idx_sessions_categories" ON "sessions" USING btree ("categories");
+CREATE INDEX "idx_sessions_code" ON "sessions" USING btree ("code");
+CREATE INDEX "idx_sessions_sensitivity_level" ON "sessions" USING btree ("sensitivity_level");
