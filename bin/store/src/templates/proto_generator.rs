@@ -501,6 +501,8 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  optional bool case_sensitive = 6;\n");
     proto.push_str("  optional string parse_as = 7;\n");
     proto.push_str("  optional MatchPattern match_pattern = 8;\n");
+    proto.push_str("  optional bool is_search = 9;\n");
+    proto.push_str("  optional bool has_group_count = 10;\n");
     proto.push_str("}\n\n");
 
     // Main aggregation filter request

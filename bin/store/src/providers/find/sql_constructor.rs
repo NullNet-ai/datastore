@@ -169,7 +169,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         Ok(sql)
     }
 
-    fn get_field(table: &str, field: &str, format_str: &str, main_table: &str) -> String {
+    pub fn get_field(table: &str, field: &str, format_str: &str, main_table: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None, main_table)
     }
 

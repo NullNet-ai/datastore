@@ -664,6 +664,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 entity,
                 field,
                 self.sql_constructor.request_body.get_date_format(),
+                &self.sql_constructor.table.as_str(),
             );
             format!(" GROUP BY {}", field)
         } else {

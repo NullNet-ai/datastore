@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.49
+### Author
+Jean
+
+### Fixes
+- ***Account Model Schema Alignment***: Fixed UTF-8 deserialization errors in account queries
+- ***Schema Accounts table***: Change `timestamp` field to Nullable<Timestamptz>
+- ***FilterCriteria***: Added missing `is_search` and `has_group_count` fields to `FilterCriteria` in store.proto
+- ***GRPC Struct Converter***: Added `is_search` and `has_group_count` fields to FilterCriteria
+- ***Proto Generator***: Added `is_search` and `has_group_count` fields to FilterCriteria
+- ***Find SQL Constructor***: Updated `get_field` to be public
+- ***Search Suggestion SQL Constructor***: Pass main table to the get_field on `construct_group_by` function
+---
+
 ## 0.1.48
 ### Author
 Kashan
