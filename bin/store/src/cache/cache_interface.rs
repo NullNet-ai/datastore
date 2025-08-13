@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::time::Duration;
 
 /// Generic interface for cache implementations
 #[allow(warnings)]
@@ -13,6 +14,9 @@ where
 
     /// Insert a value into the cache
     fn insert(&self, key: K, value: V);
+
+    /// Insert a value into the cache with a TTL
+    fn insert_with_ttl(&self, key: K, value: V, ttl: Duration);
 
     /// Remove a value from the cache
     fn remove(&self, key: &K) -> Option<V>;

@@ -7,11 +7,16 @@ use crate::db::create_connection;
 use crate::providers::aggregation_filter::AggregationSQLConstructor;
 use crate::providers::batch_update::BatchUpdateSQLConstructor;
 use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
+use crate::providers::search_suggestion::{
+    sql_constructor::SQLConstructor as SearchSQLContructor,
+    structs::{AliasedJoinedEntity, FormatFilterResponse, SearchSuggestionCache},
+    utils::{format_filters, generate_concatenated_expressions},
+};
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::structs::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, QueryParams, RequestBody,
-    SwitchAccountRequest, UpsertRequestBody,
+    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
+    QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::utils::utils::table_exists;
 use crate::{db, providers};
@@ -29,6 +34,7 @@ use serde_json::Value;
 use ulid::Ulid;
 // use std::collections::HashMap;
 // use diesel::prelude::*;
+use std::collections::BTreeMap;
 use std::fmt;
 // use diesel::sql_types::*;
 // use diesel::QueryableByName;
@@ -2178,4 +2184,274 @@ pub async fn switch_account(request: web::Json<SwitchAccountRequest>) -> impl Re
         "message": "Account switched successfully",
         "token": token
     }))
+}
+
+pub async fn search_suggestions(
+    auth: HttpRequest,
+    path_params: web::Path<String>,
+    request_body: web::Json<SearchSuggestionParams>,
+) -> impl Responder {
+    let table = path_params.into_inner();
+    let parameters: SearchSuggestionParams = request_body.into_inner();
+    let is_root = auth
+        .extensions()
+        .get::<Auth>()
+        .map_or(false, |auth_data| auth_data.is_root_account);
+
+    // Extract organization_id from auth context
+    let extensions = auth.extensions();
+    let organization_id = match extensions.get::<Auth>() {
+        Some(auth_data) => Some(auth_data.organization_id.clone()),
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            None
+        }
+    };
+
+    // Check if this is a root controller call
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+
+    if is_root_controller {
+        log::info!(
+            "Processing get_by_filter via root controller for table: {}",
+            table
+        );
+        // Add any root-specific logic here
+    } else {
+        log::info!(
+            "Processing get_by_filter via simple controller for table: {}",
+            table
+        );
+        // Add any simple controller-specific logic here
+    }
+
+    let SearchSuggestionParams {
+        advance_filters,
+        group_advance_filters,
+        joins,
+        concatenate_fields,
+        date_format,
+        ..
+    } = &parameters;
+
+    if advance_filters.is_empty() && group_advance_filters.is_empty() {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: format!("No advance or group filters provided"),
+            count: 0,
+            data: vec![],
+        });
+    }
+
+    let json_params_string = match (|| -> Result<String, serde_json::Error> {
+        let value: Value = serde_json::to_value(&parameters)?;
+        if let Value::Object(map) = value {
+            let sorted: BTreeMap<String, Value> = map.into_iter().collect();
+            serde_json::to_string(&sorted)
+        } else {
+            serde_json::to_string(&parameters)
+        }
+    })() {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("Failed to serialize parameters to JSON: {}", e);
+            return HttpResponse::UnprocessableEntity().json(ApiResponse {
+                success: false,
+                message: format!("JSON parameters processing error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let query_sha = SearchSuggestionCache::hash_string(&json_params_string);
+    let cached_data = SearchSuggestionCache::get_cache_by_key(&query_sha);
+
+    if let Some(cached_value) = cached_data {
+        log::debug!("Search Suggestion: Cached data found.");
+        let data = if let Some(arr) = cached_value.as_array() {
+            if let Some(first_value) = arr.get(0) {
+                vec![first_value.clone()]
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
+        return HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: format!(
+                "Search suggestions operation completed for table: {}",
+                &table
+            ),
+            count: data.len() as i32,
+            data,
+        });
+    }
+    // get the aliased entities
+    let mut aliased_joined_entities = Vec::new();
+
+    for join in joins {
+        let (to_entity, to_alias) = if join.r#type == "self" {
+            (
+                join.field_relation.from.entity.clone(),
+                join.field_relation.from.alias.clone(),
+            )
+        } else {
+            (
+                join.field_relation.to.entity.clone(),
+                join.field_relation.to.alias.clone(),
+            )
+        };
+
+        if let Some(alias) = to_alias {
+            aliased_joined_entities.push(AliasedJoinedEntity { to_entity, alias });
+        }
+    }
+
+    // format filters
+    let mut search_term = String::new();
+    let mut filtered_fields = Value::Object(serde_json::Map::new());
+    let mut formatted_advance_filters: Vec<Value> = Vec::new();
+    let mut formatted_group_advance_filters: Vec<Value> = Vec::new();
+    if !group_advance_filters.is_empty() {
+        for grouped_filters in group_advance_filters {
+            let filters = match grouped_filters {
+                GroupAdvanceFilter::Criteria { filters, .. } => filters.clone(),
+                GroupAdvanceFilter::Operator { filters, .. } => filters.clone(),
+            };
+
+            let FormatFilterResponse {
+                formatted_filters,
+                search_term: _search_term,
+                filtered_fields: _filtered_fields,
+            } = format_filters(
+                filters,
+                Some(&aliased_joined_entities),
+                &table,
+                filtered_fields.clone(),
+                search_term.clone(),
+            );
+
+            // Update the outer scope variables
+            filtered_fields = _filtered_fields;
+            search_term = _search_term;
+
+            // Create a new GroupAdvanceFilter with the formatted filters
+            let updated_group_filter = match grouped_filters {
+                GroupAdvanceFilter::Criteria { operator, .. } => GroupAdvanceFilter::Criteria {
+                    operator: operator.clone(),
+                    filters: formatted_filters
+                        .into_iter()
+                        .filter_map(|v| serde_json::from_value(v).ok())
+                        .collect(),
+                },
+                GroupAdvanceFilter::Operator { operator, .. } => GroupAdvanceFilter::Operator {
+                    operator: operator.clone(),
+                    filters: formatted_filters
+                        .into_iter()
+                        .filter_map(|v| serde_json::from_value(v).ok())
+                        .collect(),
+                },
+            };
+
+            // Convert to Value for the final result
+            formatted_group_advance_filters
+                .push(serde_json::to_value(updated_group_filter).unwrap_or(Value::Null));
+        }
+    } else {
+        let FormatFilterResponse {
+            formatted_filters: _formatted_advance_filters,
+            search_term: _search_term,
+            filtered_fields: _filtered_fields,
+        } = format_filters(
+            advance_filters.clone(),
+            Some(&aliased_joined_entities),
+            &table,
+            filtered_fields,
+            search_term,
+        );
+        search_term = _search_term;
+        filtered_fields = _filtered_fields;
+        formatted_advance_filters = _formatted_advance_filters;
+    }
+
+    // generate concatenated fields
+    let concatenated_expressions =
+        generate_concatenated_expressions(concatenate_fields.clone(), Some(date_format.as_str()));
+
+    // get connection to Diesel
+    let mut conn = db::get_async_connection().await;
+    // generate json build object query
+    let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> =
+        SearchSQLContructor::new(parameters, table.clone(), is_root);
+    if let Some(org_id) = organization_id {
+        sql_constructor = sql_constructor.with_organization_id(org_id);
+    }
+
+    let query = match sql_constructor.construct(
+        &filtered_fields,
+        &formatted_advance_filters,
+        &formatted_group_advance_filters,
+        &search_term.clone(),
+        &concatenated_expressions.clone(),
+    ) {
+        Ok(sql) => sql,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid Search configuration: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    log::debug!("Search Suggestion Query: {}", final_query);
+
+    // execute query
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .map(|data| {
+            if let Some(data) = data.get("results").and_then(|v| v.get("data")) {
+                data.clone()
+            } else {
+                data
+            }
+        })
+        .filter(|item| !item.is_null())
+        .collect();
+
+    let _ = SearchSuggestionCache::set_cache(&query_sha, serde_json::Value::Array(data.clone()));
+
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: format!(
+            "Search suggestions operation completed for table: {}",
+            &table
+        ),
+        count: data.len() as i32,
+        data: if data.len() > 0 { data } else { vec![] },
+    })
 }

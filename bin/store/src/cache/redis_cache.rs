@@ -103,6 +103,10 @@ where
         }
     }
 
+    fn insert_with_ttl(&self, key: K, value: V, ttl: Duration) {
+        let _ = self.insert_with_ttl(key, value, ttl);
+    }
+
     fn remove(&self, key: &K) -> Option<V> {
         let client = self.client.lock().unwrap();
         if let Ok(mut con) = client.get_connection() {

@@ -41,7 +41,7 @@ impl Cache {
     pub fn insert_with_ttl(&self, key: String, value: Value, _ttl: Duration) {
         // For in-memory cache, just use regular insert
         // For Redis, we would use the Redis-specific insert_with_ttl
-        self.insert(key, value);
+        self.inner.lock().unwrap().insert_with_ttl(key, value, _ttl);
     }
 
     pub fn get(&self, key: &str) -> Option<Value> {
