@@ -1249,7 +1249,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         case_sensitive: Option<bool>,
         match_pattern: Option<&MatchPattern>,
     ) -> String {
-        let (_table_name, field_name, field_with_table) = 
+        let (_table_name, field_name, field_with_table) =
             // Check if field_name contains complex expressions (like COALESCE)
             if field_name.contains("COALESCE") || field_name.contains("(") {
                 // This is already a complex expression, use it as-is
@@ -1274,12 +1274,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     } else {
                         // One part: just field_name - check if it's a concatenated field
                         let field_name = first_part.replace("\"", "");
-                        
                         // Check if this is a concatenated field that should be handled specially
                         let is_concatenated_field = self.request_body.get_concatenate_fields()
                             .iter()
                             .any(|concat_field| concat_field.field_name == field_name);
-                        
                         if is_concatenated_field {
                             // For concatenated fields, generate the full concatenated expression
                             let field_with_table = self.get_field_with_concatenation(
@@ -1416,7 +1414,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     "ILIKE"
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
-                dbg!(format!("@@@@@ {} {} {}", pattern,like_op, field_with_table));
+                dbg!(format!(
+                    "@@@@@ {} {} {}",
+                    pattern, like_op, field_with_table
+                ));
                 if is_plural {
                     return format!("{}::text {} {}", field_with_table, like_op, pattern);
                 }
