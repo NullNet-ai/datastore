@@ -3428,6 +3428,8 @@ message FilterCriteria {
   optional bool case_sensitive = 6;
   optional string parse_as = 7;
   optional MatchPattern match_pattern = 8;
+  optional bool is_search = 9;
+  optional bool has_group_count = 10;
 }
 
 // Main aggregation filter request

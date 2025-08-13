@@ -169,7 +169,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         Ok(sql)
     }
 
-    fn get_field(table: &str, field: &str, format_str: &str, main_table: &str) -> String {
+    pub fn get_field(table: &str, field: &str, format_str: &str, main_table: &str) -> String {
         Self::get_field_with_parse_as(table, field, format_str, None, main_table)
     }
 
@@ -340,7 +340,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
-
                     let alias = &field.field_name;
 
                     selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
@@ -906,7 +905,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
     }
     /// Constructs the standard WHERE clause pattern used across queries
-    fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
+    pub fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
         // For root access, only check tombstone
         if self.is_root {
             return Ok(format!("({}.tombstone = 0)", table_alias));
@@ -965,7 +964,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
     /// - Filter arrays follow the pattern: [criteria, operator, criteria, operator, ...]
     /// - AND operations are grouped together naturally
     /// - OR operations split the expression into separate groups with parentheses when needed
-    fn build_infix_expression(&self, filters: &[FilterCriteria]) -> Result<String, String> {
+    pub fn build_infix_expression(&self, filters: &[FilterCriteria]) -> Result<String, String> {
         if filters.is_empty() {
             return Ok(String::new());
         }
@@ -988,6 +987,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 case_sensitive,
                 parse_as,
                 match_pattern,
+                ..
             } = &filters[0]
             {
                 let field_name = self.get_field_with_concatenation(
@@ -996,13 +996,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     self.request_body.get_date_format(),
                     Some(parse_as),
                 );
-                return Ok(self.format_condition_with_case_sensitivity_and_pattern(
+                let final_statement = self.format_condition_with_case_sensitivity_and_pattern(
                     &field_name,
                     operator,
                     values,
                     *case_sensitive,
                     match_pattern.as_ref(),
-                ));
+                );
+                return Ok(final_statement);
             }
             return Err("Invalid filter: single filter must be a criteria".to_string());
         }
@@ -1030,6 +1031,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     case_sensitive,
                     parse_as,
                     match_pattern,
+                    ..
                 } => {
                     let field_name = self.get_field_with_concatenation(
                         entity.as_deref().unwrap_or(&self.table),
@@ -1247,10 +1249,55 @@ impl<T: QueryFilter> SQLConstructor<T> {
         case_sensitive: Option<bool>,
         match_pattern: Option<&MatchPattern>,
     ) -> String {
-        let mut parts = field_name.split(".");
-        let table_name = parts.next().unwrap_or("").replace("\"", "");
-        let field_name = parts.next().unwrap_or("").replace("\"", "");
-        let field_with_table = format!("{}.{}", table_name, field_name);
+        let (_table_name, field_name, field_with_table) =
+            // Check if field_name contains complex expressions (like COALESCE)
+            if field_name.contains("COALESCE") || field_name.contains("(") {
+                // This is already a complex expression, use it as-is
+                let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
+                    // Extract alias if present (e.g., "COALESCE(...) AS full_name" -> "full_name")
+                    field_name[start + 3..].trim().replace("\"", "")
+                } else {
+                    // Try to extract a meaningful name from the expression
+                    field_name.replace("\"", "")
+                };
+                (String::new(), extracted_field_name, field_name.to_string())
+            } else {
+                // Handle simple field names with or without table prefix
+                let mut parts = field_name.split(".");
+                if let Some(first_part) = parts.next() {
+                    if let Some(second_part) = parts.next() {
+                        // Two parts: table.field
+                        let table_name = first_part.replace("\"", "");
+                        let field_name = second_part.replace("\"", "");
+                        let field_with_table = format!("{}.{}", table_name, field_name);
+                        (table_name, field_name, field_with_table)
+                    } else {
+                        // One part: just field_name - check if it's a concatenated field
+                        let field_name = first_part.replace("\"", "");
+                        // Check if this is a concatenated field that should be handled specially
+                        let is_concatenated_field = self.request_body.get_concatenate_fields()
+                            .iter()
+                            .any(|concat_field| concat_field.field_name == field_name);
+                        if is_concatenated_field {
+                            // For concatenated fields, generate the full concatenated expression
+                            let field_with_table = self.get_field_with_concatenation(
+                                &self.table,
+                                &field_name,
+                                self.request_body.get_date_format(),
+                                None
+                            );
+                            (String::new(), field_name, field_with_table)
+                        } else {
+                            // For regular fields without table prefix, assume main table
+                            let field_with_table = format!("{}.{}", &self.table, field_name);
+                            (self.table.clone(), field_name, field_with_table)
+                        }
+                    }
+                } else {
+                    // No parts (shouldn't happen, but handle gracefully)
+                    (String::new(), String::new(), String::new())
+                }
+            };
         let plural_form = pluralizer::pluralize(&field_name, 2, false);
         let is_plural = plural_form == field_name;
         let values_str = values
@@ -1367,6 +1414,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     "ILIKE"
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
+                dbg!(format!(
+                    "@@@@@ {} {} {}",
+                    pattern, like_op, field_with_table
+                ));
                 if is_plural {
                     return format!("{}::text {} {}", field_with_table, like_op, pattern);
                 }
@@ -1398,13 +1449,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
     fn build_like_pattern(&self, value: &str, match_pattern: Option<&MatchPattern>) -> String {
         let clean_value = value.trim_matches('\'');
 
-        match match_pattern {
-            Some(MatchPattern::Exact) => format!("'{}'", clean_value),
-            Some(MatchPattern::Prefix) => format!("'{}%'", clean_value),
-            Some(MatchPattern::Suffix) => format!("'%{}'", clean_value),
-            Some(MatchPattern::Contains) => format!("'%{}%'", clean_value),
-            Some(MatchPattern::Custom) => value.to_string(), // Use original value for custom patterns
-            None => value.to_string(), // Use original value if no pattern specified
+        match match_pattern.unwrap_or(&MatchPattern::Contains) {
+            MatchPattern::Exact => format!("'{}'", clean_value),
+            MatchPattern::Prefix => format!("'{}%'", clean_value),
+            MatchPattern::Suffix => format!("'%{}'", clean_value),
+            MatchPattern::Contains => format!("'%{}%'", clean_value),
+            MatchPattern::Custom => value.to_string(), // Use original value for custom patterns
         }
     }
 
@@ -1431,7 +1481,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
     /// Handles GroupAdvanceFilter enum which can be either "criteria" or "operator" type
     /// Each group can contain multiple FilterCriteria that are processed as a unit
     /// For "operator" type groups, filters can be empty array
-    fn build_group_advance_filters_expression(
+    pub fn build_group_advance_filters_expression(
         &self,
         group_filters: &[GroupAdvanceFilter],
     ) -> Result<String, String> {
@@ -1605,14 +1655,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
         String::from("")
     }
-    fn construct_offset(&self) -> String {
+    pub fn construct_offset(&self) -> String {
         if self.request_body.get_offset() > 0 {
             format!(" OFFSET {}", self.request_body.get_offset())
         } else {
             String::from("")
         }
     }
-    fn construct_limit(&self) -> String {
+    pub fn construct_limit(&self) -> String {
         if self.request_body.get_limit() > 0 {
             format!(" LIMIT {}", self.request_body.get_limit())
         } else {

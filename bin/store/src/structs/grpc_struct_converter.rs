@@ -61,6 +61,8 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
                 case_sensitive: Some(proto_filter.case_sensitive.unwrap_or(false)),
                 parse_as: proto_filter.parse_as.clone().unwrap_or_default(),
                 match_pattern,
+                is_search: proto_filter.is_search,
+                has_group_count: proto_filter.has_group_count,
             })
         }
         "operator" => {

@@ -6445,6 +6445,10 @@ pub struct FilterCriteria {
     pub parse_as: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "MatchPattern", optional, tag = "8")]
     pub match_pattern: ::core::option::Option<i32>,
+    #[prost(bool, optional, tag = "9")]
+    pub is_search: ::core::option::Option<bool>,
+    #[prost(bool, optional, tag = "10")]
+    pub has_group_count: ::core::option::Option<bool>,
 }
 /// Main aggregation filter request
 #[derive(serde::Serialize, serde::Deserialize)]

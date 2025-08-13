@@ -58,12 +58,12 @@ use controllers::pg_functions::pg_listener_controller::{
 use controllers::root_controller::{
     root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
     root_batch_update_records, root_create_record, root_delete_record, root_get_by_filter,
-    root_get_by_id, root_switch_account, root_update_record, root_upsert,
+    root_get_by_id, root_search_suggestions, root_switch_account, root_update_record, root_upsert,
 };
 use controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
-    create_record, delete_record, get_by_filter, get_by_id, switch_account, update_record,
-    upload_file, upsert,
+    create_record, delete_record, get_by_filter, get_by_id, search_suggestions, switch_account,
+    update_record, upload_file, upsert,
 };
 use env_logger::Env;
 use log::{error, info};
@@ -366,7 +366,11 @@ async fn main() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(root_update_record))
                     .route("/{table}/{id}", web::delete().to(root_delete_record))
                     .route("/batch/{table}", web::post().to(root_batch_insert_records))
-                    .route("/switch_account", web::post().to(root_switch_account)),
+                    .route("/switch_account", web::post().to(root_switch_account))
+                    .route(
+                        "/{table}/filter/suggestions",
+                        web::post().to(root_search_suggestions),
+                    ),
             )
             .service(
                 web::scope("/api/store")
@@ -387,7 +391,11 @@ async fn main() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records))
-                    .route("/switch_account", web::post().to(switch_account)),
+                    .route("/switch_account", web::post().to(switch_account))
+                    .route(
+                        "/{table}/filter/suggestions",
+                        web::post().to(search_suggestions),
+                    ),
             )
             .service(
                 web::scope("/api/listener")

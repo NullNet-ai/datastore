@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use super::cache_interface::CacheInterface;
 
@@ -14,6 +15,7 @@ where
     cache: Arc<Mutex<HashMap<K, V>>>,
 }
 
+#[allow(warnings)]
 impl<K, V> InMemoryCache<K, V>
 where
     K: Eq + Hash + Clone + Debug + Send + Sync,
@@ -50,6 +52,10 @@ where
     fn insert(&self, key: K, value: V) {
         let mut cache = self.cache.lock().unwrap();
         cache.insert(key, value);
+    }
+
+    fn insert_with_ttl(&self, key: K, value: V, _ttl: Duration) {
+        Self::insert(&self, key, value);
     }
 
     fn remove(&self, key: &K) -> Option<V> {

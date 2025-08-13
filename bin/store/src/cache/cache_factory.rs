@@ -131,6 +131,11 @@ where
         self.cache.insert(key, value);
     }
 
+    /// Insert a value into the cache with TTL
+    pub fn insert_with_ttl(&self, key: K, value: V, ttl: Duration) {
+        self.cache.insert_with_ttl(key, value, ttl);
+    }
+
     /// Remove a value from the cache
     pub fn remove(&self, key: &K) -> Option<V> {
         self.cache.remove(key)
