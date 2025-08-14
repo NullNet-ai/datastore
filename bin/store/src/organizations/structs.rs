@@ -67,4 +67,5 @@ pub struct LoginResponse {
     pub message: String,
     pub token: Option<String>,
     pub role_id: String,
+    pub account_organization_id: Option<String>,
 }

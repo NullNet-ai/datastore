@@ -26,7 +26,7 @@ pub struct SessionModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub account_profile_id: Option<i32>,
+    pub account_profile_id: Option<String>,
     pub device_name: Option<String>,
     pub browser_name: Option<String>,
     pub operating_system: Option<String>,
@@ -34,7 +34,7 @@ pub struct SessionModel {
     pub location: Option<String>,
     pub ip_address: Option<String>,
     pub session_started: Option<NaiveDateTime>,
-    pub remarks: Option<String>,
+    pub remark: Option<String>,
 
     pub user_role_id: Option<String>,
     pub user_account_id: Option<String>,

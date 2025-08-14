@@ -227,8 +227,8 @@ pub struct Sessions {
     pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
-    #[prost(int32, optional, tag = "22")]
-    pub account_profile_id: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "22")]
+    pub account_profile_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
     pub device_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
@@ -329,8 +329,8 @@ pub struct SignedInActivity {
     pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
-    #[prost(int32, optional, tag = "22")]
-    pub account_profile_id: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "22")]
+    pub account_profile_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
     pub device_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]

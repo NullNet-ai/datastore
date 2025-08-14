@@ -8,6 +8,7 @@ use ulid::Ulid;
 use crate::auth::structs::{Cookie, Session, User};
 use crate::db;
 use crate::models::session_model::SessionModel;
+use crate::models::signed_in_activity_model::SignedInActivityModel;
 use crate::schema::schema::{account_organizations, sessions};
 use crate::structs::structs::{Auth, RequestBody};
 use crate::utils::utils::time_string_to_ms;
@@ -103,13 +104,6 @@ impl SessionManager {
             .first::<SessionModel>(&mut conn)
             .await?;
 
-        // Update last_accessed timestamp
-        diesel::update(sessions::table.filter(sessions::id.eq(session_id)))
-            .set(sessions::last_accessed.eq(Some(Utc::now().naive_utc())))
-            .execute(&mut conn)
-            .await
-            .ok(); // Ignore errors for this update
-
         // Convert SessionModel back to Session struct
         Ok(Session {
             user: User {
@@ -151,6 +145,7 @@ impl SessionManager {
                 .and_then(|v| serde_json::from_str(&v).ok()),
             ip_address: session_model.ip_address,
             location: session_model.location,
+            account_profile_id: session_model.account_profile_id,
         })
     }
 
@@ -192,7 +187,7 @@ impl SessionManager {
     pub async fn save_session(
         &self,
         session: &Session,
-        account_profile_id: Option<i32>,
+        account_profile_id: Option<String>,
         device_info: Option<DeviceInfo>,
         auth: Option<&Auth>,
         app_id: Option<String>,
@@ -254,7 +249,39 @@ impl SessionManager {
                 "sessions",
             );
             session_json = request_body.record;
+            
+        } else {
+            // Manually assign timestamp fields when auth is not available
+            use chrono::Utc;
+            let now = Utc::now();
+            let date_str = now.format("%Y-%m-%d").to_string();
+            let time_str = now.format("%H:%M:%S%.3f").to_string();
+            
+            // Always add these fields
+            session_json["version"] = json!(1);
+            
+            if is_update {
+
+                println!("THIS IS UPDATEEEEE");
+                // For updates, only set updated fields
+                session_json["updated_date"] = json!(date_str);
+                session_json["updated_time"] = json!(time_str);
+                session_json["updated_by"] = json!(account_profile_id.clone().unwrap_or_else(|| "system".to_string()));
+            } else {
+                // For new sessions, set both created and updated fields
+                session_json["created_date"] = json!(date_str);
+                session_json["created_time"] = json!(time_str);
+                session_json["created_by"] = json!(account_profile_id.clone().unwrap_or_else(|| "system".to_string()));
+                session_json["updated_date"] = json!(date_str);
+                session_json["updated_time"] = json!(time_str);
+                session_json["updated_by"] = json!(account_profile_id.clone().unwrap_or_else(|| "system".to_string()));
+                let now = Utc::now();
+                let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
+                session_json["timestamp"] = json!(formatted_timestamp);
+            }
         }
+
+        println!("{:?}--------------------- session_json", session_json);
 
 
         // Extract values back to SessionModel
@@ -299,8 +326,8 @@ impl SessionManager {
             sync_status: session_json["sync_status"].as_str().map(|s| s.to_string()),
             is_batch: session_json["is_batch"].as_bool(),
             account_profile_id: session_json["account_profile_id"]
-                .as_i64()
-                .map(|v| v as i32),
+                .as_str()
+                .map(|s| s.to_string()),
             device_name: session_json["device_name"].as_str().map(|s| s.to_string()),
             browser_name: session_json["browser_name"].as_str().map(|s| s.to_string()),
             operating_system: session_json["operating_system"]
@@ -316,7 +343,7 @@ impl SessionManager {
             } else {
                 Some(Utc::now().naive_utc())
             },
-            remarks: device_info.as_ref().and_then(|d| d.remarks.clone()),
+            remark: device_info.as_ref().and_then(|d| d.remarks.clone()),
 
             user_role_id: Some(session.user.role_id.clone()),
             user_account_id: Some(session.user.account_id.clone()),
@@ -427,6 +454,9 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
                 record: updated_session,
             };
 
+            // Set status to "Expired" for pruned sessions
+            request_body.record["status"] = serde_json::Value::String("Expired".to_string());
+
             // Create a dummy Auth struct for the soft deletion
             // Get environment variables
             let default_organization_id = env::var("DEFAULT_ORGANIZATION_ID")
@@ -465,4 +495,46 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
     }
 
     Ok(updated_count)
+}
+
+/// Convert Session struct to SignedInActivityModel
+pub fn session_to_signed_in_activity(session: &Session, status: Option<String>, remarks: Option<String>) -> SignedInActivityModel {
+    let now = Utc::now().naive_utc();
+    let activity_id = Ulid::new().to_string();
+    
+    SignedInActivityModel {
+        id: Some(activity_id),
+        tombstone: Some(0),
+        status: status.or_else(|| Some("Active".to_string())),
+        previous_status: None,
+        version: Some(1),
+        created_date: Some(now.format("%Y-%m-%d").to_string()),
+        created_time: Some(now.format("%H:%M:%S%.f").to_string()),
+        updated_date: Some(now.format("%Y-%m-%d").to_string()),
+        updated_time: Some(now.format("%H:%M:%S%.f").to_string()),
+        organization_id: None,
+        created_by: session.account_profile_id.clone(),
+        updated_by: session.account_profile_id.clone(),
+        deleted_by: None,
+        requested_by: None,
+        timestamp: Some(now),
+        tags: None,
+        categories: None,
+        code: None,
+        sensitivity_level: Some(1000), // Default sensitivity level
+        sync_status: None,
+        is_batch: Some(false),
+        account_profile_id: session.account_profile_id.clone(),
+        device_name: None, // Could be extracted from user agent if needed
+        browser_name: None, // Could be extracted from user agent if needed
+        operating_system: None, // Could be extracted from user agent if needed
+        authentication_method: None,
+        location: session.location.clone(),
+        ip_address: session.ip_address.clone(),
+        session_started: Some(now), // Current time as session activity time
+        remark: remarks,
+        
+        // Reference to original session
+        session_id: Some(session.session_id.clone()),
+    }
 }

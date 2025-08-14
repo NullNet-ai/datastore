@@ -1,4 +1,13 @@
+-- Drop foreign key constraints
+ALTER TABLE "signed_in_activity" DROP CONSTRAINT IF EXISTS "signed_in_activity_session_id_sessions_id_fk";
+ALTER TABLE "signed_in_activity" DROP CONSTRAINT IF EXISTS "signed_in_activity_requested_by_account_organizations_id_fk";
+ALTER TABLE "signed_in_activity" DROP CONSTRAINT IF EXISTS "signed_in_activity_deleted_by_account_organizations_id_fk";
+ALTER TABLE "signed_in_activity" DROP CONSTRAINT IF EXISTS "signed_in_activity_updated_by_account_organizations_id_fk";
+ALTER TABLE "signed_in_activity" DROP CONSTRAINT IF EXISTS "signed_in_activity_created_by_account_organizations_id_fk";
+ALTER TABLE "signed_in_activity" DROP CONSTRAINT IF EXISTS "signed_in_activity_organization_id_organizations_id_fk";
+
 -- Drop indexes for signed_in_activity table
+DROP INDEX IF EXISTS "idx_signed_in_activity_session_id";
 DROP INDEX IF EXISTS "idx_signed_in_activity_sensitivity_level";
 DROP INDEX IF EXISTS "idx_signed_in_activity_code";
 DROP INDEX IF EXISTS "idx_signed_in_activity_categories";

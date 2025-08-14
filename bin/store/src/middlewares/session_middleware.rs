@@ -105,7 +105,7 @@ where
 
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
-            let (session, is_new_session) = if let Some(session_id) = session_id {
+            let (mut session, is_new_session) = if let Some(session_id) = session_id {
                 // Try to load existing session first
                 match session_manager.load_session(&session_id).await {
                     Ok(session) => (session, false),
@@ -122,17 +122,26 @@ where
                 (new_session, true)
             };
 
+            // Extract IP address and location before service call
+            let ip_address = extract_client_ip(&req);
+            let location = get_location_from_ip(&ip_address);
+            
+            // Update session with IP and location
+            session.ip_address = Some(ip_address);
+            session.location = location;
+
             req.extensions_mut().insert(session.clone());
 
             let mut res = service.call(req).await?;
 
             let updated_session = res.request().extensions().get::<Session>().cloned();
+            println!("{:?}--------------------- updated_session", updated_session);
 
             if let Some(session) = updated_session {
                 let auth = res.request().extensions().get::<Auth>().cloned();
-                let account_profile_id = auth
-                    .as_ref()
-                    .and_then(|a| a.account_organization_id.parse::<i32>().ok());
+                // Use account_profile_id from session if available, otherwise fall back to auth
+                let account_profile_id = session.account_profile_id.clone()
+                    .or_else(|| auth.as_ref().map(|a| a.account_organization_id.clone()));
 
                 // Extract app_id from query parameters
                 let app_id = res.request().query_string().split('&').find_map(|param| {
@@ -143,6 +152,7 @@ where
                         None
                     }
                 });
+
 
                 if let Err(e) = session_manager
                     .save_session(
@@ -279,10 +289,9 @@ pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: Sess
     request.extensions_mut().insert(session);
 }
 
-#[allow(dead_code)]
 pub async fn save_session_after_request(session: &Session) -> Result<(), String> {
     let session_manager = SessionManager::with_default_config();
-    let account_profile_id = Some(1);
+    let account_profile_id = Some("1".to_string());
     session_manager
         .save_session(session, account_profile_id, None, None, None, false)
         .await

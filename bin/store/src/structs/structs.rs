@@ -167,7 +167,10 @@ impl RequestBody {
             "delete" => {
                 self.record["updated_date"] = json!(date_str);
                 self.record["updated_time"] = json!(time_str);
-                self.record["status"] = json!("Archived");
+                // Set status to "Archived" only if not provided in the request body
+                if self.record["status"].is_null() || !self.record.as_object().unwrap().contains_key("status") {
+                    self.record["status"] = json!("Archived");
+                }
                 self.record["updated_by"] = json!(auth.responsible_account);
                 self.record["deleted_by"] = json!(auth.responsible_account);
                 self.record["tombstone"] = json!(1);

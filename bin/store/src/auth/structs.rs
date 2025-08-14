@@ -5,6 +5,7 @@ use serde_json::Value;
 pub struct LoginResponse {
     pub message: String,
     pub token: Option<String>,
+    pub account_organization_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,4 +107,5 @@ pub struct Session {
     pub ip_address: Option<String>,
     #[serde(default)]
     pub location: Option<String>,
+    pub account_profile_id : Option<String>,
 }
