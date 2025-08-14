@@ -244,7 +244,7 @@ pub struct Sessions {
     #[prost(string, optional, tag = "29")]
     pub session_started: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub remarks: ::core::option::Option<::prost::alloc::string::String>,
+    pub remark: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
     pub user_role_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "32")]
@@ -256,7 +256,7 @@ pub struct Sessions {
     #[prost(string, optional, tag = "35")]
     pub cookie_path: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "36")]
-    pub cookie_expires: ::core::option::Option<::prost::alloc::string::String>,
+    pub cookie_expire: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(bool, optional, tag = "37")]
     pub cookie_http_only: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "38")]
@@ -346,41 +346,9 @@ pub struct SignedInActivity {
     #[prost(string, optional, tag = "29")]
     pub session_started: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "30")]
-    pub remarks: ::core::option::Option<::prost::alloc::string::String>,
+    pub remark: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "31")]
-    pub user_role_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "32")]
-    pub user_account_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "33")]
-    pub user_is_root_user: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "34")]
-    pub token: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "35")]
-    pub cookie_path: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "36")]
-    pub cookie_expires: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "37")]
-    pub cookie_http_only: ::core::option::Option<bool>,
-    #[prost(string, optional, tag = "38")]
-    pub cookie_original_max_age: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "39")]
-    pub origin_url: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "40")]
-    pub origin_host: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "41")]
-    pub origin_user_agent: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "42")]
-    pub valid_pass_key: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "43")]
-    pub role_permission: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "44")]
-    pub field_permission: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "45")]
-    pub record_permission: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "46")]
-    pub expire: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "47")]
-    pub last_accessed: ::core::option::Option<::prost::alloc::string::String>,
+    pub session_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ExternalContacts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]

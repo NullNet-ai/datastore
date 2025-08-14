@@ -133,13 +133,13 @@ message Sessions {
   optional string location = 27;
   optional string ip_address = 28;
   optional string session_started = 29;
-  optional string remarks = 30;
+  optional string remark = 30;
   optional string user_role_id = 31;
   optional string user_account_id = 32;
   optional bool user_is_root_user = 33;
   optional string token = 34;
   optional string cookie_path = 35;
-  optional string cookie_expires = 36;
+  optional string cookie_expire = 36;
   optional bool cookie_http_only = 37;
   optional string cookie_original_max_age = 38;
   optional string origin_url = 39;
@@ -185,24 +185,8 @@ message SignedInActivity {
   optional string location = 27;
   optional string ip_address = 28;
   optional string session_started = 29;
-  optional string remarks = 30;
-  optional string user_role_id = 31;
-  optional string user_account_id = 32;
-  optional bool user_is_root_user = 33;
-  optional string token = 34;
-  optional string cookie_path = 35;
-  optional string cookie_expires = 36;
-  optional bool cookie_http_only = 37;
-  optional string cookie_original_max_age = 38;
-  optional string origin_url = 39;
-  optional string origin_host = 40;
-  optional string origin_user_agent = 41;
-  optional string valid_pass_key = 42;
-  optional string role_permission = 43;
-  optional string field_permission = 44;
-  optional string record_permission = 45;
-  optional string expire = 46;
-  optional string last_accessed = 47;
+  optional string remark = 30;
+  optional string session_id = 31;
 }
 
 // ExternalContacts entity definition

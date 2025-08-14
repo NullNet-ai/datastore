@@ -125,7 +125,7 @@ where
             // Extract IP address and location before service call
             let ip_address = extract_client_ip(&req);
             let location = get_location_from_ip(&ip_address);
-            
+
             // Update session with IP and location
             session.ip_address = Some(ip_address);
             session.location = location;
@@ -140,7 +140,9 @@ where
             if let Some(session) = updated_session {
                 let auth = res.request().extensions().get::<Auth>().cloned();
                 // Use account_profile_id from session if available, otherwise fall back to auth
-                let account_profile_id = session.account_profile_id.clone()
+                let account_profile_id = session
+                    .account_profile_id
+                    .clone()
                     .or_else(|| auth.as_ref().map(|a| a.account_organization_id.clone()));
 
                 // Extract app_id from query parameters
@@ -152,7 +154,6 @@ where
                         None
                     }
                 });
-
 
                 if let Err(e) = session_manager
                     .save_session(

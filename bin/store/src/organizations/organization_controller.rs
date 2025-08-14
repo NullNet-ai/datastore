@@ -29,7 +29,6 @@ pub struct RegisterDto {
     pub data: Register,
 }
 
-
 pub struct OrganizationsController;
 
 impl OrganizationsController {
@@ -74,20 +73,16 @@ impl OrganizationsController {
         let query_string = req.query_string();
 
         // Print auth extensions for debugging - access extensions only once
-        
+
         // Get all extensions in a single borrow to avoid BorrowMutError
         let extensions = req.extensions();
-        
+
         // Try to get session from extensions
-        let session_option = extensions
-            .get::<crate::auth::structs::Session>()
-            .cloned();
-        
+        let session_option = extensions.get::<crate::auth::structs::Session>().cloned();
+
         // Print session information
         // Create signed_in_activity based on authentication result
-    
-        
-        
+
         // Drop the extensions borrow before continuing
         drop(extensions);
 
@@ -171,7 +166,7 @@ impl OrganizationsController {
             })
         };
 
-            // Handle the authentication result and update session first
+        // Handle the authentication result and update session first
         let updated_session_option = match &result {
             Ok(login_response) => {
                 if let Some(token) = &login_response.token {
@@ -198,7 +193,7 @@ impl OrganizationsController {
                 } else {
                     session_option.clone()
                 }
-            },
+            }
             Err(_) => session_option.clone(),
         };
 
@@ -210,21 +205,27 @@ impl OrganizationsController {
                     Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
                 };
                 let signed_in_activity = session_to_signed_in_activity(session, status, remarks);
-                
+
                 // Convert to JSON and save to database using sync_service
                 match serde_json::to_value(&signed_in_activity) {
                     Ok(activity_json) => {
-                        if let Err(e) = sync_service::insert(&"signed_in_activity".to_string(), activity_json).await {
+                        if let Err(e) =
+                            sync_service::insert(&"signed_in_activity".to_string(), activity_json)
+                                .await
+                        {
                             log::error!("Failed to save signed_in_activity: {}", e);
                         } else {
-                            log::info!("Successfully saved signed_in_activity for session: {:?}", session.session_id);
+                            log::info!(
+                                "Successfully saved signed_in_activity for session: {:?}",
+                                session.session_id
+                            );
                         }
-                    },
+                    }
                     Err(e) => {
                         log::error!("Failed to serialize signed_in_activity: {}", e);
                     }
                 }
-            },
+            }
             None => {
                 println!("No session found in extensions");
             }
@@ -234,7 +235,6 @@ impl OrganizationsController {
         match result {
             Ok(login_response) => {
                 if let Some(token) = login_response.token {
-
                     // Set cookie and return token
                     HttpResponse::Ok()
                         .cookie(

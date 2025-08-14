@@ -249,32 +249,36 @@ impl SessionManager {
                 "sessions",
             );
             session_json = request_body.record;
-            
         } else {
             // Manually assign timestamp fields when auth is not available
             use chrono::Utc;
             let now = Utc::now();
             let date_str = now.format("%Y-%m-%d").to_string();
             let time_str = now.format("%H:%M:%S%.3f").to_string();
-            
+
             // Always add these fields
             session_json["version"] = json!(1);
-            
-            if is_update {
 
+            if is_update {
                 println!("THIS IS UPDATEEEEE");
                 // For updates, only set updated fields
                 session_json["updated_date"] = json!(date_str);
                 session_json["updated_time"] = json!(time_str);
-                session_json["updated_by"] = json!(account_profile_id.clone().unwrap_or_else(|| "system".to_string()));
+                session_json["updated_by"] = json!(account_profile_id
+                    .clone()
+                    .unwrap_or_else(|| "system".to_string()));
             } else {
                 // For new sessions, set both created and updated fields
                 session_json["created_date"] = json!(date_str);
                 session_json["created_time"] = json!(time_str);
-                session_json["created_by"] = json!(account_profile_id.clone().unwrap_or_else(|| "system".to_string()));
+                session_json["created_by"] = json!(account_profile_id
+                    .clone()
+                    .unwrap_or_else(|| "system".to_string()));
                 session_json["updated_date"] = json!(date_str);
                 session_json["updated_time"] = json!(time_str);
-                session_json["updated_by"] = json!(account_profile_id.clone().unwrap_or_else(|| "system".to_string()));
+                session_json["updated_by"] = json!(account_profile_id
+                    .clone()
+                    .unwrap_or_else(|| "system".to_string()));
                 let now = Utc::now();
                 let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
                 session_json["timestamp"] = json!(formatted_timestamp);
@@ -282,7 +286,6 @@ impl SessionManager {
         }
 
         println!("{:?}--------------------- session_json", session_json);
-
 
         // Extract values back to SessionModel
         let session_model = SessionModel {
@@ -498,10 +501,14 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
 }
 
 /// Convert Session struct to SignedInActivityModel
-pub fn session_to_signed_in_activity(session: &Session, status: Option<String>, remarks: Option<String>) -> SignedInActivityModel {
+pub fn session_to_signed_in_activity(
+    session: &Session,
+    status: Option<String>,
+    remarks: Option<String>,
+) -> SignedInActivityModel {
     let now = Utc::now().naive_utc();
     let activity_id = Ulid::new().to_string();
-    
+
     SignedInActivityModel {
         id: Some(activity_id),
         tombstone: Some(0),
@@ -525,15 +532,15 @@ pub fn session_to_signed_in_activity(session: &Session, status: Option<String>, 
         sync_status: None,
         is_batch: Some(false),
         account_profile_id: session.account_profile_id.clone(),
-        device_name: None, // Could be extracted from user agent if needed
-        browser_name: None, // Could be extracted from user agent if needed
+        device_name: None,      // Could be extracted from user agent if needed
+        browser_name: None,     // Could be extracted from user agent if needed
         operating_system: None, // Could be extracted from user agent if needed
         authentication_method: None,
         location: session.location.clone(),
         ip_address: session.ip_address.clone(),
         session_started: Some(now), // Current time as session activity time
         remark: remarks,
-        
+
         // Reference to original session
         session_id: Some(session.session_id.clone()),
     }
