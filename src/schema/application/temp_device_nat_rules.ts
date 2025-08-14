@@ -41,7 +41,7 @@ const fields = {
   redirect_ip: text('redirect_ip'),
   redirect_port: text('redirect_port'),
 
-  assosiated_rule_id: text('assosiated_rule_id').default(''),
+  associated_rule_id: text('associated_rule_id').default(''),
 };
 
 const config = (table) => ({
