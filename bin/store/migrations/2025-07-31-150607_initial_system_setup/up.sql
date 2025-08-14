@@ -516,9 +516,54 @@ CREATE TABLE "encryption_keys" (
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
-	"sid" text PRIMARY KEY NOT NULL,
-	"sess" jsonb NOT NULL,
-	"expire" timestamp NOT NULL
+	"id" text PRIMARY KEY NOT NULL,
+	"tombstone" integer,
+	"status" text,
+	"previous_status" text,
+	"version" integer,
+	"created_date" text,
+	"created_time" text,
+	"updated_date" text,
+	"updated_time" text,
+	"organization_id" text,
+	"created_by" text,
+	"updated_by" text,
+	"deleted_by" text,
+	"requested_by" text,
+	"timestamp" timestamp,
+	"tags" text[],
+	"categories" text[],
+	"code" text,
+	"sensitivity_level" integer,
+	"sync_status" text,
+	"is_batch" boolean,
+	"account_profile_id" text,
+	"device_name" text,
+	"browser_name" text,
+	"operating_system" text,
+	"authentication_method" text,
+	"location" text,
+	"ip_address" text,
+	"session_started" timestamp,
+	"remark" text,
+	"user_role_id" text,
+	"user_account_id" text,
+	"user_is_root_user" boolean,
+	"token" text,
+	"cookie_path" text,
+	"cookie_expire" text,
+	"cookie_http_only" boolean,
+	"cookie_original_max_age" bigint,
+	"origin_url" text,
+	"origin_host" text,
+	"origin_user_agent" text,
+	"valid_pass_key" text,
+	"role_permission" text,
+	"field_permission" text,
+	"record_permission" text,
+	"expire" timestamp,
+	"application_accessed" text,
+	"last_accessed" timestamp with time zone
 );
 
 CREATE TABLE "table_indexes" (
@@ -1376,7 +1421,16 @@ CREATE INDEX "encryption_keys_organization_id_idx" ON "encryption_keys" USING bt
 CREATE INDEX "encryption_keys_entity_idx" ON "encryption_keys" USING btree ("entity");--> statement-breakpoint
 CREATE INDEX "encryption_keys_created_by_idx" ON "encryption_keys" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "encryption_keys_tombstone_idx" ON "encryption_keys" USING btree ("tombstone");--> statement-breakpoint
-CREATE INDEX "sessions_sid_idx" ON "sessions" USING btree ("sid");--> statement-breakpoint
+CREATE INDEX "sessions_id_idx" ON "sessions" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "sessions_account_profile_id_idx" ON "sessions" USING btree ("account_profile_id");--> statement-breakpoint
+CREATE INDEX "sessions_device_name_idx" ON "sessions" USING btree ("device_name");--> statement-breakpoint
+CREATE INDEX "sessions_browser_name_idx" ON "sessions" USING btree ("browser_name");--> statement-breakpoint
+CREATE INDEX "sessions_operating_system_idx" ON "sessions" USING btree ("operating_system");--> statement-breakpoint
+CREATE INDEX "sessions_authentication_method_idx" ON "sessions" USING btree ("authentication_method");--> statement-breakpoint
+CREATE INDEX "sessions_location_idx" ON "sessions" USING btree ("location");--> statement-breakpoint
+CREATE INDEX "sessions_ip_address_idx" ON "sessions" USING btree ("ip_address");--> statement-breakpoint
+CREATE INDEX "sessions_session_started_idx" ON "sessions" USING btree ("session_started");--> statement-breakpoint
+CREATE INDEX "sessions_status_idx" ON "sessions" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "samples_id_idx" ON "samples" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "samples_categories_idx" ON "samples" USING btree ("categories");--> statement-breakpoint
 CREATE INDEX "samples_code_idx" ON "samples" USING btree ("code");--> statement-breakpoint
@@ -1745,3 +1799,19 @@ ALTER TABLE "samples"
 ADD COLUMN "sync_status" text DEFAULT 'in-process';
 ALTER TABLE "samples" 
 ADD COLUMN "is_batch" boolean DEFAULT false;
+
+-- Add required indexes for sessions table
+CREATE INDEX "idx_sessions_tombstone" ON "sessions" USING btree ("tombstone");
+CREATE INDEX "idx_sessions_previous_status" ON "sessions" USING btree ("previous_status");
+CREATE INDEX "idx_sessions_version" ON "sessions" USING btree ("version");
+CREATE INDEX "idx_sessions_created_date" ON "sessions" USING btree ("created_date");
+CREATE INDEX "idx_sessions_updated_date" ON "sessions" USING btree ("updated_date");
+CREATE INDEX "idx_sessions_organization_id" ON "sessions" USING btree ("organization_id");
+CREATE INDEX "idx_sessions_created_by" ON "sessions" USING btree ("created_by");
+CREATE INDEX "idx_sessions_updated_by" ON "sessions" USING btree ("updated_by");
+CREATE INDEX "idx_sessions_deleted_by" ON "sessions" USING btree ("deleted_by");
+CREATE INDEX "idx_sessions_requested_by" ON "sessions" USING btree ("requested_by");
+CREATE INDEX "idx_sessions_tags" ON "sessions" USING btree ("tags");
+CREATE INDEX "idx_sessions_categories" ON "sessions" USING btree ("categories");
+CREATE INDEX "idx_sessions_code" ON "sessions" USING btree ("code");
+CREATE INDEX "idx_sessions_sensitivity_level" ON "sessions" USING btree ("sensitivity_level");

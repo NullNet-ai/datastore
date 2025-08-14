@@ -4,10 +4,12 @@ use serde::{Deserialize, Serialize};
 use crate::auth::auth_service::verify;
 use crate::auth::structs::{Origin, User};
 use crate::middlewares::auth_middleware::extract_token;
+use crate::middlewares::session_core::session_to_signed_in_activity;
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
 use crate::structs::structs::ApiResponse;
+use crate::sync::sync_service;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -36,7 +38,6 @@ impl OrganizationsController {
         }
 
         let is_request = Some(true);
-        println!("{:?}", data.0.data);
 
         match register(&data.0.data, is_request, None).await {
             Ok(result) => HttpResponse::Ok().json(result),
@@ -70,11 +71,22 @@ impl OrganizationsController {
 
     pub async fn auth(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
         let query_string = req.query_string();
-        let session_option = req
-            .extensions()
-            .get::<crate::auth::structs::Session>()
-            .cloned();
-        let session = match session_option {
+
+        // Print auth extensions for debugging - access extensions only once
+
+        // Get all extensions in a single borrow to avoid BorrowMutError
+        let extensions = req.extensions();
+
+        // Try to get session from extensions
+        let session_option = extensions.get::<crate::auth::structs::Session>().cloned();
+
+        // Print session information
+        // Create signed_in_activity based on authentication result
+
+        // Drop the extensions borrow before continuing
+        drop(extensions);
+
+        let session = match &session_option {
             Some(session) => session,
             None => {
                 return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
@@ -154,10 +166,10 @@ impl OrganizationsController {
             })
         };
 
-        // Handle the authentication result
-        match result {
+        // Handle the authentication result and update session first
+        let updated_session_option = match &result {
             Ok(login_response) => {
-                if let Some(token) = login_response.token {
+                if let Some(token) = &login_response.token {
                     let updated = crate::auth::structs::Session {
                         token: token.clone(),
                         origin: Some(Origin {
@@ -169,14 +181,60 @@ impl OrganizationsController {
                             url: req.path().to_string(),
                         }),
                         user: User {
-                            role_id: login_response.role_id,
+                            role_id: login_response.role_id.clone(),
                             is_root_user: is_root,
                             account_id,
                         },
-                        ..session
+                        account_profile_id: login_response.account_organization_id.clone(),
+                        ..session.clone()
                     };
-                    req.extensions_mut().insert(updated);
+                    req.extensions_mut().insert(updated.clone());
+                    Some(updated)
+                } else {
+                    session_option.clone()
+                }
+            }
+            Err(_) => session_option.clone(),
+        };
 
+        // Now use the updated session for signed_in_activity
+        match &updated_session_option {
+            Some(session) => {
+                let (status, remarks) = match &result {
+                    Ok(_) => (Some("Success".to_string()), None),
+                    Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
+                };
+                let signed_in_activity = session_to_signed_in_activity(session, status, remarks);
+
+                // Convert to JSON and save to database using sync_service
+                match serde_json::to_value(&signed_in_activity) {
+                    Ok(activity_json) => {
+                        if let Err(e) =
+                            sync_service::insert(&"signed_in_activity".to_string(), activity_json)
+                                .await
+                        {
+                            log::error!("Failed to save signed_in_activity: {}", e);
+                        } else {
+                            log::info!(
+                                "Successfully saved signed_in_activity for session: {:?}",
+                                session.session_id
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to serialize signed_in_activity: {}", e);
+                    }
+                }
+            }
+            None => {
+                println!("No session found in extensions");
+            }
+        }
+
+        // Return the appropriate response
+        match result {
+            Ok(login_response) => {
+                if let Some(token) = login_response.token {
                     // Set cookie and return token
                     HttpResponse::Ok()
                         .cookie(

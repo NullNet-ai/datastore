@@ -1,4 +1,20 @@
 -- This file should undo anything in `up.sql`
+-- Drop session indexes
+DROP INDEX IF EXISTS "idx_sessions_sensitivity_level";
+DROP INDEX IF EXISTS "idx_sessions_code";
+DROP INDEX IF EXISTS "idx_sessions_categories";
+DROP INDEX IF EXISTS "idx_sessions_tags";
+DROP INDEX IF EXISTS "idx_sessions_requested_by";
+DROP INDEX IF EXISTS "idx_sessions_deleted_by";
+DROP INDEX IF EXISTS "idx_sessions_updated_by";
+DROP INDEX IF EXISTS "idx_sessions_created_by";
+DROP INDEX IF EXISTS "idx_sessions_organization_id";
+DROP INDEX IF EXISTS "idx_sessions_updated_date";
+DROP INDEX IF EXISTS "idx_sessions_created_date";
+DROP INDEX IF EXISTS "idx_sessions_version";
+DROP INDEX IF EXISTS "idx_sessions_previous_status";
+DROP INDEX IF EXISTS "idx_sessions_tombstone";
+
 DROP INDEX IF EXISTS idx_stream_queue_last_accessed;
 DROP INDEX IF EXISTS idx_stream_queue_created_at;
 DROP INDEX IF EXISTS idx_stream_queue_name;

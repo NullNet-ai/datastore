@@ -14,7 +14,6 @@ pub const SYSTEM_TABLES: &[&str] = &[
     "entity_fields",
     "permissions",
     "encryption_keys",
-    "sessions",
     "data_permissions",
     "user_roles",
     "role_permissions",

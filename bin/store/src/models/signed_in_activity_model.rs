@@ -3,8 +3,8 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Insertable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
-#[diesel(table_name = crate::schema::schema::sessions)]
-pub struct SessionModel {
+#[diesel(table_name = crate::schema::schema::signed_in_activity)]
+pub struct SignedInActivityModel {
     pub id: Option<String>,
     pub tombstone: Option<i32>,
     pub status: Option<String>,
@@ -35,23 +35,5 @@ pub struct SessionModel {
     pub ip_address: Option<String>,
     pub session_started: Option<NaiveDateTime>,
     pub remark: Option<String>,
-
-    pub user_role_id: Option<String>,
-    pub user_account_id: Option<String>,
-    pub user_is_root_user: Option<bool>,
-    pub token: Option<String>,
-    pub cookie_path: Option<String>,
-    pub cookie_expire: Option<String>,
-    pub cookie_http_only: Option<bool>,
-    pub cookie_original_max_age: Option<i64>,
-    pub origin_url: Option<String>,
-    pub origin_host: Option<String>,
-    pub origin_user_agent: Option<String>,
-    pub valid_pass_key: Option<String>,
-    pub role_permission: Option<String>,
-    pub field_permission: Option<String>,
-    pub record_permission: Option<String>,
-    pub expire: Option<NaiveDateTime>,
-    pub application_accessed: Option<String>,
-    pub last_accessed: Option<NaiveDateTime>,
+    pub session_id: Option<String>,
 }

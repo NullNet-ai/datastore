@@ -112,7 +112,7 @@ pub async fn auth(
         // Get the signed in account with all related data
         let mut signed_in_account;
 
-        if let Some(account_organization_id) = account_organization_id {
+        if let Some(ref account_organization_id) = account_organization_id {
             // Create your filters array based on your requirements
             let filters = vec!["ao.tombstone = 0", "ao.status = 'Active'"];
 
@@ -173,6 +173,7 @@ pub async fn auth(
                 .as_str()
                 .unwrap_or_default()
                 .to_string(),
+            account_organization_id: account_organization_id.clone(),
         });
     }
 
@@ -334,6 +335,7 @@ pub async fn root_auth(
             message: "Invalid Root Credentials".to_string(),
             token: None,
             role_id: "".to_string(),
+            account_organization_id: None,
         });
     }
 
@@ -374,6 +376,9 @@ pub async fn root_auth(
             .as_str()
             .unwrap_or_default()
             .to_string(),
+        account_organization_id: account_organization["account_organization_id"]
+            .as_str()
+            .map(|s| s.to_string()),
     })
 }
 #[allow(warnings)]

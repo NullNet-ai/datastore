@@ -129,6 +129,14 @@ fmt-check:
 	@cd libs/merkle && cargo fmt --all --check
 	@if [ -d "mcp-proto-generator" ]; then cd mcp-proto-generator && cargo fmt --all --check; fi
 
+# Clean up git branches
+git-cleanup:
+	@echo "Fetching latest changes and pruning deleted remote branches..."
+	@git fetch --prune
+	@echo "Deleting local branches that no longer exist on remote..."
+	@git branch -vv | grep ': gone]' | awk '{print $$1}' | xargs -r git branch -D || true
+	@echo "✅ Git cleanup complete!"
+
 # Setup git hooks
 setup-hooks:
 	@echo "🪝 Setting up git hooks..."

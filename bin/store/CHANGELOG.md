@@ -5,9 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.51
+### Author
+Kashan
+
+### Features
+- ***Session Management***: Flattened session schema, from jsonb to independent tables
+- ***Sign-in Activity Tracking***: Added comprehensive sign-in activity logging with database persistence
+- ***Database Schema***: Added `signed_in_activity` table with proper foreign key relationships
+- ***Organization Controller***: Integrated sign-in activity saving using sync_service on user authentication
+
+
 ## 0.1.50
 ### Author
-<<<<<<< HEAD
 Jean
 
 ### Fixes

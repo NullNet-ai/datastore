@@ -6,18 +6,19 @@ use actix_web::{
     Error, HttpMessage,
 };
 use futures::future::{ok, Ready};
+use std::net::IpAddr;
+use std::str::FromStr;
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
 
-use super::session_core::SessionManager;
+pub use super::session_core::prune_expired_sessions;
+use super::session_core::{DeviceInfo, SessionManager};
 use crate::auth::structs::{Claims, Origin, Session};
+use crate::structs::structs::Auth;
 use crate::utils::utils::time_string_to_ms;
 
-// Just a marker type
 pub struct SessionMiddleware;
 
-// Configuration holder used internally
-#[allow(warnings)]
 struct HttpSessionConfig {
     session_manager: SessionManager,
     cookie_same_site: SameSite,
@@ -25,7 +26,6 @@ struct HttpSessionConfig {
     cookie_http_only: bool,
 }
 
-// Internal service
 pub struct SessionMiddlewareService<S> {
     service: Rc<S>,
     config: HttpSessionConfig,
@@ -94,7 +94,6 @@ where
                 return service.call(req).await;
             }
 
-            // Extract session ID from header or cookie
             let header_value = req
                 .headers()
                 .get(session_manager.session_header())
@@ -106,37 +105,90 @@ where
 
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
-            // Load or create session
-            let session = if let Some(session_id) = session_id {
-                session_manager.get_or_create_session(&session_id).await
+            let (mut session, is_new_session) = if let Some(session_id) = session_id {
+                // Try to load existing session first
+                match session_manager.load_session(&session_id).await {
+                    Ok(session) => (session, false),
+                    Err(_) => {
+                        // Session doesn't exist, create new one
+                        let new_session = session_manager.create_new_session(&session_id, "");
+                        (new_session, true)
+                    }
+                }
             } else {
+                // No session ID provided, create new session
                 let new_session_id = session_manager.extract_session_id(None, None);
-                session_manager.get_or_create_session(&new_session_id).await
+                let new_session = session_manager.create_new_session(&new_session_id, "");
+                (new_session, true)
             };
 
-            // Store session in request extensions
+            // Extract IP address and location before service call
+            let ip_address = extract_client_ip(&req);
+            let location = get_location_from_ip(&ip_address);
+
+            // Update session with IP and location
+            session.ip_address = Some(ip_address);
+            session.location = location;
+
             req.extensions_mut().insert(session.clone());
 
-            // Call the next service
             let mut res = service.call(req).await?;
 
-            // Get the possibly modified session from extensions
             let updated_session = res.request().extensions().get::<Session>().cloned();
+            println!("{:?}--------------------- updated_session", updated_session);
 
             if let Some(session) = updated_session {
-                // Save the session to the database
-                if let Err(err) = session_manager.save_session(&session).await {
-                    log::error!("Failed to save session: {:?}", err);
+                let auth = res.request().extensions().get::<Auth>().cloned();
+                // Use account_profile_id from session if available, otherwise fall back to auth
+                let account_profile_id = session
+                    .account_profile_id
+                    .clone()
+                    .or_else(|| auth.as_ref().map(|a| a.account_organization_id.clone()));
+
+                // Extract app_id from query parameters
+                let app_id = res.request().query_string().split('&').find_map(|param| {
+                    let mut parts = param.split('=');
+                    if parts.next() == Some("app_id") {
+                        parts.next().map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                });
+
+                if let Err(e) = session_manager
+                    .save_session(
+                        &session,
+                        account_profile_id,
+                        Some(DeviceInfo {
+                            device_name: "Unknown".to_string(),
+                            browser_name: "Unknown".to_string(),
+                            operating_system: "Unknown".to_string(),
+                            authentication_method: "Unknown".to_string(),
+                            location: session
+                                .location
+                                .clone()
+                                .unwrap_or_else(|| "Unknown".to_string()),
+                            ip_address: session
+                                .ip_address
+                                .clone()
+                                .unwrap_or_else(|| "Unknown".to_string()),
+                            remarks: None,
+                        }),
+                        auth.as_ref(),
+                        app_id,
+                        is_new_session,
+                    )
+                    .await
+                {
+                    log::error!("Failed to save session: {:?}", e);
                 }
 
-                // Set the session cookie in the response
                 let cookie = ActixCookie::build(session_manager.cookie_name(), session.session_id)
                     .path("/")
                     .same_site(cookie_same_site)
                     .secure(cookie_secure)
                     .http_only(cookie_http_only);
 
-                // Set cookie expiration if max_age is provided
                 let cookie =
                     if let Ok(max_age) = time_string_to_ms(session_manager.cookie_max_age()) {
                         cookie.max_age(actix_web::cookie::time::Duration::milliseconds(
@@ -154,18 +206,9 @@ where
     }
 }
 
-// Re-export the shared session management functions
-pub use super::session_core::prune_expired_sessions;
-
-// Helper function to get session from request
-#[allow(warnings)]
 pub fn get_session(req: &ServiceRequest) -> Option<Session> {
     req.extensions().get::<Session>().cloned()
 }
-
-// ============================================================================
-// gRPC Session Management
-// ============================================================================
 
 /// gRPC Session Interceptor that reuses the core session logic
 #[derive(Clone)]
@@ -198,36 +241,19 @@ impl Interceptor for GrpcSessionInterceptor {
     fn call(&mut self, mut request: Request<()>) -> Result<Request<()>, Status> {
         let metadata = request.metadata();
 
-        // Log all headers for debugging
-        log::debug!("gRPC Request headers: {:?}", metadata);
-
-        // Extract session ID from header
         let session_header_value = metadata
             .get(self.session_manager.session_header())
             .and_then(|v| v.to_str().ok());
-
-        log::debug!(
-            "Session header '{}' value: {:?}",
-            self.session_manager.session_header(),
-            session_header_value
-        );
-
-        // For gRPC, we don't have cookies, so we only check headers
         let session_id = self
             .session_manager
             .extract_session_id(session_header_value, None);
 
-        log::debug!("Extracted/Generated session ID: {}", session_id);
-
-        // Store session ID in request extensions for later async loading
-        // This avoids the runtime panic from calling block_on in an async context
         request.extensions_mut().insert(session_id);
 
         Ok(request)
     }
 }
 
-/// A chain of two interceptors that applies them in sequence
 #[derive(Clone)]
 pub struct InterceptorChain<A, B> {
     first: A,
@@ -246,84 +272,149 @@ where
     B: Interceptor + Clone,
 {
     fn call(&mut self, request: Request<()>) -> Result<Request<()>, Status> {
-        // Apply the first interceptor
         let mut first = self.first.clone();
         let request = first.call(request)?;
 
-        // Apply the second interceptor
         let mut second = self.second.clone();
         second.call(request)
     }
 }
 
-/// Helper function to extract session from gRPC request
 #[allow(dead_code)]
 pub fn get_session_from_grpc_request<T>(request: &Request<T>) -> Option<Session> {
     request.extensions().get::<Session>().cloned()
 }
 
-/// Helper function to update session in gRPC request
 #[allow(dead_code)]
 pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: Session) {
     request.extensions_mut().insert(session);
 }
 
-/// Async helper to save session after gRPC request processing
-#[allow(dead_code)]
 pub async fn save_session_after_request(session: &Session) -> Result<(), String> {
     let session_manager = SessionManager::with_default_config();
+    let account_profile_id = Some("1".to_string());
     session_manager
-        .save_session(session)
+        .save_session(session, account_profile_id, None, None, None, false)
         .await
         .map_err(|e| format!("Failed to save session: {:?}", e))
 }
 
-/// Common function to populate session with authentication data
-/// Used by both HTTP and gRPC authentication flows
 pub fn populate_session_with_auth_data(
     session: &mut Session,
-    token: &str,
+    _token: &str,
     claims: &Claims,
     origin: Origin,
+    req: &ServiceRequest,
 ) {
-    // Update session with token
-    session.token = token.to_string();
-
-    // Update session with user data from claims
+    session.token = "".to_string();
     session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
     session.user.is_root_user = claims.account.is_root_account;
     session.user.account_id = claims.account.account_id.clone();
 
-    // Set origin
     session.origin = Some(origin);
+
+    let ip_address = extract_client_ip(req);
+
+    let location = get_location_from_ip(&ip_address);
+
+    session.ip_address = Some(ip_address);
+    session.location = location;
 }
 
-/// Load and populate session with auth data for gRPC requests
-/// This function centralizes session management logic similar to HTTP middleware
+fn extract_client_ip(req: &ServiceRequest) -> String {
+    // First try to get IP directly from TCP connection
+    if let Some(peer_addr) = req.connection_info().peer_addr() {
+        // Extract just the IP part (remove port if present)
+        if let Some(ip_part) = peer_addr.split(':').next() {
+            let ip_str = ip_part.trim();
+            // Validate it's a proper IP address
+            if std::net::IpAddr::from_str(ip_str).is_ok() {
+                return ip_str.to_string();
+            }
+        }
+    }
+
+    // Fallback to headers for proxied requests
+    if let Some(forwarded_for) = req.headers().get("x-forwarded-for") {
+        if let Ok(forwarded_str) = forwarded_for.to_str() {
+            if let Some(first_ip) = forwarded_str.split(',').next() {
+                return first_ip.trim().to_string();
+            }
+        }
+    }
+
+    if let Some(real_ip) = req.headers().get("x-real-ip") {
+        if let Ok(ip_str) = real_ip.to_str() {
+            return ip_str.to_string();
+        }
+    }
+
+    // Final fallback
+    req.connection_info()
+        .realip_remote_addr()
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+fn get_location_from_ip(ip_address: &str) -> Option<String> {
+    if let Ok(ip) = IpAddr::from_str(ip_address) {
+        match ip {
+            IpAddr::V4(ipv4) => {
+                if ipv4.is_loopback() || ipv4.is_private() {
+                    return Some("Local".to_string());
+                }
+            }
+            IpAddr::V6(ipv6) => {
+                if ipv6.is_loopback() {
+                    return Some("Local".to_string());
+                }
+            }
+        }
+
+        Some("Unknown Location".to_string())
+    } else {
+        None
+    }
+}
+
 pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) -> Option<Session> {
-    // Extract session ID from interceptor
     let session_id = request.extensions().get::<String>().cloned()?;
 
     let session_manager = SessionManager::with_default_config();
-    let mut session = session_manager.get_or_create_session(&session_id).await;
+    let mut session = session_manager.get_or_create_session(&session_id, "").await;
 
-    // Update session with auth data if available (similar to HTTP middleware)
     if let (Some(auth_token), Some(claims)) = (
         request
             .extensions()
             .get::<crate::middlewares::auth_middleware::AuthToken>(),
         request.extensions().get::<Claims>(),
     ) {
-        // Create gRPC-specific origin
         let origin = Origin {
             user_agent: Some("gRPC-client".to_string()),
             host: "grpc".to_string(),
             url: "grpc://".to_string(),
         };
 
-        // Use common function to populate session
-        populate_session_with_auth_data(&mut session, &auth_token.0, claims, origin);
+        populate_session_with_auth_data_grpc(&mut session, &auth_token.0, claims, origin);
     }
 
     Some(session)
+}
+
+pub fn populate_session_with_auth_data_grpc(
+    session: &mut Session,
+    token: &str,
+    claims: &Claims,
+    origin: Origin,
+) {
+    session.token = token.to_string();
+
+    session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
+    session.user.is_root_user = claims.account.is_root_account;
+    session.user.account_id = claims.account.account_id.clone();
+
+    session.origin = Some(origin);
+
+    session.ip_address = Some("grpc-client".to_string());
+    session.location = Some("gRPC".to_string());
 }

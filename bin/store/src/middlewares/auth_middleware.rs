@@ -126,6 +126,7 @@ where
                         &t,
                         &claims,
                         origin,
+                        &auth,
                     );
 
                     auth.extensions_mut().insert(session);
