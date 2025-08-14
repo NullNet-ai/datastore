@@ -537,7 +537,7 @@ CREATE TABLE "sessions" (
 	"sensitivity_level" integer,
 	"sync_status" text,
 	"is_batch" boolean,
-	"account_profile_id" text,
+	"account_organization_id" text,
 	"device_name" text,
 	"browser_name" text,
 	"operating_system" text,
@@ -1422,7 +1422,7 @@ CREATE INDEX "encryption_keys_entity_idx" ON "encryption_keys" USING btree ("ent
 CREATE INDEX "encryption_keys_created_by_idx" ON "encryption_keys" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "encryption_keys_tombstone_idx" ON "encryption_keys" USING btree ("tombstone");--> statement-breakpoint
 CREATE INDEX "sessions_id_idx" ON "sessions" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "sessions_account_profile_id_idx" ON "sessions" USING btree ("account_profile_id");--> statement-breakpoint
+CREATE INDEX "sessions_account_organization_id_idx" ON "sessions" USING btree ("account_organization_id");--> statement-breakpoint
 CREATE INDEX "sessions_device_name_idx" ON "sessions" USING btree ("device_name");--> statement-breakpoint
 CREATE INDEX "sessions_browser_name_idx" ON "sessions" USING btree ("browser_name");--> statement-breakpoint
 CREATE INDEX "sessions_operating_system_idx" ON "sessions" USING btree ("operating_system");--> statement-breakpoint
