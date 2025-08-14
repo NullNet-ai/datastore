@@ -145,7 +145,7 @@ impl SessionManager {
                 .and_then(|v| serde_json::from_str(&v).ok()),
             ip_address: session_model.ip_address,
             location: session_model.location,
-            account_profile_id: session_model.account_profile_id,
+            account_organization_id: session_model.account_organization_id,
         })
     }
 
@@ -260,7 +260,6 @@ impl SessionManager {
             session_json["version"] = json!(1);
 
             if is_update {
-                println!("THIS IS UPDATEEEEE");
                 // For updates, only set updated fields
                 session_json["updated_date"] = json!(date_str);
                 session_json["updated_time"] = json!(time_str);
@@ -284,8 +283,6 @@ impl SessionManager {
                 session_json["timestamp"] = json!(formatted_timestamp);
             }
         }
-
-        println!("{:?}--------------------- session_json", session_json);
 
         // Extract values back to SessionModel
         let session_model = SessionModel {
@@ -328,7 +325,7 @@ impl SessionManager {
             sensitivity_level: session_json["sensitivity_level"].as_i64().map(|v| v as i32),
             sync_status: session_json["sync_status"].as_str().map(|s| s.to_string()),
             is_batch: session_json["is_batch"].as_bool(),
-            account_profile_id: session_json["account_profile_id"]
+            account_organization_id: session_json["account_organization_id"]
                 .as_str()
                 .map(|s| s.to_string()),
             device_name: session_json["device_name"].as_str().map(|s| s.to_string()),
@@ -520,8 +517,8 @@ pub fn session_to_signed_in_activity(
         updated_date: Some(now.format("%Y-%m-%d").to_string()),
         updated_time: Some(now.format("%H:%M:%S%.f").to_string()),
         organization_id: None,
-        created_by: session.account_profile_id.clone(),
-        updated_by: session.account_profile_id.clone(),
+        created_by: session.account_organization_id.clone(),
+        updated_by: session.account_organization_id.clone(),
         deleted_by: None,
         requested_by: None,
         timestamp: Some(now),
@@ -531,7 +528,7 @@ pub fn session_to_signed_in_activity(
         sensitivity_level: Some(1000), // Default sensitivity level
         sync_status: None,
         is_batch: Some(false),
-        account_profile_id: session.account_profile_id.clone(),
+        account_organization_id: session.account_organization_id.clone(),
         device_name: None,      // Could be extracted from user agent if needed
         browser_name: None,     // Could be extracted from user agent if needed
         operating_system: None, // Could be extracted from user agent if needed

@@ -125,7 +125,7 @@ message Sessions {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_profile_id = 22;
+  optional string account_organization_id = 22;
   optional string device_name = 23;
   optional string browser_name = 24;
   optional string operating_system = 25;
@@ -154,8 +154,8 @@ message Sessions {
   optional string last_accessed = 48;
 }
 
-// SignedInActivity entity definition
-message SignedInActivity {
+// SignedInActivities entity definition
+message SignedInActivities {
   optional string id = 1;
   optional int32 tombstone = 2;
   optional string status = 3;
@@ -177,7 +177,7 @@ message SignedInActivity {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_profile_id = 22;
+  optional string account_organization_id = 22;
   optional string device_name = 23;
   optional string browser_name = 24;
   optional string operating_system = 25;
@@ -871,69 +871,69 @@ message UpsertSessionsResponse {
   repeated Sessions data = 4;
 }
 
-// Create SignedInActivity request
-message CreateSignedInActivityRequest {
-  SignedInActivity signed_in_activity = 1;
+// Create SignedInActivities request
+message CreateSignedInActivitiesRequest {
+  SignedInActivities signed_in_activities = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
 }
 
-// Create SignedInActivity response
-message CreateSignedInActivityResponse {
+// Create SignedInActivities response
+message CreateSignedInActivitiesResponse {
   bool success = 1;
   int32 count = 2;
   string message = 3;
-  SignedInActivity data = 4;
+  SignedInActivities data = 4;
 }
 
-// Get SignedInActivity request
-message GetSignedInActivityRequest {
+// Get SignedInActivities request
+message GetSignedInActivitiesRequest {
   GetParams params = 1;
   GetQuery query = 2;
 }
 
-// Get SignedInActivity response
-message GetSignedInActivityResponse {
+// Get SignedInActivities response
+message GetSignedInActivitiesResponse {
   bool success = 1;
   string message = 2;
-  SignedInActivity data = 3;
+  SignedInActivities data = 3;
 }
 
-// Update SignedInActivity request
-message UpdateSignedInActivityRequest {
-  SignedInActivity signed_in_activity = 1;
+// Update SignedInActivities request
+message UpdateSignedInActivitiesRequest {
+  SignedInActivities signed_in_activity = 1;
   UpdateParams params = 2;
   UpdateQuery query = 3;
 }
 
-// Update SignedInActivity response
-message UpdateSignedInActivityResponse {
+// Update SignedInActivities response
+message UpdateSignedInActivitiesResponse {
   bool success = 1;
   int32 count = 2;
   string message = 3;
-  SignedInActivity data = 4;
+  SignedInActivities data = 4;
 }
 
-// BatchUpdate SignedInActivity request
-message BatchUpdateSignedInActivityRequest {
+// BatchUpdate SignedInActivities request
+message BatchUpdateSignedInActivitiesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
     repeated FilterCriteria advance_filters = 1;
-  SignedInActivity updates = 2;
+  SignedInActivities updates = 2;
   }
   BatchUpdateBody body = 2;
 }
 
-// BatchUpdate SignedInActivity response
-message BatchUpdateSignedInActivityResponse {
+// BatchUpdate SignedInActivities response
+message BatchUpdateSignedInActivitiesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated SignedInActivity data = 4;
+  repeated SignedInActivities data = 4;
 }
 
-// BatchDelete SignedInActivity request
-message BatchDeleteSignedInActivityRequest {
+// BatchDelete SignedInActivities request
+message BatchDeleteSignedInActivitiesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
     repeated FilterCriteria advance_filters = 1;
@@ -941,63 +941,63 @@ message BatchDeleteSignedInActivityRequest {
   BatchDeleteBody body = 2;
 }
 
-// BatchDelete SignedInActivity response
-message BatchDeleteSignedInActivityResponse {
+// BatchDelete SignedInActivities response
+message BatchDeleteSignedInActivitiesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  SignedInActivity data = 4;
+  SignedInActivities data = 4;
 }
 
-// Delete SignedInActivity request
-message DeleteSignedInActivityRequest {
+// Delete SignedInActivities request
+message DeleteSignedInActivitiesRequest {
   DeleteParams params = 1;
   DeleteQuery query = 2;
 }
 
-// Delete SignedInActivity response
-message DeleteSignedInActivityResponse {
+// Delete SignedInActivities response
+message DeleteSignedInActivitiesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  SignedInActivity data = 4;
+  SignedInActivities data = 4;
 }
 
-// BatchInsert SignedInActivity request
-message BatchInsertSignedInActivityRequest {
+// BatchInsert SignedInActivities request
+message BatchInsertSignedInActivitiesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    repeated SignedInActivity signed_in_activity = 1;
+    repeated SignedInActivities signed_in_activities = 1;
   }
   BatchBody body = 3;
 }
 
-// BatchInsert SignedInActivity response
-message BatchInsertSignedInActivityResponse {
+// BatchInsert SignedInActivities response
+message BatchInsertSignedInActivitiesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated SignedInActivity data = 4;
+  repeated SignedInActivities data = 4;
 }
 
-// Upsert SignedInActivity request
-message UpsertSignedInActivityRequest {
+// Upsert SignedInActivities request
+message UpsertSignedInActivitiesRequest {
   UpsertParams params = 1;
   UpsertQuery query = 2;
   message UpsertBody {
     repeated string conflict_columns = 1;
-    SignedInActivity data = 2;
+    SignedInActivities data = 2;
   }
   UpsertBody body = 3;
 }
 
-// Upsert SignedInActivity response
-message UpsertSignedInActivityResponse {
+// Upsert SignedInActivities response
+message UpsertSignedInActivitiesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated SignedInActivity data = 4;
+  repeated SignedInActivities data = 4;
 }
 
 // Create ExternalContacts request
@@ -3466,29 +3466,29 @@ service StoreService {
   // Upsert a Sessions (create if not exists, update if exists)
   rpc UpsertSessions(UpsertSessionsRequest) returns (UpsertSessionsResponse);
 
-  // Create a new SignedInActivity
-  rpc CreateSignedInActivity(CreateSignedInActivityRequest) returns (CreateSignedInActivityResponse);
+  // Create a new SignedInActivities
+  rpc CreateSignedInActivities(CreateSignedInActivitiesRequest) returns (CreateSignedInActivitiesResponse);
 
-  // Get a SignedInActivity by ID
-  rpc GetSignedInActivity(GetSignedInActivityRequest) returns (GetSignedInActivityResponse);
+  // Get a SignedInActivities by ID
+  rpc GetSignedInActivities(GetSignedInActivitiesRequest) returns (GetSignedInActivitiesResponse);
 
-  // Update an existing SignedInActivity
-  rpc UpdateSignedInActivity(UpdateSignedInActivityRequest) returns (UpdateSignedInActivityResponse);
+  // Update an existing SignedInActivities
+  rpc UpdateSignedInActivities(UpdateSignedInActivitiesRequest) returns (UpdateSignedInActivitiesResponse);
 
-  // Delete a SignedInActivity by ID
-  rpc DeleteSignedInActivity(DeleteSignedInActivityRequest) returns (DeleteSignedInActivityResponse);
+  // Delete a SignedInActivities by ID
+  rpc DeleteSignedInActivities(DeleteSignedInActivitiesRequest) returns (DeleteSignedInActivitiesResponse);
 
-  // Batch insert multiple SignedInActivitys
-  rpc BatchInsertSignedInActivity(BatchInsertSignedInActivityRequest) returns (BatchInsertSignedInActivityResponse);
+  // Batch insert multiple SignedInActivitiess
+  rpc BatchInsertSignedInActivities(BatchInsertSignedInActivitiesRequest) returns (BatchInsertSignedInActivitiesResponse);
 
-  // Batch update multiple SignedInActivitys based on filters
-  rpc BatchUpdateSignedInActivity(BatchUpdateSignedInActivityRequest) returns (BatchUpdateSignedInActivityResponse);
+  // Batch update multiple SignedInActivitiess based on filters
+  rpc BatchUpdateSignedInActivities(BatchUpdateSignedInActivitiesRequest) returns (BatchUpdateSignedInActivitiesResponse);
 
-  // Batch delete multiple SignedInActivitys based on filters
-  rpc BatchDeleteSignedInActivity(BatchDeleteSignedInActivityRequest) returns (BatchDeleteSignedInActivityResponse);
+  // Batch delete multiple SignedInActivitiess based on filters
+  rpc BatchDeleteSignedInActivities(BatchDeleteSignedInActivitiesRequest) returns (BatchDeleteSignedInActivitiesResponse);
 
-  // Upsert a SignedInActivity (create if not exists, update if exists)
-  rpc UpsertSignedInActivity(UpsertSignedInActivityRequest) returns (UpsertSignedInActivityResponse);
+  // Upsert a SignedInActivities (create if not exists, update if exists)
+  rpc UpsertSignedInActivities(UpsertSignedInActivitiesRequest) returns (UpsertSignedInActivitiesResponse);
 
   // Create a new ExternalContacts
   rpc CreateExternalContacts(CreateExternalContactsRequest) returns (CreateExternalContactsResponse);

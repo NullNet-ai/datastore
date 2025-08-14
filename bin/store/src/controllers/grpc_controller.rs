@@ -45,8 +45,8 @@ use crate::generated::store::{
     BatchDeleteOrganizationContactsResponse, BatchDeleteOrganizationsRequest,
     BatchDeleteOrganizationsResponse, BatchDeletePostgresChannelsRequest,
     BatchDeletePostgresChannelsResponse, BatchDeleteSamplesRequest, BatchDeleteSamplesResponse,
-    BatchDeleteSessionsRequest, BatchDeleteSessionsResponse, BatchDeleteSignedInActivityRequest,
-    BatchDeleteSignedInActivityResponse, BatchDeleteTestHypertableRequest,
+    BatchDeleteSessionsRequest, BatchDeleteSessionsResponse, BatchDeleteSignedInActivitiesRequest,
+    BatchDeleteSignedInActivitiesResponse, BatchDeleteTestHypertableRequest,
     BatchDeleteTestHypertableResponse, BatchInsertAccountOrganizationsRequest,
     BatchInsertAccountOrganizationsResponse, BatchInsertAccountPhoneNumbersRequest,
     BatchInsertAccountPhoneNumbersResponse, BatchInsertAccountProfilesRequest,
@@ -62,8 +62,8 @@ use crate::generated::store::{
     BatchInsertOrganizationContactsResponse, BatchInsertOrganizationsRequest,
     BatchInsertOrganizationsResponse, BatchInsertPostgresChannelsRequest,
     BatchInsertPostgresChannelsResponse, BatchInsertSamplesRequest, BatchInsertSamplesResponse,
-    BatchInsertSessionsRequest, BatchInsertSessionsResponse, BatchInsertSignedInActivityRequest,
-    BatchInsertSignedInActivityResponse, BatchInsertTestHypertableRequest,
+    BatchInsertSessionsRequest, BatchInsertSessionsResponse, BatchInsertSignedInActivitiesRequest,
+    BatchInsertSignedInActivitiesResponse, BatchInsertTestHypertableRequest,
     BatchInsertTestHypertableResponse, BatchUpdateAccountOrganizationsRequest,
     BatchUpdateAccountOrganizationsResponse, BatchUpdateAccountPhoneNumbersRequest,
     BatchUpdateAccountPhoneNumbersResponse, BatchUpdateAccountProfilesRequest,
@@ -79,8 +79,8 @@ use crate::generated::store::{
     BatchUpdateOrganizationContactsResponse, BatchUpdateOrganizationsRequest,
     BatchUpdateOrganizationsResponse, BatchUpdatePostgresChannelsRequest,
     BatchUpdatePostgresChannelsResponse, BatchUpdateSamplesRequest, BatchUpdateSamplesResponse,
-    BatchUpdateSessionsRequest, BatchUpdateSessionsResponse, BatchUpdateSignedInActivityRequest,
-    BatchUpdateSignedInActivityResponse, BatchUpdateTestHypertableRequest,
+    BatchUpdateSessionsRequest, BatchUpdateSessionsResponse, BatchUpdateSignedInActivitiesRequest,
+    BatchUpdateSignedInActivitiesResponse, BatchUpdateTestHypertableRequest,
     BatchUpdateTestHypertableResponse, ContactEmails, ContactPhoneNumbers, Contacts,
     CreateAccountOrganizationsRequest, CreateAccountOrganizationsResponse,
     CreateAccountPhoneNumbersRequest, CreateAccountPhoneNumbersResponse,
@@ -95,8 +95,8 @@ use crate::generated::store::{
     CreateOrganizationContactsRequest, CreateOrganizationContactsResponse,
     CreateOrganizationsRequest, CreateOrganizationsResponse, CreatePostgresChannelsRequest,
     CreatePostgresChannelsResponse, CreateSamplesRequest, CreateSamplesResponse,
-    CreateSessionsRequest, CreateSessionsResponse, CreateSignedInActivityRequest,
-    CreateSignedInActivityResponse, CreateTestHypertableRequest, CreateTestHypertableResponse,
+    CreateSessionsRequest, CreateSessionsResponse, CreateSignedInActivitiesRequest,
+    CreateSignedInActivitiesResponse, CreateTestHypertableRequest, CreateTestHypertableResponse,
     DeleteAccountOrganizationsRequest, DeleteAccountOrganizationsResponse,
     DeleteAccountPhoneNumbersRequest, DeleteAccountPhoneNumbersResponse,
     DeleteAccountProfilesRequest, DeleteAccountProfilesResponse, DeleteAccountSignaturesRequest,
@@ -110,8 +110,8 @@ use crate::generated::store::{
     DeleteOrganizationContactsRequest, DeleteOrganizationContactsResponse,
     DeleteOrganizationsRequest, DeleteOrganizationsResponse, DeletePostgresChannelsRequest,
     DeletePostgresChannelsResponse, DeleteSamplesRequest, DeleteSamplesResponse,
-    DeleteSessionsRequest, DeleteSessionsResponse, DeleteSignedInActivityRequest,
-    DeleteSignedInActivityResponse, DeleteTestHypertableRequest, DeleteTestHypertableResponse,
+    DeleteSessionsRequest, DeleteSessionsResponse, DeleteSignedInActivitiesRequest,
+    DeleteSignedInActivitiesResponse, DeleteTestHypertableRequest, DeleteTestHypertableResponse,
     Devices, ExternalContacts, Files, GetAccountOrganizationsRequest,
     GetAccountOrganizationsResponse, GetAccountPhoneNumbersRequest, GetAccountPhoneNumbersResponse,
     GetAccountProfilesRequest, GetAccountProfilesResponse, GetAccountSignaturesRequest,
@@ -123,10 +123,10 @@ use crate::generated::store::{
     GetOrganizationAccountsResponse, GetOrganizationContactsRequest,
     GetOrganizationContactsResponse, GetOrganizationsRequest, GetOrganizationsResponse,
     GetPostgresChannelsRequest, GetPostgresChannelsResponse, GetSamplesRequest, GetSamplesResponse,
-    GetSessionsRequest, GetSessionsResponse, GetSignedInActivityRequest,
-    GetSignedInActivityResponse, GetTestHypertableRequest, GetTestHypertableResponse,
+    GetSessionsRequest, GetSessionsResponse, GetSignedInActivitiesRequest,
+    GetSignedInActivitiesResponse, GetTestHypertableRequest, GetTestHypertableResponse,
     OrganizationAccounts, OrganizationContacts, Organizations, PostgresChannels, Samples, Sessions,
-    SignedInActivity, TestHypertable, UpdateAccountOrganizationsRequest,
+    SignedInActivities, TestHypertable, UpdateAccountOrganizationsRequest,
     UpdateAccountOrganizationsResponse, UpdateAccountPhoneNumbersRequest,
     UpdateAccountPhoneNumbersResponse, UpdateAccountProfilesRequest, UpdateAccountProfilesResponse,
     UpdateAccountSignaturesRequest, UpdateAccountSignaturesResponse, UpdateAccountsRequest,
@@ -139,8 +139,8 @@ use crate::generated::store::{
     UpdateOrganizationContactsRequest, UpdateOrganizationContactsResponse,
     UpdateOrganizationsRequest, UpdateOrganizationsResponse, UpdatePostgresChannelsRequest,
     UpdatePostgresChannelsResponse, UpdateSamplesRequest, UpdateSamplesResponse,
-    UpdateSessionsRequest, UpdateSessionsResponse, UpdateSignedInActivityRequest,
-    UpdateSignedInActivityResponse, UpdateTestHypertableRequest, UpdateTestHypertableResponse,
+    UpdateSessionsRequest, UpdateSessionsResponse, UpdateSignedInActivitiesRequest,
+    UpdateSignedInActivitiesResponse, UpdateTestHypertableRequest, UpdateTestHypertableResponse,
     UpsertAccountOrganizationsRequest, UpsertAccountOrganizationsResponse,
     UpsertAccountPhoneNumbersRequest, UpsertAccountPhoneNumbersResponse,
     UpsertAccountProfilesRequest, UpsertAccountProfilesResponse, UpsertAccountSignaturesRequest,
@@ -154,8 +154,8 @@ use crate::generated::store::{
     UpsertOrganizationContactsRequest, UpsertOrganizationContactsResponse,
     UpsertOrganizationsRequest, UpsertOrganizationsResponse, UpsertPostgresChannelsRequest,
     UpsertPostgresChannelsResponse, UpsertSamplesRequest, UpsertSamplesResponse,
-    UpsertSessionsRequest, UpsertSessionsResponse, UpsertSignedInActivityRequest,
-    UpsertSignedInActivityResponse, UpsertTestHypertableRequest, UpsertTestHypertableResponse,
+    UpsertSessionsRequest, UpsertSessionsResponse, UpsertSignedInActivitiesRequest,
+    UpsertSignedInActivitiesResponse, UpsertTestHypertableRequest, UpsertTestHypertableResponse,
 };
 pub struct GrpcController {}
 
@@ -198,15 +198,15 @@ impl StoreService for GrpcController {
     generate_delete_method!(sessions);
     generate_batch_delete_method!(sessions);
     generate_upsert_method!(sessions);
-    // CRUD methods for signed_in_activity
-    generate_create_method!(signed_in_activity);
-    generate_update_method!(signed_in_activity, signed_in_activity);
-    generate_batch_insert_method!(signed_in_activity);
-    generate_batch_update_method!(signed_in_activity);
-    generate_get_method!(signed_in_activity);
-    generate_delete_method!(signed_in_activity);
-    generate_batch_delete_method!(signed_in_activity);
-    generate_upsert_method!(signed_in_activity);
+    // CRUD methods for signed_in_activities
+    generate_create_method!(signed_in_activities);
+    generate_update_method!(signed_in_activities, signed_in_activity);
+    generate_batch_insert_method!(signed_in_activities);
+    generate_batch_update_method!(signed_in_activities);
+    generate_get_method!(signed_in_activities);
+    generate_delete_method!(signed_in_activities);
+    generate_batch_delete_method!(signed_in_activities);
+    generate_upsert_method!(signed_in_activities);
     // CRUD methods for external_contacts
     generate_create_method!(external_contacts);
     generate_update_method!(external_contacts, external_contact);

@@ -185,7 +185,7 @@ impl OrganizationsController {
                             is_root_user: is_root,
                             account_id,
                         },
-                        account_profile_id: login_response.account_organization_id.clone(),
+                        account_organization_id: login_response.account_organization_id.clone(),
                         ..session.clone()
                     };
                     req.extensions_mut().insert(updated.clone());
@@ -210,13 +210,13 @@ impl OrganizationsController {
                 match serde_json::to_value(&signed_in_activity) {
                     Ok(activity_json) => {
                         if let Err(e) =
-                            sync_service::insert(&"signed_in_activity".to_string(), activity_json)
+                            sync_service::insert(&"signed_in_activities".to_string(), activity_json)
                                 .await
                         {
-                            log::error!("Failed to save signed_in_activity: {}", e);
+                            log::error!("Failed to save signed_in_activities: {}", e);
                         } else {
                             log::info!(
-                                "Successfully saved signed_in_activity for session: {:?}",
+                                "Successfully saved signed_in_activities for session: {:?}",
                                 session.session_id
                             );
                         }
@@ -227,7 +227,7 @@ impl OrganizationsController {
                 }
             }
             None => {
-                println!("No session found in extensions");
+                log::error!("No session found in extensions");
             }
         }
 

@@ -211,7 +211,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-        account_profile_id -> Nullable<Text>,
+        account_organization_id -> Nullable<Text>,
         device_name -> Nullable<Text>,
         browser_name -> Nullable<Text>,
         operating_system -> Nullable<Text>,
@@ -244,7 +244,7 @@ table! {
 }
 
 table! {
-    signed_in_activity(id) {
+    signed_in_activities(id) {
         id -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
@@ -266,7 +266,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-        account_profile_id -> Nullable<Text>,
+        account_organization_id -> Nullable<Text>,
         device_name -> Nullable<Text>,
         browser_name -> Nullable<Text>,
         operating_system -> Nullable<Text>,
