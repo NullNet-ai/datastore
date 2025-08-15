@@ -107,5 +107,11 @@ pub struct Session {
     pub ip_address: Option<String>,
     #[serde(default)]
     pub location: Option<String>,
+    #[serde(default)]
+    pub browser_name: Option<String>,
+    #[serde(default)]
+    pub operating_system: Option<String>,
+    #[serde(default)]
+    pub device_name: Option<String>,
     pub account_organization_id: Option<String>,
 }

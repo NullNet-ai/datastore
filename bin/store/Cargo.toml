@@ -1,6 +1,6 @@
 [package]
 name = "store"
-version = "0.1.52"
+version = "0.1.53"
 edition = "2021"
 
 authors = [
@@ -68,6 +68,7 @@ hex = "0.4.3"
 futures-util = "0.3.31"
 redis = { version = "0.23.0", features = ["tokio-comp"] }
 sha1 = "0.10.6"
+woothee = "0.13.0"
 
 
 [build-dependencies]

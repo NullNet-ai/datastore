@@ -37,13 +37,10 @@ pub struct AccountWithOrg {
 // Simple in-memory cache implementation for tokens
 static TOKEN_CACHE: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
-pub async fn auth(
+// Helper function to get account and account_organization_id without password verification
+pub async fn get_account_info(
     account_id: &str,
-    account_secret: &str,
-    session_id: String,
-    _organization_id: &str,
-) -> Result<LoginResponse, ApiError> {
-    // Get database connection
+) -> Result<(Option<AccountModel>, Option<String>), ApiError> {
     let mut conn = db::get_async_connection().await;
 
     let account_json = get_account_with_org(account_id).await?;
@@ -94,7 +91,19 @@ pub async fn auth(
         (account, account_organization_id)
     };
 
-    // If no account found in either query, return None
+    Ok((account, account_organization_id))
+}
+
+pub async fn auth(
+    account_id: &str,
+    account_secret: &str,
+    session_id: String,
+    _organization_id: &str,
+) -> Result<LoginResponse, ApiError> {
+    // Get account information first
+    let (account, account_organization_id) = get_account_info(account_id).await?;
+
+    // If no account found in either query, return error with account_organization_id if available
     let account =
         account.ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "Account not found"))?;
 
@@ -103,10 +112,13 @@ pub async fn auth(
         let is_valid = auth_service::password_verify(stored_hash, account_secret).await?;
 
         if !is_valid {
-            return Err(ApiError::new(
-                StatusCode::UNAUTHORIZED,
-                "Invalid credentials",
-            ));
+            // Return error but include account_organization_id in the response
+            return Ok(LoginResponse {
+                message: "Invalid credentials".to_string(),
+                token: None,
+                role_id: "".to_string(),
+                account_organization_id,
+            });
         }
 
         // Get the signed in account with all related data
@@ -184,16 +196,11 @@ pub async fn auth(
     ))
 }
 
-pub async fn root_auth(
+// Helper function to get root account information without password verification
+pub async fn get_root_account_info(
     account_id: &str,
-    account_secret: &str,
-    session_id: String,
-    previously_logged_in: Option<&str>,
-) -> Result<LoginResponse, ApiError> {
-    // Get database connection
+) -> Result<(serde_json::Value, Option<String>), ApiError> {
     let mut conn = db::get_async_connection().await;
-
-    // Query to find the root account
 
     // Build the SQL query to get account with profile and organization data
     let result = sql_query(
@@ -296,6 +303,23 @@ pub async fn root_auth(
         }
     };
 
+    // Extract account_organization_id
+    let account_organization_id = account_organization["account_organization_id"]
+        .as_str()
+        .map(|s| s.to_string());
+
+    Ok((account_organization, account_organization_id))
+}
+
+pub async fn root_auth(
+    account_id: &str,
+    account_secret: &str,
+    session_id: String,
+    previously_logged_in: Option<&str>,
+) -> Result<LoginResponse, ApiError> {
+    // Get root account information first
+    let (account_organization, account_organization_id) = get_root_account_info(account_id).await?;
+
     // Check if account exists
     let account_obj = match account_organization.as_object() {
         Some(obj) => obj,
@@ -308,10 +332,12 @@ pub async fn root_auth(
     };
 
     if account_obj.get("account").is_none() {
-        return Err(ApiError::new(
-            StatusCode::NOT_FOUND,
-            "Root Account not found",
-        ));
+        return Ok(LoginResponse {
+            message: "Root Account not found".to_string(),
+            token: None,
+            role_id: "".to_string(),
+            account_organization_id,
+        });
     }
 
     // Extract account data
@@ -320,7 +346,12 @@ pub async fn root_auth(
 
     // Check if password is provided
     if account_secret.is_empty() {
-        return Err(ApiError::new(StatusCode::FORBIDDEN, "Password is required"));
+        return Ok(LoginResponse {
+            message: "Password is required".to_string(),
+            token: None,
+            role_id: "".to_string(),
+            account_organization_id,
+        });
     }
 
     // Verify password
@@ -335,7 +366,7 @@ pub async fn root_auth(
             message: "Invalid Root Credentials".to_string(),
             token: None,
             role_id: "".to_string(),
-            account_organization_id: None,
+            account_organization_id,
         });
     }
 

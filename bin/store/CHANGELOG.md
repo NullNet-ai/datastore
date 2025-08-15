@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.53
+### Author
+Kashan
+
+### Changes
+- ***Authentication Enhancement***: Improved authentication system to capture account_organization_id even on failed login attempts
+  - Modified `auth` and `root_auth` functions to return LoginResponse with account_organization_id instead of ApiError on authentication failure
+  - Added helper functions `get_account_info` and `get_root_account_info` to extract account lookup logic
+  - Updated organization_controller to properly handle new authentication response format
+  - Fixed session persistence to include account_organization_id in saved session data
+  - Enhanced signed_in_activity logging to correctly distinguish between successful and failed authentication attempts
+  - Improved security logging and audit trail capabilities
+
 ## 0.1.52
 ### Author
 Kashan
