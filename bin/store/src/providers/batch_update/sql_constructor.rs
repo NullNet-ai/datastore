@@ -57,7 +57,7 @@ impl BatchUpdateSQLConstructor {
             advance_filters: filters.to_vec(),
         };
 
-        let mut sql_constructor = SQLConstructor::new(wrapper, self.table.clone(), self.is_root);
+        let mut sql_constructor = SQLConstructor::new(wrapper, self.table.clone(), self.is_root, None);
 
         if let Some(org_id) = &self.organization_id {
             sql_constructor = sql_constructor.with_organization_id(org_id.clone());

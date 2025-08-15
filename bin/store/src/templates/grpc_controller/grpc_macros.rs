@@ -132,7 +132,7 @@ macro_rules! generate_aggregation_filter_method {
 
                     // Create AggregationSQLConstructor with organization_id if available
                     let wrapper = crate::providers::aggregation_filter::AggregationFilterWrapper::new(request);
-                    let mut sql_constructor = crate::providers::aggregation_filter::AggregationSQLConstructor::new(wrapper, table.clone(), is_root_request)
+                    let mut sql_constructor = crate::providers::aggregation_filter::AggregationSQLConstructor::new(wrapper, table.clone(), is_root_request, None)
                         .with_organization_id(auth_data.organization_id.clone());
 
                     let query = match sql_constructor.construct_aggregation() {

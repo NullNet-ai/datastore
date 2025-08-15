@@ -56,6 +56,9 @@ pub trait QueryFilter {
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
         None
     }
+    fn get_timezone(&self) -> Option<&str> {
+        Some("Asia/Manila")
+    }
 }
 
 // Implement QueryFilter for GetByFilter
@@ -123,6 +126,10 @@ impl QueryFilter for GetByFilter {
     fn get_distinct_by(&self) -> Option<&str> {
         self.distinct_by.as_deref()
     }
+
+    fn get_timezone(&self) -> Option<&str> {
+        self.timezone.as_deref()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -137,15 +144,17 @@ pub struct SQLConstructor<T: QueryFilter> {
     pub table: String,
     pub organization_id: Option<String>,
     pub is_root: bool,
+    pub timezone: Option<String>,
 }
 
 impl<T: QueryFilter> SQLConstructor<T> {
-    pub fn new(request_body: T, table: String, is_root: bool) -> Self {
+    pub fn new(request_body: T, table: String, is_root: bool, timezone: Option<String>) -> Self {
         Self {
             request_body,
             table,
             organization_id: None,
             is_root,
+            timezone,
         }
     }
 
@@ -155,6 +164,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
 
     pub fn construct(&mut self) -> Result<String, String> {
+        let body_timezone = self.request_body.get_timezone().unwrap_or("Asia/Manila");
+        let timezone = self.timezone.as_deref().unwrap_or(body_timezone).to_string();
+        self.timezone = Some(timezone);
+
         let mut sql = String::from("SELECT ");
         sql.push_str(&self.construct_selections());
         sql.push_str(" FROM ");
@@ -169,8 +182,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
         Ok(sql)
     }
 
-    pub fn get_field(table: &str, field: &str, format_str: &str, main_table: &str) -> String {
-        Self::get_field_with_parse_as(table, field, format_str, None, main_table)
+    pub fn get_field(table: &str, field: &str, format_str: &str, main_table: &str, timezone: Option<&str>) -> String {
+        Self::get_field_with_parse_as(table, field, format_str, None, main_table, timezone, true)
     }
 
     fn get_field_with_parse_as(
@@ -179,12 +192,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format_str: &str,
         parse_as: Option<&str>,
         main_table: &str,
+        timezone: Option<&str>,
+        with_alias: bool
     ) -> String {
         // TODO: apply permissions
         let base_field = if field.ends_with("_date") {
-            Self::date_format_wrapper(table, field, Some(format_str))
+            Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
         } else if field.ends_with("_time") {
-            Self::time_format_wrapper(&format!("\"{}\".\"{}\"", table, field), None, main_table)
+            Self::time_format_wrapper(&format!("\"{}\".\"{}\"", table, field), timezone, main_table, with_alias)
         } else {
             format!("\"{}\".\"{}\"", table, field)
         };
@@ -206,6 +221,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         field: &str,
         format_str: &str,
         parse_as: Option<&str>,
+        timezone: Option<&str>,
     ) -> String {
         // Check if this field is defined as a concatenated field
         for concat_field in self.request_body.get_concatenate_fields() {
@@ -231,7 +247,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                     f,
                                     format_str,
                                     None,
-                                    self.table.as_str()
+                                    self.table.as_str(),
+                                    timezone,
+                                    true
                                 )
                             )
                         })
@@ -254,36 +272,66 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
 
         // Fall back to regular field handling if not a concatenated field
-        Self::get_field_with_parse_as(table, field, format_str, parse_as, &self.table)
+        Self::get_field_with_parse_as(table, field, format_str, parse_as, &self.table, timezone, true)
     }
 
-    fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>) -> String {
+    fn date_format_wrapper(table: &str, field: &str, format_str: Option<&str>, timezone: Option<&str>, with_alias: bool) -> String {
+        let field_prefix = field
+            .strip_suffix("_date")
+            .unwrap_or(field);
+        let time_field = format!("{}_time", field_prefix);
+        let formatted_field = format!("\"{}\".\"{}\"::TIMESTAMP + \"{}\".\"{}\"::INTERVAL", table, field, table, time_field);
+        let target_timezone = timezone.unwrap_or("Asia/Manila");
+        let server_timezone = "UTC";
+        let timezone_query = format!("AT TIME ZONE '{}' AT TIME ZONE '{}'", server_timezone, target_timezone);
+        let field_with_timezone = format!("(({}) {})", formatted_field, timezone_query);
         let format = format_str.unwrap_or("mm/dd/YYYY");
+        let alias = if with_alias {
+            format!(" AS \"{}\"", field)
+        } else {
+            "".to_string()
+        };
         format!(
-            "Coalesce(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), '') AS \"{}\"",
-            table, field, format, field
+            "COALESCE(TO_CHAR({}::DATE, '{}'), ''){}",
+            field_with_timezone, format, alias
         )
     }
-    fn time_format_wrapper(field: &str, timezone: Option<&str>, main_table: &str) -> String {
+    fn time_format_wrapper(field: &str, timezone: Option<&str>, main_table: &str, with_alias: bool) -> String {
         // Convert from stored timezone to target timezone
         // PostgreSQL AT TIME ZONE converts from the specified timezone to UTC, then to local
-        let target_timezone = timezone.unwrap_or("Asia/Manila");
-        let timezone_query = format!(" AT TIME ZONE '{}'", target_timezone);
         let field_parts: Vec<&str> = field.split('.').collect();
         let table_name = field_parts[0].replace("\"", "");
         let partial_field_name = field_parts[1].replace("\"", "");
+        let cloned_partial_field_name = partial_field_name.clone();
+        let field_prefix = cloned_partial_field_name
+            .strip_suffix("_time")
+            .unwrap_or(field);
         let field_name = if field_parts.len() == 2 {
             if table_name != main_table {
+                log::debug!("time_format_wrapper ========= table_name: {}", table_name);
                 format!("{}_{}", table_name, partial_field_name)
             } else {
+                log::debug!("time_format_wrapper ========= partial_field_name: {}", partial_field_name);
                 partial_field_name
             }
         } else {
             field.to_string()
         };
+
+        let date_field = format!("\"{}\".\"{}_date\"", table_name, field_prefix);
+        let formatted_field = format!("{}::TIMESTAMP + {}::INTERVAL", date_field, field);
+        let target_timezone = timezone.unwrap_or("Asia/Manila");
+        let server_timezone = "UTC";
+        let timezone_query = format!("AT TIME ZONE '{}' AT TIME ZONE '{}'", server_timezone, target_timezone);
+        let field_with_timezone = format!("(({}) {})", formatted_field, timezone_query);
+        let alias = if with_alias {
+            format!(" AS {}", field_name)
+        } else {
+            "".to_string()
+        };
         format!(
-            "({}::time {})::time AS {}",
-            field, timezone_query, field_name
+            "({})::time::text{}",
+            field_with_timezone, alias
         )
     }
     fn construct_selections(&self) -> String {
@@ -319,31 +367,34 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
                 // Only create selection for main table concatenated fields
                 // Join selections will handle concatenated fields for joined tables
-                if is_main_table && !is_joined_table_with_pluck {
-                    // Priority: aliased_entity takes precedence over entity
-                    let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
+                // if is_main_table && !is_joined_table_with_pluck {
+                //     // Priority: aliased_entity takes precedence over entity
+                //     let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
 
-                    let concatenated_expression = field
-                        .fields
-                        .iter()
-                        .map(|f| {
-                            format!(
-                                "COALESCE({}, '')",
-                                Self::get_field_with_parse_as(
-                                    table_name,
-                                    f,
-                                    self.request_body.get_date_format(),
-                                    None,
-                                    self.table.as_str()
-                                )
-                            )
-                        })
-                        .collect::<Vec<_>>()
-                        .join(&format!(" || '{}' || ", field.separator));
-                    let alias = &field.field_name;
+                //     let concatenated_expression = field
+                //         .fields
+                //         .iter()
+                //         .map(|f| {
+                //             let chaka =  Self::get_field_with_parse_as(
+                //                     table_name,
+                //                     f,
+                //                     self.request_body.get_date_format(),
+                //                     None,
+                //                     self.table.as_str(),
+                //                     self.timezone.as_deref(),
+                //                     false
+                //                 );
+                //             format!(
+                //                 "COALESCE({}, '')",
+                //                 chaka
+                //             )
+                //         })
+                //         .collect::<Vec<_>>()
+                //         .join(&format!(" || '{}' || ", field.separator));
+                //     let alias = &field.field_name;
 
-                    selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
-                }
+                //     selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
+                // }
             }
         }
 
@@ -425,6 +476,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     field,
                     self.request_body.get_date_format(),
                     self.table.as_str(),
+                    self.timezone.as_deref(),
                 );
                 selections.push(field_selection);
             }
@@ -447,6 +499,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 field,
                 self.request_body.get_date_format(),
                 self.table.as_str(),
+                self.timezone.as_deref(),
             ));
         }
 
@@ -467,11 +520,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .map(|f| {
                             format!(
                                 "COALESCE({}, '')",
-                                Self::get_field(
+                                Self::get_field_with_parse_as(
                                     table_name,
                                     f,
                                     self.request_body.get_date_format(),
-                                    self.table.as_str()
+                                    None,
+                                    self.table.as_str(),
+                                    self.timezone.as_deref(),
+                                    false
                                 )
                             )
                         })
@@ -532,7 +588,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                         table_name,
                                         f,
                                         self.request_body.get_date_format(),
-                                        self.table.as_str()
+                                        self.table.as_str(),
+                                        self.timezone.as_deref()
                                     )
                                 )
                             })
@@ -578,6 +635,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             field,
                             self.request_body.get_date_format(),
                             self.table.as_str(),
+                            self.timezone.as_deref(),
                         )
                     }),
             );
@@ -652,15 +710,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
         fields
             .iter()
             .map(|field| {
-                format!(
-                    "'{}', {}",
-                    field,
-                    Self::get_field(
+                let field_query = Self::get_field(
                         to_alias,
                         field,
                         self.request_body.get_date_format(),
-                        self.table.as_str()
-                    )
+                        self.table.as_str(),
+                        self.timezone.as_deref()
+                    );
+                    let parts: Vec<String> = field_query.split(" AS ").map(|part| part.to_string()).collect::<Vec<String>>();
+                    let formatted_field = parts.first().unwrap().clone();
+                format!(
+                    "'{}', {}",
+                    field,
+                    formatted_field
                 )
             })
             .collect()
@@ -684,14 +746,16 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            format!(
-                                "COALESCE({}, '')",
-                                Self::get_field(
+                            let field = Self::get_field(
                                     table_name,
                                     f,
                                     self.request_body.get_date_format(),
-                                    self.table.as_str()
-                                )
+                                    self.table.as_str(),
+                                    self.timezone.as_deref()
+                                );
+                            format!(
+                                "COALESCE({}, '')",
+                                field
                             )
                         })
                         .collect::<Vec<_>>()
@@ -779,6 +843,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         field_name,
                         self.request_body.get_date_format(),
                         &self.table,
+                        self.timezone.as_deref()
                     );
 
                     // Handle case sensitivity
@@ -813,6 +878,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 order_by,
                 self.request_body.get_date_format(),
                 &self.table,
+                self.timezone.as_deref()
             );
 
             // Handle case sensitivity
@@ -995,6 +1061,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     field,
                     self.request_body.get_date_format(),
                     Some(parse_as),
+                    self.timezone.as_deref()
                 );
                 let final_statement = self.format_condition_with_case_sensitivity_and_pattern(
                     &field_name,
@@ -1038,6 +1105,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         field,
                         self.request_body.get_date_format(),
                         Some(parse_as),
+                        self.timezone.as_deref(),
                     );
                     let condition = self.format_condition_with_case_sensitivity_and_pattern(
                         &field_name,
@@ -1284,7 +1352,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 &self.table,
                                 &field_name,
                                 self.request_body.get_date_format(),
-                                None
+                                None,
+                                self.timezone.as_deref(),
                             );
                             (String::new(), field_name, field_with_table)
                         } else {
@@ -1573,6 +1642,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         field_name,
                         self.request_body.get_date_format(),
                         &self.table,
+                        self.timezone.as_deref()
                     );
 
                     // Handle case sensitivity
@@ -1607,6 +1677,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 order_by,
                 self.request_body.get_date_format(),
                 self.table.as_str(),
+                self.timezone.as_deref()
             );
 
             // Handle case sensitivity
@@ -1643,6 +1714,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             field,
                             self.request_body.get_date_format(),
                             self.table.as_str(),
+                            self.timezone.as_deref()
                         )
                     })
                     .collect();

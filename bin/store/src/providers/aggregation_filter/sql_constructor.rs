@@ -44,9 +44,9 @@ impl<T> AggregationSQLConstructor<T>
 where
     T: AggregationQueryFilter + QueryFilter,
 {
-    pub fn new(request_body: T, table: String, is_root: bool) -> Self {
+    pub fn new(request_body: T, table: String, is_root: bool, timezone: Option<String>) -> Self {
         Self {
-            sql_constructor: SQLConstructor::new(request_body, table, is_root),
+            sql_constructor: SQLConstructor::new(request_body, table, is_root, timezone),
         }
     }
 

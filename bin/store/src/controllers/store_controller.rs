@@ -1201,6 +1201,11 @@ pub async fn get_by_filter(
         .get::<Auth>()
         .map_or(false, |auth_data| auth_data.is_root_account);
 
+
+    let headers = auth.headers();
+    let timezone = headers.get("timezone")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -1250,7 +1255,7 @@ pub async fn get_by_filter(
     }
 
     // Create SQLConstructor with organization_id if available
-    let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root);
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
@@ -1327,7 +1332,7 @@ pub async fn aggregation_filter(
     };
 
     // Create AggregationSQLConstructor with organization_id if available
-    let mut sql_constructor = AggregationSQLConstructor::new(parameters, table.clone(), is_root);
+    let mut sql_constructor = AggregationSQLConstructor::new(parameters, table.clone(), is_root, None);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
@@ -2388,7 +2393,7 @@ pub async fn search_suggestions(
     let mut conn = db::get_async_connection().await;
     // generate json build object query
     let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> =
-        SearchSQLContructor::new(parameters, table.clone(), is_root);
+        SearchSQLContructor::new(parameters, table.clone(), is_root, None);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
