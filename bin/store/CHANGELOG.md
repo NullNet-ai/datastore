@@ -12,8 +12,7 @@ Bert
 ### Fixes
 - ***Find SQL Constructor***: issue with the JOIN selections for order where there's a missing order in JSON_AGG wrapper
   - using JSON_AGG when accessing jsonb must specifically access without ambigous selection of column
-### Added
-- ***Find SQL Constructor***: added support in join selections that can do filters
+  - fix group_by selections conflict with the join selections
 ---
 
 ## 0.1.52
