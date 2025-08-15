@@ -38,10 +38,10 @@ make verify-install
 
 ### Start Development
 
-Once installed, start the development servers:
+🚀 **Start the store in development mode:**
 
 ```bash
-make dev
+make store
 ```
 
 ## Manual Prerequisites (if not using installer)
@@ -67,10 +67,10 @@ make dev
       make install
       ```
 
-  3. Start development:
+  3. Start store in development mode:
 
       ```bash
-      make dev
+      make store
       ```
 
 ## Available Make Commands
@@ -90,17 +90,17 @@ The project includes a comprehensive Makefile with the following commands:
 - `make store` - Run the store only
 - `make store-watch` - Run store in watch mode with debug
 - `make store-clean-setup` - Run store clean setup
+
+### Store Generators
+- `make store-generate-schema` - Generate store schema
+- `make store-generate-proto` - Generate store proto files
+
+### Initializer
 - `make store-initialize-device` - Initialize device and wait for PostgreSQL listener
 
 ### Production
 - `make store-build` - Build store in release mode
 - `make store-prod` - Run store in production mode
-
-### Store Operations
-- `make store-generate-schema` - Generate store schema
-- `make store-generate-proto` - Generate store proto files
-- `make store-experimental` - Run experimental features
-- `make jean-store-watch` - Run store in watch mode with PostgreSQL library configurations
 
 ### Database Management
 - `make db-migrate-generate NAME=migration_name` - Generate new migration
