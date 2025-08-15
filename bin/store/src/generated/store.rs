@@ -228,7 +228,7 @@ pub struct Sessions {
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub account_profile_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_organization_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
     pub device_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
@@ -282,11 +282,11 @@ pub struct Sessions {
     #[prost(string, optional, tag = "48")]
     pub last_accessed: ::core::option::Option<::prost::alloc::string::String>,
 }
-/// SignedInActivity entity definition
+/// SignedInActivities entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SignedInActivity {
+pub struct SignedInActivities {
     #[prost(string, optional, tag = "1")]
     pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(int32, optional, tag = "2")]
@@ -330,7 +330,7 @@ pub struct SignedInActivity {
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub account_profile_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_organization_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
     pub device_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
@@ -1664,23 +1664,23 @@ pub struct UpsertSessionsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Sessions>,
 }
-/// Create SignedInActivity request
+/// Create SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateSignedInActivityRequest {
+pub struct CreateSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
-    pub signed_in_activity: ::core::option::Option<SignedInActivity>,
+    pub signed_in_activities: ::core::option::Option<SignedInActivities>,
     #[prost(message, optional, tag = "2")]
     pub params: ::core::option::Option<CreateParams>,
     #[prost(message, optional, tag = "3")]
     pub query: ::core::option::Option<CreateQuery>,
 }
-/// Create SignedInActivity response
+/// Create SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateSignedInActivityResponse {
+pub struct CreateSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(int32, tag = "2")]
@@ -1688,47 +1688,47 @@ pub struct CreateSignedInActivityResponse {
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<SignedInActivity>,
+    pub data: ::core::option::Option<SignedInActivities>,
 }
-/// Get SignedInActivity request
+/// Get SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetSignedInActivityRequest {
+pub struct GetSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<GetParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<GetQuery>,
 }
-/// Get SignedInActivity response
+/// Get SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetSignedInActivityResponse {
+pub struct GetSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "3")]
-    pub data: ::core::option::Option<SignedInActivity>,
+    pub data: ::core::option::Option<SignedInActivities>,
 }
-/// Update SignedInActivity request
+/// Update SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateSignedInActivityRequest {
+pub struct UpdateSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
-    pub signed_in_activity: ::core::option::Option<SignedInActivity>,
+    pub signed_in_activity: ::core::option::Option<SignedInActivities>,
     #[prost(message, optional, tag = "2")]
     pub params: ::core::option::Option<UpdateParams>,
     #[prost(message, optional, tag = "3")]
     pub query: ::core::option::Option<UpdateQuery>,
 }
-/// Update SignedInActivity response
+/// Update SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateSignedInActivityResponse {
+pub struct UpdateSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(int32, tag = "2")]
@@ -1736,22 +1736,22 @@ pub struct UpdateSignedInActivityResponse {
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<SignedInActivity>,
+    pub data: ::core::option::Option<SignedInActivities>,
 }
-/// BatchUpdate SignedInActivity request
+/// BatchUpdate SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateSignedInActivityRequest {
+pub struct BatchUpdateSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchUpdateParams>,
     #[prost(message, optional, tag = "2")]
     pub body: ::core::option::Option<
-        batch_update_signed_in_activity_request::BatchUpdateBody,
+        batch_update_signed_in_activities_request::BatchUpdateBody,
     >,
 }
-/// Nested message and enum types in `BatchUpdateSignedInActivityRequest`.
-pub mod batch_update_signed_in_activity_request {
+/// Nested message and enum types in `BatchUpdateSignedInActivitiesRequest`.
+pub mod batch_update_signed_in_activities_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1759,14 +1759,14 @@ pub mod batch_update_signed_in_activity_request {
         #[prost(message, repeated, tag = "1")]
         pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
-        pub updates: ::core::option::Option<super::SignedInActivity>,
+        pub updates: ::core::option::Option<super::SignedInActivities>,
     }
 }
-/// BatchUpdate SignedInActivity response
+/// BatchUpdate SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateSignedInActivityResponse {
+pub struct BatchUpdateSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -1774,22 +1774,22 @@ pub struct BatchUpdateSignedInActivityResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<SignedInActivity>,
+    pub data: ::prost::alloc::vec::Vec<SignedInActivities>,
 }
-/// BatchDelete SignedInActivity request
+/// BatchDelete SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteSignedInActivityRequest {
+pub struct BatchDeleteSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchDeleteParams>,
     #[prost(message, optional, tag = "2")]
     pub body: ::core::option::Option<
-        batch_delete_signed_in_activity_request::BatchDeleteBody,
+        batch_delete_signed_in_activities_request::BatchDeleteBody,
     >,
 }
-/// Nested message and enum types in `BatchDeleteSignedInActivityRequest`.
-pub mod batch_delete_signed_in_activity_request {
+/// Nested message and enum types in `BatchDeleteSignedInActivitiesRequest`.
+pub mod batch_delete_signed_in_activities_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1798,11 +1798,11 @@ pub mod batch_delete_signed_in_activity_request {
         pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
-/// BatchDelete SignedInActivity response
+/// BatchDelete SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteSignedInActivityResponse {
+pub struct BatchDeleteSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -1810,23 +1810,23 @@ pub struct BatchDeleteSignedInActivityResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<SignedInActivity>,
+    pub data: ::core::option::Option<SignedInActivities>,
 }
-/// Delete SignedInActivity request
+/// Delete SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteSignedInActivityRequest {
+pub struct DeleteSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<DeleteParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<DeleteQuery>,
 }
-/// Delete SignedInActivity response
+/// Delete SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteSignedInActivityResponse {
+pub struct DeleteSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -1834,35 +1834,37 @@ pub struct DeleteSignedInActivityResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<SignedInActivity>,
+    pub data: ::core::option::Option<SignedInActivities>,
 }
-/// BatchInsert SignedInActivity request
+/// BatchInsert SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertSignedInActivityRequest {
+pub struct BatchInsertSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchInsertParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<BatchInsertQuery>,
     #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<batch_insert_signed_in_activity_request::BatchBody>,
+    pub body: ::core::option::Option<
+        batch_insert_signed_in_activities_request::BatchBody,
+    >,
 }
-/// Nested message and enum types in `BatchInsertSignedInActivityRequest`.
-pub mod batch_insert_signed_in_activity_request {
+/// Nested message and enum types in `BatchInsertSignedInActivitiesRequest`.
+pub mod batch_insert_signed_in_activities_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchBody {
         #[prost(message, repeated, tag = "1")]
-        pub signed_in_activity: ::prost::alloc::vec::Vec<super::SignedInActivity>,
+        pub signed_in_activities: ::prost::alloc::vec::Vec<super::SignedInActivities>,
     }
 }
-/// BatchInsert SignedInActivity response
+/// BatchInsert SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertSignedInActivityResponse {
+pub struct BatchInsertSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -1870,22 +1872,22 @@ pub struct BatchInsertSignedInActivityResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<SignedInActivity>,
+    pub data: ::prost::alloc::vec::Vec<SignedInActivities>,
 }
-/// Upsert SignedInActivity request
+/// Upsert SignedInActivities request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertSignedInActivityRequest {
+pub struct UpsertSignedInActivitiesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<UpsertParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<UpsertQuery>,
     #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<upsert_signed_in_activity_request::UpsertBody>,
+    pub body: ::core::option::Option<upsert_signed_in_activities_request::UpsertBody>,
 }
-/// Nested message and enum types in `UpsertSignedInActivityRequest`.
-pub mod upsert_signed_in_activity_request {
+/// Nested message and enum types in `UpsertSignedInActivitiesRequest`.
+pub mod upsert_signed_in_activities_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1893,14 +1895,14 @@ pub mod upsert_signed_in_activity_request {
         #[prost(string, repeated, tag = "1")]
         pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
         #[prost(message, optional, tag = "2")]
-        pub data: ::core::option::Option<super::SignedInActivity>,
+        pub data: ::core::option::Option<super::SignedInActivities>,
     }
 }
-/// Upsert SignedInActivity response
+/// Upsert SignedInActivities response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertSignedInActivityResponse {
+pub struct UpsertSignedInActivitiesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -1908,7 +1910,7 @@ pub struct UpsertSignedInActivityResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<SignedInActivity>,
+    pub data: ::prost::alloc::vec::Vec<SignedInActivities>,
 }
 /// Create ExternalContacts request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -6703,68 +6705,68 @@ pub mod store_service_server {
             tonic::Response<super::UpsertSessionsResponse>,
             tonic::Status,
         >;
-        /// Create a new SignedInActivity
-        async fn create_signed_in_activity(
+        /// Create a new SignedInActivities
+        async fn create_signed_in_activities(
             &self,
-            request: tonic::Request<super::CreateSignedInActivityRequest>,
+            request: tonic::Request<super::CreateSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::CreateSignedInActivityResponse>,
+            tonic::Response<super::CreateSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Get a SignedInActivity by ID
-        async fn get_signed_in_activity(
+        /// Get a SignedInActivities by ID
+        async fn get_signed_in_activities(
             &self,
-            request: tonic::Request<super::GetSignedInActivityRequest>,
+            request: tonic::Request<super::GetSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::GetSignedInActivityResponse>,
+            tonic::Response<super::GetSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Update an existing SignedInActivity
-        async fn update_signed_in_activity(
+        /// Update an existing SignedInActivities
+        async fn update_signed_in_activities(
             &self,
-            request: tonic::Request<super::UpdateSignedInActivityRequest>,
+            request: tonic::Request<super::UpdateSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::UpdateSignedInActivityResponse>,
+            tonic::Response<super::UpdateSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Delete a SignedInActivity by ID
-        async fn delete_signed_in_activity(
+        /// Delete a SignedInActivities by ID
+        async fn delete_signed_in_activities(
             &self,
-            request: tonic::Request<super::DeleteSignedInActivityRequest>,
+            request: tonic::Request<super::DeleteSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::DeleteSignedInActivityResponse>,
+            tonic::Response<super::DeleteSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Batch insert multiple SignedInActivitys
-        async fn batch_insert_signed_in_activity(
+        /// Batch insert multiple SignedInActivitiess
+        async fn batch_insert_signed_in_activities(
             &self,
-            request: tonic::Request<super::BatchInsertSignedInActivityRequest>,
+            request: tonic::Request<super::BatchInsertSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::BatchInsertSignedInActivityResponse>,
+            tonic::Response<super::BatchInsertSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Batch update multiple SignedInActivitys based on filters
-        async fn batch_update_signed_in_activity(
+        /// Batch update multiple SignedInActivitiess based on filters
+        async fn batch_update_signed_in_activities(
             &self,
-            request: tonic::Request<super::BatchUpdateSignedInActivityRequest>,
+            request: tonic::Request<super::BatchUpdateSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::BatchUpdateSignedInActivityResponse>,
+            tonic::Response<super::BatchUpdateSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Batch delete multiple SignedInActivitys based on filters
-        async fn batch_delete_signed_in_activity(
+        /// Batch delete multiple SignedInActivitiess based on filters
+        async fn batch_delete_signed_in_activities(
             &self,
-            request: tonic::Request<super::BatchDeleteSignedInActivityRequest>,
+            request: tonic::Request<super::BatchDeleteSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::BatchDeleteSignedInActivityResponse>,
+            tonic::Response<super::BatchDeleteSignedInActivitiesResponse>,
             tonic::Status,
         >;
-        /// Upsert a SignedInActivity (create if not exists, update if exists)
-        async fn upsert_signed_in_activity(
+        /// Upsert a SignedInActivities (create if not exists, update if exists)
+        async fn upsert_signed_in_activities(
             &self,
-            request: tonic::Request<super::UpsertSignedInActivityRequest>,
+            request: tonic::Request<super::UpsertSignedInActivitiesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::UpsertSignedInActivityResponse>,
+            tonic::Response<super::UpsertSignedInActivitiesResponse>,
             tonic::Status,
         >;
         /// Create a new ExternalContacts
@@ -8368,208 +8370,14 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/CreateSignedInActivity" => {
+                "/store.StoreService/CreateSignedInActivities" => {
                     #[allow(non_camel_case_types)]
-                    struct CreateSignedInActivitySvc<T: StoreService>(pub Arc<T>);
+                    struct CreateSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<super::CreateSignedInActivityRequest>
-                    for CreateSignedInActivitySvc<T> {
-                        type Response = super::CreateSignedInActivityResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::CreateSignedInActivityRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::create_signed_in_activity(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = CreateSignedInActivitySvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/GetSignedInActivity" => {
-                    #[allow(non_camel_case_types)]
-                    struct GetSignedInActivitySvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::GetSignedInActivityRequest>
-                    for GetSignedInActivitySvc<T> {
-                        type Response = super::GetSignedInActivityResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::GetSignedInActivityRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::get_signed_in_activity(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = GetSignedInActivitySvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpdateSignedInActivity" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpdateSignedInActivitySvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::UpdateSignedInActivityRequest>
-                    for UpdateSignedInActivitySvc<T> {
-                        type Response = super::UpdateSignedInActivityResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::UpdateSignedInActivityRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::update_signed_in_activity(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpdateSignedInActivitySvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/DeleteSignedInActivity" => {
-                    #[allow(non_camel_case_types)]
-                    struct DeleteSignedInActivitySvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::DeleteSignedInActivityRequest>
-                    for DeleteSignedInActivitySvc<T> {
-                        type Response = super::DeleteSignedInActivityResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::DeleteSignedInActivityRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::delete_signed_in_activity(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = DeleteSignedInActivitySvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchInsertSignedInActivity" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchInsertSignedInActivitySvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchInsertSignedInActivityRequest,
-                    > for BatchInsertSignedInActivitySvc<T> {
-                        type Response = super::BatchInsertSignedInActivityResponse;
+                    > tonic::server::UnaryService<super::CreateSignedInActivitiesRequest>
+                    for CreateSignedInActivitiesSvc<T> {
+                        type Response = super::CreateSignedInActivitiesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -8577,12 +8385,12 @@ pub mod store_service_server {
                         fn call(
                             &mut self,
                             request: tonic::Request<
-                                super::BatchInsertSignedInActivityRequest,
+                                super::CreateSignedInActivitiesRequest,
                             >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_insert_signed_in_activity(
+                                <T as StoreService>::create_signed_in_activities(
                                         &inner,
                                         request,
                                     )
@@ -8597,7 +8405,7 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = BatchInsertSignedInActivitySvc(inner);
+                        let method = CreateSignedInActivitiesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -8613,15 +8421,63 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/BatchUpdateSignedInActivity" => {
+                "/store.StoreService/GetSignedInActivities" => {
                     #[allow(non_camel_case_types)]
-                    struct BatchUpdateSignedInActivitySvc<T: StoreService>(pub Arc<T>);
+                    struct GetSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchUpdateSignedInActivityRequest,
-                    > for BatchUpdateSignedInActivitySvc<T> {
-                        type Response = super::BatchUpdateSignedInActivityResponse;
+                    > tonic::server::UnaryService<super::GetSignedInActivitiesRequest>
+                    for GetSignedInActivitiesSvc<T> {
+                        type Response = super::GetSignedInActivitiesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetSignedInActivitiesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_signed_in_activities(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetSignedInActivitiesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateSignedInActivities" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateSignedInActivitiesRequest>
+                    for UpdateSignedInActivitiesSvc<T> {
+                        type Response = super::UpdateSignedInActivitiesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -8629,12 +8485,12 @@ pub mod store_service_server {
                         fn call(
                             &mut self,
                             request: tonic::Request<
-                                super::BatchUpdateSignedInActivityRequest,
+                                super::UpdateSignedInActivitiesRequest,
                             >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_update_signed_in_activity(
+                                <T as StoreService>::update_signed_in_activities(
                                         &inner,
                                         request,
                                     )
@@ -8649,7 +8505,7 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = BatchUpdateSignedInActivitySvc(inner);
+                        let method = UpdateSignedInActivitiesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -8665,15 +8521,14 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/BatchDeleteSignedInActivity" => {
+                "/store.StoreService/DeleteSignedInActivities" => {
                     #[allow(non_camel_case_types)]
-                    struct BatchDeleteSignedInActivitySvc<T: StoreService>(pub Arc<T>);
+                    struct DeleteSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchDeleteSignedInActivityRequest,
-                    > for BatchDeleteSignedInActivitySvc<T> {
-                        type Response = super::BatchDeleteSignedInActivityResponse;
+                    > tonic::server::UnaryService<super::DeleteSignedInActivitiesRequest>
+                    for DeleteSignedInActivitiesSvc<T> {
+                        type Response = super::DeleteSignedInActivitiesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -8681,12 +8536,12 @@ pub mod store_service_server {
                         fn call(
                             &mut self,
                             request: tonic::Request<
-                                super::BatchDeleteSignedInActivityRequest,
+                                super::DeleteSignedInActivitiesRequest,
                             >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_delete_signed_in_activity(
+                                <T as StoreService>::delete_signed_in_activities(
                                         &inner,
                                         request,
                                     )
@@ -8701,7 +8556,7 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = BatchDeleteSignedInActivitySvc(inner);
+                        let method = DeleteSignedInActivitiesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -8717,25 +8572,28 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/UpsertSignedInActivity" => {
+                "/store.StoreService/BatchInsertSignedInActivities" => {
                     #[allow(non_camel_case_types)]
-                    struct UpsertSignedInActivitySvc<T: StoreService>(pub Arc<T>);
+                    struct BatchInsertSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<super::UpsertSignedInActivityRequest>
-                    for UpsertSignedInActivitySvc<T> {
-                        type Response = super::UpsertSignedInActivityResponse;
+                    > tonic::server::UnaryService<
+                        super::BatchInsertSignedInActivitiesRequest,
+                    > for BatchInsertSignedInActivitiesSvc<T> {
+                        type Response = super::BatchInsertSignedInActivitiesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::UpsertSignedInActivityRequest>,
+                            request: tonic::Request<
+                                super::BatchInsertSignedInActivitiesRequest,
+                            >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::upsert_signed_in_activity(
+                                <T as StoreService>::batch_insert_signed_in_activities(
                                         &inner,
                                         request,
                                     )
@@ -8750,7 +8608,162 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = UpsertSignedInActivitySvc(inner);
+                        let method = BatchInsertSignedInActivitiesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateSignedInActivities" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateSignedInActivitiesRequest,
+                    > for BatchUpdateSignedInActivitiesSvc<T> {
+                        type Response = super::BatchUpdateSignedInActivitiesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateSignedInActivitiesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_signed_in_activities(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateSignedInActivitiesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteSignedInActivities" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteSignedInActivitiesRequest,
+                    > for BatchDeleteSignedInActivitiesSvc<T> {
+                        type Response = super::BatchDeleteSignedInActivitiesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteSignedInActivitiesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_signed_in_activities(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteSignedInActivitiesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertSignedInActivities" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertSignedInActivitiesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertSignedInActivitiesRequest>
+                    for UpsertSignedInActivitiesSvc<T> {
+                        type Response = super::UpsertSignedInActivitiesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::UpsertSignedInActivitiesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_signed_in_activities(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertSignedInActivitiesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

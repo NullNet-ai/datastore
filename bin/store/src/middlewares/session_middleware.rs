@@ -153,8 +153,8 @@ where
             if let Some(session) = updated_session {
                 let auth = res.request().extensions().get::<Auth>().cloned();
                 // Use account_profile_id from session if available, otherwise fall back to auth
-                let account_profile_id = session
-                    .account_profile_id
+                let account_organization_id = session
+                    .account_organization_id
                     .clone()
                     .or_else(|| auth.as_ref().map(|a| a.account_organization_id.clone()));
 
@@ -171,7 +171,7 @@ where
                 if let Err(e) = session_manager
                     .save_session(
                         &session,
-                        account_profile_id,
+                        account_organization_id,
                         Some(DeviceInfo {
                             device_name: device_info.device_name.clone(),
                             browser_name: device_info.browser_name.clone(),

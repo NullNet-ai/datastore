@@ -113,5 +113,5 @@ pub struct Session {
     pub operating_system: Option<String>,
     #[serde(default)]
     pub device_name: Option<String>,
-    pub account_profile_id: Option<String>,
+    pub account_organization_id: Option<String>,
 }

@@ -1,5 +1,5 @@
--- Create signed_in_activity table with same schema as sessions but without application_accessed field
-CREATE TABLE "signed_in_activity" (
+-- Create signed_in_activities table with same schema as sessions but without application_accessed field
+CREATE TABLE "signed_in_activities" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tombstone" integer,
 	"status" text,
@@ -21,7 +21,7 @@ CREATE TABLE "signed_in_activity" (
 	"sensitivity_level" integer,
 	"sync_status" text,
 	"is_batch" boolean,
-	"account_profile_id" text,
+	"account_organization_id" text,
 	"device_name" text,
 	"browser_name" text,
 	"operating_system" text,
@@ -33,27 +33,27 @@ CREATE TABLE "signed_in_activity" (
 	"session_id" text
 );
 
--- Add required indexes for signed_in_activity table
-CREATE INDEX "idx_signed_in_activity_tombstone" ON "signed_in_activity" USING btree ("tombstone");
-CREATE INDEX "idx_signed_in_activity_status" ON "signed_in_activity" USING btree ("status");
-CREATE INDEX "idx_signed_in_activity_previous_status" ON "signed_in_activity" USING btree ("previous_status");
-CREATE INDEX "idx_signed_in_activity_version" ON "signed_in_activity" USING btree ("version");
-CREATE INDEX "idx_signed_in_activity_created_date" ON "signed_in_activity" USING btree ("created_date");
-CREATE INDEX "idx_signed_in_activity_updated_date" ON "signed_in_activity" USING btree ("updated_date");
-CREATE INDEX "idx_signed_in_activity_organization_id" ON "signed_in_activity" USING btree ("organization_id");
-CREATE INDEX "idx_signed_in_activity_created_by" ON "signed_in_activity" USING btree ("created_by");
-CREATE INDEX "idx_signed_in_activity_updated_by" ON "signed_in_activity" USING btree ("updated_by");
-CREATE INDEX "idx_signed_in_activity_deleted_by" ON "signed_in_activity" USING btree ("deleted_by");
-CREATE INDEX "idx_signed_in_activity_requested_by" ON "signed_in_activity" USING btree ("requested_by");
-CREATE INDEX "idx_signed_in_activity_tags" ON "signed_in_activity" USING btree ("tags");
-CREATE INDEX "idx_signed_in_activity_categories" ON "signed_in_activity" USING btree ("categories");
-CREATE INDEX "idx_signed_in_activity_code" ON "signed_in_activity" USING btree ("code");
-CREATE INDEX "idx_signed_in_activity_sensitivity_level" ON "signed_in_activity" USING btree ("sensitivity_level");
-CREATE INDEX "idx_signed_in_activity_session_id" ON "signed_in_activity" USING btree ("session_id");
+-- Add required indexes for signed_in_activities table
+CREATE INDEX "idx_signed_in_activities_tombstone" ON "signed_in_activities" USING btree ("tombstone");
+CREATE INDEX "idx_signed_in_activities_status" ON "signed_in_activities" USING btree ("status");
+CREATE INDEX "idx_signed_in_activities_previous_status" ON "signed_in_activities" USING btree ("previous_status");
+CREATE INDEX "idx_signed_in_activities_version" ON "signed_in_activities" USING btree ("version");
+CREATE INDEX "idx_signed_in_activities_created_date" ON "signed_in_activities" USING btree ("created_date");
+CREATE INDEX "idx_signed_in_activities_updated_date" ON "signed_in_activities" USING btree ("updated_date");
+CREATE INDEX "idx_signed_in_activities_organization_id" ON "signed_in_activities" USING btree ("organization_id");
+CREATE INDEX "idx_signed_in_activities_created_by" ON "signed_in_activities" USING btree ("created_by");
+CREATE INDEX "idx_signed_in_activities_updated_by" ON "signed_in_activities" USING btree ("updated_by");
+CREATE INDEX "idx_signed_in_activities_deleted_by" ON "signed_in_activities" USING btree ("deleted_by");
+CREATE INDEX "idx_signed_in_activities_requested_by" ON "signed_in_activities" USING btree ("requested_by");
+CREATE INDEX "idx_signed_in_activities_tags" ON "signed_in_activities" USING btree ("tags");
+CREATE INDEX "idx_signed_in_activities_categories" ON "signed_in_activities" USING btree ("categories");
+CREATE INDEX "idx_signed_in_activities_code" ON "signed_in_activities" USING btree ("code");
+CREATE INDEX "idx_signed_in_activities_sensitivity_level" ON "signed_in_activities" USING btree ("sensitivity_level");
+CREATE INDEX "idx_signed_in_activities_session_id" ON "signed_in_activities" USING btree ("session_id");
 
 -- Add foreign key constraints
-ALTER TABLE "signed_in_activity" ADD CONSTRAINT "signed_in_activity_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activity" ADD CONSTRAINT "signed_in_activity_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activity" ADD CONSTRAINT "signed_in_activity_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activity" ADD CONSTRAINT "signed_in_activity_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activity" ADD CONSTRAINT "signed_in_activity_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;

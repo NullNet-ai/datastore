@@ -37,7 +37,7 @@ use serde_json::{Map, Value};
 #[derive(Debug)]
 pub enum Table {
     Sessions,
-    SignedInActivity,
+    SignedInActivities,
     ExternalContacts,
     Organizations,
     OrganizationContacts,
@@ -63,7 +63,7 @@ impl Table {
     pub fn from_str(name: &str) -> Option<Self> {
         match name {
             "sessions" => Some(Table::Sessions),
-            "signed_in_activity" => Some(Table::SignedInActivity),
+            "signed_in_activities" => Some(Table::SignedInActivities),
             "external_contacts" => Some(Table::ExternalContacts),
             "organizations" => Some(Table::Organizations),
             "organization_contacts" => Some(Table::OrganizationContacts),
@@ -131,7 +131,7 @@ impl Table {
             request,
             Sessions,
             SessionModel,
-            SignedInActivity,
+            SignedInActivities,
             SignedInActivityModel,
             ExternalContacts,
             ExternalContactModel,
@@ -187,7 +187,7 @@ impl Table {
             organization_id,
             Sessions,
             SessionModel,
-            SignedInActivity,
+            SignedInActivities,
             SignedInActivityModel,
             ExternalContacts,
             ExternalContactModel,
@@ -239,7 +239,7 @@ impl Table {
             record,
             Sessions,
             SessionModel,
-            SignedInActivity,
+            SignedInActivities,
             SignedInActivityModel,
             ExternalContacts,
             ExternalContactModel,
@@ -291,7 +291,7 @@ impl Table {
             record,
             Sessions,
             SessionModel,
-            SignedInActivity,
+            SignedInActivities,
             SignedInActivityModel,
             ExternalContacts,
             ExternalContactModel,

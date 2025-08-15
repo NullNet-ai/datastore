@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.52
+### Author
+Kashan
+
+### Changes
+- ***Database Schema***: Updated table and field names for consistency
+  - Renamed `signed_in_activity` table to `signed_in_activities` (pluralized)
+  - Changed `account_profile_id` field to `account_organization_id` in sessions and signed_in_activities tables
+  - Updated foreign key constraints to reflect new table name
+  - Updated all related models, controllers, and generated files
+
 ## 0.1.51
 ### Author
 Kashan
