@@ -1201,9 +1201,9 @@ pub async fn get_by_filter(
         .get::<Auth>()
         .map_or(false, |auth_data| auth_data.is_root_account);
 
-
     let headers = auth.headers();
-    let timezone = headers.get("timezone")
+    let timezone = headers
+        .get("timezone")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
     // Extract organization_id from auth context
@@ -1332,7 +1332,8 @@ pub async fn aggregation_filter(
     };
 
     // Create AggregationSQLConstructor with organization_id if available
-    let mut sql_constructor = AggregationSQLConstructor::new(parameters, table.clone(), is_root, None);
+    let mut sql_constructor =
+        AggregationSQLConstructor::new(parameters, table.clone(), is_root, None);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
