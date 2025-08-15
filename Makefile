@@ -1,10 +1,12 @@
 # Makefile for CRDT workspace
 
 # PHONY targets (targets that don't create files)
-.PHONY: all dev clean help install verify-install \
-        server store store-clean-setup store-watch store-build store-generate-migrate store-generate-proto \
-        db-migrate-generate db-migrate-up db-migrate-down db-migrate-revert \
-        fmt fmt-check setup-hooks
+.PHONY: all dev clean help install verify-install install-macos install-linux \
+        server store store-clean-setup store-watch store-build store-prod \
+        store-generate-schema store-generate-proto \
+        db-migrate-generate db-migrate-up db-migrate-revert \
+        fmt fmt-check git-cleanup setup-hooks \
+        jean-store-watch store-experimental store-initialize-device
 
 # Default target
 all: dev
@@ -12,25 +14,27 @@ all: dev
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  install                - Install all dependencies and setup the project"
-	@echo "  verify-install         - Verify that all required tools are installed"
-	@echo "  dev                    - Run both server and store in parallel"
-	@echo "  server                 - Run the server"
-	@echo "  store                  - Run the store"
-	@echo "  store-clean-setup      - Run store clean setup"
-	@echo "  store-watch            - Run store in watch mode with debug"
-	@echo "  store-build            - Build store in release mode"
-	@echo "  store-generate-migrate - Generate and migrate store schema"
-	@echo "  store-generate-proto   - Generate store proto files"
-	@echo "  db-migrate-generate    - Generate new migration (requires NAME=name)"
-	@echo "  db-migrate-up          - Run database migrations"
-	@echo "  db-migrate-down        - Revert database migrations"
-	@echo "  db-migrate-revert      - Revert last migration"
-	@echo "  fmt                    - Format Rust code"
-	@echo "  fmt-check              - Check code formatting"
-	@echo "  setup-hooks            - Setup git hooks"
-	@echo "  clean                  - Clean build artifacts"
-	@echo "  help                   - Show this help message"
+	@echo "  install                 - Install all dependencies and setup the project"
+	@echo "  verify-install          - Verify that all required tools are installed"
+	@echo "  dev                     - Run both server and store in parallel"
+	@echo "  server                  - Run the server"
+	@echo "  store                   - Run the store"
+	@echo "  store-clean-setup       - Run store clean setup"
+	@echo "  store-watch             - Run store in watch mode with debug"
+	@echo "  store-build             - Build store in release mode"
+	@echo "  store-prod              - Run store in production mode"
+	@echo "  store-initialize-device - Initialize device and wait for PostgreSQL listener"
+	@echo "  store-generate-schema   - Generate store schema"
+	@echo "  store-generate-proto    - Generate store proto files"
+	@echo "  db-migrate-generate     - Generate new migration (requires NAME=name)"
+	@echo "  db-migrate-up           - Run database migrations"
+	@echo "  db-migrate-revert       - Revert last migration"
+	@echo "  fmt                     - Format Rust code"
+	@echo "  fmt-check               - Check code formatting"
+	@echo "  git-cleanup             - Clean up local branches that no longer exist on remote"
+	@echo "  setup-hooks             - Setup git hooks"
+	@echo "  clean                   - Clean build artifacts"
+	@echo "  help                    - Show this help message"
 
 # =============================================================================
 # Installation and Setup targets
@@ -199,6 +203,11 @@ store-watch:
 store-build:
 	@echo "🔨 Building store..."
 	@cd bin/store && cargo build --release
+
+# Run the store in production mode
+store-prod:
+	@echo "🚀 Starting store in production mode..."
+	@cd bin/store && cargo run --release
 
 # Create store schema
 store-generate-schema:

@@ -89,9 +89,12 @@ The project includes a comprehensive Makefile with the following commands:
 - `make server` - Run the server only
 - `make store` - Run the store only
 - `make store-watch` - Run store in watch mode with debug
-- `make store-build` - Build store in release mode
 - `make store-clean-setup` - Run store clean setup
 - `make store-initialize-device` - Initialize device and wait for PostgreSQL listener
+
+### Production
+- `make store-build` - Build store in release mode
+- `make store-prod` - Run store in production mode
 
 ### Store Operations
 - `make store-generate-schema` - Generate store schema
