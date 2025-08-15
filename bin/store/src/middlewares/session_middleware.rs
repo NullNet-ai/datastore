@@ -10,6 +10,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
+use woothee::parser::Parser;
 
 pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
@@ -105,6 +106,27 @@ where
 
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
+            // Extract IP address and location before session creation
+            let ip_address = extract_client_ip(&req);
+            let location = get_location_from_ip(&ip_address);
+
+            // Extract device info from user agent
+            let user_agent = req
+                .headers()
+                .get("user-agent")
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("Unknown");
+            let device_info = parse_user_agent(user_agent);
+
+            // Log device information
+            log::info!(
+                "Device Info - Browser: {}, OS: {}, Device: {}, User Agent: {}",
+                device_info.browser_name,
+                device_info.operating_system,
+                device_info.device_name,
+                user_agent
+            );
+
             let (mut session, is_new_session) = if let Some(session_id) = session_id {
                 // Try to load existing session first
                 match session_manager.load_session(&session_id).await {
@@ -122,13 +144,12 @@ where
                 (new_session, true)
             };
 
-            // Extract IP address and location before service call
-            let ip_address = extract_client_ip(&req);
-            let location = get_location_from_ip(&ip_address);
-
-            // Update session with IP and location
+            // Update session with IP, location, and device info
             session.ip_address = Some(ip_address);
             session.location = location;
+            session.browser_name = Some(device_info.browser_name.clone());
+            session.operating_system = Some(device_info.operating_system.clone());
+            session.device_name = Some(device_info.device_name.clone());
 
             req.extensions_mut().insert(session.clone());
 
@@ -159,9 +180,9 @@ where
                         &session,
                         account_organization_id,
                         Some(DeviceInfo {
-                            device_name: "Unknown".to_string(),
-                            browser_name: "Unknown".to_string(),
-                            operating_system: "Unknown".to_string(),
+                            device_name: device_info.device_name.clone(),
+                            browser_name: device_info.browser_name.clone(),
+                            operating_system: device_info.operating_system.clone(),
                             authentication_method: "Unknown".to_string(),
                             location: session
                                 .location
@@ -203,10 +224,6 @@ where
             Ok(res)
         })
     }
-}
-
-pub fn get_session(req: &ServiceRequest) -> Option<Session> {
-    req.extensions().get::<Session>().cloned()
 }
 
 /// gRPC Session Interceptor that reuses the core session logic
@@ -313,11 +330,30 @@ pub fn populate_session_with_auth_data(
     session.origin = Some(origin);
 
     let ip_address = extract_client_ip(req);
-
     let location = get_location_from_ip(&ip_address);
+
+    // Extract device info from user agent
+    let user_agent = req
+        .headers()
+        .get("user-agent")
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("Unknown");
+    let device_info = parse_user_agent(user_agent);
+
+    // Log device information for auth data population
+    log::info!(
+        "Auth Session Device Info - Browser: {}, OS: {}, Device: {}, User Agent: {}",
+        device_info.browser_name,
+        device_info.operating_system,
+        device_info.device_name,
+        user_agent
+    );
 
     session.ip_address = Some(ip_address);
     session.location = location;
+    session.browser_name = Some(device_info.browser_name);
+    session.operating_system = Some(device_info.operating_system);
+    session.device_name = Some(device_info.device_name);
 }
 
 fn extract_client_ip(req: &ServiceRequest) -> String {
@@ -373,6 +409,60 @@ fn get_location_from_ip(ip_address: &str) -> Option<String> {
         Some("Unknown Location".to_string())
     } else {
         None
+    }
+}
+
+fn parse_user_agent(user_agent: &str) -> DeviceInfo {
+    let parser = Parser::new();
+
+    log::info!("Parsing User Agent: {}", user_agent);
+
+    match parser.parse(user_agent) {
+        Some(result) => {
+            let browser_name = format!("{} {}", result.name, result.version);
+            let operating_system = format!("{} {}", result.os, result.os_version);
+
+            // Determine device type based on category
+            let device_name = match result.category {
+                "smartphone" => "Mobile".to_string(),
+                "mobilephone" => "Mobile".to_string(),
+                "tablet" => "Tablet".to_string(),
+                "pc" => "Desktop".to_string(),
+                "appliance" => "Smart Device".to_string(),
+                "crawler" => "Bot/Crawler".to_string(),
+                _ => "Unknown Device".to_string(),
+            };
+
+            log::info!(
+                "Parsed device info - Browser: {}, OS: {}, Device: {}, Category: {}",
+                browser_name,
+                operating_system,
+                device_name,
+                result.category
+            );
+
+            DeviceInfo {
+                device_name,
+                browser_name,
+                operating_system,
+                authentication_method: "Unknown".to_string(),
+                location: "Unknown".to_string(),
+                ip_address: "Unknown".to_string(),
+                remarks: None,
+            }
+        }
+        None => {
+            log::warn!("Failed to parse user agent: {}", user_agent);
+            DeviceInfo {
+                device_name: "Unknown Device".to_string(),
+                browser_name: "Unknown Browser".to_string(),
+                operating_system: "Unknown OS".to_string(),
+                authentication_method: "Unknown".to_string(),
+                location: "Unknown".to_string(),
+                ip_address: "Unknown".to_string(),
+                remarks: None,
+            }
+        }
     }
 }
 

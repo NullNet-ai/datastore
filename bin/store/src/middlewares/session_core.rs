@@ -145,6 +145,9 @@ impl SessionManager {
                 .and_then(|v| serde_json::from_str(&v).ok()),
             ip_address: session_model.ip_address,
             location: session_model.location,
+            browser_name: session_model.browser_name,
+            operating_system: session_model.operating_system,
+            device_name: session_model.device_name,
             account_organization_id: session_model.account_organization_id,
         })
     }
@@ -219,12 +222,13 @@ impl SessionManager {
             "sensitivity_level": 1000,
             "is_batch": false,
             "account_profile_id": account_profile_id,
-            "device_name": device_info.as_ref().map(|d| d.device_name.clone()),
-            "browser_name": device_info.as_ref().map(|d| d.browser_name.clone()),
-            "operating_system": device_info.as_ref().map(|d| d.operating_system.clone()),
+            "account_organization_id": session.account_organization_id,
+            "device_name": device_info.as_ref().map(|d| d.device_name.clone()).or(session.device_name.clone()),
+            "browser_name": device_info.as_ref().map(|d| d.browser_name.clone()).or(session.browser_name.clone()),
+            "operating_system": device_info.as_ref().map(|d| d.operating_system.clone()).or(session.operating_system.clone()),
             "authentication_method": device_info.as_ref().map(|d| d.authentication_method.clone()),
-            "location": device_info.as_ref().map(|d| d.location.clone()),
-            "ip_address": device_info.as_ref().map(|d| d.ip_address.clone()),
+            "location": device_info.as_ref().map(|d| d.location.clone()).or(session.location.clone()),
+            "ip_address": device_info.as_ref().map(|d| d.ip_address.clone()).or(session.ip_address.clone()),
         });
 
         // For new sessions, add creation timestamps
@@ -529,9 +533,9 @@ pub fn session_to_signed_in_activity(
         sync_status: None,
         is_batch: Some(false),
         account_organization_id: session.account_organization_id.clone(),
-        device_name: None,      // Could be extracted from user agent if needed
-        browser_name: None,     // Could be extracted from user agent if needed
-        operating_system: None, // Could be extracted from user agent if needed
+        device_name: session.device_name.clone(),
+        browser_name: session.browser_name.clone(),
+        operating_system: session.operating_system.clone(),
         authentication_method: None,
         location: session.location.clone(),
         ip_address: session.ip_address.clone(),

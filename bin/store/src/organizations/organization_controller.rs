@@ -166,10 +166,24 @@ impl OrganizationsController {
             })
         };
 
+        // Extract account_organization_id from the result (available even if auth failed)
+        let account_organization_id = match &result {
+            Ok(login_response) => login_response.account_organization_id.clone(),
+            Err(_) => None,
+        };
+
+        // Log the account_organization_id for debugging
+        if let Some(ref ao_id) = account_organization_id {
+            log::info!("Found account_organization_id: {}", ao_id);
+        } else {
+            log::info!("No account_organization_id found");
+        }
+
         // Handle the authentication result and update session first
         let updated_session_option = match &result {
             Ok(login_response) => {
                 if let Some(token) = &login_response.token {
+                    // Successful authentication - update session with token
                     let updated = crate::auth::structs::Session {
                         token: token.clone(),
                         origin: Some(Origin {
@@ -191,7 +205,21 @@ impl OrganizationsController {
                     req.extensions_mut().insert(updated.clone());
                     Some(updated)
                 } else {
-                    session_option.clone()
+                    // Failed authentication but we have account info - update session with account_organization_id
+                    let updated = crate::auth::structs::Session {
+                        origin: Some(Origin {
+                            user_agent: req
+                                .headers()
+                                .get("user-agent")
+                                .map(|v| v.to_str().unwrap_or_default().to_string()),
+                            host: req.connection_info().host().to_string(),
+                            url: req.path().to_string(),
+                        }),
+                        account_organization_id: login_response.account_organization_id.clone(),
+                        ..session.clone()
+                    };
+                    req.extensions_mut().insert(updated.clone());
+                    Some(updated)
                 }
             }
             Err(_) => session_option.clone(),
@@ -201,7 +229,16 @@ impl OrganizationsController {
         match &updated_session_option {
             Some(session) => {
                 let (status, remarks) = match &result {
-                    Ok(_) => (Some("Success".to_string()), None),
+                    Ok(login_response) => {
+                        if login_response.token.is_some() {
+                            (Some("Success".to_string()), None)
+                        } else {
+                            (
+                                Some("Failed".to_string()),
+                                Some(login_response.message.clone()),
+                            )
+                        }
+                    }
                     Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
                 };
                 let signed_in_activity = session_to_signed_in_activity(session, status, remarks);
