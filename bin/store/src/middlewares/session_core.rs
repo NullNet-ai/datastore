@@ -145,6 +145,9 @@ impl SessionManager {
                 .and_then(|v| serde_json::from_str(&v).ok()),
             ip_address: session_model.ip_address,
             location: session_model.location,
+            browser_name: session_model.browser_name,
+            operating_system: session_model.operating_system,
+            device_name: session_model.device_name,
             account_profile_id: session_model.account_profile_id,
         })
     }
@@ -285,7 +288,6 @@ impl SessionManager {
             }
         }
 
-        println!("{:?}--------------------- session_json", session_json);
 
         // Extract values back to SessionModel
         let session_model = SessionModel {
@@ -532,9 +534,9 @@ pub fn session_to_signed_in_activity(
         sync_status: None,
         is_batch: Some(false),
         account_profile_id: session.account_profile_id.clone(),
-        device_name: None,      // Could be extracted from user agent if needed
-        browser_name: None,     // Could be extracted from user agent if needed
-        operating_system: None, // Could be extracted from user agent if needed
+        device_name: session.device_name.clone(),
+        browser_name: session.browser_name.clone(),
+        operating_system: session.operating_system.clone(),
         authentication_method: None,
         location: session.location.clone(),
         ip_address: session.ip_address.clone(),

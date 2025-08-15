@@ -166,6 +166,19 @@ impl OrganizationsController {
             })
         };
 
+        // Extract account_organization_id from the result (available even if auth failed)
+        let account_organization_id = match &result {
+            Ok(login_response) => login_response.account_organization_id.clone(),
+            Err(_) => None,
+        };
+
+        // Log the account_organization_id for debugging
+        if let Some(ref ao_id) = account_organization_id {
+            log::info!("Found account_organization_id: {}", ao_id);
+        } else {
+            log::info!("No account_organization_id found");
+        }
+
         // Handle the authentication result and update session first
         let updated_session_option = match &result {
             Ok(login_response) => {
