@@ -281,3 +281,30 @@ clean:
 jean-store-watch:
 	@echo "Starting store in watch mode..."
 	@cd bin/store && PQ_LIB_DIR=/opt/homebrew/opt/postgresql@14/lib/postgresql@14 LIBRARY_PATH=/opt/homebrew/opt/postgresql@14/lib/postgresql@14 cargo watch -x run
+
+# Run experimental features
+store-experimental:
+	@echo "Running experimental features..."
+	@cd bin/store && EXPERIMENTAL_PERMISSIONS=true cargo run
+
+# Run store initialize device
+store-initialize-device:
+	@echo "🔧 Initializing device..."
+	@cd bin/store && { \
+		INITIALIZE_DEVICE=true cargo run > /tmp/store_init.log 2>&1 & \
+		PID=$$!; \
+		echo "⏳ Waiting for PostgreSQL listener to start..."; \
+		for i in $$(seq 1 60); do \
+			if grep -q "Started listening on PostgreSQL channels" /tmp/store_init.log 2>/dev/null; then \
+				echo "✅ PostgreSQL listener started!"; \
+				break; \
+			fi; \
+			sleep 1; \
+		done; \
+		kill $$PID 2>/dev/null || true; \
+		wait $$PID 2>/dev/null || true; \
+		rm -f /tmp/store_init.log; \
+	}
+	@echo "✅ Device initialization completed! Waiting 1 second before exit..."
+	@sleep 1
+	@echo "🏁 Exiting store-initialize-device"

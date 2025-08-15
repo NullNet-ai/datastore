@@ -78,7 +78,9 @@ make dev
 The project includes a comprehensive Makefile with the following commands:
 
 ### Setup & Installation
-- `make install` - One-command installer for all dependencies
+- `make install` - One-command installer for all dependencies (auto-detects macOS/Linux)
+- `make install-macos` - Install dependencies specifically for macOS
+- `make install-linux` - Install dependencies specifically for Linux
 - `make verify-install` - Verify that all required tools are installed
 - `make setup-hooks` - Setup git hooks for code quality
 
@@ -88,6 +90,14 @@ The project includes a comprehensive Makefile with the following commands:
 - `make store` - Run the store only
 - `make store-watch` - Run store in watch mode with debug
 - `make store-build` - Build store in release mode
+- `make store-clean-setup` - Run store clean setup
+- `make store-initialize-device` - Initialize device and wait for PostgreSQL listener
+
+### Store Operations
+- `make store-generate-schema` - Generate store schema
+- `make store-generate-proto` - Generate store proto files
+- `make store-experimental` - Run experimental features
+- `make jean-store-watch` - Run store in watch mode with PostgreSQL library configurations
 
 ### Database Management
 - `make db-migrate-generate NAME=migration_name` - Generate new migration
@@ -95,8 +105,11 @@ The project includes a comprehensive Makefile with the following commands:
 - `make db-migrate-revert` - Revert last migration
 
 ### Code Quality
-- `make fmt` - Format Rust code
-- `make fmt-check` - Check code formatting
+- `make fmt` - Format Rust code across all projects
+- `make fmt-check` - Check code formatting across all projects
+
+### Git & Version Control
+- `make git-cleanup` - Clean up local branches that no longer exist on remote
 
 ### Utilities
 - `make clean` - Clean build artifacts
