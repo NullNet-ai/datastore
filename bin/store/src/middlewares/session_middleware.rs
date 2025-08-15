@@ -109,16 +109,23 @@ where
             // Extract IP address and location before session creation
             let ip_address = extract_client_ip(&req);
             let location = get_location_from_ip(&ip_address);
-            
+
             // Extract device info from user agent
-            let user_agent = req.headers().get("user-agent")
+            let user_agent = req
+                .headers()
+                .get("user-agent")
                 .and_then(|h| h.to_str().ok())
                 .unwrap_or("Unknown");
             let device_info = parse_user_agent(user_agent);
-            
+
             // Log device information
-            log::info!("Device Info - Browser: {}, OS: {}, Device: {}, User Agent: {}", 
-                device_info.browser_name, device_info.operating_system, device_info.device_name, user_agent);
+            log::info!(
+                "Device Info - Browser: {}, OS: {}, Device: {}, User Agent: {}",
+                device_info.browser_name,
+                device_info.operating_system,
+                device_info.device_name,
+                user_agent
+            );
 
             let (mut session, is_new_session) = if let Some(session_id) = session_id {
                 // Try to load existing session first
@@ -218,7 +225,6 @@ where
         })
     }
 }
-
 
 /// gRPC Session Interceptor that reuses the core session logic
 #[derive(Clone)]
@@ -325,16 +331,23 @@ pub fn populate_session_with_auth_data(
 
     let ip_address = extract_client_ip(req);
     let location = get_location_from_ip(&ip_address);
-    
+
     // Extract device info from user agent
-    let user_agent = req.headers().get("user-agent")
+    let user_agent = req
+        .headers()
+        .get("user-agent")
         .and_then(|h| h.to_str().ok())
         .unwrap_or("Unknown");
     let device_info = parse_user_agent(user_agent);
-    
+
     // Log device information for auth data population
-    log::info!("Auth Session Device Info - Browser: {}, OS: {}, Device: {}, User Agent: {}", 
-        device_info.browser_name, device_info.operating_system, device_info.device_name, user_agent);
+    log::info!(
+        "Auth Session Device Info - Browser: {}, OS: {}, Device: {}, User Agent: {}",
+        device_info.browser_name,
+        device_info.operating_system,
+        device_info.device_name,
+        user_agent
+    );
 
     session.ip_address = Some(ip_address);
     session.location = location;
@@ -401,14 +414,14 @@ fn get_location_from_ip(ip_address: &str) -> Option<String> {
 
 fn parse_user_agent(user_agent: &str) -> DeviceInfo {
     let parser = Parser::new();
-    
+
     log::info!("Parsing User Agent: {}", user_agent);
-    
+
     match parser.parse(user_agent) {
         Some(result) => {
             let browser_name = format!("{} {}", result.name, result.version);
             let operating_system = format!("{} {}", result.os, result.os_version);
-            
+
             // Determine device type based on category
             let device_name = match result.category {
                 "smartphone" => "Mobile".to_string(),
@@ -419,12 +432,15 @@ fn parse_user_agent(user_agent: &str) -> DeviceInfo {
                 "crawler" => "Bot/Crawler".to_string(),
                 _ => "Unknown Device".to_string(),
             };
-            
+
             log::info!(
                 "Parsed device info - Browser: {}, OS: {}, Device: {}, Category: {}",
-                browser_name, operating_system, device_name, result.category
+                browser_name,
+                operating_system,
+                device_name,
+                result.category
             );
-            
+
             DeviceInfo {
                 device_name,
                 browser_name,

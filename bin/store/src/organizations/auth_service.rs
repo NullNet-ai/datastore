@@ -104,7 +104,8 @@ pub async fn auth(
     let (account, account_organization_id) = get_account_info(account_id).await?;
 
     // If no account found in either query, return error with account_organization_id if available
-    let account = account.ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "Account not found"))?;
+    let account =
+        account.ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "Account not found"))?;
 
     // Verify the password
     if let Some(stored_hash) = &account.account_secret {

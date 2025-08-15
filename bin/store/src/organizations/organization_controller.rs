@@ -233,9 +233,12 @@ impl OrganizationsController {
                         if login_response.token.is_some() {
                             (Some("Success".to_string()), None)
                         } else {
-                            (Some("Failed".to_string()), Some(login_response.message.clone()))
+                            (
+                                Some("Failed".to_string()),
+                                Some(login_response.message.clone()),
+                            )
                         }
-                    },
+                    }
                     Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
                 };
                 let signed_in_activity = session_to_signed_in_activity(session, status, remarks);

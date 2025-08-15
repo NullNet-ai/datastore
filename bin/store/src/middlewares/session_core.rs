@@ -288,7 +288,6 @@ impl SessionManager {
             }
         }
 
-
         // Extract values back to SessionModel
         let session_model = SessionModel {
             id: session_json["id"].as_str().map(|s| s.to_string()),
