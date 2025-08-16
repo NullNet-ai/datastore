@@ -350,13 +350,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
             .unwrap_or(field);
         let field_name = if field_parts.len() == 2 {
             if table_name != main_table {
-                log::debug!("time_format_wrapper ========= table_name: {}", table_name);
                 format!("{}_{}", table_name, partial_field_name)
             } else {
-                log::debug!(
-                    "time_format_wrapper ========= partial_field_name: {}",
-                    partial_field_name
-                );
                 partial_field_name
             }
         } else {
@@ -801,15 +796,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         .fields
                         .iter()
                         .map(|f| {
-                            let field = Self::get_field(
-                                table_name,
-                                f,
-                                self.request_body.get_date_format(),
-                                self.table.as_str(),
-                                self.timezone.as_deref(),
-                                false,
-                            );
-                            format!("COALESCE({}, '')", field)
+                            format!(
+                                "COALESCE({}, '')",
+                                Self::get_field(
+                                    table_name,
+                                    f,
+                                    self.request_body.get_date_format(),
+                                    self.table.as_str(),
+                                    self.timezone.as_deref(),
+                                    false,
+                                )
+                            )
                         })
                         .collect::<Vec<_>>()
                         .join(&format!(" || '{}' || ", field.separator));
