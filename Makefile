@@ -1,10 +1,12 @@
 # Makefile for CRDT workspace
 
 # PHONY targets (targets that don't create files)
-.PHONY: all dev clean help \
-        server store store-clean-setup store-watch store-build store-generate-migrate store-generate-proto \
-        db-migrate-generate db-migrate-up db-migrate-down db-migrate-revert \
-        fmt fmt-check setup-hooks
+.PHONY: all dev clean help install verify-install install-macos install-linux \
+        server store store-clean-setup store-watch store-build store-prod \
+        store-generate-schema store-generate-proto \
+        db-migrate-generate db-migrate-up db-migrate-revert \
+        fmt fmt-check git-cleanup setup-hooks \
+        jean-store-watch store-experimental store-initialize-device
 
 # Default target
 all: dev
@@ -12,23 +14,157 @@ all: dev
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  dev                    - Run both server and store in parallel"
-	@echo "  server                 - Run the server"
-	@echo "  store                  - Run the store"
-	@echo "  store-clean-setup      - Run store clean setup"
-	@echo "  store-watch            - Run store in watch mode with debug"
-	@echo "  store-build            - Build store in release mode"
-	@echo "  store-generate-migrate - Generate and migrate store schema"
-	@echo "  store-generate-proto   - Generate store proto files"
-	@echo "  db-migrate-generate    - Generate new migration (requires NAME=name)"
-	@echo "  db-migrate-up          - Run database migrations"
-	@echo "  db-migrate-down        - Revert database migrations"
-	@echo "  db-migrate-revert      - Revert last migration"
-	@echo "  fmt                    - Format Rust code"
-	@echo "  fmt-check              - Check code formatting"
-	@echo "  setup-hooks            - Setup git hooks"
-	@echo "  clean                  - Clean build artifacts"
-	@echo "  help                   - Show this help message"
+	@echo "  install                 - Install all dependencies and setup the project"
+	@echo "  verify-install          - Verify that all required tools are installed"
+	@echo "  dev                     - Run both server and store in parallel"
+	@echo "  server                  - Run the server"
+	@echo "  store                   - Run the store"
+	@echo "  store-clean-setup       - Run store clean setup"
+	@echo "  store-watch             - Run store in watch mode with debug"
+	@echo "  store-build             - Build store in release mode"
+	@echo "  store-prod              - Run store in production mode"
+	@echo "  store-initialize-device - Initialize device and wait for PostgreSQL listener"
+	@echo "  store-generate-schema   - Generate store schema"
+	@echo "  store-generate-proto    - Generate store proto files"
+	@echo "  db-migrate-generate     - Generate new migration (requires NAME=name)"
+	@echo "  db-migrate-up           - Run database migrations"
+	@echo "  db-migrate-revert       - Revert last migration"
+	@echo "  fmt                     - Format Rust code"
+	@echo "  fmt-check               - Check code formatting"
+	@echo "  git-cleanup             - Clean up local branches that no longer exist on remote"
+	@echo "  setup-hooks             - Setup git hooks"
+	@echo "  clean                   - Clean build artifacts"
+	@echo "  help                    - Show this help message"
+
+# =============================================================================
+# Installation and Setup targets
+# =============================================================================
+
+# One-command installer for seamless project setup
+install:
+	@echo "🚀 Setting up CRDT Workspace - One-command installer"
+	@echo "📋 Detecting operating system..."
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		echo "🍎 macOS detected"; \
+		make install-macos; \
+	elif [ "$$(uname)" = "Linux" ]; then \
+		echo "🐧 Linux detected"; \
+		make install-linux; \
+	else \
+		echo "❌ Unsupported operating system: $$(uname)"; \
+		echo "Please install dependencies manually:"; \
+		echo "  - Rust (https://rustup.rs/)"; \
+		echo "  - PostgreSQL"; \
+		echo "  - cargo-make, cargo-watch, diesel_cli"; \
+		exit 1; \
+	fi
+	@echo "✅ Installation complete! Run 'make store' to start the project."
+
+# macOS installation
+install-macos:
+	@echo "🔧 Installing dependencies for macOS..."
+	@# Check if Homebrew is installed
+	@if ! command -v brew >/dev/null 2>&1; then \
+		echo "📦 Installing Homebrew..."; \
+		/bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; \
+		echo "🔄 Setting up Homebrew environment..."; \
+		eval "$$(/opt/homebrew/bin/brew shellenv)"; \
+		export PATH="/opt/homebrew/bin:$$PATH"; \
+	else \
+		echo "✅ Homebrew already installed"; \
+	fi
+	@# Ensure Homebrew is in PATH for subsequent commands
+	@export PATH="/opt/homebrew/bin:$$PATH"; \
+	if ! command -v psql >/dev/null 2>&1; then \
+		echo "🐘 Installing PostgreSQL..."; \
+		brew install postgresql@14; \
+		brew services start postgresql@14; \
+	else \
+		echo "✅ PostgreSQL already installed"; \
+	fi
+	@# Install Rust if not present
+	@if ! command -v rustc >/dev/null 2>&1; then \
+		echo "🦀 Installing Rust..."; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+		source ~/.cargo/env; \
+	else \
+		echo "✅ Rust already installed"; \
+	fi
+	@# Install Rust tools
+	@echo "🔨 Installing Rust development tools..."
+	@source ~/.cargo/env && cargo install cargo-make cargo-watch || true
+	@source ~/.cargo/env && cargo install diesel_cli --no-default-features --features postgres || true
+	@# Setup git hooks
+	@make setup-hooks
+	@echo "🎉 macOS setup complete!"
+
+# Linux installation
+install-linux:
+	@echo "🔧 Installing dependencies for Linux..."
+	@# Detect package manager and install PostgreSQL
+	@if command -v apt-get >/dev/null 2>&1; then \
+		echo "📦 Using apt-get (Debian/Ubuntu)"; \
+		sudo apt-get update; \
+		sudo apt-get install -y curl build-essential libssl-dev pkg-config libpq-dev postgresql postgresql-contrib; \
+		sudo systemctl start postgresql; \
+		sudo systemctl enable postgresql; \
+	elif command -v yum >/dev/null 2>&1; then \
+		echo "📦 Using yum (RHEL/CentOS)"; \
+		sudo yum update -y; \
+		sudo yum install -y curl gcc openssl-devel pkgconfig postgresql-devel postgresql-server postgresql-contrib; \
+		sudo postgresql-setup initdb; \
+		sudo systemctl start postgresql; \
+		sudo systemctl enable postgresql; \
+	elif command -v pacman >/dev/null 2>&1; then \
+		echo "📦 Using pacman (Arch Linux)"; \
+		sudo pacman -Syu --noconfirm curl base-devel openssl pkgconf postgresql; \
+		sudo systemctl start postgresql; \
+		sudo systemctl enable postgresql; \
+	else \
+		echo "❌ Unsupported package manager. Please install PostgreSQL manually."; \
+		exit 1; \
+	fi
+	@# Install Rust if not present
+	@if ! command -v rustc >/dev/null 2>&1; then \
+		echo "🦀 Installing Rust..."; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+		source ~/.cargo/env; \
+	else \
+		echo "✅ Rust already installed"; \
+	fi
+	@# Install Rust tools
+	@echo "🔨 Installing Rust development tools..."
+	@source ~/.cargo/env && cargo install cargo-make cargo-watch || true
+	@source ~/.cargo/env && cargo install diesel_cli --no-default-features --features postgres || true
+	@# Setup git hooks
+	@make setup-hooks
+	@echo "🎉 Linux setup complete!"
+
+# Verify installation
+verify-install:
+	@echo "🔍 Verifying installation..."
+	@echo "Checking Rust..."
+	@rustc --version || (echo "❌ Rust not found" && exit 1)
+	@echo "Checking Cargo..."
+	@cargo --version || (echo "❌ Cargo not found" && exit 1)
+	@echo "Checking cargo-make..."
+	@cargo make --version || (echo "❌ cargo-make not found" && exit 1)
+	@echo "Checking cargo-watch..."
+	@cargo watch --version || (echo "❌ cargo-watch not found" && exit 1)
+	@echo "Checking diesel CLI..."
+	@diesel --version || (echo "❌ diesel CLI not found" && exit 1)
+	@echo "Checking PostgreSQL..."
+	@export PATH="/opt/homebrew/bin:$$PATH"; \
+	if command -v psql >/dev/null 2>&1; then \
+		psql --version; \
+	elif [ -f "/opt/homebrew/bin/psql" ]; then \
+		/opt/homebrew/bin/psql --version; \
+		echo "⚠️  PostgreSQL found but not in PATH. Add this to your shell profile:"; \
+		echo "   export PATH=\"/opt/homebrew/bin:\$$PATH\""; \
+	else \
+		echo "❌ PostgreSQL not found" && exit 1; \
+	fi
+	@echo "✅ All required tools are installed and working!"
 
 # =============================================================================
 # Development targets
@@ -68,9 +204,14 @@ store-build:
 	@echo "🔨 Building store..."
 	@cd bin/store && cargo build --release
 
+# Run the store in production mode
+store-prod:
+	@echo "🚀 Starting store in production mode..."
+	@cd bin/store && cargo run --release
+
 # Create store schema
-store-generate-migrate:
-	@echo "📋 Generating and migrating store schema..."
+store-generate-schema:
+	@echo "📋 Generating store schema..."
 	@cd bin/store && CREATE_SCHEMA=true cargo run
 
 # Generate store proto
@@ -95,11 +236,6 @@ db-migrate-generate:
 db-migrate-up:
 	@echo "⬆️  Running database migrations..."
 	@cd bin/store && diesel migration run
-
-# Revert database migrations
-db-migrate-down:
-	@echo "⬇️  Reverting database migrations..."
-	@cd bin/store && diesel migration revert
 
 # Revert last migration
 db-migrate-revert:
@@ -154,3 +290,30 @@ clean:
 jean-store-watch:
 	@echo "Starting store in watch mode..."
 	@cd bin/store && PQ_LIB_DIR=/opt/homebrew/opt/postgresql@14/lib/postgresql@14 LIBRARY_PATH=/opt/homebrew/opt/postgresql@14/lib/postgresql@14 cargo watch -x run
+
+# Run experimental features
+store-experimental:
+	@echo "Running experimental features..."
+	@cd bin/store && EXPERIMENTAL_PERMISSIONS=true cargo run
+
+# Run store initialize device
+store-initialize-device:
+	@echo "🔧 Initializing device..."
+	@cd bin/store && { \
+		INITIALIZE_DEVICE=true cargo run > /tmp/store_init.log 2>&1 & \
+		PID=$$!; \
+		echo "⏳ Waiting for PostgreSQL listener to start..."; \
+		for i in $$(seq 1 60); do \
+			if grep -q "Started listening on PostgreSQL channels" /tmp/store_init.log 2>/dev/null; then \
+				echo "✅ PostgreSQL listener started!"; \
+				break; \
+			fi; \
+			sleep 1; \
+		done; \
+		kill $$PID 2>/dev/null || true; \
+		wait $$PID 2>/dev/null || true; \
+		rm -f /tmp/store_init.log; \
+	}
+	@echo "✅ Device initialization completed! Waiting 1 second before exit..."
+	@sleep 1
+	@echo "🏁 Exiting store-initialize-device"

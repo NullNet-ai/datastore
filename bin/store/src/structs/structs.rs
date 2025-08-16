@@ -701,10 +701,10 @@ pub struct GetFileById {
     pub id: String,
 }
 
-#[derive(Deserialize)]
-pub struct UploadFile {
-    pub file: String,
-}
+// #[derive(Deserialize)]
+// pub struct UploadFile {
+//     pub file: String,
+// }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SearchSuggestionParams {
