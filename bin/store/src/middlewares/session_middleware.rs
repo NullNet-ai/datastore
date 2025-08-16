@@ -107,8 +107,19 @@ where
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
 
             // Extract IP address and location before session creation
+            let location = req
+                .headers()
+                .get("x-forwarded-location")
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("Unknown");
+            // let location = get_location_from_ip(&ip_address);
+            let authentication_method = req
+                .headers()
+                .get("x-authentication-method")
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("Unknown")
+                .to_string();
             let ip_address = extract_client_ip(&req);
-            let location = get_location_from_ip(&ip_address);
 
             // Extract device info from user agent
             let user_agent = req
@@ -146,7 +157,7 @@ where
 
             // Update session with IP, location, and device info
             session.ip_address = Some(ip_address);
-            session.location = location;
+            session.location = Some(location.to_string());
             session.browser_name = Some(device_info.browser_name.clone());
             session.operating_system = Some(device_info.operating_system.clone());
             session.device_name = Some(device_info.device_name.clone());
@@ -183,7 +194,7 @@ where
                             device_name: device_info.device_name.clone(),
                             browser_name: device_info.browser_name.clone(),
                             operating_system: device_info.operating_system.clone(),
-                            authentication_method: "Unknown".to_string(),
+                            authentication_method: authentication_method.clone(),
                             location: session
                                 .location
                                 .clone()
@@ -330,7 +341,13 @@ pub fn populate_session_with_auth_data(
     session.origin = Some(origin);
 
     let ip_address = extract_client_ip(req);
-    let location = get_location_from_ip(&ip_address);
+    let location = req
+        .headers()
+        .get("x-forwarded-location")
+        .and_then(|h| h.to_str().ok())
+        // .map(|s| s.to_string())
+        .unwrap_or("Unknown");
+    // let location = get_location_from_ip(&ip_address);
 
     // Extract device info from user agent
     let user_agent = req
@@ -350,26 +367,14 @@ pub fn populate_session_with_auth_data(
     );
 
     session.ip_address = Some(ip_address);
-    session.location = location;
+    session.location = Some(location.to_string());
     session.browser_name = Some(device_info.browser_name);
     session.operating_system = Some(device_info.operating_system);
     session.device_name = Some(device_info.device_name);
 }
 
 fn extract_client_ip(req: &ServiceRequest) -> String {
-    // First try to get IP directly from TCP connection
-    if let Some(peer_addr) = req.connection_info().peer_addr() {
-        // Extract just the IP part (remove port if present)
-        if let Some(ip_part) = peer_addr.split(':').next() {
-            let ip_str = ip_part.trim();
-            // Validate it's a proper IP address
-            if std::net::IpAddr::from_str(ip_str).is_ok() {
-                return ip_str.to_string();
-            }
-        }
-    }
-
-    // Fallback to headers for proxied requests
+    // First try to headers for proxied requests
     if let Some(forwarded_for) = req.headers().get("x-forwarded-for") {
         if let Ok(forwarded_str) = forwarded_for.to_str() {
             if let Some(first_ip) = forwarded_str.split(',').next() {
@@ -381,6 +386,18 @@ fn extract_client_ip(req: &ServiceRequest) -> String {
     if let Some(real_ip) = req.headers().get("x-real-ip") {
         if let Ok(ip_str) = real_ip.to_str() {
             return ip_str.to_string();
+        }
+    }
+
+    // Fallback to get IP directly from TCP connection
+    if let Some(peer_addr) = req.connection_info().peer_addr() {
+        // Extract just the IP part (remove port if present)
+        if let Some(ip_part) = peer_addr.split(':').next() {
+            let ip_str = ip_part.trim();
+            // Validate it's a proper IP address
+            if std::net::IpAddr::from_str(ip_str).is_ok() {
+                return ip_str.to_string();
+            }
         }
     }
 
