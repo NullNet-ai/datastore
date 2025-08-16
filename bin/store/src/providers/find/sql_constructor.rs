@@ -454,15 +454,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
             }
         }
 
-        let group_by = self.request_body.get_group_by();
-
-        // If group_by is present and not empty, replace all selections with group by aggregations
-        if let Some(group_by) = group_by {
-            if !group_by.fields.is_empty() {
-                return self.construct_group_by_selections();
-            }
-        }
-
         // Add join selections from pluck_object if joins are present
         if !self.request_body.get_joins().is_empty()
             && !self.request_body.get_pluck_object().is_empty()
@@ -492,6 +483,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
             }
         }
 
+        let group_by = self.request_body.get_group_by();
+        // If group_by is present and not empty, replace all selections with group by aggregations
+        // only replace all selections if one of selected fields are not aggregated using JSON AGG,
+
+        if let Some(group_by) = group_by {
+            if !group_by.fields.is_empty() {
+                let group_by_selections = self.construct_group_by_selections(&mut selections);
+                selections.extend(group_by_selections.split(", ").map(String::from));
+            }
+        }
+
         if selections.is_empty() {
             "id".to_string()
         } else {
@@ -499,7 +501,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
     }
 
-    fn construct_group_by_selections(&self) -> String {
+    fn construct_group_by_selections(&self, acc_selections: &mut Vec<String>) -> String {
         let group_by = self.request_body.get_group_by();
         let mut selections = Vec::new();
 
@@ -519,7 +521,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     self.table.as_str(),
                     self.timezone.as_deref(),
                 );
-                selections.push(field_selection);
+                if !acc_selections.contains(&field_selection) {
+                    selections.push(field_selection);
+                }
             }
         }
 
@@ -821,8 +825,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
             Err(_) => format!("({}.tombstone = 0)", to_alias),
         };
 
-        let order_by_clause = self.build_jsonb_agg_order_by(to_alias);
-
+        // Build order_by clause with join-specific override logic
+        let order_by_clause = self.build_join_order_by_clause(join, "elem");
+        // let filters = self.request_body.get_filters();
         if join.nested {
             let prev_join = previous_join.unwrap();
             let prev_join_to_alias = prev_join
@@ -833,9 +838,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 .unwrap_or(&prev_join.field_relation.to.entity);
 
             format!(
-                "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} AND {}), '[]') AS \"{}\"",
-                field_pairs.join(", "),
+                "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} LEFT JOIN {} {} ON {} WHERE {} AND {}) sub ), '[]' ) AS {}",
                 order_by_clause,
+                field_pairs.join(", "),
                 prev_join.field_relation.to.entity,
                 prev_join_to_alias,
                 target_table,
@@ -847,9 +852,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
             )
         } else {
             format!(
-                "COALESCE((SELECT JSONB_AGG(JSONB_BUILD_OBJECT({}){}) FROM \"{}\" \"{}\" WHERE {} AND {}), '[]') AS \"{}\"",
-                field_pairs.join(", "),
+                "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {} AND {}) sub ), '[]' ) AS {}",
                 order_by_clause,
+                field_pairs.join(", "),
                 target_table,
                 to_alias,
                 standard_where,
@@ -859,8 +864,32 @@ impl<T: QueryFilter> SQLConstructor<T> {
         }
     }
 
+    /// Builds ORDER BY clause for join selections with join-specific override logic
+    fn build_join_order_by_clause(&self, join: &Join, alias_elem: &str) -> String {
+        // Check if join has specific order_by and order_direction
+        if let (Some(join_order_by), Some(join_order_direction)) = (
+            &join.field_relation.to.order_by,
+            &join.field_relation.to.order_direction,
+        ) {
+            if !join_order_by.is_empty() && !join_order_direction.is_empty() {
+                // Handle case sensitivity (default to case-insensitive for joins)
+                let final_field = format!("'{}'", join_order_by);
+
+                return format!(
+                    " ORDER BY {}->>{} {}",
+                    alias_elem,
+                    final_field,
+                    join_order_direction.to_uppercase()
+                );
+            }
+        }
+
+        // Fallback to request body order_by if no join-specific ordering
+        String::from("")
+    }
+
     /// Builds ORDER BY clause for JSONB_AGG based on multiple_sort or fallback to order_by/order_direction
-    fn build_jsonb_agg_order_by(&self, table_alias: &str) -> String {
+    fn get_proper_order(&self, _table: &str) -> String {
         // Check if multiple_sort is available and not empty
         if !self.request_body.get_multiple_sort().is_empty() {
             let sort_clauses: Vec<String> = self
@@ -869,14 +898,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 .iter()
                 .map(|sort_option| {
                     let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
-                    let (sort_table_alias, field_name) = if field_parts.len() == 2 {
+                    let (table_alias, field_name) = if field_parts.len() == 2 {
                         (field_parts[0], field_parts[1])
                     } else {
-                        (table_alias, sort_option.by_field.as_str())
+                        (self.table.as_str(), sort_option.by_field.as_str())
                     };
 
                     let field_expression = Self::get_field(
-                        sort_table_alias,
+                        table_alias,
                         field_name,
                         self.request_body.get_date_format(),
                         &self.table,
@@ -907,14 +936,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
             let order_direction = self.request_body.get_order_direction();
 
             if order_by == "id" && order_direction == "asc" {
-                return String::new();
+                return String::from("");
             }
 
             let field_expression = Self::get_field(
-                table_alias,
+                _table,
                 order_by,
                 self.request_body.get_date_format(),
-                &self.table,
+                self.table.as_str(),
                 self.timezone.as_deref(),
             );
 
@@ -935,7 +964,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 order_direction.to_uppercase()
             )
         } else {
-            String::new()
+            String::from("")
         }
     }
 
@@ -1520,10 +1549,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     "ILIKE"
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
-                dbg!(format!(
-                    "@@@@@ {} {} {}",
-                    pattern, like_op, field_with_table
-                ));
                 if is_plural {
                     return format!("{}::text {} {}", field_with_table, like_op, pattern);
                 }
@@ -1660,82 +1685,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 .collect();
             return format!(" ORDER BY {}", fields.join(", "));
         }
-        // Check if multiple_sort is available and not empty
-        if !self.request_body.get_multiple_sort().is_empty() {
-            let sort_clauses: Vec<String> = self
-                .request_body
-                .get_multiple_sort()
-                .iter()
-                .map(|sort_option| {
-                    let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
-                    let (table_alias, field_name) = if field_parts.len() == 2 {
-                        (field_parts[0], field_parts[1])
-                    } else {
-                        (self.table.as_str(), sort_option.by_field.as_str())
-                    };
 
-                    let field_expression = Self::get_field(
-                        table_alias,
-                        field_name,
-                        self.request_body.get_date_format(),
-                        &self.table,
-                        self.timezone.as_deref(),
-                    );
-
-                    // Handle case sensitivity
-                    let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
-                        field_expression
-                    } else {
-                        format!("LOWER({})", field_expression)
-                    };
-
-                    format!(
-                        "{} {}",
-                        final_field,
-                        sort_option.by_direction.to_uppercase()
-                    )
-                })
-                .collect();
-
-            format!(" ORDER BY {}", sort_clauses.join(", "))
-        }
-        // Fallback to single field sorting using trait methods
-        else if !self.request_body.get_order_by().is_empty() {
-            // Skip ORDER BY if using default values (id field with asc direction)
-            let order_by = self.request_body.get_order_by();
-            let order_direction = self.request_body.get_order_direction();
-
-            if order_by == "id" && order_direction == "asc" {
-                return String::from("");
-            }
-
-            let field_expression = Self::get_field(
-                &self.table,
-                order_by,
-                self.request_body.get_date_format(),
-                self.table.as_str(),
-                self.timezone.as_deref(),
-            );
-
-            // Handle case sensitivity
-            let final_field = if self
-                .request_body
-                .get_is_case_sensitive_sorting()
-                .unwrap_or(false)
-            {
-                field_expression
-            } else {
-                format!("LOWER({})", field_expression)
-            };
-
-            format!(
-                " ORDER BY {} {}",
-                final_field,
-                order_direction.to_uppercase()
-            )
-        } else {
-            String::from("")
-        }
+        self.get_proper_order(&self.table)
     }
     fn construct_group_by(&self) -> String {
         let group_by = self.request_body.get_group_by();

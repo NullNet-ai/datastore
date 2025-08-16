@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.54
+### Author
+Bert
+
+### Fixes
+- ***Find SQL Constructor***: issue with the JOIN selections for order where there's a missing order in JSON_AGG wrapper
+  - using JSON_AGG when accessing jsonb must specifically access without ambigous selection of column
+  - fix group_by selections conflict with the join selections
+---
+
 ## 0.1.53
 ### Author
 Kashan
