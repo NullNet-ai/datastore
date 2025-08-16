@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.55
+### Author
+Jean
+
+### Changes
+- ***Session field values saved***: Field values will lookup from the request headers.
+  - Additional headers from request, `x-forwarded-location` for `location`, `x-authentication-method` for `authentication_method`
+  - Update to prioritize from the request headers, `x-forwarded-for` for `ip_address` instead of getting from TCP Connection
+---
+
 ## 0.1.54
 ### Author
 Bert
@@ -54,7 +64,7 @@ Kashan
 ### Author
 Jean
 
-### Fixes
+### Features
 - ***Account Model Schema Alignment***: Fixed UTF-8 deserialization errors in account queries
 - ***Schema Accounts table***: Change `timestamp` field to Nullable<Timestamptz>
 - ***FilterCriteria***: Added missing `is_search` and `has_group_count` fields to `FilterCriteria` in store.proto
