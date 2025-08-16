@@ -192,8 +192,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format_str: &str,
         main_table: &str,
         timezone: Option<&str>,
+        with_alias: bool,
     ) -> String {
-        Self::get_field_with_parse_as(table, field, format_str, None, main_table, timezone, true)
+        Self::get_field_with_parse_as(
+            table, field, format_str, None, main_table, timezone, with_alias,
+        )
     }
 
     fn get_field_with_parse_as(
@@ -237,6 +240,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format_str: &str,
         parse_as: Option<&str>,
         timezone: Option<&str>,
+        with_alias: bool,
     ) -> String {
         // Check if this field is defined as a concatenated field
         for concat_field in self.request_body.get_concatenate_fields() {
@@ -264,7 +268,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                     None,
                                     self.table.as_str(),
                                     timezone,
-                                    true
+                                    with_alias
                                 )
                             )
                         })
@@ -294,7 +298,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             parse_as,
             &self.table,
             timezone,
-            true,
+            with_alias,
         )
     }
 
@@ -378,66 +382,68 @@ impl<T: QueryFilter> SQLConstructor<T> {
     fn construct_selections(&self) -> String {
         let mut selections = Vec::new();
 
+        // Commented: This results to duplication of concatenated field selections
+        // Creating selections are handled in construct_pluck
         // Check if there are existing join selections that would handle concatenated fields
-        let has_join_selections = !self.request_body.get_joins().is_empty()
-            && !self.request_body.get_pluck_object().is_empty()
-            && self
-                .request_body
-                .get_pluck_object()
-                .iter()
-                .any(|(_, fields)| !fields.is_empty());
+        // let has_join_selections = !self.request_body.get_joins().is_empty()
+        //     && !self.request_body.get_pluck_object().is_empty()
+        //     && self
+        //         .request_body
+        //         .get_pluck_object()
+        //         .iter()
+        //         .any(|(_, fields)| !fields.is_empty());
 
         // Handle concatenated fields for main table and joins
-        if !self.request_body.get_concatenate_fields().is_empty() {
-            for field in self.request_body.get_concatenate_fields() {
-                // Priority: aliased_entity takes precedence over entity
-                let entity_alias = field.aliased_entity.as_deref().unwrap_or(&field.entity);
+        // if !self.request_body.get_concatenate_fields().is_empty() {
+        //     for field in self.request_body.get_concatenate_fields() {
+        //         // Priority: aliased_entity takes precedence over entity
+        //         let entity_alias = field.aliased_entity.as_deref().unwrap_or(&field.entity);
 
-                // Check if this concatenated field is for the main table
-                // Priority check: aliased_entity first, then entity
-                let is_main_table = field.aliased_entity.as_deref() == Some(&self.table)
-                    || (field.aliased_entity.is_none() && field.entity == self.table);
+        //         // Check if this concatenated field is for the main table
+        //         // Priority check: aliased_entity first, then entity
+        //         let is_main_table = field.aliased_entity.as_deref() == Some(&self.table)
+        //             || (field.aliased_entity.is_none() && field.entity == self.table);
 
-                // Check if this concatenated field is for a joined table that has pluck_object
-                let is_joined_table_with_pluck = has_join_selections
-                    && self
-                        .request_body
-                        .get_pluck_object()
-                        .contains_key(entity_alias)
-                    && !is_main_table;
+        //         // Check if this concatenated field is for a joined table that has pluck_object
+        //         let is_joined_table_with_pluck = has_join_selections
+        //             && self
+        //                 .request_body
+        //                 .get_pluck_object()
+        //                 .contains_key(entity_alias)
+        //             && !is_main_table;
 
-                // Only create selection for main table concatenated fields
-                // Join selections will handle concatenated fields for joined tables
-                // if is_main_table && !is_joined_table_with_pluck {
-                //     // Priority: aliased_entity takes precedence over entity
-                //     let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
+        //         // Only create selection for main table concatenated fields
+        //         // Join selections will handle concatenated fields for joined tables
+        //         if is_main_table && !is_joined_table_with_pluck {
+        //             // Priority: aliased_entity takes precedence over entity
+        //             let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
 
-                //     let concatenated_expression = field
-                //         .fields
-                //         .iter()
-                //         .map(|f| {
-                //             let chaka =  Self::get_field_with_parse_as(
-                //                     table_name,
-                //                     f,
-                //                     self.request_body.get_date_format(),
-                //                     None,
-                //                     self.table.as_str(),
-                //                     self.timezone.as_deref(),
-                //                     false
-                //                 );
-                //             format!(
-                //                 "COALESCE({}, '')",
-                //                 chaka
-                //             )
-                //         })
-                //         .collect::<Vec<_>>()
-                //         .join(&format!(" || '{}' || ", field.separator));
-                //     let alias = &field.field_name;
+        //             let concatenated_expression = field
+        //                 .fields
+        //                 .iter()
+        //                 .map(|f| {
+        //                     let chaka =  Self::get_field_with_parse_as(
+        //                             table_name,
+        //                             f,
+        //                             self.request_body.get_date_format(),
+        //                             None,
+        //                             self.table.as_str(),
+        //                             self.timezone.as_deref(),
+        //                             false
+        //                         );
+        //                     format!(
+        //                         "COALESCE({}, '')",
+        //                         chaka
+        //                     )
+        //                 })
+        //                 .collect::<Vec<_>>()
+        //                 .join(&format!(" || '{}' || ", field.separator));
+        //             let alias = &field.field_name;
 
-                //     selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
-                // }
-            }
-        }
+        //             selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
+        //         }
+        //     }
+        // }
 
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
             if distinct_by.is_empty() {
@@ -520,6 +526,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     self.request_body.get_date_format(),
                     self.table.as_str(),
                     self.timezone.as_deref(),
+                    true,
                 );
                 if !acc_selections.contains(&field_selection) {
                     selections.push(field_selection);
@@ -545,6 +552,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 self.request_body.get_date_format(),
                 self.table.as_str(),
                 self.timezone.as_deref(),
+                true,
             ));
         }
 
@@ -634,7 +642,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                         f,
                                         self.request_body.get_date_format(),
                                         self.table.as_str(),
-                                        self.timezone.as_deref()
+                                        self.timezone.as_deref(),
+                                        true
                                     )
                                 )
                             })
@@ -681,6 +690,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             self.request_body.get_date_format(),
                             self.table.as_str(),
                             self.timezone.as_deref(),
+                            true,
                         )
                     }),
             );
@@ -761,6 +771,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     self.request_body.get_date_format(),
                     self.table.as_str(),
                     self.timezone.as_deref(),
+                    false,
                 );
                 let parts: Vec<String> = field_query
                     .split(" AS ")
@@ -796,6 +807,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 self.request_body.get_date_format(),
                                 self.table.as_str(),
                                 self.timezone.as_deref(),
+                                false,
                             );
                             format!("COALESCE({}, '')", field)
                         })
@@ -910,6 +922,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         self.request_body.get_date_format(),
                         &self.table,
                         self.timezone.as_deref(),
+                        true,
                     );
 
                     // Handle case sensitivity
@@ -945,6 +958,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 self.request_body.get_date_format(),
                 self.table.as_str(),
                 self.timezone.as_deref(),
+                true,
             );
 
             // Handle case sensitivity
@@ -1128,6 +1142,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     self.request_body.get_date_format(),
                     Some(parse_as),
                     self.timezone.as_deref(),
+                    false,
                 );
                 let final_statement = self.format_condition_with_case_sensitivity_and_pattern(
                     &field_name,
@@ -1172,6 +1187,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         self.request_body.get_date_format(),
                         Some(parse_as),
                         self.timezone.as_deref(),
+                        false,
                     );
                     let condition = self.format_condition_with_case_sensitivity_and_pattern(
                         &field_name,
@@ -1420,6 +1436,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 self.request_body.get_date_format(),
                                 None,
                                 self.timezone.as_deref(),
+                                true
                             );
                             (String::new(), field_name, field_with_table)
                         } else {
@@ -1703,6 +1720,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             self.request_body.get_date_format(),
                             self.table.as_str(),
                             self.timezone.as_deref(),
+                            true,
                         )
                     })
                     .collect();

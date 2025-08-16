@@ -670,6 +670,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 self.sql_constructor.request_body.get_date_format(),
                 &self.sql_constructor.table.as_str(),
                 self.sql_constructor.request_body.get_timezone(),
+                true,
             );
             format!(" GROUP BY {}", field)
         } else {
