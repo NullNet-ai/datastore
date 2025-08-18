@@ -12,7 +12,7 @@ const fields = {
     () => device_configurations.id as AnyPgColumn,
   ),
   type: text('type'),
-  name: text('name'),
+  name: text('name').unique(),
   description: text('description'),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
   alias_status: text('alias_status'),
