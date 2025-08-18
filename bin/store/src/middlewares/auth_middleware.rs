@@ -1,5 +1,5 @@
 use crate::auth::auth_service::verify;
-use crate::auth::structs::{Claims, Origin, Session};
+use crate::auth::structs::{Claims, Origin};
 use crate::models::session_model::SessionModel;
 use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;

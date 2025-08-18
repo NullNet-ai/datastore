@@ -6,7 +6,6 @@ use actix_web::{
     Error, HttpMessage,
 };
 use futures::future::{ok, Ready};
-use std::net::IpAddr;
 use std::str::FromStr;
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
@@ -14,7 +13,7 @@ use woothee::parser::Parser;
 
 pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
-use crate::{auth::structs::{Claims, Origin, Session}, models::session_model::SessionModel};
+use crate::{auth::structs::{Claims, Origin}, models::session_model::SessionModel};
 use crate::structs::structs::Auth;
 use crate::utils::utils::time_string_to_ms;
 
@@ -312,12 +311,12 @@ where
 }
 
 #[allow(dead_code)]
-pub fn get_session_from_grpc_request<T>(request: &Request<T>) -> Option<Session> {
-    request.extensions().get::<Session>().cloned()
+pub fn get_session_from_grpc_request<T>(request: &Request<T>) -> Option<SessionModel> {
+    request.extensions().get::<SessionModel>().cloned()
 }
 
 #[allow(dead_code)]
-pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: Session) {
+pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: SessionModel) {
     request.extensions_mut().insert(session);
 }
 
@@ -412,27 +411,6 @@ fn extract_client_ip(req: &ServiceRequest) -> String {
         .realip_remote_addr()
         .unwrap_or("unknown")
         .to_string()
-}
-
-fn get_location_from_ip(ip_address: &str) -> Option<String> {
-    if let Ok(ip) = IpAddr::from_str(ip_address) {
-        match ip {
-            IpAddr::V4(ipv4) => {
-                if ipv4.is_loopback() || ipv4.is_private() {
-                    return Some("Local".to_string());
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                if ipv6.is_loopback() {
-                    return Some("Local".to_string());
-                }
-            }
-        }
-
-        Some("Unknown Location".to_string())
-    } else {
-        None
-    }
 }
 
 fn parse_user_agent(user_agent: &str) -> DeviceInfo {

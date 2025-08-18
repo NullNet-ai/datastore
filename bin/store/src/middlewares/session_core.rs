@@ -5,7 +5,6 @@ use std::env;
 
 use ulid::Ulid;
 
-use crate::auth::structs::{Cookie, Session, User};
 use crate::db;
 use crate::models::session_model::SessionModel;
 use crate::models::signed_in_activity_model::SignedInActivityModel;
@@ -483,7 +482,7 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
 
 /// Convert Session struct to SignedInActivityModel
 pub fn session_to_signed_in_activity(
-    session: &Session,
+    session: &SessionModel,
     status: Option<String>,
     remarks: Option<String>,
 ) -> SignedInActivityModel {
@@ -523,6 +522,6 @@ pub fn session_to_signed_in_activity(
         remark: remarks,
 
         // Reference to original session
-        session_id: Some(session.session_id.clone()),
+        session_id: session.id.clone(),
     }
 }
