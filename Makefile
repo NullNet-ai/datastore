@@ -139,6 +139,10 @@ install-linux:
 	@# Setup git hooks
 	@make setup-hooks
 	@echo "🎉 Linux setup complete!"
+	@# Seeding database
+	@echo "🌱 Seeding Store database..."
+	@make store-clean-setup
+	@echo "✅ Store database seeded!"
 
 # Verify installation
 verify-install:
