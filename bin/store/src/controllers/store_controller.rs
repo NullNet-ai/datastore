@@ -1089,6 +1089,7 @@ pub async fn upsert(
 pub async fn delete_record(
     auth: HttpRequest,
     path_params: web::Path<(String, String)>,
+    query: web::Query<QueryParams>,
 ) -> impl Responder {
     let (table_name, record_id) = path_params.into_inner();
     let extensions = auth.extensions();
@@ -1103,6 +1104,16 @@ pub async fn delete_record(
                 data: vec![],
             });
         }
+    };
+
+     let pluck_fields: Vec<String> = if query.pluck.is_empty() {
+        vec!["id".to_string()]
+    } else {
+        query
+            .pluck
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect()
     };
 
     // Check if this is a root controller call
@@ -1138,7 +1149,7 @@ pub async fn delete_record(
         &table_name,
         delete_updates,
         &record_id,
-        None,
+        Some(pluck_fields),
         "delete",
         &auth_data,
         is_root_controller,
