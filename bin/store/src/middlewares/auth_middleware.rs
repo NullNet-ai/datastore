@@ -1,5 +1,6 @@
 use crate::auth::auth_service::verify;
-use crate::auth::structs::{Claims, Origin, Session};
+use crate::auth::structs::{Claims, Origin};
+use crate::models::session_model::SessionModel;
 use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
@@ -103,7 +104,7 @@ where
                         Ok(res)
                     });
                 }
-                let maybe_session = auth.extensions().get::<Session>().cloned();
+                let maybe_session = auth.extensions().get::<SessionModel>().cloned();
                 if let Some(mut session) = maybe_session {
                     // Create HTTP-specific origin
                     let host = auth.connection_info().host().to_string();

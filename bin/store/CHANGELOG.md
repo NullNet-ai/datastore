@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.56
+### Author
+Kashan
+
+### Changes
+- ***Session Architecture Migration***: Complete migration from Session struct to SessionModel for improved consistency
+  - Replaced nested User and Origin structs with flattened fields in SessionModel
+  - Updated session_middleware.rs to use SessionModel with direct field access (user_role_id, user_is_root_user, user_account_id)
+  - Modified organization_controller.rs to construct SessionModel with flattened origin fields (origin_user_agent, origin_host, origin_url)
+  - Fixed session_core.rs to properly handle SessionModel field access and cloning
+  - Updated session_to_signed_in_activity function to work with SessionModel structure
+---
+
 ## 0.1.55
 ### Author
 Jean
