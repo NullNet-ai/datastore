@@ -80,7 +80,7 @@ impl SessionManager {
     }
 
     /// Load or create a session
-    pub async fn get_or_create_session(&self, session_id: &str, token: &str) -> Session {
+    pub async fn get_or_create_session(&self, session_id: &str, token: &str) -> SessionModel {
         match self.load_session(session_id).await {
             Ok(session) => session,
             Err(err) => {
@@ -94,7 +94,7 @@ impl SessionManager {
     }
 
     /// Load existing session from database
-    pub async fn load_session(&self, session_id: &str) -> Result<Session, diesel::result::Error> {
+    pub async fn load_session(&self, session_id: &str) -> Result<SessionModel, diesel::result::Error> {
         let mut conn = db::get_async_connection().await;
 
         let session_model = sessions::table
@@ -104,92 +104,84 @@ impl SessionManager {
             .first::<SessionModel>(&mut conn)
             .await?;
 
-        // Convert SessionModel back to Session struct
-        Ok(Session {
-            user: User {
-                role_id: session_model.user_role_id.unwrap_or_default(),
-                account_id: session_model.user_account_id.unwrap_or_default(),
-                is_root_user: session_model.user_is_root_user.unwrap_or(false),
-            },
-            session_id: session_model.id.unwrap_or_default(),
-            origin: if session_model.origin_url.is_some()
-                || session_model.origin_host.is_some()
-                || session_model.origin_user_agent.is_some()
-            {
-                Some(crate::auth::structs::Origin {
-                    url: session_model.origin_url.unwrap_or_default(),
-                    host: session_model.origin_host.unwrap_or_default(),
-                    user_agent: session_model.origin_user_agent,
-                })
-            } else {
-                None
-            },
-            token: session_model.token.unwrap_or_default(),
-            cookie: Cookie {
-                path: session_model.cookie_path.unwrap_or("/".to_string()),
-                expires: session_model.cookie_expire.unwrap_or_default(),
-                originalMaxAge: session_model.cookie_original_max_age.unwrap_or(86400000),
-                httpOnly: session_model.cookie_http_only.unwrap_or(true),
-            },
-            valid_pass_keys: session_model
-                .valid_pass_key
-                .and_then(|v| serde_json::from_str(&v).ok()),
-            role_permissions: session_model
-                .role_permission
-                .and_then(|v| serde_json::from_str(&v).ok()),
-            field_permissions: session_model
-                .field_permission
-                .and_then(|v| serde_json::from_str(&v).ok()),
-            record_permissions: session_model
-                .record_permission
-                .and_then(|v| serde_json::from_str(&v).ok()),
-            ip_address: session_model.ip_address,
-            location: session_model.location,
-            browser_name: session_model.browser_name,
-            operating_system: session_model.operating_system,
-            device_name: session_model.device_name,
-            account_organization_id: session_model.account_organization_id,
-        })
+        Ok(session_model)
     }
 
-    pub fn create_new_session(&self, session_id: &str, token: &str) -> Session {
-        let cookie_expiry_res = time_string_to_ms(&self.config.cookie_max_age);
-        let cookie_exp = match cookie_expiry_res {
+    pub fn create_new_session(&self, session_id: &str, token: &str) -> SessionModel {
+        let session_expires = std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
+        let session_exp = match time_string_to_ms(&session_expires) {
             Ok(expiry) => expiry,
             Err(err) => {
                 log::error!(
-                    "Error converting cookie expiry time '{}' to milliseconds: {}",
-                    self.config.cookie_max_age,
+                    "Error converting session expiry time '{}' to milliseconds: {}",
+                    session_expires,
                     err
                 );
                 86400000 // Default to 1 day (86400000 ms) on error
             }
         };
 
-        let cookie = Cookie {
-            path: "/".to_string(),
-            expires: Utc::now()
-                .checked_add_signed(Duration::milliseconds(cookie_exp as i64))
-                .unwrap_or(Utc::now())
-                .to_rfc3339(),
-            originalMaxAge: cookie_exp as i64,
-            httpOnly: true,
-        };
+        let expires = Utc::now()
+            .checked_add_signed(Duration::milliseconds(session_exp as i64))
+            .unwrap_or(Utc::now())
+            .to_rfc3339();
 
-        Session {
-            user: User::default(),
-            session_id: session_id.to_string(),
-            origin: None,
-            token: token.to_string(),
-            cookie,
-            ..Default::default()
+        SessionModel {
+            id: Some(session_id.to_string()),
+            tombstone: Some(0),
+            status: Some("Active".to_string()),
+            previous_status: None,
+            version: Some(1),
+            created_date: Some(Utc::now().format("%Y-%m-%d").to_string()),
+            created_time: Some(Utc::now().format("%H:%M:%S").to_string()),
+            updated_date: Some(Utc::now().format("%Y-%m-%d").to_string()),
+            updated_time: Some(Utc::now().format("%H:%M:%S").to_string()),
+            organization_id: None,
+            created_by: None,
+            updated_by: None,
+            deleted_by: None,
+            requested_by: None,
+            timestamp: Some(Utc::now().naive_utc()),
+            tags: None,
+            categories: None,
+            code: None,
+            sensitivity_level: None,
+            sync_status: None,
+            is_batch: None,
+            account_organization_id: None,
+            device_name: None,
+            browser_name: None,
+            operating_system: None,
+            authentication_method: None,
+            location: None,
+            ip_address: None,
+            session_started: Some(Utc::now().naive_utc()),
+            remark: None,
+            user_role_id: Some(String::default()),
+            user_account_id: Some(String::default()),
+            user_is_root_user: Some(false),
+            token: Some(token.to_string()),
+            cookie_path: Some("/".to_string()),
+            cookie_expire: Some(expires),
+            cookie_http_only: Some(true),
+            cookie_original_max_age: Some(session_exp as i64),
+            origin_url: None,
+            origin_host: None,
+            origin_user_agent: None,
+            valid_pass_key: None,
+            role_permission: None,
+            field_permission: None,
+            record_permission: None,
+            expire: Some(Utc::now().checked_add_signed(Duration::milliseconds(session_exp as i64)).unwrap_or(Utc::now()).naive_utc()),
+            application_accessed: None,
+            last_accessed: Some(Utc::now().naive_utc()),
         }
     }
 
     /// Save session to database
     pub async fn save_session(
         &self,
-        session: &Session,
+        session: &SessionModel,
         account_profile_id: Option<String>,
         device_info: Option<DeviceInfo>,
         auth: Option<&Auth>,
@@ -216,7 +208,7 @@ impl SessionManager {
 
         // Create base session model data
         let mut session_json = json!({
-            "id": session.session_id.clone(),
+            "id": session.id.clone(),
             "tombstone": 0,
             "status": "Active",
             "sensitivity_level": 1000,
@@ -349,41 +341,29 @@ impl SessionManager {
             },
             remark: device_info.as_ref().and_then(|d| d.remarks.clone()),
 
-            user_role_id: Some(session.user.role_id.clone()),
-            user_account_id: Some(session.user.account_id.clone()),
-            user_is_root_user: Some(session.user.is_root_user),
+            user_role_id: session.user_role_id.clone(),
+            user_account_id: session.user_account_id.clone(),
+            user_is_root_user: session.user_is_root_user,
             token: None,
-            cookie_path: Some(session.cookie.path.clone()),
+            cookie_path: session.cookie_path.clone(),
             cookie_expire: if is_update {
                 None // Don't update cookie_expire for existing sessions
             } else {
-                Some(session.cookie.expires.clone())
+                session.cookie_expire.clone()
             },
-            cookie_http_only: Some(session.cookie.httpOnly),
+            cookie_http_only: session.cookie_http_only,
             cookie_original_max_age: if is_update {
                 None // Don't update cookie_original_max_age for existing sessions
             } else {
-                Some(session.cookie.originalMaxAge)
+                session.cookie_original_max_age
             },
-            origin_url: session.origin.as_ref().map(|o| o.url.clone()),
-            origin_host: session.origin.as_ref().map(|o| o.host.clone()),
-            origin_user_agent: session.origin.as_ref().and_then(|o| o.user_agent.clone()),
-            valid_pass_key: session
-                .valid_pass_keys
-                .as_ref()
-                .and_then(|v| serde_json::to_string(v).ok()),
-            role_permission: session
-                .role_permissions
-                .as_ref()
-                .and_then(|v| serde_json::to_string(v).ok()),
-            field_permission: session
-                .field_permissions
-                .as_ref()
-                .and_then(|v| serde_json::to_string(v).ok()),
-            record_permission: session
-                .record_permissions
-                .as_ref()
-                .and_then(|v| serde_json::to_string(v).ok()),
+            origin_url: session.origin_url.clone(),
+            origin_host: session.origin_host.clone(),
+            origin_user_agent: session.origin_user_agent.clone(),
+            valid_pass_key: session.valid_pass_key.clone(),
+            role_permission: session.role_permission.clone(),
+            field_permission: session.field_permission.clone(),
+            record_permission: session.record_permission.clone(),
             expire: if is_update {
                 None // Don't update expire for existing sessions
             } else {
