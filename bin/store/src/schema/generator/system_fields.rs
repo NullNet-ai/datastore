@@ -29,7 +29,7 @@ macro_rules! system_fields {
         categories: nullable(array(text())),
         code: nullable(text()),
         id: nullable(text()), primary_key: true,
-        sensitivity_level: nullable(integer()),
+        sensitivity_level: nullable(integer()), default: 1000
         sync_status: nullable(text()), default: "in_process",
         is_batch: nullable(boolean()), default: "false"
     };

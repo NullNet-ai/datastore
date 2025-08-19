@@ -56,7 +56,8 @@ create_root_wrapper!(root_batch_update_records => batch_update_records,
 
 create_root_wrapper!(root_delete_record => delete_record,
     auth: HttpRequest,
-    path_params: actix_web::web::Path<(String, String)>
+    path_params: actix_web::web::Path<(String, String)>,
+    query: actix_web::web::Query<crate::structs::structs::QueryParams>
 );
 
 create_root_wrapper!(root_batch_delete_records => batch_delete_records,

@@ -13,9 +13,12 @@ use woothee::parser::Parser;
 
 pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
-use crate::{auth::structs::{Claims, Origin}, models::session_model::SessionModel};
 use crate::structs::structs::Auth;
 use crate::utils::utils::time_string_to_ms;
+use crate::{
+    auth::structs::{Claims, Origin},
+    models::session_model::SessionModel,
+};
 
 pub struct SessionMiddleware;
 
@@ -216,7 +219,7 @@ where
                     log::error!("Session ID doesn't exist");
                     actix_web::error::ErrorInternalServerError("Session ID doesn't exist")
                 })?;
-                
+
                 let cookie = ActixCookie::build(session_manager.cookie_name(), session_id)
                     .path("/")
                     .same_site(cookie_same_site)
@@ -467,7 +470,9 @@ fn parse_user_agent(user_agent: &str) -> DeviceInfo {
     }
 }
 
-pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) -> Option<SessionModel> {
+pub async fn load_and_populate_session_for_grpc<T>(
+    request: &tonic::Request<T>,
+) -> Option<SessionModel> {
     let session_id = request.extensions().get::<String>().cloned()?;
 
     let session_manager = SessionManager::with_default_config();

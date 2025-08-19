@@ -171,7 +171,7 @@ impl RequestBody {
                 if self.record["status"].is_null()
                     || !self.record.as_object().unwrap().contains_key("status")
                 {
-                    self.record["status"] = json!("Archived");
+                    self.record["status"] = json!("Deleted");
                 }
                 self.record["updated_by"] = json!(auth.responsible_account);
                 self.record["deleted_by"] = json!(auth.responsible_account);
