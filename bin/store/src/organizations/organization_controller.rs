@@ -1,15 +1,14 @@
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
-
 use crate::auth::auth_service::verify;
-use crate::auth::structs::{Origin, User};
 use crate::middlewares::auth_middleware::extract_token;
 use crate::middlewares::session_core::session_to_signed_in_activity;
+use crate::models::session_model::SessionModel;
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
 use crate::structs::structs::ApiResponse;
 use crate::sync::sync_service;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -78,7 +77,7 @@ impl OrganizationsController {
         let extensions = req.extensions();
 
         // Try to get session from extensions
-        let session_option = extensions.get::<crate::auth::structs::Session>().cloned();
+        let session_option = extensions.get::<SessionModel>().cloned();
 
         // Print session information
         // Create signed_in_activity based on authentication result
@@ -92,6 +91,19 @@ impl OrganizationsController {
                 return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
                     success: false,
                     message: "Session doesn't exist in the login request".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+
+        // Extract session ID and handle error if it doesn't exist
+        let session_id = match &session.id {
+            Some(id) => id.clone(),
+            None => {
+                return HttpResponse::BadRequest().json(crate::structs::structs::ApiResponse {
+                    success: false,
+                    message: "Session ID doesn't exist in the organization_controller".to_string(),
                     count: 0,
                     data: vec![],
                 })
@@ -143,7 +155,7 @@ impl OrganizationsController {
             root_auth(
                 &account_id,
                 &account_secret,
-                session.session_id.clone(),
+                session_id.clone(),
                 if !t.is_empty() { Some(&t) } else { None },
             )
             .await
@@ -156,7 +168,7 @@ impl OrganizationsController {
             auth(
                 &account_id,
                 &account_secret,
-                session.session_id.clone(),
+                session_id.clone(),
                 "", // Empty organization_id as it's not used in the auth function
             )
             .await
@@ -184,21 +196,17 @@ impl OrganizationsController {
             Ok(login_response) => {
                 if let Some(token) = &login_response.token {
                     // Successful authentication - update session with token
-                    let updated = crate::auth::structs::Session {
-                        token: token.clone(),
-                        origin: Some(Origin {
-                            user_agent: req
-                                .headers()
-                                .get("user-agent")
-                                .map(|v| v.to_str().unwrap_or_default().to_string()),
-                            host: req.connection_info().host().to_string(),
-                            url: req.path().to_string(),
-                        }),
-                        user: User {
-                            role_id: login_response.role_id.clone(),
-                            is_root_user: is_root,
-                            account_id,
-                        },
+                    let updated = SessionModel {
+                        token: Some(token.clone()),
+                        origin_user_agent: req
+                            .headers()
+                            .get("user-agent")
+                            .map(|v| v.to_str().unwrap_or_default().to_string()),
+                        origin_host: Some(req.connection_info().host().to_string()),
+                        origin_url: Some(req.path().to_string()),
+                        user_role_id: Some(login_response.role_id.clone()),
+                        user_is_root_user: Some(is_root),
+                        user_account_id: Some(account_id),
                         account_organization_id: login_response.account_organization_id.clone(),
                         ..session.clone()
                     };
@@ -206,15 +214,13 @@ impl OrganizationsController {
                     Some(updated)
                 } else {
                     // Failed authentication but we have account info - update session with account_organization_id
-                    let updated = crate::auth::structs::Session {
-                        origin: Some(Origin {
-                            user_agent: req
-                                .headers()
-                                .get("user-agent")
-                                .map(|v| v.to_str().unwrap_or_default().to_string()),
-                            host: req.connection_info().host().to_string(),
-                            url: req.path().to_string(),
-                        }),
+                    let updated = SessionModel {
+                        origin_user_agent: req
+                            .headers()
+                            .get("user-agent")
+                            .map(|v| v.to_str().unwrap_or_default().to_string()),
+                        origin_host: Some(req.connection_info().host().to_string()),
+                        origin_url: Some(req.path().to_string()),
                         account_organization_id: login_response.account_organization_id.clone(),
                         ..session.clone()
                     };
@@ -241,7 +247,7 @@ impl OrganizationsController {
                     }
                     Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
                 };
-                let signed_in_activity = session_to_signed_in_activity(session, status, remarks);
+                let signed_in_activity = session_to_signed_in_activity(&session, status, remarks);
 
                 // Convert to JSON and save to database using sync_service
                 match serde_json::to_value(&signed_in_activity) {
@@ -254,7 +260,7 @@ impl OrganizationsController {
                         } else {
                             log::info!(
                                 "Successfully saved signed_in_activities for session: {:?}",
-                                session.session_id
+                                session_id
                             );
                         }
                     }

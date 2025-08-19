@@ -6,7 +6,6 @@ use actix_web::{
     Error, HttpMessage,
 };
 use futures::future::{ok, Ready};
-use std::net::IpAddr;
 use std::str::FromStr;
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
@@ -14,9 +13,12 @@ use woothee::parser::Parser;
 
 pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
-use crate::auth::structs::{Claims, Origin, Session};
 use crate::structs::structs::Auth;
 use crate::utils::utils::time_string_to_ms;
+use crate::{
+    auth::structs::{Claims, Origin},
+    models::session_model::SessionModel,
+};
 
 pub struct SessionMiddleware;
 
@@ -112,7 +114,6 @@ where
                 .get("x-forwarded-location")
                 .and_then(|h| h.to_str().ok())
                 .unwrap_or("Unknown");
-            // let location = get_location_from_ip(&ip_address);
             let authentication_method = req
                 .headers()
                 .get("x-authentication-method")
@@ -166,7 +167,7 @@ where
 
             let mut res = service.call(req).await?;
 
-            let updated_session = res.request().extensions().get::<Session>().cloned();
+            let updated_session = res.request().extensions().get::<SessionModel>().cloned();
 
             if let Some(session) = updated_session {
                 let auth = res.request().extensions().get::<Auth>().cloned();
@@ -214,7 +215,12 @@ where
                     log::error!("Failed to save session: {:?}", e);
                 }
 
-                let cookie = ActixCookie::build(session_manager.cookie_name(), session.session_id)
+                let session_id = session.id.as_ref().ok_or_else(|| {
+                    log::error!("Session ID doesn't exist");
+                    actix_web::error::ErrorInternalServerError("Session ID doesn't exist")
+                })?;
+
+                let cookie = ActixCookie::build(session_manager.cookie_name(), session_id)
                     .path("/")
                     .same_site(cookie_same_site)
                     .secure(cookie_secure)
@@ -308,16 +314,16 @@ where
 }
 
 #[allow(dead_code)]
-pub fn get_session_from_grpc_request<T>(request: &Request<T>) -> Option<Session> {
-    request.extensions().get::<Session>().cloned()
+pub fn get_session_from_grpc_request<T>(request: &Request<T>) -> Option<SessionModel> {
+    request.extensions().get::<SessionModel>().cloned()
 }
 
 #[allow(dead_code)]
-pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: Session) {
+pub fn update_session_in_grpc_request<T>(request: &mut Request<T>, session: SessionModel) {
     request.extensions_mut().insert(session);
 }
 
-pub async fn save_session_after_request(session: &Session) -> Result<(), String> {
+pub async fn save_session_after_request(session: &SessionModel) -> Result<(), String> {
     let session_manager = SessionManager::with_default_config();
     let account_profile_id = Some("1".to_string());
     session_manager
@@ -327,18 +333,20 @@ pub async fn save_session_after_request(session: &Session) -> Result<(), String>
 }
 
 pub fn populate_session_with_auth_data(
-    session: &mut Session,
+    session: &mut SessionModel,
     _token: &str,
     claims: &Claims,
     origin: Origin,
     req: &ServiceRequest,
 ) {
-    session.token = "".to_string();
-    session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
-    session.user.is_root_user = claims.account.is_root_account;
-    session.user.account_id = claims.account.account_id.clone();
+    session.token = None;
+    session.user_role_id = claims.account.role_id.clone();
+    session.user_is_root_user = Some(claims.account.is_root_account);
+    session.user_account_id = Some(claims.account.account_id.clone());
 
-    session.origin = Some(origin);
+    session.origin_url = Some(origin.url);
+    session.origin_host = Some(origin.host);
+    session.origin_user_agent = origin.user_agent;
 
     let ip_address = extract_client_ip(req);
     let location = req
@@ -408,27 +416,6 @@ fn extract_client_ip(req: &ServiceRequest) -> String {
         .to_string()
 }
 
-fn get_location_from_ip(ip_address: &str) -> Option<String> {
-    if let Ok(ip) = IpAddr::from_str(ip_address) {
-        match ip {
-            IpAddr::V4(ipv4) => {
-                if ipv4.is_loopback() || ipv4.is_private() {
-                    return Some("Local".to_string());
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                if ipv6.is_loopback() {
-                    return Some("Local".to_string());
-                }
-            }
-        }
-
-        Some("Unknown Location".to_string())
-    } else {
-        None
-    }
-}
-
 fn parse_user_agent(user_agent: &str) -> DeviceInfo {
     let parser = Parser::new();
 
@@ -483,7 +470,9 @@ fn parse_user_agent(user_agent: &str) -> DeviceInfo {
     }
 }
 
-pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) -> Option<Session> {
+pub async fn load_and_populate_session_for_grpc<T>(
+    request: &tonic::Request<T>,
+) -> Option<SessionModel> {
     let session_id = request.extensions().get::<String>().cloned()?;
 
     let session_manager = SessionManager::with_default_config();
@@ -508,18 +497,20 @@ pub async fn load_and_populate_session_for_grpc<T>(request: &tonic::Request<T>) 
 }
 
 pub fn populate_session_with_auth_data_grpc(
-    session: &mut Session,
-    token: &str,
+    session: &mut SessionModel,
+    _token: &str,
     claims: &Claims,
     origin: Origin,
 ) {
-    session.token = token.to_string();
+    session.token = Some("".to_string());
 
-    session.user.role_id = claims.account.role_id.clone().unwrap_or_default();
-    session.user.is_root_user = claims.account.is_root_account;
-    session.user.account_id = claims.account.account_id.clone();
+    session.user_role_id = claims.account.role_id.clone();
+    session.user_is_root_user = Some(claims.account.is_root_account);
+    session.user_account_id = Some(claims.account.account_id.clone());
 
-    session.origin = Some(origin);
+    session.origin_url = Some(origin.url);
+    session.origin_host = Some(origin.host);
+    session.origin_user_agent = origin.user_agent;
 
     session.ip_address = Some("grpc-client".to_string());
     session.location = Some("gRPC".to_string());
