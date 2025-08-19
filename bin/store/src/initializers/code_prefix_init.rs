@@ -27,6 +27,28 @@ impl CodePrefixInitializer {
             },
         );
 
+         prefixes.insert(
+            "sessions".to_string(),
+            CounterModel {
+                default_code: 10000,
+                prefix: "SE".to_string(),
+                counter: 0,
+                entity: "sessions".to_string(),
+                digits_number: 6,
+            },
+        );
+
+          prefixes.insert(
+            "signed_in_activities".to_string(),
+            CounterModel {
+                default_code: 10000,
+                prefix: "SIA".to_string(),
+                counter: 0,
+                entity: "signed_in_activities".to_string(),
+                digits_number: 6,
+            },
+        );
+
         // Add more table configurations as needed
         // Example:
         // prefixes.insert(

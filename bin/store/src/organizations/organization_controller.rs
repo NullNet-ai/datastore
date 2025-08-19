@@ -247,7 +247,7 @@ impl OrganizationsController {
                     }
                     Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
                 };
-                let signed_in_activity = session_to_signed_in_activity(&session, status, remarks);
+                let signed_in_activity = session_to_signed_in_activity(&session, status, remarks).await;
 
                 // Convert to JSON and save to database using sync_service
                 match serde_json::to_value(&signed_in_activity) {
