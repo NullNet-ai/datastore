@@ -1106,7 +1106,7 @@ pub async fn delete_record(
         }
     };
 
-     let pluck_fields: Vec<String> = if query.pluck.is_empty() {
+    let pluck_fields: Vec<String> = if query.pluck.is_empty() {
         vec!["id".to_string()]
     } else {
         query

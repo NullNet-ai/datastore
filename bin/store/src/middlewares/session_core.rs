@@ -93,7 +93,10 @@ impl SessionManager {
     }
 
     /// Load existing session from database
-    pub async fn load_session(&self, session_id: &str) -> Result<SessionModel, diesel::result::Error> {
+    pub async fn load_session(
+        &self,
+        session_id: &str,
+    ) -> Result<SessionModel, diesel::result::Error> {
         let mut conn = db::get_async_connection().await;
 
         let session_model = sessions::table
@@ -107,7 +110,8 @@ impl SessionManager {
     }
 
     pub fn create_new_session(&self, session_id: &str, token: &str) -> SessionModel {
-        let session_expires = std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
+        let session_expires =
+            std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
         let session_exp = match time_string_to_ms(&session_expires) {
             Ok(expiry) => expiry,
             Err(err) => {
@@ -171,7 +175,12 @@ impl SessionManager {
             role_permission: None,
             field_permission: None,
             record_permission: None,
-            expire: Some(Utc::now().checked_add_signed(Duration::milliseconds(session_exp as i64)).unwrap_or(Utc::now()).naive_utc()),
+            expire: Some(
+                Utc::now()
+                    .checked_add_signed(Duration::milliseconds(session_exp as i64))
+                    .unwrap_or(Utc::now())
+                    .naive_utc(),
+            ),
             application_accessed: None,
             last_accessed: Some(Utc::now().naive_utc()),
         }

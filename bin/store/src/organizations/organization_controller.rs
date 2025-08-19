@@ -1,14 +1,14 @@
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
-use crate::models::session_model::SessionModel;
 use crate::auth::auth_service::verify;
 use crate::middlewares::auth_middleware::extract_token;
 use crate::middlewares::session_core::session_to_signed_in_activity;
+use crate::models::session_model::SessionModel;
 use crate::organizations::auth_service::{auth, root_auth};
 use crate::organizations::organization_service::register;
 use crate::organizations::structs::Register;
 use crate::structs::structs::ApiResponse;
 use crate::sync::sync_service;
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
