@@ -68,4 +68,5 @@ pub struct LoginResponse {
     pub token: Option<String>,
     pub role_id: String,
     pub account_organization_id: Option<String>,
+    pub session_id: Option<String>,
 }

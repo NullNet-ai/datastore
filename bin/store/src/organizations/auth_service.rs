@@ -118,6 +118,7 @@ pub async fn auth(
                 token: None,
                 role_id: "".to_string(),
                 account_organization_id,
+                session_id: Some(session_id.clone()),
             });
         }
 
@@ -186,6 +187,7 @@ pub async fn auth(
                 .unwrap_or_default()
                 .to_string(),
             account_organization_id: account_organization_id.clone(),
+            session_id: Some(session_id.clone()),
         });
     }
 
@@ -337,6 +339,7 @@ pub async fn root_auth(
             token: None,
             role_id: "".to_string(),
             account_organization_id,
+            session_id: Some(session_id.clone()),
         });
     }
 
@@ -351,6 +354,7 @@ pub async fn root_auth(
             token: None,
             role_id: "".to_string(),
             account_organization_id,
+            session_id: Some(session_id.clone()),
         });
     }
 
@@ -367,6 +371,7 @@ pub async fn root_auth(
             token: None,
             role_id: "".to_string(),
             account_organization_id,
+            session_id: Some(session_id.clone()),
         });
     }
 
@@ -410,6 +415,7 @@ pub async fn root_auth(
         account_organization_id: account_organization["account_organization_id"]
             .as_str()
             .map(|s| s.to_string()),
+        session_id: Some(session_id.clone()),
     })
 }
 #[allow(warnings)]
