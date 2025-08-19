@@ -62,7 +62,10 @@ install:
 	@echo "🌱 Seeding Store database..."
 	@make store-clean-setup
 	@echo "✅ Store database seeded!"
+	@# Setup git hooks
+	@make setup-hooks
 	@echo "✅ Installation complete! Run 'make store' to start the project."
+	
 
 # macOS installation
 install-macos:
