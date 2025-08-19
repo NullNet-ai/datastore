@@ -689,12 +689,43 @@ impl<'a, 'b> Validation<'a, 'b> {
                         continue;
                     }
 
+                    // Check if the filtered field exists in JOIN "to" fields, aliases, or entities
+                    let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
+                        let to_endpoint = &join.field_relation.to;
+
+                        // Check if field matches the "to" field
+                        if to_endpoint.field == *field {
+                            // Check if entity matches the "to" entity or alias
+                            if to_endpoint.entity == *entity_str {
+                                return true;
+                            }
+                            if let Some(alias) = &to_endpoint.alias {
+                                if alias == entity_str {
+                                    return true;
+                                }
+                            }
+                        }
+                        false
+                    });
+
+                    if !field_exists_in_joins {
+                        return ApiResponse {
+                            success: false,
+                            message: format!(
+                                "advance_filters[{}] > field > Filter field '{}' in entity '{}' conflicts with JOIN 'to' field. Filtered fields cannot reference JOIN 'to' fields, their aliases, or entities",
+                                filter_index, field, entity_str
+                            ),
+                            count: 0,
+                            data: vec![],
+                        };
+                    }
+
                     // Validate field exists in schema
-                    if !field_exists_in_table(entity_str, field) {
+                    if !field_exists_in_table(entity_str, field) && !field_exists_in_joins {
                         return ApiResponse {
                              success: false,
                              message: format!(
-                                 "advance_filters[{}] > field > Filter field '{}' does not exist in entity '{}'",
+                                 "advance_filters@@@@{}] > field > Filter field '{}' does not exist in entity '{}'",
                                  filter_index, field, entity_str
                              ),
                              count: 0,
