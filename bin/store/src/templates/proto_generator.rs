@@ -683,6 +683,8 @@ pub fn diesel_type_to_proto(diesel_type: &str) -> &'static str {
         t if t.contains("Int4") => "int32",
         t if t.contains("Integer") => "int32",
         t if t.contains("BigInt") => "int64",
+        t if t.contains("Float4") => "float",
+        t if t.contains("Float8") => "double",
         t if t.contains("Bool") => "bool",
         t if t.contains("Uuid") => "string",
         t if t.contains("Text") => "string",
