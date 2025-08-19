@@ -49,6 +49,10 @@ impl QueryFilter for SearchSuggestionParams {
     fn get_concatenate_fields(&self) -> &[ConcatenateField] {
         &self.concatenate_fields
     }
+
+    fn get_timezone(&self) -> Option<&str> {
+        self.timezone.as_deref()
+    }
 }
 
 pub struct SQLConstructor<T: QuerySearchSuggestion + QueryFilter + Clone> {
@@ -64,9 +68,9 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> QuerySearchSuggestion for S
 }
 
 impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
-    pub fn new(request_body: T, table: String, is_root: bool) -> Self {
+    pub fn new(request_body: T, table: String, is_root: bool, timezone: Option<String>) -> Self {
         Self {
-            sql_constructor: FindSQLConstructor::new(request_body, table, is_root),
+            sql_constructor: FindSQLConstructor::new(request_body, table, is_root, timezone),
             advance_filters: None,
             group_advance_filters: None,
         }
@@ -665,6 +669,8 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 field,
                 self.sql_constructor.request_body.get_date_format(),
                 &self.sql_constructor.table.as_str(),
+                self.sql_constructor.request_body.get_timezone(),
+                true,
             );
             format!(" GROUP BY {}", field)
         } else {

@@ -356,6 +356,8 @@ pub struct GetByFilter {
     pub limit: usize,
 
     pub distinct_by: Option<String>,
+
+    pub timezone: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -731,4 +733,6 @@ pub struct SearchSuggestionParams {
 
     #[serde(default)]
     pub pluck_object: BTreeMap<String, Vec<String>>,
+
+    pub timezone: Option<String>,
 }
