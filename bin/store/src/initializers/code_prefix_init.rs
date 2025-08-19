@@ -27,7 +27,7 @@ impl CodePrefixInitializer {
             },
         );
 
-         prefixes.insert(
+        prefixes.insert(
             "sessions".to_string(),
             CounterModel {
                 default_code: 10000,
@@ -38,7 +38,7 @@ impl CodePrefixInitializer {
             },
         );
 
-          prefixes.insert(
+        prefixes.insert(
             "signed_in_activities".to_string(),
             CounterModel {
                 default_code: 10000,

@@ -152,7 +152,9 @@ where
             } else {
                 // No session ID provided, create new session
                 let new_session_id = session_manager.extract_session_id(None, None);
-                let new_session = session_manager.create_new_session(&new_session_id, "").await;
+                let new_session = session_manager
+                    .create_new_session(&new_session_id, "")
+                    .await;
                 (new_session, true)
             };
 

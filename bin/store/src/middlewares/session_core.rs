@@ -221,7 +221,6 @@ impl SessionManager {
 
         let is_update = !is_new;
 
-
         // Create base session model data
         let mut session_json = json!({
             "id": session.id.clone(),
