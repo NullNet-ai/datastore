@@ -10,6 +10,7 @@ use crate::models::session_model::SessionModel;
 use crate::models::signed_in_activity_model::SignedInActivityModel;
 use crate::schema::schema::{account_organizations, sessions};
 use crate::structs::structs::{Auth, RequestBody};
+use crate::table_enum::generate_code;
 use crate::utils::utils::time_string_to_ms;
 use serde_json::json;
 
@@ -87,7 +88,7 @@ impl SessionManager {
                     "Error loading session, will create a new session: {:?}",
                     err
                 );
-                self.create_new_session(session_id, token)
+                self.create_new_session(session_id, token).await
             }
         }
     }
@@ -109,7 +110,7 @@ impl SessionManager {
         Ok(session_model)
     }
 
-    pub fn create_new_session(&self, session_id: &str, token: &str) -> SessionModel {
+    pub async fn create_new_session(&self, session_id: &str, token: &str) -> SessionModel {
         let session_expires =
             std::env::var("SESSION_EXPIRES_IN").unwrap_or_else(|_| "1d".to_string());
         let session_exp = match time_string_to_ms(&session_expires) {
@@ -147,7 +148,13 @@ impl SessionManager {
             timestamp: Some(Utc::now().naive_utc()),
             tags: None,
             categories: None,
-            code: None,
+            code: match generate_code("sessions", "SES", 1000).await {
+                Ok(code) => Some(code),
+                Err(e) => {
+                    log::error!("Failed to generate code for sessions: {}", e);
+                    None
+                }
+            },
             sensitivity_level: None,
             sync_status: None,
             is_batch: None,
@@ -218,6 +225,7 @@ impl SessionManager {
         let mut session_json = json!({
             "id": session.id.clone(),
             "tombstone": 0,
+            "code": session.code.clone(),
             "status": "Active",
             "sensitivity_level": 1000,
             "is_batch": false,
@@ -490,7 +498,7 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
 }
 
 /// Convert Session struct to SignedInActivityModel
-pub fn session_to_signed_in_activity(
+pub async fn session_to_signed_in_activity(
     session: &SessionModel,
     status: Option<String>,
     remarks: Option<String>,
@@ -516,7 +524,13 @@ pub fn session_to_signed_in_activity(
         timestamp: Some(now),
         tags: None,
         categories: None,
-        code: None,
+        code: match generate_code("signed_in_activities", "SIA", 1000).await {
+            Ok(code) => Some(code),
+            Err(e) => {
+                log::error!("Failed to generate code for signed_in_activities: {}", e);
+                None
+            }
+        },
         sensitivity_level: Some(1000), // Default sensitivity level
         sync_status: None,
         is_batch: Some(false),

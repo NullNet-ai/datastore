@@ -145,14 +145,16 @@ where
                     Ok(session) => (session, false),
                     Err(_) => {
                         // Session doesn't exist, create new one
-                        let new_session = session_manager.create_new_session(&session_id, "");
+                        let new_session = session_manager.create_new_session(&session_id, "").await;
                         (new_session, true)
                     }
                 }
             } else {
                 // No session ID provided, create new session
                 let new_session_id = session_manager.extract_session_id(None, None);
-                let new_session = session_manager.create_new_session(&new_session_id, "");
+                let new_session = session_manager
+                    .create_new_session(&new_session_id, "")
+                    .await;
                 (new_session, true)
             };
 

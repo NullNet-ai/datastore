@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.60
+### Author
+Kashan
+
+### Features
+- ***session_core***: Added automatic code generation for sessions using generate_code function
+- ***session_core***: Added automatic code generation for signed_in_activities using generate_code function
+- ***session_core***: Improved error handling for code generation with proper logging instead of panicking
+---
+
 ## 0.1.59
 ### Author
 Bert
