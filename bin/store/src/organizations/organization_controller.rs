@@ -279,14 +279,17 @@ impl OrganizationsController {
         match result {
             Ok(login_response) => {
                 if let Some(token) = login_response.token {
-                    // Set cookie and return token
+                    // Set cookie and return token with sessionID
                     HttpResponse::Ok()
                         .cookie(
                             actix_web::cookie::Cookie::build("token", token.clone())
                                 .path("/")
                                 .finish(),
                         )
-                        .json(serde_json::json!({ "token": token }))
+                        .json(serde_json::json!({ 
+                            "token": token,
+                            "sessionID": login_response.session_id.unwrap_or_else(|| session_id.clone()) 
+                        }))
                 } else {
                     // Authentication failed but no error was thrown
                     HttpResponse::Forbidden().json(serde_json::json!({
