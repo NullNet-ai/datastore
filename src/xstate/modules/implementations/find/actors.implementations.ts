@@ -134,6 +134,21 @@ export class FindActorsImplementations {
             .map((p) => `${p.entity}.${p.field}`),
         } = body;
 
+        Object.keys(pluck_object).forEach((key) => {
+          if (typeof pluck_object[key] === 'string') {
+            try {
+              pluck_object[key] = JSON.parse(pluck_object[key]);
+            } catch (error) {
+              throw new BadRequestException({
+                success: false,
+                message: `Invalid JSON format for pluck_object key '${key}': ${error.message}`,
+                count: 0,
+                data: [],
+              });
+            }
+          }
+        });
+
         if (!valid_pass_keys.includes(pass_field_key) && pass_field_key) {
           throw new BadRequestException({
             success: false,
