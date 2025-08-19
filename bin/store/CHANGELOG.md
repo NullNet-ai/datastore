@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.61
+### Author
+Kashan
+
+### Features
+- ***Authentication***: Added sessionID to LoginResponse structure
+  - Updated LoginResponse struct in organizations/structs.rs to include session_id field
+  - Modified auth_service.rs to populate session_id in all LoginResponse instances
+  - Updated organization_controller.rs to use sessionID from LoginResponse
+  - Added LoginRequest and LoginResponse proto messages to store.proto
+  - Enhanced authentication flow to consistently include session information
+---
+
 ## 0.1.60
 ### Author
 Kashan
