@@ -316,7 +316,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
             table, field, table, time_field
         );
         let target_timezone = timezone.unwrap_or("Asia/Manila");
-        let server_timezone = "UTC";
+        let server_timezone = std::env::var("TZ").unwrap_or_else(|_| "UTC".to_string());
+
         let timezone_query = format!(
             "AT TIME ZONE '{}' AT TIME ZONE '{}'",
             server_timezone, target_timezone
@@ -361,7 +362,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         let date_field = format!("\"{}\".\"{}_date\"", table_name, field_prefix);
         let formatted_field = format!("{}::TIMESTAMP + {}::INTERVAL", date_field, field);
         let target_timezone = timezone.unwrap_or("Asia/Manila");
-        let server_timezone = "UTC";
+        let server_timezone = std::env::var("TZ").unwrap_or_else(|_| "UTC".to_string());
         let timezone_query = format!(
             "AT TIME ZONE '{}' AT TIME ZONE '{}'",
             server_timezone, target_timezone
