@@ -46,7 +46,7 @@ Before running the installation, ensure you have the following system requiremen
 First, clone the project repository:
 
 ```bash
-git clone <repository-url>
+git clone https://gitlab.platform.dnadev.net/platform/db/crdt/rust/crdt-workspace.git
 cd crdt-workspace
 ```
 
