@@ -1,0 +1,70 @@
+# Simple Dockerfile for testing make commands across different Linux distributions
+
+# Stage 1: Ubuntu test
+FROM ubuntu:latest AS ubuntu-test
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    make \
+    git \
+    sudo \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY . .
+RUN cp .env-sample .env && \
+    sed -i 's/localhost/host.docker.internal/g' .env
+
+RUN make help
+RUN make install
+
+CMD ["make", "store"]
+
+# Stage 2: CentOS test
+FROM centos:latest AS centos-test
+RUN yum update -y && yum install -y \
+    make \
+    git \
+    sudo \
+    curl
+
+WORKDIR /app
+COPY . .
+RUN cp .env-sample .env && \
+    sed -i 's/localhost/host.docker.internal/g' .env
+
+RUN make help
+RUN make install
+
+CMD ["make", "store"]
+
+# Stage 3: Arch test
+FROM archlinux:latest AS arch-test
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm \
+    make \
+    git \
+    sudo \
+    curl
+
+WORKDIR /app
+COPY . .
+RUN cp .env-sample .env && \
+    sed -i 's/localhost/host.docker.internal/g' .env
+
+RUN make help
+RUN make install
+
+CMD ["make", "store"]
+
+# Final stage: Ubuntu as default
+FROM ubuntu-test AS final
+CMD ["make", "help"]
+
+# Build instructions:
+# docker build --target ubuntu-test -t crdt-ubuntu .
+# docker build --target centos-test -t crdt-centos .
+# docker build --target arch-test -t crdt-arch .
+# docker run -it crdt-ubuntu
+# docker run -it crdt-centos
+# docker run -it crdt-arch

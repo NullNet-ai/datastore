@@ -46,6 +46,11 @@ make store
 
 ## Manual Prerequisites (if not using installer)
 
+- **make** - Build automation tool (usually pre-installed on macOS/Linux)
+  - macOS: `xcode-select --install` or `brew install make`
+  - Ubuntu/Debian: `sudo apt-get install build-essential`
+  - CentOS/RHEL: `sudo yum groupinstall "Development Tools"`
+  - Arch Linux: `sudo pacman -S base-devel`
 - Rust (latest stable version)
 - PostgreSQL
 - cargo-make: `cargo install cargo-make`
