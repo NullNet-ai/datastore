@@ -28,6 +28,13 @@ Before running the installation, ensure you have the following system requiremen
 - **Linux** - Supports apt-get (Ubuntu/Debian), yum (RHEL/CentOS), and pacman (Arch)
 - **Docker** - For containerized development (optional)
 
+### Database Requirements
+- **PostgreSQL** - Database server (version 12 or higher recommended)
+  - On macOS: Will be installed via Homebrew during `make install`
+  - On Linux: Will be installed via package manager during `make install`
+  - Manual installation: Ensure PostgreSQL service is running and accessible
+  - Default connection: `postgresql://localhost:5432`
+
 ### Network Requirements
 - Internet connection for downloading Rust toolchain and dependencies
 - Access to crates.io and GitHub for package downloads
@@ -54,7 +61,7 @@ make install
 
 This will automatically install:
 - **Rust toolchain** (rustc, cargo, rustup)
-- **PostgreSQL** database server
+- **PostgreSQL** database client
 - **Cargo tools**: cargo-make, cargo-watch, diesel_cli
 - **Git hooks** for development workflow
 - **Environment configuration** and dependencies
