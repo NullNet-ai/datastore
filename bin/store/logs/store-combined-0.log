@@ -1,0 +1,93 @@
+2025-08-20T10:41:24:    Compiling store v0.1.63 (/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/rust-projects/crdt-workspace/bin/store)
+2025-08-20T10:41:25: warning: store@0.1.63: Successfully compiled proto files
+2025-08-20T10:41:35:     Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.02s
+2025-08-20T10:41:35:      Running `/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/rust-projects/crdt-workspace/target/debug/store`
+2025-08-20T10:41:36: Loading AWS config from environment
+2025-08-20T10:41:36: 🔧 Configuring S3 client for endpoint: https://mastra-minio-api.app.dnaqa.net
+2025-08-20T10:41:36: ⚠️  SSL certificate verification is DISABLED - use only for development!
+2025-08-20T10:41:36: ✅ S3 client configured successfully for endpoint: https://mastra-minio-api.app.dnaqa.net
+2025-08-20T10:41:36: 
+2025-08-20T10:41:36: 🔧 S3 Client Configuration:
+2025-08-20T10:41:36:    Region: us-east-1
+2025-08-20T10:41:36:    Endpoint: Configured during client creation
+2025-08-20T10:41:36:    Service: Amazon S3
+2025-08-20T10:41:36: 
+2025-08-20T10:41:36: 📍 Region retrieved from client: us-east-1
+2025-08-20T10:41:36: Reading bucket name from environment
+2025-08-20T10:41:36: S3 client initialization complete with bucket: bcktgpct
+2025-08-20T10:41:36: 
+2025-08-20T10:41:36: Testing connectivity to MinIO endpoint...
+2025-08-20T10:41:37: ✅ Successfully connected to MinIO endpoint
+2025-08-20T10:41:37: Found 8 existing buckets
+2025-08-20T10:41:37:   - bcktgpct
+2025-08-20T10:41:37:   - bcktwpct
+2025-08-20T10:41:37:   - samples
+2025-08-20T10:41:37:   - samples33
+2025-08-20T10:41:37:   - store
+2025-08-20T10:41:37:   - test
+2025-08-20T10:41:37:   - test2
+2025-08-20T10:41:37:   - travelbutler
+2025-08-20T10:41:37: ✅ Bucket 'bcktgpct' already exists (found in bucket list)
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Initialized cache with type: Redis, TTL: Some(3600s)
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::cache::cache_factory] Attempting to connect to Redis at redis://127.0.0.1:6379/
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z ERROR store::cache::cache_factory] Failed to connect to Redis at redis://127.0.0.1:6379/: Connection refused (os error 61)
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z WARN  store::cache::cache_factory] Falling back to in-memory cache
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Initializing background services...
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::code_prefix_init] Initialized/updated counter for entity: signed_in_activities
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::code_prefix_init] Initialized/updated counter for entity: sessions
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::code_prefix_init] Initialized/updated counter for entity: devices
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Code prefix initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Session pruning service started
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Loading Merkle trees from database...
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Starting session pruning background task
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Session pruning interval set to 21600 seconds
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Running session pruning task
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Merkle trees loaded from database successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Merkle tree save interval set to 300000 milliseconds
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Merkle tree periodic save task started
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Merkle tree periodic save service started
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] All background services initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Background services initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Starting PgListenerService...
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] PgListenerService initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Database connected successfully.
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Queue initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::batch_sync::background_sync] Initializing BackgroundSyncService...
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::batch_sync] Starting background insert processor
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::batch_sync] Starting background update processor
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::batch_sync] Starting background code assignment processor
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::initializers::background_services_init] Pruned 0 expired sessions
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Queue initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Store is running on 0.0.0.0:5000
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  actix_server::builder] starting 16 workers
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  actix_server::server] Actix runtime found; starting in Actix runtime
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  actix_server::server] starting service: "actix-web-service-0.0.0.0:5000", workers: 16, listening on: 0.0.0.0:5000
+2025-08-20T10:41:37: gRPC Server listening on 0.0.0.0:9000
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::streaming_service] Initializing MessageStreamingService...
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::streaming_service] Message routing task started
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::streaming_service] Processing queue handler started
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::streaming_service] MessageStreamingService initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] MessageStreamingService initialized successfully
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store] Socket.IO server running on http://0.0.0.0:3001
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::pg_listener_service] Refreshing channels from database...
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::pg_listener_service] About to query postgres_channels table
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::sync::merkles::merkle_manager] Saved tree for group 01JBHKXHYSKPP247HZZWHA3JBT with timestamp 1755657098:5162:B052PCAPF0RGEFMC
+2025-08-20T10:41:37: [2025-08-20T02:41:37Z INFO  store::message_stream::pg_listener_service] Started listening on PostgreSQL channels
+2025-08-20T10:42:07: [2025-08-20T02:42:07Z INFO  store::message_stream::pg_listener_service] Performing periodic channel refresh...
+2025-08-20T10:42:07: [2025-08-20T02:42:07Z INFO  store::message_stream::pg_listener_service] About to query postgres_channels table
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store] SIGINT received, running custom shutdown...
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] Shutdown requested, preparing for graceful shutdown
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] Saving data before shutdown
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] Saving pending messages...
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::sync::message_manager] Waiting for message queue to drain...
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::sync::message_manager] Current message queue size: 0
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::sync::message_manager] Message queue is empty or timeout reached, proceeding with shutdown
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] Successfully saved all pending messages
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] Saving Merkle trees to database...
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::sync::merkles::merkle_manager] Saved tree for group 01JBHKXHYSKPP247HZZWHA3JBT with timestamp 1755657098:5162:B052PCAPF0RGEFMC
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] Successfully saved all Merkle trees to database
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store::shutdown_handler] All data saved successfully, ready for shutdown
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store] Successfully saved all data before shutdown
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store] Waiting 5 seconds before final shutdown...
+2025-08-20T10:42:23: [2025-08-20T02:42:23Z INFO  store] Shutdown delay complete, exiting now
+2025-08-20T10:42:23: Successfully saved Merkle trees to database

@@ -6,7 +6,8 @@
         store-generate-schema store-generate-proto \
         db-migrate-generate db-migrate-up db-migrate-revert \
         fmt fmt-check git-cleanup setup-hooks \
-        jean-store-watch store-experimental store-initialize-device
+        jean-store-watch store-experimental store-initialize-device \
+        pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete
 
 # Default target
 all: dev
@@ -34,6 +35,12 @@ help:
 	@echo "  git-cleanup             - Clean up local branches that no longer exist on remote"
 	@echo "  setup-hooks             - Setup git hooks"
 	@echo "  clean                   - Clean build artifacts"
+	@echo "  pm2-start               - Start all services with PM2"
+	@echo "  pm2-stop                - Stop all PM2 services"
+	@echo "  pm2-restart             - Restart all PM2 services"
+	@echo "  pm2-status              - Show PM2 process status"
+	@echo "  pm2-logs                - Show PM2 logs"
+	@echo "  pm2-delete              - Delete all PM2 processes"
 	@echo "  help                    - Show this help message"
 
 # =============================================================================
@@ -291,6 +298,44 @@ clean:
 	@cd bin/server && cargo clean
 	@cd bin/store && cargo clean
 	@echo "✅ Clean complete!"
+
+# =============================================================================
+# PM2 Process Management targets
+# =============================================================================
+
+# Start all services with PM2
+pm2-start:
+	@echo "🚀 Starting CRDT workspace with PM2..."
+	@pm2 start ecosystem.config.js
+	@echo "✅ Services started! Use 'make pm2-status' to check status."
+
+# Stop all PM2 services
+pm2-stop:
+	@echo "⏹️  Stopping PM2 services..."
+	@pm2 stop ecosystem.config.js
+	@echo "✅ Services stopped!"
+
+# Restart all PM2 services
+pm2-restart:
+	@echo "🔄 Restarting PM2 services..."
+	@pm2 restart ecosystem.config.js
+	@echo "✅ Services restarted!"
+
+# Show PM2 process status
+pm2-status:
+	@echo "📊 PM2 Process Status:"
+	@pm2 status
+
+# Show PM2 logs
+pm2-logs:
+	@echo "📋 PM2 Logs (press Ctrl+C to exit):"
+	@pm2 logs
+
+# Delete all PM2 processes
+pm2-delete:
+	@echo "🗑️  Deleting PM2 processes..."
+	@pm2 delete ecosystem.config.js
+	@echo "✅ PM2 processes deleted!"
 
 
 # Run the store in watch mode with PG library configurations

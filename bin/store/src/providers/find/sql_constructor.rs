@@ -831,17 +831,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         join_condition: &str,
     ) -> String {
         let mut where_conditions = Vec::new();
-        
+
         // Add system where clause
         let standard_where = match self.build_system_where_clause(to_alias) {
             Ok(clause) => clause,
             Err(_) => format!("({}.tombstone = 0)", to_alias),
         };
         where_conditions.push(standard_where);
-        
+
         // Add join condition
         where_conditions.push(join_condition.to_string());
-        
+
         // Add filters from 'to' RelationEndpoint if present
         if !join.field_relation.to.filters.is_empty() {
             match self.build_infix_expression(&join.field_relation.to.filters) {
@@ -854,12 +854,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 _ => {}
             }
         }
-        
+
         let combined_where = where_conditions.join(" AND ");
 
         // Build order_by clause with join-specific override logic
         let order_by_clause = self.build_join_order_by_clause(join, "elem");
-        
+
         if join.nested {
             let prev_join = previous_join.unwrap();
             let prev_join_to_alias = prev_join
