@@ -41,9 +41,18 @@ Before running the installation, ensure you have the following system requiremen
 
 ## Quick Setup
 
-### Step 1: Environment Configuration
+### Step 1: Clone the Repository
 
-First, set up your environment variables by copying the sample file:
+First, clone the project repository:
+
+```bash
+git clone <repository-url>
+cd crdt-workspace
+```
+
+### Step 2: Environment Configuration
+
+Set up your environment variables by copying the sample file:
 
 ```bash
 cp .env-sample .env
@@ -51,7 +60,7 @@ cp .env-sample .env
 
 Then edit the `.env` file to configure your specific settings (database URLs, API keys, etc.).
 
-### Step 2: One-Command Installation
+### Step 3: One-Command Installation
 
 🚀 **After setting up the environment, install the entire project with just one command:**
 
