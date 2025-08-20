@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.67
+### Author
+Kashan
+### Added
+- ***update controller***: Enhanced update function to check if processed_record contains all fields specified in pluck_fields
+- ***update controller***: Added automatic complete record retrieval when pluck_fields contain missing fields from update body
+- ***update controller***: Improved field validation logic to ensure pluck_fields always return requested data
+### Fixes
+
 ## 0.1.66
 ### Author
 Kashan
