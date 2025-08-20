@@ -32,9 +32,21 @@ Before running the installation, ensure you have the following system requiremen
 - Internet connection for downloading Rust toolchain and dependencies
 - Access to crates.io and GitHub for package downloads
 
-## Quick Setup (One Command)
+## Quick Setup
 
-🚀 **After meeting the prerequisites, new developers can set up the entire project with just one command:**
+### Step 1: Environment Configuration
+
+First, set up your environment variables by copying the sample file:
+
+```bash
+cp .env-sample .env
+```
+
+Then edit the `.env` file to configure your specific settings (database URLs, API keys, etc.).
+
+### Step 2: One-Command Installation
+
+🚀 **After setting up the environment, install the entire project with just one command:**
 
 ```bash
 make install
