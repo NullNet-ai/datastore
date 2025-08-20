@@ -111,7 +111,7 @@ export class GetActorsImplementations {
       const { table_schema } = Utility.checkTable(table);
       const _plucked_fields = Utility.parsePluckedFields({
         table,
-        pluck: query.pluck?.split(',') || '',
+        pluck: query.pluck?.split(',') || ['id'],
         date_format,
         encrypted_fields: query.encrypted_fields,
         time_zone,

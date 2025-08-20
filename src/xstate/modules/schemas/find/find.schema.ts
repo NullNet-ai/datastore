@@ -68,6 +68,12 @@ export enum EOrderDirection {
   ASCENDING = 'ascending',
 }
 
+export enum ELikeMatchPattern {
+  STARTS_WITH = 'starts_with',
+  ENDS_WITH = 'ends_with',
+  CONTAINS = 'contains',
+}
+
 export interface IGroupAdvanceFilters<f = string> {
   type: 'criteria' | 'operator';
   operator: EOperator;
@@ -119,6 +125,7 @@ export interface IAdvanceFilters<f = string> {
   case_sensitive?: boolean;
   parse_as?: 'text';
   fields?: Array<f>;
+  match_pattern?: ELikeMatchPattern;
 }
 export interface IWhereClauses {
   and: Array<IAdvanceFilters>;

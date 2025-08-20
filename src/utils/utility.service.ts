@@ -4,6 +4,7 @@ import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
 import { ulid } from 'ulid';
 import { LoggerService, ZodValidationException,  } from '@dna-platform/common';
 import {
+  ELikeMatchPattern,
   EOperator,
   EOrderDirection,
   IAdvanceFilters,
@@ -105,6 +106,7 @@ interface IEvaluateFilter {
   pass_field_key?: string;
   permissions?: Record<string, any>;
   concatenated_field_expressions?: Record<string, any>;
+  match_pattern?: ELikeMatchPattern;
 }
 
 interface IAggregationFilterAnalyzer {
@@ -195,7 +197,6 @@ export class Utility {
             created_time: formattedTime,
             updated_date: formattedDate,
             updated_time: formattedTime,
-            timestamp: date.toISOString(),
           }
         : {
             updated_date: formattedDate,
@@ -639,7 +640,7 @@ export class Utility {
                 }
                   ${
                     nested
-                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."id" = "${prev_join_to_entity}"."${from.field}"`
+                      ? `LEFT JOIN "${toEntity}" "${toAlias}" ON "${toAlias}"."${to.field}" = "${prev_join_to_entity}"."${from.field}"`
                       : ''
                   }
                   WHERE (${default_filter_clause}${additional_where_and_clause})
@@ -916,7 +917,7 @@ export class Utility {
                 : schema[nested_from.entity];
 
               nested_additional_filter = [
-                eq(aliased_to_entity.id, parent_entity[from.field]),
+                eq(aliased_to_entity[to.field], parent_entity[from.field]),
               ];
             }
             sub_query = sub_query
@@ -1125,6 +1126,7 @@ export class Utility {
     pass_field_key = '',
     permissions,
     concatenated_field_expressions = {},
+    match_pattern = ELikeMatchPattern.CONTAINS,
   }: IEvaluateFilter) {
     const is_aliased = aliased_entities.includes(entity);
     let _field = `${field}`;
@@ -1240,10 +1242,11 @@ export class Utility {
       ];
     }
 
+    const is_array_field = pluralize.isPlural(field);
     switch (operator) {
       case EOperator.EQUAL:
         // exact value for an array field
-        if (pluralize.isPlural(field)) {
+        if (is_array_field) {
           return eq(
             schema_field,
             sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
@@ -1251,7 +1254,7 @@ export class Utility {
         }
         return or(...values.map((value) => eq(schema_field, value)));
       case EOperator.NOT_EQUAL:
-        if (pluralize.isPlural(field)) {
+        if (is_array_field) {
           return ne(
             schema_field,
             sql.raw(`ARRAY[${values.map((value) => `'${value}'`).join(', ')}]`),
@@ -1278,7 +1281,7 @@ export class Utility {
         return or(...values.map((value) => ilike(schema_field, `%${value}%`)));
       case EOperator.NOT_CONTAINS:
         if (case_sensitive) {
-          return or(
+          return and(
             ...values.map((value) => notLike(schema_field, `%${value}%`)),
           );
         }
@@ -1298,15 +1301,39 @@ export class Utility {
       case EOperator.OR:
         return or(...dz_filter_queue);
       case EOperator.LIKE:
-        if (case_sensitive) {
-          return like(schema_field, `%${values[0]}%`);
+        let like_value_pattern = `%${values[0]}%`;
+        if (
+          match_pattern === ELikeMatchPattern.STARTS_WITH &&
+          !is_array_field
+        ) {
+          like_value_pattern = `${values[0]}%`;
+        } else if (
+          match_pattern === ELikeMatchPattern.ENDS_WITH &&
+          !is_array_field
+        ) {
+          like_value_pattern = `%${values[0]}`;
         }
-        return ilike(schema_field, `%${values[0]}%`);
+        if (case_sensitive) {
+          return like(schema_field, like_value_pattern);
+        }
+        return ilike(schema_field, like_value_pattern);
       case EOperator.NOT_LIKE:
-        if (case_sensitive) {
-          return notLike(schema_field, `%${values[0]}%`);
+        let not_like_value_pattern = `%${values[0]}%`;
+        if (
+          match_pattern === ELikeMatchPattern.STARTS_WITH &&
+          !is_array_field
+        ) {
+          not_like_value_pattern = `${values[0]}%`;
+        } else if (
+          match_pattern === ELikeMatchPattern.ENDS_WITH &&
+          !is_array_field
+        ) {
+          not_like_value_pattern = `%${values[0]}`;
         }
-        return notIlike(schema_field, `%${values[0]}%`);
+        if (case_sensitive) {
+          return notLike(schema_field, not_like_value_pattern);
+        }
+        return notIlike(schema_field, not_like_value_pattern);
       case EOperator.HAS_NO_VALUE:
         let is_empty_filter = eq(schema_field, '');
         if (pluralize.isPlural(field)) {
@@ -1429,6 +1456,7 @@ export class Utility {
           case_sensitive = false,
           parse_as = '',
           fields = [],
+          match_pattern = ELikeMatchPattern.CONTAINS,
         },
       ] = advance_filters as IAdvanceFilters[] as [
         {
@@ -1441,6 +1469,7 @@ export class Utility {
           case_sensitive?: boolean;
           parse_as?: 'text';
           fields?: Array<string>;
+          match_pattern?: ELikeMatchPattern;
         },
       ];
       if (typeof values === 'string') {
@@ -1479,6 +1508,7 @@ export class Utility {
           pass_field_key,
           permissions,
           concatenated_field_expressions,
+          match_pattern,
         }),
       ];
     }
@@ -1492,6 +1522,7 @@ export class Utility {
         case_sensitive = false,
         parse_as = '',
         fields = [],
+        match_pattern = ELikeMatchPattern.CONTAINS,
       } = filter;
       if (typeof values === 'string') {
         filter.values = JSON.parse(values);
@@ -1530,6 +1561,7 @@ export class Utility {
           time_zone,
           date_format,
           concatenated_field_expressions,
+          match_pattern,
         }),
       );
 
@@ -1552,6 +1584,7 @@ export class Utility {
             time_zone,
             date_format,
             concatenated_field_expressions,
+            match_pattern,
           }),
         );
         if (where_clause_queue.length > 1) where_clause_queue.shift();
@@ -1856,10 +1889,16 @@ export class Utility {
 
   public static execCommand(command: string) {
     try {
-      execSync(command);
-      return true;
+      const raw_result = execSync(command);
+      const raw_string = raw_result?.toString('utf-8')?.trim();
+      const result = raw_string.replace(/(\w+):/g, '"$1":');
+      return {
+        success: true,
+        result,
+      };
     } catch (error: any) {
       Utility.logger.error(error.stderr.toString() ?? error?.message ?? error);
+      return { success: false };
     }
   }
 
@@ -2631,9 +2670,9 @@ export class Utility {
 
   public static replacePlaceholders(query, values) {
     values.forEach((value, index) => {
-      const placeholder = `\\$${index + 1}`;
+      const placeholder = `\$${index + 1}`;
       const formatted_value = typeof value === 'string' ? `'${value}'` : value;
-      query = query.replace(new RegExp(placeholder, 'g'), formatted_value);
+      query = query.replace(placeholder, formatted_value);
     });
     return query;
   }

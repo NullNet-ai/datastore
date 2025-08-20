@@ -45,8 +45,10 @@ export class NotificationsGateway
     const mainPipe = this.pgListenerService.getMainStream();
 
     mainPipe.on('data', (payload) => {
+      if (payload.event_name.startsWith('timeline_')) return;
+
       this.logger.debug(
-        `🔔 Main stream data received: ${JSON.stringify(payload)}`,
+        `Main stream data received: ${JSON.stringify(payload)}`,
       );
 
       this.processingQueue.push(payload);

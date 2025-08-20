@@ -22,7 +22,7 @@ export class PgFunctionActorsImplementations {
   }
   public readonly actors: IActors = {
     pgFunction: fromPromise(async ({ input }): Promise<IResponse> => {
-      const { context } = input;
+      const { context, event } = input;
       if (!context?.controller_args)
         return Promise.reject({
           payload: {
@@ -34,7 +34,7 @@ export class PgFunctionActorsImplementations {
         });
 
       const [_res, _req] = context?.controller_args;
-      const { body } = _req;
+      const { body, query } = _req;
       const { function: function_string, table_name } = body;
       if (!function_string)
         return Promise.reject({
@@ -60,11 +60,6 @@ export class PgFunctionActorsImplementations {
       const function_name = function_string.match(
         /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+([a-zA-Z0-9_]+)/i,
       )[1];
-      console.log(
-        '%c 🦒: PgFunctionActorsImplementations -> function_name ',
-        'font-size:16px;background-color:#67f92c;color:black;',
-        function_name,
-      );
       body.channel_name = function_name;
 
       const channel_name = function_string.match(
@@ -87,32 +82,33 @@ export class PgFunctionActorsImplementations {
         });
       }
       try {
-        await this.db.execute(sql.raw(function_string));
-        const gfdghd = await this.db.execute(
-          sql.raw(`DO $$
-  BEGIN
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_trigger WHERE tgname = '${channel_name}_trigger'
-    ) THEN
-      CREATE TRIGGER ${channel_name}_trigger
-      AFTER INSERT ON ${table_name}
-      FOR EACH ROW EXECUTE FUNCTION ${channel_name}();
-    END IF;
-  END;
-  $$;`),
-        );
+        let trigger_instance_statement = 'AFTER INSERT';
+        if (query?.type === 'timeline')
+          trigger_instance_statement += ' OR UPDATE OR DELETE';
 
-        console.log(
-          '%c 🚳: PgFunctionActorsImplementations -> gfdghd ',
-          'font-size:16px;background-color:#6d53b0;color:white;',
-          gfdghd,
+        await this.db.execute(sql.raw(function_string));
+        await this.db.execute(
+          sql.raw(`DO $$
+        BEGIN
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_available_extensions
+              WHERE name = 'hstore'
+          ) THEN
+              CREATE EXTENSION hstore;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_trigger WHERE tgname = '${channel_name}_trigger'
+          ) THEN
+            CREATE TRIGGER ${channel_name}_trigger
+            ${trigger_instance_statement} ON ${table_name}
+            FOR EACH ROW EXECUTE FUNCTION ${channel_name}();
+          END IF;
+        END;
+        $$;`),
         );
       } catch (err: any) {
-        console.log(
-          '%c 🚜: PgFunctionActorsImplementations -> err ',
-          'font-size:16px;background-color:#0710d5;color:white;',
-          err,
-        );
         this.logger.error(err.message);
         return Promise.reject({
           payload: {
@@ -128,7 +124,7 @@ export class PgFunctionActorsImplementations {
           success: true,
           message: 'pgFunction Message',
           count: 0,
-          data: [],
+          data: event.output.payload.data,
         },
       });
     }),

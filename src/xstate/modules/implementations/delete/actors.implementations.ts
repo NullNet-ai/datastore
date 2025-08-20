@@ -114,6 +114,8 @@ export class DeleteActorsImplementations {
         }
 
         this.logger.debug(`Soft deleting ${table} record with id: ${id}`);
+        await this.setRequestContext(_req);
+
         const result = await this.db
           .update(table_schema)
           .set({
@@ -177,4 +179,16 @@ export class DeleteActorsImplementations {
       }
     }),
   };
+
+  private async setRequestContext(request) {
+    const raw_query = `SET my.request_context = '${JSON.stringify({
+      headers: request.headers,
+      url: request.url,
+      route: request.route?.path,
+      method: request.method,
+      status_code: request.statusCode,
+      status_message: request.statusMessage,
+    })}'`;
+    await this.db.execute(sql.raw(raw_query));
+  }
 }

@@ -44,9 +44,6 @@ import { AuthService } from '@dna-platform/crdt-lww-postgres/build/organizations
 import { StoreGrpcService } from './store.grpc.service';
 import { BatchUpdateImplementationModule } from '../../xstate/modules/implementations/batch_update/batch_update.implementation.module';
 import { SearchSuggestionsImplementationModule } from 'src/xstate/modules/implementations/search_suggestions/search_suggestions.implementation.module';
-import { PgFunctionImplementationModule } from '../../xstate/modules/implementations/pg_function/pg_function.implementation.module';
-import { PgListenerGetImplementationModule } from '../../xstate/modules/implementations/pg_listener_get/pg_listener_get.implementation.module';
-import { PgListenerDeleteImplementationModule } from '../../xstate/modules/implementations/pg_listener_delete/pg_listener_delete.implementation.module';
 import { UpsertImplementationModule } from '../../xstate/modules/implementations/upsert/upsert.implementation.module';
 import {
   OrganizationsModule,
@@ -56,6 +53,9 @@ import {
 } from '../../xstate/modules/implementations/register_device/register_device.implementation.module';
 
 // import { DatabaseBackupModule } from '../backup/database_backup.module';
+import { PgFunctionImplementationModule } from '../../xstate/modules/implementations/pg_function/pg_function.implementation.module';
+import { PgListenerGetImplementationModule } from '../../xstate/modules/implementations/pg_listener_get/pg_listener_get.implementation.module';
+import { PgListenerDeleteImplementationModule } from '../../xstate/modules/implementations/pg_listener_delete/pg_listener_delete.implementation.module';
 
 const machines_providers = machine_providers([
   // CRUD
@@ -85,7 +85,6 @@ const machines_providers = machine_providers([
   machines.TransactionsMachine,
   // Count
   machines.CountMachine,
-
   // PgListener
   machines.PgFunctionMachine,
   machines.PgListenerGetMachine,
