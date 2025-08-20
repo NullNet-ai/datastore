@@ -522,6 +522,7 @@ pub async fn session_to_signed_in_activity(
         deleted_by: None,
         requested_by: None,
         timestamp: Some(now),
+        hypertable_timestamp: Some(now.to_string()),
         tags: None,
         categories: None,
         code: match generate_code("signed_in_activities", "SIA", 1000).await {

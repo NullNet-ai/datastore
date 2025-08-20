@@ -59,6 +59,11 @@ pub async fn apply(
             && !ht_timestamp[10..].contains('-')
         {
             format!("{}+00:00", ht_timestamp)
+        } else if ht_timestamp.contains(' ') && !ht_timestamp.contains('T') {
+            // Handle space-separated timestamps like "2025-08-20 21:44:41.082307"
+            // Convert to RFC3339 format with T separator and UTC timezone
+            let with_t = ht_timestamp.replace(' ', "T");
+            format!("{}+00:00", with_t)
         } else {
             ht_timestamp.to_string()
         };

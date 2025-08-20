@@ -36,4 +36,5 @@ pub struct SignedInActivityModel {
     pub session_started: Option<NaiveDateTime>,
     pub remark: Option<String>,
     pub session_id: Option<String>,
+    pub hypertable_timestamp: Option<String>,
 }
