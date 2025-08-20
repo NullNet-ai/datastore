@@ -9,7 +9,7 @@ CREATE TABLE "account_phone_numbers" (
     "tombstone" INTEGER DEFAULT 0,
     "status" TEXT DEFAULT 'Active',
     "previous_status" TEXT,
-    "version" INTEGER,
+    "version" INTEGER DEFAULT 0,
     "created_date" TEXT,
     "created_time" TEXT,
     "updated_date" TEXT,

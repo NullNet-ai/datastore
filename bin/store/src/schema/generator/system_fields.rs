@@ -14,7 +14,7 @@ macro_rules! system_fields {
         tombstone: nullable(integer()), default: "0",
         status: nullable(text()), default: "Active",
         previous_status: nullable(text()),
-        version: nullable(integer()),
+        version: nullable(integer()), default: "0",
         created_date: nullable(text()),
         created_time: nullable(text()),
         updated_date: nullable(text()),

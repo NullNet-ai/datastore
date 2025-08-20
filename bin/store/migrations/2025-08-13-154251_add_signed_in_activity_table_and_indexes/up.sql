@@ -4,7 +4,7 @@ CREATE TABLE "signed_in_activities" (
 	"tombstone" integer,
 	"status" text,
 	"previous_status" text,
-	"version" integer,
+	"version" integer default 0,
 	"created_date" text,
 	"created_time" text,
 	"updated_date" text,
@@ -32,7 +32,7 @@ CREATE TABLE "signed_in_activities" (
 	"remark" text,
 	"session_id" text,
 	"hypertable_timestamp" text,
-	PRIMARY KEY ("id", "timestamp")
+	PRIMARY KEY ("timestamp","id")
 );
 
 -- Convert to TimescaleDB hypertable
@@ -55,12 +55,6 @@ CREATE INDEX "idx_signed_in_activities_code" ON "signed_in_activities" USING btr
 CREATE INDEX "idx_signed_in_activities_sensitivity_level" ON "signed_in_activities" USING btree ("sensitivity_level");
 CREATE INDEX "idx_signed_in_activities_session_id" ON "signed_in_activities" USING btree ("session_id");
 
--- Add foreign key constraints
-ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
-
-
+-- Convert to TimescaleDB hypertable FIRST
 SELECT create_hypertable('signed_in_activities', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+

@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.66
+### Author
+Kashan
+### Added
+- ***schema validation***: Added validation in schema generator to detect and prevent foreign key constraints on TimescaleDB hypertables
+- ***schema validation***: Schema generator now exits with error message when hypertable tables have foreign key constraints
+- ***system fields***: Set default value of 0 for version field in all table system fields
+### Fixes
+
 ## 0.1.65
 ### Author
 Kashan
