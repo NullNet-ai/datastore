@@ -3,9 +3,12 @@ use std::{future::Future, pin::Pin, rc::Rc};
 use actix_web::{
     cookie::{Cookie as ActixCookie, SameSite},
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage,
+    Error, HttpMessage, web::BytesMut,
 };
+use actix_http;
 use futures::future::{ok, Ready};
+use futures::StreamExt;
+use serde_json::Value;
 use std::str::FromStr;
 use tonic::service::Interceptor;
 use tonic::{Request, Status};
@@ -82,7 +85,7 @@ where
 
     forward_ready!(service);
 
-    fn call(&self, req: ServiceRequest) -> Self::Future {
+    fn call(&self, mut req: ServiceRequest) -> Self::Future {
         let service = Rc::clone(&self.service);
         let session_manager = self.config.session_manager.clone();
         let cookie_same_site = self.config.cookie_same_site;
@@ -107,6 +110,48 @@ where
                 .map(|c| c.value().to_string());
 
             let session_id = header_value.map(|s| s.to_string()).or(cookie_value);
+
+            // Check if this is a login route and handle account_id matching
+            let is_login_route = path.contains("/auth") && req.method() == actix_web::http::Method::POST;
+            let mut account_id_from_body: Option<String> = None;
+
+            if is_login_route {
+                 // Extract and store the request body
+                 let mut payload = req.take_payload();
+                 let mut bytes = BytesMut::new();
+                
+                while let Some(chunk) = payload.next().await {
+                    let chunk = chunk.map_err(|e| {
+                        log::error!("Error reading request body: {}", e);
+                        actix_web::error::ErrorBadRequest("Failed to read request body")
+                    })?;
+                    bytes.extend_from_slice(&chunk);
+                }
+                
+                let body_bytes = bytes.freeze();
+                
+                // Try to parse the body to extract account_id
+                if let Ok(body_str) = std::str::from_utf8(&body_bytes) {
+                    if let Ok(json_value) = serde_json::from_str::<Value>(body_str) {
+                        // Extract account_id from the nested structure: data.account_id or data.email
+                        if let Some(data) = json_value.get("data") {
+                            account_id_from_body = data.get("account_id")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                                .or_else(|| {
+                                    data.get("email")
+                                        .and_then(|v| v.as_str())
+                                        .map(|s| s.to_string())
+                                });
+                        }
+                    }
+                }
+                
+                // Restore the body to the request so it can be consumed by the controller
+                let (_, mut payload) = actix_http::h1::Payload::create(true);
+                payload.unread_data(body_bytes);
+                req.set_payload(payload.into());
+            }
 
             // Extract IP address and location before session creation
             let location = req
@@ -142,7 +187,38 @@ where
             let (mut session, is_new_session) = if let Some(session_id) = session_id {
                 // Try to load existing session first
                 match session_manager.load_session(&session_id).await {
-                    Ok(session) => (session, false),
+                    Ok(existing_session) => {
+                        // For login routes, check if account_id matches existing session's user_account_id
+                        if is_login_route {
+                            if let (Some(body_account_id), Some(session_account_id)) = 
+                                (&account_id_from_body, &existing_session.user_account_id) {
+                                if body_account_id != session_account_id {
+                                    // Account IDs don't match, create new session
+                                    log::info!("Account ID mismatch for login route. Body: {}, Session: {}. Creating new session.", 
+                                              body_account_id, session_account_id);
+                                    let new_session_id = session_manager.extract_session_id(None, None);
+                                    let new_session = session_manager
+                                        .create_new_session(&new_session_id, "")
+                                        .await;
+                                    (new_session, true)
+                                } else {
+                                    // Account IDs match, use existing session
+                                    log::info!("Account ID matches for login route. Reusing existing session.");
+                                    (existing_session, false)
+                                }
+                            } else {
+                                // Either no account_id in body or no user_account_id in session
+                                // Use existing session but log the situation
+                                if account_id_from_body.is_some() && existing_session.user_account_id.is_none() {
+                                    log::info!("Login route with account_id in body but no user_account_id in existing session. Using existing session.");
+                                }
+                                (existing_session, false)
+                            }
+                        } else {
+                            // Not a login route, use existing session
+                            (existing_session, false)
+                        }
+                    },
                     Err(_) => {
                         // Session doesn't exist, create new one
                         let new_session = session_manager.create_new_session(&session_id, "").await;
