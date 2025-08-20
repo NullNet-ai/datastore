@@ -585,7 +585,6 @@ pub struct Join {
     pub field_relation: FieldRelation,
     #[serde(default)]
     pub nested: bool,
-    pub filters: Option<FilterCriteria>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

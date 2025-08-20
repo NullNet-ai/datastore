@@ -165,7 +165,6 @@ pub fn convert_join(proto_join: &store::Join) -> Option<Join> {
         r#type: proto_join.r#type.clone(),
         field_relation,
         nested: proto_join.nested.unwrap_or(false),
-        filters: None, // TODO: Add proper conversion from proto_join.filters if needed
     })
 }
 

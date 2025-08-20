@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.63
+### Author
+Bert
+### Added
+- ***joins***: Added filters in field relation "to" property only.
+- ***validation***: Added validation to check that filters are not used on 'from' RelationEndpoint.
+### Fixes
+- ***validation***: Fixed the validations for advance_filters to priorities the pluck, pluck_object,pluck_group_object,concatenated_fields and group_by than join's fields
+---
+
 ## 0.1.62
 ### Author
 Kashan

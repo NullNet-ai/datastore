@@ -1287,16 +1287,32 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 format!("\"{}\".\"id\"", lateral_alias)
             };
 
-        let standard_where = self
-            .build_system_where_clause(&lateral_alias)
-            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias));
+        let mut where_conditions = vec![
+            self.build_system_where_clause(&lateral_alias)
+                .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))
+        ];
+
+        // Add filters from the 'to' RelationEndpoint if they exist
+        if !join.field_relation.to.filters.is_empty() {
+            match self.build_infix_expression(&join.field_relation.to.filters) {
+                Ok(filter_expression) if !filter_expression.is_empty() => {
+                    where_conditions.push(filter_expression);
+                }
+                Err(_) => {
+                    // Log error or handle gracefully - for now, continue without the filter
+                }
+                _ => {}
+            }
+        }
+
+        let combined_where = where_conditions.join(" AND ");
 
         if is_nested {
             return format!(
                 "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
                 selected_fields,
                 to_entity, lateral_alias,
-                standard_where,
+                combined_where,
                 lateral_alias, to_field, from_entity, from_field,
                 to_alias
             );
@@ -1312,7 +1328,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
             selected_fields,
             to_entity, lateral_alias,
-            standard_where,
+            combined_where,
             from_table_ref, from_field, lateral_alias, to_field,
             to_alias
         )

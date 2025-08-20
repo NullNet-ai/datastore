@@ -528,6 +528,19 @@ impl<'a, 'b> Validation<'a, 'b> {
                     data: vec![],
                 };
             }
+
+            // Validate that filters are not allowed on 'from' RelationEndpoint
+            if !join.field_relation.from.filters.is_empty() {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "joins[{}] > field_relation > from > filters > Filters are not allowed on 'from' RelationEndpoint. Use filters on 'to' RelationEndpoint instead",
+                        join_index
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
         }
 
         ApiResponse {
