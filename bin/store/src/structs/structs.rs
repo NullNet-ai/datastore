@@ -603,6 +603,8 @@ pub struct RelationEndpoint {
     pub order_by: Option<String>,
     pub limit: Option<usize>,
     pub offset: Option<usize>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub filters: Vec<FilterCriteria>,
 }
 
 //advance filters

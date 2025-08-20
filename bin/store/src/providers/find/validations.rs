@@ -20,13 +20,16 @@ impl<'a, 'b> Validation<'a, 'b> {
     pub fn exec(&self) -> ApiResponse {
         let validation_checks = vec![
             "table",
+            // Prioritized properties first
             "pluck",
             "pluck_object",
+            "pluck_group_object",
+            "concatenated_fields",
+            "group_by",
+            // Other validations
             "advance_filters:group_advance_filters",
             "advance_filters",
             "group_advance_filters",
-            "concatenated_fields",
-            "group_by",
             "joins",
             "order_by_format",
             "order_direction",
@@ -42,11 +45,12 @@ impl<'a, 'b> Validation<'a, 'b> {
                 "table" => self.validate_table(),
                 "pluck" => self.validate_pluck(),
                 "pluck_object" => self.validate_pluck_object(),
+                "pluck_group_object" => self.validate_pluck_group_object(),
+                "concatenated_fields" => self.validate_concatenated_fields(),
+                "group_by" => self.validate_group_by(),
                 "advance_filters:group_advance_filters" => self.validate_conflicting_filters(),
                 "advance_filters" => self.validate_advance_filters(),
                 "group_advance_filters" => self.validate_group_advance_filters(),
-                "concatenated_fields" => self.validate_concatenated_fields(),
-                "group_by" => self.validate_group_by(),
                 "joins" => self.validate_joins(),
                 "order_by_format" => self.validate_order_by_format(),
                 "order_direction" => self.validate_order_direction(),
@@ -366,6 +370,78 @@ impl<'a, 'b> Validation<'a, 'b> {
             data: vec![],
         }
     }
+
+    pub fn validate_pluck_group_object(&self) -> ApiResponse {
+        // If no joins are present, pluck_group_object should be empty or only reference the main table
+        if self.request_body.joins.is_empty() {
+            for (entity, _) in &self.request_body.pluck_group_object {
+                if entity != self.table {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "pluck_group_object[{}] > Entity '{}' is not valid. Without joins, only the main table '{}' can be referenced",
+                            entity, entity, self.table
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+            }
+        } else {
+            // Collect valid entities from joins (both entity names and aliases)
+            let mut valid_entities = std::collections::HashSet::new();
+
+            // Add the main table as a valid entity
+            valid_entities.insert(self.table.clone());
+
+            // Add join entities and their aliases
+            for join in &self.request_body.joins {
+                // Add the target entity
+                valid_entities.insert(join.field_relation.to.entity.clone());
+
+                // Add the alias if it exists
+                if let Some(alias) = &join.field_relation.to.alias {
+                    valid_entities.insert(alias.clone());
+                }
+            }
+
+            // Validate each entity in pluck_group_object
+            for (entity, fields) in &self.request_body.pluck_group_object {
+                if !valid_entities.contains(entity) {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "pluck_group_object[{}] > Entity '{}' is not valid. Valid entities are: {}",
+                            entity, entity, valid_entities.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+
+                // Validate that fields are not empty
+                if fields.is_empty() {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "pluck_group_object[{}] > Fields cannot be empty for entity '{}'",
+                            entity, entity
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+            }
+        }
+
+        ApiResponse {
+            success: true,
+            message: "Successfully validated pluck_group_object fields".to_string(),
+            count: 0,
+            data: vec![],
+        }
+    }
+
     pub fn validate_joins(&self) -> ApiResponse {
         for (join_index, join) in self.request_body.joins.iter().enumerate() {
             // Validate join type
@@ -447,6 +523,19 @@ impl<'a, 'b> Validation<'a, 'b> {
                     message: format!(
                         "joins[{}] > field_relation > to > field > Join to field '{}' does not exist in entity '{}'",
                         join_index, to_field, to_entity
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+
+            // Validate that filters are not allowed on 'from' RelationEndpoint
+            if !join.field_relation.from.filters.is_empty() {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "joins[{}] > field_relation > from > filters > Filters are not allowed on 'from' RelationEndpoint. Use filters on 'to' RelationEndpoint instead",
+                        join_index
                     ),
                     count: 0,
                     data: vec![],
@@ -689,6 +778,24 @@ impl<'a, 'b> Validation<'a, 'b> {
                         continue;
                     }
 
+                    // Check if the filtered field exists in prioritized properties first
+                    // Check in pluck
+                    let field_exists_in_prioritized = self.request_body.pluck.contains(field) ||
+                        // Check in pluck_object
+                        self.request_body.pluck_object.get(entity_str)
+                            .map_or(false, |fields| fields.contains(field)) ||
+                        // Check in pluck_group_object
+                        self.request_body.pluck_group_object.get(entity_str)
+                            .map_or(false, |fields| fields.contains(field)) ||
+                        // Check in group_by fields
+                        self.request_body.group_by.as_ref()
+                            .map_or(false, |group_by| group_by.fields.contains(field));
+
+                    // If field exists in prioritized properties, skip JOIN validation
+                    if field_exists_in_prioritized {
+                        continue;
+                    }
+
                     // Check if the filtered field exists in JOIN "to" fields, aliases, or entities
                     let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
                         let to_endpoint = &join.field_relation.to;
@@ -712,7 +819,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                         return ApiResponse {
                             success: false,
                             message: format!(
-                                "advance_filters[{}] > field > Filter field '{}' in entity '{}' conflicts with JOIN 'to' field. Filtered fields cannot reference JOIN 'to' fields, their aliases, or entities",
+                                "advance_filters[{}] > field > Filter field '{}' in entity '{}' is not found in prioritized properties (pluck, pluck_object, pluck_group_object, concatenated_fields, group_by) or JOIN 'to' fields. Please ensure the field exists in one of these locations.",
                                 filter_index, field, entity_str
                             ),
                             count: 0,

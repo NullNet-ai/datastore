@@ -3387,6 +3387,7 @@ message RelationEndpoint {
   optional string order_by = 5;
   optional int32 limit = 6;
   optional int32 offset = 7;
+  repeated FilterCriteria filters = 8;
 }
 
 // Field relation for joins
