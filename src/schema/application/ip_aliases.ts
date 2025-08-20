@@ -8,19 +8,23 @@ import {
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { table as aliases } from './aliases';
+import { primaryKey } from 'drizzle-orm/pg-core';
 
 const table_name = 'ip_aliases';
+
+const config = (table) => ({
+  pk: primaryKey({ columns: [table.id] }),
+  ...getConfigDefaults.defaultIndexes(table_name, table),
+});
 
 const fields = {
   alias_id: text('alias_id').references(
     () => aliases.id as AnyPgColumn,
   ),
-  ip: inet('ip'),
-  prefix: integer('prefix').default(32),
+  ip: inet('ip').unique(),
+  prefix: integer('prefix').default(32).unique(),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
 }
-
-const config = getConfigDefaults.byIndex(table_name);
 
 export const table = pgTable(
   table_name,
