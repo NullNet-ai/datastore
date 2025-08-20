@@ -13,20 +13,39 @@ crdt-rust/
 │   └── main/       # Main executable
 ```
 
+## Prerequisites
+
+Before running the installation, ensure you have the following system requirements:
+
+### Required System Tools
+- **make** - Build automation tool (required to run the installer)
+- **curl** or **wget** - For downloading dependencies
+- **git** - Version control system
+- **sudo privileges** - Required for system package installation
+
+### Operating System Support
+- **macOS** - Homebrew will be used for package management
+- **Linux** - Supports apt-get (Ubuntu/Debian), yum (RHEL/CentOS), and pacman (Arch)
+- **Docker** - For containerized development (optional)
+
+### Network Requirements
+- Internet connection for downloading Rust toolchain and dependencies
+- Access to crates.io and GitHub for package downloads
+
 ## Quick Setup (One Command)
 
-🚀 **New developers can set up the entire project with just one command:**
+🚀 **After meeting the prerequisites, new developers can set up the entire project with just one command:**
 
 ```bash
 make install
 ```
 
 This will automatically install:
-- Rust (if not already installed)
-- PostgreSQL
-- cargo-make, cargo-watch, diesel_cli
-- Set up git hooks
-- Configure the development environment
+- **Rust toolchain** (rustc, cargo, rustup)
+- **PostgreSQL** database server
+- **Cargo tools**: cargo-make, cargo-watch, diesel_cli
+- **Git hooks** for development workflow
+- **Environment configuration** and dependencies
 
 ### Verify Installation
 
