@@ -473,6 +473,7 @@ pub fn generate_unified_proto(tables: &[Table]) -> String {
     proto.push_str("  optional string order_by = 5;\n");
     proto.push_str("  optional int32 limit = 6;\n");
     proto.push_str("  optional int32 offset = 7;\n");
+    proto.push_str("  repeated FilterCriteria filters = 8;\n");
     proto.push_str("}\n\n");
 
     // Field relation for joins

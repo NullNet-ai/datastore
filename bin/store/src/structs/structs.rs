@@ -585,6 +585,7 @@ pub struct Join {
     pub field_relation: FieldRelation,
     #[serde(default)]
     pub nested: bool,
+    pub filters: Option<FilterCriteria>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -603,6 +604,8 @@ pub struct RelationEndpoint {
     pub order_by: Option<String>,
     pub limit: Option<usize>,
     pub offset: Option<usize>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub filters: Vec<FilterCriteria>,
 }
 
 //advance filters

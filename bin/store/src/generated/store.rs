@@ -6367,6 +6367,8 @@ pub struct RelationEndpoint {
     pub limit: ::core::option::Option<i32>,
     #[prost(int32, optional, tag = "7")]
     pub offset: ::core::option::Option<i32>,
+    #[prost(message, repeated, tag = "8")]
+    pub filters: ::prost::alloc::vec::Vec<FilterCriteria>,
 }
 /// Field relation for joins
 #[derive(serde::Serialize, serde::Deserialize)]
