@@ -1,0 +1,28 @@
+2025-08-20T10:41:36: Loading AWS config from environment
+2025-08-20T10:41:36: 🔧 Configuring S3 client for endpoint: https://mastra-minio-api.app.dnaqa.net
+2025-08-20T10:41:36: ⚠️  SSL certificate verification is DISABLED - use only for development!
+2025-08-20T10:41:36: ✅ S3 client configured successfully for endpoint: https://mastra-minio-api.app.dnaqa.net
+2025-08-20T10:41:36: 
+2025-08-20T10:41:36: 🔧 S3 Client Configuration:
+2025-08-20T10:41:36:    Region: us-east-1
+2025-08-20T10:41:36:    Endpoint: Configured during client creation
+2025-08-20T10:41:36:    Service: Amazon S3
+2025-08-20T10:41:36: 
+2025-08-20T10:41:36: 📍 Region retrieved from client: us-east-1
+2025-08-20T10:41:36: Reading bucket name from environment
+2025-08-20T10:41:36: S3 client initialization complete with bucket: bcktgpct
+2025-08-20T10:41:36: 
+2025-08-20T10:41:36: Testing connectivity to MinIO endpoint...
+2025-08-20T10:41:37: ✅ Successfully connected to MinIO endpoint
+2025-08-20T10:41:37: Found 8 existing buckets
+2025-08-20T10:41:37:   - bcktgpct
+2025-08-20T10:41:37:   - bcktwpct
+2025-08-20T10:41:37:   - samples
+2025-08-20T10:41:37:   - samples33
+2025-08-20T10:41:37:   - store
+2025-08-20T10:41:37:   - test
+2025-08-20T10:41:37:   - test2
+2025-08-20T10:41:37:   - travelbutler
+2025-08-20T10:41:37: ✅ Bucket 'bcktgpct' already exists (found in bucket list)
+2025-08-20T10:41:37: gRPC Server listening on 0.0.0.0:9000
+2025-08-20T10:42:23: Successfully saved Merkle trees to database
