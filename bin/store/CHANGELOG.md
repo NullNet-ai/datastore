@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.62
+### Author
+Kashan
+
+### Features
+- ***Session Management***: Enhanced session middleware with intelligent session reuse for login routes
+  - Added login route detection for POST requests to /auth endpoint
+  - Implemented request body extraction and parsing to get account_id from login data
+  - Added session comparison logic to reuse existing sessions when account_id matches
+  - Ensured request body restoration for downstream controllers consumption
+  - Added actix-http dependency for payload restoration functionality
+  - Optimized session creation to avoid unnecessary new sessions for same user logins
+---
+
 ## 0.1.61
 ### Author
 Kashan
