@@ -1,6 +1,6 @@
 -- Create signed_in_activities table with same schema as sessions but without application_accessed field
 CREATE TABLE "signed_in_activities" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" text NOT NULL,
 	"tombstone" integer,
 	"status" text,
 	"previous_status" text,
@@ -14,7 +14,7 @@ CREATE TABLE "signed_in_activities" (
 	"updated_by" text,
 	"deleted_by" text,
 	"requested_by" text,
-	"timestamp" timestamp with time zone,
+	"timestamp" timestamp with time zone NOT NULL,
 	"tags" text[],
 	"categories" text[],
 	"code" text,
@@ -30,8 +30,12 @@ CREATE TABLE "signed_in_activities" (
 	"ip_address" text,
 	"session_started" timestamp,
 	"remark" text,
-	"session_id" text
+	"session_id" text,
+	"hypertable_timestamp" text,
+	PRIMARY KEY ("id", "timestamp")
 );
+
+-- Convert to TimescaleDB hypertable
 
 -- Add required indexes for signed_in_activities table
 CREATE INDEX "idx_signed_in_activities_tombstone" ON "signed_in_activities" USING btree ("tombstone");
@@ -57,3 +61,6 @@ ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_created_
 ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "signed_in_activities" ADD CONSTRAINT "signed_in_activities_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+
+
+SELECT create_hypertable('signed_in_activities', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);

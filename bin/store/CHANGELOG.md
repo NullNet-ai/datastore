@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.65
+### Author
+Kashan
+### Added
+- ***database***: Added `hypertable_timestamp` column of type `text` to `signed_in_activities` table
+- ***database***: Converted `signed_in_activities` table to TimescaleDB hypertable with composite primary key (`id`, `timestamp`)
+- ***database***: Added TimescaleDB hypertable creation with 1-day chunk interval and `if_not_exists` option
+### Fixes
+- ***timestamp parsing***: Fixed timestamp parsing errors for space-separated timestamp formats (e.g., "2025-08-20 21:44:41.082307")
+- ***timestamp parsing***: Enhanced RFC3339 timestamp conversion to handle both T-separated and space-separated formats
+- ***timestamp parsing***: Applied consistent timestamp formatting logic across both `hypertable_timestamp` and regular timestamp parsing functions
+---
+
 ## 0.1.64
 ### Author
 Bert

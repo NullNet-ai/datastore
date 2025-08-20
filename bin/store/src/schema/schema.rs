@@ -244,7 +244,7 @@ table! {
 }
 
 table! {
-    signed_in_activities(id) {
+    signed_in_activities(id, timestamp) {
         id -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
@@ -276,6 +276,7 @@ table! {
         session_started -> Nullable<Timestamp>,
         remark -> Nullable<Text>,
         session_id -> Nullable<Text>,
+        hypertable_timestamp -> Nullable<Text>,
 
     }
 }
