@@ -41,7 +41,8 @@ export class UpsertActorsImplementations {
       const { organization_id = '' } = responsible_account;
       const [_res, _req] = controller_args;
       const { params, body } = _req;
-      const { table } = params;
+      const { table, type } = params;
+
 
       const { data, conflict_columns } = body;
       const table_schema = local_schema[table];
@@ -60,7 +61,7 @@ export class UpsertActorsImplementations {
         db_query = db_query.where(
           and(
             ...conditions,
-            eq(table_schema.organization_id, organization_id),
+            ...(type != 'root' ? [eq(table_schema.organization_id, organization_id)] : []),
             eq(table_schema.tombstone, 0),
           ),
         );
