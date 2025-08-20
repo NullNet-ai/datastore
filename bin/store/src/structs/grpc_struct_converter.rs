@@ -99,7 +99,11 @@ pub fn convert_join(proto_join: &store::Join) -> Option<Join> {
                     order_by: to_endpoint.order_by.clone(),
                     limit: to_endpoint.limit.map(|l| l as usize),
                     offset: to_endpoint.offset.map(|o| o as usize),
-                    filters: to_endpoint.filters.iter().filter_map(convert_filter_criteria).collect(),
+                    filters: to_endpoint
+                        .filters
+                        .iter()
+                        .filter_map(convert_filter_criteria)
+                        .collect(),
                 })
                 .unwrap_or(RelationEndpoint {
                     entity: String::new(),
@@ -123,7 +127,11 @@ pub fn convert_join(proto_join: &store::Join) -> Option<Join> {
                     order_by: from_endpoint.order_by.clone(),
                     limit: from_endpoint.limit.map(|l| l as usize),
                     offset: from_endpoint.offset.map(|o| o as usize),
-                    filters: from_endpoint.filters.iter().filter_map(convert_filter_criteria).collect(),
+                    filters: from_endpoint
+                        .filters
+                        .iter()
+                        .filter_map(convert_filter_criteria)
+                        .collect(),
                 })
                 .unwrap_or(RelationEndpoint {
                     entity: String::new(),

@@ -779,9 +779,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                     }
 
                     // Check if the filtered field exists in prioritized properties first
-                    let field_exists_in_prioritized = 
-                        // Check in pluck
-                        self.request_body.pluck.contains(field) ||
+                    // Check in pluck
+                    let field_exists_in_prioritized = self.request_body.pluck.contains(field) ||
                         // Check in pluck_object
                         self.request_body.pluck_object.get(entity_str)
                             .map_or(false, |fields| fields.contains(field)) ||
@@ -815,7 +814,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                         }
                         false
                     });
-                    
+
                     if !field_exists_in_joins {
                         return ApiResponse {
                             success: false,

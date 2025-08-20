@@ -286,7 +286,7 @@ impl OrganizationsController {
                                 .path("/")
                                 .finish(),
                         )
-                        .json(serde_json::json!({ 
+                        .json(serde_json::json!({
                             "token": token,
                             "sessionID": login_response.session_id.unwrap_or_else(|| session_id.clone()) 
                         }))

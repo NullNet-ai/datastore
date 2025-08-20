@@ -1287,10 +1287,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 format!("\"{}\".\"id\"", lateral_alias)
             };
 
-        let mut where_conditions = vec![
-            self.build_system_where_clause(&lateral_alias)
-                .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))
-        ];
+        let mut where_conditions = vec![self
+            .build_system_where_clause(&lateral_alias)
+            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))];
 
         // Add filters from the 'to' RelationEndpoint if they exist
         if !join.field_relation.to.filters.is_empty() {
