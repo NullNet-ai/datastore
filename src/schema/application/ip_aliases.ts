@@ -15,8 +15,8 @@ const fields = {
   alias_id: text('alias_id').references(
     () => aliases.id as AnyPgColumn,
   ),
-  ip: inet('ip'),
-  prefix: integer('prefix').default(32),
+  ip: inet('ip').unique(),
+  prefix: integer('prefix').default(32).unique(),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
 }
 
