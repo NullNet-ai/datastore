@@ -339,7 +339,7 @@ where
                     let json_error = actix_web::HttpResponse::InternalServerError()
                         .content_type("application/json")
                         .json(error_response);
-                    actix_web::error::InternalError::from_response("Internal Server Error", jsonc_error)
+                    actix_web::error::InternalError::from_response("Internal Server Error", json_error)
                 })?;
 
                 let cookie = ActixCookie::build(session_manager.cookie_name(), session_id)
