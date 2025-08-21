@@ -419,16 +419,15 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             )
                         } else {
                             // Handle single field without entity prefix
-                           
-                                Self::get_field(
-                                    &self.table,
-                                    field,
-                                    self.request_body.get_date_format(),
-                                    self.table.as_str(),
-                                    self.timezone.as_deref(),
-                                    true,
-                                )
-                           
+
+                            Self::get_field(
+                                &self.table,
+                                field,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                true,
+                            )
                         }
                     })
                     .collect();
@@ -973,18 +972,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         format!("LOWER({})", field_expression)
                     };
 
-                   
-
                     // Check if field exists in group_by and use proper formatting
                     if let Some(group_by) = &self.request_body.get_group_by() {
                         let field_in_group_by = group_by.fields.iter().any(|group_field| {
                             let group_parts: Vec<&str> = group_field.trim().split('.').collect();
                             let group_table_name = self.normalize_entity_name(group_parts[0]);
-                            
+
                             if group_parts.len() > 1 {
                                 // Handle entity.field format in group_by
-                                group_parts[1] == field_name && 
-                                (group_table_name == table_alias || group_parts[0] == table_alias)
+                                group_parts[1] == field_name
+                                    && (group_table_name == table_alias
+                                        || group_parts[0] == table_alias)
                             } else {
                                 // Handle single field format in group_by
                                 group_parts[0] == field_name
@@ -1004,7 +1002,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 })
                 .filter(|clause| !clause.is_empty()) // Filter out empty clauses
                 .collect();
-            
+
             if !sort_clauses.is_empty() {
                 return format!(" ORDER BY {}", sort_clauses.join(", "));
             }

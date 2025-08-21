@@ -215,7 +215,9 @@ impl<'a, 'b> Validation<'a, 'b> {
             // Validate that all fields exist in the specified entity
             for (field_index, field) in concatenate_field.fields.iter().enumerate() {
                 let normalized_entity = self.normalize_entity_name(&concatenate_field.entity);
-                if !field_exists_in_table(&normalized_entity, field) && !field_exists_in_table(&concatenate_field.entity, field) {
+                if !field_exists_in_table(&normalized_entity, field)
+                    && !field_exists_in_table(&concatenate_field.entity, field)
+                {
                     return ApiResponse {
                         success: false,
                         message: format!(
@@ -248,7 +250,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                     _ => ("", ""), // Handle invalid format gracefully
                 };
                 let normalized_entity = self.normalize_entity_name(entity);
-                if !field_exists_in_table(&normalized_entity, field_name) && !field_exists_in_table(entity, field_name) {
+                if !field_exists_in_table(&normalized_entity, field_name)
+                    && !field_exists_in_table(entity, field_name)
+                {
                     return ApiResponse {
                         success: false,
                         message: format!(
@@ -369,7 +373,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                 }
 
                 let normalized_table = self.normalize_entity_name(&table_to_check);
-                if !field_exists_in_table(&normalized_table, field) && !field_exists_in_table(&table_to_check, field) {
+                if !field_exists_in_table(&normalized_table, field)
+                    && !field_exists_in_table(&table_to_check, field)
+                {
                     return ApiResponse {
                         success: false,
                         message: format!(
@@ -526,7 +532,9 @@ impl<'a, 'b> Validation<'a, 'b> {
             };
 
             let normalized_from_table = self.normalize_entity_name(from_table_to_check);
-            if !field_exists_in_table(&normalized_from_table, from_field) && !field_exists_in_table(from_table_to_check, from_field) {
+            if !field_exists_in_table(&normalized_from_table, from_field)
+                && !field_exists_in_table(from_table_to_check, from_field)
+            {
                 return ApiResponse {
                     success: false,
                     message: format!(
@@ -539,7 +547,9 @@ impl<'a, 'b> Validation<'a, 'b> {
             }
 
             let normalized_to_entity = self.normalize_entity_name(to_entity);
-            if !field_exists_in_table(&normalized_to_entity, to_field) && !field_exists_in_table(to_entity, to_field) {
+            if !field_exists_in_table(&normalized_to_entity, to_field)
+                && !field_exists_in_table(to_entity, to_field)
+            {
                 return ApiResponse {
                     success: false,
                     message: format!(
@@ -806,7 +816,8 @@ impl<'a, 'b> Validation<'a, 'b> {
                             .any(|concat_field| {
                                 concat_field.field_name == *field
                                     && (concat_field.entity == normalized_entity
-                                        || concat_field.aliased_entity.as_ref() == Some(&normalized_entity))
+                                        || concat_field.aliased_entity.as_ref()
+                                            == Some(&normalized_entity))
                             });
 
                     if is_concatenated_field {
@@ -837,7 +848,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                         // Check if field matches the "to" field
                         if to_endpoint.field == *field {
                             // Check if entity matches the "to" entity or alias (try both original and normalized)
-                            if  to_endpoint.entity == normalized_entity {
+                            if to_endpoint.entity == normalized_entity {
                                 return true;
                             }
                             if let Some(alias) = &to_endpoint.alias {
@@ -862,9 +873,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                     }
 
                     // Validate field exists in schema (try both original and normalized entity names)
-                    if !field_exists_in_table(&normalized_entity, field)
-                        && !field_exists_in_joins
-                    {
+                    if !field_exists_in_table(&normalized_entity, field) && !field_exists_in_joins {
                         return ApiResponse {
                              success: false,
                              message: format!(
@@ -955,7 +964,9 @@ impl<'a, 'b> Validation<'a, 'b> {
 
                         // Validate field exists in schema (try both original and normalized entity names)
                         let normalized_entity = self.normalize_entity_name(entity_str);
-                        if !field_exists_in_table(&normalized_entity, field) && !field_exists_in_table(entity_str, field) {
+                        if !field_exists_in_table(&normalized_entity, field)
+                            && !field_exists_in_table(entity_str, field)
+                        {
                             return ApiResponse {
                                  success: false,
                                  message: format!(
