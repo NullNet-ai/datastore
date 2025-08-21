@@ -415,22 +415,23 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 self.request_body.get_date_format(),
                                 self.table.as_str(),
                                 self.timezone.as_deref(),
-                                true,
+                                true, // SELECT fields need aliases for proper JSON mapping
                             )
                         } else {
                             // Handle single field without entity prefix
-                            Self::get_field(
-                                &self.table,
-                                field,
-                                self.request_body.get_date_format(),
-                                self.table.as_str(),
-                                self.timezone.as_deref(),
-                                true,
-                            )
+                           
+                                Self::get_field(
+                                    &self.table,
+                                    field,
+                                    self.request_body.get_date_format(),
+                                    self.table.as_str(),
+                                    self.timezone.as_deref(),
+                                    true,
+                                )
+                           
                         }
                     })
                     .collect();
-
                 return group_selections.join(", ");
             }
         }
@@ -972,7 +973,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         format!("LOWER({})", field_expression)
                     };
 
-                    dbg!(format!("table: {} field_name: {}", table_alias, field_name));
+                   
 
                     // Check if field exists in group_by and use proper formatting
                     if let Some(group_by) = &self.request_body.get_group_by() {
@@ -989,7 +990,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 group_parts[0] == field_name
                             }
                         });
-                        
                         // If field is in group_by, use the field expression without direction
                         if field_in_group_by {
                             return final_field;
@@ -1022,7 +1022,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 self.request_body.get_date_format(),
                 self.table.as_str(),
                 self.timezone.as_deref(),
-                true,
+                false,
             );
 
             // Handle case sensitivity
@@ -1813,7 +1813,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 self.request_body.get_date_format(),
                                 self.table.as_str(),
                                 self.timezone.as_deref(),
-                                true,
+                                false, // GROUP BY cannot have aliases
                             )
                         } else {
                             // Handle single field without entity prefix
@@ -1823,7 +1823,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                                 self.request_body.get_date_format(),
                                 self.table.as_str(),
                                 self.timezone.as_deref(),
-                                true,
+                                false, // GROUP BY cannot have aliases
                             )
                         }
                     })
