@@ -940,7 +940,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         self.request_body.get_date_format(),
                         &self.table,
                         self.timezone.as_deref(),
-                        true,
+                        false,
                     );
 
                     // Handle case sensitivity
@@ -958,17 +958,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 })
                 .collect();
 
-            format!(" ORDER BY {}", sort_clauses.join(", "))
+            return format!(" ORDER BY {}", sort_clauses.join(", "));
         }
         // Fallback to single field sorting using trait methods
         else if !self.request_body.get_order_by().is_empty() {
-            // Skip ORDER BY if using default values (id field with asc direction)
             let order_by = self.request_body.get_order_by();
             let order_direction = self.request_body.get_order_direction();
-
-            if order_by == "id" && order_direction == "asc" {
-                return String::from("");
-            }
 
             let field_expression = Self::get_field(
                 _table,
@@ -1718,22 +1713,20 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
     fn construct_order_by(&self) -> String {
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
-            if distinct_by.is_empty() {
-                return String::new();
-            }
-
-            let fields: Vec<String> = distinct_by
-                .split(',')
-                .map(|field| {
-                    let parts: Vec<&str> = field.trim().split('.').collect();
-                    if parts.len() == 2 {
-                        format!("\"{}\".\"{}\"", parts[0], parts[1])
+            if !distinct_by.is_empty() {
+                let fields: Vec<String> = distinct_by
+                    .split(',')
+                    .map(|field| {
+                        let parts: Vec<&str> = field.trim().split('.').collect();
+                        if parts.len() == 2 {
+                            format!("\"{}\".\"{}\"", parts[0], parts[1])
                     } else {
                         format!("\"{}\".\"{}\"", self.table, field.trim())
                     }
                 })
                 .collect();
-            return format!(" ORDER BY {}", fields.join(", "));
+                return format!(" ORDER BY {}", fields.join(", "));
+            }
         }
 
         self.get_proper_order(&self.table)
