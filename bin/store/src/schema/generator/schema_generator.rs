@@ -29,7 +29,10 @@ impl SchemaGenerator {
     pub fn analyze_changes(table_def: &TableDefinition) -> Result<Vec<SchemaChange>, String> {
         // Validate that hypertables don't have foreign key constraints
         if table_def.is_hypertable && !table_def.foreign_keys.is_empty() {
-            eprintln!("ERROR: Table '{}' is marked as a hypertable but has foreign key constraints.", table_def.name);
+            eprintln!(
+                "ERROR: Table '{}' is marked as a hypertable but has foreign key constraints.",
+                table_def.name
+            );
             eprintln!("TimescaleDB hypertables don't support foreign key constraints.");
             eprintln!("Please remove the foreign key constraints from this table definition.");
             std::process::exit(1);
@@ -137,8 +140,13 @@ impl SchemaGenerator {
         foreign_keys: &[crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition],
     ) -> Result<Vec<SchemaChange>, String> {
         // Validate that hypertables don't have foreign key constraints
-        if table_def.is_hypertable && (!foreign_keys.is_empty() || !table_def.foreign_keys.is_empty()) {
-            eprintln!("ERROR: Table '{}' is marked as a hypertable but has foreign key constraints.", table_def.name);
+        if table_def.is_hypertable
+            && (!foreign_keys.is_empty() || !table_def.foreign_keys.is_empty())
+        {
+            eprintln!(
+                "ERROR: Table '{}' is marked as a hypertable but has foreign key constraints.",
+                table_def.name
+            );
             eprintln!("TimescaleDB hypertables don't support foreign key constraints.");
             eprintln!("Please remove the foreign key constraints from this table definition.");
             std::process::exit(1);

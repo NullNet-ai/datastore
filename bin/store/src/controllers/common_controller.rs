@@ -485,12 +485,16 @@ pub async fn process_and_update_record(
     let plucked_record: serde_json::Value = match pluck_fields {
         Some(fields) => {
             // Check if processed_record contains all required fields
-            let missing_fields: Vec<&String> = fields.iter()
-                .filter(|field| !processed_record.as_object()
-                    .map(|obj| obj.contains_key(*field))
-                    .unwrap_or(false))
+            let missing_fields: Vec<&String> = fields
+                .iter()
+                .filter(|field| {
+                    !processed_record
+                        .as_object()
+                        .map(|obj| obj.contains_key(*field))
+                        .unwrap_or(false)
+                })
                 .collect();
-            
+
             if !missing_fields.is_empty() {
                 // If fields are missing, fetch the complete record using get_by_id
                 let mut conn = db::get_async_connection().await;
@@ -508,7 +512,7 @@ pub async fn process_and_update_record(
                             format!("Failed to get complete record: {}", e),
                         )
                     })?;
-                
+
                 match complete_record {
                     Some(record_value) => table.pluck_fields(&record_value, fields),
                     None => {
@@ -522,7 +526,7 @@ pub async fn process_and_update_record(
                 // All fields are present in processed_record
                 table.pluck_fields(&processed_record, fields)
             }
-        },
+        }
         None => processed_record,
     };
 
