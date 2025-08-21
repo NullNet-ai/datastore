@@ -26,18 +26,33 @@ Before running the installation, ensure you have the following system requiremen
 ### Operating System Support
 - **macOS** - Homebrew will be used for package management
 - **Linux** - Supports apt-get (Ubuntu/Debian), yum (RHEL/CentOS), and pacman (Arch)
+- **Windows** - Chocolatey will be used for package management
 - **Docker** - For containerized development (optional)
 
+### Rust Version Requirement
+- **Rust 1.86.0** - Specific version required for compatibility
+  - The installer will automatically install and verify this version
+  - If you have a different version installed, the installer will prompt you to update
+  - Manual installation: `rustup install 1.86.0 && rustup default 1.86.0`
+
 ### Database Requirements
-- **PostgreSQL** - Database server (version 12 or higher recommended)
-  - On macOS: Will be installed via Homebrew during `make install`
-  - On Linux: Will be installed via package manager during `make install`
-  - Manual installation: Ensure PostgreSQL service is running and accessible
+- **TimescaleDB** - Time-series database built on PostgreSQL (version 12 or higher recommended)
+  - On macOS: PostgreSQL will be installed via Homebrew during `make install`, TimescaleDB extension needs to be added separately
+  - On Linux: PostgreSQL will be installed via package manager during `make install`, TimescaleDB extension needs to be added separately
+  - On Windows: PostgreSQL will be installed via Chocolatey during `make install`, TimescaleDB extension needs to be added separately
+  - Manual installation: Ensure PostgreSQL service is running with TimescaleDB extension enabled
   - Default connection: `postgresql://localhost:5432`
+  - TimescaleDB installation guide: https://docs.timescale.com/install/
 
 ### Network Requirements
 - Internet connection for downloading Rust toolchain and dependencies
 - Access to crates.io and GitHub for package downloads
+
+### Windows-Specific Requirements
+- **PowerShell** - Required for running Windows installation scripts
+- **Administrator privileges** - May be required for Chocolatey installation
+- **Windows 10/11** - Recommended for best compatibility
+- **.NET Framework** - Will be installed automatically with Chocolatey if needed
 
 ## Quick Setup
 
@@ -50,7 +65,22 @@ git clone https://gitlab.platform.dnadev.net/platform/db/crdt/rust/crdt-workspac
 cd crdt-workspace
 ```
 
-### Step 2: Environment Configuration
+### Step 2: Configure Git Remote (Optional)
+
+If you plan to push changes to your own repository, update the git remote URL:
+
+```bash
+# Remove the original remote
+git remote remove origin
+
+# Add your own repository as the new origin
+git remote add origin <your-repository-url>
+
+# Verify the new remote
+git remote -v
+```
+
+### Step 3: Environment Configuration
 
 Set up your environment variables by copying the sample file:
 
@@ -60,7 +90,7 @@ cp .env-sample .env
 
 Then edit the `.env` file to configure your specific settings (database URLs, API keys, etc.).
 
-### Step 3: One-Command Installation
+### Step 4: One-Command Installation
 
 🚀 **After setting up the environment, install the entire project with just one command:**
 
@@ -68,20 +98,29 @@ Then edit the `.env` file to configure your specific settings (database URLs, AP
 make install
 ```
 
+**Note for Windows users:** The installer will automatically detect your Windows environment and use PowerShell with Chocolatey for package management. Ensure you have administrator privileges if prompted.
+
 This will automatically install:
-- **Rust toolchain** (rustc, cargo, rustup)
-- **PostgreSQL** database client
+- **Rust 1.86.0** (rustc, cargo, rustup) with version verification
+- **PostgreSQL** database server (version 14 on Windows, latest on macOS/Linux) - TimescaleDB extension needs to be added separately
 - **Cargo tools**: cargo-make, cargo-watch, diesel_cli
 - **Git hooks** for development workflow
 - **Environment configuration** and dependencies
+- **Platform-specific package managers** (Homebrew on macOS, Chocolatey on Windows)
 
 ### Verify Installation
 
-After installation, verify everything is working:
+After installation, verify everything is working on any supported platform:
 
 ```bash
 make verify-install
 ```
+
+This command will check:
+- Rust 1.86.0 installation and version
+- PostgreSQL server availability (TimescaleDB extension should be installed separately)
+- Required Cargo tools (cargo-make, cargo-watch, diesel_cli)
+- Platform-specific dependencies
 
 ### Start Development
 
@@ -93,16 +132,36 @@ make store
 
 ## Manual Prerequisites (if not using installer)
 
-- **make** - Build automation tool (usually pre-installed on macOS/Linux)
+### Build Tools
+- **make** - Build automation tool
   - macOS: `xcode-select --install` or `brew install make`
   - Ubuntu/Debian: `sudo apt-get install build-essential`
   - CentOS/RHEL: `sudo yum groupinstall "Development Tools"`
   - Arch Linux: `sudo pacman -S base-devel`
-- Rust (latest stable version)
-- PostgreSQL
-- cargo-make: `cargo install cargo-make`
-- cargo-watch: `cargo install cargo-watch`
-- diesel_cli: `cargo install diesel_cli --no-default-features --features postgres`
+  - Windows: Install via Chocolatey `choco install make` or use WSL
+
+### Rust Toolchain
+- **Rust 1.86.0** (specific version required for compatibility)
+  ```bash
+  # Install rustup if not already installed
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  
+  # Install and set Rust 1.86.0 as default
+  rustup install 1.86.0
+  rustup default 1.86.0
+  ```
+
+### Database
+- **TimescaleDB** (PostgreSQL with TimescaleDB extension, version 12 or higher)
+  - macOS: `brew install postgresql` then add TimescaleDB extension
+  - Ubuntu/Debian: `sudo apt-get install postgresql postgresql-contrib` then add TimescaleDB extension
+  - Windows: `choco install postgresql14` then add TimescaleDB extension
+  - TimescaleDB installation: Follow the official guide at https://docs.timescale.com/install/
+
+### Cargo Tools
+- **cargo-make**: `cargo install cargo-make`
+- **cargo-watch**: `cargo install cargo-watch`
+- **diesel_cli**: `cargo install diesel_cli --no-default-features --features postgres`
 
 ## Getting Started (Manual Setup)
 
@@ -130,10 +189,11 @@ make store
 The project includes a comprehensive Makefile with the following commands:
 
 ### Setup & Installation
-- `make install` - One-command installer for all dependencies (auto-detects macOS/Linux)
-- `make install-macos` - Install dependencies specifically for macOS
-- `make install-linux` - Install dependencies specifically for Linux
-- `make verify-install` - Verify that all required tools are installed
+- `make install` - One-command installer for all dependencies (auto-detects macOS/Linux/Windows)
+- `make install-macos` - Install dependencies specifically for macOS with Rust 1.86.0
+- `make install-linux` - Install dependencies specifically for Linux with Rust 1.86.0
+- `make install-windows` - Install dependencies specifically for Windows with Rust 1.86.0
+- `make verify-install` - Verify that all required tools are installed (cross-platform)
 - `make setup-hooks` - Setup git hooks for code quality
 
 ### Development
