@@ -1,5 +1,3 @@
-version: '3.9'
-
 networks:
   internal:
   frontend: 
@@ -14,16 +12,16 @@ services:
     networks:
       - internal
     environment:
-      POSTGRES_USER: admin
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: nullnet
+      POSTGRES_DB: store
     restart: always
 
   redis:
     image: redis:7
     container_name: redis
     ports:
-      - '6380:6379'  # Host:Container mapping
+      - '6379:6379'  # Host:Container mapping
     networks:
       - internal
     restart: unless-stopped

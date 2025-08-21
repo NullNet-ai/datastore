@@ -48,6 +48,22 @@ Before running the installation, ensure you have the following system requiremen
 - **Docker Compose file** - Located at `bin/store/docker-compose.yml`
 - **Services** - Provides TimescaleDB and Redis services for development
 - **Usage** - Use `make docker-compose-up` to start services
+- **Prerequisites** - Docker Desktop must be installed and running
+- **Error Handling** - Automatic Docker daemon checks with clear error messages
+
+#### Troubleshooting Docker Issues
+
+**Docker daemon not running:**
+- **macOS/Windows**: Start Docker Desktop application
+- **Linux**: Run `sudo systemctl start docker` or `sudo service docker start`
+
+**Container name conflicts:**
+- Remove existing containers: `docker rm redis timescaledb`
+- Or use: `make docker-compose-down` followed by `make docker-compose-up`
+
+**Permission issues:**
+- **Linux**: Add user to docker group: `sudo usermod -aG docker $USER`
+- **macOS/Windows**: Ensure Docker Desktop has proper permissions
 
 ### Network Requirements
 - Internet connection for downloading Rust toolchain and dependencies
@@ -105,16 +121,17 @@ make install
 
 **Note for Windows users:** The installer will automatically detect your Windows environment and use PowerShell with Chocolatey for package management. Ensure you have administrator privileges if prompted.
 
-This will automatically install:
-- **Rust 1.86.0** (rustc, cargo, rustup) with version verification
-- **PostgreSQL** database server (version 14 on Windows, latest on macOS/Linux) - TimescaleDB extension needs to be added separately
-- **Cargo tools**: cargo-make, cargo-watch, diesel_cli
-- **Protocol Buffers** compiler installation
-- **Git hooks** for development workflow
-- **Environment configuration** and dependencies
-- **Platform-specific package managers** (Homebrew on macOS, Chocolatey on Windows)
-- **Docker Compose services** (TimescaleDB and Redis) for development
-- **Platform detection** and appropriate package manager usage
+This will automatically:
+- **Set up environment** by copying `.env-sample` to `.env`
+- **Install Rust 1.86.0** (rustc, cargo, rustup) with version verification
+- **Install PostgreSQL** database server (version 14 on Windows, latest on macOS/Linux) - TimescaleDB extension needs to be added separately
+- **Install Cargo tools**: cargo-make, cargo-watch, diesel_cli
+- **Install Protocol Buffers** compiler
+- **Setup Git hooks** for development workflow
+- **Configure environment** and dependencies
+- **Install platform-specific package managers** (Homebrew on macOS, Chocolatey on Windows)
+- **Start Docker Compose services** (TimescaleDB and Redis) for development with automatic Docker daemon checks and comprehensive error handling
+- **Detect platform** and use appropriate package manager
 
 ### Verify Installation
 

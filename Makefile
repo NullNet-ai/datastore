@@ -100,6 +100,14 @@ install:
 # macOS installation
 install-macos:
 	@echo "🔧 Installing dependencies for macOS..."
+	@# Setup environment file
+	@if [ ! -f ".env" ]; then \
+		echo "📄 Setting up environment file..."; \
+		cp .env-sample .env; \
+		echo "✅ Environment file created from .env-sample"; \
+	else \
+		echo "✅ Environment file already exists"; \
+	fi
 	@# Check if Homebrew is installed
 	@if ! command -v brew >/dev/null 2>&1; then \
 		echo "📦 Installing Homebrew..."; \
@@ -150,8 +158,18 @@ install-macos:
 	@# Start Docker Compose services
 	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
 	@if [ -f "bin/store/docker-compose.yml" ]; then \
-		docker-compose -f bin/store/docker-compose.yml up -d; \
-		echo "✅ Docker Compose services started successfully!"; \
+		if command -v docker >/dev/null 2>&1; then \
+			if docker info >/dev/null 2>&1; then \
+				docker-compose -f bin/store/docker-compose.yml up -d; \
+				echo "✅ Docker Compose services started successfully!"; \
+			else \
+				echo "⚠️  Docker daemon is not running. Please start Docker Desktop and try again."; \
+				echo "   You can manually start services later with: make docker-compose-up"; \
+			fi; \
+		else \
+			echo "⚠️  Docker not found. Please install Docker Desktop and try again."; \
+			echo "   You can manually start services later with: make docker-compose-up"; \
+		fi; \
 	else \
 		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
 	fi
@@ -160,6 +178,14 @@ install-macos:
 # Linux installation
 install-linux:
 	@echo "🔧 Installing dependencies for Linux..."
+	@# Setup environment file
+	@if [ ! -f ".env" ]; then \
+		echo "📄 Setting up environment file..."; \
+		cp .env-sample .env; \
+		echo "✅ Environment file created from .env-sample"; \
+	else \
+		echo "✅ Environment file already exists"; \
+	fi
 	@# Detect package manager and install PostgreSQL and Protocol Buffers
 	@if command -v apt-get >/dev/null 2>&1; then \
 		echo "📦 Using apt-get (Debian/Ubuntu)"; \
@@ -211,8 +237,18 @@ install-linux:
 	@# Start Docker Compose services
 	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
 	@if [ -f "bin/store/docker-compose.yml" ]; then \
-		docker-compose -f bin/store/docker-compose.yml up -d; \
-		echo "✅ Docker Compose services started successfully!"; \
+		if command -v docker >/dev/null 2>&1; then \
+			if docker info >/dev/null 2>&1; then \
+				docker-compose -f bin/store/docker-compose.yml up -d; \
+				echo "✅ Docker Compose services started successfully!"; \
+			else \
+				echo "⚠️  Docker daemon is not running. Please start Docker service and try again."; \
+				echo "   You can manually start services later with: make docker-compose-up"; \
+			fi; \
+		else \
+			echo "⚠️  Docker not found. Please install Docker and try again."; \
+			echo "   You can manually start services later with: make docker-compose-up"; \
+		fi; \
 	else \
 		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
 	fi
@@ -221,6 +257,8 @@ install-linux:
 # Windows installation
 install-windows:
 	@echo "🔧 Installing dependencies for Windows..."
+	@# Setup environment file
+	@powershell -Command "if (!(Test-Path '.env')) { Write-Host '📄 Setting up environment file...'; Copy-Item '.env-sample' '.env'; Write-Host '✅ Environment file created from .env-sample' } else { Write-Host '✅ Environment file already exists' }"
 	@# Check if Chocolatey is installed
 	@powershell -Command "if (!(Get-Command choco -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Chocolatey...'; Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) } else { Write-Host '✅ Chocolatey already installed' }"
 	@# Install PostgreSQL using Chocolatey
@@ -237,7 +275,7 @@ install-windows:
 	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install diesel_cli --no-default-features --features postgres"
 	@# Start Docker Compose services
 	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
-	@powershell -Command "if (Test-Path 'bin/store/docker-compose.yml') { docker-compose -f bin/store/docker-compose.yml up -d; Write-Host '✅ Docker Compose services started successfully!' } else { Write-Host '⚠️  Docker Compose file not found at bin/store/docker-compose.yml' }"
+	@powershell -Command "if (Test-Path 'bin/store/docker-compose.yml') { if (Get-Command docker -ErrorAction SilentlyContinue) { try { docker info | Out-Null; docker-compose -f bin/store/docker-compose.yml up -d; Write-Host '✅ Docker Compose services started successfully!' } catch { Write-Host '⚠️  Docker daemon is not running. Please start Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker not found. Please install Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker Compose file not found at bin/store/docker-compose.yml' }"
 	@echo "🎉 Windows setup complete!"
 
 # Verify installation
@@ -372,7 +410,7 @@ store-clean-setup:
 	@cd bin/store && export PATH="$$HOME/.cargo/bin:$$PATH" && { \
 		if command -v expect >/dev/null 2>&1; then \
 			expect -c ' \
-				set timeout 30; \
+				set timeout 60; \
 				spawn cargo make clean-setup; \
 				expect "Enter password for database cleanup:"; \
 				send "admin\r"; \
@@ -602,8 +640,18 @@ docker-compose-up:
 		echo "Please ensure the docker-compose.yml file exists in bin/store/"; \
 		exit 1; \
 	fi
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) up -d
-	@echo "✅ Docker Compose services started successfully!"
+	@if command -v docker >/dev/null 2>&1; then \
+		if docker info >/dev/null 2>&1; then \
+			docker-compose -f $(DOCKER_COMPOSE_FILE) up -d; \
+			echo "✅ Docker Compose services started successfully!"; \
+		else \
+			echo "⚠️  Docker daemon is not running. Please start Docker Desktop and try again."; \
+			echo "   You can manually start services later with: make docker-compose-up"; \
+		fi; \
+	else \
+		echo "⚠️  Docker not found. Please install Docker Desktop and try again."; \
+		echo "   You can manually start services later with: make docker-compose-up"; \
+	fi
 
 # Stop and remove Docker Compose services
 docker-compose-down:
@@ -612,8 +660,16 @@ docker-compose-down:
 		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
 		exit 1; \
 	fi
-	@docker-compose -f $(DOCKER_COMPOSE_FILE) down
-	@echo "✅ Docker Compose services stopped successfully!"
+	@if command -v docker >/dev/null 2>&1; then \
+		if docker info >/dev/null 2>&1; then \
+			docker-compose -f $(DOCKER_COMPOSE_FILE) down; \
+			echo "✅ Docker Compose services stopped successfully!"; \
+		else \
+			echo "⚠️  Docker daemon is not running. Cannot stop services."; \
+		fi; \
+	else \
+		echo "⚠️  Docker not found. Please install Docker Desktop."; \
+	fi
 
 # Restart Docker Compose services
 docker-compose-restart:
