@@ -2,6 +2,7 @@
 // use serde_json::Value;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, FilterCriteria, GetByFilter};
+use pluralizer::pluralize;
 
 // #[derive(Serialize, Deserialize)]
 pub struct Validation<'a, 'b> {
@@ -14,6 +15,26 @@ impl<'a, 'b> Validation<'a, 'b> {
         Self {
             request_body,
             table,
+        }
+    }
+
+    /// Helper function to convert entity names from singular to plural form
+    /// If the entity is already plural, adds 's' to it
+    #[cfg(test)]
+    pub fn normalize_entity_name(&self, entity: &str) -> String {
+        self.normalize_entity_name_internal(entity)
+    }
+
+    /// Internal helper function to convert entity names from singular to plural form
+    /// If the entity is already plural, adds 's' to it
+    fn normalize_entity_name_internal(&self, entity: &str) -> String {
+        let plural_form = pluralize(entity, 2, false);
+        if plural_form == entity {
+            // If pluralize didn't change the word, it might already be plural
+            // or it's an irregular word, so add 's' as requested
+            format!("{}s", entity)
+        } else {
+            plural_form
         }
     }
 
@@ -762,6 +783,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                         None => continue,
                     };
 
+                    // Normalize entity name to plural form
+                    let normalized_entity = self.normalize_entity_name_internal(entity_str);
+
                     // Check if this field is a concatenated field and skip validation if it is
                     let is_concatenated_field =
                         self.request_body
@@ -781,11 +805,15 @@ impl<'a, 'b> Validation<'a, 'b> {
                     // Check if the filtered field exists in prioritized properties first
                     // Check in pluck
                     let field_exists_in_prioritized = self.request_body.pluck.contains(field) ||
-                        // Check in pluck_object
+                        // Check in pluck_object (try both original and normalized entity names)
                         self.request_body.pluck_object.get(entity_str)
                             .map_or(false, |fields| fields.contains(field)) ||
-                        // Check in pluck_group_object
+                        self.request_body.pluck_object.get(&normalized_entity)
+                            .map_or(false, |fields| fields.contains(field)) ||
+                        // Check in pluck_group_object (try both original and normalized entity names)
                         self.request_body.pluck_group_object.get(entity_str)
+                            .map_or(false, |fields| fields.contains(field)) ||
+                        self.request_body.pluck_group_object.get(&normalized_entity)
                             .map_or(false, |fields| fields.contains(field)) ||
                         // Check in group_by fields
                         self.request_body.group_by.as_ref()
@@ -802,12 +830,12 @@ impl<'a, 'b> Validation<'a, 'b> {
 
                         // Check if field matches the "to" field
                         if to_endpoint.field == *field {
-                            // Check if entity matches the "to" entity or alias
-                            if to_endpoint.entity == *entity_str {
+                            // Check if entity matches the "to" entity or alias (try both original and normalized)
+                            if to_endpoint.entity == *entity_str || to_endpoint.entity == normalized_entity {
                                 return true;
                             }
                             if let Some(alias) = &to_endpoint.alias {
-                                if alias == entity_str {
+                                if alias == entity_str || alias == &normalized_entity {
                                     return true;
                                 }
                             }
@@ -827,13 +855,13 @@ impl<'a, 'b> Validation<'a, 'b> {
                         };
                     }
 
-                    // Validate field exists in schema
-                    if !field_exists_in_table(entity_str, field) && !field_exists_in_joins {
+                    // Validate field exists in schema (try both original and normalized entity names)
+                    if !field_exists_in_table(entity_str, field) && !field_exists_in_table(&normalized_entity, field) && !field_exists_in_joins {
                         return ApiResponse {
                              success: false,
                              message: format!(
-                                 "advance_filters@@@@{}] > field > Filter field '{}' does not exist in entity '{}'",
-                                 filter_index, field, entity_str
+                                 "advance_filters[{}] > field > Filter field '{}' does not exist in entity '{}' or '{}'",
+                                 filter_index, field, entity_str, normalized_entity
                              ),
                              count: 0,
                              data: vec![],

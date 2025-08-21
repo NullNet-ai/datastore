@@ -5,6 +5,7 @@ use crate::{
         Join, LogicalOperator, MatchPattern, SortOption,
     },
 };
+use pluralizer::pluralize;
 use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
@@ -155,6 +156,19 @@ impl<T: QueryFilter> SQLConstructor<T> {
             organization_id: None,
             is_root,
             timezone,
+        }
+    }
+
+    /// Helper function to convert entity names from singular to plural form
+    /// If the entity is already plural, adds 's' to it
+    fn normalize_entity_name(&self, entity: &str) -> String {
+        let plural_form = pluralize(entity, 2, false);
+        if plural_form == entity {
+            // If pluralize didn't change the word, it might already be plural
+            // or it's an irregular word, so add 's' as requested
+            format!("{}s", entity)
+        } else {
+            plural_form
         }
     }
 
@@ -1149,8 +1163,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 ..
             } = &filters[0]
             {
+                let normalized_entity = entity
+                    .as_ref()
+                    .map(|e| self.normalize_entity_name(e))
+                    .unwrap_or_else(|| self.table.clone());
                 let field_name = self.get_field_with_concatenation(
-                    entity.as_deref().unwrap_or(&self.table),
+                    &normalized_entity,
                     field,
                     self.request_body.get_date_format(),
                     Some(parse_as),
@@ -1194,8 +1212,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     match_pattern,
                     ..
                 } => {
+                    let normalized_entity = entity
+                        .as_ref()
+                        .map(|e| self.normalize_entity_name(e))
+                        .unwrap_or_else(|| self.table.clone());
                     let field_name = self.get_field_with_concatenation(
-                        entity.as_deref().unwrap_or(&self.table),
+                        &normalized_entity,
                         field,
                         self.request_body.get_date_format(),
                         Some(parse_as),
@@ -1720,11 +1742,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         let parts: Vec<&str> = field.trim().split('.').collect();
                         if parts.len() == 2 {
                             format!("\"{}\".\"{}\"", parts[0], parts[1])
-                    } else {
-                        format!("\"{}\".\"{}\"", self.table, field.trim())
-                    }
-                })
-                .collect();
+                        } else {
+                            format!("\"{}\".\"{}\"", self.table, field.trim())
+                        }
+                    })
+                    .collect();
                 return format!(" ORDER BY {}", fields.join(", "));
             }
         }
