@@ -166,7 +166,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
         if plural_form == entity {
             plural_form.to_string()
         } else {
-            format!("{}s", plural_form)
+            format!("{}s", entity)
         }
     }
 
@@ -264,8 +264,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .as_deref()
                     .unwrap_or(&concat_field.entity);
 
-                // Check if the table matches
-                if target_table == table {
+                // Check if the table matches (with normalization)
+                let normalized_entity = self.normalize_entity_name(&concat_field.entity);
+                let normalized_target_table = if concat_field.aliased_entity.is_some() {
+                    target_table
+                } else {
+                    &normalized_entity
+                };
+                if target_table == table || normalized_target_table == table {
                     // Generate concatenated expression
                     let concatenated_expression = concat_field
                         .fields
@@ -388,70 +394,48 @@ impl<T: QueryFilter> SQLConstructor<T> {
         format!("({})::time::text{}", field_with_timezone, alias)
     }
     fn construct_selections(&self) -> String {
+        if let Some(group_by) = self.request_body.get_group_by() {
+            if !group_by.fields.is_empty() {
+                // Only include group_by fields in selections
+                let group_selections: Vec<String> = group_by
+                    .fields
+                    .iter()
+                    .map(|field| {
+                        let parts: Vec<&str> = field.trim().split('.').collect();
+                        if parts.len() == 2 {
+                            // Handle entity.field pattern like "contacts.code"
+                            let entity = parts[0]; // index 0 is the entity
+                            let field_name = parts[1]; // index 1 is the actual field
+                            let normalized_entity = self.normalize_entity_name(entity);
+                            
+                            // Use the normalized entity as the table reference
+                            Self::get_field(
+                                &normalized_entity,
+                                field_name,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                true,
+                            )
+                        } else {
+                            // Handle single field without entity prefix
+                            Self::get_field(
+                                &self.table,
+                                field,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                true,
+                            )
+                        }
+                    })
+                    .collect();
+                
+                return group_selections.join(", ");
+            }
+        }
+        
         let mut selections = Vec::new();
-
-        // Commented: This results to duplication of concatenated field selections
-        // Creating selections are handled in construct_pluck
-        // Check if there are existing join selections that would handle concatenated fields
-        // let has_join_selections = !self.request_body.get_joins().is_empty()
-        //     && !self.request_body.get_pluck_object().is_empty()
-        //     && self
-        //         .request_body
-        //         .get_pluck_object()
-        //         .iter()
-        //         .any(|(_, fields)| !fields.is_empty());
-
-        // Handle concatenated fields for main table and joins
-        // if !self.request_body.get_concatenate_fields().is_empty() {
-        //     for field in self.request_body.get_concatenate_fields() {
-        //         // Priority: aliased_entity takes precedence over entity
-        //         let entity_alias = field.aliased_entity.as_deref().unwrap_or(&field.entity);
-
-        //         // Check if this concatenated field is for the main table
-        //         // Priority check: aliased_entity first, then entity
-        //         let is_main_table = field.aliased_entity.as_deref() == Some(&self.table)
-        //             || (field.aliased_entity.is_none() && field.entity == self.table);
-
-        //         // Check if this concatenated field is for a joined table that has pluck_object
-        //         let is_joined_table_with_pluck = has_join_selections
-        //             && self
-        //                 .request_body
-        //                 .get_pluck_object()
-        //                 .contains_key(entity_alias)
-        //             && !is_main_table;
-
-        //         // Only create selection for main table concatenated fields
-        //         // Join selections will handle concatenated fields for joined tables
-        //         if is_main_table && !is_joined_table_with_pluck {
-        //             // Priority: aliased_entity takes precedence over entity
-        //             let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
-
-        //             let concatenated_expression = field
-        //                 .fields
-        //                 .iter()
-        //                 .map(|f| {
-        //                     let chaka =  Self::get_field_with_parse_as(
-        //                             table_name,
-        //                             f,
-        //                             self.request_body.get_date_format(),
-        //                             None,
-        //                             self.table.as_str(),
-        //                             self.timezone.as_deref(),
-        //                             false
-        //                         );
-        //                     format!(
-        //                         "COALESCE({}, '')",
-        //                         chaka
-        //                     )
-        //                 })
-        //                 .collect::<Vec<_>>()
-        //                 .join(&format!(" || '{}' || ", field.separator));
-        //             let alias = &field.field_name;
-
-        //             selections.push(format!("({}) AS \"{}\"", concatenated_expression, alias));
-        //         }
-        //     }
-        // }
 
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
             if distinct_by.is_empty() {
@@ -528,14 +512,33 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
             // Add unique fields from group_by.fields
             for field in &group_by.fields {
-                let field_selection = Self::get_field(
-                    &self.table,
-                    field,
-                    self.request_body.get_date_format(),
-                    self.table.as_str(),
-                    self.timezone.as_deref(),
-                    true,
-                );
+                let parts: Vec<&str> = field.trim().split('.').collect();
+                let field_selection = if parts.len() == 2 {
+                    // Handle entity.field pattern like "contacts.code"
+                    let entity = parts[0]; // index 0 is the entity
+                    let field_name = parts[1]; // index 1 is the actual field
+                    let normalized_entity = self.normalize_entity_name(entity);
+
+                    // Use the normalized entity as the table reference
+                    Self::get_field(
+                        &normalized_entity,
+                        field_name,
+                        self.request_body.get_date_format(),
+                        self.table.as_str(),
+                        self.timezone.as_deref(),
+                        true,
+                    )
+                } else {
+                    // Handle single field without entity prefix
+                    Self::get_field(
+                        &self.table,
+                        field,
+                        self.request_body.get_date_format(),
+                        self.table.as_str(),
+                        self.timezone.as_deref(),
+                        true,
+                    )
+                };
                 if !acc_selections.contains(&field_selection) {
                     selections.push(field_selection);
                 }
@@ -551,7 +554,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
     fn construct_pluck(&self) -> String {
         let mut pluck_fields = Vec::new();
-
         // Add regular pluck fields
         for field in self.request_body.get_pluck() {
             pluck_fields.push(Self::get_field(
@@ -567,9 +569,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
         // Add concatenated fields that match the main table
         if !self.request_body.get_concatenate_fields().is_empty() {
             for field in self.request_body.get_concatenate_fields() {
-                // Priority check: aliased_entity first, then entity
+                // Priority check: aliased_entity first, then entity (with normalization)
+                let normalized_entity = self.normalize_entity_name(&field.entity);
                 let matches_main_table = field.aliased_entity.as_deref() == Some(&self.table)
-                    || (field.aliased_entity.is_none() && field.entity == self.table);
+                    || field.aliased_entity.as_deref() == Some(&normalized_entity)
+                    || (field.aliased_entity.is_none()
+                        && (field.entity == self.table || normalized_entity == self.table));
 
                 if matches_main_table {
                     // Priority: aliased_entity takes precedence over entity
@@ -631,8 +636,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
             // Add concatenated fields that match this table alias
             if !self.request_body.get_concatenate_fields().is_empty() {
                 for field in self.request_body.get_concatenate_fields() {
+                    let normalized_entity = self.normalize_entity_name(&field.entity);
                     if field.aliased_entity.as_deref() == Some(table_alias)
                         || field.entity == *table_alias
+                        || normalized_entity == *table_alias
                     {
                         let table_name = if let Some(aliased_entity) = &field.aliased_entity {
                             aliased_entity
@@ -798,7 +805,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 .get_concatenate_fields()
                 .iter()
                 .filter(|field| {
-                    field.aliased_entity.as_deref() == Some(to_alias) || field.entity == to_alias
+                    let normalized_entity = self.normalize_entity_name(&field.entity);
+                    field.aliased_entity.as_deref() == Some(to_alias)
+                        || field.entity == to_alias
+                        || normalized_entity == to_alias
                 })
                 .for_each(|field| {
                     let table_name = field
@@ -1732,6 +1742,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
 
     fn construct_order_by(&self) -> String {
+        if let Some(group_by) = &self.request_body.get_group_by() {
+            if !group_by.fields.is_empty() {
+                return String::new();
+            }
+        }
+
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
             if !distinct_by.is_empty() {
                 let fields: Vec<String> = distinct_by
@@ -1760,14 +1776,33 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     .fields
                     .iter()
                     .map(|field| {
-                        Self::get_field(
-                            &self.table,
-                            field,
-                            self.request_body.get_date_format(),
-                            self.table.as_str(),
-                            self.timezone.as_deref(),
-                            true,
-                        )
+                        let parts: Vec<&str> = field.trim().split('.').collect();
+                        if parts.len() == 2 {
+                            // Handle entity.field pattern like "contacts.code"
+                            let entity = parts[0]; // index 0 is the entity
+                            let field_name = parts[1]; // index 1 is the actual field
+                            let normalized_entity = self.normalize_entity_name(entity);
+
+                            // Use the normalized entity as the table reference
+                            Self::get_field(
+                                &normalized_entity,
+                                field_name,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                true,
+                            )
+                        } else {
+                            // Handle single field without entity prefix
+                            Self::get_field(
+                                &self.table,
+                                field,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                true,
+                            )
+                        }
                     })
                     .collect();
 
