@@ -9,7 +9,8 @@
         jean-store-watch store-experimental store-initialize-device \
         pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete \
         docker-build-ubuntu docker-build-centos docker-build-arch docker-build-all \
-        docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all
+        docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all \
+        docker-compose-up docker-compose-down docker-compose-restart docker-compose-logs docker-compose-ps
 
 # Default target
 all: dev
@@ -54,6 +55,11 @@ help:
 	@echo "  docker-run-centos       - Run Docker container for CentOS testing"
 	@echo "  docker-run-arch         - Run Docker container for Arch Linux testing"
 	@echo "  docker-run-all          - Run Docker containers for all operating systems"
+	@echo "  docker-compose-up       - Start TimescaleDB and Redis services using Docker Compose"
+	@echo "  docker-compose-down     - Stop and remove Docker Compose services"
+	@echo "  docker-compose-restart  - Restart Docker Compose services"
+	@echo "  docker-compose-logs     - Show logs from Docker Compose services"
+	@echo "  docker-compose-ps       - Show status of Docker Compose services"
 	@echo "  help                    - Show this help message"
 
 # =============================================================================
@@ -141,6 +147,14 @@ install-macos:
 	@echo "🔨 Installing Rust development tools..."
 	@export PATH="$$HOME/.cargo/bin:$$PATH" && cargo install cargo-make cargo-watch
 	@export PATH="$$HOME/.cargo/bin:$$PATH" && cargo install diesel_cli --no-default-features --features postgres
+	@# Start Docker Compose services
+	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
+	@if [ -f "bin/store/docker-compose.yml" ]; then \
+		docker-compose -f bin/store/docker-compose.yml up -d; \
+		echo "✅ Docker Compose services started successfully!"; \
+	else \
+		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
+	fi
 	@echo "🎉 macOS setup complete!"
 
 # Linux installation
@@ -194,6 +208,14 @@ install-linux:
 	@echo "🔨 Installing Rust development tools..."
 	@. "$$HOME/.cargo/env" && cargo install cargo-make cargo-watch
 	@. "$$HOME/.cargo/env" && cargo install diesel_cli --no-default-features --features postgres
+	@# Start Docker Compose services
+	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
+	@if [ -f "bin/store/docker-compose.yml" ]; then \
+		docker-compose -f bin/store/docker-compose.yml up -d; \
+		echo "✅ Docker Compose services started successfully!"; \
+	else \
+		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
+	fi
 	@echo "🎉 Linux setup complete!"
 
 # Windows installation
@@ -213,6 +235,9 @@ install-windows:
 	@echo "🔨 Installing Rust development tools..."
 	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install cargo-make cargo-watch"
 	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install diesel_cli --no-default-features --features postgres"
+	@# Start Docker Compose services
+	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
+	@powershell -Command "if (Test-Path 'bin/store/docker-compose.yml') { docker-compose -f bin/store/docker-compose.yml up -d; Write-Host '✅ Docker Compose services started successfully!' } else { Write-Host '⚠️  Docker Compose file not found at bin/store/docker-compose.yml' }"
 	@echo "🎉 Windows setup complete!"
 
 # Verify installation
@@ -281,6 +306,16 @@ verify-install:
 		powershell -Command "psql --version"; \
 	else \
 		echo "❌ PostgreSQL not found" && exit 1; \
+	fi
+	@echo "Checking Docker Compose services..."
+	@if [ -f "bin/store/docker-compose.yml" ]; then \
+		if command -v docker-compose >/dev/null 2>&1; then \
+			docker-compose -f bin/store/docker-compose.yml ps; \
+		else \
+			echo "⚠️  Docker Compose not found, skipping service check"; \
+		fi; \
+	else \
+		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
 	fi
 	@echo "✅ All required tools are installed and working!"
 
@@ -551,6 +586,62 @@ pm2-delete:
 	@echo "🗑️  Deleting PM2 processes..."
 	@pm2 delete ecosystem.config.js
 	@echo "✅ PM2 processes deleted!"
+
+# =============================================================================
+# Docker Compose targets
+# =============================================================================
+
+# Docker Compose file path
+DOCKER_COMPOSE_FILE := bin/store/docker-compose.yml
+
+# Start TimescaleDB and Redis services using Docker Compose
+docker-compose-up:
+	@echo "🐳 Starting Docker Compose services..."
+	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
+		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
+		echo "Please ensure the docker-compose.yml file exists in bin/store/"; \
+		exit 1; \
+	fi
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) up -d
+	@echo "✅ Docker Compose services started successfully!"
+
+# Stop and remove Docker Compose services
+docker-compose-down:
+	@echo "🐳 Stopping Docker Compose services..."
+	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
+		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
+		exit 1; \
+	fi
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) down
+	@echo "✅ Docker Compose services stopped successfully!"
+
+# Restart Docker Compose services
+docker-compose-restart:
+	@echo "🐳 Restarting Docker Compose services..."
+	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
+		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
+		exit 1; \
+	fi
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) restart
+	@echo "✅ Docker Compose services restarted successfully!"
+
+# Show logs from Docker Compose services
+docker-compose-logs:
+	@echo "📋 Docker Compose service logs:"
+	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
+		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
+		exit 1; \
+	fi
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) logs -f
+
+# Show status of Docker Compose services
+docker-compose-ps:
+	@echo "📊 Docker Compose service status:"
+	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
+		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
+		exit 1; \
+	fi
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) ps
 
 # =============================================================================
 # Docker Build targets

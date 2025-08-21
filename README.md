@@ -44,6 +44,11 @@ Before running the installation, ensure you have the following system requiremen
   - Default connection: `postgresql://localhost:5432`
   - TimescaleDB installation guide: https://docs.timescale.com/install/
 
+### Docker Compose
+- **Docker Compose file** - Located at `bin/store/docker-compose.yml`
+- **Services** - Provides TimescaleDB and Redis services for development
+- **Usage** - Use `make docker-compose-up` to start services
+
 ### Network Requirements
 - Internet connection for downloading Rust toolchain and dependencies
 - Access to crates.io and GitHub for package downloads
@@ -104,9 +109,12 @@ This will automatically install:
 - **Rust 1.86.0** (rustc, cargo, rustup) with version verification
 - **PostgreSQL** database server (version 14 on Windows, latest on macOS/Linux) - TimescaleDB extension needs to be added separately
 - **Cargo tools**: cargo-make, cargo-watch, diesel_cli
+- **Protocol Buffers** compiler installation
 - **Git hooks** for development workflow
 - **Environment configuration** and dependencies
 - **Platform-specific package managers** (Homebrew on macOS, Chocolatey on Windows)
+- **Docker Compose services** (TimescaleDB and Redis) for development
+- **Platform detection** and appropriate package manager usage
 
 ### Verify Installation
 
@@ -225,6 +233,13 @@ The project includes a comprehensive Makefile with the following commands:
 
 ### Git & Version Control
 - `make git-cleanup` - Clean up local branches that no longer exist on remote
+
+### Docker Compose Commands
+- `make docker-compose-up` - Start TimescaleDB and Redis services using Docker Compose
+- `make docker-compose-down` - Stop and remove Docker Compose services
+- `make docker-compose-restart` - Restart Docker Compose services
+- `make docker-compose-logs` - Show logs from Docker Compose services
+- `make docker-compose-ps` - Show status of Docker Compose services
 
 ### Utilities
 - `make clean` - Clean build artifacts
