@@ -78,6 +78,7 @@ install:
 		echo "Please install dependencies manually:"; \
 		echo "  - Rust 1.86.0 (https://rustup.rs/)"; \
 		echo "  - PostgreSQL"; \
+		echo "  - Protocol Buffers (protoc)"; \
 		echo "  - cargo-make, cargo-watch, diesel_cli"; \
 		exit 1; \
 	fi
@@ -112,6 +113,14 @@ install-macos:
 	else \
 		echo "✅ PostgreSQL already installed"; \
 	fi
+	@# Install Protocol Buffers
+	@export PATH="/opt/homebrew/bin:$$PATH"; \
+	if ! command -v protoc >/dev/null 2>&1; then \
+		echo "📦 Installing Protocol Buffers..."; \
+		brew install protobuf; \
+	else \
+		echo "✅ Protocol Buffers already installed"; \
+	fi
 	@# Install Rust 1.86.0 specifically
 	@if ! command -v rustc >/dev/null 2>&1; then \
 		echo "🦀 Installing Rust 1.86.0..."; \
@@ -137,13 +146,14 @@ install-macos:
 # Linux installation
 install-linux:
 	@echo "🔧 Installing dependencies for Linux..."
-	@# Detect package manager and install PostgreSQL
+	@# Detect package manager and install PostgreSQL and Protocol Buffers
 	@if command -v apt-get >/dev/null 2>&1; then \
 		echo "📦 Using apt-get (Debian/Ubuntu)"; \
 		sudo apt-get update; \
 		sudo apt-get install -y curl build-essential libssl-dev pkg-config libpq-dev postgresql postgresql-contrib protobuf-compiler; \
 		sudo systemctl start postgresql; \
 		sudo systemctl enable postgresql; \
+		echo "✅ PostgreSQL and Protocol Buffers installed via apt-get"; \
 	elif command -v yum >/dev/null 2>&1; then \
 		echo "📦 Using yum (RHEL/CentOS)"; \
 		sudo yum update -y; \
@@ -151,13 +161,15 @@ install-linux:
 		sudo postgresql-setup initdb; \
 		sudo systemctl start postgresql; \
 		sudo systemctl enable postgresql; \
+		echo "✅ PostgreSQL and Protocol Buffers installed via yum"; \
 	elif command -v pacman >/dev/null 2>&1; then \
 		echo "📦 Using pacman (Arch Linux)"; \
 		sudo pacman -Syu --noconfirm curl base-devel openssl pkgconf postgresql protobuf; \
 		sudo systemctl start postgresql; \
 		sudo systemctl enable postgresql; \
+		echo "✅ PostgreSQL and Protocol Buffers installed via pacman"; \
 	else \
-		echo "❌ Unsupported package manager. Please install PostgreSQL manually."; \
+		echo "❌ Unsupported package manager. Please install PostgreSQL and Protocol Buffers manually."; \
 		exit 1; \
 	fi
 	@# Install Rust 1.86.0 specifically
@@ -191,6 +203,8 @@ install-windows:
 	@powershell -Command "if (!(Get-Command choco -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Chocolatey...'; Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) } else { Write-Host '✅ Chocolatey already installed' }"
 	@# Install PostgreSQL using Chocolatey
 	@powershell -Command "if (!(Get-Command psql -ErrorAction SilentlyContinue)) { Write-Host '🐘 Installing PostgreSQL...'; choco install postgresql14 -y; Write-Host '🔄 Starting PostgreSQL service...'; Start-Service postgresql-x64-14 } else { Write-Host '✅ PostgreSQL already installed' }"
+	@# Install Protocol Buffers using Chocolatey
+	@powershell -Command "if (!(Get-Command protoc -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Protocol Buffers...'; choco install protoc -y } else { Write-Host '✅ Protocol Buffers already installed' }"
 	@# Install Git if not present
 	@powershell -Command "if (!(Get-Command git -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Git...'; choco install git -y } else { Write-Host '✅ Git already installed' }"
 	@# Install Rust 1.86.0 specifically
@@ -245,6 +259,16 @@ verify-install:
 		fi; \
 	else \
 		echo "❌ diesel CLI not found" && exit 1; \
+	fi
+	@echo "Checking Protocol Buffers compiler..."
+	@if command -v protoc >/dev/null 2>&1 || powershell -Command "protoc --version" 2>/dev/null; then \
+		if command -v protoc >/dev/null 2>&1; then \
+			protoc --version; \
+		else \
+			powershell -Command "protoc --version"; \
+		fi; \
+	else \
+		echo "❌ Protocol Buffers compiler (protoc) not found" && exit 1; \
 	fi
 	@echo "Checking PostgreSQL..."
 	@if command -v psql >/dev/null 2>&1; then \
