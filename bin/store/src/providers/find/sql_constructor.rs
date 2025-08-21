@@ -164,11 +164,9 @@ impl<T: QueryFilter> SQLConstructor<T> {
     fn normalize_entity_name(&self, entity: &str) -> String {
         let plural_form = pluralize(entity, 2, false);
         if plural_form == entity {
-            // If pluralize didn't change the word, it might already be plural
-            // or it's an irregular word, so add 's' as requested
-            format!("{}s", entity)
+            plural_form.to_string()
         } else {
-            plural_form
+            format!("{}s", plural_form)
         }
     }
 
