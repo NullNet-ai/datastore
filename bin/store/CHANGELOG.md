@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.69
+### Author
+Bert
+### Fixes
+- ***sql_constructor***: 
+  - Fixed issue where field aliases were not being used in GROUP BY clauses, leading to incorrect query results
+  - Fixed issue where field aliases were not being used in ORDER BY clauses, leading to incorrect query results
+  - Auto pluralize all the entities to maintain consistency.
+  - Fix sort issue where it was not sorting the data correctly.
+---
+
 ## 0.1.68
 ### Author
 Kashan

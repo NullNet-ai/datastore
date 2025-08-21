@@ -2,6 +2,7 @@
 // use serde_json::Value;
 use crate::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, FilterCriteria, GetByFilter};
+use pluralizer::pluralize;
 
 // #[derive(Serialize, Deserialize)]
 pub struct Validation<'a, 'b> {
@@ -14,6 +15,17 @@ impl<'a, 'b> Validation<'a, 'b> {
         Self {
             request_body,
             table,
+        }
+    }
+
+    /// Internal helper function to convert entity names from singular to plural form
+    /// If the entity is already plural, adds 's' to it
+    fn normalize_entity_name(&self, entity: &str) -> String {
+        let plural_form = pluralize(entity, 2, false);
+        if plural_form == entity {
+            plural_form.to_string()
+        } else {
+            format!("{}s", entity)
         }
     }
 
@@ -202,12 +214,15 @@ impl<'a, 'b> Validation<'a, 'b> {
 
             // Validate that all fields exist in the specified entity
             for (field_index, field) in concatenate_field.fields.iter().enumerate() {
-                if !field_exists_in_table(&concatenate_field.entity, field) {
+                let normalized_entity = self.normalize_entity_name(&concatenate_field.entity);
+                if !field_exists_in_table(&normalized_entity, field)
+                    && !field_exists_in_table(&concatenate_field.entity, field)
+                {
                     return ApiResponse {
                         success: false,
                         message: format!(
-                            "concatenate_fields[{}] > fields[{}] > Field '{}' does not exist in entity '{}'",
-                            concat_index, field_index, field, concatenate_field.entity
+                            "concatenate_fields[{}] > fields[{}] > Field '{}' does not exist in entity '{}' or '{}'",
+                            concat_index, field_index, field, concatenate_field.entity, normalized_entity
                         ),
                         count: 0,
                         data: vec![],
@@ -229,12 +244,20 @@ impl<'a, 'b> Validation<'a, 'b> {
         if let Some(group_by) = &self.request_body.group_by {
             // Validate that all fields in group_by exist in the main table
             for (field_index, field) in group_by.fields.iter().enumerate() {
-                if !field_exists_in_table(self.table, field) {
+                let parts: Vec<&str> = field.split('.').collect();
+                let (entity, field_name) = match (parts.get(0), parts.get(1)) {
+                    (Some(&e), Some(&f)) => (e, f),
+                    _ => ("", ""), // Handle invalid format gracefully
+                };
+                let normalized_entity = self.normalize_entity_name(entity);
+                if !field_exists_in_table(&normalized_entity, field_name)
+                    && !field_exists_in_table(entity, field_name)
+                {
                     return ApiResponse {
                         success: false,
                         message: format!(
-                            "group_by > fields[{}] > Field '{}' does not exist in table '{}'",
-                            field_index, field, self.table
+                            "group_by > fields[{}] > Field '{}' does not exist in entity '{}' or '{}'",
+                            field_index, field_name, entity, normalized_entity
                         ),
                         count: 0,
                         data: vec![],
@@ -349,12 +372,15 @@ impl<'a, 'b> Validation<'a, 'b> {
                     continue;
                 }
 
-                if !field_exists_in_table(&table_to_check, field) {
+                let normalized_table = self.normalize_entity_name(&table_to_check);
+                if !field_exists_in_table(&normalized_table, field)
+                    && !field_exists_in_table(&table_to_check, field)
+                {
                     return ApiResponse {
                         success: false,
                         message: format!(
-                            "pluck_object[{}][{}] > Field '{}' does not exist in entity '{}'",
-                            entity, field_index, field, table_to_check
+                            "pluck_object[{}][{}] > Field '{}' does not exist in entity '{}' or '{}'",
+                            entity, field_index, field, table_to_check, normalized_table
                         ),
                         count: 0,
                         data: vec![],
@@ -505,24 +531,30 @@ impl<'a, 'b> Validation<'a, 'b> {
                 from_entity
             };
 
-            if !field_exists_in_table(from_table_to_check, from_field) {
+            let normalized_from_table = self.normalize_entity_name(from_table_to_check);
+            if !field_exists_in_table(&normalized_from_table, from_field)
+                && !field_exists_in_table(from_table_to_check, from_field)
+            {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "joins[{}] > field_relation > from > field > Join from field '{}' does not exist in entity '{}'",
-                        join_index, from_field, from_table_to_check
+                        "joins[{}] > field_relation > from > field > Join from field '{}' does not exist in entity '{}' or '{}'",
+                        join_index, from_field, from_table_to_check, normalized_from_table
                     ),
                     count: 0,
                     data: vec![],
                 };
             }
 
-            if !field_exists_in_table(to_entity, to_field) {
+            let normalized_to_entity = self.normalize_entity_name(to_entity);
+            if !field_exists_in_table(&normalized_to_entity, to_field)
+                && !field_exists_in_table(to_entity, to_field)
+            {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "joins[{}] > field_relation > to > field > Join to field '{}' does not exist in entity '{}'",
-                        join_index, to_field, to_entity
+                        "joins[{}] > field_relation > to > field > Join to field '{}' does not exist in entity '{}' or '{}'",
+                        join_index, to_field, to_entity, normalized_to_entity
                     ),
                     count: 0,
                     data: vec![],
@@ -747,6 +779,17 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
 
     pub fn validate_advance_filters(&self) -> ApiResponse {
+        if let Some(group_by) = &self.request_body.group_by {
+            if !group_by.fields.is_empty() {
+                return ApiResponse {
+                    success: true,
+                    message: "Successfully skipped advance_filters validation because group_by is present".to_string(),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+        }
+
         for (filter_index, filter) in self.request_body.advance_filters.iter().enumerate() {
             match filter {
                 FilterCriteria::Criteria {
@@ -762,6 +805,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                         None => continue,
                     };
 
+                    // Normalize entity name to plural form
+                    let normalized_entity = self.normalize_entity_name(entity_str);
+
                     // Check if this field is a concatenated field and skip validation if it is
                     let is_concatenated_field =
                         self.request_body
@@ -769,8 +815,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                             .iter()
                             .any(|concat_field| {
                                 concat_field.field_name == *field
-                                    && (concat_field.entity == *entity_str
-                                        || concat_field.aliased_entity.as_ref() == Some(entity_str))
+                                    && (concat_field.entity == normalized_entity
+                                        || concat_field.aliased_entity.as_ref()
+                                            == Some(&normalized_entity))
                             });
 
                     if is_concatenated_field {
@@ -781,11 +828,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                     // Check if the filtered field exists in prioritized properties first
                     // Check in pluck
                     let field_exists_in_prioritized = self.request_body.pluck.contains(field) ||
-                        // Check in pluck_object
-                        self.request_body.pluck_object.get(entity_str)
+                        self.request_body.pluck_object.get(&normalized_entity)
                             .map_or(false, |fields| fields.contains(field)) ||
-                        // Check in pluck_group_object
-                        self.request_body.pluck_group_object.get(entity_str)
+                        self.request_body.pluck_group_object.get(&normalized_entity)
                             .map_or(false, |fields| fields.contains(field)) ||
                         // Check in group_by fields
                         self.request_body.group_by.as_ref()
@@ -802,12 +847,12 @@ impl<'a, 'b> Validation<'a, 'b> {
 
                         // Check if field matches the "to" field
                         if to_endpoint.field == *field {
-                            // Check if entity matches the "to" entity or alias
-                            if to_endpoint.entity == *entity_str {
+                            // Check if entity matches the "to" entity or alias (try both original and normalized)
+                            if to_endpoint.entity == normalized_entity {
                                 return true;
                             }
                             if let Some(alias) = &to_endpoint.alias {
-                                if alias == entity_str {
+                                if alias == &normalized_entity {
                                     return true;
                                 }
                             }
@@ -820,20 +865,20 @@ impl<'a, 'b> Validation<'a, 'b> {
                             success: false,
                             message: format!(
                                 "advance_filters[{}] > field > Filter field '{}' in entity '{}' is not found in prioritized properties (pluck, pluck_object, pluck_group_object, concatenated_fields, group_by) or JOIN 'to' fields. Please ensure the field exists in one of these locations.",
-                                filter_index, field, entity_str
+                                filter_index, field, normalized_entity
                             ),
                             count: 0,
                             data: vec![],
                         };
                     }
 
-                    // Validate field exists in schema
-                    if !field_exists_in_table(entity_str, field) && !field_exists_in_joins {
+                    // Validate field exists in schema (try both original and normalized entity names)
+                    if !field_exists_in_table(&normalized_entity, field) && !field_exists_in_joins {
                         return ApiResponse {
                              success: false,
                              message: format!(
-                                 "advance_filters@@@@{}] > field > Filter field '{}' does not exist in entity '{}'",
-                                 filter_index, field, entity_str
+                                 "advance_filters[{}] > field > Filter field '{}' does not exist in entity '{}'",
+                                 filter_index, field, normalized_entity
                              ),
                              count: 0,
                              data: vec![],
@@ -917,13 +962,16 @@ impl<'a, 'b> Validation<'a, 'b> {
                             continue;
                         }
 
-                        // Validate field exists in schema
-                        if !field_exists_in_table(entity_str, field) {
+                        // Validate field exists in schema (try both original and normalized entity names)
+                        let normalized_entity = self.normalize_entity_name(entity_str);
+                        if !field_exists_in_table(&normalized_entity, field)
+                            && !field_exists_in_table(entity_str, field)
+                        {
                             return ApiResponse {
                                  success: false,
                                  message: format!(
-                                     "group_advance_filters[{}] > filters[{}] > field > Group filter field '{}' does not exist in entity '{}'",
-                                     group_index, filter_index, field, entity_str
+                                     "group_advance_filters[{}] > filters[{}] > field > Group filter field '{}' does not exist in entity '{}' or '{}'",
+                                     group_index, filter_index, field, entity_str, normalized_entity
                                  ),
                                  count: 0,
                                  data: vec![],
