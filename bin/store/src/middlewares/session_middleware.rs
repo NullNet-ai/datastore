@@ -17,7 +17,7 @@ use woothee::parser::Parser;
 
 pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
-use crate::structs::structs::Auth;
+use crate::structs::structs::{Auth, ApiResponse};
 use crate::utils::utils::time_string_to_ms;
 use crate::{
     auth::structs::{Claims, Origin},
@@ -115,6 +115,25 @@ where
             // Check if this is a login route and handle account_id matching
             let is_login_route =
                 path.contains("/auth") && req.method() == actix_web::http::Method::POST;
+
+            // If route is not login and there is no session_id, reject the request
+            if !is_login_route && session_id.is_none() {
+                let error_response = ApiResponse {
+                    success: false,
+                    message: "Session ID is required for this request, please login first".to_string(),
+                    count: 0,
+                    data: vec![],
+                };
+
+                let json_error = actix_web::HttpResponse::Unauthorized()
+                    .content_type("application/json")
+                    .json(error_response);
+                
+                return Err(actix_web::error::InternalError::from_response(
+                    "Unauthorized", 
+                    json_error
+                ).into());
+            }
             let mut account_id_from_body: Option<String> = None;
 
             if is_login_route {
@@ -125,7 +144,16 @@ where
                 while let Some(chunk) = payload.next().await {
                     let chunk = chunk.map_err(|e| {
                         log::error!("Error reading request body: {}", e);
-                        actix_web::error::ErrorBadRequest("Failed to read request body")
+                        let error_response = ApiResponse {
+                            success: false,
+                            message: "Failed to read request body".to_string(),
+                            count: 0,
+                            data: vec![],
+                        };
+                        let json_error = actix_web::HttpResponse::BadRequest()
+                            .content_type("application/json")
+                            .json(error_response);
+                        actix_web::error::InternalError::from_response("Bad Request", json_error)
                     })?;
                     bytes.extend_from_slice(&chunk);
                 }
@@ -302,7 +330,16 @@ where
 
                 let session_id = session.id.as_ref().ok_or_else(|| {
                     log::error!("Session ID doesn't exist");
-                    actix_web::error::ErrorInternalServerError("Session ID doesn't exist")
+                    let error_response = ApiResponse {
+                        success: false,
+                        message: "Session ID doesn't exist, please login first".to_string(),
+                        count: 0,
+                        data: vec![],
+                    };
+                    let json_error = actix_web::HttpResponse::InternalServerError()
+                        .content_type("application/json")
+                        .json(error_response);
+                    actix_web::error::InternalError::from_response("Internal Server Error", jsonc_error)
                 })?;
 
                 let cookie = ActixCookie::build(session_manager.cookie_name(), session_id)
