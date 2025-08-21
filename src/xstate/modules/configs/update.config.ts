@@ -62,7 +62,10 @@ export const config = (
               src: 'verify',
               input: ({ context }) => ({ context }),
               onDone: {
-                actions: ['assignResponsibleAccount','assignQueryDataPermissions',],
+                actions: [
+                  'assignResponsibleAccount',
+                  'assignQueryDataPermissions',
+                ],
                 target: 'get',
               },
               onError: {
@@ -71,6 +74,7 @@ export const config = (
             },
           },
           get: {
+            entry: ['updateContext'],
             invoke: {
               id: 'get',
               src: 'get',
@@ -87,7 +91,7 @@ export const config = (
             invoke: {
               id: 'update',
               src: 'update',
-              input: ({ context }) => ({ context }),
+              input: ({ context, event }) => ({ context, event }),
               onDone: {
                 target: 'success',
               },

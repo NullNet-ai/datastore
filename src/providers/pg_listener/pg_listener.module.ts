@@ -6,6 +6,7 @@ import { PostgresProvider } from '../../db/postgres.provider';
 import { DrizzleService } from '@dna-platform/crdt-lww-postgres';
 import { AuthModule } from '@dna-platform/crdt-lww-postgres/build/modules/auth/auth.module';
 import { QueueService } from './stream/queue.service';
+import { TimelineService } from '../../providers/timeline/timeline.service';
 
 @Module({
   imports: [ConfigModule, AuthModule],
@@ -15,6 +16,7 @@ import { QueueService } from './stream/queue.service';
     PostgresProvider,
     DrizzleService,
     QueueService,
+    TimelineService,
   ],
   exports: [],
 })

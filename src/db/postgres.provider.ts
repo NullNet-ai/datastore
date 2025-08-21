@@ -1,4 +1,3 @@
-// src/database/postgres.service.ts
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import { ConfigService } from '@nestjs/config';

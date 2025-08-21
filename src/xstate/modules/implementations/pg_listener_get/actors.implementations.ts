@@ -32,14 +32,14 @@ export class PgListenerGetActorsImplementations {
       //get all the triggers and functions and return back the list
       const { rows: function_rows } = await this.db.execute(
         sql.raw(`
-  SELECT p.proname AS name
-  FROM pg_proc p
-  JOIN pg_namespace n ON n.oid = p.pronamespace
-  WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
-    AND pg_function_is_visible(p.oid)
-    AND p.prorettype = 'trigger'::regtype
-  ORDER BY p.proname;
-`),
+          SELECT p.proname AS name
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+            AND pg_function_is_visible(p.oid)
+            AND p.prorettype = 'trigger'::regtype
+          ORDER BY p.proname;
+        `),
       );
       const { rows: trigger_rows } = await this.db.execute(
         sql.raw(`

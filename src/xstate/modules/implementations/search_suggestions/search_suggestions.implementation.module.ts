@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RedisClientProvider } from '../../../../db/redis_client.provider';
 import {
   SearchSuggestionsActionsImplementations,
   SearchSuggestionsActorsImplementations,
@@ -9,6 +10,7 @@ const providers = [
   SearchSuggestionsActionsImplementations,
   SearchSuggestionsActorsImplementations,
   SearchSuggestionsGuardsImplementations,
+  RedisClientProvider,
 ];
 @Module({
   providers,

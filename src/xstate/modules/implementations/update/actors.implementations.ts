@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { IResponse, ZodValidationException } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/update/update.schema';
 import { Utility } from '../../../../utils/utility.service';
@@ -7,12 +7,13 @@ import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
 import pick from 'lodash.pick';
 import { VerifyActorsImplementations } from '../verify';
 import * as local_schema from '../../../../schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { GetActorsImplementations } from '../get';
 import { LoggerService } from '@dna-platform/common';
 const { SYNC_ENABLED = 'false' } = process.env;
 @Injectable()
 export class UpdateActorsImplementations {
+  private table_exceptions = ['organizations', 'account_organizations'];
   private db;
   constructor(
     private readonly syncService: SyncService,
@@ -32,7 +33,7 @@ export class UpdateActorsImplementations {
       let errors: { message: string; stack: string; status_code: number }[] =
         [];
       try {
-        const { context } = input;
+        const { context, event } = input;
         if (!context?.controller_args)
           return Promise.reject({
             payload: {
@@ -87,7 +88,11 @@ export class UpdateActorsImplementations {
             });
           }
         }
-        if (!body?.organization_id && !is_root_account) {
+        if (
+          !body?.organization_id &&
+          !is_root_account &&
+          !this.table_exceptions.includes(table)
+        ) {
           body.organization_id = organization_id;
         }
 
@@ -145,7 +150,7 @@ export class UpdateActorsImplementations {
           });
         }
 
-        body.updated_by = account_organization_id;
+        _body.updated_by = account_organization_id;
         const updated_data = Utility.updateParse({ schema, data: _body });
         const table_schema = local_schema[table];
         if (!table_schema) {
@@ -163,42 +168,27 @@ export class UpdateActorsImplementations {
         this.logger.debug(`Update request for ${table}: ${id}`);
 
         if (body.status) {
-          result = await Utility.encryptUpdate({
-            query: {
-              table_schema,
-            },
-            encrypted_fields: body.encrypted_fields,
-            table,
-            db: this.db,
-            data: {
-              ...updated_data,
-              previous_status: updated_data.status,
-            },
-            where: [`id = '${id}'`, 'AND', `tombstone = 0`],
-            returning: {
-              table_schema,
-            },
-            organization_id,
-          });
-          updated_data.previous_status = result?.previous_status;
-        } else {
-          result = await Utility.encryptUpdate({
-            query: {
-              table_schema,
-            },
-            encrypted_fields: body.encrypted_fields,
-            table,
-            db: this.db,
-            data: {
-              ...updated_data,
-            },
-            where: [`id = '${id}'`],
-            returning: {
-              table_schema,
-            },
-            organization_id,
-          });
+          const previous_data = event?.output?.payload?.data?.[0];
+          updated_data.previous_status = previous_data?.status;
         }
+
+        await this.setRequestContext(_req);
+        result = await Utility.encryptUpdate({
+          query: {
+            table_schema,
+          },
+          encrypted_fields: body.encrypted_fields,
+          table,
+          db: this.db,
+          data: {
+            ...updated_data,
+          },
+          where: [`id = '${id}'`, 'AND', `tombstone = 0`],
+          returning: {
+            table_schema,
+          },
+          organization_id,
+        });
 
         delete updated_data.id;
         updated_data.version = result?.version;
@@ -228,9 +218,19 @@ export class UpdateActorsImplementations {
           status_code: error.status_code,
         });
         if (error.status !== 400 && error.status < 500) throw error;
+        if (error instanceof ZodValidationException) {
+          throw new BadRequestException({
+            success: false,
+            message: `There was an error while updating record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
+            count: 0,
+            data: [],
+            metadata,
+            errors: error.getZodErrors(),
+          });
+        }
         throw new BadRequestException({
           success: false,
-          message: `There was an error while creating the new record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
+          message: `There was an error while updating record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
           count: 0,
           data: [],
           metadata,
@@ -239,4 +239,17 @@ export class UpdateActorsImplementations {
       }
     }),
   };
+
+  private async setRequestContext(request) {
+    const { cookie, authorization, ..._headers } = request.headers;
+    const raw_query = `SET my.request_context = '${JSON.stringify({
+      headers: _headers,
+      url: request.url,
+      route: request.route?.path,
+      method: request.method,
+      status_code: request.statusCode,
+      status_message: request.statusMessage,
+    })}'`;
+    await this.db.execute(sql.raw(raw_query));
+  }
 }

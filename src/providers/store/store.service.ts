@@ -31,6 +31,9 @@ import * as schema from '../../schema';
 import { desc, sql, eq, and, isNotNull } from 'drizzle-orm';
 import * as cache from 'memory-cache';
 import * as argon2 from 'argon2';
+import omit from 'lodash.omit';
+import { TimelineService } from '../timeline/timeline.service';
+
 const pluralize = require('pluralize');
 const {
   DEBUG = 'false',
@@ -38,6 +41,7 @@ const {
   REDIS_CACHE_PORT = '6379',
   REDIS_CACHE_ENDPOINT = 'localhost',
   PORTAL_REDIS_CACHE_INDEX = '1',
+  DEFAULT_ORGANIZATION_ID = '01JBHKXHYSKPP247HZZWHA3JCT',
 } = process.env;
 @Injectable()
 export class StoreMutationDriver {
@@ -114,6 +118,7 @@ export class InitializerService {
     private drizzleService: DrizzleService,
     private logger: LoggerService,
     private authService: AuthService,
+    private timelineService: TimelineService,
   ) {
     this.db = this.drizzleService.getClient();
   }
@@ -276,6 +281,107 @@ export class InitializerService {
 
         this.logger.debug(`Root Account created: ${JSON.stringify(result)}`);
         break;
+      case EInitializer.ENTITY_DATA:
+        const init_data = _params as Array<Record<string, any>>;
+        if (!entity)
+          throw new BadRequestException(
+            '[Data Initialization]: Indicate entity for data initialization',
+          );
+
+        const table_schema = schema[entity];
+        if (!table_schema)
+          throw new BadRequestException(
+            '[Data Initialization]: Invalid entity for Data Initialization',
+          );
+        if (!init_data?.length)
+          throw new BadRequestException(
+            '[Data Initialization]: Initial data is required for Data Initialization',
+          );
+
+        const invalid_fields = [
+          ...new Set(
+            init_data
+              .map((data) => {
+                const fields = Object.keys(data);
+                if (!fields.includes('id'))
+                  throw new BadRequestException(
+                    '[Data Initialization]: ID is required on initial data.',
+                  );
+                return fields.filter(
+                  (field) => !Object.keys(table_schema).includes(field),
+                );
+              })
+              .flat(),
+          ),
+        ];
+
+        if (invalid_fields?.length)
+          throw new BadRequestException(
+            `[Data Initialization]: Invalid fields [${invalid_fields}] on initial data for entity ${entity}`,
+          );
+
+        await mapSeries(init_data, async (data) => {
+          const { id, organization_id = DEFAULT_ORGANIZATION_ID } = data;
+
+          const is_existing = await this.db
+            .select({ id: table_schema.id })
+            .from(table_schema)
+            .where(
+              and(
+                eq(table_schema.tombstone, 0),
+                eq(table_schema.id, id),
+                eq(table_schema.organization_id, organization_id),
+              ),
+            )
+            .then(([result]) => result);
+
+          if (is_existing) {
+            this.logger.warn(
+              `[Data Initialization]: Record ${id} of ${entity} already exists.`,
+            );
+          } else {
+            const date = new Date();
+            const formattedDate = date
+              .toLocaleDateString(locale, date_options)
+              .replace(/-/g, '/');
+            const formattedTime = Utility.convertTime12to24(
+              date.toLocaleTimeString(locale, {
+                timeZone: timezone,
+              }),
+            );
+            const formatted_data = {
+              status: 'Active',
+              ...data,
+              code: await this.generateCode(entity),
+              organization_id,
+              tombstone: 0,
+              created_date: formattedDate,
+              created_time: formattedTime,
+              updated_date: formattedDate,
+              updated_time: formattedTime,
+            };
+
+            const result = await this.db
+              .insert(table_schema)
+              .values(formatted_data)
+              .returning()
+              .then(([result]) => {
+                this.logger.log(
+                  `[Data Initialization]: Record [${result?.id}] for entity ${entity} inserted successfully`,
+                );
+                return result?.id;
+              })
+              .catch((err) => {
+                this.logger.error(
+                  `[Data Initialization]: Error inserting data for entity ${entity} with ID [${id}]: ${err.message}`,
+                );
+                return null;
+              });
+
+            return result;
+          }
+        });
+        break;
       default:
         throw new Error('Invalid initializer type');
     }
@@ -375,7 +481,7 @@ export class InitializerService {
 
       const redis_cli_connection_cmd = `redis-cli -p ${REDIS_CACHE_PORT} -h ${REDIS_CACHE_ENDPOINT} -n ${PORTAL_REDIS_CACHE_INDEX}`;
       const hash_set_cmd = `HSET ${hash_key} ${entries}`;
-      const success = Utility.execCommand(
+      const { success } = Utility.execCommand(
         redis_cli_connection_cmd + ' ' + hash_set_cmd,
       );
       if (success && DEBUG === 'true')
@@ -416,6 +522,76 @@ export class InitializerService {
     // TODO: create permissions
     // TODO: create data_permissions
     // TODO: use the src/schema/init.sql file to create the default data permissions
+  }
+
+  private async generateCode(entity: string) {
+    const db = this.drizzleService.getClient();
+    const counter_schema = schema['counters'];
+    return db
+      .insert(counter_schema)
+      .values({ entity, counter: 1 })
+      .onConflictDoUpdate({
+        target: [counter_schema.entity],
+        set: {
+          counter: sql`${counter_schema.counter} + 1`,
+        },
+      })
+      .returning({
+        prefix: counter_schema.prefix,
+        default_code: counter_schema.default_code,
+        counter: counter_schema.counter,
+        digits_number: counter_schema.digits_number,
+      })
+      .then(([entity_code]) => {
+        const { prefix, default_code, counter } = entity_code as Record<
+          string,
+          any
+        >;
+        let { digits_number } = entity_code as Record<string, any>;
+        const getDigit = (num: number) => {
+          return num.toString().length;
+        };
+
+        if (digits_number) {
+          digits_number = digits_number - getDigit(counter || 0);
+          const zero_digits =
+            digits_number > 0 ? '0'.repeat(digits_number) : '';
+          return prefix + (zero_digits + counter);
+        }
+        return prefix + (default_code + counter);
+      })
+      .catch(() => null);
+  }
+
+  async timelineTableConfig({
+    include_crdt_tables = [],
+    exclude_app_tables = [],
+  }: {
+    include_crdt_tables?: string[];
+    exclude_app_tables?: string[];
+  } = {}) {
+    const with_timeline_app_tables = omit(app_schema, exclude_app_tables);
+    const tables = [
+      ...new Set([
+        ...Object.keys(with_timeline_app_tables),
+        ...include_crdt_tables,
+      ]),
+    ];
+    const install_extension = `DO $$
+        BEGIN
+            CREATE EXTENSION IF NOT EXISTS hstore;
+        END;
+        $$;
+      `;
+    await this.db.execute(sql.raw(install_extension));
+
+    tables.map(async (table) => {
+      if (!schema[table])
+        throw new BadRequestException(
+          `[Timeline]: Table ${table} does not exist in schema`,
+        );
+      await this.timelineService.createTimelinePgTriggerFunction(table);
+    });
   }
 }
 

@@ -413,4 +413,12 @@ export class PgListenerController {
   async pgListenerDelete(@Res() _res: Response, @Req() _req: Request) {
     await this.pgListenerService.deleteListener(_res, _req);
   }
+
+  @Post('/function/:type')
+  async createTimelineTriggerFunction(
+    @Res() _res: Response,
+    @Req() _req: Request,
+  ) {
+    await this.pgListenerService.pgListener(_res, _req);
+  }
 }

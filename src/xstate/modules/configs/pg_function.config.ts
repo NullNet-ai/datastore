@@ -73,7 +73,7 @@ export const config = (
             invoke: {
               id: 'pgFunction',
               src: 'pgFunction',
-              input: ({ context }) => ({ context }),
+              input: ({ context, event }) => ({ context, event }),
               onDone: {
                 actions: ['updateContext'],
                 target: 'create',
@@ -87,7 +87,7 @@ export const config = (
             invoke: {
               id: 'create',
               src: 'create',
-              input: ({ context }) => ({ context }),
+              input: ({ context, event }) => ({ context, event }),
               onDone: {
                 target: 'success',
               },

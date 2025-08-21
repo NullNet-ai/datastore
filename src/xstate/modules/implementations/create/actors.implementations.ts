@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { IResponse } from '@dna-platform/common';
+import { IResponse, ZodValidationException } from '@dna-platform/common';
 import { fromPromise } from 'xstate';
 import { IActors } from '../../schemas/create/create.schema';
 import { DrizzleService, SyncService } from '@dna-platform/crdt-lww-postgres';
@@ -134,10 +134,9 @@ export class CreateActorsImplementations {
             },
           });
         }
-
-          body.timestamp = body?.timestamp
-            ? new Date(body?.timestamp)
-            : new Date()
+        body.timestamp = body?.timestamp
+          ? new Date(body?.timestamp)
+          : new Date();
         body.id = body.id === undefined ? ulid() : body.id;
 
         //get first three characters of the table name as prefix
@@ -146,12 +145,13 @@ export class CreateActorsImplementations {
           //! TODO: refactor this, incrementing counter should be parallel to inserting record
           let exist = null;
           if (body.id) {
-            exist = await this.db
+            const result = await this.db
               .select({ id: local_schema[table].id })
               .from(local_schema[table])
               .where(eq(local_schema[table].id, body.id))
               .prepare(`existing_record_${table}`)
-              .execute()[0];
+              .execute();
+            exist = result?.[0];
           }
           if (!exist) {
             const counter_schema = local_schema['counters'];
@@ -210,6 +210,7 @@ export class CreateActorsImplementations {
         let parsed_data = Utility.createParse({ schema, data: _body });
         this.logger.debug(`Create request for ${table}: ${body.id}`);
 
+        await this.setRequestContext(_req);
         const results = await Utility.encryptCreate({
           query: {
             table_schema,
@@ -245,6 +246,16 @@ export class CreateActorsImplementations {
           status_code: error.status_code,
         });
         if (error.status !== 400 && error.status < 500) throw error;
+        if (error instanceof ZodValidationException) {
+          throw new BadRequestException({
+            success: false,
+            message: `There was an error while creating the new record. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
+            count: 0,
+            data: [],
+            metadata,
+            errors: error.getZodErrors(),
+          });
+        }
         throw new BadRequestException({
           success: false,
           message: `There was an error while creating the new record in table ${error_table}. Please verify the entered information for completeness and accuracy. If the issue continues, contact your database administrator for further assistance.`,
@@ -256,4 +267,17 @@ export class CreateActorsImplementations {
       }
     }),
   };
+
+  private async setRequestContext(request) {
+    const { cookie, authorization, ..._headers } = request.headers;
+    const raw_query = `SET my.request_context = '${JSON.stringify({
+      headers: _headers,
+      url: request.url,
+      route: request.route?.path,
+      method: request.method,
+      status_code: request.statusCode,
+      status_message: request.statusMessage,
+    })}'`;
+    await this.db.execute(sql.raw(raw_query));
+  }
 }

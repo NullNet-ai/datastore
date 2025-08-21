@@ -3,18 +3,23 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { Subject } from 'rxjs';
 import { PostgresProvider } from '../../db/postgres.provider';
 import { Readable } from 'stream';
+import { TimelineService } from '../../providers/timeline/timeline.service';
+
 @Injectable()
 @Injectable()
 export class PgListenerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PgListenerService.name);
   public notifications$ = new Subject<any>();
   private client;
-  private subscribed_channels = new Set<string>();
+  public subscribed_channels = new Set<string>();
   private refresh_interval!: ReturnType<typeof setInterval>;
   private main_stream: Readable;
   private is_paused = false;
 
-  constructor(private postgresProvider: PostgresProvider) {
+  constructor(
+    private postgresProvider: PostgresProvider,
+    private timelineService: TimelineService,
+  ) {
     this.main_stream = new Readable({
       objectMode: true,
       highWaterMark: 200_000,
@@ -43,6 +48,7 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
           }
 
           this.notifications$.next(payload);
+          this.timelineService.sendTimelineEvent(payload);
         } catch (err: any) {
           this.logger.error(`⚠️ Error parsing payload: ${err.message}`);
         }
