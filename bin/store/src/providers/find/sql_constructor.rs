@@ -407,7 +407,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             let entity = parts[0]; // index 0 is the entity
                             let field_name = parts[1]; // index 1 is the actual field
                             let normalized_entity = self.normalize_entity_name(entity);
-                            
+
                             // Use the normalized entity as the table reference
                             Self::get_field(
                                 &normalized_entity,
@@ -430,11 +430,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         }
                     })
                     .collect();
-                
+
                 return group_selections.join(", ");
             }
         }
-        
+
         let mut selections = Vec::new();
 
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
@@ -972,18 +972,27 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         format!("LOWER({})", field_expression)
                     };
 
-                     if let Some(group_by) = &self.request_body.get_group_by() {
-                        if !group_by.fields.is_empty() {
-                            let group_by_fields = group_by.fields.iter().map(|field| {
-                                let parts: Vec<&str> = field.trim().split('.').collect();
-                                if parts.len() == 2 {
-                                    format!("\"{}\".\"{}\"", parts[0], parts[1])
-                                } else {
-                                    format!("\"{}\".\"{}\"", self.table, field.trim())
-                                }
-                            }).collect::<Vec<String>>().join(", ");
+                    dbg!(format!("table: {} field_name: {}", table_alias, field_name));
+
+                    // Check if field exists in group_by and use proper formatting
+                    if let Some(group_by) = &self.request_body.get_group_by() {
+                        let field_in_group_by = group_by.fields.iter().any(|group_field| {
+                            let group_parts: Vec<&str> = group_field.trim().split('.').collect();
+                            let group_table_name = self.normalize_entity_name(group_parts[0]);
                             
-                            return format!(" ORDER BY {}", group_by_fields);
+                            if group_parts.len() > 1 {
+                                // Handle entity.field format in group_by
+                                group_parts[1] == field_name && 
+                                (group_table_name == table_alias || group_parts[0] == table_alias)
+                            } else {
+                                // Handle single field format in group_by
+                                group_parts[0] == field_name
+                            }
+                        });
+                        
+                        // If field is in group_by, use the field expression without direction
+                        if field_in_group_by {
+                            return final_field;
                         }
                     }
 
@@ -993,9 +1002,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         sort_option.by_direction.to_uppercase()
                     )
                 })
+                .filter(|clause| !clause.is_empty()) // Filter out empty clauses
                 .collect();
+            
+            if !sort_clauses.is_empty() {
+                return format!(" ORDER BY {}", sort_clauses.join(", "));
+            }
 
-            return format!(" ORDER BY {}", sort_clauses.join(", "));
+            String::from("")
         }
         // Fallback to single field sorting using trait methods
         else if !self.request_body.get_order_by().is_empty() {
