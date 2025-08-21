@@ -195,6 +195,163 @@ make help
       cargo fmt
       ```
 
+## Guidelines in Adding a New Schema
+
+  1. Create or Update necessary files
+ 
+     #### Creating a new table schema 
+      - Create a new file on path:
+        `bin/store/src/schema/tables/<table_name>.rs`
+
+     #### Adding a new field to existing table schema
+     - Update the table file from this directory `bin/store/src/schema/tables/`
+
+     Note:
+      - Table name should be in `snake case` and `pluralized`.
+      - Can copy from existing table file and rename the file.
+      - Update the necessary names in the file if copied.
+      - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
+      - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
+
+     Example:
+
+      ```rust
+        use crate::schema::generator::diesel_schema_definition::{
+            DieselTableDefinition, types::*
+        };
+        use crate::define_table_schema;
+        use crate::{system_fields, system_indexes, system_foreign_keys};
+
+        pub struct SamplesTable;
+
+        define_table_schema! {
+            hypertable: false,
+            fields: {
+                // System fields - common across all tables
+                system_fields!(),
+                
+                // Samples table specific fields
+                sample_text: nullable(text()),
+                sample_char: nullable(varchar(Some(300))),
+                sample_number: nullable(integer()), default: 0, migration_nullable: false,
+                sample_object: nullable(jsonb()),
+                is_sample_boolean: nullable(boolean()),
+                sample_with_reference_id: nullable(text()),
+            },
+            indexes: {
+                // System field indexes
+                system_indexes!("samples"),
+
+                idx_samples_sample_text: {
+                    columns: ["sample_text"],
+                    unique: false,
+                    type: "btree"
+                },
+            },
+            foreign_keys: {
+                // System foreign keys
+                system_foreign_keys!("samples"),
+                
+                // Custom foreign keys
+                fk_samples_sample_with_reference_id: {
+                    columns: ["sample_with_reference_id"],
+                    foreign_table: "account_signatures",
+                    foreign_columns: ["id"],
+                    on_delete: "no action",
+                    on_update: "no action"
+                }
+            }
+        }
+      ```
+  
+  2. Git add and commit the changes with a proper commit message to track the changes on the files.
+
+     **Why we need to git add and commit:**
+     - **Version Control**: Track all changes made to schema files for historical reference
+     - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+     - **Rollback Capability**: Enable reverting to previous working states if issues arise
+     - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+     - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+     - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+     - **Debugging**: Help identify when and where issues were introduced in the schema
+     - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+
+  3. Run command for schema generation.
+
+      ```bash
+      make store-generate-schema
+      ```
+     Note:
+       - You have to enter migration name for the migration file to be created, format will be in `snake case`, better to have standard naming for your migrations files.
+       - Migrations generated will be stored in this directory: `bin/store/migrations`
+
+  4. Verify generated files:
+     - Check the migration file in `bin/store/migrations` directory.
+     - Check the table model file in `bin/store/src/models` directory, with the file name <table_name>_model.rs, the sorting of fields must be the same with the sorting on the file in table `bin/store/src/schema/tables/<table_name>.rs` that you have created.
+     - Check the schema file in `bin/store/src/schema/schema.rs`, the table schema must be added to the file.
+
+  5. Run command for migration.
+
+      ```bash
+      make db-migrate-up
+      ```
+  
+  6. Git add and commit the changes with a proper commit messages, to track and secure the changes.
+
+     **Why we need to git add and commit:**
+     - **Version Control**: Track all changes made to schema files for historical reference
+     - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+     - **Rollback Capability**: Enable reverting to previous working states if issues arise
+     - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+     - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+     - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+     - **Debugging**: Help identify when and where issues were introduced in the schema
+     - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+
+  7. Run command for store proto file generation.
+
+      ```bash
+      make store-generate-proto
+      ```
+
+  8. Verify generated files:
+     - Check the generated `table_enum` file in `bin/store/src/table_enum.rs` 
+     - Check the generated `grpc_controller` file changes on `bin/store/src/controllers/grpc_controller.rs` 
+     - Check the generated `store.rs` file changes on `bin/store/src/generated/store.rs` 
+     - Check the generated `store.proto` file changes on `bin/store/src/proto/store.proto`
+
+  10. Run command to check the code.
+      ```bash
+      cargo check
+      ```
+
+  11. Run command to format code.
+      ```bash
+      make fmt
+      ```
+
+  12. Run command to check the code format.
+      ```bash
+      make fmt-check
+      ```
+  
+  13. Git add and commit the changes with a proper commit messages, to track and secure the changes.
+
+     **Why we need to git add and commit:**
+     - **Version Control**: Track all changes made to schema files for historical reference
+     - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+     - **Rollback Capability**: Enable reverting to previous working states if issues arise
+     - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+     - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+     - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+     - **Debugging**: Help identify when and where issues were introduced in the schema
+     - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+
+  14. Run command to run the store.
+      ```bash
+      make store
+      ```
+
 ## Contributing Guidelines
 
   1. Follow Rust's coding conventions
