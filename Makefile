@@ -1,7 +1,7 @@
 # Makefile for CRDT workspace
 
 # PHONY targets (targets that don't create files)
-.PHONY: all dev clean help install verify-install install-macos install-linux \
+.PHONY: all dev clean help install verify-install install-macos install-linux install-windows \
         server store store-clean-setup store-watch store-build store-prod \
         store-generate-schema store-generate-proto \
         db-migrate-generate db-migrate-up db-migrate-revert \
@@ -17,7 +17,10 @@ all: dev
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  install                 - Install all dependencies and setup the project"
+	@echo "  install                 - Install all dependencies and setup the project (auto-detects OS)"
+	@echo "  install-macos           - Install dependencies specifically for macOS"
+	@echo "  install-linux           - Install dependencies specifically for Linux"
+	@echo "  install-windows         - Install dependencies specifically for Windows"
 	@echo "  verify-install          - Verify that all required tools are installed"
 	@echo "  dev                     - Run both server and store in parallel"
 	@echo "  server                  - Run the server"
@@ -67,10 +70,13 @@ install:
 	elif [ "$$(uname)" = "Linux" ]; then \
 		echo "🐧 Linux detected"; \
 		make install-linux; \
+	elif [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		echo "🪟 Windows detected"; \
+		make install-windows; \
 	else \
 		echo "❌ Unsupported operating system: $$(uname)"; \
 		echo "Please install dependencies manually:"; \
-		echo "  - Rust (https://rustup.rs/)"; \
+		echo "  - Rust 1.86.0 (https://rustup.rs/)"; \
 		echo "  - PostgreSQL"; \
 		echo "  - cargo-make, cargo-watch, diesel_cli"; \
 		exit 1; \
@@ -106,12 +112,21 @@ install-macos:
 	else \
 		echo "✅ PostgreSQL already installed"; \
 	fi
-	@# Install Rust if not present
+	@# Install Rust 1.86.0 specifically
 	@if ! command -v rustc >/dev/null 2>&1; then \
-		echo "🦀 Installing Rust..."; \
-		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+		echo "🦀 Installing Rust 1.86.0..."; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.86.0; \
 	else \
-		echo "✅ Rust already installed"; \
+		echo "🔍 Checking Rust version..."; \
+		RUST_VERSION=$$(rustc --version | cut -d' ' -f2); \
+		if [ "$$RUST_VERSION" != "1.86.0" ]; then \
+			echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.86.0"; \
+			echo "🔄 Installing Rust 1.86.0..."; \
+			rustup install 1.86.0; \
+			rustup default 1.86.0; \
+		else \
+			echo "✅ Rust 1.86.0 already installed"; \
+		fi; \
 	fi
 	@# Install Rust tools
 	@echo "🔨 Installing Rust development tools..."
@@ -145,14 +160,23 @@ install-linux:
 		echo "❌ Unsupported package manager. Please install PostgreSQL manually."; \
 		exit 1; \
 	fi
-	@# Install Rust if not present
+	@# Install Rust 1.86.0 specifically
 	@if ! command -v rustc >/dev/null 2>&1; then \
-		echo "🦀 Installing Rust..."; \
-		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+		echo "🦀 Installing Rust 1.86.0..."; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.86.0; \
 		echo "🔄 Sourcing Rust environment..."; \
 		. "$$HOME/.cargo/env"; \
 	else \
-		echo "✅ Rust already installed"; \
+		echo "🔍 Checking Rust version..."; \
+		RUST_VERSION=$$(rustc --version | cut -d' ' -f2); \
+		if [ "$$RUST_VERSION" != "1.86.0" ]; then \
+			echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.86.0"; \
+			echo "🔄 Installing Rust 1.86.0..."; \
+			rustup install 1.86.0; \
+			rustup default 1.86.0; \
+		else \
+			echo "✅ Rust 1.86.0 already installed"; \
+		fi; \
 	fi
 	@# Install Rust tools
 	@echo "🔨 Installing Rust development tools..."
@@ -160,27 +184,77 @@ install-linux:
 	@. "$$HOME/.cargo/env" && cargo install diesel_cli --no-default-features --features postgres
 	@echo "🎉 Linux setup complete!"
 
+# Windows installation
+install-windows:
+	@echo "🔧 Installing dependencies for Windows..."
+	@# Check if Chocolatey is installed
+	@powershell -Command "if (!(Get-Command choco -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Chocolatey...'; Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) } else { Write-Host '✅ Chocolatey already installed' }"
+	@# Install PostgreSQL using Chocolatey
+	@powershell -Command "if (!(Get-Command psql -ErrorAction SilentlyContinue)) { Write-Host '🐘 Installing PostgreSQL...'; choco install postgresql14 -y; Write-Host '🔄 Starting PostgreSQL service...'; Start-Service postgresql-x64-14 } else { Write-Host '✅ PostgreSQL already installed' }"
+	@# Install Git if not present
+	@powershell -Command "if (!(Get-Command git -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Git...'; choco install git -y } else { Write-Host '✅ Git already installed' }"
+	@# Install Rust 1.86.0 specifically
+	@powershell -Command "if (!(Get-Command rustc -ErrorAction SilentlyContinue)) { Write-Host '🦀 Installing Rust 1.86.0...'; Invoke-WebRequest -Uri 'https://win.rustup.rs/' -OutFile 'rustup-init.exe'; .\rustup-init.exe -y --default-toolchain 1.86.0; Remove-Item rustup-init.exe } else { Write-Host '🔍 Checking Rust version...'; $$rustVersion = (rustc --version).Split(' ')[1]; if ($$rustVersion -ne '1.86.0') { Write-Host '⚠️  Current Rust version: ' + $$rustVersion + ', required: 1.86.0'; Write-Host '🔄 Installing Rust 1.86.0...'; rustup install 1.86.0; rustup default 1.86.0 } else { Write-Host '✅ Rust 1.86.0 already installed' } }"
+	@# Install Rust tools
+	@echo "🔨 Installing Rust development tools..."
+	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install cargo-make cargo-watch"
+	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install diesel_cli --no-default-features --features postgres"
+	@echo "🎉 Windows setup complete!"
+
 # Verify installation
 verify-install:
 	@echo "🔍 Verifying installation..."
 	@echo "Checking Rust..."
-	@rustc --version || (echo "❌ Rust not found" && exit 1)
+	@if command -v rustc >/dev/null 2>&1 || powershell -Command "rustc --version" 2>/dev/null; then \
+		if command -v rustc >/dev/null 2>&1; then \
+			rustc --version; \
+		else \
+			powershell -Command "rustc --version"; \
+		fi; \
+	else \
+		echo "❌ Rust not found" && exit 1; \
+	fi
 	@echo "Checking Cargo..."
-	@cargo --version || (echo "❌ Cargo not found" && exit 1)
+	@if command -v cargo >/dev/null 2>&1 || powershell -Command "cargo --version" 2>/dev/null; then \
+		if command -v cargo >/dev/null 2>&1; then \
+			cargo --version; \
+		else \
+			powershell -Command "cargo --version"; \
+		fi; \
+	else \
+		echo "❌ Cargo not found" && exit 1; \
+	fi
 	@echo "Checking cargo-make..."
-	@cargo make --version || (echo "❌ cargo-make not found" && exit 1)
+	@if command -v cargo >/dev/null 2>&1; then \
+		cargo make --version || (echo "❌ cargo-make not found" && exit 1); \
+	else \
+		powershell -Command "cargo make --version" || (echo "❌ cargo-make not found" && exit 1); \
+	fi
 	@echo "Checking cargo-watch..."
-	@cargo watch --version || (echo "❌ cargo-watch not found" && exit 1)
+	@if command -v cargo >/dev/null 2>&1; then \
+		cargo watch --version || (echo "❌ cargo-watch not found" && exit 1); \
+	else \
+		powershell -Command "cargo watch --version" || (echo "❌ cargo-watch not found" && exit 1); \
+	fi
 	@echo "Checking diesel CLI..."
-	@diesel --version || (echo "❌ diesel CLI not found" && exit 1)
+	@if command -v diesel >/dev/null 2>&1 || powershell -Command "diesel --version" 2>/dev/null; then \
+		if command -v diesel >/dev/null 2>&1; then \
+			diesel --version; \
+		else \
+			powershell -Command "diesel --version"; \
+		fi; \
+	else \
+		echo "❌ diesel CLI not found" && exit 1; \
+	fi
 	@echo "Checking PostgreSQL..."
-	@export PATH="/opt/homebrew/bin:$$PATH"; \
-	if command -v psql >/dev/null 2>&1; then \
+	@if command -v psql >/dev/null 2>&1; then \
 		psql --version; \
 	elif [ -f "/opt/homebrew/bin/psql" ]; then \
 		/opt/homebrew/bin/psql --version; \
 		echo "⚠️  PostgreSQL found but not in PATH. Add this to your shell profile:"; \
 		echo "   export PATH=\"/opt/homebrew/bin:\$$PATH\""; \
+	elif powershell -Command "psql --version" 2>/dev/null; then \
+		powershell -Command "psql --version"; \
 	else \
 		echo "❌ PostgreSQL not found" && exit 1; \
 	fi
