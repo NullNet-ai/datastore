@@ -972,6 +972,21 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         format!("LOWER({})", field_expression)
                     };
 
+                     if let Some(group_by) = &self.request_body.get_group_by() {
+                        if !group_by.fields.is_empty() {
+                            let group_by_fields = group_by.fields.iter().map(|field| {
+                                let parts: Vec<&str> = field.trim().split('.').collect();
+                                if parts.len() == 2 {
+                                    format!("\"{}\".\"{}\"", parts[0], parts[1])
+                                } else {
+                                    format!("\"{}\".\"{}\"", self.table, field.trim())
+                                }
+                            }).collect::<Vec<String>>().join(", ");
+                            
+                            return format!(" ORDER BY {}", group_by_fields);
+                        }
+                    }
+
                     format!(
                         "{} {}",
                         final_field,
@@ -1742,21 +1757,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
     }
 
     fn construct_order_by(&self) -> String {
-        if let Some(group_by) = &self.request_body.get_group_by() {
-            if !group_by.fields.is_empty() {
-                let group_by_fields = group_by.fields.iter().map(|field| {
-                    let parts: Vec<&str> = field.trim().split('.').collect();
-                    if parts.len() == 2 {
-                        format!("\"{}\".\"{}\"", parts[0], parts[1])
-                    } else {
-                        format!("\"{}\".\"{}\"", self.table, field.trim())
-                    }
-                }).collect::<Vec<String>>().join(", ");
-                
-                return format!(" ORDER BY {}", group_by_fields);
-            }
-        }
-
         if let Some(distinct_by) = self.request_body.get_distinct_by() {
             if !distinct_by.is_empty() {
                 let fields: Vec<String> = distinct_by
