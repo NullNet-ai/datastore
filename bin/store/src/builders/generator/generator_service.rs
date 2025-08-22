@@ -193,7 +193,8 @@ impl GeneratorService {
     /// Check if field ordering has changed by comparing current model with expected ordering
     fn has_field_ordering_changed(table_def: &TableDefinition) -> Result<bool, String> {
         let singular_name = to_singular(&table_def.name);
-        let model_file_path = Path::new("src/database/models").join(format!("{}_model.rs", singular_name));
+        let model_file_path =
+            Path::new("src/database/models").join(format!("{}_model.rs", singular_name));
 
         if !model_file_path.exists() {
             return Ok(true); // Model doesn't exist, needs to be created
