@@ -1,6 +1,6 @@
 use crate::builders::templates::proto_generator::{Case, CaseConvert};
-use crate::utils::utils::{parse_tables, to_singular};
 use crate::constants::paths;
+use crate::utils::utils::{parse_tables, to_singular};
 use log::{error, info, warn};
 use regex::Regex;
 use std::fs::{self, File};

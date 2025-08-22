@@ -119,8 +119,8 @@ impl GeneratorService {
             } else {
                 // Check if model file exists, if not, create it (for new tables)
                 let singular_name = to_singular(&table_def.name);
-                let model_file_path =
-                    Path::new(paths::database::MODELS_DIR).join(format!("{}_model.rs", singular_name));
+                let model_file_path = Path::new(paths::database::MODELS_DIR)
+                    .join(format!("{}_model.rs", singular_name));
 
                 if !model_file_path.exists() {
                     let model_content = ModelGenerator::generate_model(&table_def)?;

@@ -1,7 +1,7 @@
+use crate::constants::paths;
 use crate::database::db::create_connection;
 use crate::init::init::initialize;
 use crate::init::structs::EInitializer;
-use crate::constants::paths;
 use log::{error, info, warn};
 use std::env;
 use std::io::{self, Write};

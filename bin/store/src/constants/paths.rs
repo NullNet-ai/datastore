@@ -7,22 +7,22 @@
 pub mod database {
     /// Main schema file path
     pub const SCHEMA_FILE: &str = "src/database/schema/schema.rs";
-    
+
     /// Schema tables directory
     pub const SCHEMA_TABLES_DIR: &str = "src/database/schema/tables";
-    
+
     /// System fields definition file
     pub const SYSTEM_FIELDS_FILE: &str = "src/database/schema/generator/system_fields.rs";
-    
+
     /// Hypertables definition file
     pub const HYPERTABLES_FILE: &str = "src/database/schema/hypertables.rs";
-    
+
     /// Database initialization SQL file
     pub const INIT_SQL_FILE: &str = "src/database/schema/init.sql";
-    
+
     /// Models directory
     pub const MODELS_DIR: &str = "src/database/models";
-    
+
     /// Models module file
     pub const MODELS_MOD_FILE: &str = "src/database/models/mod.rs";
 }

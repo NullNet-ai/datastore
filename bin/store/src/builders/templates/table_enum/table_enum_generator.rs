@@ -1,6 +1,6 @@
+use crate::constants::paths;
 use crate::database::schema::verify::field_exists_in_table;
 use crate::proto_generator::{Case, CaseConvert};
-use crate::constants::paths;
 use crate::utils::utils::{parse_tables, to_singular};
 use log::{error, info, warn};
 use std::fs::{self, File};

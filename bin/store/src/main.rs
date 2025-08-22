@@ -25,11 +25,11 @@ use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import
 use crate::builders::generator::generator_service::GeneratorService;
+use crate::constants::paths;
 use crate::database::db;
 use crate::database::schema;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::init::init::initialize;
-use crate::constants::paths;
 use crate::init::structs::EInitializer;
 use crate::middleware::session_middleware::SessionMiddleware;
 use crate::middleware::shutdown_handler;
@@ -159,7 +159,10 @@ async fn main() -> std::io::Result<()> {
         // Proto generation
         if generate_proto {
             info!("Generating proto files");
-            proto_generator::generate_protos(paths::database::SCHEMA_FILE, paths::proto::OUTPUT_DIR);
+            proto_generator::generate_protos(
+                paths::database::SCHEMA_FILE,
+                paths::proto::OUTPUT_DIR,
+            );
 
             if let Err(e) = run_build_script() {
                 error!("Failed to run build script: {}", e);

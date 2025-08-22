@@ -1,8 +1,8 @@
 use crate::builders::generator::field_definition::TableDefinition;
+use crate::constants::paths;
 use crate::database::schema::verify::{
     field_exists_in_table, field_type_in_table, get_table_fields, FieldTypeInfo,
 };
-use crate::constants::paths;
 use regex::Regex;
 use std::fs;
 

@@ -1,9 +1,9 @@
+use crate::constants::paths;
 use log::{info, warn};
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
-use crate::constants::paths;
 
 #[allow(warnings)]
 pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
