@@ -36,7 +36,12 @@ impl MigrationGenerator {
         let timestamp = Self::generate_timestamp();
 
         // Create migration directory
-        let migration_dir = format!("{}/{}_{}", paths::database::MIGRATIONS_DIR, timestamp, migration_name);
+        let migration_dir = format!(
+            "{}/{}_{}",
+            paths::database::MIGRATIONS_DIR,
+            timestamp,
+            migration_name
+        );
         info!("Creating migration directory: {}", migration_dir);
 
         // Check if migration already exists

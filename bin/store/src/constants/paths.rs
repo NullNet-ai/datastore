@@ -9,7 +9,7 @@ pub const GENERATED_DIR: &str = "src/generated";
 /// Database-related path constants
 pub mod database {
     use super::GENERATED_DIR;
-    
+
     /// Main schema file path
     pub const SCHEMA_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/schema.rs");
 
@@ -44,7 +44,7 @@ pub mod database {
 /// Proto generation path constants
 pub mod proto {
     use super::GENERATED_DIR;
-    
+
     /// Proto source file
     pub const SOURCE_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/proto/store.proto");
     /// Proto output directory
@@ -56,7 +56,7 @@ pub mod proto {
 /// gRPC controller path constants
 pub mod grpc {
     use super::GENERATED_DIR;
-    
+
     /// Generated gRPC controller file path
     pub const CONTROLLER_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/grpc_controller.rs");
 }

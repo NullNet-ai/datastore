@@ -1,7 +1,7 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::generated::models::account_model::AccountModel;
 use crate::database::schema::accounts;
+use crate::generated::models::account_model::AccountModel;
 use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::LoginResponse;
 use crate::utils::utils::time_string_to_ms;
