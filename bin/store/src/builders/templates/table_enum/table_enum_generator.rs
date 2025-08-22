@@ -1,5 +1,6 @@
 use crate::database::schema::verify::field_exists_in_table;
 use crate::proto_generator::{Case, CaseConvert};
+use crate::constants::paths;
 use crate::utils::utils::{parse_tables, to_singular};
 use log::{error, info, warn};
 use std::fs::{self, File};
@@ -320,7 +321,7 @@ pub fn run_generator() -> io::Result<()> {
     info!("Starting Table enum generator");
 
     // Default paths
-    let schema_path = "src/database/schema/schema.rs";
+    let schema_path = paths::database::SCHEMA_FILE;
     let output_path = "src/table_enum.rs";
 
     // Generate the Table enum

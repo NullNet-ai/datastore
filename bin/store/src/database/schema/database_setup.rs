@@ -1,6 +1,7 @@
 use crate::database::db::create_connection;
 use crate::init::init::initialize;
 use crate::init::structs::EInitializer;
+use crate::constants::paths;
 use log::{error, info, warn};
 use std::env;
 use std::io::{self, Write};
@@ -132,7 +133,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     // Step 4: Run init.sql if requested
     if flags.run_init_sql {
         info!("Step 4: Running database initialization script...");
-        let init_path = Path::new(&current_dir).join("src/database/schema/init.sql");
+        let init_path = Path::new(&current_dir).join(paths::database::INIT_SQL_FILE);
         let init_sql = std::fs::read_to_string(&init_path)?;
 
         if let Err(e) = execute_sql_script(&db_client, &init_sql).await {

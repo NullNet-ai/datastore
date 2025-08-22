@@ -1,5 +1,6 @@
 use crate::builders::templates::proto_generator::{Case, CaseConvert};
 use crate::utils::utils::{parse_tables, to_singular};
+use crate::constants::paths;
 use log::{error, info, warn};
 use regex::Regex;
 use std::fs::{self, File};
@@ -21,7 +22,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
 
     let mut service_name = String::new();
     let mut rpc_methods = Vec::new();
-    let schema_path = "src/database/schema/schema.rs";
+    let schema_path = paths::database::SCHEMA_FILE;
     let schema = match fs::read_to_string(schema_path) {
         Ok(content) => content,
         Err(e) => {

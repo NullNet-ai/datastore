@@ -2,7 +2,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use crate::constants::paths;
 const SCHEMA_CONTENT: &str = include_str!("schema.rs");
+
 
 /// Verifies if a field exists in a specified table by parsing the schema.rs file
 ///
@@ -17,7 +19,7 @@ const SCHEMA_CONTENT: &str = include_str!("schema.rs");
 ///
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
     // Path to schema.rs file
-    let possible_paths = vec![Path::new("src/database/schema/schema.rs"), Path::new("schema.rs")];
+    let possible_paths = vec![Path::new(paths::database::SCHEMA_FILE), Path::new(paths::LEGACY_SCHEMA_FILE)];
     // Read the schema file
     let mut schema_content = String::new();
     for path in possible_paths {
@@ -80,7 +82,7 @@ pub struct FieldTypeInfo {
 
 pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTypeInfo> {
     // Path to schema.rs file
-    let possible_paths = vec![Path::new("src/database/schema/schema.rs"), Path::new("schema.rs")];
+    let possible_paths = vec![Path::new(paths::database::SCHEMA_FILE), Path::new(paths::LEGACY_SCHEMA_FILE)];
     // Read the schema file
     let mut schema_content = String::new();
     for path in possible_paths {
@@ -205,7 +207,7 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 ///
 pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
     // Path to schema.rs file
-    let possible_paths = vec![Path::new("src/database/schema/schema.rs"), Path::new("schema.rs")];
+    let possible_paths = vec![Path::new(paths::database::SCHEMA_FILE), Path::new(paths::LEGACY_SCHEMA_FILE)];
     // Read the schema file
     let mut schema_content = String::new();
     for path in possible_paths {

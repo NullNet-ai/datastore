@@ -3,6 +3,7 @@ use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use crate::constants::paths;
 
 #[allow(warnings)]
 pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
@@ -63,7 +64,7 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
     info!("Running database initialization script...");
 
     // Run init.sql to initialize the database
-    let init_path = Path::new(&current_dir).join("src/database/schema/init.sql");
+    let init_path = Path::new(&current_dir).join(paths::database::INIT_SQL_FILE);
     let init_status = Command::new("psql")
         .args([
             "-U",

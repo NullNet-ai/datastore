@@ -1,5 +1,6 @@
 use crate::builders::generator::field_definition::{ParsedField, TableDefinition};
 use crate::builders::generator::utils::{FieldTypeParser, StringUtils};
+use crate::constants::paths;
 use crate::utils::utils::to_singular;
 use std::fs;
 
@@ -106,7 +107,7 @@ impl ModelGenerator {
 
     /// Get system field names from the system_fields macro
     fn get_system_field_names() -> Result<Vec<String>, String> {
-        let system_fields_path = "src/database/schema/generator/system_fields.rs";
+        let system_fields_path = paths::database::SYSTEM_FIELDS_FILE;
         let content = fs::read_to_string(system_fields_path)
             .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
 

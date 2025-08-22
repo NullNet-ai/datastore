@@ -9,6 +9,7 @@ use providers::operations::batch_sync::background_sync;
 use providers::operations::message_stream::gateway::{create_socket_io, set_streaming_service};
 use std::env;
 mod builders;
+mod constants;
 mod controllers;
 mod database;
 mod generated;
@@ -28,6 +29,7 @@ use crate::database::db;
 use crate::database::schema;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::init::init::initialize;
+use crate::constants::paths;
 use crate::init::structs::EInitializer;
 use crate::middleware::session_middleware::SessionMiddleware;
 use crate::middleware::shutdown_handler;
@@ -157,7 +159,7 @@ async fn main() -> std::io::Result<()> {
         // Proto generation
         if generate_proto {
             info!("Generating proto files");
-            proto_generator::generate_protos("src/database/schema/schema.rs", "src/proto");
+            proto_generator::generate_protos(paths::database::SCHEMA_FILE, paths::proto::OUTPUT_DIR);
 
             if let Err(e) = run_build_script() {
                 error!("Failed to run build script: {}", e);
