@@ -1,6 +1,6 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::database::schema::schema;
+use crate::generated::schema::counters;
 use crate::generated::models::counter_model::CounterModel;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
@@ -72,14 +72,14 @@ impl CodePrefixInitializer {
         // Process each counter without using a transaction
         for (_, counter) in &self.prefixes {
             // Insert with on_conflict_do_update - if the entity already exists, update prefix and default_code
-            diesel::insert_into(schema::counters::table)
+            diesel::insert_into(counters::table)
                 .values(counter)
-                .on_conflict(schema::counters::entity)
+                .on_conflict(counters::entity)
                 .do_update()
                 .set((
-                    schema::counters::prefix.eq(diesel::upsert::excluded(schema::counters::prefix)),
-                    schema::counters::default_code
-                        .eq(diesel::upsert::excluded(schema::counters::default_code)),
+                    counters::prefix.eq(diesel::upsert::excluded(counters::prefix)),
+                    counters::default_code
+                        .eq(diesel::upsert::excluded(counters::default_code)),
                 ))
                 .execute(&mut conn)
                 .await

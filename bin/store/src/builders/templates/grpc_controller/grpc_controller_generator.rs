@@ -122,7 +122,8 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     )?;
     writeln!(
         file,
-        "// Note: Converter functions have been moved to grpc_struct_converter.rs"
+        "// Note: Converter functions have been moved to {}",
+        paths::grpc::STRUCT_CONVERTER_FILE
     )?;
 
     // Import request and response types

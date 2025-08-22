@@ -1,24 +1,24 @@
 use crate::database::db;
-use crate::database::models::account_model::AccountModel;
-use crate::database::models::account_organization_model::AccountOrganizationModel;
-use crate::database::models::account_phone_number_model::AccountPhoneNumberModel;
-use crate::database::models::account_profile_model::AccountProfileModel;
-use crate::database::models::account_signature_model::AccountSignatureModel;
-use crate::database::models::address_model::AddressModel;
-use crate::database::models::contact_email_model::ContactEmailModel;
-use crate::database::models::contact_model::ContactModel;
-use crate::database::models::contact_phone_number_model::ContactPhoneNumberModel;
-use crate::database::models::device_model::DeviceModel;
-use crate::database::models::external_contact_model::ExternalContactModel;
-use crate::database::models::file_model::FileModel;
-use crate::database::models::organization_account_model::OrganizationAccountModel;
-use crate::database::models::organization_contact_model::OrganizationContactModel;
-use crate::database::models::organization_model::OrganizationModel;
-use crate::database::models::postgres_channel_model::PostgresChannelModel;
-use crate::database::models::sample_model::SampleModel;
-use crate::database::models::session_model::SessionModel;
-use crate::database::models::signed_in_activity_model::SignedInActivityModel;
-use crate::database::models::test_hypertable_model::TestHypertableModel;
+use crate::generated::models::account_model::AccountModel;
+use crate::generated::models::account_organization_model::AccountOrganizationModel;
+use crate::generated::models::account_phone_number_model::AccountPhoneNumberModel;
+use crate::generated::models::account_profile_model::AccountProfileModel;
+use crate::generated::models::account_signature_model::AccountSignatureModel;
+use crate::generated::models::address_model::AddressModel;
+use crate::generated::models::contact_email_model::ContactEmailModel;
+use crate::generated::models::contact_model::ContactModel;
+use crate::generated::models::contact_phone_number_model::ContactPhoneNumberModel;
+use crate::generated::models::device_model::DeviceModel;
+use crate::generated::models::external_contact_model::ExternalContactModel;
+use crate::generated::models::file_model::FileModel;
+use crate::generated::models::organization_account_model::OrganizationAccountModel;
+use crate::generated::models::organization_contact_model::OrganizationContactModel;
+use crate::generated::models::organization_model::OrganizationModel;
+use crate::generated::models::postgres_channel_model::PostgresChannelModel;
+use crate::generated::models::sample_model::SampleModel;
+use crate::generated::models::session_model::SessionModel;
+use crate::generated::models::signed_in_activity_model::SignedInActivityModel;
+use crate::generated::models::test_hypertable_model::TestHypertableModel;
 use crate::generated::models::counter_model::CounterModel;
 use crate::generated::schema;
 use crate::structs::structs::{Auth, RequestBody};
@@ -348,15 +348,15 @@ pub async fn generate_code(
     };
 
     // Attempt the insert with conflict handling
-    let result = diesel::insert_into(schema::counters::dsl::counters::table())
+    let result = diesel::insert_into(crate::generated::schema::counters::dsl::counters::table())
         .values(&new_counter)
-        .on_conflict(schema::counters::entity)
+        .on_conflict(crate::generated::schema::counters::entity)
         .do_update()
-        .set(schema::counters::counter.eq(schema::counters::counter + 1))
+        .set(crate::generated::schema::counters::counter.eq(crate::generated::schema::counters::counter + 1))
         .returning((
-            schema::counters::prefix,
-            schema::counters::default_code,
-            schema::counters::counter,
+            crate::generated::schema::counters::prefix,
+            crate::generated::schema::counters::default_code,
+            crate::generated::schema::counters::counter,
         ))
         .get_result::<(String, i32, i32)>(&mut conn)
         .await

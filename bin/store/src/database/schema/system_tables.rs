@@ -8,7 +8,6 @@ pub const SYSTEM_TABLES: &[&str] = &[
     "queues",
     "queue_items",
     "transactions",
-    "counters",
     "entities",
     "fields",
     "entity_fields",

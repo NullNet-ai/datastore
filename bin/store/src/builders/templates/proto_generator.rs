@@ -13,7 +13,7 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
     match fs::read_to_string(schema_path) {
         Ok(schema) => {
             info!("Successfully read schema file");
-            let proto_file_path = Path::new(output_dir).join("store.proto");
+            let proto_file_path = Path::new(output_dir).join(paths::templates::PROTO_FILE_NAME);
             if proto_file_path.exists() {
                 info!("Deleting existing proto file: {:?}", proto_file_path);
                 if let Err(err) = fs::remove_file(&proto_file_path) {
@@ -54,7 +54,7 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
             let proto_content = generate_unified_proto(&tables);
 
             // Write proto file
-            let file_path = Path::new(output_dir).join("store.proto");
+            let file_path = Path::new(output_dir).join(paths::templates::PROTO_FILE_NAME);
             match File::create(&file_path) {
                 Ok(mut file) => match file.write_all(proto_content.as_bytes()) {
                     Ok(_) => info!("Successfully wrote proto content to file"),

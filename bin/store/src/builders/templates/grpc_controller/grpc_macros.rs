@@ -1,12 +1,10 @@
-// Removed unused imports: Case, CaseConvert, SessionModel
-
 // Session management macro for automatic session persistence
 #[macro_export]
 macro_rules! with_session_management {
     ($request:ident, $body:block) => {
         {
             // Load and populate session using centralized function (similar to HTTP middleware)
-            let session: Option<SessionModel> = crate::middleware::session_middleware::load_and_populate_session_for_grpc(&$request).await;
+            let session: Option<crate::generated::models::session_model::SessionModel> = crate::middleware::session_middleware::load_and_populate_session_for_grpc(&$request).await;
 
             // Store session in request extensions for use in business logic before consuming the request
             if let Some(ref session) = session {

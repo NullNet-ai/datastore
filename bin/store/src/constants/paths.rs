@@ -59,6 +59,24 @@ pub mod grpc {
 
     /// Generated gRPC controller file path
     pub const CONTROLLER_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/grpc_controller.rs");
+    
+    /// gRPC struct converter file path
+    pub const STRUCT_CONVERTER_FILE: &str = "grpc_struct_converter.rs";
+}
+
+/// Template-related path constants
+pub mod templates {
+    /// Proto file name constant
+    pub const PROTO_FILE_NAME: &str = "store.proto";
+    
+    /// Template directory base path
+    pub const TEMPLATES_DIR: &str = "src/builders/templates";
+    
+    /// gRPC controller template directory
+    pub const GRPC_CONTROLLER_TEMPLATE_DIR: &str = const_format::concatcp!(TEMPLATES_DIR, "/grpc_controller");
+    
+    /// Table enum template directory
+    pub const TABLE_ENUM_TEMPLATE_DIR: &str = const_format::concatcp!(TEMPLATES_DIR, "/table_enum");
 }
 
 /// Legacy schema file path (for backward compatibility)

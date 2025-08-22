@@ -32,7 +32,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
         let model_name = format!("{}_model", singular_name.to_case(Case::Snake));
         writeln!(
             file,
-            "use crate::database::models::{}::{}Model;",
+            "use crate::generated::models::{}::{}Model;",
             model_name,
             singular_name.to_case(Case::Pascal)
         )?;
