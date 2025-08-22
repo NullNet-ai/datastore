@@ -204,6 +204,7 @@ fn default_pluck() -> String {
     "id".to_string()
 }
 
+#[allow(warnings)]
 #[derive(Clone)]
 pub struct Clock {
     pub timestamp: MutableTimestamp,

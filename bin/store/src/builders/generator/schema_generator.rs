@@ -219,7 +219,7 @@ impl SchemaGenerator {
 
     /// Update the schema.rs file with new table definition
     pub fn update_schema_file(table_def: &TableDefinition) -> Result<(), String> {
-        let schema_file_path = "src/schema/schema.rs";
+        let schema_file_path = "src/database/schema/schema.rs";
 
         // Read existing schema content
         let existing_content = match fs::read_to_string(schema_file_path) {
@@ -373,7 +373,7 @@ impl SchemaGenerator {
 
     /// Check if a table uses system fields by reading its definition file
     fn table_uses_system_fields(table_name: &str) -> bool {
-        let table_file_path = format!("src/schema/tables/{}.rs", table_name);
+        let table_file_path = format!("src/database/schema/tables/{}.rs", table_name);
         if let Ok(content) = std::fs::read_to_string(&table_file_path) {
             content.contains("system_fields!()")
         } else {
@@ -488,7 +488,7 @@ impl SchemaGenerator {
     }
 
     fn get_system_field_names() -> Result<Vec<String>, String> {
-        let system_fields_path = "src/schema/generator/system_fields.rs";
+        let system_fields_path = "src/database/schema/generator/system_fields.rs";
         let content = fs::read_to_string(system_fields_path)
             .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
 

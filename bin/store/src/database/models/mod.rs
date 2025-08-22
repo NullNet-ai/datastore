@@ -46,6 +46,6 @@ pub mod transaction_model;
 pub mod test_hypertable_model;
 pub mod user_role_model;
 
-use crate::database::schema::*;
+// Removed unused import: crate::database::schema::*
 
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs

@@ -320,7 +320,7 @@ pub fn run_generator() -> io::Result<()> {
     info!("Starting Table enum generator");
 
     // Default paths
-    let schema_path = "src/schema/schema.rs";
+    let schema_path = "src/database/schema/schema.rs";
     let output_path = "src/table_enum.rs";
 
     // Generate the Table enum

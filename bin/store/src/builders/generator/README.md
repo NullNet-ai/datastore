@@ -13,9 +13,9 @@ The Schema Generator automatically creates Rust models, updates `schema.rs`, and
 
 ## How it Works
 
-1. **Table Definitions**: Create `.rs` files in `src/schema/tables/` with table field definitions
+1. **Table Definitions**: Create `.rs` files in `src/database/schema/tables/` with table field definitions
 2. **Automatic Generation**: Run with `CREATE_SCHEMA=true cargo run` to generate:
-   - Rust model structs in `src/models/`
+   - Rust model structs in `src/database/models/`
    - Updated `schema.rs` with new table definitions
    - Database migration files in `migrations/`
 3. **Smart Re-runs**: Only generates new migrations when actual schema changes are detected
@@ -375,10 +375,10 @@ ALTER TABLE metrics SET (timescaledb.compress = true);
 
 When you run the schema generator, it will:
 
-1. **Generate Model Files**: Creates `{table_name}_model.rs` in `src/models/`
-2. **Update Schema**: Adds table definitions to `src/schema/schema.rs`
+1. **Generate Model Files**: Creates `{table_name}_model.rs` in `src/database/models/`
+2. **Update Schema**: Adds table definitions to `src/database/schema/schema.rs`
 3. **Create Migrations**: Generates SQL migration files in `migrations/`
-4. **Update Models Module**: Updates `src/models/mod.rs` to include new models
+4. **Update Models Module**: Updates `src/database/models/mod.rs` to include new models
 
 ### 6. Smart Updates
 

@@ -14,6 +14,7 @@ pub enum FilterCriteria {
 }
 
 impl FilterCriteria {
+    #[allow(warnings)]
     pub fn build_from_conflict_columns(
         conflict_columns: Vec<String>,
         data: &serde_json::Value,

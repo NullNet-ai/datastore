@@ -1,5 +1,4 @@
-use crate::builders::templates::proto_generator::{Case, CaseConvert};
-use crate::database::models::session_model::SessionModel;
+// Removed unused imports: Case, CaseConvert, SessionModel
 
 // Session management macro for automatic session persistence
 #[macro_export]

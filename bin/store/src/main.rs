@@ -26,7 +26,7 @@ use crate::providers::storage::cache::{cache, CacheConfig};
 use crate::builders::generator::generator_service::GeneratorService;
 use crate::database::db;
 use crate::database::schema;
-use crate::database::schema::database_setup::{setup_database, DatabaseSetupFlags};
+use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::init::init::initialize;
 use crate::init::structs::EInitializer;
 use crate::middleware::session_middleware::SessionMiddleware;

@@ -55,7 +55,7 @@ impl GeneratorService {
             // Extract indexes and foreign keys from table definition file
             let (indexes, foreign_keys) = {
                 // Find the table definition file to read its content
-                let table_files_dir = "src/schema/tables";
+                let table_files_dir = "src/database/schema/tables";
 
                 // Try multiple possible file names for the table
                 let possible_files = vec![
@@ -120,7 +120,7 @@ impl GeneratorService {
                 // Check if model file exists, if not, create it (for new tables)
                 let singular_name = to_singular(&table_def.name);
                 let model_file_path =
-                    Path::new("src/models").join(format!("{}_model.rs", singular_name));
+                    Path::new("src/database/models").join(format!("{}_model.rs", singular_name));
 
                 if !model_file_path.exists() {
                     let model_content = ModelGenerator::generate_model(&table_def)?;
@@ -130,7 +130,7 @@ impl GeneratorService {
                     // Check if field ordering has changed between schema and model
                     if Self::has_field_ordering_changed(&table_def)? {
                         // Rebuild the entire table in schema with proper field ordering
-                        let schema_file_path = "src/schema/schema.rs";
+                        let schema_file_path = "src/database/schema/schema.rs";
                         let existing_content = match fs::read_to_string(schema_file_path) {
                             Ok(content) => content,
                             Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
@@ -193,7 +193,7 @@ impl GeneratorService {
     /// Check if field ordering has changed by comparing current model with expected ordering
     fn has_field_ordering_changed(table_def: &TableDefinition) -> Result<bool, String> {
         let singular_name = to_singular(&table_def.name);
-        let model_file_path = Path::new("src/models").join(format!("{}_model.rs", singular_name));
+        let model_file_path = Path::new("src/database/models").join(format!("{}_model.rs", singular_name));
 
         if !model_file_path.exists() {
             return Ok(true); // Model doesn't exist, needs to be created
@@ -247,7 +247,7 @@ impl GeneratorService {
 
     /// Get system field names from the system_fields macro
     fn get_system_field_names() -> Result<Vec<String>, String> {
-        let system_fields_path = "src/schema/generator/system_fields.rs";
+        let system_fields_path = "src/database/schema/generator/system_fields.rs";
         let content = fs::read_to_string(system_fields_path)
             .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
 
@@ -317,7 +317,7 @@ impl GeneratorService {
 
     /// Write model file to the models directory
     fn write_model_file(table_name: &str, model_content: &str) -> Result<(), String> {
-        let models_dir = Path::new("src/models");
+        let models_dir = Path::new("src/database/models");
 
         // Create models directory if it doesn't exist
         if !models_dir.exists() {
@@ -346,7 +346,7 @@ impl GeneratorService {
 
     /// Add module declaration to models/mod.rs
     fn add_module_to_mod_rs(singular_name: &str) -> Result<(), String> {
-        let mod_file_path = Path::new("src/models/mod.rs");
+        let mod_file_path = Path::new("src/database/models/mod.rs");
 
         // Read existing mod.rs content
         let content = fs::read_to_string(mod_file_path)
@@ -383,7 +383,7 @@ impl GeneratorService {
 
     /// Discover all table definition files in the schema directory
     fn discover_table_definitions() -> Result<Vec<TableDefinition>, String> {
-        let tables_dir = "src/schema/tables";
+        let tables_dir = "src/database/schema/tables";
 
         debug!("Scanning directory: {}", tables_dir);
 
@@ -1144,7 +1144,7 @@ impl GeneratorService {
 
     /// Update the hypertables array in hypertables.rs based on current table definitions
     fn update_hypertables_array(table_definitions: &[TableDefinition]) -> Result<(), String> {
-        let hypertables_file_path = "src/schema/hypertables.rs";
+        let hypertables_file_path = "src/database/schema/hypertables.rs";
 
         // Collect all hypertable names
         let hypertable_names: Vec<&str> = table_definitions
@@ -1357,7 +1357,7 @@ impl GeneratorService {
 
     /// Dynamically reads the system_fields macro from system_fields.rs
     fn get_system_fields_expansion() -> Result<String, String> {
-        let system_fields_path = "src/schema/generator/system_fields.rs";
+        let system_fields_path = "src/database/schema/generator/system_fields.rs";
         let content = fs::read_to_string(system_fields_path)
             .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
 
