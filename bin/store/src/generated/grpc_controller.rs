@@ -5,7 +5,6 @@ use crate::controllers::common_controller::{
 };
 use crate::database::db;
 use crate::database::db::create_connection;
-use crate::generated::models::session_model::SessionModel;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
 use crate::generated::table_enum::Table;
 use crate::middleware::auth_middleware::GrpcAuthInterceptor;

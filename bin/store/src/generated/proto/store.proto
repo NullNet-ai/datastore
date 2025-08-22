@@ -187,6 +187,7 @@ message SignedInActivities {
   optional string session_started = 29;
   optional string remark = 30;
   optional string session_id = 31;
+  optional string hypertable_timestamp = 32;
 }
 
 // ExternalContacts entity definition
@@ -424,8 +425,8 @@ message Addresses {
   optional string address = 22;
   optional string address_line_one = 23;
   optional string address_line_two = 24;
-  optional string latitude = 25;
-  optional string longitude = 26;
+  optional float latitude = 25;
+  optional float longitude = 26;
   optional string place_id = 27;
   optional string street_number = 28;
   optional string street = 29;
