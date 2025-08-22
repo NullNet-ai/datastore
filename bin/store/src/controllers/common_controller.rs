@@ -1,8 +1,8 @@
-use crate::db::{self, DatabaseTypeConverter};
+use crate::database::db::{self, DatabaseTypeConverter};
 
-use crate::schema::verify::field_exists_in_table;
+use crate::database::schema::verify::field_exists_in_table;
 use crate::structs::structs::{ApiResponse, Auth, RequestBody};
-use crate::sync::sync_service::{insert, update};
+use crate::providers::operations::sync::sync_service::{insert, update};
 use crate::table_enum::{generate_code, Table};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;

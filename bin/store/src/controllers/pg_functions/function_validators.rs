@@ -1,4 +1,4 @@
-use crate::db::get_async_connection;
+use crate::database::db::get_async_connection;
 use diesel::sql_query;
 use diesel_async::AsyncConnection;
 use diesel_async::RunQueryDsl;

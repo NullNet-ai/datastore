@@ -3,15 +3,16 @@ use super::common_controller::{
     process_and_insert_record, process_and_update_record, process_record_for_update,
     process_records, sanitize_updates,
 };
-use crate::db;
-use crate::db::create_connection;
+use crate::database::db;
+use crate::database::db::create_connection;
+use crate::database::models::session_model::SessionModel;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
-use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
-use crate::middlewares::session_middleware::{GrpcSessionInterceptor, InterceptorChain};
-use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
-use crate::providers::find::DynamicResult;
+use crate::middleware::auth_middleware::GrpcAuthInterceptor;
+use crate::middleware::session_middleware::{GrpcSessionInterceptor, InterceptorChain};
+use crate::middleware::shutdown_middleware::GrpcShutdownInterceptor;
+use crate::providers::queries::find::DynamicResult;
 use crate::structs::structs::RequestBody;
-use crate::sync::sync_service::update;
+use crate::providers::operations::sync::sync_service::update;
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use crate::with_session_management;

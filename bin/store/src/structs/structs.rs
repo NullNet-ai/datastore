@@ -1,5 +1,5 @@
-use crate::schema::forbidden_tables;
-use crate::sync::hlc::mutable_timestamp::MutableTimestamp;
+use crate::database::schema::forbidden_tables;
+use crate::providers::operations::sync::hlc::mutable_timestamp::MutableTimestamp;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
 use diesel::sql_types::Text;
@@ -435,7 +435,7 @@ impl ConcatenateField {
         table_name: &str,
         mut plucked_fields: HashMap<String, serde_json::Value>,
     ) -> Result<Option<HashMap<String, serde_json::Value>>, actix_web::Error> {
-        use crate::schema::verify;
+        use crate::database::schema::verify;
         use actix_web::error::ErrorBadRequest;
 
         for field in concatenate_fields {

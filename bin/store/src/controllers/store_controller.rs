@@ -1,13 +1,13 @@
-use crate::batch_sync::BatchSyncService;
+use crate::providers::operations::batch_sync::BatchSyncService;
 use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::db::create_connection;
-use crate::providers::aggregation_filter::AggregationSQLConstructor;
-use crate::providers::batch_update::BatchUpdateSQLConstructor;
-use crate::providers::find::{DynamicResult, SQLConstructor, Validation};
-use crate::providers::search_suggestion::{
+use crate::database::db::create_connection;
+use crate::providers::queries::aggregation_filter::AggregationSQLConstructor;
+use crate::providers::queries::batch_update::BatchUpdateSQLConstructor;
+use crate::providers::queries::find::{DynamicResult, SQLConstructor, Validation};
+use crate::providers::queries::search_suggestion::{
     sql_constructor::SQLConstructor as SearchSQLContructor,
     structs::{AliasedJoinedEntity, FormatFilterResponse, SearchSuggestionCache},
     utils::{format_filters, generate_concatenated_expressions},
@@ -2100,8 +2100,8 @@ pub async fn upload_file(
 }
 
 pub async fn switch_account(request: web::Json<SwitchAccountRequest>) -> impl Responder {
-    use crate::auth::auth_service;
-    use crate::organizations::auth_service as org_auth_service;
+    use crate::providers::operations::auth::auth_service;
+    use crate::providers::operations::organizations::auth_service as org_auth_service;
     use serde_json::json;
 
     // Verify the token
