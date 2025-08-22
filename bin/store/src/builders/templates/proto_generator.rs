@@ -653,7 +653,7 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("\n    tonic_build::configure()\n");
     build_content.push_str("        .build_server(true)   // Enable server code (default)\n");
     build_content.push_str("        .build_client(false)   // Enable client code (default)\n");
-    build_content.push_str("        .out_dir(paths::proto::GENERATED_DIR)\n");
+    build_content.push_str("        .out_dir(paths::GENERATED_DIR)\n");
     build_content.push_str("        .compile_protos(\n");
 
     // Add all proto files to the compile function

@@ -41,7 +41,7 @@ define_table_schema! {
     },
     foreign_keys: {
         // System field foreign keys
-        system_foreign_keys!("test_hypertable")
+        // system_foreign_keys!("test_hypertable")
     }
 }
 
