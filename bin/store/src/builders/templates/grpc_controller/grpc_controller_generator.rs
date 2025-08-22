@@ -58,7 +58,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     let mut file = File::create(output_path)?;
 
     // Write imports
-    writeln!(file, "use super::common_controller::{{")?;
+    writeln!(file, "use crate::controllers::common_controller::{{")?;
     writeln!(
         file,
         "    convert_json_to_csv, execute_copy, perform_upsert,"
@@ -294,8 +294,8 @@ pub fn run_generator() -> io::Result<()> {
     info!("Starting gRPC controller generator");
 
     // Default paths
-    let proto_path = "src/proto/store.proto";
-    let output_path = "src/controllers/grpc_controller.rs";
+    let proto_path = paths::proto::SOURCE_FILE;
+    let output_path = paths::grpc::CONTROLLER_FILE;
 
     // Generate the controller
     match generate_grpc_controller(proto_path, output_path) {

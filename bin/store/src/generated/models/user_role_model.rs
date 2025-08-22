@@ -1,4 +1,4 @@
-use crate::database::common_defaults::default_sensitivity_level;
+use crate::database::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

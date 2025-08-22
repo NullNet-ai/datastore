@@ -1,4 +1,4 @@
-use super::common_controller::{
+use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, perform_upsert, process_and_get_record_by_id,
     process_and_insert_record, process_and_update_record, process_record_for_update,
     process_records, sanitize_updates,

@@ -45,7 +45,7 @@ use crate::providers::operations::sync::sync_service::bg_sync;
 use crate::providers::operations::sync::transactions::queue_service::QueueService;
 use crate::providers::operations::sync::transactions::transaction_service::TransactionService;
 
-use controllers::grpc_controller::GrpcController;
+use crate::generated::grpc_controller::GrpcController;
 use controllers::pg_functions::pg_listener_controller::{
     create_pg_function, pg_listener_delete, pg_listener_get, test_pg_function_syntax,
 };

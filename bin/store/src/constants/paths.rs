@@ -45,5 +45,11 @@ pub mod proto {
     pub const BUILD_SCRIPT: &str = "src/builders/generator/build_proto.rs";
 }
 
+/// gRPC controller path constants
+pub mod grpc {
+    /// Generated gRPC controller file path
+    pub const CONTROLLER_FILE: &str = "src/generated/grpc_controller.rs";
+}
+
 /// Legacy schema file path (for backward compatibility)
 pub const LEGACY_SCHEMA_FILE: &str = "schema.rs";
