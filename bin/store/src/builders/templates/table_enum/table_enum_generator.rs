@@ -1,5 +1,5 @@
-use crate::proto_generator::{Case, CaseConvert};
 use crate::database::schema::verify::field_exists_in_table;
+use crate::proto_generator::{Case, CaseConvert};
 use crate::utils::utils::{parse_tables, to_singular};
 use log::{error, info, warn};
 use std::fs::{self, File};
@@ -46,7 +46,10 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "use diesel_async::RunQueryDsl;")?;
     writeln!(file, "use serde_json::{{Map, Value}};")?;
     writeln!(file, "use crate::database::db;")?;
-    writeln!(file, "use crate::database::models::counter_model::CounterModel;")?;
+    writeln!(
+        file,
+        "use crate::database::models::counter_model::CounterModel;"
+    )?;
 
     writeln!(file, "")?;
 

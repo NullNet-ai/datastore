@@ -1,6 +1,8 @@
 use crate::providers::operations::message_stream::flush_connection_limiter::get_flush_limiter;
 use crate::providers::operations::message_stream::pg_listener_service::PgListenerService;
-use crate::providers::operations::message_stream::shared_state::{get_shared_state, SharedStreamingState};
+use crate::providers::operations::message_stream::shared_state::{
+    get_shared_state, SharedStreamingState,
+};
 use crate::providers::operations::message_stream::stream_queue_service::StreamQueueService;
 use crate::providers::operations::message_stream::token_bucket::{Message, TokenBucket};
 use log::{error, info, warn};
@@ -208,7 +210,8 @@ impl MessageStreamingService {
 
         tokio::spawn(async move {
             loop {
-                let dequeue_result: Option<String> = service.shared_state.dequeue_for_processing().await;
+                let dequeue_result: Option<String> =
+                    service.shared_state.dequeue_for_processing().await;
                 if let Some(channel_name) = dequeue_result {
                     // Check if channel is flushing and not already being processed
                     if service.shared_state.is_flushing(&channel_name).await {
@@ -430,7 +433,9 @@ impl MessageStreamingService {
         message: Value,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(_org_clients) =
-            crate::providers::operations::message_stream::gateway::get_organization_clients(organization_id)
+            crate::providers::operations::message_stream::gateway::get_organization_clients(
+                organization_id,
+            )
         {
             let should_queue = self.shared_state.is_flushing(channel_name).await
                 || self.shared_state.is_backpressured(channel_name).await;

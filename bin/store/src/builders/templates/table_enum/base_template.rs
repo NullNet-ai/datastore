@@ -61,12 +61,8 @@ impl Table {
         auth: &Auth,
     ) -> Result<String, DieselError> {
         generate_insert_record_match!(
-            self,
-            auth,
-            conn,
-            record,
-            request
-            // Add other tables and their models here as needed
+            self, auth, conn, record,
+            request // Add other tables and their models here as needed
         )
     }
 
@@ -82,8 +78,7 @@ impl Table {
             conn,
             id,
             is_root_account,
-            organization_id
-            // Add other tables and their models here as needed
+            organization_id // Add other tables and their models here as needed
         )
     }
 
@@ -93,10 +88,7 @@ impl Table {
         record: Value,
     ) -> Result<(), DieselError> {
         generate_upsert_record_match!(
-            self,
-            conn,
-            record
-            // Add other tables and their models here as needed
+            self, conn, record // Add other tables and their models here as needed
         )
     }
 
@@ -106,10 +98,7 @@ impl Table {
         record: Value,
     ) -> Result<(), DieselError> {
         generate_upsert_record_with_timestamp_match!(
-            self,
-            conn,
-            record
-            // Add other tables and their models here as needed
+            self, conn, record // Add other tables and their models here as needed
         )
     }
 }

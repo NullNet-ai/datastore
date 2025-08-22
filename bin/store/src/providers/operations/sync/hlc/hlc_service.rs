@@ -1,6 +1,6 @@
-use crate::providers::operations::sync::structs::Clock;
 use crate::providers::operations::sync::hlc::mutable_timestamp::MutableTimestamp;
 use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
+use crate::providers::operations::sync::structs::Clock;
 use diesel_async::AsyncPgConnection;
 use hlc::Timestamp;
 use merkle::MerkleTree;

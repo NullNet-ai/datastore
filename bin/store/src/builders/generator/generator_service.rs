@@ -1,5 +1,7 @@
 use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
-use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, ParsedField, TableDefinition};
+use crate::builders::generator::field_definition::{
+    FieldDefinition, ForeignKey, ParsedField, TableDefinition,
+};
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
@@ -123,7 +125,7 @@ impl GeneratorService {
                 if !model_file_path.exists() {
                     let model_content = ModelGenerator::generate_model(&table_def)?;
                     Self::write_model_file(&table_def.name, &model_content)?;
-                info!("Created initial model for new table '{}'", table_def.name);
+                    info!("Created initial model for new table '{}'", table_def.name);
                 } else {
                     // Check if field ordering has changed between schema and model
                     if Self::has_field_ordering_changed(&table_def)? {
@@ -142,7 +144,7 @@ impl GeneratorService {
 
                         let model_content = ModelGenerator::generate_model(&table_def)?;
                         Self::write_model_file(&table_def.name, &model_content)?;
-                info!("Regenerated schema and model for table '{}' due to field ordering mismatch", table_def.name);
+                        info!("Regenerated schema and model for table '{}' due to field ordering mismatch", table_def.name);
                     } else {
                         debug!("Table '{}': Schema and model field ordering match, skipping regeneration", table_def.name);
                     }
@@ -157,7 +159,10 @@ impl GeneratorService {
                 all_changes.len(),
                 all_changes
                     .iter()
-                    .map(|c: &crate::builders::generator::schema_generator::SchemaChange| &c.table_name)
+                    .map(
+                        |c: &crate::builders::generator::schema_generator::SchemaChange| &c
+                            .table_name
+                    )
                     .collect::<std::collections::HashSet<_>>()
                     .len()
             );
@@ -222,7 +227,10 @@ impl GeneratorService {
 
         // First, add system fields in the order defined by system_fields macro
         for system_field_name in &system_field_names {
-            if let Some(field) = parsed_fields.iter().find(|f: &&ParsedField| f.name == *system_field_name) {
+            if let Some(field) = parsed_fields
+                .iter()
+                .find(|f: &&ParsedField| f.name == *system_field_name)
+            {
                 ordered_fields.push(field.name.clone());
             }
         }

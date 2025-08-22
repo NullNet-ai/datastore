@@ -1,8 +1,8 @@
 use crate::database::schema::generator::diesel_schema_definition::{
-    DieselTableDefinition, types::*
+    types::*, DieselTableDefinition,
 };
 use crate::define_table_schema;
-use crate::{system_fields, system_indexes, system_foreign_keys};
+use crate::{system_fields, system_foreign_keys, system_indexes};
 
 /// Account phone numbers table for storing phone number information
 pub struct AccountPhoneNumbersTable;
@@ -12,7 +12,7 @@ define_table_schema! {
     fields: {
         // System fields - common across all tables
         system_fields!(),
-        
+
         // Account phone numbers specific fields
         account_profile_id: nullable(text()),
         raw_phone_number: nullable(text()),
@@ -27,7 +27,7 @@ define_table_schema! {
     foreign_keys: {
         // System foreign keys
         system_foreign_keys!("account_phone_numbers"),
-        
+
         // Custom foreign keys
         fk_account_phone_numbers_profile_id: {
             columns: ["account_profile_id"],

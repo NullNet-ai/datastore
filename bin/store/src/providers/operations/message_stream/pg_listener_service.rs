@@ -112,7 +112,8 @@ impl PgListenerService {
         *is_running = true;
         drop(is_running);
 
-        let (client, mut connection) = crate::database::db::create_connection_with_polling().await?;
+        let (client, mut connection) =
+            crate::database::db::create_connection_with_polling().await?;
 
         let (tx, mut rx) = mpsc::unbounded_channel();
 
@@ -237,7 +238,8 @@ impl PgListenerService {
             }
         };
 
-        let msg = crate::providers::operations::message_stream::token_bucket::Message(message.0.clone());
+        let msg =
+            crate::providers::operations::message_stream::token_bucket::Message(message.0.clone());
         let has_capacity = self.main_stream.receive_message(msg).await;
 
         if !has_capacity {

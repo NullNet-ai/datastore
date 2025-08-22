@@ -10,9 +10,9 @@ use crate::generated::store::store_service_server::{StoreService, StoreServiceSe
 use crate::middleware::auth_middleware::GrpcAuthInterceptor;
 use crate::middleware::session_middleware::{GrpcSessionInterceptor, InterceptorChain};
 use crate::middleware::shutdown_middleware::GrpcShutdownInterceptor;
+use crate::providers::operations::sync::sync_service::update;
 use crate::providers::queries::find::DynamicResult;
 use crate::structs::structs::RequestBody;
-use crate::providers::operations::sync::sync_service::update;
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use crate::with_session_management;

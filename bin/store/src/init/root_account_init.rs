@@ -1,12 +1,12 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::init::structs::InitializerParams;
 use crate::database::models::account_model::AccountModel;
 use crate::database::models::account_organization_model::AccountOrganizationModel;
 use crate::database::models::account_profile_model::AccountProfileModel;
 use crate::database::models::counter_model::CounterModel;
 use crate::database::models::organization_model::OrganizationModel;
 use crate::database::schema;
+use crate::init::structs::InitializerParams;
 use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
@@ -108,16 +108,18 @@ impl RootAccountInitializer {
         );
 
         // Hash the password
-        let hashed_password = match crate::providers::operations::auth::auth_service::password_hash(&account_secret).await
-        {
-            Ok(hash) => hash,
-            Err(e) => {
-                return Err(ApiError::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to hash password: {}", e),
-                ));
-            }
-        };
+        let hashed_password =
+            match crate::providers::operations::auth::auth_service::password_hash(&account_secret)
+                .await
+            {
+                Ok(hash) => hash,
+                Err(e) => {
+                    return Err(ApiError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to hash password: {}", e),
+                    ));
+                }
+            };
 
         // Create personal organization
         let mut personal_organization = OrganizationModel {

@@ -20,8 +20,8 @@ use super::session_core::{DeviceInfo, SessionManager};
 use crate::structs::structs::{ApiResponse, Auth};
 use crate::utils::utils::time_string_to_ms;
 use crate::{
-    providers::operations::auth::structs::{Claims, Origin},
     database::models::session_model::SessionModel,
+    providers::operations::auth::structs::{Claims, Origin},
 };
 
 pub struct SessionMiddleware;

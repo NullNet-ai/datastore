@@ -1,12 +1,12 @@
 use crate::database::db;
 use crate::database::models::crdt_message_model::CrdtMessageModel;
 use crate::middleware::shutdown_handler;
-use crate::providers::operations::sync::structs::Clock;
 use crate::providers::operations::sync::hlc::hlc_service::HlcService;
 use crate::providers::operations::sync::message_manager::get_sender;
 use crate::providers::operations::sync::message_service;
 use crate::providers::operations::sync::message_service::{compare_messages, create_messages};
 use crate::providers::operations::sync::store::store_driver::apply;
+use crate::providers::operations::sync::structs::Clock;
 use crate::providers::operations::sync::sync_endpoints_service;
 use crate::providers::operations::sync::transactions::queue_service::QueueService;
 use crate::providers::operations::sync::transactions::transaction_service::TransactionService;

@@ -1,7 +1,7 @@
+use crate::database::models::session_model::SessionModel;
 use crate::providers::operations::auth::auth_service::verify;
 use crate::providers::operations::auth::structs::Claims;
 use crate::providers::operations::auth::structs::Origin;
-use crate::database::models::session_model::SessionModel;
 use crate::structs::structs::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
@@ -388,7 +388,10 @@ pub fn validate_grpc_request_with_root_access<T>(
     };
 
     // Get claims for root access validation
-    let claims = match request.extensions().get::<crate::providers::operations::auth::structs::Claims>() {
+    let claims = match request
+        .extensions()
+        .get::<crate::providers::operations::auth::structs::Claims>()
+    {
         Some(claims) => claims.clone(),
         None => {
             return Err(tonic::Status::internal("Claims not available"));

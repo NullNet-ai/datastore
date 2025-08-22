@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use crate::providers::operations::auth::structs::Session;
-use crate::providers::operations::permissions::permission_utils::{get_cached_permissions, PermissionsContext};
+use crate::providers::operations::permissions::permission_utils::{
+    get_cached_permissions, PermissionsContext,
+};
 use crate::providers::operations::permissions::permissions_queries::PermissionQueryParams;
 use crate::providers::operations::permissions::structs::{DataPermissions, SchemaItem};
 use crate::structs::structs::{ApiResponse, Auth};

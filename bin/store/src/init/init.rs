@@ -1,4 +1,3 @@
-use crate::providers::storage::cache::cache;
 use crate::controllers::store_controller::ApiError;
 use crate::init::background_services_init::get_background_services_initializer;
 use crate::init::code_prefix_init::get_code_prefix_initializer;
@@ -7,6 +6,7 @@ use crate::init::initial_entity_data::init::get_initial_entity_data_initializer;
 use crate::init::root_account_init::get_root_account_initializer;
 use crate::init::structs::{EInitializer, InitializerParams};
 use crate::init::system_device_init::get_system_device_initializer;
+use crate::providers::storage::cache::cache;
 
 pub async fn initialize(
     initializer_type: EInitializer,

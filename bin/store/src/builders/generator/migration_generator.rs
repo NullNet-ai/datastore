@@ -1,4 +1,4 @@
-use crate::builders::generator::field_definition::{TableDefinition, ParsedField};
+use crate::builders::generator::field_definition::{ParsedField, TableDefinition};
 use crate::builders::generator::schema_generator::{SchemaChange, SchemaChangeType};
 use chrono::{DateTime, Utc};
 use log::{debug, info};

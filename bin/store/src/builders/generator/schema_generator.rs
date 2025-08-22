@@ -447,8 +447,8 @@ impl SchemaGenerator {
     /// Order fields properly according to system fields macro and entity-specific fields
     fn order_fields_properly(
         existing_fields: &[crate::builders::generator::field_definition::ParsedField],
-    new_fields: &[crate::builders::generator::field_definition::ParsedField],
-) -> Result<Vec<crate::builders::generator::field_definition::ParsedField>, String> {
+        new_fields: &[crate::builders::generator::field_definition::ParsedField],
+    ) -> Result<Vec<crate::builders::generator::field_definition::ParsedField>, String> {
         let system_field_names = Self::get_system_field_names()?;
         let mut ordered_fields = Vec::new();
 

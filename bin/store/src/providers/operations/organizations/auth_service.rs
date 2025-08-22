@@ -1,9 +1,9 @@
-use crate::providers::operations::auth::auth_service;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
 use crate::database::models::account_model::AccountModel;
-use crate::providers::operations::organizations::structs::LoginResponse;
 use crate::database::schema::accounts;
+use crate::providers::operations::auth::auth_service;
+use crate::providers::operations::organizations::structs::LoginResponse;
 use crate::utils::utils::time_string_to_ms;
 use actix_web::http::StatusCode;
 use chrono::{Duration, Utc};

@@ -1,8 +1,8 @@
 use crate::database::schema::generator::diesel_schema_definition::{
-    DieselTableDefinition, types::*
+    types::*, DieselTableDefinition,
 };
 use crate::define_table_schema;
-use crate::{system_fields, system_indexes, system_foreign_keys};
+use crate::{system_fields, system_foreign_keys, system_indexes};
 
 /// Test hypertable for time-series data
 pub struct TestHypertableTable;
@@ -12,11 +12,11 @@ define_table_schema! {
     fields: {
         // System fields - common across all tables
         system_fields!(),
-        
+
         timestamp: nullable(timestamptz()), primary_key: true,
-        
+
         hypertable_timestamp: nullable(text()), primary_key: false,
-        
+
         // Additional fields for time-series data
         sensor_id: nullable(text()),
         temperature: nullable(integer()),
@@ -26,7 +26,7 @@ define_table_schema! {
     indexes: {
         // System field indexes
         system_indexes!("test_hypertable"),
-        
+
         // Custom table-specific indexes
         idx_test_hypertable_sensor: {
             columns: ["sensor_id"],

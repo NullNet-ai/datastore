@@ -3,8 +3,8 @@ use sha1::{Digest, Sha1};
 use std::env;
 use std::time::Duration;
 
-use crate::providers::storage::cache::cache;
 use crate::providers::queries::search_suggestion::structs::SearchSuggestionCache;
+use crate::providers::storage::cache::cache;
 
 impl SearchSuggestionCache {
     pub fn get_cache_by_key(key: &str) -> Option<Value> {

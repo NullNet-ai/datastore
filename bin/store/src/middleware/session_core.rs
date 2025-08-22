@@ -398,7 +398,11 @@ impl SessionManager {
         })?;
 
         // Use sync service to insert/update session for synchronization
-        crate::providers::operations::sync::sync_service::insert(&"sessions".to_string(), session_json).await?;
+        crate::providers::operations::sync::sync_service::insert(
+            &"sessions".to_string(),
+            session_json,
+        )
+        .await?;
 
         Ok(())
     }
@@ -488,7 +492,11 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
             request_body.process_record("delete", &auth, true, "sessions");
 
             // Use sync service to update the session
-            crate::providers::operations::sync::sync_service::insert(&"sessions".to_string(), request_body.record).await?;
+            crate::providers::operations::sync::sync_service::insert(
+                &"sessions".to_string(),
+                request_body.record,
+            )
+            .await?;
 
             updated_count += 1;
         }

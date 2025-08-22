@@ -1,12 +1,12 @@
-use crate::providers::operations::auth::auth_service::verify;
+use crate::database::models::session_model::SessionModel;
 use crate::middleware::auth_middleware::extract_token;
 use crate::middleware::session_core::session_to_signed_in_activity;
-use crate::database::models::session_model::SessionModel;
+use crate::providers::operations::auth::auth_service::verify;
 use crate::providers::operations::organizations::auth_service::{auth, root_auth};
 use crate::providers::operations::organizations::organization_service::register;
 use crate::providers::operations::organizations::structs::Register;
-use crate::structs::structs::ApiResponse;
 use crate::providers::operations::sync::sync_service;
+use crate::structs::structs::ApiResponse;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
