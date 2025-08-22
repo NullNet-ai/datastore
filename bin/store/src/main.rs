@@ -157,7 +157,7 @@ async fn main() -> std::io::Result<()> {
         // Proto generation
         if generate_proto {
             info!("Generating proto files");
-            proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
+            proto_generator::generate_protos("src/database/schema/schema.rs", "src/proto");
 
             if let Err(e) = run_build_script() {
                 error!("Failed to run build script: {}", e);
