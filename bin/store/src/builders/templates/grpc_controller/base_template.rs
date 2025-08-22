@@ -17,7 +17,7 @@ use log::info;
 
 use crate::providers::operations::sync::sync_service::update;
 use crate::structs::structs::RequestBody;
-use crate::table_enum::Table;
+use crate::generated::table_enum::Table;
 use crate::utils::utils::table_exists;
 use serde_json::Value;
 use std::net::SocketAddr;

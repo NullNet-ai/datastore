@@ -3,6 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
+use crate::constants::paths;
 use crate::utils::utils::{parse_tables, to_singular, Table};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
@@ -636,8 +637,9 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
         }
     }
 
-    // Create build.rs content
+    // Create build_proto.rs content
     let mut build_content = String::new();
+    build_content.push_str("use crate::constants::paths;\n\n");
     build_content.push_str("fn main() -> Result<(), Box<dyn std::error::Error>> {\n");
 
     // Add rerun-if-changed for all proto files
@@ -651,7 +653,7 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("\n    tonic_build::configure()\n");
     build_content.push_str("        .build_server(true)   // Enable server code (default)\n");
     build_content.push_str("        .build_client(false)   // Enable client code (default)\n");
-    build_content.push_str("        .out_dir(\"src/generated\") // Custom output directory\n");
+    build_content.push_str("        .out_dir(paths::proto::GENERATED_DIR)\n");
     build_content.push_str("        .compile_protos(\n");
 
     // Add all proto files to the compile function
@@ -667,13 +669,16 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("    Ok(())\n");
     build_content.push_str("}\n");
 
-    // Write to build.rs file
-    let build_path = Path::new("build.rs");
+    // Write to build_proto.rs file
+    let build_path = Path::new(paths::proto::BUILD_SCRIPT);
+    if let Some(parent) = build_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
     let mut file = File::create(build_path)?;
     file.write_all(build_content.as_bytes())?;
 
     info!(
-        "Generated build.rs file with {} proto files",
+        "Generated build_proto.rs file with {} proto files",
         proto_files.len()
     );
     Ok(())

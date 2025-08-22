@@ -1,14 +1,15 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::contact_phone_numbers)]
+#[diesel(table_name = crate::database::schema::schema::external_contacts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ContactPhoneNumberModel {
+pub struct ExternalContactModel {
+    // System fields
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -32,6 +33,8 @@ pub struct ContactPhoneNumberModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
 
-    pub contact_id: Option<String>,
-    pub phone_number_raw: Option<String>,
+    // Specific fields
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub email: Option<String>,
 }

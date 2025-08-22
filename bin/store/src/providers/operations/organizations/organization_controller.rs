@@ -1,4 +1,4 @@
-use crate::database::models::session_model::SessionModel;
+use crate::generated::models::session_model::SessionModel;
 use crate::middleware::auth_middleware::extract_token;
 use crate::middleware::session_core::session_to_signed_in_activity;
 use crate::providers::operations::auth::auth_service::verify;

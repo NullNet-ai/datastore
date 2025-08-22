@@ -1,5 +1,5 @@
 use crate::database::db;
-use crate::database::models::crdt_message_model::CrdtMessageModel;
+use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::middleware::shutdown_handler;
 use crate::providers::operations::sync::hlc::hlc_service::HlcService;
 use crate::providers::operations::sync::message_manager::get_sender;

@@ -1,5 +1,5 @@
 use crate::database::db;
-use crate::database::models::crdt_message_model::CrdtMessageModel;
+use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::providers::operations::sync::message_service;
 use once_cell::sync::OnceCell;
 use std::sync::Arc;

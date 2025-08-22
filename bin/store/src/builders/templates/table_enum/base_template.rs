@@ -1,6 +1,6 @@
 use crate::database::db;
-use crate::database::models::counter_model::CounterModel;
-use crate::database::schema;
+use crate::generated::models::counter_model::CounterModel;
+use crate::generated::schema;
 use crate::database::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
 use crate::{

@@ -1,7 +1,7 @@
 use crate::controllers::common_controller::process_and_update_record;
+use crate::generated::table_enum::generate_code;
 use crate::providers::operations::sync::sync_service::{insert, update};
 use crate::structs::structs::Auth;
-use crate::table_enum::generate_code;
 use log;
 pub mod background_sync;
 use serde_json::{json, Value};

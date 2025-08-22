@@ -1,9 +1,9 @@
 use crate::database::db::{self, DatabaseTypeConverter};
 
 use crate::database::schema::verify::field_exists_in_table;
+use crate::generated::table_enum::{generate_code, Table};
 use crate::providers::operations::sync::sync_service::{insert, update};
 use crate::structs::structs::{ApiResponse, Auth, RequestBody};
-use crate::table_enum::{generate_code, Table};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
 use actix_web::http;

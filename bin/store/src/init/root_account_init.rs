@@ -1,11 +1,11 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::database::models::account_model::AccountModel;
-use crate::database::models::account_organization_model::AccountOrganizationModel;
-use crate::database::models::account_profile_model::AccountProfileModel;
-use crate::database::models::counter_model::CounterModel;
-use crate::database::models::organization_model::OrganizationModel;
-use crate::database::schema;
+use crate::database::schema::schema;
+use crate::generated::models::account_model::AccountModel;
+use crate::generated::models::account_organization_model::AccountOrganizationModel;
+use crate::generated::models::account_profile_model::AccountProfileModel;
+use crate::generated::models::counter_model::CounterModel;
+use crate::generated::models::organization_model::OrganizationModel;
 use crate::init::structs::InitializerParams;
 use actix_web::http::StatusCode;
 use chrono::Utc;

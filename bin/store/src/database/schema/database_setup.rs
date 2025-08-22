@@ -72,7 +72,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             info!("Password correct. Running database cleanup script...");
 
             // Run cleanup.sql using database connection
-            let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
+            let cleanup_path = Path::new(&current_dir).join(paths::database::CLEANUP_SQL_FILE);
             let cleanup_sql = std::fs::read_to_string(&cleanup_path)?;
 
             if let Err(e) = execute_sql_script(&db_client, &cleanup_sql).await {

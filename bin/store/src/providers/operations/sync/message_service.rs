@@ -1,5 +1,5 @@
-use crate::database::models::crdt_message_model::CrdtMessageModel;
-use crate::database::schema::crdt_messages;
+use crate::database::schema::schema::crdt_messages;
+use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::providers::operations::sync::hlc::hlc_service;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -207,7 +207,7 @@ pub async fn get_messages_since(
     conn: &mut AsyncPgConnection,
     timestamp_str: &str,
 ) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
-    use crate::database::schema::crdt_messages;
+    use crate::database::schema::schema::crdt_messages;
 
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))

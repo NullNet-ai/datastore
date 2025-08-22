@@ -1,6 +1,6 @@
-use crate::database::models::crdt_message_model::CrdtMessageModel;
 use crate::database::schema::verify::field_type_in_table;
-use crate::table_enum::Table;
+use crate::generated::models::crdt_message_model::CrdtMessageModel;
+use crate::generated::table_enum::Table;
 
 use diesel_async::AsyncPgConnection;
 use pluralizer::pluralize;

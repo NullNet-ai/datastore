@@ -37,7 +37,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
             singular_name.to_case(Case::Pascal)
         )?;
     }
-    writeln!(file, "use crate::database::schema;")?;
+    writeln!(file, "use crate::generated::schema;")?;
     writeln!(file, "use crate::structs::structs::{{Auth, RequestBody}};")?;
     writeln!(file, "use actix_web::web;")?;
     writeln!(file, "use diesel::associations::HasTable;")?;
@@ -49,7 +49,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "use crate::database::db;")?;
     writeln!(
         file,
-        "use crate::database::models::counter_model::CounterModel;"
+        "use crate::generated::models::counter_model::CounterModel;"
     )?;
 
     writeln!(file, "")?;
@@ -322,7 +322,7 @@ pub fn run_generator() -> io::Result<()> {
 
     // Default paths
     let schema_path = paths::database::SCHEMA_FILE;
-    let output_path = "src/table_enum.rs";
+    let output_path = paths::database::TABLE_ENUM_FILE;
 
     // Generate the Table enum
     match generate_table_enum(schema_path, output_path) {

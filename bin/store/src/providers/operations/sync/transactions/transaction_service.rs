@@ -1,6 +1,6 @@
 use crate::database::db;
-use crate::database::models::transaction_model::TransactionModel;
-use crate::database::schema::transactions;
+use crate::database::schema::schema::transactions;
+use crate::generated::models::transaction_model::TransactionModel;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};

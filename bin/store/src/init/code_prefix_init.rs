@@ -1,7 +1,7 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::database::models::counter_model::CounterModel;
-use crate::database::schema;
+use crate::database::schema::schema;
+use crate::generated::models::counter_model::CounterModel;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};

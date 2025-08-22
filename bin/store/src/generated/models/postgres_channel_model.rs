@@ -1,15 +1,14 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::organization_domains)]
+#[diesel(table_name = crate::database::schema::schema::postgres_channels)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationDomainModel {
-    // System fields
+pub struct PostgresChannelModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -26,13 +25,13 @@ pub struct OrganizationDomainModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
+    pub id: Option<String>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
 
-    // Specific fields
-    pub domain_name: Option<String>,
+    pub channel_name: Option<String>,
+    pub function: Option<String>,
 }

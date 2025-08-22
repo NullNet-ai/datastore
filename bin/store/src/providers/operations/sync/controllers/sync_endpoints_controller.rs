@@ -1,5 +1,5 @@
 use crate::database::db;
-use crate::database::models::sync_endpoint_model::SyncEndpointModel;
+use crate::generated::models::sync_endpoint_model::SyncEndpointModel;
 use crate::providers::operations::sync::sync_endpoints_service;
 use crate::providers::operations::sync::transport::transport_driver::PostOpts;
 use actix_web::{get, post, web, HttpResponse, Responder};

@@ -20,7 +20,7 @@ use super::session_core::{DeviceInfo, SessionManager};
 use crate::structs::structs::{ApiResponse, Auth};
 use crate::utils::utils::time_string_to_ms;
 use crate::{
-    database::models::session_model::SessionModel,
+    generated::models::session_model::SessionModel,
     providers::operations::auth::structs::{Claims, Origin},
 };
 

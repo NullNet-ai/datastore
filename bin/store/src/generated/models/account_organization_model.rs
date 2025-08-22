@@ -1,14 +1,14 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::organization_contacts)]
+#[diesel(table_name = crate::database::schema::schema::account_organizations)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationContactModel {
+pub struct AccountOrganizationModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -33,4 +33,10 @@ pub struct OrganizationContactModel {
     pub is_batch: Option<bool>,
 
     pub contact_id: Option<String>,
+    pub email: Option<String>,
+    pub account_id: Option<String>,
+    pub role_id: Option<String>,
+    pub account_organization_status: Option<String>,
+    pub is_invited: Option<bool>,
+    pub device_id: Option<String>,
 }

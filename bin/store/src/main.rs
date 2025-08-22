@@ -17,7 +17,7 @@ mod init;
 mod middleware;
 mod providers;
 mod structs;
-mod table_enum;
+// table_enum is now in generated module
 mod utils;
 use crate::controllers::store_controller::{download_file_by_id, get_file_by_id};
 use crate::providers::operations::batch_sync::BatchSyncService;
@@ -27,7 +27,7 @@ use crate::providers::storage::cache::{cache, CacheConfig};
 use crate::builders::generator::generator_service::GeneratorService;
 use crate::constants::paths;
 use crate::database::db;
-use crate::database::schema;
+
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::init::init::initialize;
 use crate::init::structs::EInitializer;
@@ -129,7 +129,7 @@ async fn main() -> std::io::Result<()> {
     let init_db = args.contains(&"--init-db".to_string());
     if cleanup {
         info!("Running cleanup operation only...");
-        match schema::database_setup::setup_database(DatabaseSetupFlags {
+        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
             run_cleanup: true,
             run_migrations: true,
             initialize_services: false,
@@ -245,7 +245,7 @@ async fn main() -> std::io::Result<()> {
 
     if init_db {
         info!("Running cleanup operation only...");
-        match schema::database_setup::setup_database(DatabaseSetupFlags {
+        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
             run_cleanup: false,
             run_migrations: false,
             initialize_services: true,

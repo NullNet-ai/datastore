@@ -1,7 +1,7 @@
 use crate::database::db;
-use crate::database::models::queue_item_model::QueueItemModel;
-use crate::database::models::queue_model::QueueModel;
-use crate::database::schema::{queue_items, queues};
+use crate::database::schema::schema::{queue_items, queues};
+use crate::generated::models::queue_item_model::QueueItemModel;
+use crate::generated::models::queue_model::QueueModel;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::OptionalExtension;

@@ -1,7 +1,7 @@
 use crate::database::db::AsyncDbPooledConnection;
-use crate::database::models::stream_queue_item_model::{NewStreamQueueItem, StreamQueueItemModel};
-use crate::database::models::stream_queue_model::NewStreamQueue;
-use crate::database::schema::{stream_queue, stream_queue_items};
+use crate::database::schema::schema::{stream_queue, stream_queue_items};
+use crate::generated::models::stream_queue_item_model::{NewStreamQueueItem, StreamQueueItemModel};
+use crate::generated::models::stream_queue_model::NewStreamQueue;
 
 use diesel::result::Error as DieselError;
 use diesel::{ExpressionMethods, QueryDsl, SelectableHelper};

@@ -1,10 +1,10 @@
 use crate::builders::templates::proto_generator::diesel_type_to_proto;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::database::models::counter_model::CounterModel;
-use crate::database::schema::counters;
+use crate::database::schema::schema::counters;
 use crate::database::schema::system_tables::is_system_table;
-use crate::table_enum::Table as TableEnum;
+use crate::generated::models::counter_model::CounterModel;
+use crate::generated::table_enum::Table as TableEnum;
 use actix_web::http;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

@@ -1,15 +1,14 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::external_contacts)]
+#[diesel(table_name = crate::database::schema::schema::organization_accounts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ExternalContactModel {
-    // System fields
+pub struct OrganizationAccountModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -33,8 +32,10 @@ pub struct ExternalContactModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
 
-    // Specific fields
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
-    pub email: Option<String>,
+    pub organization_contact_id: Option<String>,
+    pub account_id: Option<String>,
+    pub account_secret: Option<String>,
+    pub role_id: Option<String>,
+    pub contact_id: Option<String>,
+    pub device_id: Option<String>,
 }

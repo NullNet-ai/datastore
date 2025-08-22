@@ -1,18 +1,14 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
-use chrono::{DateTime, Utc};
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::accounts)]
+#[diesel(table_name = crate::database::schema::schema::contact_emails)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct AccountModel {
-    // System fields
-    pub id: Option<String>,
-    pub categories: Option<Vec<String>>,
-    pub code: Option<String>,
+pub struct ContactEmailModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -26,17 +22,17 @@ pub struct AccountModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<DateTime<Utc>>,
     pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
 
-    // Specific fields
-    pub account_id: Option<String>,
-    pub image_url: Option<String>,
-    pub account_secret: Option<String>,
-    pub account_status: Option<String>,
-    pub is_new_user: Option<bool>,
+    pub contact_id: Option<String>,
+    pub email: Option<String>,
+    pub is_primary: Option<bool>,
 }

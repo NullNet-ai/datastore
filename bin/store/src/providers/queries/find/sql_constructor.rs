@@ -1,5 +1,5 @@
 use crate::{
-    schema::hypertables::is_hypertable,
+    database::schema::hypertables::is_hypertable,
     structs::structs::{
         ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
         Join, LogicalOperator, MatchPattern, SortOption,

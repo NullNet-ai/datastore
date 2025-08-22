@@ -1,17 +1,14 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
-use diesel::{Insertable, Queryable};
-use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::devices)]
+#[diesel(table_name = crate::database::schema::schema::organization_contacts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct DeviceModel {
-    // System fields
+pub struct OrganizationContactModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -35,16 +32,5 @@ pub struct DeviceModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
 
-    pub model: Option<String>,
-    pub address_id: Option<String>,
-    pub instance_name: Option<String>,
-    pub is_connection_established: Option<bool>,
-    pub system_id: Option<String>,
-    pub device_version: Option<String>,
-    pub last_heartbeat: Option<String>,
-    pub is_monitoring_enabled: Option<bool>,
-    pub is_remote_access_enabled: Option<bool>,
-    pub ip_address: Option<IpNetwork>,
-    pub device_status: Option<String>,
-    pub device_gui_protocol: Option<String>,
+    pub contact_id: Option<String>,
 }

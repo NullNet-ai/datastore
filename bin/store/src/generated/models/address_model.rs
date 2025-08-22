@@ -1,14 +1,14 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
+use crate::database::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::organizations)]
+#[diesel(table_name = crate::database::schema::schema::addresses)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationModel {
+pub struct AddressModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -25,16 +25,26 @@ pub struct OrganizationModel {
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub id: Option<String>,
     pub timestamp: Option<chrono::NaiveDateTime>,
     #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
 
-    pub parent_organization_id: Option<String>,
-    pub name: Option<String>,
-    pub organization_level: Option<i32>,
-    pub root_organization_id: Option<String>,
-    pub path_level: Option<Vec<String>>,
+    pub id: Option<String>,
+    pub address: Option<String>,
+    pub address_line_one: Option<String>,
+    pub address_line_two: Option<String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+    pub place_id: Option<String>,
+    pub street_number: Option<String>,
+    pub street: Option<String>,
+    pub region: Option<String>,
+    pub region_code: Option<String>,
+    pub country_code: Option<String>,
+    pub postal_code: Option<String>,
+    pub country: Option<String>,
+    pub state: Option<String>,
+    pub city: Option<String>,
 }

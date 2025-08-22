@@ -1,4 +1,4 @@
-use crate::database::models::session_model::SessionModel;
+use crate::generated::models::session_model::SessionModel;
 use crate::providers::operations::auth::auth_service::verify;
 use crate::providers::operations::auth::structs::Claims;
 use crate::providers::operations::auth::structs::Origin;

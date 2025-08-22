@@ -36,7 +36,7 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
             info!("Password correct. Running database cleanup script...");
 
             // Run cleanup.sql
-            let cleanup_path = Path::new(&current_dir).join("src/cleanup.sql");
+            let cleanup_path = Path::new(&current_dir).join(paths::database::CLEANUP_SQL_FILE);
             let cleanup_status = Command::new("psql")
                 .args([
                     "-U",
