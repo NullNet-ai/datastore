@@ -1,7 +1,7 @@
+use crate::define_table_schema;
 use crate::generated::schema::generator::diesel_schema_definition::{
     types::*, DieselTableDefinition,
 };
-use crate::define_table_schema;
 use crate::{system_fields, system_foreign_keys, system_indexes};
 
 /// Test hypertable for time-series data

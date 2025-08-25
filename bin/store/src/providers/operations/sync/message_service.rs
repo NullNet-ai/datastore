@@ -1,5 +1,5 @@
-use crate::generated::schema::crdt_messages;
 use crate::generated::models::crdt_message_model::CrdtMessageModel;
+use crate::generated::schema::crdt_messages;
 use crate::providers::operations::sync::hlc::hlc_service;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

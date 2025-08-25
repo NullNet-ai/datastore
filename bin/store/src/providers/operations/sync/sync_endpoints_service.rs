@@ -1,5 +1,5 @@
-use crate::generated::schema::sync_endpoints;
 use crate::generated::models::sync_endpoint_model::SyncEndpointModel;
+use crate::generated::schema::sync_endpoints;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;

@@ -8,6 +8,7 @@ use crate::generated::models::address_model::AddressModel;
 use crate::generated::models::contact_email_model::ContactEmailModel;
 use crate::generated::models::contact_model::ContactModel;
 use crate::generated::models::contact_phone_number_model::ContactPhoneNumberModel;
+use crate::generated::models::counter_model::CounterModel;
 use crate::generated::models::device_model::DeviceModel;
 use crate::generated::models::external_contact_model::ExternalContactModel;
 use crate::generated::models::file_model::FileModel;
@@ -19,7 +20,6 @@ use crate::generated::models::sample_model::SampleModel;
 use crate::generated::models::session_model::SessionModel;
 use crate::generated::models::signed_in_activity_model::SignedInActivityModel;
 use crate::generated::models::test_hypertable_model::TestHypertableModel;
-use crate::generated::models::counter_model::CounterModel;
 use crate::generated::schema;
 use crate::structs::structs::{Auth, RequestBody};
 use crate::{
@@ -352,7 +352,10 @@ pub async fn generate_code(
         .values(&new_counter)
         .on_conflict(crate::generated::schema::counters::entity)
         .do_update()
-        .set(crate::generated::schema::counters::counter.eq(crate::generated::schema::counters::counter + 1))
+        .set(
+            crate::generated::schema::counters::counter
+                .eq(crate::generated::schema::counters::counter + 1),
+        )
         .returning((
             crate::generated::schema::counters::prefix,
             crate::generated::schema::counters::default_code,

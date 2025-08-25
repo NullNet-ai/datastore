@@ -1,7 +1,7 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::generated::schema::counters;
 use crate::generated::models::counter_model::CounterModel;
+use crate::generated::schema::counters;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
@@ -78,8 +78,7 @@ impl CodePrefixInitializer {
                 .do_update()
                 .set((
                     counters::prefix.eq(diesel::upsert::excluded(counters::prefix)),
-                    counters::default_code
-                        .eq(diesel::upsert::excluded(counters::default_code)),
+                    counters::default_code.eq(diesel::upsert::excluded(counters::default_code)),
                 ))
                 .execute(&mut conn)
                 .await
