@@ -352,15 +352,8 @@ pub async fn generate_code(
         .values(&new_counter)
         .on_conflict(counters::entity)
         .do_update()
-        .set(
-            counters::counter
-                .eq(counters::counter + 1),
-        )
-        .returning((
-            counters::prefix,
-            counters::default_code,
-            counters::counter,
-        ))
+        .set(counters::counter.eq(counters::counter + 1))
+        .returning((counters::prefix, counters::default_code, counters::counter))
         .get_result::<(String, i32, i32)>(&mut conn)
         .await
         .map_err(|e| {
