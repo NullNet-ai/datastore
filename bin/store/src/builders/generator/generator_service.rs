@@ -3,7 +3,9 @@ use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, 
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
-use crate::constants::paths::database::{HYPERTABLES_FILE, MODELS_MOD_FILE, SCHEMA_TABLES_DIR, SYSTEM_FIELDS_FILE};
+use crate::constants::paths::database::{
+    HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_TABLES_DIR, SYSTEM_FIELDS_FILE,
+};
 use crate::utils::utils::to_singular;
 use log::{debug, error, info};
 use std::env;
@@ -118,7 +120,7 @@ impl GeneratorService {
                 // Check if model file exists, if not, create it (for new tables)
                 let singular_name = to_singular(&table_def.name);
                 let model_file_path =
-                    Path::new("src/models").join(format!("{}_model.rs", singular_name));
+                    Path::new(MODELS_DIR).join(format!("{}_model.rs", singular_name));
 
                 if !model_file_path.exists() {
                     let model_content = ModelGenerator::generate_model(&table_def)?;
@@ -188,7 +190,7 @@ impl GeneratorService {
     /// Check if field ordering has changed by comparing current model with expected ordering
     fn has_field_ordering_changed(table_def: &TableDefinition) -> Result<bool, String> {
         let singular_name = to_singular(&table_def.name);
-        let model_file_path = Path::new("src/models").join(format!("{}_model.rs", singular_name));
+        let model_file_path = Path::new(MODELS_DIR).join(format!("{}_model.rs", singular_name));
 
         if !model_file_path.exists() {
             return Ok(true); // Model doesn't exist, needs to be created

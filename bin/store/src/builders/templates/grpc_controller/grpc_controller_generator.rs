@@ -105,7 +105,10 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     writeln!(file, "use crate::providers::find::DynamicResult;")?;
 
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
-    writeln!(file, "use crate::providers::operations::sync::sync_service::update;")?;
+    writeln!(
+        file,
+        "use crate::providers::operations::sync::sync_service::update;"
+    )?;
     writeln!(file, "use crate::generated::table_enum::Table;")?;
     writeln!(file, "use crate::utils::utils::table_exists;")?;
     writeln!(file, "use serde_json::Value;")?;

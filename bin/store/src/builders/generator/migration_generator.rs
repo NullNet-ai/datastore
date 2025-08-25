@@ -1,6 +1,6 @@
-use crate::builders::generator::field_definition::{ParsedField, TableDefinition};
+use crate::builders::generator::field_definition::TableDefinition;
 use crate::builders::generator::schema_generator::{SchemaChange, SchemaChangeType};
-use crate::constants::paths;
+use crate::constants::paths::database::MIGRATIONS_DIR;
 use chrono::{DateTime, Utc};
 use log::{debug, info};
 use std::fs;
@@ -36,12 +36,7 @@ impl MigrationGenerator {
         let timestamp = Self::generate_timestamp();
 
         // Create migration directory
-        let migration_dir = format!(
-            "{}/{}_{}",
-            paths::database::MIGRATIONS_DIR,
-            timestamp,
-            migration_name
-        );
+        let migration_dir = format!("{}/{}_{}", MIGRATIONS_DIR, timestamp, migration_name);
         info!("Creating migration directory: {}", migration_dir);
 
         // Check if migration already exists
@@ -117,7 +112,7 @@ impl MigrationGenerator {
 
     /// Check if a migration with the given name already exists
     fn migration_exists(name: &str) -> Result<bool, String> {
-        let migrations_dir = paths::database::MIGRATIONS_DIR;
+        let migrations_dir = MIGRATIONS_DIR;
 
         if !Path::new(migrations_dir).exists() {
             return Ok(false);
@@ -370,7 +365,7 @@ impl MigrationGenerator {
 
         sql.push_str(&format!("CREATE TABLE \"{}\" (\n", table_name));
 
-        let mut parsed_fields: Vec<ParsedField> = Vec::new();
+        let mut parsed_fields = Vec::new();
         for field in &table_def.fields {
             match field.parse_for_context(true) {
                 // Use migration context to preserve VARCHAR
