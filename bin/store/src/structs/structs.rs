@@ -94,9 +94,11 @@ impl RequestBody {
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
-                // Keep timestamp as-is if it's already properly formatted
-                if chrono::DateTime::parse_from_rfc3339(ts_str).is_ok() {
-                    // Timestamp is already valid, keep it
+                // If timestamp is RFC3339 compliant, convert to UTC and format without timezone
+                if let Ok(parsed_ts) = chrono::DateTime::parse_from_rfc3339(ts_str) {
+                    let utc_ts = parsed_ts.naive_utc();
+                    let formatted = utc_ts.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
+                    *timestamp = json!(formatted);
                     return;
                 }
                 // Remove any trailing Z, +00:00, etc. only if needed
@@ -204,7 +206,6 @@ fn default_pluck() -> String {
     "id".to_string()
 }
 
-#[allow(warnings)]
 #[derive(Clone)]
 pub struct Clock {
     pub timestamp: MutableTimestamp,
