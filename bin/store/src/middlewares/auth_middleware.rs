@@ -123,7 +123,7 @@ where
                     };
 
                     // Use common function to populate session
-                    crate::middleware::session_middleware::populate_session_with_auth_data(
+                    crate::middlewares::session_middleware::populate_session_with_auth_data(
                         &mut session,
                         &t,
                         &claims,

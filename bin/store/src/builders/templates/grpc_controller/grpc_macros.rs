@@ -4,7 +4,7 @@ macro_rules! with_session_management {
     ($request:ident, $body:block) => {
         {
             // Load and populate session using centralized function (similar to HTTP middleware)
-            let session: Option<crate::generated::models::session_model::SessionModel> = crate::middleware::session_middleware::load_and_populate_session_for_grpc(&$request).await;
+            let session = crate::middlewares::session_middleware::load_and_populate_session_for_grpc(&$request).await;
 
             // Store session in request extensions for use in business logic before consuming the request
             if let Some(ref session) = session {
@@ -15,8 +15,8 @@ macro_rules! with_session_management {
             let result = $body;
 
             // Save session after processing if it was modified
-            if let Some(ref session) = session {
-                if let Err(e) = crate::middleware::session_middleware::save_session_after_request(session).await {
+            if let Some(session) = session {
+                if let Err(e) = crate::middlewares::session_middleware::save_session_after_request(&session).await {
                     log::warn!("Failed to save session: {}", e);
                 }
             }
@@ -48,7 +48,7 @@ macro_rules! generate_create_method {
                     };
 
                     // Use common validation function
-                    let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                    let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                     let request_inner = request.into_inner();
                     let query = match request_inner.query {
@@ -117,7 +117,7 @@ macro_rules! generate_aggregation_filter_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         let request = request.into_inner();
 
@@ -205,7 +205,7 @@ macro_rules! generate_update_method {
                     };
 
                     // Use common validation function
-                    let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                    let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                     let request_inner = request.into_inner();
                     let query = match request_inner.query {
@@ -287,7 +287,7 @@ macro_rules! generate_batch_insert_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         let request = request.into_inner();
                     let table_name = params.table;
@@ -426,7 +426,7 @@ macro_rules! generate_batch_update_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         let request_inner = request.into_inner();
 
@@ -535,7 +535,7 @@ macro_rules! generate_batch_update_method {
                     log::info!("SQL Query for batch update: {}", sql_query);
 
                     // Execute the query
-                    let mut conn = crate::database::db::get_async_connection().await;
+                    let mut conn = crate::db::get_async_connection().await;
 
                     let count = match diesel::sql_query(&sql_query)
                         .execute(&mut conn)
@@ -581,7 +581,7 @@ macro_rules! generate_get_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         // Extract request parameters
                         let request = request.into_inner();
@@ -663,7 +663,7 @@ macro_rules! generate_upsert_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         let request_inner = request.into_inner();
 
@@ -740,7 +740,7 @@ macro_rules! generate_delete_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         let request_inner = request.into_inner();
 
@@ -814,7 +814,7 @@ macro_rules! generate_batch_delete_method {
                         };
 
                         // Use common validation function
-                        let (auth_data, _claims) = crate::middleware::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
+                        let (auth_data, _claims) = crate::middlewares::auth_middleware::validate_grpc_request_with_root_access(&request, &params.r#type)?;
 
                         let request = request.into_inner();
 
@@ -890,7 +890,7 @@ macro_rules! generate_batch_delete_method {
                     };
 
                     // Execute the query
-                    let mut conn = crate::database::db::get_async_connection().await;
+                    let mut conn = crate::db::get_async_connection().await;
 
                     let count = match diesel::sql_query(&sql_query)
                         .execute(&mut conn)

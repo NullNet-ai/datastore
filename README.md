@@ -295,13 +295,26 @@ make help
       - Create a new file on path:
         `bin/store/src/schema/tables/<table_name>.rs`
 
+        Note: Can copy from existing table file and rename the file.
+
      #### Adding a new field to existing table schema
      - Update the table file from this directory `bin/store/src/schema/tables/`
 
-     Note:
+     #### Overriding a system table schema
+     - If target table to create is a system table `bin/store/src/schema/system_tables.rs`, which is unaccessible to a client request.
+
+       1. Create a new file in this directory `bin/store/src/schema/tables`, name the file with format `<table_name>.rs`
+          - Copy an existing table file or refer from the example below or better use an AI to generate the whole file and add an example table file as code base format.
+          - Refer the system table schema of its fields from `bin/store/src/schema/schema.rs`
+          - Carefully update the table file, its proper naming of table and fields, and the assigning of data types.
+          - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
+          - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
+        
+       2. Remove the table from the system_tables file in path `bin/store/src/schema/system_tables.rs`
+
+     Key Requirements:
+      - Carefully check and update the necessary names in the file if copied.
       - Table name should be in `snake case` and `pluralized`.
-      - Can copy from existing table file and rename the file.
-      - Update the necessary names in the file if copied.
       - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
       - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
 
@@ -379,7 +392,7 @@ make help
 
   4. Verify generated files:
      - Check the migration file in `bin/store/migrations` directory.
-     - Check the table model file in `bin/store/src/models` directory, with the file name <table_name>_model.rs, the sorting of fields must be the same with the sorting on the file in table `bin/store/src/schema/tables/<table_name>.rs` that you have created.
+     - Check the table model file in `bin/store/src/models` directory, with the file name `<table_name>_model.rs`, the sorting of fields must be the same with the sorting on the schema on the file in `bin/store/src/schema/schema.rs` that is generated.
      - Check the schema file in `bin/store/src/schema/schema.rs`, the table schema must be added to the file.
 
   5. Run command for migration.
@@ -451,4 +464,3 @@ make help
   3. Include tests for new functionality
   4. Update documentation as needed
   5. Make sure all tests pass before submitting PR
-

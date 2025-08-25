@@ -608,7 +608,7 @@ pub async fn load_and_populate_session_for_grpc<T>(
     if let (Some(auth_token), Some(claims)) = (
         request
             .extensions()
-            .get::<crate::middleware::auth_middleware::AuthToken>(),
+            .get::<crate::middlewares::auth_middleware::AuthToken>(),
         request.extensions().get::<Claims>(),
     ) {
         let origin = Origin {

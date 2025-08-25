@@ -5,6 +5,51 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.73
+### Author
+Jean
+### Fixes
+- ***sql constructor for selections***: Updating the selections and looking up from `pluck` first before the `pluck_oject`, so the join_selections will override the main pluck selections.
+
+## 0.1.72
+### Author
+Kashan Ali Khalid
+### Fixes
+- ***timestamp handling***: 
+  - Fixed inconsistent timestamp processing between `structs.rs` and `store_driver.rs`
+  - RFC3339 compliant timestamps are now consistently converted to UTC in `structs.rs`
+  - All timestamps are now normalized to UTC format without timezone suffixes for database consistency
+  - Improved timestamp precision in session middleware to include microseconds (`%.3f`)
+  - Enhanced sync reliability by ensuring consistent timestamp formatting across the codebase
+---
+
+## 0.1.71
+### Author
+Jean
+### Added
+- ***password verification***: Added new `/api/password/verify` endpoint for password validation
+- ***structs***: Added `VerifyPasswordParams` struct for password verification requests
+- ***organization service***: Added `verify_password` function for password validation logic
+- ***organization controller***: Add `verify_password` function to standardize the response from the validation service
+---
+
+## 0.1.70
+### Author
+Kashan Ali Khalid
+### Added
+- ***schema***: 
+  - Added `user_roles` table to the schema with role and entity fields
+- ***gitignore***: 
+  - Added three generated files to .gitignore: `grpc_controller.rs`, `store.rs`, and `table_enum.rs`
+### Fixes
+- ***schema_generator***: 
+  - Fixed duplicate index creation issue in migration generator
+  - Enhanced `index_exists_in_schema` function to detect both old and new index naming formats
+  - Now properly checks for existing indexes in formats: `{table_name}_{field}_idx` and `idx_{table_name}_{field}`
+  - Prevents creation of duplicate indexes when similar indexes already exist in older migration files
+  - Added `extract_field_from_index_name` helper function to handle both naming conventions
+---
+
 ## 0.1.69
 ### Author
 Bert

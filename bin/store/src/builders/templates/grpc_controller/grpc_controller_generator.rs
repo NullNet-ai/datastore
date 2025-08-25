@@ -1,5 +1,4 @@
 use crate::builders::templates::proto_generator::{Case, CaseConvert};
-use crate::constants::paths;
 use crate::utils::utils::{parse_tables, to_singular};
 use log::{error, info, warn};
 use regex::Regex;
@@ -22,7 +21,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
 
     let mut service_name = String::new();
     let mut rpc_methods = Vec::new();
-    let schema_path = paths::database::SCHEMA_FILE;
+    let schema_path = "src/schema/schema.rs";
     let schema = match fs::read_to_string(schema_path) {
         Ok(content) => content,
         Err(e) => {
@@ -58,7 +57,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     let mut file = File::create(output_path)?;
 
     // Write imports
-    writeln!(file, "use crate::controllers::common_controller::{{")?;
+    writeln!(file, "use super::common_controller::{{")?;
     writeln!(
         file,
         "    convert_json_to_csv, execute_copy, perform_upsert,"
@@ -73,8 +72,8 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     )?;
     writeln!(file, "}};")?;
     writeln!(file, "use crate::with_session_management;")?;
-    writeln!(file, "use crate::database::db;")?;
-    writeln!(file, "use crate::database::db::create_connection;")?;
+    writeln!(file, "use crate::db;")?;
+    writeln!(file, "use crate::db::create_connection;")?;
     writeln!(file, "use diesel_async::RunQueryDsl;")?;
     writeln!(file, "use crate::{{generate_create_method, generate_update_method, generate_batch_insert_method,")?;
     writeln!(
@@ -90,24 +89,21 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     )?;
     writeln!(
         file,
-        "use crate::middleware::auth_middleware::GrpcAuthInterceptor;"
+        "use crate::middlewares::auth_middleware::GrpcAuthInterceptor;"
     )?;
     writeln!(
         file,
-        "use crate::middleware::session_middleware::{{GrpcSessionInterceptor, InterceptorChain}};"
+        "use crate::middlewares::session_middleware::{{GrpcSessionInterceptor, InterceptorChain}};"
     )?;
     writeln!(
         file,
-        "use crate::middleware::shutdown_middleware::GrpcShutdownInterceptor;"
+        "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
     )?;
-    writeln!(file, "use crate::providers::queries::find::DynamicResult;")?;
+    writeln!(file, "use crate::providers::find::DynamicResult;")?;
 
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
-    writeln!(
-        file,
-        "use crate::providers::operations::sync::sync_service::update;"
-    )?;
-    writeln!(file, "use crate::generated::table_enum::Table;")?;
+    writeln!(file, "use crate::sync::sync_service::update;")?;
+    writeln!(file, "use crate::table_enum::Table;")?;
     writeln!(file, "use crate::utils::utils::table_exists;")?;
     writeln!(file, "use serde_json::Value;")?;
     writeln!(file, "use std::net::SocketAddr;")?;
@@ -122,8 +118,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     )?;
     writeln!(
         file,
-        "// Note: Converter functions have been moved to {}",
-        paths::grpc::STRUCT_CONVERTER_FILE
+        "// Note: Converter functions have been moved to grpc_struct_converter.rs"
     )?;
 
     // Import request and response types
@@ -295,8 +290,8 @@ pub fn run_generator() -> io::Result<()> {
     info!("Starting gRPC controller generator");
 
     // Default paths
-    let proto_path = paths::proto::SOURCE_FILE;
-    let output_path = paths::grpc::CONTROLLER_FILE;
+    let proto_path = "src/proto/store.proto";
+    let output_path = "src/controllers/grpc_controller.rs";
 
     // Generate the controller
     match generate_grpc_controller(proto_path, output_path) {

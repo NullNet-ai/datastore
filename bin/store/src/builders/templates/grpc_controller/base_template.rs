@@ -1,23 +1,24 @@
+//! This only use as Base Template reference
 use super::common_controller::{
-    convert_json_to_csv, execute_copy, perform_upsert, process_and_get_record_by_id,
-    process_and_insert_record, process_and_update_record, process_record_for_update,
-    process_records, sanitize_updates,
+    convert_json_to_csv, execute_copy, perform_upsert,
+    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
+    process_record_for_update, process_records, sanitize_updates,
 };
+use crate::with_session_management;
 use crate::database::db;
 use crate::database::db::create_connection;
+use diesel_async::RunQueryDsl;
 use crate::generated::store::store_service_server::{StoreService, StoreServiceServer};
-use crate::middleware::auth_middleware::GrpcAuthInterceptor;
-use crate::middleware::session_middleware::{GrpcSessionInterceptor, InterceptorChain};
-use crate::middleware::shutdown_middleware::GrpcShutdownInterceptor;
+use crate::middlewares::auth_middleware::GrpcAuthInterceptor;
+use crate::middlewares::session_middleware::{GrpcSessionInterceptor, InterceptorChain};
+use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;
 use crate::providers::queries::find::DynamicResult;
 use crate::providers::queries::find::SQLConstructor;
-use crate::with_session_management;
-use diesel_async::RunQueryDsl;
 use log::info;
 
-use crate::providers::operations::sync::sync_service::update;
 use crate::structs::structs::RequestBody;
-use crate::generated::table_enum::Table;
+use crate::providers::operations::sync::sync_service::update;
+use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use serde_json::Value;
 use std::net::SocketAddr;
@@ -31,100 +32,107 @@ use crate::generated::store::{
     BatchDeleteAccountOrganizationsResponse, BatchDeleteAccountProfilesRequest,
     BatchDeleteAccountProfilesResponse, BatchDeleteAccountsRequest, BatchDeleteAccountsResponse,
     BatchDeleteAddressesRequest, BatchDeleteAddressesResponse, BatchDeleteAppFirewallsRequest,
-    BatchDeleteAppFirewallsResponse, BatchDeleteContactEmailsRequest,
-    BatchDeleteContactEmailsResponse, BatchDeleteContactPhoneNumbersRequest,
-    BatchDeleteContactPhoneNumbersResponse, BatchDeleteContactsRequest,
-    BatchDeleteContactsResponse, BatchDeleteDevicesRequest, BatchDeleteDevicesResponse,
+    BatchDeleteAppFirewallsResponse,
+    BatchDeleteContactEmailsRequest, BatchDeleteContactEmailsResponse,
+    BatchDeleteContactPhoneNumbersRequest, BatchDeleteContactPhoneNumbersResponse,
+    BatchDeleteContactsRequest, BatchDeleteContactsResponse, BatchDeleteDevicesRequest, BatchDeleteDevicesResponse,
     BatchDeleteExternalContactsRequest, BatchDeleteExternalContactsResponse,
     BatchDeleteIpInfosRequest, BatchDeleteIpInfosResponse, BatchDeleteOrganizationAccountsRequest,
     BatchDeleteOrganizationAccountsResponse, BatchDeleteOrganizationContactsRequest,
     BatchDeleteOrganizationContactsResponse, BatchDeleteOrganizationsRequest,
-    BatchDeleteOrganizationsResponse, BatchDeletePostgresChannelsRequest,
-    BatchDeletePostgresChannelsResponse, BatchDeleteSamplesRequest, BatchDeleteSamplesResponse,
-    BatchInsertAccountOrganizationsRequest, BatchInsertAccountOrganizationsResponse,
-    BatchInsertAccountProfilesRequest, BatchInsertAccountProfilesResponse,
-    BatchInsertAccountsRequest, BatchInsertAccountsResponse, BatchInsertAddressesRequest,
-    BatchInsertAddressesResponse, BatchInsertAppFirewallsRequest, BatchInsertAppFirewallsResponse,
+    BatchDeleteOrganizationsResponse, BatchDeletePostgresChannelsRequest, BatchDeletePostgresChannelsResponse, BatchDeleteSamplesRequest,
+    BatchDeleteSamplesResponse, BatchInsertAccountOrganizationsRequest,
+    BatchInsertAccountOrganizationsResponse, BatchInsertAccountProfilesRequest,
+    BatchInsertAccountProfilesResponse, BatchInsertAccountsRequest, BatchInsertAccountsResponse,
+    BatchInsertAddressesRequest, BatchInsertAddressesResponse, BatchInsertAppFirewallsRequest,
+    BatchInsertAppFirewallsResponse,
     BatchInsertContactEmailsRequest, BatchInsertContactEmailsResponse,
     BatchInsertContactPhoneNumbersRequest, BatchInsertContactPhoneNumbersResponse,
-    BatchInsertContactsRequest, BatchInsertContactsResponse, BatchInsertDevicesRequest,
-    BatchInsertDevicesResponse, BatchInsertExternalContactsRequest,
-    BatchInsertExternalContactsResponse, BatchInsertIpInfosRequest, BatchInsertIpInfosResponse,
-    BatchInsertOrganizationAccountsRequest, BatchInsertOrganizationAccountsResponse,
-    BatchInsertOrganizationContactsRequest, BatchInsertOrganizationContactsResponse,
-    BatchInsertOrganizationsRequest, BatchInsertOrganizationsResponse,
-    BatchInsertPostgresChannelsRequest, BatchInsertPostgresChannelsResponse,
-    BatchInsertSamplesRequest, BatchInsertSamplesResponse, BatchUpdateAccountOrganizationsRequest,
+    BatchInsertContactsRequest, BatchInsertContactsResponse, BatchInsertDevicesRequest, BatchInsertDevicesResponse,
+    BatchInsertExternalContactsRequest, BatchInsertExternalContactsResponse,
+    BatchInsertIpInfosRequest, BatchInsertIpInfosResponse, BatchInsertOrganizationAccountsRequest,
+    BatchInsertOrganizationAccountsResponse, BatchInsertOrganizationContactsRequest,
+    BatchInsertOrganizationContactsResponse, BatchInsertOrganizationsRequest,
+    BatchInsertOrganizationsResponse, BatchInsertPostgresChannelsRequest, BatchInsertPostgresChannelsResponse, BatchInsertSamplesRequest,
+    BatchInsertSamplesResponse, BatchUpdateAccountOrganizationsRequest,
     BatchUpdateAccountOrganizationsResponse, BatchUpdateAccountProfilesRequest,
     BatchUpdateAccountProfilesResponse, BatchUpdateAccountsRequest, BatchUpdateAccountsResponse,
     BatchUpdateAddressesRequest, BatchUpdateAddressesResponse, BatchUpdateAppFirewallsRequest,
-    BatchUpdateAppFirewallsResponse, BatchUpdateContactEmailsRequest,
-    BatchUpdateContactEmailsResponse, BatchUpdateContactPhoneNumbersRequest,
-    BatchUpdateContactPhoneNumbersResponse, BatchUpdateContactsRequest,
-    BatchUpdateContactsResponse, BatchUpdateDevicesRequest, BatchUpdateDevicesResponse,
+    BatchUpdateAppFirewallsResponse,
+    BatchUpdateContactEmailsRequest, BatchUpdateContactEmailsResponse,
+    BatchUpdateContactPhoneNumbersRequest, BatchUpdateContactPhoneNumbersResponse,
+    BatchUpdateContactsRequest, BatchUpdateContactsResponse, BatchUpdateDevicesRequest, BatchUpdateDevicesResponse,
     BatchUpdateExternalContactsRequest, BatchUpdateExternalContactsResponse,
     BatchUpdateIpInfosRequest, BatchUpdateIpInfosResponse, BatchUpdateOrganizationAccountsRequest,
     BatchUpdateOrganizationAccountsResponse, BatchUpdateOrganizationContactsRequest,
     BatchUpdateOrganizationContactsResponse, BatchUpdateOrganizationsRequest,
-    BatchUpdateOrganizationsResponse, BatchUpdatePostgresChannelsRequest,
-    BatchUpdatePostgresChannelsResponse, BatchUpdateSamplesRequest, BatchUpdateSamplesResponse,
-    ContactEmails, ContactPhoneNumbers, Contacts, CreateAccountOrganizationsRequest,
-    CreateAccountOrganizationsResponse, CreateAccountProfilesRequest,
-    CreateAccountProfilesResponse, CreateAccountsRequest, CreateAccountsResponse,
-    CreateAddressesRequest, CreateAddressesResponse, CreateAppFirewallsRequest,
-    CreateAppFirewallsResponse, CreateContactEmailsRequest, CreateContactEmailsResponse,
-    CreateContactPhoneNumbersRequest, CreateContactPhoneNumbersResponse, CreateContactsRequest,
-    CreateContactsResponse, CreateDevicesRequest, CreateDevicesResponse,
-    CreateExternalContactsRequest, CreateExternalContactsResponse, CreateIpInfosRequest,
-    CreateIpInfosResponse, CreateOrganizationAccountsRequest, CreateOrganizationAccountsResponse,
-    CreateOrganizationContactsRequest, CreateOrganizationContactsResponse,
-    CreateOrganizationsRequest, CreateOrganizationsResponse, CreatePostgresChannelsRequest,
-    CreatePostgresChannelsResponse, CreateSamplesRequest, CreateSamplesResponse,
-    DeleteAccountOrganizationsRequest, DeleteAccountOrganizationsResponse,
-    DeleteAccountProfilesRequest, DeleteAccountProfilesResponse, DeleteAccountsRequest,
-    DeleteAccountsResponse, DeleteAddressesRequest, DeleteAddressesResponse,
-    DeleteAppFirewallsRequest, DeleteAppFirewallsResponse, DeleteContactEmailsRequest,
-    DeleteContactEmailsResponse, DeleteContactPhoneNumbersRequest,
-    DeleteContactPhoneNumbersResponse, DeleteContactsRequest, DeleteContactsResponse,
-    DeleteDevicesRequest, DeleteDevicesResponse, DeleteExternalContactsRequest,
-    DeleteExternalContactsResponse, DeleteIpInfosRequest, DeleteIpInfosResponse,
-    DeleteOrganizationAccountsRequest, DeleteOrganizationAccountsResponse,
-    DeleteOrganizationContactsRequest, DeleteOrganizationContactsResponse,
-    DeleteOrganizationsRequest, DeleteOrganizationsResponse, DeletePostgresChannelsRequest,
-    DeletePostgresChannelsResponse, DeleteSamplesRequest, DeleteSamplesResponse, Devices,
-    ExternalContacts, GetAccountOrganizationsRequest, GetAccountOrganizationsResponse,
-    GetAccountProfilesRequest, GetAccountProfilesResponse, GetAccountsRequest, GetAccountsResponse,
-    GetAddressesRequest, GetAddressesResponse, GetAppFirewallsRequest, GetAppFirewallsResponse,
+    BatchUpdateOrganizationsResponse, BatchUpdatePostgresChannelsRequest, BatchUpdatePostgresChannelsResponse, BatchUpdateSamplesRequest,
+    BatchUpdateSamplesResponse, ContactEmails, ContactPhoneNumbers, Contacts,
+    CreateAccountOrganizationsRequest, CreateAccountOrganizationsResponse,
+    CreateAccountProfilesRequest, CreateAccountProfilesResponse, CreateAccountsRequest,
+    CreateAccountsResponse, CreateAddressesRequest, CreateAddressesResponse,
+    CreateAppFirewallsRequest, CreateAppFirewallsResponse,
+    CreateContactEmailsRequest, CreateContactEmailsResponse, CreateContactPhoneNumbersRequest,
+    CreateContactPhoneNumbersResponse, CreateContactsRequest, CreateContactsResponse, CreateDevicesRequest,
+    CreateDevicesResponse, CreateExternalContactsRequest, CreateExternalContactsResponse,
+    CreateIpInfosRequest, CreateIpInfosResponse, CreateOrganizationAccountsRequest,
+    CreateOrganizationAccountsResponse, CreateOrganizationContactsRequest,
+    CreateOrganizationContactsResponse, CreateOrganizationsRequest, CreateOrganizationsResponse, CreatePostgresChannelsRequest,
+    CreatePostgresChannelsResponse,
+    CreateSamplesRequest, CreateSamplesResponse,
+    DeleteAccountOrganizationsRequest,
+    DeleteAccountOrganizationsResponse, DeleteAccountProfilesRequest,
+    DeleteAccountProfilesResponse, DeleteAccountsRequest, DeleteAccountsResponse,
+    DeleteAddressesRequest, DeleteAddressesResponse, DeleteAppFirewallsRequest,
+    DeleteAppFirewallsResponse, DeleteContactEmailsRequest,
+    DeleteContactEmailsResponse, DeleteContactPhoneNumbersRequest, DeleteContactPhoneNumbersResponse, DeleteContactsRequest,
+    DeleteContactsResponse, DeleteDevicesRequest, DeleteDevicesResponse, DeleteExternalContactsRequest, DeleteExternalContactsResponse,
+    DeleteIpInfosRequest, DeleteIpInfosResponse, DeleteOrganizationAccountsRequest,
+    DeleteOrganizationAccountsResponse, DeleteOrganizationContactsRequest,
+    DeleteOrganizationContactsResponse, DeleteOrganizationsRequest, DeleteOrganizationsResponse,
+    DeletePostgresChannelsRequest,
+    DeletePostgresChannelsResponse,
+    DeleteSamplesRequest, DeleteSamplesResponse, Devices, ExternalContacts, GetAccountOrganizationsRequest,
+    GetAccountOrganizationsResponse, GetAccountProfilesRequest, GetAccountProfilesResponse,
+    GetAccountsRequest, GetAccountsResponse, GetAddressesRequest, GetAddressesResponse,
+    GetAppFirewallsRequest, GetAppFirewallsResponse,
     GetContactEmailsRequest, GetContactEmailsResponse, GetContactPhoneNumbersRequest,
-    GetContactPhoneNumbersResponse, GetContactsRequest, GetContactsResponse, GetDevicesRequest,
-    GetDevicesResponse, GetExternalContactsRequest, GetExternalContactsResponse, GetIpInfosRequest,
-    GetIpInfosResponse, GetOrganizationAccountsRequest, GetOrganizationAccountsResponse,
+    GetContactPhoneNumbersResponse, GetContactsRequest, GetContactsResponse, GetDevicesRequest, GetDevicesResponse,
+    GetExternalContactsRequest, GetExternalContactsResponse, GetIpInfosRequest, GetIpInfosResponse,
+    GetOrganizationAccountsRequest, GetOrganizationAccountsResponse,
     GetOrganizationContactsRequest, GetOrganizationContactsResponse, GetOrganizationsRequest,
-    GetOrganizationsResponse, GetPostgresChannelsRequest, GetPostgresChannelsResponse,
-    GetSamplesRequest, GetSamplesResponse, IpInfos, OrganizationAccounts, OrganizationContacts,
-    Organizations, PostgresChannels, Samples, UpdateAccountOrganizationsRequest,
-    UpdateAccountOrganizationsResponse, UpdateAccountProfilesRequest,
-    UpdateAccountProfilesResponse, UpdateAccountsRequest, UpdateAccountsResponse,
-    UpdateAddressesRequest, UpdateAddressesResponse, UpdateContactEmailsRequest,
-    UpdateContactEmailsResponse, UpdateContactPhoneNumbersRequest,
+    GetOrganizationsResponse,
+    GetPostgresChannelsRequest, GetPostgresChannelsResponse,
+    GetSamplesRequest, GetSamplesResponse, IpInfos, OrganizationAccounts, OrganizationContacts, Organizations,
+    PostgresChannels, Samples,
+    UpdateAccountOrganizationsRequest, UpdateAccountOrganizationsResponse,
+    UpdateAccountProfilesRequest, UpdateAccountProfilesResponse, UpdateAccountsRequest,
+    UpdateAccountsResponse, UpdateAddressesRequest, UpdateAddressesResponse,
+    UpdateContactEmailsRequest, UpdateContactEmailsResponse, UpdateContactPhoneNumbersRequest,
     UpdateContactPhoneNumbersResponse, UpdateContactsRequest, UpdateContactsResponse,
-    UpdateDevicesRequest, UpdateDevicesResponse, UpdateExternalContactsRequest,
-    UpdateExternalContactsResponse, UpdateIpInfosRequest, UpdateIpInfosResponse,
-    UpdateOrganizationAccountsRequest, UpdateOrganizationAccountsResponse,
-    UpdateOrganizationContactsRequest, UpdateOrganizationContactsResponse,
-    UpdateOrganizationsRequest, UpdateOrganizationsResponse, UpdatePostgresChannelsRequest,
-    UpdatePostgresChannelsResponse, UpdateSamplesRequest, UpdateSamplesResponse,
-    UpsertAccountOrganizationsRequest, UpsertAccountOrganizationsResponse,
-    UpsertAccountProfilesRequest, UpsertAccountProfilesResponse, UpsertAccountsRequest,
-    UpsertAccountsResponse, UpsertAddressesRequest, UpsertAddressesResponse,
-    UpsertAppFirewallsRequest, UpsertContactEmailsRequest, UpsertContactEmailsResponse,
-    UpsertContactPhoneNumbersRequest, UpsertContactPhoneNumbersResponse, UpsertContactsRequest,
-    UpsertContactsResponse, UpsertDevicesRequest, UpsertDevicesResponse,
-    UpsertExternalContactsRequest, UpsertExternalContactsResponse, UpsertIpInfosRequest,
-    UpsertIpInfosResponse, UpsertOrganizationAccountsRequest, UpsertOrganizationAccountsResponse,
-    UpsertOrganizationContactsRequest, UpsertOrganizationContactsResponse,
-    UpsertOrganizationsRequest, UpsertOrganizationsResponse, UpsertPostgresChannelsRequest,
-    UpsertPostgresChannelsResponse, UpsertSamplesRequest, UpsertSamplesResponse,
+    UpdateDevicesRequest,
+    UpdateDevicesResponse, UpdateExternalContactsRequest, UpdateExternalContactsResponse,
+    UpdateIpInfosRequest, UpdateIpInfosResponse, UpdateOrganizationAccountsRequest,
+    UpdateOrganizationAccountsResponse, UpdateOrganizationContactsRequest,
+    UpdateOrganizationContactsResponse, UpdateOrganizationsRequest, UpdateOrganizationsResponse,
+    UpdatePostgresChannelsRequest,
+    UpdatePostgresChannelsResponse,
+    UpdateSamplesRequest, UpdateSamplesResponse,
+    UpsertAccountOrganizationsRequest,
+    UpsertAccountOrganizationsResponse, UpsertAccountProfilesRequest,
+    UpsertAccountProfilesResponse, UpsertAccountsRequest, UpsertAccountsResponse,
+    UpsertAddressesRequest, UpsertAddressesResponse, UpsertAppFirewallsRequest,
+    UpsertContactEmailsRequest,
+    UpsertContactEmailsResponse, UpsertContactPhoneNumbersRequest,
+    UpsertContactPhoneNumbersResponse, UpsertContactsRequest, UpsertContactsResponse,
+    UpsertDevicesRequest,
+    UpsertDevicesResponse, UpsertExternalContactsRequest, UpsertExternalContactsResponse,
+    UpsertIpInfosRequest, UpsertIpInfosResponse, UpsertOrganizationAccountsRequest,
+    UpsertOrganizationAccountsResponse, UpsertOrganizationContactsRequest,
+    UpsertOrganizationContactsResponse, UpsertOrganizationsRequest, UpsertOrganizationsResponse,
+    UpsertPostgresChannelsRequest,
+    UpsertPostgresChannelsResponse,
+    UpsertSamplesRequest, UpsertSamplesResponse,
 };
 use crate::{
     generate_aggregation_filter_method, generate_batch_delete_method, generate_batch_insert_method,
@@ -146,7 +154,7 @@ impl GrpcController {
         let session_interceptor = GrpcSessionInterceptor::new();
         let auth_interceptor = GrpcAuthInterceptor;
         let shutdown_interceptor = GrpcShutdownInterceptor;
-
+        
         // Chain interceptors: shutdown -> session -> auth
         let session_auth_chain = InterceptorChain::new(session_interceptor, auth_interceptor);
         let interceptor_chain = InterceptorChain::new(shutdown_interceptor, session_auth_chain);
@@ -245,6 +253,24 @@ impl StoreService for GrpcController {
     generate_batch_delete_method!(samples);
     generate_upsert_method!(samples);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // CRUD methods for devices
     generate_create_method!(devices);
     generate_update_method!(devices, device);
@@ -272,6 +298,9 @@ impl StoreService for GrpcController {
     generate_delete_method!(postgres_channels);
     generate_batch_delete_method!(postgres_channels);
     generate_upsert_method!(postgres_channels);
+
+
+
 
     // CRUD methods for contacts
     generate_create_method!(contacts);

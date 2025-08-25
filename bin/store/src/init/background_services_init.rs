@@ -1,7 +1,7 @@
 use crate::controllers::store_controller::ApiError;
 use crate::init::code_prefix_init::get_code_prefix_initializer;
 use crate::init::initial_entity_data::init::get_initial_entity_data_initializer;
-use crate::middleware::session_middleware;
+use crate::middlewares::session_middleware;
 use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
 use std::env;
 use tokio::time::{interval, Duration};

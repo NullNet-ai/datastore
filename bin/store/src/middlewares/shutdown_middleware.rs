@@ -1,4 +1,4 @@
-use crate::middleware::shutdown_handler::is_shutdown_requested;
+use crate::shutdown_handler::is_shutdown_requested;
 use crate::structs::structs::ApiResponse;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
