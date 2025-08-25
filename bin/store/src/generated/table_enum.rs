@@ -20,7 +20,7 @@ use crate::generated::models::sample_model::SampleModel;
 use crate::generated::models::session_model::SessionModel;
 use crate::generated::models::signed_in_activity_model::SignedInActivityModel;
 use crate::generated::models::test_hypertable_model::TestHypertableModel;
-use crate::generated::schema;
+use crate::generated::schema::counters;
 use crate::structs::structs::{Auth, RequestBody};
 use crate::{
     generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,
@@ -348,18 +348,18 @@ pub async fn generate_code(
     };
 
     // Attempt the insert with conflict handling
-    let result = diesel::insert_into(crate::generated::schema::counters::dsl::counters::table())
+    let result = diesel::insert_into(counters::dsl::counters::table())
         .values(&new_counter)
-        .on_conflict(crate::generated::schema::counters::entity)
+        .on_conflict(counters::entity)
         .do_update()
         .set(
-            crate::generated::schema::counters::counter
-                .eq(crate::generated::schema::counters::counter + 1),
+            counters::counter
+                .eq(counters::counter + 1),
         )
         .returning((
-            crate::generated::schema::counters::prefix,
-            crate::generated::schema::counters::default_code,
-            crate::generated::schema::counters::counter,
+            counters::prefix,
+            counters::default_code,
+            counters::counter,
         ))
         .get_result::<(String, i32, i32)>(&mut conn)
         .await
