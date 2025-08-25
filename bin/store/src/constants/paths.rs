@@ -75,9 +75,6 @@ pub mod templates {
     /// gRPC controller template directory
     pub const GRPC_CONTROLLER_TEMPLATE_DIR: &str =
         const_format::concatcp!(TEMPLATES_DIR, "/grpc_controller");
-
-    /// Table enum template directory
-    pub const TABLE_ENUM_TEMPLATE_DIR: &str = const_format::concatcp!(TEMPLATES_DIR, "/table_enum");
 }
 
 /// Legacy schema file path (for backward compatibility)
