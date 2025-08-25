@@ -1,7 +1,8 @@
+//! This only use as Base Template reference
 use crate::database::db;
+use crate::database::schema::verify::field_exists_in_table;
 use crate::generated::models::counter_model::CounterModel;
 use crate::generated::schema;
-use crate::database::schema::verify::field_exists_in_table;
 use crate::structs::structs::{Auth, RequestBody};
 use crate::{
     generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,
@@ -61,12 +62,8 @@ impl Table {
         auth: &Auth,
     ) -> Result<String, DieselError> {
         generate_insert_record_match!(
-            self,
-            auth,
-            conn,
-            record,
-            request
-            // Add other tables and their models here as needed
+            self, auth, conn, record,
+            request // Add other tables and their models here as needed
         )
     }
 
@@ -82,8 +79,7 @@ impl Table {
             conn,
             id,
             is_root_account,
-            organization_id
-            // Add other tables and their models here as needed
+            organization_id // Add other tables and their models here as needed
         )
     }
 
@@ -93,10 +89,7 @@ impl Table {
         record: Value,
     ) -> Result<(), DieselError> {
         generate_upsert_record_match!(
-            self,
-            conn,
-            record
-            // Add other tables and their models here as needed
+            self, conn, record // Add other tables and their models here as needed
         )
     }
 
@@ -106,10 +99,7 @@ impl Table {
         record: Value,
     ) -> Result<(), DieselError> {
         generate_upsert_record_with_timestamp_match!(
-            self,
-            conn,
-            record
-            // Add other tables and their models here as needed
+            self, conn, record // Add other tables and their models here as needed
         )
     }
 }

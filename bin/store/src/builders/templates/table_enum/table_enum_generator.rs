@@ -1,6 +1,6 @@
-use crate::constants::paths;
+use crate::builders::templates::proto_generator::{Case, CaseConvert};
+use crate::constants::paths::database::{SCHEMA_FILE, TABLE_ENUM_FILE};
 use crate::database::schema::verify::field_exists_in_table;
-use crate::proto_generator::{Case, CaseConvert};
 use crate::utils::utils::{parse_tables, to_singular};
 use log::{error, info, warn};
 use std::fs::{self, File};
@@ -47,10 +47,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "use diesel_async::RunQueryDsl;")?;
     writeln!(file, "use serde_json::{{Map, Value}};")?;
     writeln!(file, "use crate::database::db;")?;
-    writeln!(
-        file,
-        "use crate::generated::models::counter_model::CounterModel;"
-    )?;
+    writeln!(file, "use crate::generated::models::counter_model::CounterModel;")?;
 
     writeln!(file, "")?;
 
@@ -321,8 +318,8 @@ pub fn run_generator() -> io::Result<()> {
     info!("Starting Table enum generator");
 
     // Default paths
-    let schema_path = paths::database::SCHEMA_FILE;
-    let output_path = paths::database::TABLE_ENUM_FILE;
+    let schema_path = SCHEMA_FILE;
+    let output_path = TABLE_ENUM_FILE;
 
     // Generate the Table enum
     match generate_table_enum(schema_path, output_path) {

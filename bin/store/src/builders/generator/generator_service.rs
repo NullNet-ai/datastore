@@ -1,11 +1,9 @@
 use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
-use crate::builders::generator::field_definition::{
-    FieldDefinition, ForeignKey, ParsedField, TableDefinition,
-};
+use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, TableDefinition};
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
-use crate::constants::paths;
+use crate::constants::paths::database::{HYPERTABLES_FILE, MODELS_MOD_FILE, SCHEMA_TABLES_DIR, SYSTEM_FIELDS_FILE};
 use crate::utils::utils::to_singular;
 use log::{debug, error, info};
 use std::env;
@@ -55,7 +53,7 @@ impl GeneratorService {
             // Extract indexes and foreign keys from table definition file
             let (indexes, foreign_keys) = {
                 // Find the table definition file to read its content
-                let table_files_dir = paths::database::SCHEMA_TABLES_DIR;
+                let table_files_dir = "src/schema/tables";
 
                 // Try multiple possible file names for the table
                 let possible_files = vec![
@@ -119,8 +117,8 @@ impl GeneratorService {
             } else {
                 // Check if model file exists, if not, create it (for new tables)
                 let singular_name = to_singular(&table_def.name);
-                let model_file_path = Path::new(paths::database::MODELS_DIR)
-                    .join(format!("{}_model.rs", singular_name));
+                let model_file_path =
+                    Path::new("src/models").join(format!("{}_model.rs", singular_name));
 
                 if !model_file_path.exists() {
                     let model_content = ModelGenerator::generate_model(&table_def)?;
@@ -130,7 +128,7 @@ impl GeneratorService {
                     // Check if field ordering has changed between schema and model
                     if Self::has_field_ordering_changed(&table_def)? {
                         // Rebuild the entire table in schema with proper field ordering
-                        let schema_file_path = paths::database::SCHEMA_FILE;
+                        let schema_file_path = "src/schema/schema.rs";
                         let existing_content = match fs::read_to_string(schema_file_path) {
                             Ok(content) => content,
                             Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
@@ -159,10 +157,7 @@ impl GeneratorService {
                 all_changes.len(),
                 all_changes
                     .iter()
-                    .map(
-                        |c: &crate::builders::generator::schema_generator::SchemaChange| &c
-                            .table_name
-                    )
+                    .map(|c| &c.table_name)
                     .collect::<std::collections::HashSet<_>>()
                     .len()
             );
@@ -193,8 +188,7 @@ impl GeneratorService {
     /// Check if field ordering has changed by comparing current model with expected ordering
     fn has_field_ordering_changed(table_def: &TableDefinition) -> Result<bool, String> {
         let singular_name = to_singular(&table_def.name);
-        let model_file_path =
-            Path::new(paths::database::MODELS_DIR).join(format!("{}_model.rs", singular_name));
+        let model_file_path = Path::new("src/models").join(format!("{}_model.rs", singular_name));
 
         if !model_file_path.exists() {
             return Ok(true); // Model doesn't exist, needs to be created
@@ -228,10 +222,7 @@ impl GeneratorService {
 
         // First, add system fields in the order defined by system_fields macro
         for system_field_name in &system_field_names {
-            if let Some(field) = parsed_fields
-                .iter()
-                .find(|f: &&ParsedField| f.name == *system_field_name)
-            {
+            if let Some(field) = parsed_fields.iter().find(|f| f.name == *system_field_name) {
                 ordered_fields.push(field.name.clone());
             }
         }
@@ -248,7 +239,7 @@ impl GeneratorService {
 
     /// Get system field names from the system_fields macro
     fn get_system_field_names() -> Result<Vec<String>, String> {
-        let system_fields_path = paths::database::SYSTEM_FIELDS_FILE;
+        let system_fields_path = SYSTEM_FIELDS_FILE;
         let content = fs::read_to_string(system_fields_path)
             .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
 
@@ -318,7 +309,7 @@ impl GeneratorService {
 
     /// Write model file to the models directory
     fn write_model_file(table_name: &str, model_content: &str) -> Result<(), String> {
-        let models_dir = Path::new(paths::database::MODELS_DIR);
+        let models_dir = Path::new("src/models");
 
         // Create models directory if it doesn't exist
         if !models_dir.exists() {
@@ -347,7 +338,7 @@ impl GeneratorService {
 
     /// Add module declaration to models/mod.rs
     fn add_module_to_mod_rs(singular_name: &str) -> Result<(), String> {
-        let mod_file_path = Path::new(paths::database::MODELS_MOD_FILE);
+        let mod_file_path = Path::new(MODELS_MOD_FILE);
 
         // Read existing mod.rs content
         let content = fs::read_to_string(mod_file_path)
@@ -384,7 +375,7 @@ impl GeneratorService {
 
     /// Discover all table definition files in the schema directory
     fn discover_table_definitions() -> Result<Vec<TableDefinition>, String> {
-        let tables_dir = paths::database::SCHEMA_TABLES_DIR;
+        let tables_dir = SCHEMA_TABLES_DIR;
 
         debug!("Scanning directory: {}", tables_dir);
 
@@ -1029,7 +1020,7 @@ impl GeneratorService {
                                         .replace("\"", "")
                                         .to_string();
 
-                                    if let Some(fk) = current_fk.as_mut() {
+                                    if let Some(ref mut fk) = current_fk {
                                         fk.column = column;
                                     }
                                 }
@@ -1044,7 +1035,7 @@ impl GeneratorService {
                                 .replace(",", "")
                                 .replace("\"", "")
                                 .to_string();
-                            if let Some(fk) = current_fk.as_mut() {
+                            if let Some(ref mut fk) = current_fk {
                                 fk.references_table = table_val.replace(",", "").replace("\"", "");
                             }
                         } else if line.contains("foreign_columns:") {
@@ -1059,7 +1050,7 @@ impl GeneratorService {
                                         .replace("\"", "")
                                         .to_string();
 
-                                    if let Some(fk) = current_fk.as_mut() {
+                                    if let Some(ref mut fk) = current_fk {
                                         fk.references_column = column;
                                     }
                                 }
@@ -1072,7 +1063,7 @@ impl GeneratorService {
                                 .trim()
                                 .trim_matches('"')
                                 .to_string();
-                            if let Some(fk) = current_fk.as_mut() {
+                            if let Some(ref mut fk) = current_fk {
                                 fk.on_delete = Some(delete_val);
                             }
                         } else if line.contains("on_update:") {
@@ -1083,7 +1074,7 @@ impl GeneratorService {
                                 .trim()
                                 .trim_matches('"')
                                 .to_string();
-                            if let Some(fk) = current_fk.as_mut() {
+                            if let Some(ref mut fk) = current_fk {
                                 fk.on_update = Some(update_val);
                             }
                         } else if line == "}" {
@@ -1145,7 +1136,7 @@ impl GeneratorService {
 
     /// Update the hypertables array in hypertables.rs based on current table definitions
     fn update_hypertables_array(table_definitions: &[TableDefinition]) -> Result<(), String> {
-        let hypertables_file_path = paths::database::HYPERTABLES_FILE;
+        let hypertables_file_path = HYPERTABLES_FILE;
 
         // Collect all hypertable names
         let hypertable_names: Vec<&str> = table_definitions
@@ -1358,7 +1349,7 @@ impl GeneratorService {
 
     /// Dynamically reads the system_fields macro from system_fields.rs
     fn get_system_fields_expansion() -> Result<String, String> {
-        let system_fields_path = paths::database::SYSTEM_FIELDS_FILE;
+        let system_fields_path = SYSTEM_FIELDS_FILE;
         let content = fs::read_to_string(system_fields_path)
             .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
 

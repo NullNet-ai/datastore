@@ -51,7 +51,7 @@ macro_rules! generate_insert_record_match {
                             // }
 
                             diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                .values(&value)
+                                .values(value.clone())
                                 .execute($conn)
                                 .await?;
 
@@ -121,7 +121,7 @@ macro_rules! generate_upsert_record_match {
 
                             if has_version {
                                 diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                    .values(&value)
+                                    .values(value.clone())
                                     .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
                                     .do_update()
                                     .set(crate::generated::schema::[<$table:snake:lower>]::version.eq(crate::generated::schema::[<$table:snake:lower>]::version + 1))
@@ -130,7 +130,7 @@ macro_rules! generate_upsert_record_match {
                                     .map(|_| ())
                             } else if (has_status){
                                 diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                .values(&value)
+                                .values(value.clone())
                                 .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
                                 .do_update()
                                 .set((
@@ -142,10 +142,10 @@ macro_rules! generate_upsert_record_match {
                                 .map(|_| ())
                             } else {
                                 diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                    .values(&value)
+                                    .values(value.clone())
                                     .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
                                     .do_update()
-                                    .set(&value)
+                                    .set(value)
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
@@ -177,16 +177,16 @@ macro_rules! generate_upsert_record_with_timestamp_match {
 
                             if has_version {
                                 diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                    .values(&value)
+                                    .values(value.clone())
                                     .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
                                     .do_update()
                                     .set(crate::generated::schema::[<$table:snake:lower>]::version.eq(crate::generated::schema::[<$table:snake:lower>]::version + 1))
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
-                            } else if (has_status){
+                            }else if (has_status){
                                 diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                .values(&value)
+                                .values(value.clone())
                                 .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
                                 .do_update()
                                 .set((
@@ -198,10 +198,10 @@ macro_rules! generate_upsert_record_with_timestamp_match {
                                 .map(|_| ())
                             } else {
                                 diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
-                                    .values(&value)
+                                    .values(value.clone())
                                     .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
                                     .do_update()
-                                    .set(&value)
+                                    .set(value)
                                     .execute($conn)
                                     .await
                                     .map(|_| ())

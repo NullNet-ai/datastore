@@ -3,7 +3,8 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use crate::constants::paths;
+use crate::constants::paths::proto::{BUILD_SCRIPT, SOURCE_FILE};
+use crate::constants::paths::templates::PROTO_FILE_NAME;
 use crate::utils::utils::{parse_tables, to_singular, Table};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
@@ -13,7 +14,7 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
     match fs::read_to_string(schema_path) {
         Ok(schema) => {
             info!("Successfully read schema file");
-            let proto_file_path = Path::new(output_dir).join(paths::templates::PROTO_FILE_NAME);
+            let proto_file_path = Path::new(output_dir).join(PROTO_FILE_NAME);
             if proto_file_path.exists() {
                 info!("Deleting existing proto file: {:?}", proto_file_path);
                 if let Err(err) = fs::remove_file(&proto_file_path) {
@@ -54,7 +55,7 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
             let proto_content = generate_unified_proto(&tables);
 
             // Write proto file
-            let file_path = Path::new(output_dir).join(paths::templates::PROTO_FILE_NAME);
+            let file_path = Path::new(output_dir).join(SOURCE_FILE);
             match File::create(&file_path) {
                 Ok(mut file) => match file.write_all(proto_content.as_bytes()) {
                     Ok(_) => info!("Successfully wrote proto content to file"),
@@ -637,9 +638,8 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
         }
     }
 
-    // Create build_proto.rs content
+    // Create build.rs content
     let mut build_content = String::new();
-    build_content.push_str("use crate::constants::paths;\n\n");
     build_content.push_str("fn main() -> Result<(), Box<dyn std::error::Error>> {\n");
 
     // Add rerun-if-changed for all proto files
@@ -653,7 +653,7 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("\n    tonic_build::configure()\n");
     build_content.push_str("        .build_server(true)   // Enable server code (default)\n");
     build_content.push_str("        .build_client(false)   // Enable client code (default)\n");
-    build_content.push_str("        .out_dir(paths::GENERATED_DIR)\n");
+    build_content.push_str("        .out_dir(\"src/generated\") // Custom output directory\n");
     build_content.push_str("        .compile_protos(\n");
 
     // Add all proto files to the compile function
@@ -669,16 +669,13 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("    Ok(())\n");
     build_content.push_str("}\n");
 
-    // Write to build_proto.rs file
-    let build_path = Path::new(paths::proto::BUILD_SCRIPT);
-    if let Some(parent) = build_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
+    // Write to build.rs file
+    let build_path = Path::new(BUILD_SCRIPT);
     let mut file = File::create(build_path)?;
     file.write_all(build_content.as_bytes())?;
 
     info!(
-        "Generated build_proto.rs file with {} proto files",
+        "Generated build.rs file with {} proto files",
         proto_files.len()
     );
     Ok(())

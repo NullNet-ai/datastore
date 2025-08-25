@@ -22,6 +22,7 @@ use crate::generated::models::signed_in_activity_model::SignedInActivityModel;
 use crate::generated::models::test_hypertable_model::TestHypertableModel;
 use crate::generated::schema::counters;
 use crate::structs::structs::{Auth, RequestBody};
+
 use crate::{
     generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match,
     generate_upsert_record_match, generate_upsert_record_with_timestamp_match,
