@@ -6,7 +6,7 @@ use std::env;
 use ulid::Ulid;
 
 use crate::database::db;
-use crate::database::schema::{account_organizations, sessions};
+use crate::generated::schema::{account_organizations, sessions};
 use crate::generated::models::session_model::SessionModel;
 use crate::generated::models::signed_in_activity_model::SignedInActivityModel;
 use crate::generated::table_enum::generate_code;

@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Insertable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
-#[diesel(table_name = crate::database::schema::schema::signed_in_activities)]
+#[diesel(table_name = crate::generated::schema::signed_in_activities)]
 pub struct SignedInActivityModel {
     pub id: Option<String>,
     pub tombstone: Option<i32>,

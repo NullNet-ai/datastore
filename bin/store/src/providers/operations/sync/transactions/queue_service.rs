@@ -1,5 +1,5 @@
 use crate::database::db;
-use crate::database::schema::schema::{queue_items, queues};
+use crate::generated::schema::{queue_items, queues};
 use crate::generated::models::queue_item_model::QueueItemModel;
 use crate::generated::models::queue_model::QueueModel;
 use diesel::prelude::*;

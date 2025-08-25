@@ -1,5 +1,5 @@
 use crate::database::db;
-use crate::database::schema::schema::transactions;
+use crate::generated::schema::transactions;
 use crate::generated::models::transaction_model::TransactionModel;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Insertable, AsChangeset, Debug, Clone, Serialize, Deserialize)]
-#[diesel(table_name = crate::database::schema::schema::sessions)]
+#[diesel(table_name = crate::generated::schema::sessions)]
 pub struct SessionModel {
     pub id: Option<String>,
     pub tombstone: Option<i32>,

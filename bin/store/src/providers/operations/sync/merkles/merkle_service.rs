@@ -1,4 +1,4 @@
-use crate::database::schema::crdt_merkles;
+use crate::generated::schema::crdt_merkles;
 use crate::generated::models::crdt_merkle_model::{CrdtMerkleModel, ParsedMerkle};
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

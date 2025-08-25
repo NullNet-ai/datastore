@@ -1,4 +1,4 @@
-use crate::database::schema::schema::crdt_merkles;
+use crate::generated::schema::crdt_merkles;
 use diesel::prelude::*;
 use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};

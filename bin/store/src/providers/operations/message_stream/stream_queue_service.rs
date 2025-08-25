@@ -1,5 +1,5 @@
 use crate::database::db::AsyncDbPooledConnection;
-use crate::database::schema::schema::{stream_queue, stream_queue_items};
+use crate::generated::schema::{stream_queue, stream_queue_items};
 use crate::generated::models::stream_queue_item_model::{NewStreamQueueItem, StreamQueueItemModel};
 use crate::generated::models::stream_queue_model::NewStreamQueue;
 

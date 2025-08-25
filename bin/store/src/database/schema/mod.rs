@@ -3,9 +3,5 @@ pub mod database_setup;
 pub mod forbidden_tables;
 pub mod from_proto;
 pub mod hypertables;
-pub mod schema;
 pub mod system_tables;
 pub mod verify;
-
-// Re-export schema for easier access
-pub use schema::*;

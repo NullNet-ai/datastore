@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::account_organizations)]
+#[diesel(table_name = crate::generated::schema::account_organizations)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
 pub struct AccountOrganizationModel {

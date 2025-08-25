@@ -1,4 +1,4 @@
-use crate::database::schema::generator::diesel_schema_definition::{
+use crate::generated::schema::generator::diesel_schema_definition::{
     types::*, DieselTableDefinition,
 };
 use crate::define_table_schema;

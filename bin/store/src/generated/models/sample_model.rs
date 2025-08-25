@@ -1,4 +1,4 @@
-use crate::database::schema::schema::samples;
+use crate::generated::schema::samples;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 #[derive(

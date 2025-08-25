@@ -3,7 +3,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-const SCHEMA_CONTENT: &str = include_str!("schema.rs");
+const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
 /// Verifies if a field exists in a specified table by parsing the schema.rs file
 ///

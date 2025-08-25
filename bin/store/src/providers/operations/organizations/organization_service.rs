@@ -1,9 +1,9 @@
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
-use crate::database::schema::schema::account_organizations;
-use crate::database::schema::schema::accounts;
-use crate::database::schema::schema::counters;
-use crate::database::schema::schema::organizations;
+use crate::generated::schema::account_organizations;
+use crate::generated::schema::accounts;
+use crate::generated::schema::counters;
+use crate::generated::schema::organizations;
 use crate::generated::models::account_model::AccountModel;
 use crate::generated::models::account_organization_model::AccountOrganizationModel;
 use crate::generated::models::account_profile_model::AccountProfileModel;

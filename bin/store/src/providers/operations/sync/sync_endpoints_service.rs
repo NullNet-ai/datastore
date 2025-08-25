@@ -1,4 +1,4 @@
-use crate::database::schema::schema::sync_endpoints;
+use crate::generated::schema::sync_endpoints;
 use crate::generated::models::sync_endpoint_model::SyncEndpointModel;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

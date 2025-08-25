@@ -1,4 +1,4 @@
-use crate::database::schema::schema::transactions;
+use crate::generated::schema::transactions;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

@@ -5,7 +5,7 @@ use serde_json::Value as JsonValue;
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::database::schema::schema::fields)]
+#[diesel(table_name = crate::generated::schema::fields)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
 pub struct FieldModel {

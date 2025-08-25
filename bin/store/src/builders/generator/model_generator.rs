@@ -64,7 +64,7 @@ impl ModelGenerator {
         content.push_str(&format!("    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,\n"));
         content.push_str(&format!(")]\n"));
         content.push_str(&format!(
-            "#[diesel(table_name = crate::database::schema::{})]\n",
+            "#[diesel(table_name = crate::generated::schema::{})]\n",
             table_name
         ));
         content.push_str(&format!("#[diesel(check_for_backend(diesel::pg::Pg))]\n"));

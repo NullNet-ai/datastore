@@ -6,9 +6,9 @@ macro_rules! generate_hypertable_timestamp_match {
             match $self {
                 $(
                     Table::$table => {
-                        let result = crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
-                            .filter(crate::database::schema::[<$table:snake:lower>]::id.eq($id))
-                            .select(crate::database::schema::[<$table:snake:lower>]::hypertable_timestamp)
+                        let result = crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
+                            .filter(crate::generated::schema::[<$table:snake:lower>]::id.eq($id))
+                            .select(crate::generated::schema::[<$table:snake:lower>]::hypertable_timestamp)
                             .first::<Option<String>>($conn)
                             .await;
 
@@ -50,7 +50,7 @@ macro_rules! generate_insert_record_match {
                             //     value.hypertable_timestamp = Some(value.timestamp.to_string());
                             // }
 
-                            diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                            diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                 .values(&value)
                                 .execute($conn)
                                 .await?;
@@ -73,22 +73,22 @@ macro_rules! generate_get_by_id_match {
             match $self {
                 $(
                     Table::$table => {
-                        let mut query = crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
-                            .filter(crate::database::schema::[<$table:snake:lower>]::id.eq($id))
-                            .filter(crate::database::schema::[<$table:snake:lower>]::tombstone.eq(0))
+                        let mut query = crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
+                            .filter(crate::generated::schema::[<$table:snake:lower>]::id.eq($id))
+                            .filter(crate::generated::schema::[<$table:snake:lower>]::tombstone.eq(0))
                             .into_boxed();
 
                         // Add organization_id filter if not root account
                         if !$is_root_account {
                             if let Some(org_id) = $organization_id {
                                 query = query
-                                    .filter(crate::database::schema::[<$table:snake:lower>]::organization_id.is_not_null())
-                                    .filter(crate::database::schema::[<$table:snake:lower>]::organization_id.eq(org_id));
+                                    .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.is_not_null())
+                                    .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.eq(org_id));
                             }
                         }
 
                         let result = query
-                            .select(crate::database::schema::[<$table:snake:lower>]::all_columns)
+                            .select(crate::generated::schema::[<$table:snake:lower>]::all_columns)
                             .first::<$model>($conn)
                             .await
                             .optional()?;
@@ -120,30 +120,30 @@ macro_rules! generate_upsert_record_match {
                             })?;
 
                             if has_version {
-                                diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(&value)
-                                    .on_conflict((crate::database::schema::[<$table:snake:lower>]::id))
+                                    .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
                                     .do_update()
-                                    .set(crate::database::schema::[<$table:snake:lower>]::version.eq(crate::database::schema::[<$table:snake:lower>]::version + 1))
+                                    .set(crate::generated::schema::[<$table:snake:lower>]::version.eq(crate::generated::schema::[<$table:snake:lower>]::version + 1))
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
                             } else if (has_status){
-                                diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                 .values(&value)
-                                .on_conflict((crate::database::schema::[<$table:snake:lower>]::id))
+                                .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
                                 .do_update()
                                 .set((
-                                crate::database::schema::[<$table:snake:lower>]::previous_status.eq(crate::database::schema::[<$table:snake:lower>]::status),
-                                crate::database::schema::[<$table:snake:lower>]::status.eq(value.status.clone()),
+                                crate::generated::schema::[<$table:snake:lower>]::previous_status.eq(crate::generated::schema::[<$table:snake:lower>]::status),
+                                crate::generated::schema::[<$table:snake:lower>]::status.eq(value.status.clone()),
                                 ))
                                 .execute($conn)
                                 .await
                                 .map(|_| ())
                             } else {
-                                diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(&value)
-                                    .on_conflict((crate::database::schema::[<$table:snake:lower>]::id))
+                                    .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
                                     .do_update()
                                     .set(&value)
                                     .execute($conn)
@@ -176,30 +176,30 @@ macro_rules! generate_upsert_record_with_timestamp_match {
                             })?;
 
                             if has_version {
-                                diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(&value)
-                                    .on_conflict((crate::database::schema::[<$table:snake:lower>]::id, crate::database::schema::[<$table:snake:lower>]::timestamp))
+                                    .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
                                     .do_update()
-                                    .set(crate::database::schema::[<$table:snake:lower>]::version.eq(crate::database::schema::[<$table:snake:lower>]::version + 1))
+                                    .set(crate::generated::schema::[<$table:snake:lower>]::version.eq(crate::generated::schema::[<$table:snake:lower>]::version + 1))
                                     .execute($conn)
                                     .await
                                     .map(|_| ())
                             } else if (has_status){
-                                diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                 .values(&value)
-                                .on_conflict((crate::database::schema::[<$table:snake:lower>]::id, crate::database::schema::[<$table:snake:lower>]::timestamp))
+                                .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
                                 .do_update()
                                 .set((
-                                crate::database::schema::[<$table:snake:lower>]::previous_status.eq(crate::database::schema::[<$table:snake:lower>]::status),
-                                crate::database::schema::[<$table:snake:lower>]::status.eq(value.status.clone()),
+                                crate::generated::schema::[<$table:snake:lower>]::previous_status.eq(crate::generated::schema::[<$table:snake:lower>]::status),
+                                crate::generated::schema::[<$table:snake:lower>]::status.eq(value.status.clone()),
                                 ))
                                 .execute($conn)
                                 .await
                                 .map(|_| ())
                             } else {
-                                diesel::insert_into(crate::database::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
                                     .values(&value)
-                                    .on_conflict((crate::database::schema::[<$table:snake:lower>]::id, crate::database::schema::[<$table:snake:lower>]::timestamp))
+                                    .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
                                     .do_update()
                                     .set(&value)
                                     .execute($conn)

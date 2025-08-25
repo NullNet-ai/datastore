@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable, Serialize, Deserialize, Clone, AsChangeset, Insertable, Debug)]
-#[diesel(table_name = crate::database::schema::schema::counters)]
+#[diesel(table_name = crate::generated::schema::counters)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct CounterModel {
     pub entity: String,
