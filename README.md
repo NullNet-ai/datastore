@@ -5,37 +5,119 @@ A Rust implementation of Conflict-Free Replicated Data Types (CRDTs) using Merkl
 ## Project Structure
 
 ```plaintext
-crdt-rust/
-├── libs/
-│   ├── hlc/        # Hybrid Logical Clock implementation
-│   └── merkle/     # Merkle Tree implementation
-├── bin/
-│   └── main/       # Main executable
+crdt-workspace/
+├── .env-sample                    # Environment configuration template
+├── .gitignore                     # Git ignore patterns
+├── Cargo.toml                     # Workspace configuration
+├── Makefile                       # Build automation and development commands
+├── README.md                      # Project documentation
+├── bin/                           # Binary applications
+│   ├── main/                      # Main executable application
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       └── main.rs
+│   ├── server/                    # Server application
+│   │   ├── Cargo.toml
+│   │   ├── Dockerfile
+│   │   ├── build.rs
+│   │   ├── migrations/            # Server database migrations
+│   │   └── src/
+│   │       ├── controllers/       # API controllers
+│   │       ├── db/               # Database connections
+│   │       ├── models/           # Data models
+│   │       ├── schema/           # Database schema definitions
+│   │       └── sync/             # Synchronization logic
+│   └── store/                     # Store application (main CRDT implementation)
+│       ├── Cargo.toml
+│       ├── Dockerfile
+│       ├── docker-compose.yml     # Development services (TimescaleDB, Redis)
+│       ├── migrations/            # Store database migrations
+│       └── src/
+│           ├── builders/          # Code generation and build tools
+│           │   └── generator/     # Schema and proto generators
+│           ├── constants/         # Application constants and paths
+│           ├── controllers/       # gRPC and API controllers
+│           ├── database/          # Database schema and operations
+│           │   └── schema/        # Database schema definitions
+│           │       ├── tables/    # Individual table definitions
+│           │       ├── hypertables.rs
+│           │       └── init.sql
+│           ├── generated/         # Auto-generated code (do not edit manually)
+│           │   ├── models/        # Generated data models
+│           │   ├── proto/         # Generated protobuf files
+│           │   ├── schema.rs      # Generated database schema
+│           │   ├── table_enum.rs  # Generated table enumerations
+│           │   └── grpc_controller.rs
+│           ├── initializers/      # Application initialization
+│           ├── middlewares/       # Request/response middleware
+│           ├── providers/         # Service providers
+│           ├── structs/          # Data structures
+│           └── utils/            # Utility functions
+├── libs/                          # Shared libraries
+│   ├── hlc/                      # Hybrid Logical Clock implementation
+│   │   ├── Cargo.toml
+│   │   └── src/lib.rs
+│   └── merkle/                   # Merkle Tree implementation
+│       ├── Cargo.toml
+│       ├── proto/tree.proto      # Merkle tree protobuf definitions
+│       └── src/lib.rs
+├── mcp-proto-generator/          # MCP protocol buffer generator
+├── scripts/                      # Development and deployment scripts
+│   ├── post-checkout            # Git hook scripts
+│   ├── pre-push
+│   └── setup-hooks.sh
+└── tests/                        # Integration tests
 ```
+
+### Key Directories Explained
+
+- **`bin/store/`** - The main CRDT store implementation with gRPC API
+- **`bin/server/`** - Additional server functionality
+- **`libs/`** - Reusable libraries (HLC and Merkle tree implementations)
+- **`bin/store/src/generated/`** - Auto-generated code from schema and proto definitions
+- **`bin/store/src/database/schema/tables/`** - Individual table schema definitions
+- **`bin/store/migrations/`** - Database migration files
+- **`bin/store/src/builders/generator/`** - Code generation tools and scripts
+- **`bin/store/src/constants/paths.rs`** - Centralized path constants for consistency
+
+### Path Management
+
+The project uses centralized path constants defined in `bin/store/src/constants/paths.rs` to ensure consistency across all components. This file contains:
+
+- **Database paths** - Schema files, models, migrations, and table definitions
+- **Generated code paths** - Proto files, gRPC controllers, and auto-generated models
+- **Build script paths** - Code generation and build automation scripts
+
+When adding new features or modifying existing ones, always reference these constants rather than hardcoding paths to maintain consistency and ease of maintenance.
 
 ## Prerequisites
 
 Before running the installation, ensure you have the following system requirements:
 
 ### Required System Tools
+
 - **make** - Build automation tool (required to run the installer)
 - **curl** or **wget** - For downloading dependencies
 - **git** - Version control system
 - **sudo privileges** - Required for system package installation
 
 ### Operating System Support
+
 - **macOS** - Homebrew will be used for package management
 - **Linux** - Supports apt-get (Ubuntu/Debian), yum (RHEL/CentOS), and pacman (Arch)
 - **Windows** - Chocolatey will be used for package management
 - **Docker** - For containerized development (optional)
 
 ### Rust Version Requirement
+
 - **Rust 1.86.0** - Specific version required for compatibility
   - The installer will automatically install and verify this version
   - If you have a different version installed, the installer will prompt you to update
   - Manual installation: `rustup install 1.86.0 && rustup default 1.86.0`
 
 ### Database Requirements
+
 - **TimescaleDB** - Time-series database built on PostgreSQL (version 12 or higher recommended)
   - On macOS: PostgreSQL will be installed via Homebrew during `make install`, TimescaleDB extension needs to be added separately
   - On Linux: PostgreSQL will be installed via package manager during `make install`, TimescaleDB extension needs to be added separately
@@ -45,6 +127,7 @@ Before running the installation, ensure you have the following system requiremen
   - TimescaleDB installation guide: https://docs.timescale.com/install/
 
 ### Docker Compose
+
 - **Docker Compose file** - Located at `bin/store/docker-compose.yml`
 - **Services** - Provides TimescaleDB and Redis services for development
 - **Usage** - Use `make docker-compose-up` to start services
@@ -54,22 +137,27 @@ Before running the installation, ensure you have the following system requiremen
 #### Troubleshooting Docker Issues
 
 **Docker daemon not running:**
+
 - **macOS/Windows**: Start Docker Desktop application
 - **Linux**: Run `sudo systemctl start docker` or `sudo service docker start`
 
 **Container name conflicts:**
+
 - Remove existing containers: `docker rm redis timescaledb`
 - Or use: `make docker-compose-down` followed by `make docker-compose-up`
 
 **Permission issues:**
+
 - **Linux**: Add user to docker group: `sudo usermod -aG docker $USER`
 - **macOS/Windows**: Ensure Docker Desktop has proper permissions
 
 ### Network Requirements
+
 - Internet connection for downloading Rust toolchain and dependencies
 - Access to crates.io and GitHub for package downloads
 
 ### Windows-Specific Requirements
+
 - **PowerShell** - Required for running Windows installation scripts
 - **Administrator privileges** - May be required for Chocolatey installation
 - **Windows 10/11** - Recommended for best compatibility
@@ -122,6 +210,7 @@ make install
 **Note for Windows users:** The installer will automatically detect your Windows environment and use PowerShell with Chocolatey for package management. Ensure you have administrator privileges if prompted.
 
 This will automatically:
+
 - **Set up environment** by copying `.env-sample` to `.env`
 - **Install Rust 1.86.0** (rustc, cargo, rustup) with version verification
 - **Install PostgreSQL** database server (version 14 on Windows, latest on macOS/Linux) - TimescaleDB extension needs to be added separately
@@ -142,6 +231,7 @@ make verify-install
 ```
 
 This command will check:
+
 - Rust 1.86.0 installation and version
 - PostgreSQL server availability (TimescaleDB extension should be installed separately)
 - Required Cargo tools (cargo-make, cargo-watch, diesel_cli)
@@ -158,6 +248,7 @@ make store
 ## Manual Prerequisites (if not using installer)
 
 ### Build Tools
+
 - **make** - Build automation tool
   - macOS: `xcode-select --install` or `brew install make`
   - Ubuntu/Debian: `sudo apt-get install build-essential`
@@ -166,17 +257,20 @@ make store
   - Windows: Install via Chocolatey `choco install make` or use WSL
 
 ### Rust Toolchain
+
 - **Rust 1.86.0** (specific version required for compatibility)
+
   ```bash
   # Install rustup if not already installed
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-  
+
   # Install and set Rust 1.86.0 as default
   rustup install 1.86.0
   rustup default 1.86.0
   ```
 
 ### Database
+
 - **TimescaleDB** (PostgreSQL with TimescaleDB extension, version 12 or higher)
   - macOS: `brew install postgresql` then add TimescaleDB extension
   - Ubuntu/Debian: `sudo apt-get install postgresql postgresql-contrib` then add TimescaleDB extension
@@ -184,36 +278,38 @@ make store
   - TimescaleDB installation: Follow the official guide at https://docs.timescale.com/install/
 
 ### Cargo Tools
+
 - **cargo-make**: `cargo install cargo-make`
 - **cargo-watch**: `cargo install cargo-watch`
 - **diesel_cli**: `cargo install diesel_cli --no-default-features --features postgres`
 
 ## Getting Started (Manual Setup)
 
-  1. Clone the repository:
+1. Clone the repository:
 
-      ```bash
-      git clone https://github.com/yourusername/crdt-rust.git
-      cd crdt-rust
-      ```
+   ```bash
+   git clone <your-repository-url>
+   cd crdt-workspace
+   ```
 
-  2. Install dependencies:
+2. Install dependencies:
 
-      ```bash
-      make install
-      ```
+   ```bash
+   make install
+   ```
 
-  3. Start store in development mode:
+3. Start store in development mode:
 
-      ```bash
-      make store
-      ```
+   ```bash
+   make store
+   ```
 
 ## Available Make Commands
 
 The project includes a comprehensive Makefile with the following commands:
 
 ### Setup & Installation
+
 - `make install` - One-command installer for all dependencies (auto-detects macOS/Linux/Windows)
 - `make install-macos` - Install dependencies specifically for macOS with Rust 1.86.0
 - `make install-linux` - Install dependencies specifically for Linux with Rust 1.86.0
@@ -222,6 +318,7 @@ The project includes a comprehensive Makefile with the following commands:
 - `make setup-hooks` - Setup git hooks for code quality
 
 ### Development
+
 - `make dev` - Run both server and store in parallel
 - `make server` - Run the server only
 - `make store` - Run the store only
@@ -229,29 +326,36 @@ The project includes a comprehensive Makefile with the following commands:
 - `make store-clean-setup` - Run store clean setup
 
 ### Store Generators
+
 - `make store-generate-schema` - Generate store schema
 - `make store-generate-proto` - Generate store proto files
 
 ### Initializer
+
 - `make store-initialize-device` - Initialize device and wait for PostgreSQL listener
 
 ### Production
+
 - `make store-build` - Build store in release mode
 - `make store-prod` - Run store in production mode
 
 ### Database Management
+
 - `make db-migrate-generate NAME=migration_name` - Generate new migration
 - `make db-migrate-up` - Run database migrations
 - `make db-migrate-revert` - Revert last migration
 
 ### Code Quality
+
 - `make fmt` - Format Rust code across all projects
 - `make fmt-check` - Check code formatting across all projects
 
 ### Git & Version Control
+
 - `make git-cleanup` - Clean up local branches that no longer exist on remote
 
 ### Docker Compose Commands
+
 - `make docker-compose-up` - Start TimescaleDB and Redis services using Docker Compose
 - `make docker-compose-down` - Stop and remove Docker Compose services
 - `make docker-compose-restart` - Restart Docker Compose services
@@ -259,208 +363,229 @@ The project includes a comprehensive Makefile with the following commands:
 - `make docker-compose-ps` - Show status of Docker Compose services
 
 ### Utilities
+
 - `make clean` - Clean build artifacts
 - `make help` - Show all available commands
 
 For a complete list of commands, run:
+
 ```bash
 make help
 ```
 
 ## Development Workflow
 
-  1. Create a new branch for your feature or bug fix:
+1. Create a new branch for your feature or bug fix:
 
-      ```bash
-      git checkout -b feature/feature-name
-      ```
+   ```bash
+   git checkout -b feature/feature-name
+   ```
 
-  2. Make your changes in the appropriate library:
+2. Make your changes in the appropriate component:
 
-     - HLC changes go in libs/hlc
-     - Merkle Tree changes go in libs/merkle
-     - Main application changes go in bin/main
+   - **HLC (Hybrid Logical Clock) changes** go in `libs/hlc/`
+   - **Merkle Tree changes** go in `libs/merkle/`
+   - **Main application changes** go in `bin/main/`
+   - **Server application changes** go in `bin/server/`
+   - **Store application changes** (CRDT implementation) go in `bin/store/`
+   - **Schema definitions** go in `bin/store/src/database/schema/tables/`
+   - **Generated code** is automatically created in `bin/store/src/generated/`
 
-  3. Format your code:
+3. Format your code:
 
-      ```bash
-      cargo fmt
-      ```
+   ```bash
+   cargo fmt
+   ```
 
 ## Guidelines in Adding a New Schema
 
-  1. Create or Update necessary files
- 
-     #### Creating a new table schema 
-      - Create a new file on path:
-        `bin/store/src/schema/tables/<table_name>.rs`
+1. Create or Update necessary files
 
-        Note: Can copy from existing table file and rename the file.
+   #### Creating a new table schema
 
-     #### Adding a new field to existing table schema
-     - Update the table file from this directory `bin/store/src/schema/tables/`
+   - Create a new file in the schema tables directory:
+     `bin/store/src/database/schema/tables/<table_name>.rs`
 
-     #### Overriding a system table schema
-     - If target table to create is a system table `bin/store/src/schema/system_tables.rs`, which is unaccessible to a client request.
+     Note: Can copy from existing table file and rename the file.
 
-       1. Create a new file in this directory `bin/store/src/schema/tables`, name the file with format `<table_name>.rs`
-          - Copy an existing table file or refer from the example below or better use an AI to generate the whole file and add an example table file as code base format.
-          - Refer the system table schema of its fields from `bin/store/src/schema/schema.rs`
-          - Carefully update the table file, its proper naming of table and fields, and the assigning of data types.
-          - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
-          - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
-        
-       2. Remove the table from the system_tables file in path `bin/store/src/schema/system_tables.rs`
+   #### Adding a new field to existing table schema
 
-     Key Requirements:
-      - Carefully check and update the necessary names in the file if copied.
-      - Table name should be in `snake case` and `pluralized`.
-      - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
-      - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
+   - Update the table file from this directory: `bin/store/src/database/schema/tables/`
 
-     Example:
+   #### Overriding a system table schema
 
-      ```rust
-        use crate::schema::generator::diesel_schema_definition::{
-            DieselTableDefinition, types::*
-        };
-        use crate::define_table_schema;
-        use crate::{system_fields, system_indexes, system_foreign_keys};
+   - If target table to create is a system table defined in system tables, which is inaccessible to client requests.
 
-        pub struct SamplesTable;
+     1. Create a new file in the schema tables directory: `bin/store/src/database/schema/tables/<table_name>.rs`
 
-        define_table_schema! {
-            hypertable: false,
-            fields: {
-                // System fields - common across all tables
-                system_fields!(),
-                
-                // Samples table specific fields
-                sample_text: nullable(text()),
-                sample_char: nullable(varchar(Some(300))),
-                sample_number: nullable(integer()), default: 0, migration_nullable: false,
-                sample_object: nullable(jsonb()),
-                is_sample_boolean: nullable(boolean()),
-                sample_with_reference_id: nullable(text()),
-            },
-            indexes: {
-                // System field indexes
-                system_indexes!("samples"),
+        - Copy an existing table file or refer from the example below or better use an AI to generate the whole file and add an example table file as code base format.
+        - Refer the system table schema of its fields from the generated schema file: `bin/store/src/generated/schema.rs`
+        - Carefully update the table file, its proper naming of table and fields, and the assigning of data types.
+        - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
+        - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
 
-                idx_samples_sample_text: {
-                    columns: ["sample_text"],
-                    unique: false,
-                    type: "btree"
-                },
-            },
-            foreign_keys: {
-                // System foreign keys
-                system_foreign_keys!("samples"),
-                
-                // Custom foreign keys
-                fk_samples_sample_with_reference_id: {
-                    columns: ["sample_with_reference_id"],
-                    foreign_table: "account_signatures",
-                    foreign_columns: ["id"],
-                    on_delete: "no action",
-                    on_update: "no action"
-                }
-            }
-        }
-      ```
-  
-  2. Git add and commit the changes with a proper commit message to track the changes on the files.
+     2. Remove the table from the system_tables file if it exists there
 
-     **Why we need to git add and commit:**
-     - **Version Control**: Track all changes made to schema files for historical reference
-     - **Change Documentation**: Maintain a clear record of what was modified, when, and why
-     - **Rollback Capability**: Enable reverting to previous working states if issues arise
-     - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
-     - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
-     - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
-     - **Debugging**: Help identify when and where issues were introduced in the schema
-     - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+   Key Requirements:
 
-  3. Run command for schema generation.
+   - Carefully check and update the necessary names in the file if copied.
+   - Table name should be in `snake case` and `pluralized`.
+   - Set the indices properly, with a unique name, formatted as `idx_<table_name>_<column_name>`.
+   - Set the foreign keys properly, with a unique name, formatted as `fk_<table_name>_<column_name>`.
 
-      ```bash
-      make store-generate-schema
-      ```
-     Note:
-       - You have to enter migration name for the migration file to be created, format will be in `snake case`, better to have standard naming for your migrations files.
-       - Migrations generated will be stored in this directory: `bin/store/migrations`
+   Example:
 
-  4. Verify generated files:
-     - Check the migration file in `bin/store/migrations` directory.
-     - Check the table model file in `bin/store/src/models` directory, with the file name `<table_name>_model.rs`, the sorting of fields must be the same with the sorting on the schema on the file in `bin/store/src/schema/schema.rs` that is generated.
-     - Check the schema file in `bin/store/src/schema/schema.rs`, the table schema must be added to the file.
+   ```rust
+     use crate::schema::generator::diesel_schema_definition::{
+         DieselTableDefinition, types::*
+     };
+     use crate::define_table_schema;
+     use crate::{system_fields, system_indexes, system_foreign_keys};
 
-  5. Run command for migration.
+     pub struct SamplesTable;
 
-      ```bash
-      make db-migrate-up
-      ```
-  
-  6. Git add and commit the changes with a proper commit messages, to track and secure the changes.
+     define_table_schema! {
+         hypertable: false,
+         fields: {
+             // System fields - common across all tables
+             system_fields!(),
 
-     **Why we need to git add and commit:**
-     - **Version Control**: Track all changes made to schema files for historical reference
-     - **Change Documentation**: Maintain a clear record of what was modified, when, and why
-     - **Rollback Capability**: Enable reverting to previous working states if issues arise
-     - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
-     - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
-     - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
-     - **Debugging**: Help identify when and where issues were introduced in the schema
-     - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+             // Samples table specific fields
+             sample_text: nullable(text()),
+             sample_char: nullable(varchar(Some(300))),
+             sample_number: nullable(integer()), default: 0, migration_nullable: false,
+             sample_object: nullable(jsonb()),
+             is_sample_boolean: nullable(boolean()),
+             sample_with_reference_id: nullable(text()),
+         },
+         indexes: {
+             // System field indexes
+             system_indexes!("samples"),
 
-  7. Run command for store proto file generation.
+             idx_samples_sample_text: {
+                 columns: ["sample_text"],
+                 unique: false,
+                 type: "btree"
+             },
+         },
+         foreign_keys: {
+             // System foreign keys
+             system_foreign_keys!("samples"),
 
-      ```bash
-      make store-generate-proto
-      ```
+             // Custom foreign keys
+             fk_samples_sample_with_reference_id: {
+                 columns: ["sample_with_reference_id"],
+                 foreign_table: "account_signatures",
+                 foreign_columns: ["id"],
+                 on_delete: "no action",
+                 on_update: "no action"
+             }
+         }
+     }
+   ```
 
-  8. Verify generated files:
-     - Check the generated `table_enum` file in `bin/store/src/table_enum.rs` 
-     - Check the generated `grpc_controller` file changes on `bin/store/src/controllers/grpc_controller.rs` 
-     - Check the generated `store.rs` file changes on `bin/store/src/generated/store.rs` 
-     - Check the generated `store.proto` file changes on `bin/store/src/proto/store.proto`
+2. Git add and commit the changes with a proper commit message to track the changes on the files.
 
-  10. Run command to check the code.
-      ```bash
-      cargo check
-      ```
+   **Why we need to git add and commit:**
 
-  11. Run command to format code.
-      ```bash
-      make fmt
-      ```
+   - **Version Control**: Track all changes made to schema files for historical reference
+   - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+   - **Rollback Capability**: Enable reverting to previous working states if issues arise
+   - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+   - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+   - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+   - **Debugging**: Help identify when and where issues were introduced in the schema
+   - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
 
-  12. Run command to check the code format.
-      ```bash
-      make fmt-check
-      ```
-  
-  13. Git add and commit the changes with a proper commit messages, to track and secure the changes.
+3. Run command for schema generation.
 
-     **Why we need to git add and commit:**
-     - **Version Control**: Track all changes made to schema files for historical reference
-     - **Change Documentation**: Maintain a clear record of what was modified, when, and why
-     - **Rollback Capability**: Enable reverting to previous working states if issues arise
-     - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
-     - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
-     - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
-     - **Debugging**: Help identify when and where issues were introduced in the schema
-     - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+   ```bash
+   make store-generate-schema
+   ```
 
-  14. Run command to run the store.
-      ```bash
-      make store
-      ```
+   Note:
+
+   - You have to enter migration name for the migration file to be created, format will be in `snake case`, better to have standard naming for your migrations files.
+   - Migrations generated will be stored in this directory: `bin/store/migrations`
+
+4. Verify generated files:
+
+   - Check the migration file in the migrations directory: `bin/store/migrations/`
+   - Check the table model file in the generated models directory: `bin/store/src/generated/models/<table_name>_model.rs`, the sorting of fields must be the same with the sorting on the schema in the generated schema file: `bin/store/src/generated/schema.rs`
+   - Check the generated schema file: `bin/store/src/generated/schema.rs`, the table schema must be added to the file.
+
+5. Run command for migration.
+
+   ```bash
+   make db-migrate-up
+   ```
+
+6. Git add and commit the changes with a proper commit messages, to track and secure the changes.
+
+   **Why we need to git add and commit:**
+
+   - **Version Control**: Track all changes made to schema files for historical reference
+   - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+   - **Rollback Capability**: Enable reverting to previous working states if issues arise
+   - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+   - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+   - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+   - **Debugging**: Help identify when and where issues were introduced in the schema
+   - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+
+7. Run command for store proto file generation.
+
+   ```bash
+   make store-generate-proto
+   ```
+
+8. Verify generated files:
+
+   - Check the generated table enum file: `bin/store/src/generated/table_enum.rs`
+   - Check the generated gRPC controller file: `bin/store/src/generated/grpc_controller.rs`
+   - Check the generated store.rs file: `bin/store/src/generated/store.rs`
+   - Check the generated store.proto file: `bin/store/src/generated/proto/store.proto`
+
+9. Run command to check the code.
+
+   ```bash
+   cargo check
+   ```
+
+10. Run command to format code.
+
+    ```bash
+    make fmt
+    ```
+
+11. Run command to check the code format.
+
+    ```bash
+    make fmt-check
+    ```
+
+12. Git add and commit the changes with a proper commit message, to track and secure the changes.
+
+    **Why we need to git add and commit:**
+
+    - **Version Control**: Track all changes made to schema files for historical reference
+    - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+    - **Rollback Capability**: Enable reverting to previous working states if issues arise
+    - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+    - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+    - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+    - **Debugging**: Help identify when and where issues were introduced in the schema
+    - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+
+13. Run command to run the store.
+    ```bash
+    make store
+    ```
 
 ## Contributing Guidelines
 
-  1. Follow Rust's coding conventions
-  2. Write clear commit messages
-  3. Include tests for new functionality
-  4. Update documentation as needed
-  5. Make sure all tests pass before submitting PR
+1. Follow Rust's coding conventions
+2. Write clear commit messages
+3. Include tests for new functionality
+4. Update documentation as needed
+5. Make sure all tests pass before submitting PR
