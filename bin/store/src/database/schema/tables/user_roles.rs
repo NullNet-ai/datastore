@@ -1,8 +1,6 @@
-use crate::schema::generator::diesel_schema_definition::{
-    DieselTableDefinition, types::*
-};
 use crate::define_table_schema;
-use crate::{system_fields, system_indexes, system_foreign_keys};
+use crate::schema::generator::diesel_schema_definition::{types::*, DieselTableDefinition};
+use crate::{system_fields, system_foreign_keys, system_indexes};
 
 /// User roles table for role-based access control
 pub struct UserRolesTable;
@@ -12,7 +10,7 @@ define_table_schema! {
     fields: {
         // System fields - common across all tables
         system_fields!(),
-        
+
         // User roles specific fields
         role: nullable(text()),
         entity: nullable(text()),
@@ -24,7 +22,7 @@ define_table_schema! {
     foreign_keys: {
         // System field foreign keys
         system_foreign_keys!("user_roles"),
-        
-    
+
+
     }
 }
