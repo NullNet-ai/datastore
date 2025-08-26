@@ -39,10 +39,7 @@ define_table_schema! {
             type: "btree"
         }
     },
-    foreign_keys: {
-        // System field foreign keys
-        // system_foreign_keys!("test_hypertable")
-    }
+    foreign_keys: {}
 }
 
 impl DieselTableDefinition for TestHypertableTable {
