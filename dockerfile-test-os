@@ -24,10 +24,12 @@ RUN apt-get update && apt-get install -y \
 FROM ubuntu-base AS rust-builder
 
 # Set Rust compilation environment variables for memory efficiency
-ENV CARGO_BUILD_JOBS=2
+ENV CARGO_BUILD_JOBS=1
 ENV CARGO_NET_RETRY=10
-ENV RUSTFLAGS="-C target-cpu=generic -C opt-level=2"
+ENV RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false -C link-arg=-Wl,--no-keep-memory -C link-arg=-Wl,--reduce-memory-overheads"
 ENV RUST_BACKTRACE=1
+ENV CARGO_PROFILE_DEV_DEBUG=0
+ENV CARGO_PROFILE_DEV_INCREMENTAL=false
 
 # Install Rust 1.86.0 with minimal components
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
@@ -65,8 +67,10 @@ RUN make help
 # Pre-compile dependencies to cache them
 RUN cargo fetch --locked
 
-# Run optimized installation with memory limits
-RUN ulimit -v 3145728 && make install-rust-tools
+# Set memory limits and run optimized installation
+RUN ulimit -v 6291456 && ulimit -s 8192 && \
+    echo 'vm.overcommit_memory = 1' >> /etc/sysctl.conf && \
+    make install-rust-tools
 
 CMD ["make", "store"]
 

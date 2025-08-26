@@ -9,7 +9,7 @@
         jean-store-watch store-experimental store-initialize-device \
         pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete \
         docker-build-ubuntu docker-build-ubuntu-clean docker-build-ubuntu-fresh docker-build-centos docker-build-arch docker-build-all \
-        docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all \
+docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all docker-ubuntu-memory-optimized \
         docker-compose-up docker-compose-down docker-compose-restart docker-compose-logs docker-compose-ps
 
 # Default target
@@ -57,6 +57,7 @@ help:
 	@echo "  docker-run-centos       - Run Docker container for CentOS testing"
 	@echo "  docker-run-arch         - Run Docker container for Arch Linux testing"
 	@echo "  docker-run-all          - Run Docker containers for all operating systems"
+	@echo "  docker-ubuntu-memory-optimized - Build and run memory-optimized Ubuntu container"
 	@echo "  docker-compose-up       - Start TimescaleDB and Redis services using Docker Compose"
 	@echo "  docker-compose-down     - Stop and remove Docker Compose services"
 	@echo "  docker-compose-restart  - Restart Docker Compose services"
@@ -709,8 +710,9 @@ docker-build-ubuntu:
 	@echo "🐳 Building Docker image for Ubuntu test..."
 	@docker build --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os \
 		--build-arg BUILDKIT_INLINE_CACHE=1 \
-		--build-arg CARGO_BUILD_JOBS=2 \
-		--memory=4g --memory-swap=6g .
+		--build-arg CARGO_BUILD_JOBS=1 \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ Ubuntu Docker image built successfully!"
 
 # Build Docker image for CentOS test
@@ -741,19 +743,25 @@ docker-build-ubuntu-fresh:
 	@echo "🐳 Building fresh Ubuntu Docker image (no cache)..."
 	@docker build --no-cache --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os \
 		--build-arg BUILDKIT_INLINE_CACHE=1 \
-		--build-arg CARGO_BUILD_JOBS=2 \
-		--memory=4g --memory-swap=6g .
+		--build-arg CARGO_BUILD_JOBS=1 \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ Fresh Ubuntu Docker image built successfully!"
 
 # Run Docker container for Ubuntu testing
 docker-run-ubuntu:
 	@echo "🐳 Running Docker container for Ubuntu testing..."
 	@docker run --rm -it \
-		--memory=4g --memory-swap=6g \
-		--cpus=2 \
+		--memory=8g --memory-swap=12g \
+		--cpus=1 \
+		--shm-size=2g \
 		--ulimit nofile=65536:65536 \
-		--env CARGO_BUILD_JOBS=2 \
+		--ulimit memlock=-1:-1 \
+		--env CARGO_BUILD_JOBS=1 \
 		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
 		crdt-ubuntu
 
 # Run Docker container for CentOS testing
@@ -775,6 +783,29 @@ docker-run-all:
 	@docker run --rm -it crdt-centos
 	@echo "Running Arch Linux container..."
 	@docker run --rm -it crdt-arch
+
+# Optimized Ubuntu Docker build and run for Linux environments with memory constraints
+docker-ubuntu-memory-optimized:
+	@echo "🐳 Building and running memory-optimized Ubuntu Docker container..."
+	@docker build --target ubuntu-test -t crdt-ubuntu-optimized -f dockerfile-test-os \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg CARGO_BUILD_JOBS=1 \
+		--memory=12g --memory-swap=16g \
+		--shm-size=4g .
+	@docker run --rm -it \
+		--memory=12g --memory-swap=16g \
+		--cpus=1 \
+		--shm-size=4g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--ulimit stack=8388608 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false -C link-arg=-Wl,--no-keep-memory" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		--env CARGO_PROFILE_DEV_OPT_LEVEL=1 \
+		crdt-ubuntu-optimized
 
 
 # Run the store in watch mode with PG library configurations
