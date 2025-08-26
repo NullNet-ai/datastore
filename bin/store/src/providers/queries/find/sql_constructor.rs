@@ -452,6 +452,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
             }
         }
 
+        // set pluck as selections
+        if !self.request_body.get_pluck().is_empty() {
+            let pluck = self.construct_pluck();
+            if !pluck.is_empty() {
+                selections.push(pluck);
+            }
+        }
+
         // Add join selections from pluck_object if joins are present
         if !self.request_body.get_joins().is_empty()
             && !self.request_body.get_pluck_object().is_empty()
@@ -466,13 +474,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 selections.extend(join_selections);
             }
         }
-        // set pluck as selections
-        if !self.request_body.get_pluck().is_empty() {
-            let pluck = self.construct_pluck();
-            if !pluck.is_empty() {
-                selections.push(pluck);
-            }
-        }
+
         // set pluck group object as selections
         if !self.request_body.get_pluck_group_object().is_empty() {
             let pluck_group_object = self.construct_pluck_group_object();
