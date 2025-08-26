@@ -56,7 +56,7 @@ impl GeneratorService {
             // Extract indexes and foreign keys from table definition file
             let (indexes, foreign_keys) = {
                 // Find the table definition file to read its content
-                let table_files_dir = "src/schema/tables";
+                let table_files_dir = SCHEMA_TABLES_DIR;
 
                 // Try multiple possible file names for the table
                 let possible_files = vec![
@@ -312,7 +312,7 @@ impl GeneratorService {
 
     /// Write model file to the models directory
     fn write_model_file(table_name: &str, model_content: &str) -> Result<(), String> {
-        let models_dir = Path::new("src/models");
+        let models_dir = Path::new(MODELS_DIR);
 
         // Create models directory if it doesn't exist
         if !models_dir.exists() {
