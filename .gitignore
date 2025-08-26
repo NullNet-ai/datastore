@@ -41,6 +41,8 @@ Thumbs.db
 # Test files
 /tests/*.test.*
 /tests/*.rs
+/bin/store/src/database/schema/tables/test_samples.rs
 
 # Log files
 /logs/
+/logs/bin/store/logs/*
