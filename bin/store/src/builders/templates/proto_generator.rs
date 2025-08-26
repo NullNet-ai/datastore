@@ -3,7 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-use crate::constants::paths::proto::{BUILD_SCRIPT, SOURCE_FILE};
+use crate::constants::paths::proto::{BUILD_SCRIPT};
 use crate::constants::paths::templates::PROTO_FILE_NAME;
 use crate::constants::paths::GENERATED_DIR;
 use crate::utils::utils::{parse_tables, to_singular, Table};
@@ -56,7 +56,7 @@ pub fn generate_protos(schema_path: &str, output_dir: &str) {
             let proto_content = generate_unified_proto(&tables);
 
             // Write proto file
-            let file_path = Path::new(output_dir).join(SOURCE_FILE);
+            let file_path = Path::new(output_dir).join(PROTO_FILE_NAME);
             match File::create(&file_path) {
                 Ok(mut file) => match file.write_all(proto_content.as_bytes()) {
                     Ok(_) => info!("Successfully wrote proto content to file"),
