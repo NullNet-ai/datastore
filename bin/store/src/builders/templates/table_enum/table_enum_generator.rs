@@ -47,6 +47,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "use diesel_async::RunQueryDsl;")?;
     writeln!(file, "use serde_json::{{Map, Value}};")?;
     writeln!(file, "use crate::database::db;")?;
+    writeln!(file, "use crate::models::counter_model::CounterModel;")?;
 
     writeln!(file, "")?;
 
