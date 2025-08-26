@@ -1,7 +1,6 @@
-use crate::builders::generator::field_definition::TableDefinition;
 use crate::constants::paths;
-use crate::constants::paths::database::{MIGRATIONS_DIR, UP_SQL_FILE};
-use crate::database::schema::verify::{
+use crate::schema::generator::field_definition::TableDefinition;
+use crate::schema::verify::{
     field_exists_in_table, field_type_in_table, get_table_fields, FieldTypeInfo,
 };
 use regex::Regex;
@@ -139,7 +138,7 @@ impl SchemaGenerator {
     pub fn analyze_changes_with_indexes_and_foreign_keys(
         table_def: &TableDefinition,
         indexes: &[(String, Vec<String>, bool, Option<String>)],
-        foreign_keys: &[crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition],
+        foreign_keys: &[crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition],
     ) -> Result<Vec<SchemaChange>, String> {
         // Validate that hypertables don't have foreign key constraints
         if table_def.is_hypertable
@@ -288,11 +287,11 @@ impl SchemaGenerator {
     /// Check if an index already exists for a table
     fn index_exists_in_schema(table_name: &str, index_name: &str) -> bool {
         // Read the migrations directory to check if this index was already created
-        let migrations_dir = MIGRATIONS_DIR;
+        let migrations_dir = paths::database::MIGRATIONS_DIR;
 
         if let Ok(entries) = std::fs::read_dir(migrations_dir) {
             for entry in entries.flatten() {
-                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(UP_SQL_FILE)) {
+                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)) {
                     // Check if this index was already created in a previous migration
                     // Pattern matches: CREATE [UNIQUE] INDEX [IF NOT EXISTS] "index_name" ON "table_name"
                     let index_pattern = format!(
@@ -305,20 +304,75 @@ impl SchemaGenerator {
                             return true;
                         }
                     }
+
+                    // Also check for alternative index naming formats
+                    // Extract field name from index_name to check for both formats:
+                    // Format 1: idx_{table_name}_{field} (new format)
+                    // Format 2: {table_name}_{field}_idx (old format)
+                    if let Some(field_name) =
+                        Self::extract_field_from_index_name(table_name, index_name)
+                    {
+                        // Check for old format: {table_name}_{field}_idx
+                        let old_format_name = format!("{}_{}_{}", table_name, field_name, "idx");
+                        let old_pattern = format!(
+                            r#"CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?["']?{}["']?\s+ON\s+["']?{}["']?"#,
+                            regex::escape(&old_format_name),
+                            regex::escape(table_name)
+                        );
+                        if let Ok(old_regex) = Regex::new(&old_pattern) {
+                            if old_regex.is_match(&up_sql) {
+                                return true;
+                            }
+                        }
+
+                        // Check for new format: idx_{table_name}_{field}
+                        let new_format_name = format!("idx_{}_{}", table_name, field_name);
+                        let new_pattern = format!(
+                            r#"CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?["']?{}["']?\s+ON\s+["']?{}["']?"#,
+                            regex::escape(&new_format_name),
+                            regex::escape(table_name)
+                        );
+                        if let Ok(new_regex) = Regex::new(&new_pattern) {
+                            if new_regex.is_match(&up_sql) {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
         }
         false
     }
 
+    /// Extract field name from index name for both naming formats
+    fn extract_field_from_index_name(table_name: &str, index_name: &str) -> Option<String> {
+        // Handle new format: idx_{table_name}_{field}
+        let new_prefix = format!("idx_{}_", table_name);
+        if index_name.starts_with(&new_prefix) {
+            return Some(index_name[new_prefix.len()..].to_string());
+        }
+
+        // Handle old format: {table_name}_{field}_idx
+        let old_suffix = "_idx";
+        if index_name.starts_with(table_name) && index_name.ends_with(old_suffix) {
+            let start = table_name.len() + 1; // +1 for the underscore
+            let end = index_name.len() - old_suffix.len();
+            if start < end {
+                return Some(index_name[start..end].to_string());
+            }
+        }
+
+        None
+    }
+
     /// Check if a foreign key already exists for a table
     fn foreign_key_exists_in_schema(table_name: &str, constraint_name: &str) -> bool {
         // Read the migrations directory to check if this foreign key was already created
-        let migrations_dir = MIGRATIONS_DIR;
+        let migrations_dir = paths::database::MIGRATIONS_DIR;
 
         if let Ok(entries) = std::fs::read_dir(migrations_dir) {
             for entry in entries.flatten() {
-                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(UP_SQL_FILE)) {
+                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)) {
                     // Check if this foreign key was already created in a previous migration
                     // Pattern matches: ALTER TABLE "table_name" ADD CONSTRAINT "constraint_name"
                     let fk_pattern = format!(
@@ -448,9 +502,9 @@ impl SchemaGenerator {
 
     /// Order fields properly according to system fields macro and entity-specific fields
     fn order_fields_properly(
-        existing_fields: &[crate::builders::generator::field_definition::ParsedField],
-        new_fields: &[crate::builders::generator::field_definition::ParsedField],
-    ) -> Result<Vec<crate::builders::generator::field_definition::ParsedField>, String> {
+        existing_fields: &[crate::schema::generator::field_definition::ParsedField],
+        new_fields: &[crate::schema::generator::field_definition::ParsedField],
+    ) -> Result<Vec<crate::schema::generator::field_definition::ParsedField>, String> {
         let system_field_names = Self::get_system_field_names()?;
         let mut ordered_fields = Vec::new();
 
