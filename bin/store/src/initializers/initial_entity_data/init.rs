@@ -3,7 +3,7 @@ use crate::database::db;
 // use crate::init::initial_entity_data::connections::get_initial_connections;
 use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
 use crate::generated::table_enum::{generate_code, Table};
-use crate::init::structs::InitializerParams;
+use crate::initializers::structs::InitializerParams;
 use crate::providers::operations::sync::sync_service;
 use actix_web::http::StatusCode;
 use serde_json::Value;

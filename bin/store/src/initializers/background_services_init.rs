@@ -1,6 +1,6 @@
 use crate::controllers::store_controller::ApiError;
-use crate::init::code_prefix_init::get_code_prefix_initializer;
-use crate::init::initial_entity_data::init::get_initial_entity_data_initializer;
+use crate::initializers::code_prefix_init::get_code_prefix_initializer;
+use crate::initializers::initial_entity_data::init::get_initial_entity_data_initializer;
 use crate::middlewares::session_middleware;
 use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
 use std::env;
@@ -15,7 +15,7 @@ impl BackgroundServicesInitializer {
 
     pub async fn initialize(
         &self,
-        _params: Option<crate::init::structs::InitializerParams>,
+        _params: Option<crate::initializers::structs::InitializerParams>,
     ) -> Result<(), ApiError> {
         log::info!("Initializing background services...");
 

@@ -6,7 +6,7 @@ use crate::generated::models::account_profile_model::AccountProfileModel;
 use crate::generated::models::counter_model::CounterModel;
 use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema;
-use crate::init::structs::InitializerParams;
+use crate::initializers::structs::InitializerParams;
 use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
