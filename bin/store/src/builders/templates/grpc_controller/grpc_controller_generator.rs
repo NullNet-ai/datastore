@@ -102,7 +102,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         file,
         "use crate::middlewares::shutdown_middleware::GrpcShutdownInterceptor;"
     )?;
-    writeln!(file, "use crate::providers::find::DynamicResult;")?;
+    writeln!(file, "use crate::providers::queries::find::DynamicResult;")?;
 
     writeln!(file, "use crate::structs::structs::RequestBody;")?;
     writeln!(
