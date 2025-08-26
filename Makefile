@@ -66,19 +66,118 @@ help:
 # Installation and Setup targets
 # =============================================================================
 
+# Common setup tasks
+setup-env:
+	@# Setup environment file
+	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		powershell -Command "if (!(Test-Path '.env')) { Write-Host '📄 Setting up environment file...'; Copy-Item '.env-sample' '.env'; Write-Host '✅ Environment file created from .env-sample' } else { Write-Host '✅ Environment file already exists' }"; \
+	else \
+		if [ ! -f ".env" ]; then \
+			echo "📄 Setting up environment file..."; \
+			cp .env-sample .env; \
+			echo "✅ Environment file created from .env-sample"; \
+		else \
+			echo "✅ Environment file already exists"; \
+		fi; \
+	fi
+
+install-rust:
+	@# Install Rust 1.86.0 specifically
+	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		powershell -Command "if (!(Get-Command rustc -ErrorAction SilentlyContinue)) { Write-Host '🦀 Installing Rust 1.86.0...'; Invoke-WebRequest -Uri 'https://win.rustup.rs/' -OutFile 'rustup-init.exe'; .\rustup-init.exe -y --default-toolchain 1.86.0; Remove-Item rustup-init.exe } else { Write-Host '🔍 Checking Rust version...'; $$rustVersion = (rustc --version).Split(' ')[1]; if ($$rustVersion -ne '1.86.0') { Write-Host '⚠️  Current Rust version: ' + $$rustVersion + ', required: 1.86.0'; Write-Host '🔄 Installing Rust 1.86.0...'; rustup install 1.86.0; rustup default 1.86.0 } else { Write-Host '✅ Rust 1.86.0 already installed' } }"; \
+	else \
+		if ! command -v rustc >/dev/null 2>&1; then \
+			echo "🦀 Installing Rust 1.86.0..."; \
+			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.86.0; \
+			if [ -f "$$HOME/.cargo/env" ]; then \
+				. "$$HOME/.cargo/env"; \
+			fi; \
+		else \
+			echo "🔍 Checking Rust version..."; \
+			RUST_VERSION=$$(rustc --version | cut -d' ' -f2); \
+			if [ "$$RUST_VERSION" != "1.86.0" ]; then \
+				echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.86.0"; \
+				echo "🔄 Installing Rust 1.86.0..."; \
+				rustup install 1.86.0; \
+				rustup default 1.86.0; \
+			else \
+				echo "✅ Rust 1.86.0 already installed"; \
+			fi; \
+		fi; \
+	fi
+
+install-rust-tools:
+	@# Install Rust tools
+	@echo "🔨 Installing Rust development tools..."
+	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install cargo-make cargo-watch"; \
+		powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install diesel_cli --no-default-features --features postgres"; \
+	else \
+		export PATH="$$HOME/.cargo/bin:$$PATH"; \
+		if [ -f "$$HOME/.cargo/env" ]; then \
+			. "$$HOME/.cargo/env"; \
+		fi; \
+		cargo install cargo-make cargo-watch; \
+		export PATH="$$HOME/.cargo/bin:$$PATH"; \
+		if [ -f "$$HOME/.cargo/env" ]; then \
+			. "$$HOME/.cargo/env"; \
+		fi; \
+		cargo install diesel_cli --no-default-features --features postgres; \
+	fi
+
+start-docker-services:
+	@echo "⏳ Waiting 5 seconds before starting Docker services..."
+	@sleep 5
+	@# Start Docker Compose services
+	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
+	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		powershell -Command "if (Test-Path 'bin/store/docker-compose.yml') { if (Get-Command docker -ErrorAction SilentlyContinue) { try { docker info | Out-Null; docker-compose -f bin/store/docker-compose.yml up -d; Write-Host '✅ Docker Compose services started successfully!' } catch { Write-Host '⚠️  Docker daemon is not running. Please start Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker not found. Please install Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker Compose file not found at bin/store/docker-compose.yml' }"; \
+	else \
+		if [ -f "bin/store/docker-compose.yml" ]; then \
+			if command -v docker >/dev/null 2>&1; then \
+				if docker info >/dev/null 2>&1; then \
+					docker-compose -f bin/store/docker-compose.yml up -d; \
+					echo "✅ Docker Compose services started successfully!"; \
+				else \
+					echo "⚠️  Docker daemon is not running. Please start Docker Desktop and try again."; \
+					echo "   You can manually start services later with: make docker-compose-up"; \
+				fi; \
+			else \
+				echo "⚠️  Docker not found. Please install Docker Desktop and try again."; \
+				echo "   You can manually start services later with: make docker-compose-up"; \
+			fi; \
+		else \
+			echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
+		fi; \
+	fi
+
+finalize-setup:
+	@# Seeding database
+	@echo "🌱 Seeding Store database..."
+	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; make store-clean-setup"; \
+	else \
+		export PATH="$$HOME/.cargo/bin:$$PATH" && make store-clean-setup; \
+	fi
+	@echo "✅ Store database seeded!"
+	@# Setup git hooks
+	@make setup-hooks
+	@echo "✅ Installation complete! Run 'make store' to start the project."
+
 # One-command installer for seamless project setup
 install:
 	@echo "🚀 Setting up CRDT Workspace - One-command installer"
+	@make setup-env
 	@echo "📋 Detecting operating system..."
 	@if [ "$$(uname)" = "Darwin" ]; then \
 		echo "🍎 macOS detected"; \
-		make install-macos; \
+		make install-macos-deps; \
 	elif [ "$$(uname)" = "Linux" ]; then \
 		echo "🐧 Linux detected"; \
-		make install-linux; \
+		make install-linux-deps; \
 	elif [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
 		echo "🪟 Windows detected"; \
-		make install-windows; \
+		make install-windows-deps; \
 	else \
 		echo "❌ Unsupported operating system: $$(uname)"; \
 		echo "Please install dependencies manually:"; \
@@ -88,26 +187,15 @@ install:
 		echo "  - cargo-make, cargo-watch, diesel_cli"; \
 		exit 1; \
 	fi
-	@# Seeding database
-	@echo "🌱 Seeding Store database..."
-	@export PATH="$$HOME/.cargo/bin:$$PATH" && make store-clean-setup
-	@echo "✅ Store database seeded!"
-	@# Setup git hooks
-	@make setup-hooks
-	@echo "✅ Installation complete! Run 'make store' to start the project."
+	@make install-rust
+	@make install-rust-tools
+	@make start-docker-services
+	@make finalize-setup
 	
 
-# macOS installation
-install-macos:
-	@echo "🔧 Installing dependencies for macOS..."
-	@# Setup environment file
-	@if [ ! -f ".env" ]; then \
-		echo "📄 Setting up environment file..."; \
-		cp .env-sample .env; \
-		echo "✅ Environment file created from .env-sample"; \
-	else \
-		echo "✅ Environment file already exists"; \
-	fi
+# macOS system dependencies installation
+install-macos-deps:
+	@echo "🔧 Installing system dependencies for macOS..."
 	@# Check if Homebrew is installed
 	@if ! command -v brew >/dev/null 2>&1; then \
 		echo "📦 Installing Homebrew..."; \
@@ -135,57 +223,14 @@ install-macos:
 	else \
 		echo "✅ Protocol Buffers already installed"; \
 	fi
-	@# Install Rust 1.86.0 specifically
-	@if ! command -v rustc >/dev/null 2>&1; then \
-		echo "🦀 Installing Rust 1.86.0..."; \
-		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.86.0; \
-	else \
-		echo "🔍 Checking Rust version..."; \
-		RUST_VERSION=$$(rustc --version | cut -d' ' -f2); \
-		if [ "$$RUST_VERSION" != "1.86.0" ]; then \
-			echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.86.0"; \
-			echo "🔄 Installing Rust 1.86.0..."; \
-			rustup install 1.86.0; \
-			rustup default 1.86.0; \
-		else \
-			echo "✅ Rust 1.86.0 already installed"; \
-		fi; \
-	fi
-	@# Install Rust tools
-	@echo "🔨 Installing Rust development tools..."
-	@export PATH="$$HOME/.cargo/bin:$$PATH" && cargo install cargo-make cargo-watch
-	@export PATH="$$HOME/.cargo/bin:$$PATH" && cargo install diesel_cli --no-default-features --features postgres
-	@# Start Docker Compose services
-	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
-	@if [ -f "bin/store/docker-compose.yml" ]; then \
-		if command -v docker >/dev/null 2>&1; then \
-			if docker info >/dev/null 2>&1; then \
-				docker-compose -f bin/store/docker-compose.yml up -d; \
-				echo "✅ Docker Compose services started successfully!"; \
-			else \
-				echo "⚠️  Docker daemon is not running. Please start Docker Desktop and try again."; \
-				echo "   You can manually start services later with: make docker-compose-up"; \
-			fi; \
-		else \
-			echo "⚠️  Docker not found. Please install Docker Desktop and try again."; \
-			echo "   You can manually start services later with: make docker-compose-up"; \
-		fi; \
-	else \
-		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
-	fi
-	@echo "🎉 macOS setup complete!"
+	@echo "🎉 macOS system dependencies installed!"
 
-# Linux installation
-install-linux:
-	@echo "🔧 Installing dependencies for Linux..."
-	@# Setup environment file
-	@if [ ! -f ".env" ]; then \
-		echo "📄 Setting up environment file..."; \
-		cp .env-sample .env; \
-		echo "✅ Environment file created from .env-sample"; \
-	else \
-		echo "✅ Environment file already exists"; \
-	fi
+# Legacy target for backward compatibility
+install-macos: install-macos-deps install-rust install-rust-tools start-docker-services finalize-setup
+
+# Linux system dependencies installation
+install-linux-deps:
+	@echo "🔧 Installing system dependencies for Linux..."
 	@# Detect package manager and install PostgreSQL and Protocol Buffers
 	@if command -v apt-get >/dev/null 2>&1; then \
 		echo "📦 Using apt-get (Debian/Ubuntu)"; \
@@ -212,53 +257,14 @@ install-linux:
 		echo "❌ Unsupported package manager. Please install PostgreSQL and Protocol Buffers manually."; \
 		exit 1; \
 	fi
-	@# Install Rust 1.86.0 specifically
-	@if ! command -v rustc >/dev/null 2>&1; then \
-		echo "🦀 Installing Rust 1.86.0..."; \
-		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.86.0; \
-		echo "🔄 Sourcing Rust environment..."; \
-		. "$$HOME/.cargo/env"; \
-	else \
-		echo "🔍 Checking Rust version..."; \
-		RUST_VERSION=$$(rustc --version | cut -d' ' -f2); \
-		if [ "$$RUST_VERSION" != "1.86.0" ]; then \
-			echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.86.0"; \
-			echo "🔄 Installing Rust 1.86.0..."; \
-			rustup install 1.86.0; \
-			rustup default 1.86.0; \
-		else \
-			echo "✅ Rust 1.86.0 already installed"; \
-		fi; \
-	fi
-	@# Install Rust tools
-	@echo "🔨 Installing Rust development tools..."
-	@. "$$HOME/.cargo/env" && cargo install cargo-make cargo-watch
-	@. "$$HOME/.cargo/env" && cargo install diesel_cli --no-default-features --features postgres
-	@# Start Docker Compose services
-	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
-	@if [ -f "bin/store/docker-compose.yml" ]; then \
-		if command -v docker >/dev/null 2>&1; then \
-			if docker info >/dev/null 2>&1; then \
-				docker-compose -f bin/store/docker-compose.yml up -d; \
-				echo "✅ Docker Compose services started successfully!"; \
-			else \
-				echo "⚠️  Docker daemon is not running. Please start Docker service and try again."; \
-				echo "   You can manually start services later with: make docker-compose-up"; \
-			fi; \
-		else \
-			echo "⚠️  Docker not found. Please install Docker and try again."; \
-			echo "   You can manually start services later with: make docker-compose-up"; \
-		fi; \
-	else \
-		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
-	fi
-	@echo "🎉 Linux setup complete!"
+	@echo "🎉 Linux system dependencies installed!"
 
-# Windows installation
-install-windows:
+# Legacy target for backward compatibility
+install-linux: install-linux-deps install-rust install-rust-tools start-docker-services finalize-setup
+
+# Windows system dependencies installation
+install-windows-deps:
 	@echo "🔧 Installing dependencies for Windows..."
-	@# Setup environment file
-	@powershell -Command "if (!(Test-Path '.env')) { Write-Host '📄 Setting up environment file...'; Copy-Item '.env-sample' '.env'; Write-Host '✅ Environment file created from .env-sample' } else { Write-Host '✅ Environment file already exists' }"
 	@# Check if Chocolatey is installed
 	@powershell -Command "if (!(Get-Command choco -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Chocolatey...'; Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) } else { Write-Host '✅ Chocolatey already installed' }"
 	@# Install PostgreSQL using Chocolatey
@@ -267,16 +273,9 @@ install-windows:
 	@powershell -Command "if (!(Get-Command protoc -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Protocol Buffers...'; choco install protoc -y } else { Write-Host '✅ Protocol Buffers already installed' }"
 	@# Install Git if not present
 	@powershell -Command "if (!(Get-Command git -ErrorAction SilentlyContinue)) { Write-Host '📦 Installing Git...'; choco install git -y } else { Write-Host '✅ Git already installed' }"
-	@# Install Rust 1.86.0 specifically
-	@powershell -Command "if (!(Get-Command rustc -ErrorAction SilentlyContinue)) { Write-Host '🦀 Installing Rust 1.86.0...'; Invoke-WebRequest -Uri 'https://win.rustup.rs/' -OutFile 'rustup-init.exe'; .\rustup-init.exe -y --default-toolchain 1.86.0; Remove-Item rustup-init.exe } else { Write-Host '🔍 Checking Rust version...'; $$rustVersion = (rustc --version).Split(' ')[1]; if ($$rustVersion -ne '1.86.0') { Write-Host '⚠️  Current Rust version: ' + $$rustVersion + ', required: 1.86.0'; Write-Host '🔄 Installing Rust 1.86.0...'; rustup install 1.86.0; rustup default 1.86.0 } else { Write-Host '✅ Rust 1.86.0 already installed' } }"
-	@# Install Rust tools
-	@echo "🔨 Installing Rust development tools..."
-	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install cargo-make cargo-watch"
-	@powershell -Command "$$env:PATH += ';' + $$env:USERPROFILE + '\.cargo\bin'; cargo install diesel_cli --no-default-features --features postgres"
-	@# Start Docker Compose services
-	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
-	@powershell -Command "if (Test-Path 'bin/store/docker-compose.yml') { if (Get-Command docker -ErrorAction SilentlyContinue) { try { docker info | Out-Null; docker-compose -f bin/store/docker-compose.yml up -d; Write-Host '✅ Docker Compose services started successfully!' } catch { Write-Host '⚠️  Docker daemon is not running. Please start Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker not found. Please install Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker Compose file not found at bin/store/docker-compose.yml' }"
-	@echo "🎉 Windows setup complete!"
+
+# Legacy target for backward compatibility
+install-windows: setup-env install-windows-deps install-rust install-rust-tools start-docker-services finalize-setup
 
 # Verify installation
 verify-install:
