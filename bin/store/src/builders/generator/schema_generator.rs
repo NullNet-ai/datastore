@@ -1,6 +1,6 @@
 use crate::constants::paths;
-use crate::schema::generator::field_definition::TableDefinition;
-use crate::schema::verify::{
+use crate::builders::generator::field_definition::TableDefinition;
+use crate::database::schema::verify::{
     field_exists_in_table, field_type_in_table, get_table_fields, FieldTypeInfo,
 };
 use regex::Regex;
@@ -138,7 +138,7 @@ impl SchemaGenerator {
     pub fn analyze_changes_with_indexes_and_foreign_keys(
         table_def: &TableDefinition,
         indexes: &[(String, Vec<String>, bool, Option<String>)],
-        foreign_keys: &[crate::schema::generator::diesel_schema_definition::ForeignKeyDefinition],
+        foreign_keys: &[crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition],
     ) -> Result<Vec<SchemaChange>, String> {
         // Validate that hypertables don't have foreign key constraints
         if table_def.is_hypertable
@@ -291,7 +291,9 @@ impl SchemaGenerator {
 
         if let Ok(entries) = std::fs::read_dir(migrations_dir) {
             for entry in entries.flatten() {
-                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)) {
+                if let Ok(up_sql) =
+                    std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE))
+                {
                     // Check if this index was already created in a previous migration
                     // Pattern matches: CREATE [UNIQUE] INDEX [IF NOT EXISTS] "index_name" ON "table_name"
                     let index_pattern = format!(
@@ -372,7 +374,9 @@ impl SchemaGenerator {
 
         if let Ok(entries) = std::fs::read_dir(migrations_dir) {
             for entry in entries.flatten() {
-                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)) {
+                if let Ok(up_sql) =
+                    std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE))
+                {
                     // Check if this foreign key was already created in a previous migration
                     // Pattern matches: ALTER TABLE "table_name" ADD CONSTRAINT "constraint_name"
                     let fk_pattern = format!(
@@ -502,9 +506,9 @@ impl SchemaGenerator {
 
     /// Order fields properly according to system fields macro and entity-specific fields
     fn order_fields_properly(
-        existing_fields: &[crate::schema::generator::field_definition::ParsedField],
-        new_fields: &[crate::schema::generator::field_definition::ParsedField],
-    ) -> Result<Vec<crate::schema::generator::field_definition::ParsedField>, String> {
+        existing_fields: &[crate::builders::generator::field_definition::ParsedField],
+        new_fields: &[crate::builders::generator::field_definition::ParsedField],
+    ) -> Result<Vec<crate::builders::generator::field_definition::ParsedField>, String> {
         let system_field_names = Self::get_system_field_names()?;
         let mut ordered_fields = Vec::new();
 

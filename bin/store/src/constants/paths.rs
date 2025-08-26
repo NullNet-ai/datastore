@@ -69,6 +69,3 @@ pub mod templates {
     /// Proto file name
     pub const PROTO_FILE_NAME: &str = "store.proto";
 }
-
-/// Legacy schema file path (for backward compatibility)
-pub const LEGACY_SCHEMA_FILE: &str = "schema.rs";
