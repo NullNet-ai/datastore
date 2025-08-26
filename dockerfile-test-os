@@ -1,22 +1,72 @@
 # Simple Dockerfile for testing make commands across different Linux distributions
 
-# Stage 1: Ubuntu test
-FROM ubuntu:latest AS ubuntu-test
+# Stage 1: Ubuntu base with system dependencies
+FROM ubuntu:22.04 AS ubuntu-base
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies in a single layer
 RUN apt-get update && apt-get install -y \
     make \
     git \
     sudo \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    libpq-dev \
+    postgresql-client \
+    protobuf-compiler \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Stage 2: Rust toolchain installation
+FROM ubuntu-base AS rust-builder
+
+# Set Rust compilation environment variables for memory efficiency
+ENV CARGO_BUILD_JOBS=2
+ENV CARGO_NET_RETRY=10
+ENV RUSTFLAGS="-C target-cpu=generic -C opt-level=2"
+ENV RUST_BACKTRACE=1
+
+# Install Rust 1.86.0 with minimal components
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    --default-toolchain 1.86.0 \
+    --profile minimal \
+    --component rustfmt,clippy
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Rust tools with optimized settings
+RUN cargo install --locked cargo-make cargo-watch && \
+    cargo install --locked diesel_cli --no-default-features --features postgres
+
+# Stage 3: Ubuntu test environment
+FROM rust-builder AS ubuntu-test
 
 WORKDIR /app
-COPY . .
-RUN cp .env-sample .env && \
-    sed -i 's/localhost/host.docker.internal/g' .env
 
+# Copy dependency files first for better caching
+COPY Cargo.toml Cargo.lock ./
+COPY libs/ libs/
+COPY bin/ bin/
+
+# Copy configuration files
+COPY .env-sample .env
+RUN sed -i 's/localhost/host.docker.internal/g' .env
+
+# Copy remaining files
+COPY Makefile ./
+COPY dockerfile-test-os ./
+
+# Run make help (lightweight operation)
 RUN make help
-RUN make install
+
+# Pre-compile dependencies to cache them
+RUN cargo fetch --locked
+
+# Run optimized installation with memory limits
+RUN ulimit -v 3145728 && make install-rust-tools
 
 CMD ["make", "store"]
 

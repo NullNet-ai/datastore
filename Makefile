@@ -8,7 +8,7 @@
         fmt fmt-check git-cleanup setup-hooks \
         jean-store-watch store-experimental store-initialize-device \
         pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete \
-        docker-build-ubuntu docker-build-centos docker-build-arch docker-build-all \
+        docker-build-ubuntu docker-build-ubuntu-clean docker-build-ubuntu-fresh docker-build-centos docker-build-arch docker-build-all \
         docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all \
         docker-compose-up docker-compose-down docker-compose-restart docker-compose-logs docker-compose-ps
 
@@ -48,6 +48,8 @@ help:
 	@echo "  pm2-logs                - Show PM2 logs"
 	@echo "  pm2-delete              - Delete all PM2 processes"
 	@echo "  docker-build-ubuntu     - Build Docker image for Ubuntu test"
+	@echo "  docker-build-ubuntu-clean - Build Ubuntu Docker image with cleanup"
+	@echo "  docker-build-ubuntu-fresh - Build fresh Ubuntu Docker image (no cache)"
 	@echo "  docker-build-centos     - Build Docker image for CentOS test"
 	@echo "  docker-build-arch       - Build Docker image for Arch Linux test"
 	@echo "  docker-build-all        - Build Docker images for all distributions"
@@ -189,7 +191,6 @@ install:
 	fi
 	@make install-rust
 	@make install-rust-tools
-	@make start-docker-services
 	@make finalize-setup
 	
 
@@ -224,6 +225,7 @@ install-macos-deps:
 		echo "✅ Protocol Buffers already installed"; \
 	fi
 	@echo "🎉 macOS system dependencies installed!"
+	@make start-docker-services
 
 # Legacy target for backward compatibility
 install-macos: install-macos-deps install-rust install-rust-tools start-docker-services finalize-setup
@@ -705,7 +707,10 @@ docker-compose-ps:
 # Build Docker image for Ubuntu test
 docker-build-ubuntu:
 	@echo "🐳 Building Docker image for Ubuntu test..."
-	@docker build --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os .
+	@docker build --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg CARGO_BUILD_JOBS=2 \
+		--memory=4g --memory-swap=6g .
 	@echo "✅ Ubuntu Docker image built successfully!"
 
 # Build Docker image for CentOS test
@@ -724,10 +729,32 @@ docker-build-arch:
 docker-build-all: docker-build-ubuntu docker-build-centos docker-build-arch
 	@echo "✅ All Docker images built successfully!"
 
+# Build Docker image for Ubuntu test with cleanup
+docker-build-ubuntu-clean:
+	@echo "🧹 Cleaning up previous Ubuntu Docker artifacts..."
+	@docker system prune -f --filter "label=stage=ubuntu-test" || true
+	@docker rmi crdt-ubuntu || true
+	@make docker-build-ubuntu
+
+# Build Docker image for Ubuntu test with no cache
+docker-build-ubuntu-fresh:
+	@echo "🐳 Building fresh Ubuntu Docker image (no cache)..."
+	@docker build --no-cache --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg CARGO_BUILD_JOBS=2 \
+		--memory=4g --memory-swap=6g .
+	@echo "✅ Fresh Ubuntu Docker image built successfully!"
+
 # Run Docker container for Ubuntu testing
 docker-run-ubuntu:
 	@echo "🐳 Running Docker container for Ubuntu testing..."
-	@docker run --rm -it crdt-ubuntu
+	@docker run --rm -it \
+		--memory=4g --memory-swap=6g \
+		--cpus=2 \
+		--ulimit nofile=65536:65536 \
+		--env CARGO_BUILD_JOBS=2 \
+		--env RUST_BACKTRACE=1 \
+		crdt-ubuntu
 
 # Run Docker container for CentOS testing
 docker-run-centos:
