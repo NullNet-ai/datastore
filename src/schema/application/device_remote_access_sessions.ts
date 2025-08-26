@@ -30,7 +30,7 @@ export const table = pgTable(
 
     timestamp: timestamp('timestamp', {
       withTimezone: true,
-      mode: 'string',
+      // mode: 'string',
     }).defaultNow(),
   },
   config,
