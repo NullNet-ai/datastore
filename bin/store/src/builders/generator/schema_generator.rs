@@ -1,5 +1,6 @@
 use crate::builders::generator::field_definition::TableDefinition;
 use crate::constants::paths;
+use crate::constants::paths::database::{MIGRATIONS_DIR, UP_SQL_FILE};
 use crate::database::schema::verify::{
     field_exists_in_table, field_type_in_table, get_table_fields, FieldTypeInfo,
 };
@@ -287,11 +288,11 @@ impl SchemaGenerator {
     /// Check if an index already exists for a table
     fn index_exists_in_schema(table_name: &str, index_name: &str) -> bool {
         // Read the migrations directory to check if this index was already created
-        let migrations_dir = "migrations";
+        let migrations_dir = MIGRATIONS_DIR;
 
         if let Ok(entries) = std::fs::read_dir(migrations_dir) {
             for entry in entries.flatten() {
-                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join("up.sql")) {
+                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(UP_SQL_FILE)) {
                     // Check if this index was already created in a previous migration
                     // Pattern matches: CREATE [UNIQUE] INDEX [IF NOT EXISTS] "index_name" ON "table_name"
                     let index_pattern = format!(
@@ -313,11 +314,11 @@ impl SchemaGenerator {
     /// Check if a foreign key already exists for a table
     fn foreign_key_exists_in_schema(table_name: &str, constraint_name: &str) -> bool {
         // Read the migrations directory to check if this foreign key was already created
-        let migrations_dir = "migrations";
+        let migrations_dir = MIGRATIONS_DIR;
 
         if let Ok(entries) = std::fs::read_dir(migrations_dir) {
             for entry in entries.flatten() {
-                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join("up.sql")) {
+                if let Ok(up_sql) = std::fs::read_to_string(entry.path().join(UP_SQL_FILE)) {
                     // Check if this foreign key was already created in a previous migration
                     // Pattern matches: ALTER TABLE "table_name" ADD CONSTRAINT "constraint_name"
                     let fk_pattern = format!(

@@ -207,6 +207,7 @@ fn default_pluck() -> String {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct Clock {
     pub timestamp: MutableTimestamp,
     pub merkle: MerkleTree,

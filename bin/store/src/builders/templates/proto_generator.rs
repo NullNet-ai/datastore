@@ -5,6 +5,7 @@ use std::path::Path;
 
 use crate::constants::paths::proto::{BUILD_SCRIPT, SOURCE_FILE};
 use crate::constants::paths::templates::PROTO_FILE_NAME;
+use crate::constants::paths::GENERATED_DIR;
 use crate::utils::utils::{parse_tables, to_singular, Table};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
@@ -653,7 +654,10 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("\n    tonic_build::configure()\n");
     build_content.push_str("        .build_server(true)   // Enable server code (default)\n");
     build_content.push_str("        .build_client(false)   // Enable client code (default)\n");
-    build_content.push_str("        .out_dir(\"src/generated\") // Custom output directory\n");
+    build_content.push_str(&format!(
+        "        .out_dir(\"{}\") // Custom output directory\n",
+        GENERATED_DIR
+    ));
     build_content.push_str("        .compile_protos(\n");
 
     // Add all proto files to the compile function

@@ -39,6 +39,11 @@ pub mod database {
 
     /// Migrations directory
     pub const MIGRATIONS_DIR: &str = "migrations";
+
+    /// Migration up SQL file
+    pub const UP_SQL_FILE: &str = "up.sql";
+
+
 }
 
 /// Proto generation path constants
@@ -60,21 +65,15 @@ pub mod grpc {
     /// Generated gRPC controller file path
     pub const CONTROLLER_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/grpc_controller.rs");
 
-    /// gRPC struct converter file path
-    pub const STRUCT_CONVERTER_FILE: &str = "grpc_struct_converter.rs";
+    
 }
 
-/// Template-related path constants
+
+
+/// Template-related constants
 pub mod templates {
-    /// Proto file name constant
+    /// Proto file name
     pub const PROTO_FILE_NAME: &str = "store.proto";
-
-    /// Template directory base path
-    pub const TEMPLATES_DIR: &str = "src/builders/templates";
-
-    /// gRPC controller template directory
-    pub const GRPC_CONTROLLER_TEMPLATE_DIR: &str =
-        const_format::concatcp!(TEMPLATES_DIR, "/grpc_controller");
 }
 
 /// Legacy schema file path (for backward compatibility)

@@ -4,7 +4,8 @@ use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
 use crate::constants::paths::database::{
-    HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_TABLES_DIR, SYSTEM_FIELDS_FILE,
+    HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_FILE, SCHEMA_TABLES_DIR,
+    SYSTEM_FIELDS_FILE,
 };
 use crate::utils::utils::to_singular;
 use log::{debug, error, info};
@@ -130,7 +131,7 @@ impl GeneratorService {
                     // Check if field ordering has changed between schema and model
                     if Self::has_field_ordering_changed(&table_def)? {
                         // Rebuild the entire table in schema with proper field ordering
-                        let schema_file_path = "src/schema/schema.rs";
+                        let schema_file_path = SCHEMA_FILE;
                         let existing_content = match fs::read_to_string(schema_file_path) {
                             Ok(content) => content,
                             Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
