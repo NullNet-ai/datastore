@@ -102,6 +102,33 @@ message AggregationFilterParams {
   string type = 1; // request type
 }
 
+// UserRoles entity definition
+message UserRoles {
+  optional string id = 1;
+  optional int32 tombstone = 2;
+  optional string status = 3;
+  optional string previous_status = 4;
+  optional int32 version = 5;
+  optional string created_date = 6;
+  optional string created_time = 7;
+  optional string updated_date = 8;
+  optional string updated_time = 9;
+  optional string organization_id = 10;
+  optional string created_by = 11;
+  optional string updated_by = 12;
+  optional string deleted_by = 13;
+  optional string requested_by = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string timestamp = 18;
+  optional string role = 19;
+  optional string entity = 20;
+  optional int32 sensitivity_level = 21;
+  optional string sync_status = 22;
+  optional bool is_batch = 23;
+}
+
 // Sessions entity definition
 message Sessions {
   optional string id = 1;
@@ -741,6 +768,135 @@ message AccountSignatures {
   optional string account_profile_id = 22;
   optional string name = 23;
   optional string signature = 24;
+}
+
+// Create UserRoles request
+message CreateUserRolesRequest {
+  UserRoles user_roles = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create UserRoles response
+message CreateUserRolesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  UserRoles data = 4;
+}
+
+// Get UserRoles request
+message GetUserRolesRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get UserRoles response
+message GetUserRolesResponse {
+  bool success = 1;
+  string message = 2;
+  UserRoles data = 3;
+}
+
+// Update UserRoles request
+message UpdateUserRolesRequest {
+  UserRoles user_role = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update UserRoles response
+message UpdateUserRolesResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  UserRoles data = 4;
+}
+
+// BatchUpdate UserRoles request
+message BatchUpdateUserRolesRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  UserRoles updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate UserRoles response
+message BatchUpdateUserRolesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated UserRoles data = 4;
+}
+
+// BatchDelete UserRoles request
+message BatchDeleteUserRolesRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete UserRoles response
+message BatchDeleteUserRolesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  UserRoles data = 4;
+}
+
+// Delete UserRoles request
+message DeleteUserRolesRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete UserRoles response
+message DeleteUserRolesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  UserRoles data = 4;
+}
+
+// BatchInsert UserRoles request
+message BatchInsertUserRolesRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated UserRoles user_roles = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert UserRoles response
+message BatchInsertUserRolesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated UserRoles data = 4;
+}
+
+// Upsert UserRoles request
+message UpsertUserRolesRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    UserRoles data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert UserRoles response
+message UpsertUserRolesResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated UserRoles data = 4;
 }
 
 // Create Sessions request
@@ -3444,6 +3600,30 @@ message AggregationFilterResponse {
 
 // Store service definition with CRUD operations
 service StoreService {
+  // Create a new UserRoles
+  rpc CreateUserRoles(CreateUserRolesRequest) returns (CreateUserRolesResponse);
+
+  // Get a UserRoles by ID
+  rpc GetUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse);
+
+  // Update an existing UserRoles
+  rpc UpdateUserRoles(UpdateUserRolesRequest) returns (UpdateUserRolesResponse);
+
+  // Delete a UserRoles by ID
+  rpc DeleteUserRoles(DeleteUserRolesRequest) returns (DeleteUserRolesResponse);
+
+  // Batch insert multiple UserRoless
+  rpc BatchInsertUserRoles(BatchInsertUserRolesRequest) returns (BatchInsertUserRolesResponse);
+
+  // Batch update multiple UserRoless based on filters
+  rpc BatchUpdateUserRoles(BatchUpdateUserRolesRequest) returns (BatchUpdateUserRolesResponse);
+
+  // Batch delete multiple UserRoless based on filters
+  rpc BatchDeleteUserRoles(BatchDeleteUserRolesRequest) returns (BatchDeleteUserRolesResponse);
+
+  // Upsert a UserRoles (create if not exists, update if exists)
+  rpc UpsertUserRoles(UpsertUserRolesRequest) returns (UpsertUserRolesResponse);
+
   // Create a new Sessions
   rpc CreateSessions(CreateSessionsRequest) returns (CreateSessionsResponse);
 
