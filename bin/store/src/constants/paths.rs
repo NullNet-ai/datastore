@@ -42,8 +42,6 @@ pub mod database {
 
     /// Migration up SQL file
     pub const UP_SQL_FILE: &str = "up.sql";
-
-
 }
 
 /// Proto generation path constants
@@ -64,11 +62,7 @@ pub mod grpc {
 
     /// Generated gRPC controller file path
     pub const CONTROLLER_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/grpc_controller.rs");
-
-    
 }
-
-
 
 /// Template-related constants
 pub mod templates {
