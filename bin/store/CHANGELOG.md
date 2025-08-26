@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.74
+### Author
+Kashan Ali Khalid
+### Fixes
+- ***schema field ordering***: 
+  - Reordered fields in `user_roles` table schema to match `UserRoleModel` struct field order
+  - Moved `role`, `entity`, and `sensitivity_level` fields to appear after `timestamp` and before `sync_status` and `is_batch`
+  - Improved consistency between database schema and model definitions for better maintainability
+---
+
 ## 0.1.73
 ### Author
 Jean

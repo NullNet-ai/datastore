@@ -96,14 +96,11 @@ table! {
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         timestamp -> Nullable<Timestamp>,
-        sync_status -> Nullable<Text>,
-        is_batch -> Nullable<Bool>,
-
         role -> Nullable<Text>,
         entity -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
-
-
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
     }
 }
 
