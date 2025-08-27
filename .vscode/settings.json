@@ -1,0 +1,39 @@
+{
+    "rust-analyzer.checkOnSave": true,
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml"
+    ],
+    "rust-analyzer.cargo.buildScripts.enable": true,
+    "rust-analyzer.procMacro.enable": true,
+    "rust-analyzer.cargo.loadOutDirsFromCheck": true,
+    "rust-analyzer.checkOnSave.command": "check",
+    "rust-analyzer.checkOnSave.allTargets": false,
+    "rust-analyzer.cargo.features": "all",
+    "rust-analyzer.diagnostics.enable": true,
+    "rust-analyzer.completion.addCallParentheses": true,
+    "rust-analyzer.completion.addCallArgumentSnippets": true,
+    "rust-analyzer.inlayHints.enable": true,
+    "rust-analyzer.inlayHints.parameterHints.enable": true,
+    "rust-analyzer.inlayHints.typeHints.enable": true,
+    "rust-analyzer.lens.enable": true,
+    "rust-analyzer.lens.methodReferences": true,
+    "rust-analyzer.lens.references": true,
+    "rust-analyzer.hover.actions.enable": true,
+    "rust-analyzer.hover.actions.implementations.enable": true,
+    "rust-analyzer.hover.actions.references.enable": true,
+    "rust-analyzer.hover.actions.run.enable": true,
+    "rust-analyzer.hover.actions.debug.enable": true,
+    "rust-analyzer.runnables.command": "cargo",
+    "rust-analyzer.server.extraEnv": {
+        "PROTOC": "/opt/homebrew/bin/protoc"
+    },
+    "code-runner.executorMap": {
+        "rust": "export PROTOC=/opt/homebrew/bin/protoc && cargo test"
+    },
+    "code-runner.runInTerminal": true,
+    "code-runner.preserveFocus": false,
+    "code-runner.clearPreviousOutput": true,
+    "terminal.integrated.env.osx": {
+        "PROTOC": "/opt/homebrew/bin/protoc"
+    }
+}

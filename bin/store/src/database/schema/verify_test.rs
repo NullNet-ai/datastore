@@ -3,14 +3,14 @@ mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
     #[test]
     fn test_field_exists() {
-        // // Test with existing table and field
-        // assert!(field_exists_in_table("contacts", "name"));
+        // Test with existing table and field
+        assert!(field_exists_in_table("contacts", "first_name"));
 
-        // // Test with existing table but non-existing field
-        // assert!(!field_exists_in_table("items", "nonexistent_field"));
+        // Test with existing table but non-existing field
+        assert!(!field_exists_in_table("items", "nonexistent_field"));
 
-        // // Test with non-existing table
-        // assert!(!field_exists_in_table("nonexistent_table", "name"));
+        // Test with non-existing table
+        assert!(!field_exists_in_table("nonexistent_table", "first_name"));
     }
 
     #[test]

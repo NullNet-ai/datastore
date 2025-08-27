@@ -5,17 +5,6 @@ use std::fs;
 use std::path::Path;
 const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
-/// Verifies if a field exists in a specified table by parsing the schema.rs file
-///
-/// # Arguments
-///
-/// * `table_name` - The name of the table to check
-/// * `field_name` - The name of the field to verify
-///
-/// # Returns
-///
-/// * `bool` - True if the field exists in the table, false otherwise
-///
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
     // Path to schema.rs file
     let possible_paths = vec![
