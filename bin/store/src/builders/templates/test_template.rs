@@ -8,14 +8,83 @@
  * Use this naming convention for the test function should_<descriptive_name>
  * Apply Success and Failure scenarios
  */
+
+//! # Schema Verification Testing Module
+//!
+//! This module provides comprehensive testing for database schema verification functions.
+//! It includes unit tests and documentation tests to ensure robust field and table validation.
+//!
+//! ## Examples
+//!
+//! Basic field existence checking:
+//!
+//! ```
+//! use crate::database::schema::verify::field_exists_in_table;
+//!
+//! // Check if a field exists in a table
+//! let exists = field_exists_in_table("contacts", "first_name");
+//! assert!(exists); // Should return true for existing field
+//!
+//! // Check non-existing field
+//! let not_exists = field_exists_in_table("items", "nonexistent_field");
+//! assert!(!not_exists); // Should return false
+//! ```
+//!
+//! Table field retrieval:
+//!
+//! ```
+//! use crate::database::schema::verify::get_table_fields;
+//!
+//! // Get all fields from an existing table
+//! if let Some(fields) = get_table_fields("items") {
+//!     assert!(!fields.is_empty());
+//!     assert!(fields.contains(&"id".to_string()));
+//! }
+//!
+//! // Non-existing table should return None
+//! assert!(get_table_fields("nonexistent_table").is_none());
+//! ```
+//!
+//! ## Error Handling
+//!
+//! The functions handle various edge cases gracefully:
+//!
+//! ```
+//! use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
+//!
+//! // Empty strings should return false/None
+//! assert!(!field_exists_in_table("", "field_name"));
+//! assert!(!field_exists_in_table("table_name", ""));
+//! assert!(get_table_fields("").is_none());
+//!
+//! // Special characters should be handled safely
+//! assert!(!field_exists_in_table("table[.*+?^${}()|\\]", "field_name"));
+//! assert!(get_table_fields("table[.*+?^${}()|\\]").is_none());
+//! ```
+
 #[cfg(test)]
 mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
 
     /// Validates field existence checking across different scenarios:
     /// - Existing table with existing field (should return true)
-    /// - Existing table with non-existing field (should return false)
+    /// - Existing table with non-existing field (should return false) 
     /// - Non-existing table (should return false)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use crate::database::schema::verify::field_exists_in_table;
+    ///
+    /// // Test existing field in existing table
+    /// assert!(field_exists_in_table("contacts", "first_name"));
+    ///
+    /// // Test non-existing field in existing table
+    /// assert!(!field_exists_in_table("items", "nonexistent_field"));
+    ///
+    /// // Test field in non-existing table
+    /// assert!(!field_exists_in_table("nonexistent_table", "first_name"));
+    /// ```
     #[test]
     fn should_correctly_validate_field_existence_in_database_schema() {
         println!("Testing field existence validation...");
@@ -39,6 +108,21 @@ mod tests {
     /// - Existing table should return Some(Vec<String>) with field names
     /// - Non-existing table should return None
     /// - Returned fields should include common database fields like 'id'
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use crate::database::schema::verify::get_table_fields;
+    ///
+    /// // Test retrieving fields from existing table
+    /// if let Some(fields) = get_table_fields("items") {
+    ///     assert!(!fields.is_empty());
+    ///     assert!(fields.contains(&"id".to_string()));
+    /// }
+    ///
+    /// // Test non-existing table returns None
+    /// assert!(get_table_fields("nonexistent_table").is_none());
+    /// ```
     #[test]
     fn should_retrieve_all_fields_from_existing_tables() {
         println!("Testing table field retrieval...");
@@ -65,6 +149,34 @@ mod tests {
     /// - Invalid characters in table/field names
     /// - Very long input strings
     /// - Special characters that might break regex patterns
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
+    ///
+    /// // Test empty string inputs
+    /// assert!(!field_exists_in_table("", "field_name"));
+    /// assert!(!field_exists_in_table("table_name", ""));
+    /// assert!(get_table_fields("").is_none());
+    ///
+    /// // Test special regex characters
+    /// assert!(!field_exists_in_table("table[.*+?^${}()|\\]", "field_name"));
+    /// assert!(get_table_fields("table[.*+?^${}()|\\]").is_none());
+    ///
+    /// // Test very long strings
+    /// let long_string = "a".repeat(1000);
+    /// assert!(!field_exists_in_table(&long_string, "field_name"));
+    /// assert!(get_table_fields(&long_string).is_none());
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// These functions should never panic, even with malformed input.
+    ///
+    /// # Safety
+    ///
+    /// All inputs are safely handled through regex escaping and validation.
     #[test]
     fn should_handle_edge_cases_and_invalid_inputs_gracefully() {
         println!("Testing edge cases and failure scenarios...");
