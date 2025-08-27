@@ -70,7 +70,7 @@ where
         if bucket_size.is_none() {
             return Err("Missing required parameter: bucket_size".to_string());
         }
- 
+
         if entity.is_none() || entity.map_or(true, |e| e.is_empty()) {
             return Err("Missing required parameter: entity".to_string());
         }

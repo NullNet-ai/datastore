@@ -1,7 +1,7 @@
 use super::validations::Validation;
 use crate::structs::structs::{
-    FilterCriteria, FilterOperator, GetByFilter, MatchPattern, ConcatenateField, GroupAdvanceFilter,
-    LogicalOperator,
+    ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter,
+    LogicalOperator, MatchPattern,
 };
 use std::collections::HashMap;
 
@@ -33,9 +33,9 @@ fn test_validate_table_success() {
     let request_body = create_default_get_by_filter();
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_table();
-    
+
     assert!(result.success);
     assert_eq!(result.message, "Successfully validated table field");
 }
@@ -45,9 +45,9 @@ fn test_validate_table_empty_table() {
     let request_body = create_default_get_by_filter();
     let table = "".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_table();
-    
+
     assert!(!result.success);
     assert_eq!(result.message, "table is required");
 }
@@ -57,9 +57,9 @@ fn test_validate_pluck_success() {
     let request_body = create_default_get_by_filter();
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_pluck();
-    
+
     assert!(result.success);
     assert_eq!(result.message, "Successfully validated pluck field");
 }
@@ -70,9 +70,9 @@ fn test_validate_pluck_empty() {
     request_body.pluck = vec![];
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_pluck();
-    
+
     assert!(!result.success);
     assert_eq!(result.message, "pluck is required");
 }
@@ -82,11 +82,14 @@ fn test_validate_conflicting_filters_success() {
     let request_body = create_default_get_by_filter();
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_conflicting_filters();
-    
+
     assert!(result.success);
-    assert_eq!(result.message, "Successfully validated conflicting properties");
+    assert_eq!(
+        result.message,
+        "Successfully validated conflicting properties"
+    );
 }
 
 #[test]
@@ -119,11 +122,14 @@ fn test_validate_conflicting_filters_both_present() {
     }];
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_conflicting_filters();
-    
+
     assert!(!result.success);
-    assert_eq!(result.message, "Both advance_filters and group_advance_filters cannot be provided at the same time");
+    assert_eq!(
+        result.message,
+        "Both advance_filters and group_advance_filters cannot be provided at the same time"
+    );
 }
 
 #[test]
@@ -131,9 +137,9 @@ fn test_validate_concatenated_fields_success() {
     let request_body = create_default_get_by_filter();
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_concatenated_fields();
-    
+
     assert!(result.success);
 }
 
@@ -149,9 +155,9 @@ fn test_validate_concatenated_fields_empty_fields() {
     }];
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_concatenated_fields();
-    
+
     assert!(!result.success);
     assert!(result.message.contains("Fields array cannot be empty"));
 }
@@ -168,9 +174,9 @@ fn test_validate_concatenated_fields_empty_field_name() {
     }];
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_concatenated_fields();
-    
+
     assert!(!result.success);
     assert!(result.message.contains("Field name cannot be empty"));
 }
@@ -181,9 +187,9 @@ fn test_validate_distinct_by_success() {
     request_body.distinct_by = None; // Test with None to avoid field validation
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_distinct_by();
-    
+
     assert!(result.success);
     assert_eq!(result.message, "Successfully validated distinct_by field");
 }
@@ -194,9 +200,9 @@ fn test_validate_distinct_by_empty() {
     request_body.distinct_by = Some("".to_string());
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_distinct_by();
-    
+
     assert!(result.success);
     assert_eq!(result.message, "Successfully validated distinct_by field");
 }
@@ -206,9 +212,9 @@ fn test_validate_distinct_by_none() {
     let request_body = create_default_get_by_filter();
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.validate_distinct_by();
-    
+
     assert!(result.success);
     assert_eq!(result.message, "Successfully validated distinct_by field");
 }
@@ -218,11 +224,11 @@ fn test_normalize_entity_name() {
     let request_body = create_default_get_by_filter();
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     // Test singular to plural conversion - the function adds 's' to singular forms
     assert_eq!(validation.normalize_entity_name("user"), "users");
     assert_eq!(validation.normalize_entity_name("product"), "products");
-    
+
     // Test already plural forms - function returns as-is if already plural
     assert_eq!(validation.normalize_entity_name("users"), "users");
     assert_eq!(validation.normalize_entity_name("products"), "products");
@@ -239,13 +245,17 @@ fn test_exec_all_validations_pass() {
     request_body.date_format = "YYYY-mm-dd".to_string(); // Use valid date format
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.exec();
-    
+
     if !result.success {
         println!("Validation failed with message: {}", result.message);
     }
-    assert!(result.success, "Expected validation to pass, but got: {}", result.message);
+    assert!(
+        result.success,
+        "Expected validation to pass, but got: {}",
+        result.message
+    );
     assert_eq!(result.message, "All validations passed successfully");
 }
 
@@ -254,9 +264,9 @@ fn test_exec_validation_fails_on_empty_table() {
     let request_body = create_default_get_by_filter();
     let table = "".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.exec();
-    
+
     assert!(!result.success);
     assert_eq!(result.message, "table is required");
 }
@@ -267,9 +277,9 @@ fn test_exec_validation_fails_on_empty_pluck() {
     request_body.pluck = vec![];
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.exec();
-    
+
     assert!(!result.success);
     assert_eq!(result.message, "pluck is required");
 }
@@ -304,9 +314,12 @@ fn test_exec_validation_fails_on_conflicting_filters() {
     }];
     let table = "users".to_string();
     let validation = Validation::new(&request_body, &table);
-    
+
     let result = validation.exec();
-    
+
     assert!(!result.success);
-    assert_eq!(result.message, "Both advance_filters and group_advance_filters cannot be provided at the same time");
+    assert_eq!(
+        result.message,
+        "Both advance_filters and group_advance_filters cannot be provided at the same time"
+    );
 }

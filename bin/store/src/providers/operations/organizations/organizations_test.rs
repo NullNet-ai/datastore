@@ -1,8 +1,12 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::operations::organizations::structs::{Register, AccountType, LoginResponse};
-    use crate::providers::operations::organizations::organization_controller::{AuthData, AuthDto, RegisterDto};
+    use crate::providers::operations::organizations::organization_controller::{
+        AuthData, AuthDto, RegisterDto,
+    };
+    use crate::providers::operations::organizations::structs::{
+        AccountType, LoginResponse, Register,
+    };
     use std::str::FromStr;
 
     // Helper function to create a default Register struct for testing
@@ -49,7 +53,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_struct_creation() {
         let register = create_default_register();
-        
+
         assert_eq!(register.account_id, "acc_123");
         assert_eq!(register.account_secret, "secret_123");
         assert_eq!(register.first_name, "John");
@@ -61,7 +65,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_struct_default() {
         let register = Register::default();
-        
+
         assert!(register.account_id.is_empty());
         assert!(register.account_secret.is_empty());
         assert!(register.first_name.is_empty());
@@ -72,15 +76,32 @@ mod tests {
 
     #[tokio::test]
     async fn test_account_type_from_str() {
-        
-        assert_eq!(AccountType::from_str("contact").unwrap(), AccountType::Contact);
-        assert_eq!(AccountType::from_str("Contact").unwrap(), AccountType::Contact);
-        assert_eq!(AccountType::from_str("CONTACT").unwrap(), AccountType::Contact);
-        
-        assert_eq!(AccountType::from_str("device").unwrap(), AccountType::Device);
-        assert_eq!(AccountType::from_str("Device").unwrap(), AccountType::Device);
-        assert_eq!(AccountType::from_str("DEVICE").unwrap(), AccountType::Device);
-        
+        assert_eq!(
+            AccountType::from_str("contact").unwrap(),
+            AccountType::Contact
+        );
+        assert_eq!(
+            AccountType::from_str("Contact").unwrap(),
+            AccountType::Contact
+        );
+        assert_eq!(
+            AccountType::from_str("CONTACT").unwrap(),
+            AccountType::Contact
+        );
+
+        assert_eq!(
+            AccountType::from_str("device").unwrap(),
+            AccountType::Device
+        );
+        assert_eq!(
+            AccountType::from_str("Device").unwrap(),
+            AccountType::Device
+        );
+        assert_eq!(
+            AccountType::from_str("DEVICE").unwrap(),
+            AccountType::Device
+        );
+
         assert!(AccountType::from_str("invalid").is_err());
     }
 
@@ -93,7 +114,7 @@ mod tests {
     #[tokio::test]
     async fn test_auth_data_creation() {
         let auth_data = create_auth_data();
-        
+
         assert_eq!(auth_data.account_id, Some("test_account_id".to_string()));
         assert_eq!(auth_data.account_secret, Some("test_secret".to_string()));
         assert_eq!(auth_data.email, Some("test@example.com".to_string()));
@@ -104,7 +125,7 @@ mod tests {
     async fn test_auth_dto_serialization() {
         let auth_data = create_auth_data();
         let auth_dto = AuthDto { data: auth_data };
-        
+
         let serialized = serde_json::to_string(&auth_dto).unwrap();
         assert!(serialized.contains("test_account_id"));
         assert!(serialized.contains("test_secret"));
@@ -114,7 +135,7 @@ mod tests {
     async fn test_register_dto_serialization() {
         let register = create_default_register();
         let register_dto = RegisterDto { data: register };
-        
+
         let serialized = serde_json::to_string(&register_dto).unwrap();
         assert!(serialized.contains("acc_123"));
         assert!(serialized.contains("secret_123"));
@@ -131,11 +152,14 @@ mod tests {
             account_organization_id: Some("acc_org_123".to_string()),
             session_id: Some("session_123".to_string()),
         };
-        
+
         assert_eq!(login_response.message, "Login successful");
         assert_eq!(login_response.token, Some("jwt_token_123".to_string()));
         assert_eq!(login_response.role_id, "role_123");
-        assert_eq!(login_response.account_organization_id, Some("acc_org_123".to_string()));
+        assert_eq!(
+            login_response.account_organization_id,
+            Some("acc_org_123".to_string())
+        );
         assert_eq!(login_response.session_id, Some("session_123".to_string()));
     }
 
@@ -143,7 +167,7 @@ mod tests {
     async fn test_register_validation_empty_account_id() {
         let mut register = create_default_register();
         register.account_id = String::new();
-        
+
         // Test that empty account_id should be invalid
         assert!(register.account_id.is_empty());
     }
@@ -152,7 +176,7 @@ mod tests {
     async fn test_register_validation_empty_account_secret() {
         let mut register = create_default_register();
         register.account_secret = String::new();
-        
+
         // Test that empty account_secret should be invalid
         assert!(register.account_secret.is_empty());
     }
@@ -162,7 +186,7 @@ mod tests {
         let mut register = create_default_register();
         register.first_name = String::new();
         register.last_name = String::new();
-        
+
         // Test that empty names should be invalid
         assert!(register.first_name.is_empty());
         assert!(register.last_name.is_empty());
@@ -171,7 +195,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_with_categories() {
         let register = create_default_register();
-        
+
         assert!(register.categories.is_some());
         let categories = register.categories.unwrap();
         assert_eq!(categories.len(), 2);
@@ -182,7 +206,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_with_organization_categories() {
         let register = create_default_register();
-        
+
         assert!(register.account_organization_categories.is_some());
         let org_categories = register.account_organization_categories.unwrap();
         assert_eq!(org_categories.len(), 1);
@@ -192,7 +216,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_with_contact_categories() {
         let register = create_default_register();
-        
+
         assert!(register.contact_categories.is_some());
         let contact_categories = register.contact_categories.unwrap();
         assert_eq!(contact_categories.len(), 1);
@@ -202,7 +226,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_with_device_categories() {
         let register = create_default_register();
-        
+
         assert!(register.device_categories.is_some());
         let device_categories = register.device_categories.unwrap();
         assert_eq!(device_categories.len(), 1);
@@ -213,7 +237,7 @@ mod tests {
     async fn test_account_type_clone() {
         let account_type = AccountType::Contact;
         let cloned_type = account_type.clone();
-        
+
         assert_eq!(account_type, cloned_type);
     }
 
@@ -221,7 +245,7 @@ mod tests {
     async fn test_register_clone() {
         let register = create_default_register();
         let cloned_register = register.clone();
-        
+
         assert_eq!(register.account_id, cloned_register.account_id);
         assert_eq!(register.account_secret, cloned_register.account_secret);
         assert_eq!(register.first_name, cloned_register.first_name);
@@ -237,7 +261,7 @@ mod tests {
             email: None,
             password: None,
         };
-        
+
         assert_eq!(auth_data.account_id, None);
         assert_eq!(auth_data.account_secret, None);
         assert_eq!(auth_data.email, None);
@@ -253,7 +277,7 @@ mod tests {
             account_organization_id: None,
             session_id: None,
         };
-        
+
         assert_eq!(login_response.message, "Login failed");
         assert_eq!(login_response.token, None);
         assert_eq!(login_response.role_id, "guest");
@@ -263,12 +287,12 @@ mod tests {
 
     // Mock tests for functions that would require database connections
     // These test the structure and basic validation logic without actual DB calls
-    
+
     #[tokio::test]
     async fn test_register_struct_debug_format() {
         let register = create_default_register();
         let debug_str = format!("{:?}", register);
-        
+
         assert!(debug_str.contains("Register"));
         assert!(debug_str.contains("acc_123"));
         assert!(debug_str.contains("John"));
@@ -278,7 +302,7 @@ mod tests {
     async fn test_auth_data_debug_format() {
         let auth_data = create_auth_data();
         let debug_str = format!("{:?}", auth_data);
-        
+
         assert!(debug_str.contains("AuthData"));
         assert!(debug_str.contains("test_account_id"));
     }
@@ -292,7 +316,7 @@ mod tests {
             account_organization_id: Some("test_org".to_string()),
             session_id: Some("test_session".to_string()),
         };
-        
+
         let debug_str = format!("{:?}", login_response);
         assert!(debug_str.contains("LoginResponse"));
         assert!(debug_str.contains("Test message"));

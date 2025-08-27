@@ -1,22 +1,18 @@
 #[cfg(test)]
 mod tests {
-    use super::super::{
-        permission_utils::*,
-        permissions_queries::*,
-        structs::*,
-    };
+    use super::super::{permission_utils::*, permissions_queries::*, structs::*};
     use crate::providers::operations::auth::structs::{Session, User};
-    use actix_web::http::{Method, Uri};
+    use crate::utils::request_type_handler::RequestType;
     use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
+    use actix_web::http::{Method, Uri};
     use serde_json::{json, Value};
     use std::collections::HashMap;
     use std::str::FromStr;
-    use crate::utils::request_type_handler::RequestType;
 
     // Helper function to create a test session
     fn create_test_session() -> Session {
-        use crate::providers::operations::auth::structs::{Origin, Cookie};
-        
+        use crate::providers::operations::auth::structs::{Cookie, Origin};
+
         Session {
             session_id: "test_session_123".to_string(),
             user: User {
@@ -82,10 +78,11 @@ mod tests {
                 table: "users".to_string(),
                 pgp_sym_key: "test_key".to_string(),
             },
-            group_by_field_record_permissions_params: PermissionQueryParams::GroupByFieldRecordPermissions {
-                table: "users".to_string(),
-                role_id: "admin".to_string(),
-            },
+            group_by_field_record_permissions_params:
+                PermissionQueryParams::GroupByFieldRecordPermissions {
+                    table: "users".to_string(),
+                    role_id: "admin".to_string(),
+                },
             role_permissions_query_params: PermissionQueryParams::RolePermissions {
                 role_id: "admin".to_string(),
             },
@@ -111,7 +108,7 @@ mod tests {
     #[test]
     fn test_data_permissions_default() {
         let permissions = DataPermissions::default();
-        
+
         assert!(permissions.requested_fields.is_empty());
         assert_eq!(permissions.account_organization_id, "");
         assert!(permissions.schema.is_empty());
@@ -137,13 +134,13 @@ mod tests {
     #[test]
     fn test_permission_query_params_default() {
         let params = PermissionQueryParams::default();
-        
+
         match params {
-            PermissionQueryParams::DataPermissions { 
-                tables, 
-                main_fields, 
-                sensitivity_level, 
-                account_organization_id 
+            PermissionQueryParams::DataPermissions {
+                tables,
+                main_fields,
+                sensitivity_level,
+                account_organization_id,
             } => {
                 assert!(tables.is_empty());
                 assert!(main_fields.is_empty());
@@ -161,8 +158,13 @@ mod tests {
         let sensitivity_level = 2;
         let account_organization_id = "org_123".to_string();
 
-        let query = get_permissions_query(&tables, &main_fields, sensitivity_level, &account_organization_id);
-        
+        let query = get_permissions_query(
+            &tables,
+            &main_fields,
+            sensitivity_level,
+            &account_organization_id,
+        );
+
         assert!(query.contains("SELECT"));
         assert!(query.contains("data_permissions"));
         assert!(query.contains("p.id as permission_id"));
@@ -177,7 +179,7 @@ mod tests {
         let pgp_sym_key = "test_key";
 
         let query = get_valid_pass_keys_query(organization_id, table, pgp_sym_key);
-        
+
         assert!(query.contains("SELECT"));
         assert!(query.contains("id"));
         assert!(query.contains(organization_id));
@@ -191,7 +193,7 @@ mod tests {
         let role_id = "admin";
 
         let query = get_group_by_field_record_permissions(table, role_id);
-        
+
         assert!(query.contains("SELECT"));
         assert!(query.contains("COUNT"));
         assert!(query.contains("GROUP BY"));
@@ -204,7 +206,7 @@ mod tests {
         let role_id = "admin";
 
         let query = get_role_permissions_query(role_id);
-        
+
         assert!(query.contains("SELECT"));
         assert!(query.contains("role_permissions"));
         assert!(query.contains(role_id));
@@ -308,7 +310,7 @@ mod tests {
     #[test]
     fn test_permissions_context_creation() {
         let context = create_test_permissions_context();
-        
+
         assert_eq!(context.table, "users");
         assert_eq!(context.account_organization_id, "org_123");
         assert_eq!(context.account_id, "user_123");
@@ -342,7 +344,9 @@ mod tests {
         };
 
         match pass_key_params {
-            PermissionQueryParams::ValidPassKeys { organization_id, .. } => {
+            PermissionQueryParams::ValidPassKeys {
+                organization_id, ..
+            } => {
                 assert_eq!(organization_id, "org_123");
             }
             _ => panic!("Expected ValidPassKeys variant"),
@@ -408,7 +412,7 @@ mod tests {
     #[test]
     fn test_data_permissions_with_schema() {
         let mut permissions = DataPermissions::default();
-        
+
         permissions.schema.push(SchemaItem {
             entity: "users".to_string(),
             alias: "u".to_string(),
