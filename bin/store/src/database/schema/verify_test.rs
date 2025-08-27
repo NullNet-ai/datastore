@@ -1,63 +1,10 @@
-//! # Schema Verification Testing Module
-//!
-//! This module provides comprehensive testing for database schema verification functions.
-//! It includes unit tests and documentation tests to ensure robust field and table validation.
-//!
-//! ## Examples
-//!
-//! Basic field existence checking:
-//!
-//! ```
-//! use crate::database::schema::verify::field_exists_in_table;
-//!
-//! // Check if a field exists in a table
-//! let exists = field_exists_in_table("contacts", "first_name");
-//! assert!(exists); // Should return true for existing field
-//!
-//! // Check non-existing field
-//! let not_exists = field_exists_in_table("items", "nonexistent_field");
-//! assert!(!not_exists); // Should return false
-//! ```
-//!
-//! Table field retrieval:
-//!
-//! ```
-//! use crate::database::schema::verify::get_table_fields;
-//!
-//! // Get all fields from an existing table
-//! if let Some(fields) = get_table_fields("items") {
-//!     assert!(!fields.is_empty());
-//!     assert!(fields.contains(&"id".to_string()));
-//! }
-//!
-//! // Non-existing table should return None
-//! assert!(get_table_fields("nonexistent_table").is_none());
-//! ```
-//!
-//! ## Error Handling
-//!
-//! The functions handle various edge cases gracefully:
-//!
-//! ```
-//! use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
-//!
-//! // Empty strings should return false/None
-//! assert!(!field_exists_in_table("", "field_name"));
-//! assert!(!field_exists_in_table("table_name", ""));
-//! assert!(get_table_fields("").is_none());
-//!
-//! // Special characters should be handled safely
-//! assert!(!field_exists_in_table("table[.*+?^${}()|\\]", "field_name"));
-//! assert!(get_table_fields("table[.*+?^${}()|\\]").is_none());
-//! ```
-
 #[cfg(test)]
 mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
 
     /// Validates field existence checking across different scenarios:
     /// - Existing table with existing field (should return true)
-    /// - Existing table with non-existing field (should return false) 
+    /// - Existing table with non-existing field (should return false)
     /// - Non-existing table (should return false)
     ///
     /// # Examples
