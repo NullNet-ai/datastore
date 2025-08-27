@@ -2,10 +2,9 @@
 mod tests {
     use super::super::{permission_utils::*, permissions_queries::*, structs::*};
     use crate::providers::operations::auth::structs::{Session, User};
-    use crate::utils::request_type_handler::RequestType;
     use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
     use actix_web::http::{Method, Uri};
-    use serde_json::{json, Value};
+    use serde_json::{json};
     use std::collections::HashMap;
     use std::str::FromStr;
 

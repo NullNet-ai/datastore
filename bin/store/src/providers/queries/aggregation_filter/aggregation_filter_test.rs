@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::providers::queries::aggregation_filter::sql_constructor::{
         AggregationFilterWrapper, AggregationQueryFilter, AggregationSQLConstructor,
     };
     use crate::providers::queries::find::sql_constructor::QueryFilter;
     use crate::structs::structs::{
-        Aggregation, AggregationFilter, AggregationOrder, AggregationType, FilterCriteria, Join,
+        Aggregation, AggregationFilter, AggregationType
     };
 
     // Helper function to create a test AggregationFilter
@@ -87,6 +86,8 @@ mod tests {
     #[test]
     fn test_aggregation_sql_constructor_new() {
         let filter = create_test_aggregation_filter();
+        // TODO: Need to check again
+        #[allow(unused)]
         let constructor = AggregationSQLConstructor::new(
             filter,
             "test_table".to_string(),
