@@ -8,8 +8,8 @@
         fmt fmt-check git-cleanup setup-hooks \
         jean-store-watch store-experimental store-initialize-device \
         pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete \
-        docker-build-ubuntu docker-build-centos docker-build-arch docker-build-all \
-        docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all \
+        docker-build-ubuntu docker-build-ubuntu-clean docker-build-ubuntu-fresh docker-build-centos docker-build-arch docker-build-all \
+docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all docker-ubuntu-memory-optimized \
         docker-compose-up docker-compose-down docker-compose-restart docker-compose-logs docker-compose-ps
 
 # Default target
@@ -48,6 +48,8 @@ help:
 	@echo "  pm2-logs                - Show PM2 logs"
 	@echo "  pm2-delete              - Delete all PM2 processes"
 	@echo "  docker-build-ubuntu     - Build Docker image for Ubuntu test"
+	@echo "  docker-build-ubuntu-clean - Build Ubuntu Docker image with cleanup"
+	@echo "  docker-build-ubuntu-fresh - Build fresh Ubuntu Docker image (no cache)"
 	@echo "  docker-build-centos     - Build Docker image for CentOS test"
 	@echo "  docker-build-arch       - Build Docker image for Arch Linux test"
 	@echo "  docker-build-all        - Build Docker images for all distributions"
@@ -55,6 +57,7 @@ help:
 	@echo "  docker-run-centos       - Run Docker container for CentOS testing"
 	@echo "  docker-run-arch         - Run Docker container for Arch Linux testing"
 	@echo "  docker-run-all          - Run Docker containers for all operating systems"
+	@echo "  docker-ubuntu-memory-optimized - Build and run memory-optimized Ubuntu container"
 	@echo "  docker-compose-up       - Start TimescaleDB and Redis services using Docker Compose"
 	@echo "  docker-compose-down     - Stop and remove Docker Compose services"
 	@echo "  docker-compose-restart  - Restart Docker Compose services"
@@ -189,7 +192,6 @@ install:
 	fi
 	@make install-rust
 	@make install-rust-tools
-	@make start-docker-services
 	@make finalize-setup
 	
 
@@ -224,6 +226,7 @@ install-macos-deps:
 		echo "✅ Protocol Buffers already installed"; \
 	fi
 	@echo "🎉 macOS system dependencies installed!"
+	@make start-docker-services
 
 # Legacy target for backward compatibility
 install-macos: install-macos-deps install-rust install-rust-tools start-docker-services finalize-setup
@@ -253,6 +256,11 @@ install-linux-deps:
 		sudo systemctl start postgresql; \
 		sudo systemctl enable postgresql; \
 		echo "✅ PostgreSQL and Protocol Buffers installed via pacman"; \
+	elif command -v apk >/dev/null 2>&1; then \
+		echo "📦 Using apk (Alpine Linux)"; \
+		apk update; \
+		apk add --no-cache curl build-base openssl-dev pkgconfig postgresql-dev postgresql postgresql-libs protobuf-dev protoc musl-dev; \
+		echo "✅ PostgreSQL and Protocol Buffers installed via apk"; \
 	else \
 		echo "❌ Unsupported package manager. Please install PostgreSQL and Protocol Buffers manually."; \
 		exit 1; \
@@ -705,39 +713,97 @@ docker-compose-ps:
 # Build Docker image for Ubuntu test
 docker-build-ubuntu:
 	@echo "🐳 Building Docker image for Ubuntu test..."
-	@docker build --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os .
+	@docker build --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg CARGO_BUILD_JOBS=1 \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ Ubuntu Docker image built successfully!"
 
 # Build Docker image for CentOS test
 docker-build-centos:
 	@echo "🐳 Building Docker image for CentOS test..."
-	@docker build --target centos-test -t crdt-centos -f dockerfile-test-os .
+	@docker build --target centos-test -t crdt-centos -f dockerfile-test-os \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ CentOS Docker image built successfully!"
 
 # Build Docker image for Arch Linux test
 docker-build-arch:
 	@echo "🐳 Building Docker image for Arch Linux test..."
-	@docker build --target arch-test -t crdt-arch -f dockerfile-test-os .
+	@docker build --target arch-test -t crdt-arch -f dockerfile-test-os \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ Arch Linux Docker image built successfully!"
 
 # Build Docker images for all distributions
 docker-build-all: docker-build-ubuntu docker-build-centos docker-build-arch
 	@echo "✅ All Docker images built successfully!"
 
+# Build Docker image for Ubuntu test with cleanup
+docker-build-ubuntu-clean:
+	@echo "🧹 Cleaning up previous Ubuntu Docker artifacts..."
+	@docker system prune -f --filter "label=stage=ubuntu-test" || true
+	@docker rmi crdt-ubuntu || true
+	@make docker-build-ubuntu
+
+# Build Docker image for Ubuntu test with no cache
+docker-build-ubuntu-fresh:
+	@echo "🐳 Building fresh Ubuntu Docker image (no cache)..."
+	@docker build --no-cache --target ubuntu-test -t crdt-ubuntu -f dockerfile-test-os \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg CARGO_BUILD_JOBS=1 \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
+	@echo "✅ Fresh Ubuntu Docker image built successfully!"
+
 # Run Docker container for Ubuntu testing
 docker-run-ubuntu:
 	@echo "🐳 Running Docker container for Ubuntu testing..."
-	@docker run --rm -it crdt-ubuntu
+	@docker run --rm -it \
+		--memory=8g --memory-swap=12g \
+		--cpus=1 \
+		--shm-size=2g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		crdt-ubuntu
 
 # Run Docker container for CentOS testing
 docker-run-centos:
 	@echo "🐳 Running Docker container for CentOS testing..."
-	@docker run --rm -it crdt-centos
+	@docker run --rm -it \
+		--memory=8g --memory-swap=12g \
+		--cpus=1 \
+		--shm-size=2g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		crdt-centos
 
 # Run Docker container for Arch Linux testing
 docker-run-arch:
 	@echo "🐳 Running Docker container for Arch Linux testing..."
-	@docker run --rm -it crdt-arch
+	@docker run --rm -it \
+		--memory=8g --memory-swap=12g \
+		--cpus=1 \
+		--shm-size=2g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		crdt-arch
 
 # Run Docker containers for all operating systems (interactive)
 docker-run-all:
@@ -748,6 +814,29 @@ docker-run-all:
 	@docker run --rm -it crdt-centos
 	@echo "Running Arch Linux container..."
 	@docker run --rm -it crdt-arch
+
+# Optimized Ubuntu Docker build and run for Linux environments with memory constraints
+docker-ubuntu-memory-optimized:
+	@echo "🐳 Building and running memory-optimized Ubuntu Docker container..."
+	@docker build --target ubuntu-test -t crdt-ubuntu-optimized -f dockerfile-test-os \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg CARGO_BUILD_JOBS=1 \
+		--memory=12g --memory-swap=16g \
+		--shm-size=4g .
+	@docker run --rm -it \
+		--memory=12g --memory-swap=16g \
+		--cpus=1 \
+		--shm-size=4g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--ulimit stack=8388608 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false -C link-arg=-Wl,--no-keep-memory" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		--env CARGO_PROFILE_DEV_OPT_LEVEL=1 \
+		crdt-ubuntu-optimized
 
 
 # Run the store in watch mode with PG library configurations

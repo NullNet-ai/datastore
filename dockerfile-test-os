@@ -1,8 +1,12 @@
 # Simple Dockerfile for testing make commands across different Linux distributions
 
 # Stage 1: Ubuntu test
-FROM ubuntu:latest AS ubuntu-test
+FROM ubuntu:22.04 AS ubuntu-test
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 RUN apt-get update && apt-get install -y \
     make \
     git \
@@ -20,9 +24,14 @@ RUN make install
 
 CMD ["make", "store"]
 
-# Stage 2: CentOS test
-FROM centos:latest AS centos-test
-RUN yum update -y && yum install -y \
+# Stage 2: Fedora test (Red Hat family)
+FROM fedora:latest AS centos-test
+ENV TZ=UTC
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN dnf update -y && dnf install -y \
+    @development-tools \
     make \
     git \
     sudo \
@@ -38,14 +47,19 @@ RUN make install
 
 CMD ["make", "store"]
 
-# Stage 3: Arch test
-FROM archlinux:latest AS arch-test
-RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm \
+# Stage 3: Alpine test (lightweight)
+FROM alpine:latest AS arch-test
+ENV TZ=UTC
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apk update && apk add --no-cache \
+    build-base \
     make \
     git \
     sudo \
-    curl
+    curl \
+    bash
 
 WORKDIR /app
 COPY . .
