@@ -301,7 +301,7 @@ mod tests {
 
         let mut request_body = create_default_get_by_filter();
         request_body.distinct_by = Some("id".to_string());
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with distinct_by field",
@@ -323,15 +323,15 @@ mod tests {
     /// Tests that distinct_by validation fails with empty field
     /// This ensures proper error handling for empty distinct_by values
     #[test]
-    fn should_fail_distinct_by_validation_with_empty_field() {
-        println!("Testing distinct_by validation with empty field");
+    fn should_fail_distinct_by_validation_with_non_existent_field() {
+        println!("Testing distinct_by validation with non-existent field");
 
         let mut request_body = create_default_get_by_filter();
-        request_body.distinct_by = Some("".to_string());
-        let table = "users".to_string();
+        request_body.distinct_by = Some("test".to_string());
+        let table = "contacts".to_string();
 
         println!(
-            "Creating validation for table: {} with empty distinct_by",
+            "Creating validation for table: {} with non-existent distinct_by field",
             table
         );
         let validation = Validation::new(&request_body, &table);
