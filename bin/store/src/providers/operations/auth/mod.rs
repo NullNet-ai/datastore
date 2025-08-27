@@ -2,6 +2,9 @@ use sha2::{Digest, Sha256};
 pub mod auth_service;
 pub mod structs;
 
+#[cfg(test)]
+mod auth_service_test;
+
 pub struct AuthService;
 #[allow(warnings)]
 impl AuthService {

@@ -20,7 +20,7 @@ impl<'a, 'b> Validation<'a, 'b> {
 
     /// Internal helper function to convert entity names from singular to plural form
     /// If the entity is already plural, adds 's' to it
-    fn normalize_entity_name(&self, entity: &str) -> String {
+    pub fn normalize_entity_name(&self, entity: &str) -> String {
         let plural_form = pluralize(entity, 2, false);
         if plural_form == entity {
             plural_form.to_string()

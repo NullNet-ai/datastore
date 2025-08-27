@@ -5,3 +5,6 @@ pub mod shared_state;
 pub mod stream_queue_service;
 pub mod streaming_service;
 pub mod token_bucket;
+
+#[cfg(test)]
+mod message_stream_test;
