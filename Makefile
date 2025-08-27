@@ -417,12 +417,12 @@ store-clean-setup:
 	@cd bin/store && export PATH="$$HOME/.cargo/bin:$$PATH" && { \
 		if command -v expect >/dev/null 2>&1; then \
 			expect -c ' \
-				set timeout 60; \
+				set timeout 80; \
 				spawn cargo make clean-setup; \
 				expect "Enter password for database cleanup:"; \
 				send "admin\r"; \
 				expect { \
-					"MessageStreamingService initialized successfully" { \
+					"Store is running" { \
 						puts "\n=== Setup completed successfully! ==="; \
 						kill [exp_pid]; \
 						exit 0 \

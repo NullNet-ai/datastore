@@ -1,13 +1,3 @@
-/** TODO:
- * Tests will always have descriptive names that clearly indicate what they are testing.
- * Only import the functions that are needed for the test.
- * Always a Documentation testing comment above the test function.
- * Use println! to log test steps and results.
- * Use any testing functions from https://doc.rust-lang.org/rust-by-example/testing
- * Use this naming convention for the file <name>_test.rs
- * Use this naming convention for the test function should_<descriptive_name>
- * Apply Success and Failure scenarios
- */
 mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
 
