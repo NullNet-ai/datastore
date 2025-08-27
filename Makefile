@@ -256,6 +256,11 @@ install-linux-deps:
 		sudo systemctl start postgresql; \
 		sudo systemctl enable postgresql; \
 		echo "✅ PostgreSQL and Protocol Buffers installed via pacman"; \
+	elif command -v apk >/dev/null 2>&1; then \
+		echo "📦 Using apk (Alpine Linux)"; \
+		apk update; \
+		apk add --no-cache curl build-base openssl-dev pkgconfig postgresql-dev postgresql postgresql-libs protobuf-dev protoc musl-dev; \
+		echo "✅ PostgreSQL and Protocol Buffers installed via apk"; \
 	else \
 		echo "❌ Unsupported package manager. Please install PostgreSQL and Protocol Buffers manually."; \
 		exit 1; \
@@ -718,13 +723,17 @@ docker-build-ubuntu:
 # Build Docker image for CentOS test
 docker-build-centos:
 	@echo "🐳 Building Docker image for CentOS test..."
-	@docker build --target centos-test -t crdt-centos -f dockerfile-test-os .
+	@docker build --target centos-test -t crdt-centos -f dockerfile-test-os \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ CentOS Docker image built successfully!"
 
 # Build Docker image for Arch Linux test
 docker-build-arch:
 	@echo "🐳 Building Docker image for Arch Linux test..."
-	@docker build --target arch-test -t crdt-arch -f dockerfile-test-os .
+	@docker build --target arch-test -t crdt-arch -f dockerfile-test-os \
+		--memory=8g --memory-swap=12g \
+		--shm-size=2g .
 	@echo "✅ Arch Linux Docker image built successfully!"
 
 # Build Docker images for all distributions
@@ -767,12 +776,34 @@ docker-run-ubuntu:
 # Run Docker container for CentOS testing
 docker-run-centos:
 	@echo "🐳 Running Docker container for CentOS testing..."
-	@docker run --rm -it crdt-centos
+	@docker run --rm -it \
+		--memory=8g --memory-swap=12g \
+		--cpus=1 \
+		--shm-size=2g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		crdt-centos
 
 # Run Docker container for Arch Linux testing
 docker-run-arch:
 	@echo "🐳 Running Docker container for Arch Linux testing..."
-	@docker run --rm -it crdt-arch
+	@docker run --rm -it \
+		--memory=8g --memory-swap=12g \
+		--cpus=1 \
+		--shm-size=2g \
+		--ulimit nofile=65536:65536 \
+		--ulimit memlock=-1:-1 \
+		--env CARGO_BUILD_JOBS=1 \
+		--env RUST_BACKTRACE=1 \
+		--env RUSTFLAGS="-C target-cpu=generic -C opt-level=1 -C debuginfo=0 -C incremental=false" \
+		--env CARGO_PROFILE_DEV_DEBUG=0 \
+		--env CARGO_PROFILE_DEV_INCREMENTAL=false \
+		crdt-arch
 
 # Run Docker containers for all operating systems (interactive)
 docker-run-all:
