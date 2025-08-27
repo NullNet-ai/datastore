@@ -5,7 +5,7 @@ use std::env;
 fn test_is_storage_disabled_true() {
     env::set_var("DISABLE_STORAGE", "true");
     assert!(is_storage_disabled());
-    
+
     env::remove_var("DISABLE_STORAGE");
 }
 
@@ -13,23 +13,23 @@ fn test_is_storage_disabled_true() {
 fn test_is_storage_disabled_false() {
     env::set_var("DISABLE_STORAGE", "false");
     assert!(!is_storage_disabled());
-    
+
     // Test that non-boolean strings default to false
     env::set_var("DISABLE_STORAGE", "1");
     assert!(!is_storage_disabled());
-    
+
     env::set_var("DISABLE_STORAGE", "yes");
     assert!(!is_storage_disabled());
-    
+
     env::set_var("DISABLE_STORAGE", "0");
     assert!(!is_storage_disabled());
-    
+
     env::set_var("DISABLE_STORAGE", "no");
     assert!(!is_storage_disabled());
-    
+
     env::set_var("DISABLE_STORAGE", "invalid");
     assert!(!is_storage_disabled());
-    
+
     env::remove_var("DISABLE_STORAGE");
 }
 
@@ -60,11 +60,11 @@ fn test_get_valid_bucket_name_sanitization() {
     // Test special characters removal - bucket name "test@#$%bucket!" -> "t" (first char of "test") + "b" (first char of "bucket")
     let result = get_valid_bucket_name("test@#$%bucket!", None);
     assert_eq!(result, "bcktt"); // Only "t" from "test" since special chars break the word
-    
+
     // Test with org_id containing numbers and special chars - "org123!@#" -> "or" + "rg" -> "orrg"
     let result = get_valid_bucket_name("test", Some("org123!@#"));
     assert_eq!(result, "bckttor"); // "t" from "test" + "or" from org pattern
-    
+
     // Test mixed case conversion
     let result = get_valid_bucket_name("Test Bucket", Some("MyOrg"));
     // "Test Bucket" -> "tb", "MyOrg" -> "my" + "yo" + "rg" -> "myyorg"
@@ -86,11 +86,11 @@ fn test_get_valid_bucket_name_edge_cases() {
     // Empty bucket name
     let result = get_valid_bucket_name("", None);
     assert_eq!(result, "bckt");
-    
+
     // Only spaces
     let result = get_valid_bucket_name("   ", None);
     assert_eq!(result, "bckt");
-    
+
     // Single character
     let result = get_valid_bucket_name("a", None);
     assert_eq!(result, "bckta");
@@ -109,11 +109,11 @@ fn test_get_valid_bucket_name_complex_scenarios() {
     // "org-id" -> "or" + "rg" + "id" -> "orgid" (but algorithm is first2+middle+last2)
     // "org-id" has 6 chars: "or" + "g-" + "id" -> but filtering gives "orgid"
     assert_eq!(result, "bcktmorgid");
-    
+
     // Test with numbers in bucket name (should be filtered out)
     let result = get_valid_bucket_name("bucket123 test456", None);
     assert_eq!(result, "bcktbt"); // "b" from "bucket123", "t" from "test456"
-    
+
     // Test with mixed scenarios
     let result = get_valid_bucket_name("My Awesome Bucket!", Some("company123"));
     // "My Awesome Bucket!" -> "mab", "company123" (len=10) -> "co" + "mpan" (mid_start=4, mid_end=6) + "23" -> "company" (filtered to "coan")
@@ -139,14 +139,14 @@ fn test_org_id_pattern_generation() {
     // Test various org_id lengths and patterns
     // Algorithm: first 2 chars + middle chars (floor(len/2)-1 to floor(len/2)+1) + last 2 chars
     let test_cases = vec![
-        ("ab", "abab"),           // ab + (empty middle) + ab = abab
-        ("abc", "ababbc"),        // ab + ab (mid_start=0, mid_end=2) + bc = ababbc
-        ("abcd", "abbccd"),       // ab + bc (mid_start=1, mid_end=3) + cd = abbccd
-        ("abcde", "abbcde"),      // ab + bc (mid_start=1, mid_end=3) + de = abbcde  
-        ("abcdef", "abcdef"),     // ab + cd (mid_start=2, mid_end=4) + ef = abcdef
-        ("abcdefg", "abcdfg"),    // ab + cd (mid_start=2, mid_end=4) + fg = abcdfg
+        ("ab", "abab"),        // ab + (empty middle) + ab = abab
+        ("abc", "ababbc"),     // ab + ab (mid_start=0, mid_end=2) + bc = ababbc
+        ("abcd", "abbccd"),    // ab + bc (mid_start=1, mid_end=3) + cd = abbccd
+        ("abcde", "abbcde"),   // ab + bc (mid_start=1, mid_end=3) + de = abbcde
+        ("abcdef", "abcdef"),  // ab + cd (mid_start=2, mid_end=4) + ef = abcdef
+        ("abcdefg", "abcdfg"), // ab + cd (mid_start=2, mid_end=4) + fg = abcdfg
     ];
-    
+
     for (org_id, expected_pattern) in test_cases {
         let result = get_valid_bucket_name("test", Some(org_id));
         let expected = format!("bcktt{}", expected_pattern);
@@ -163,7 +163,7 @@ fn test_bucket_name_first_char_extraction() {
         ("a b c d e", "bcktabcde"),
         ("single", "bckts"),
     ];
-    
+
     for (input, expected) in test_cases {
         let result = get_valid_bucket_name(input, None);
         assert_eq!(result, expected, "Failed for input: {}", input);

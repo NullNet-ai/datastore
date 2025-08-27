@@ -103,9 +103,7 @@ mod tests {
 
         let where_clause = result.unwrap();
         // Should return some form of WHERE clause even if empty
-        assert!(
-            where_clause.is_empty() || where_clause.contains("WHERE")
-        );
+        assert!(where_clause.is_empty() || where_clause.contains("WHERE"));
     }
 
     #[test]

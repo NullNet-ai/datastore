@@ -6,7 +6,7 @@ mod tests {
         shared_state::SharedStreamingState,
         token_bucket::{Message, TokenBucket},
     };
-    use serde_json::{json};
+    use serde_json::json;
 
     // Helper functions
     fn create_test_message(id: &str, org_id: &str) -> Message {
