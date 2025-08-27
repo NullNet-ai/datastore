@@ -1,4 +1,4 @@
-/**
+/** TODO:
  * Tests will always have descriptive names that clearly indicate what they are testing.
  * Only import the functions that are needed for the test.
  * Always a Documentation testing comment above the test function.
@@ -8,7 +8,6 @@
  * Use this naming convention for the test function should_<descriptive_name>
  * Apply Success and Failure scenarios
  */
-#[cfg(test)]
 mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
 

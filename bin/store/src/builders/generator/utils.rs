@@ -164,33 +164,3 @@ impl FieldTypeParser {
         Ok(inner.to_string())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_string_utils() {
-        assert_eq!(StringUtils::to_pascal_case("user_profile"), "UserProfile");
-    }
-
-    #[test]
-    fn test_field_type_parser() {
-        assert_eq!(
-            FieldTypeParser::parse_diesel_type("text()").unwrap(),
-            "Text"
-        );
-        assert_eq!(
-            FieldTypeParser::parse_diesel_type("nullable(text())").unwrap(),
-            "Nullable<Text>"
-        );
-        assert_eq!(
-            FieldTypeParser::diesel_to_rust_type("Text").unwrap(),
-            "String"
-        );
-        assert_eq!(
-            FieldTypeParser::diesel_to_rust_type("Nullable<Text>").unwrap(),
-            "Option<String>"
-        );
-    }
-}

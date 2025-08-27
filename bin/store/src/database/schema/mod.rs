@@ -6,5 +6,4 @@ pub mod hypertables;
 pub mod system_tables;
 pub mod verify;
 
-#[cfg(test)]
 mod verify_test;
