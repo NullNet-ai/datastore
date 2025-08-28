@@ -33,6 +33,7 @@ pub struct RuntimeManager {
     shutdown_requested: Arc<RwLock<bool>>,
     health_check_interval: Duration,
     logger: Option<Arc<crate::lifecycle::logging::LifecycleLogger>>,
+    health_service: Option<Arc<crate::lifecycle::health_service::HealthService>>,
 }
 
 impl RuntimeManager {
@@ -54,12 +55,18 @@ impl RuntimeManager {
             shutdown_requested: Arc::new(RwLock::new(false)),
             health_check_interval: Duration::from_secs(30),
             logger: None,
+            health_service: None,
         }
     }
 
     /// Set the logger for structured logging
     pub fn with_logger(mut self, logger: Arc<crate::lifecycle::logging::LifecycleLogger>) -> Self {
         self.logger = Some(logger);
+        self
+    }
+
+    pub fn with_health_service(mut self, health_service: Arc<crate::lifecycle::health_service::HealthService>) -> Self {
+        self.health_service = Some(health_service);
         self
     }
 
@@ -384,13 +391,14 @@ impl RuntimeManager {
 
         info!("[RUNTIME] HTTP server starting on {}", bind_address);
 
+        let health_service = self.health_service.clone();
         let server = HttpServer::new(move || {
             let app_state = AppState {
                 s3_client: s3_client.clone(),
                 bucket_name: bucket_name.clone(),
             };
 
-            App::new()
+            let mut app = App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(sync_router::configure_sync_routes)
                 .configure(health_router::configure_health_routes)
@@ -399,7 +407,13 @@ impl RuntimeManager {
                 .configure(root_store_router::configure_root_store_routes)
                 .configure(|cfg| store_router::configure_store_routes(cfg, app_state.clone()))
                 .configure(listener_router::configure_listener_routes)
-                .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()))
+                .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()));
+             
+            if let Some(hs) = &health_service {
+                app = app.app_data(web::Data::new(hs.clone()));
+            }
+             
+            app
         })
         .disable_signals()
         .bind(bind_address)?

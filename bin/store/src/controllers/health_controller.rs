@@ -1,11 +1,10 @@
-use crate::lifecycle::manager::LifecycleManager;
+use crate::lifecycle::health_service::HealthService;
 use crate::lifecycle::state::{ComponentStatus, HealthMetrics};
 use actix_web::{get, web, HttpResponse, Responder};
 use chrono;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// Health check response structure
 #[derive(Serialize, Debug)]
@@ -71,16 +70,14 @@ pub struct LivenessResponse {
 /// Returns 200 OK if the service is healthy, 503 Service Unavailable otherwise
 #[get("/health")]
 pub async fn health_check(
-    lifecycle_manager: web::Data<Arc<RwLock<LifecycleManager>>>,
+    health_service: web::Data<Arc<HealthService>>,
 ) -> impl Responder {
-    let manager = lifecycle_manager.read().await;
+    let is_healthy = health_service.is_healthy().await;
+    let health_report = health_service.generate_health_report().await;
 
-    let is_healthy = manager.is_healthy().await;
-    let state_manager = manager.state_manager();
-
-    // Get system metrics
-    let health_metrics = state_manager.get_health_metrics().await;
-    let components = state_manager.get_all_components().await;
+    // Get system metrics from health report
+    let health_metrics = &health_report.metrics;
+    let components = &health_report.components;
 
     // Convert components to API format
     let mut component_statuses = HashMap::new();
@@ -95,7 +92,7 @@ pub async fn health_check(
         };
 
         component_statuses.insert(
-            name,
+            name.clone(),
             ComponentHealthStatus {
                 status: status_str.to_string(),
                 last_check: info.last_health_check.map(|t| {
@@ -139,16 +136,14 @@ pub async fn health_check(
 /// Detailed health check endpoint with comprehensive system information
 #[get("/health/detailed")]
 pub async fn detailed_health_check(
-    lifecycle_manager: web::Data<Arc<RwLock<LifecycleManager>>>,
+    health_service: web::Data<Arc<HealthService>>,
 ) -> impl Responder {
-    let manager = lifecycle_manager.read().await;
+    let is_healthy = health_service.is_healthy().await;
+    let health_report = health_service.generate_health_report().await;
 
-    let is_healthy = manager.is_healthy().await;
-    let state_manager = manager.state_manager();
-
-    // Get system metrics
-    let health_metrics = state_manager.get_health_metrics().await;
-    let components = state_manager.get_all_components().await;
+    // Get system metrics from health report
+    let health_metrics = &health_report.metrics;
+    let components = &health_report.components;
 
     // Convert components to API format
     let mut component_statuses = HashMap::new();
@@ -163,7 +158,7 @@ pub async fn detailed_health_check(
         };
 
         component_statuses.insert(
-            name,
+            name.clone(),
             ComponentHealthStatus {
                 status: status_str.to_string(),
                 last_check: info.last_health_check.map(|t| {
@@ -244,18 +239,16 @@ pub async fn detailed_health_check(
 /// Returns 200 if the service is ready to accept traffic
 #[get("/health/ready")]
 pub async fn readiness_probe(
-    lifecycle_manager: web::Data<Arc<RwLock<LifecycleManager>>>,
+    health_service: web::Data<Arc<HealthService>>,
 ) -> impl Responder {
-    let manager = lifecycle_manager.read().await;
-    let state_manager = manager.state_manager();
-
-    let components = state_manager.get_all_components().await;
+    let health_report = health_service.generate_health_report().await;
+    let components = &health_report.components;
     let mut component_ready = HashMap::new();
     let mut all_ready = true;
 
     for (name, info) in components {
         let is_ready = matches!(info.status, ComponentStatus::Running);
-        component_ready.insert(name, is_ready);
+        component_ready.insert(name.clone(), is_ready);
         if !is_ready {
             all_ready = false;
         }
@@ -277,12 +270,10 @@ pub async fn readiness_probe(
 /// Returns 200 if the service is alive (basic functionality)
 #[get("/health/live")]
 pub async fn liveness_probe(
-    lifecycle_manager: web::Data<Arc<RwLock<LifecycleManager>>>,
+    health_service: web::Data<Arc<HealthService>>,
 ) -> impl Responder {
-    let manager = lifecycle_manager.read().await;
-    let state_manager = manager.state_manager();
-
-    let health_metrics = state_manager.get_health_metrics().await;
+    let health_report = health_service.generate_health_report().await;
+    let health_metrics = &health_report.metrics;
 
     let response = LivenessResponse {
         alive: true, // If we can respond, we're alive

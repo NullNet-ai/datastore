@@ -1,3 +1,4 @@
+pub mod health_service;
 pub mod logging;
 pub mod manager;
 pub mod runtime;

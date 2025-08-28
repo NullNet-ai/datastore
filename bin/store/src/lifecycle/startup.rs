@@ -667,6 +667,11 @@ impl StartupManager {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         debug!("[STARTUP] Initializing logging and cache systems");
 
+        // Update StartupManager status to starting
+        self.state_manager
+            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Starting)
+            .await;
+
         // Initialize cache configuration
         let cache_type_str = std::env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
         let cache_type = CacheType::from_str(&cache_type_str).unwrap_or(CacheType::InMemory);
@@ -687,6 +692,11 @@ impl StartupManager {
         let _ = cache.cache_type();
         debug!("[STARTUP] Cache system verified");
 
+        // Update StartupManager status to running
+        self.state_manager
+            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Running)
+            .await;
+
         Ok(())
     }
 
@@ -699,22 +709,49 @@ impl StartupManager {
     > {
         debug!("[STARTUP] Setting up database connection pool");
 
+        // Update DatabasePool status to starting
+        self.state_manager
+            .update_component_status("DatabasePool", crate::lifecycle::state::ComponentStatus::Starting)
+            .await;
+
         // Initialize database pool
         let pool = db::establish_async_pool();
         info!("[STARTUP] Database connection pool established");
 
+        // Update DatabasePool status to running
+        self.state_manager
+            .update_component_status("DatabasePool", crate::lifecycle::state::ComponentStatus::Running)
+            .await;
+
         debug!("[STARTUP] Initializing S3 storage");
 
+        // Update S3Client status to starting
+        self.state_manager
+            .update_component_status("S3Client", crate::lifecycle::state::ComponentStatus::Starting)
+            .await;
+
         // Initialize S3 storage
-        let (s3_client, bucket_name) = storage::initialize().await.map_err(|e| {
-            error!("[STARTUP] Failed to initialize S3 storage: {}", e);
-            e
-        })?;
+        let (s3_client, bucket_name) = match storage::initialize().await {
+            Ok(result) => result,
+            Err(e) => {
+                error!("[STARTUP] Failed to initialize S3 storage: {}", e);
+                // Update S3Client status to failed
+                self.state_manager
+                    .update_component_status("S3Client", crate::lifecycle::state::ComponentStatus::Failed(e.to_string()))
+                    .await;
+                return Err(e.into());
+            }
+        };
 
         info!(
             "[STARTUP] S3 storage initialized with bucket: {}",
             bucket_name
         );
+
+        // Update S3Client status to running
+        self.state_manager
+            .update_component_status("S3Client", crate::lifecycle::state::ComponentStatus::Running)
+            .await;
 
         Ok((pool, s3_client, bucket_name))
     }
