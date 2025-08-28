@@ -398,9 +398,12 @@ impl RuntimeManager {
 
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
-        
-        info!("[RUNTIME] HTTP server successfully bound to {}", bind_address);
-        
+
+        info!(
+            "[RUNTIME] HTTP server successfully bound to {}",
+            bind_address
+        );
+
         // Run server with shutdown handling
         tokio::select! {
             result = server => {
@@ -430,17 +433,17 @@ impl RuntimeManager {
     ) -> Result<actix_web::dev::Server, Box<dyn std::error::Error + Send + Sync>> {
         use crate::providers::storage::AppState;
         use crate::routers::*;
-        use actix_web::{web, App, HttpServer, middleware::Logger};
+        use actix_web::{middleware::Logger, web, App, HttpServer};
 
         info!("[RUNTIME] Configuring HTTP server for {}", bind_address);
 
         let health_service = self.health_service.clone();
-        
+
         // Validate bind address format
         if !bind_address.contains(':') {
             return Err(format!("Invalid bind address format: {}", bind_address).into());
         }
-        
+
         let server = HttpServer::new(move || {
             let app_state = AppState {
                 s3_client: s3_client.clone(),
@@ -469,12 +472,18 @@ impl RuntimeManager {
         .disable_signals()
         .bind(&bind_address)
         .map_err(|e| {
-            error!("[RUNTIME] Failed to bind HTTP server to {}: {}", bind_address, e);
+            error!(
+                "[RUNTIME] Failed to bind HTTP server to {}: {}",
+                bind_address, e
+            );
             e
         })?
         .run();
-        
-        info!("[RUNTIME] HTTP server configured and ready to start on {}", bind_address);
+
+        info!(
+            "[RUNTIME] HTTP server configured and ready to start on {}",
+            bind_address
+        );
         Ok(server)
     }
 

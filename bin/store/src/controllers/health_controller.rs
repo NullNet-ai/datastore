@@ -73,224 +73,224 @@ impl HealthController {
     /// Basic health check endpoint
     /// Returns 200 OK if the service is healthy, 503 Service Unavailable otherwise
     pub async fn health_check(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
-    let is_healthy = health_service.is_healthy().await;
-    let health_report = health_service.generate_health_report().await;
+        let is_healthy = health_service.is_healthy().await;
+        let health_report = health_service.generate_health_report().await;
 
-    // Get system metrics from health report
-    let health_metrics = &health_report.metrics;
-    let components = &health_report.components;
+        // Get system metrics from health report
+        let health_metrics = &health_report.metrics;
+        let components = &health_report.components;
 
-    // Convert components to API format
-    let mut component_statuses = HashMap::new();
-    for (name, info) in components {
-        let status_str = match info.status {
-            ComponentStatus::NotStarted => "not_started",
-            ComponentStatus::Starting => "starting",
-            ComponentStatus::Running => "running",
-            ComponentStatus::Stopping => "stopping",
-            ComponentStatus::Stopped => "stopped",
-            ComponentStatus::Failed(_) => "failed",
+        // Convert components to API format
+        let mut component_statuses = HashMap::new();
+        for (name, info) in components {
+            let status_str = match info.status {
+                ComponentStatus::NotStarted => "not_started",
+                ComponentStatus::Starting => "starting",
+                ComponentStatus::Running => "running",
+                ComponentStatus::Stopping => "stopping",
+                ComponentStatus::Stopped => "stopped",
+                ComponentStatus::Failed(_) => "failed",
+            };
+
+            component_statuses.insert(
+                name.clone(),
+                ComponentHealthStatus {
+                    status: status_str.to_string(),
+                    last_check: info.last_health_check.map(|t| {
+                        chrono::DateTime::<chrono::Utc>::from(t)
+                            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                            .to_string()
+                    }),
+                    uptime_seconds: info
+                        .started_at
+                        .map(|t| t.elapsed().unwrap_or_default().as_secs()),
+                },
+            );
+        }
+
+        let response = HealthResponse {
+            status: if is_healthy {
+                "healthy".to_string()
+            } else {
+                "unhealthy".to_string()
+            },
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .to_string(),
+            uptime_seconds: health_metrics.uptime.as_secs(),
+            components: component_statuses,
+            metrics: SystemMetrics {
+                memory_usage_mb: health_metrics.memory_usage_mb.unwrap_or(0) as f64,
+                cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
+                active_connections: health_metrics.active_connections,
+                processed_requests: health_metrics.processed_requests,
+            },
         };
 
-        component_statuses.insert(
-            name.clone(),
-            ComponentHealthStatus {
-                status: status_str.to_string(),
-                last_check: info.last_health_check.map(|t| {
-                    chrono::DateTime::<chrono::Utc>::from(t)
-                        .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-                        .to_string()
-                }),
-                uptime_seconds: info
-                    .started_at
-                    .map(|t| t.elapsed().unwrap_or_default().as_secs()),
-            },
-        );
-    }
-
-    let response = HealthResponse {
-        status: if is_healthy {
-            "healthy".to_string()
+        if is_healthy {
+            HttpResponse::Ok().json(response)
         } else {
-            "unhealthy".to_string()
-        },
-        timestamp: chrono::Utc::now()
-            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-            .to_string(),
-        uptime_seconds: health_metrics.uptime.as_secs(),
-        components: component_statuses,
-        metrics: SystemMetrics {
-            memory_usage_mb: health_metrics.memory_usage_mb.unwrap_or(0) as f64,
-            cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
-            active_connections: health_metrics.active_connections,
-            processed_requests: health_metrics.processed_requests,
-        },
-    };
-
-    if is_healthy {
-        HttpResponse::Ok().json(response)
-    } else {
-        HttpResponse::ServiceUnavailable().json(response)
-    }
+            HttpResponse::ServiceUnavailable().json(response)
+        }
     }
 
     /// Detailed health check endpoint with comprehensive system information
     pub async fn detailed_health_check(
         health_service: web::Data<Arc<HealthService>>,
     ) -> impl Responder {
-    let is_healthy = health_service.is_healthy().await;
-    let health_report = health_service.generate_health_report().await;
+        let is_healthy = health_service.is_healthy().await;
+        let health_report = health_service.generate_health_report().await;
 
-    // Get system metrics from health report
-    let health_metrics = &health_report.metrics;
-    let components = &health_report.components;
+        // Get system metrics from health report
+        let health_metrics = &health_report.metrics;
+        let components = &health_report.components;
 
-    // Convert components to API format
-    let mut component_statuses = HashMap::new();
-    for (name, info) in components {
-        let status_str = match info.status {
-            ComponentStatus::NotStarted => "not_started",
-            ComponentStatus::Starting => "starting",
-            ComponentStatus::Running => "running",
-            ComponentStatus::Stopping => "stopping",
-            ComponentStatus::Stopped => "stopped",
-            ComponentStatus::Failed(_) => "failed",
-        };
+        // Convert components to API format
+        let mut component_statuses = HashMap::new();
+        for (name, info) in components {
+            let status_str = match info.status {
+                ComponentStatus::NotStarted => "not_started",
+                ComponentStatus::Starting => "starting",
+                ComponentStatus::Running => "running",
+                ComponentStatus::Stopping => "stopping",
+                ComponentStatus::Stopped => "stopped",
+                ComponentStatus::Failed(_) => "failed",
+            };
 
-        component_statuses.insert(
-            name.clone(),
-            ComponentHealthStatus {
-                status: status_str.to_string(),
-                last_check: info.last_health_check.map(|t| {
-                    chrono::DateTime::<chrono::Utc>::from(t)
-                        .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-                        .to_string()
-                }),
-                uptime_seconds: info
-                    .started_at
-                    .map(|t| t.elapsed().unwrap_or_default().as_secs()),
+            component_statuses.insert(
+                name.clone(),
+                ComponentHealthStatus {
+                    status: status_str.to_string(),
+                    last_check: info.last_health_check.map(|t| {
+                        chrono::DateTime::<chrono::Utc>::from(t)
+                            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                            .to_string()
+                    }),
+                    uptime_seconds: info
+                        .started_at
+                        .map(|t| t.elapsed().unwrap_or_default().as_secs()),
+                },
+            );
+        }
+
+        // Perform detailed checks
+        let mut checks = HashMap::new();
+
+        // Database connectivity check
+        let db_check_start = std::time::Instant::now();
+        let db_check = perform_database_check().await;
+        checks.insert(
+            "database".to_string(),
+            CheckResult {
+                status: if db_check.is_ok() {
+                    "pass".to_string()
+                } else {
+                    "fail".to_string()
+                },
+                message: db_check.unwrap_or_else(|e| e),
+                duration_ms: db_check_start.elapsed().as_millis() as u64,
             },
         );
-    }
 
-    // Perform detailed checks
-    let mut checks = HashMap::new();
-
-    // Database connectivity check
-    let db_check_start = std::time::Instant::now();
-    let db_check = perform_database_check().await;
-    checks.insert(
-        "database".to_string(),
-        CheckResult {
-            status: if db_check.is_ok() {
-                "pass".to_string()
-            } else {
-                "fail".to_string()
+        // Memory check
+        let memory_check_start = std::time::Instant::now();
+        let memory_check = perform_memory_check(&health_metrics).await;
+        checks.insert(
+            "memory".to_string(),
+            CheckResult {
+                status: if memory_check.is_ok() {
+                    "pass".to_string()
+                } else {
+                    "warn".to_string()
+                },
+                message: memory_check.unwrap_or_else(|e| e),
+                duration_ms: memory_check_start.elapsed().as_millis() as u64,
             },
-            message: db_check.unwrap_or_else(|e| e),
-            duration_ms: db_check_start.elapsed().as_millis() as u64,
-        },
-    );
+        );
 
-    // Memory check
-    let memory_check_start = std::time::Instant::now();
-    let memory_check = perform_memory_check(&health_metrics).await;
-    checks.insert(
-        "memory".to_string(),
-        CheckResult {
-            status: if memory_check.is_ok() {
-                "pass".to_string()
-            } else {
-                "warn".to_string()
+        // Cache connectivity check
+        let cache_check_start = std::time::Instant::now();
+        let cache_check = perform_cache_check().await;
+        checks.insert(
+            "cache".to_string(),
+            CheckResult {
+                status: if cache_check.is_ok() {
+                    "pass".to_string()
+                } else {
+                    "fail".to_string()
+                },
+                message: cache_check.unwrap_or_else(|e| e),
+                duration_ms: cache_check_start.elapsed().as_millis() as u64,
             },
-            message: memory_check.unwrap_or_else(|e| e),
-            duration_ms: memory_check_start.elapsed().as_millis() as u64,
-        },
-    );
+        );
 
-    // Cache connectivity check
-    let cache_check_start = std::time::Instant::now();
-    let cache_check = perform_cache_check().await;
-    checks.insert(
-        "cache".to_string(),
-        CheckResult {
-            status: if cache_check.is_ok() {
-                "pass".to_string()
+        let response = DetailedHealthResponse {
+            status: if is_healthy {
+                "healthy".to_string()
             } else {
-                "fail".to_string()
+                "unhealthy".to_string()
             },
-            message: cache_check.unwrap_or_else(|e| e),
-            duration_ms: cache_check_start.elapsed().as_millis() as u64,
-        },
-    );
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .to_string(),
+            uptime_seconds: health_metrics.uptime.as_secs(),
+            components: component_statuses,
+            metrics: SystemMetrics {
+                memory_usage_mb: health_metrics.memory_usage_mb.unwrap_or(0) as f64,
+                cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
+                active_connections: health_metrics.active_connections,
+                processed_requests: health_metrics.processed_requests,
+            },
+            checks,
+        };
 
-    let response = DetailedHealthResponse {
-        status: if is_healthy {
-            "healthy".to_string()
+        if is_healthy {
+            HttpResponse::Ok().json(response)
         } else {
-            "unhealthy".to_string()
-        },
-        timestamp: chrono::Utc::now()
-            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-            .to_string(),
-        uptime_seconds: health_metrics.uptime.as_secs(),
-        components: component_statuses,
-        metrics: SystemMetrics {
-            memory_usage_mb: health_metrics.memory_usage_mb.unwrap_or(0) as f64,
-            cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
-            active_connections: health_metrics.active_connections,
-            processed_requests: health_metrics.processed_requests,
-        },
-        checks,
-    };
-
-    if is_healthy {
-        HttpResponse::Ok().json(response)
-    } else {
-        HttpResponse::ServiceUnavailable().json(response)
-    }
+            HttpResponse::ServiceUnavailable().json(response)
+        }
     }
 
     /// Kubernetes-style readiness probe
     /// Returns 200 if the service is ready to accept traffic
     pub async fn readiness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
-    let health_report = health_service.generate_health_report().await;
-    let components = &health_report.components;
-    let mut component_ready = HashMap::new();
-    let mut all_ready = true;
+        let health_report = health_service.generate_health_report().await;
+        let components = &health_report.components;
+        let mut component_ready = HashMap::new();
+        let mut all_ready = true;
 
-    for (name, info) in components {
-        let is_ready = matches!(info.status, ComponentStatus::Running);
-        component_ready.insert(name.clone(), is_ready);
-        if !is_ready {
-            all_ready = false;
+        for (name, info) in components {
+            let is_ready = matches!(info.status, ComponentStatus::Running);
+            component_ready.insert(name.clone(), is_ready);
+            if !is_ready {
+                all_ready = false;
+            }
         }
-    }
 
-    let response = ReadinessResponse {
-        ready: all_ready,
-        components: component_ready,
-    };
+        let response = ReadinessResponse {
+            ready: all_ready,
+            components: component_ready,
+        };
 
-    if all_ready {
-        HttpResponse::Ok().json(response)
-    } else {
-        HttpResponse::ServiceUnavailable().json(response)
-    }
+        if all_ready {
+            HttpResponse::Ok().json(response)
+        } else {
+            HttpResponse::ServiceUnavailable().json(response)
+        }
     }
 
     /// Kubernetes-style liveness probe
     /// Returns 200 if the service is alive (basic functionality)
     pub async fn liveness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
-    let health_report = health_service.generate_health_report().await;
-    let health_metrics = &health_report.metrics;
+        let health_report = health_service.generate_health_report().await;
+        let health_metrics = &health_report.metrics;
 
-    let response = LivenessResponse {
-        alive: true, // If we can respond, we're alive
-        uptime_seconds: health_metrics.uptime.as_secs(),
-    };
+        let response = LivenessResponse {
+            alive: true, // If we can respond, we're alive
+            uptime_seconds: health_metrics.uptime.as_secs(),
+        };
 
-    HttpResponse::Ok().json(response)
+        HttpResponse::Ok().json(response)
     }
 }
 

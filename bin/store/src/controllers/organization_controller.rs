@@ -69,7 +69,6 @@ impl OrganizationsController {
     }
 
     pub async fn auth(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
-
         let query_string = req.query_string();
 
         // Print auth extensions for debugging - access extensions only once

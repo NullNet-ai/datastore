@@ -13,8 +13,17 @@ pub fn configure_health_routes(cfg: &mut ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .route("/health", web::get().to(HealthController::health_check))
-            .route("/health/detailed", web::get().to(HealthController::detailed_health_check))
-            .route("/health/ready", web::get().to(HealthController::readiness_probe))
-            .route("/health/live", web::get().to(HealthController::liveness_probe)),
+            .route(
+                "/health/detailed",
+                web::get().to(HealthController::detailed_health_check),
+            )
+            .route(
+                "/health/ready",
+                web::get().to(HealthController::readiness_probe),
+            )
+            .route(
+                "/health/live",
+                web::get().to(HealthController::liveness_probe),
+            ),
     );
 }

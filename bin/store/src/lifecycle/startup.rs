@@ -669,7 +669,10 @@ impl StartupManager {
 
         // Update StartupManager status to starting
         self.state_manager
-            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Starting)
+            .update_component_status(
+                "StartupManager",
+                crate::lifecycle::state::ComponentStatus::Starting,
+            )
             .await;
 
         // Initialize cache configuration
@@ -694,7 +697,10 @@ impl StartupManager {
 
         // Update StartupManager status to running
         self.state_manager
-            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Running)
+            .update_component_status(
+                "StartupManager",
+                crate::lifecycle::state::ComponentStatus::Running,
+            )
             .await;
 
         Ok(())
@@ -711,7 +717,10 @@ impl StartupManager {
 
         // Update DatabasePool status to starting
         self.state_manager
-            .update_component_status("DatabasePool", crate::lifecycle::state::ComponentStatus::Starting)
+            .update_component_status(
+                "DatabasePool",
+                crate::lifecycle::state::ComponentStatus::Starting,
+            )
             .await;
 
         // Initialize database pool
@@ -720,14 +729,20 @@ impl StartupManager {
 
         // Update DatabasePool status to running
         self.state_manager
-            .update_component_status("DatabasePool", crate::lifecycle::state::ComponentStatus::Running)
+            .update_component_status(
+                "DatabasePool",
+                crate::lifecycle::state::ComponentStatus::Running,
+            )
             .await;
 
         debug!("[STARTUP] Initializing S3 storage");
 
         // Update S3Client status to starting
         self.state_manager
-            .update_component_status("S3Client", crate::lifecycle::state::ComponentStatus::Starting)
+            .update_component_status(
+                "S3Client",
+                crate::lifecycle::state::ComponentStatus::Starting,
+            )
             .await;
 
         // Initialize S3 storage
@@ -743,7 +758,10 @@ impl StartupManager {
 
         // Update S3Client status to running
         self.state_manager
-            .update_component_status("S3Client", crate::lifecycle::state::ComponentStatus::Running)
+            .update_component_status(
+                "S3Client",
+                crate::lifecycle::state::ComponentStatus::Running,
+            )
             .await;
 
         Ok((pool, s3_client, bucket_name))
