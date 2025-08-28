@@ -23,15 +23,15 @@ use crate::builders::generator::generator_service::GeneratorService;
 use crate::constants::paths;
 use crate::database::db;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
-use crate::middlewares::shutdown_handler;
 use crate::lifecycle::{
     logging::{LogConfig, LogLevel},
     manager::LifecycleManager,
 };
+use crate::middlewares::shutdown_handler;
+use env_logger::Env;
 use log::{error, info};
 use std::process;
 use std::time::Duration;
-use env_logger::Env;
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;

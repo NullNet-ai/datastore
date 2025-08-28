@@ -71,7 +71,10 @@ impl RuntimeManager {
         self
     }
 
-    pub fn with_health_service(mut self, health_service: Arc<crate::lifecycle::health_service::HealthService>) -> Self {
+    pub fn with_health_service(
+        mut self,
+        health_service: Arc<crate::lifecycle::health_service::HealthService>,
+    ) -> Self {
         self.health_service = Some(health_service);
         self
     }
@@ -197,41 +200,48 @@ impl RuntimeManager {
     pub async fn check_database_health() -> Result<(), String> {
         use crate::database::db::create_connection;
         use std::time::Duration;
-        
+
         debug!("[RUNTIME] Checking database health");
 
         // Perform actual database health check with timeout
         match tokio::time::timeout(Duration::from_secs(5), async {
             // Create database connection
-            let client = create_connection().await
+            let client = create_connection()
+                .await
                 .map_err(|e| format!("Failed to create database connection: {}", e))?;
-            
+
             // Execute simple health check query
-            let rows = client.query("SELECT 1 as health_check", &[])
+            let rows = client
+                .query("SELECT 1 as health_check", &[])
                 .await
                 .map_err(|e| format!("Health check query failed: {}", e))?;
-            
+
             // Verify we got expected result
             if rows.is_empty() {
                 return Err("Health check query returned no rows".to_string());
             }
-            
+
             let health_value: i32 = rows[0].get(0);
             if health_value != 1 {
-                return Err(format!("Health check query returned unexpected value: {}", health_value));
+                return Err(format!(
+                    "Health check query returned unexpected value: {}",
+                    health_value
+                ));
             }
-            
+
             debug!("[RUNTIME] Database health check successful");
             Ok(())
-        }).await {
+        })
+        .await
+        {
             Ok(Ok(())) => {
                 info!("[RUNTIME] Database health check passed");
                 Ok(())
-            },
+            }
             Ok(Err(e)) => {
                 error!("[RUNTIME] Database health check failed: {}", e);
                 Err(e)
-            },
+            }
             Err(_) => {
                 let error_msg = "Database health check timed out after 5 seconds";
                 error!("[RUNTIME] {}", error_msg);
@@ -449,11 +459,11 @@ impl RuntimeManager {
                 .configure(|cfg| store_router::configure_store_routes(cfg, app_state.clone()))
                 .configure(listener_router::configure_listener_routes)
                 .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()));
-             
+
             if let Some(hs) = &health_service {
                 app = app.app_data(web::Data::new(hs.clone()));
             }
-             
+
             app
         })
         .disable_signals()

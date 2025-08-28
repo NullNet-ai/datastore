@@ -244,9 +244,11 @@ impl LifecycleManager {
 
         // Execute runtime with required parameters
         // This will run until a shutdown signal is received
-        match self.runtime_manager
+        match self
+            .runtime_manager
             .execute(pool.clone(), s3_client.clone(), bucket_name.clone())
-            .await {
+            .await
+        {
             Ok(_) => {
                 // Update RuntimeManager status to stopped when gracefully shut down
                 self.state_manager
@@ -256,7 +258,10 @@ impl LifecycleManager {
             Err(e) => {
                 // Update RuntimeManager status to failed on error
                 self.state_manager
-                    .update_component_status("RuntimeManager", ComponentStatus::Failed(e.to_string()))
+                    .update_component_status(
+                        "RuntimeManager",
+                        ComponentStatus::Failed(e.to_string()),
+                    )
                     .await;
                 return Err(e);
             }
@@ -281,11 +286,11 @@ impl LifecycleManager {
         self.state_manager
             .update_component_status("StartupManager", ComponentStatus::Stopping)
             .await;
-        
+
         self.state_manager
             .update_component_status("RuntimeManager", ComponentStatus::Stopping)
             .await;
-        
+
         // Update ShutdownManager status to starting
         self.state_manager
             .update_component_status("ShutdownManager", ComponentStatus::Starting)
@@ -308,7 +313,10 @@ impl LifecycleManager {
             Err(e) => {
                 // Update ShutdownManager status to failed on error
                 self.state_manager
-                    .update_component_status("ShutdownManager", ComponentStatus::Failed(e.to_string()))
+                    .update_component_status(
+                        "ShutdownManager",
+                        ComponentStatus::Failed(e.to_string()),
+                    )
                     .await;
                 Err(e)
             }
@@ -361,16 +369,18 @@ impl LifecycleManager {
         let is_healthy = self.state_manager.is_healthy().await;
         let metrics = self.state_manager.get_health_metrics().await;
         let components = self.state_manager.get_all_components().await;
-        
+
         self.health_service.update_phase(phase).await;
         self.health_service.update_health_status(is_healthy).await;
-        
+
         let health_report = super::health_service::HealthReport {
             metrics,
             components,
         };
-        
-        self.health_service.update_health_report(health_report).await;
+
+        self.health_service
+            .update_health_report(health_report)
+            .await;
     }
 
     /// Request graceful shutdown

@@ -1,7 +1,7 @@
-use crate::lifecycle::state::{LifecyclePhase, HealthMetrics, ComponentInfo};
+use crate::lifecycle::state::{ComponentInfo, HealthMetrics, LifecyclePhase};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
 
 /// Health report structure
 #[derive(Debug, Clone)]

@@ -69,9 +69,7 @@ pub struct LivenessResponse {
 /// Basic health check endpoint
 /// Returns 200 OK if the service is healthy, 503 Service Unavailable otherwise
 #[get("/health")]
-pub async fn health_check(
-    health_service: web::Data<Arc<HealthService>>,
-) -> impl Responder {
+pub async fn health_check(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let is_healthy = health_service.is_healthy().await;
     let health_report = health_service.generate_health_report().await;
 
@@ -238,9 +236,7 @@ pub async fn detailed_health_check(
 /// Kubernetes-style readiness probe
 /// Returns 200 if the service is ready to accept traffic
 #[get("/health/ready")]
-pub async fn readiness_probe(
-    health_service: web::Data<Arc<HealthService>>,
-) -> impl Responder {
+pub async fn readiness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let health_report = health_service.generate_health_report().await;
     let components = &health_report.components;
     let mut component_ready = HashMap::new();
@@ -269,9 +265,7 @@ pub async fn readiness_probe(
 /// Kubernetes-style liveness probe
 /// Returns 200 if the service is alive (basic functionality)
 #[get("/health/live")]
-pub async fn liveness_probe(
-    health_service: web::Data<Arc<HealthService>>,
-) -> impl Responder {
+pub async fn liveness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let health_report = health_service.generate_health_report().await;
     let health_metrics = &health_report.metrics;
 
@@ -286,7 +280,7 @@ pub async fn liveness_probe(
 /// Perform database connectivity check
 async fn perform_database_check() -> Result<String, String> {
     use crate::lifecycle::runtime::RuntimeManager;
-    
+
     // Reuse the existing database health check from runtime module
     match RuntimeManager::check_database_health().await {
         Ok(()) => Ok("Database connection successful".to_string()),
