@@ -5,3 +5,5 @@ pub mod runtime;
 pub mod shutdown;
 pub mod startup;
 pub mod state;
+
+pub mod runtime_test;

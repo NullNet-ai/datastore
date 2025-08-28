@@ -8,12 +8,6 @@ use std::time::{Duration, Instant};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    include!("runtime/tests.rs");
-}
-
 /// Runtime health status
 #[derive(Debug, Clone, PartialEq)]
 pub enum HealthStatus {
@@ -184,7 +178,7 @@ impl RuntimeManager {
         }
 
         // Check cache system
-        if let Err(e) = Self::check_cache_health().await {
+        if let Err(e) = check_cache_health().await {
             return HealthStatus::Degraded(format!("Cache system issue: {}", e));
         }
 
@@ -250,15 +244,7 @@ impl RuntimeManager {
         }
     }
 
-    /// Check cache system health
-    async fn check_cache_health() -> Result<(), String> {
-        debug!("[RUNTIME] Checking cache health");
 
-        // TODO: Implement actual cache health check
-        // Example: Set/get a test key with timeout
-
-        Ok(())
-    }
 
     /// Check memory usage
     async fn check_memory_usage() -> Option<String> {
@@ -510,5 +496,66 @@ impl RuntimeManager {
 impl Default for RuntimeManager {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Check cache system health
+pub async fn check_cache_health() -> Result<String, String> {
+    debug!("[RUNTIME] Checking cache health");
+
+    use crate::providers::storage::cache::{cache, CacheConfig};
+    use std::time::Duration;
+    use tokio::time::timeout;
+
+    // Get current cache configuration
+    let cache_config = CacheConfig::global();
+    let cache_type = cache_config.cache_type;
+
+    debug!("[RUNTIME] Cache type: {:?}", cache_type);
+
+    // Test cache operations with timeout
+    let health_check = async {
+        let test_key = "__health_check__".to_string();
+        let test_value = serde_json::Value::String("test_value".to_string());
+
+        // Test insert operation
+        cache.insert(test_key.clone(), test_value.clone());
+
+        // Test get operation
+        match cache.get(&test_key) {
+            Some(retrieved_value) => {
+                if retrieved_value == test_value {
+                    debug!("[RUNTIME] Cache read/write test successful");
+                    
+                    // Clean up test key
+                    cache.remove(&test_key);
+                    
+                    Ok(())
+                } else {
+                    Err("Cache returned incorrect value".to_string())
+                }
+            }
+            None => Err("Cache failed to retrieve test value".to_string()),
+        }
+    };
+
+    // Apply timeout to prevent hanging on Redis connection issues
+    match timeout(Duration::from_secs(5), health_check).await {
+        Ok(result) => {
+            match result {
+                Ok(_) => {
+                    info!("[RUNTIME] Cache health check passed for {:?}", cache_type);
+                    Ok(format!("Cache ({:?}) connectivity verified", cache_type))
+                }
+                Err(e) => {
+                    error!("[RUNTIME] Cache health check failed: {}", e);
+                    Err(format!("Cache health check failed: {}", e))
+                }
+            }
+        }
+        Err(_) => {
+            error!("[RUNTIME] Cache health check timed out");
+            Err("Cache health check timed out after 5 seconds".to_string())
+        }
     }
 }

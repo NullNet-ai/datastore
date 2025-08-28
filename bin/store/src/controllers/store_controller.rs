@@ -1400,7 +1400,6 @@ pub async fn aggregation_filter(
 
 // files implementation
 // Query
-// TODO: get file metadat from database
 pub async fn get_file_by_id(
     auth: HttpRequest,
     path_params: web::Path<String>,

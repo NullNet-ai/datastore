@@ -1,4 +1,5 @@
 use crate::lifecycle::health_service::HealthService;
+use crate::lifecycle::runtime::check_cache_health;
 use crate::lifecycle::state::{ComponentStatus, HealthMetrics};
 use actix_web::{get, web, HttpResponse, Responder};
 use chrono;
@@ -206,6 +207,22 @@ pub async fn detailed_health_check(
         },
     );
 
+    // Cache connectivity check
+    let cache_check_start = std::time::Instant::now();
+    let cache_check = perform_cache_check().await;
+    checks.insert(
+        "cache".to_string(),
+        CheckResult {
+            status: if cache_check.is_ok() {
+                "pass".to_string()
+            } else {
+                "fail".to_string()
+            },
+            message: cache_check.unwrap_or_else(|e| e),
+            duration_ms: cache_check_start.elapsed().as_millis() as u64,
+        },
+    );
+
     let response = DetailedHealthResponse {
         status: if is_healthy {
             "healthy".to_string()
@@ -301,5 +318,13 @@ async fn perform_memory_check(metrics: &HealthMetrics) -> Result<String, String>
         Err(format!("High memory usage: {} MB", memory_usage))
     } else {
         Ok(format!("Memory usage normal: {} MB", memory_usage))
+    }
+}
+
+/// Performs cache health check by delegating to the runtime module
+async fn perform_cache_check() -> Result<String, String> {
+    match check_cache_health().await {
+        Ok(message) => Ok(message),
+        Err(e) => Err(format!("Cache health check failed: {}", e)),
     }
 }

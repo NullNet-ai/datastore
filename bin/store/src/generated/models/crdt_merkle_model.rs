@@ -16,5 +16,5 @@ pub struct CrdtMerkleModel {
 pub struct ParsedMerkle {
     pub group_id: String,
     pub timestamp: String,
-    pub merkle: MerkleTree, // TODO: instead of String but parse it to protobuff and also store it as stringified protobuff
+    pub merkle: MerkleTree, //TODO: instead of String but parse it to protobuff and also store it as stringified protobuff
 }

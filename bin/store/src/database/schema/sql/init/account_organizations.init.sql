@@ -1,6 +1,5 @@
 DO $$
 DECLARE
--- TODO - define if system field and allow return!!!
     entity_record_id TEXT := uuid_generate_v4()::TEXT;
     organization_record_id TEXT := uuid_generate_v4()::TEXT;
     record_email TEXT := 'superadmin@dnamicro.com';
