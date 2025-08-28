@@ -371,7 +371,7 @@ macro_rules! generate_batch_insert_method {
 
                         if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
                             if let Err(e) =
-crate::providers::operations::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clone(), id.to_string(), "".to_string(), auth_data.clone(), true).await
+crate::providers::operations::batch_sync::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clone(), id.to_string(), "".to_string(), auth_data.clone(), true).await
                             {
                                 log::error!("Code assignment error with id {id}: {e}");
                             }

@@ -20,7 +20,7 @@ mod structs;
 // table_enum is now in generated module
 mod utils;
 use crate::controllers::store_controller::{download_file_by_id, get_file_by_id};
-use crate::providers::operations::batch_sync::BatchSyncService;
+use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import

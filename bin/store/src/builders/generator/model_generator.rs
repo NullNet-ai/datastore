@@ -202,34 +202,3 @@ impl ModelGenerator {
         dependencies
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::builders::generator::field_definition::FieldDefinition;
-
-    #[test]
-    fn test_generate_model() {
-        let table_def = TableDefinition {
-            name: "users".to_string(),
-            indexes: Vec::new(),
-            foreign_keys: Vec::new(),
-            is_hypertable: false,
-            fields: vec![
-                FieldDefinition::new("id".to_string(), "integer()".to_string())
-                    .unwrap()
-                    .with_attributes(true, true, false, None),
-                FieldDefinition::new("name".to_string(), "text()".to_string())
-                    .unwrap()
-                    .with_attributes(false, false, true, None),
-            ],
-        };
-
-        let result = ModelGenerator::generate_model(&table_def);
-        assert!(result.is_ok());
-        let content = result.unwrap();
-        assert!(content.contains("pub struct UserModel"));
-        assert!(content.contains("pub id: i32"));
-        assert!(content.contains("pub name: String"));
-    }
-}

@@ -3,7 +3,7 @@ use crate::controllers::common_controller::{
     process_and_update_record, process_records,
 };
 use crate::database::db::create_connection;
-use crate::providers::operations::batch_sync::BatchSyncService;
+use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::queries::aggregation_filter::AggregationSQLConstructor;
 use crate::providers::queries::batch_update::BatchUpdateSQLConstructor;
 use crate::providers::queries::find::{DynamicResult, SQLConstructor, Validation};

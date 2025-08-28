@@ -5,17 +5,6 @@ use std::fs;
 use std::path::Path;
 const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
-/// Verifies if a field exists in a specified table by parsing the schema.rs file
-///
-/// # Arguments
-///
-/// * `table_name` - The name of the table to check
-/// * `field_name` - The name of the field to verify
-///
-/// # Returns
-///
-/// * `bool` - True if the field exists in the table, false otherwise
-///
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
     // Path to schema.rs file
     let possible_paths = vec![
@@ -274,34 +263,4 @@ pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
     }
 
     None
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_field_exists() {
-        // Test with existing table and field
-        assert!(field_exists_in_table("items", "name"));
-
-        // Test with existing table but non-existing field
-        assert!(!field_exists_in_table("items", "nonexistent_field"));
-
-        // Test with non-existing table
-        assert!(!field_exists_in_table("nonexistent_table", "name"));
-    }
-
-    #[test]
-    fn test_get_table_fields() {
-        // Test with existing table
-        if let Some(fields) = get_table_fields("items") {
-            assert!(!fields.is_empty());
-            // Check that common fields exist
-            assert!(fields.contains(&"id".to_string()));
-        }
-
-        // Test with non-existing table
-        assert!(get_table_fields("nonexistent_table").is_none());
-    }
 }

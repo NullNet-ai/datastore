@@ -5,3 +5,5 @@ pub mod from_proto;
 pub mod hypertables;
 pub mod system_tables;
 pub mod verify;
+
+mod verify_test;

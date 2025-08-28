@@ -5,6 +5,126 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.75
+### Author
+Bert
+### Added
+- ***Unit tests***:
+  - **Authentication Service Tests** (`auth_service_test.rs`):
+    - Password hashing consistency with bcrypt format and different salts
+    - Different password verification and cross-validation failure handling
+    - Empty string password hashing and verification
+    - Special character password handling
+    - Unicode password support across different character sets
+  - **Organizations Service Tests** (`organizations_test.rs`):
+    - Register struct creation with all required fields
+    - Register struct default implementation with empty/None values
+    - AccountType parsing from string values with error handling
+    - AccountType Display trait formatting for enum variants
+    - AuthData struct creation with authentication credentials
+    - AuthDto JSON serialization functionality
+  - **Permissions Service Tests** (`permissions_test.rs`):
+    - DataPermissions default implementation with empty structures
+    - SchemaItem creation with database schema field mapping
+    - PermissionQueryParams default value implementation
+    - Permissions query generation for data access control
+  - **Query Services Tests**:
+    - **Search Suggestion Tests** (`search_suggestion_test.rs`):
+      - AliasedJoinedEntity creation and cloning with entity aliasing
+      - FieldExpression creation, cloning, and JSON serialization
+      - ConcatenatedExpressions HashMap operations and type handling
+      - FormatFilterResponse creation with formatted filters and search terms
+      - FieldFiltersResult creation with optional field filters
+      - SearchSuggestionCache hash string generation and consistency
+      - Field filter matching and non-matching criteria handling
+      - Concatenated expressions generation with SQL and custom separators
+      - Filter formatting with and without aliased entities
+      - ConcatenateField creation with custom properties and separators
+      - Debug representation formatting for all struct types
+      - Default search pattern fallback and multiple entity handling
+    - **Find Validations Tests** (`validations_test.rs`):
+      - Table validation with valid and empty table names
+      - Pluck validation with valid fields and empty arrays
+      - Conflicting filters validation for advance_filters and group_advance_filters
+      - Concatenated fields validation with valid config and error cases
+      - Distinct_by validation with valid fields, non-existent fields, and None values
+      - Entity name normalization between singular and plural forms
+      - Complete validation pipeline with valid and invalid configurations
+    - **Aggregation Filter Tests** (`aggregation_filter_test.rs`):
+      - AggregationFilter default implementations and trait testing
+      - QueryFilter and AggregationQueryFilter trait implementations
+      - AggregationSQLConstructor creation and organization ID handling
+      - Aggregation SQL construction with success and error scenarios
+      - Missing aggregations, bucket_size, and entity error handling
+      - AggregationFilterWrapper creation and trait implementations
+      - Debug and Clone trait implementations for filter structures
+    - **Batch Update Tests** (`batch_update_test.rs`):
+      - BatchUpdateFilterWrapper creation and QueryFilter trait implementation
+      - BatchUpdateSQLConstructor creation with table names and organization IDs
+      - WHERE clause construction with empty filters and filter criteria
+      - Organization ID filtering for non-root contexts
+      - Batch update SQL construction with basic and complex parameters
+      - Complex SET clause handling with conditional logic and functions
+      - Multiple update operations and various filter criteria combinations
+      - Debug and Clone trait implementations for wrapper structures
+    - Valid pass keys query generation
+    - Group by field record permissions query generation
+    - Role permissions query generation
+    - PermissionQueryResult creation with all fields
+    - ValidPassKeyResult creation functionality
+    - GroupByFieldRecordPermissionsResult creation
+    - RolePermissionResult creation
+    - PermissionsContext creation and validation
+    - PermissionQueryParams variants creation and matching
+    - PermissionQueryType enum variants handling
+    - DataPermissions population with schema items
+    - DataPermissions JSON serialization
+    - SchemaItem JSON serialization
+    - PermissionQueryResult optional fields handling
+  - **Message Stream Tests** (`message_stream_test.rs`):
+    - SharedStreamingState initialization with empty collections
+    - Channel registration functionality with valid parameters
+    - Duplicate channel registration handling
+    - Backpressure management functionality
+    - Flushing management functionality
+    - Processing queue management
+    - Processing management functionality
+    - Channel organization retrieval
+    - Channel retrieval functionality
+    - TokenBucket initialization with specified parameters
+    - Token bucket creation without consumer
+    - Message reception with available tokens
+    - Message reception without available tokens (rejection)
+    - Message emission functionality
+    - Message emission from empty buffer handling
+    - Token capacity increase functionality
+    - Token capacity decrease functionality
+    - Token setting with buffer overflow handling
+    - FlushConnectionLimiter initialization
+    - FlushConnectionLimiter capacity management
+    - Message creation with proper field values
+    - Message debug formatting
+    - Message cloning functionality
+    - Token bucket backpressure recovery
+    - Shared state channel lifecycle management
+    - Multiple organizations and channels management
+  - **Storage Service Tests** (`minio_test.rs`):
+    - Storage disable functionality with DISABLE_STORAGE environment variable
+    - Storage enable functionality with various non-true values
+    - Default storage behavior without environment variable
+    - Valid bucket name generation (basic functionality)
+    - Valid bucket name generation with organization ID
+    - Bucket name sanitization for special characters
+    - Bucket name length limits and truncation
+    - Bucket name edge cases handling
+    - Bucket name generation with empty organization ID
+    - Complex bucket name scenarios with hyphens and numbers
+    - AppState structure compilation validation
+    - NoCertificateVerification struct compilation
+    - Organization ID pattern generation
+    - Bucket name first character extraction
+---
+
 ## 0.1.74
 ### Author
 Kashan Ali Khalid
