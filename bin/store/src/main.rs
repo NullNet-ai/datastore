@@ -72,190 +72,9 @@ fn run_build_script() -> std::io::Result<()> {
     Ok(())
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    dotenv().ok();
-
-    let (s3_client, bucket_name) = match providers::storage::initialize().await {
-        Ok((client, bucket)) => (client, bucket),
-        Err(e) => {
-            log::error!("Failed to initialize S3 client: {}", e);
-            std::process::exit(1);
-        }
-    };
-
-    let generate_proto =
-        env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string()) == "true";
-    let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
-    let generate_table_enum =
-        env::var("GENERATE_TABLE_ENUM").unwrap_or_else(|_| "false".to_string()) == "true";
-    let create_schema = env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true";
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .filter_module("tokio_postgres", log::LevelFilter::Info)
-        .init();
-    let cache_type_str = env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
-    let cache_type = CacheType::from_str(&cache_type_str).unwrap_or(CacheType::InMemory);
-    let redis_connection = env::var("REDIS_CONNECTION").ok();
-    let ttl = env::var("CACHE_TTL")
-        .ok()
-        .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
-        .map(Duration::from_secs);
-    let args: Vec<String> = env::args().collect();
-
-    CacheConfig::init(cache_type, redis_connection, ttl);
-    log::info!(
-        "Initialized cache with type: {:?}, TTL: {:?}",
-        cache_type,
-        ttl
-    );
-
-    let _ = cache.cache_type();
-
-    // Set boolean flags based on command-line arguments
-    let cleanup = args.contains(&"--cleanup".to_string());
-    let init_db = args.contains(&"--init-db".to_string());
-    if cleanup {
-        info!("Running cleanup operation only...");
-        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
-            run_cleanup: true,
-            run_migrations: true,
-            initialize_services: false,
-            run_init_sql: false,
-        })
-        .await
-        {
-            Ok(_) => {
-                info!("Database cleanup completed successfully!");
-            }
-            Err(e) => {
-                error!("Error during database cleanup: {}", e);
-            }
-        }
-    }
-    if let Err(e) = initialize(EInitializer::BACKGROUND_SERVICES_CONFIG, None).await {
-        log::error!("Failed to initialize background services: {}", e);
-    } else {
-        log::info!("Background services initialized successfully");
-    }
-
-    TransactionService::initialize().await;
-
-    if generate_proto || generate_grpc || generate_table_enum || create_schema {
-        info!("Starting code generation...");
-
-        // Proto generation
-        if generate_proto {
-            info!("Generating proto files");
-            proto_generator::generate_protos(
-                paths::database::SCHEMA_FILE,
-                paths::proto::OUTPUT_DIR,
-            );
-
-            if let Err(e) = run_build_script() {
-                error!("Failed to run build script: {}", e);
-            }
-        }
-
-        // gRPC controller generation
-        if generate_grpc {
-            info!("Generating gRPC controllers");
-            if let Err(e) = grpc_controller_generator::run_generator() {
-                error!("Error: {}", e);
-                process::exit(1);
-            }
-        }
-
-        // Table enum generation
-        if generate_table_enum {
-            info!("Generating table enums");
-            if let Err(e) = table_enum_generator::run_generator() {
-                error!("Failed to generate table enum: {}", e);
-            }
-        }
-
-        // Schema generation
-        if create_schema {
-            info!("Running schema generator");
-            if let Err(e) = GeneratorService::run() {
-                error!("Failed to generate schema: {}", e);
-                process::exit(1);
-            }
-        }
-
-        info!("Code generation completed successfully!");
-        process::exit(0);
-    }
-
-    let background_sync_service = match background_sync::BackgroundSyncService::new().await {
-        Ok(service) => service,
-        Err(e) => {
-            log::error!("Failed to initialize BackgroundSyncService: {}", e);
-            return Ok(());
-        }
-    };
-
-    // Spawn it in a background task
-    tokio::spawn(async move {
-        if let Err(e) = background_sync_service.init().await {
-            log::error!("Error in background sync service: {}", e);
-        }
-    });
-
-    //Pg listener service
-    info!("Starting PgListenerService...");
-    if let Err(e) = PgListenerService::initialize().await {
-        log::error!("Failed to initialize PgListenerService: {}", e);
-    } else {
-        log::info!("PgListenerService initialized successfully");
-    }
-
-    // Initialize the message sender
-    let sender = create_message_channel();
-    let arc_sender = Arc::new(sender);
-    SENDER.set(arc_sender).expect("Failed to initialize sender");
-
-    let pool = db::establish_async_pool();
-    info!("Database connected successfully.");
-
-    // init batch sync
-    if let Err(e) = BatchSyncService::init().await {
-        log::error!("Failed to initialize queue: {}", e);
-    } else {
-        log::info!("Queue initialized successfully");
-    }
-
-    if let Err(e) = QueueService::init().await {
-        log::error!("Failed to initialize queue: {}", e);
-    } else {
-        info!("Queue initialized successfully");
-    }
-
-    if init_db {
-        info!("Running cleanup operation only...");
-        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
-            run_cleanup: false,
-            run_migrations: false,
-            initialize_services: true,
-            run_init_sql: true,
-        })
-        .await
-        {
-            Ok(_) => {
-                info!("Database cleanup completed successfully!");
-            }
-            Err(e) => {
-                error!("Error during database cleanup: {}", e);
-            }
-        }
-    }
-
-    //GRPC config
-
-    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
-    let grpc_port = env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string());
-    let grpc_url = env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
-
+/// Spawns all background services including gRPC, background sync, and Socket.IO server
+async fn spawn_background_services(grpc_addr: String, socket_host: String, socket_port: String) {
+    // Start gRPC server
     tokio::spawn(async move {
         match GrpcController::init(&grpc_addr).await {
             Ok(_) => info!("gRPC server started successfully"),
@@ -263,18 +82,14 @@ async fn main() -> std::io::Result<()> {
         }
     });
 
-    //HTTPS config
-
-    let server_url = format!("0.0.0.0:{}", port);
-    info!("Store is running on {}", server_url);
+    // Start background sync service
     tokio::spawn(async {
         if let Err(e) = bg_sync().await {
             log::error!("Error starting background sync: {}", e);
         }
     });
 
-    //Socket server config
-
+    // Start Socket.IO server
     tokio::spawn(async move {
         use axum::Router;
 
@@ -299,17 +114,27 @@ async fn main() -> std::io::Result<()> {
 
         let app = Router::new().layer(layer);
 
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3001")
+        let listener = tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port))
             .await
-            .expect("Failed to bind Socket.IO server to port 3001");
+            .expect(&format!("Failed to bind Socket.IO server to port {}", socket_port));
 
-        info!("Socket.IO server running on http://0.0.0.0:3001");
+        info!("Socket.IO server running on http://{}:{}", socket_host, socket_port);
 
         axum::serve(listener, app)
             .await
             .expect("Socket.IO server failed");
     });
+}
 
+/// Creates and configures the main HTTP server
+fn create_http_server(
+    pool: crate::database::db::AsyncDbPool,
+    s3_client: aws_sdk_s3::Client,
+    bucket_name: String,
+    bind_address: String,
+) -> std::io::Result<actix_web::dev::Server> {
+    info!("Store is running on {}", bind_address);
+    
     let server = HttpServer::new(move || {
         let app_state = AppState {
             s3_client: s3_client.clone(),
@@ -327,8 +152,282 @@ async fn main() -> std::io::Result<()> {
             .configure(|cfg| configure_file_routes(cfg, app_state.clone()))
     })
     .disable_signals()
-    .bind(server_url)?
+    .bind(bind_address)?
     .run();
+    
+    Ok(server)
+}
+
+/// Configuration structure for command-line arguments
+struct CommandArgs {
+    cleanup: bool,
+    init_db: bool,
+    generate_proto: bool,
+    generate_grpc: bool,
+    generate_table_enum: bool,
+    create_schema: bool,
+}
+
+/// Configuration structure for environment variables
+struct EnvConfig {
+    host: String,
+    port: String,
+    grpc_port: String,
+    grpc_url: String,
+    socket_host: String,
+    socket_port: String,
+    cache_type: CacheType,
+    redis_connection: Option<String>,
+    ttl: Option<Duration>,
+}
+
+/// Parse command-line arguments
+fn parse_command_args() -> CommandArgs {
+    let args: Vec<String> = env::args().collect();
+    
+    CommandArgs {
+        cleanup: args.contains(&"--cleanup".to_string()),
+        init_db: args.contains(&"--init-db".to_string()),
+        generate_proto: env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string()) == "true",
+        generate_grpc: env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true",
+        generate_table_enum: env::var("GENERATE_TABLE_ENUM").unwrap_or_else(|_| "false".to_string()) == "true",
+        create_schema: env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true",
+    }
+}
+
+/// Parse environment configuration
+fn parse_env_config() -> EnvConfig {
+    let cache_type_str = env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
+    let cache_type = CacheType::from_str(&cache_type_str).unwrap_or(CacheType::InMemory);
+    let redis_connection = env::var("REDIS_CONNECTION").ok();
+    let ttl = env::var("CACHE_TTL")
+        .ok()
+        .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
+        .map(Duration::from_secs);
+    
+    EnvConfig {
+        host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
+        port: env::var("PORT").unwrap_or_else(|_| "5000".to_string()),
+        grpc_port: env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string()),
+        grpc_url: env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string()),
+        socket_host: env::var("SOCKET_HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
+        socket_port: env::var("SOCKET_PORT").unwrap_or_else(|_| "3001".to_string()),
+        cache_type,
+        redis_connection,
+        ttl,
+    }
+}
+
+/// Initialize logging and cache configuration
+fn initialize_logging_and_cache(env_config: &EnvConfig) {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .filter_module("tokio_postgres", log::LevelFilter::Info)
+        .init();
+    
+    CacheConfig::init(
+        env_config.cache_type.clone(),
+        env_config.redis_connection.clone(),
+        env_config.ttl,
+    );
+    
+    log::info!(
+        "Initialized cache with type: {:?}, TTL: {:?}",
+        env_config.cache_type,
+        env_config.ttl
+    );
+    
+    let _ = cache.cache_type();
+}
+
+/// Handle code generation tasks
+async fn handle_code_generation(args: &CommandArgs) {
+    if args.generate_proto || args.generate_grpc || args.generate_table_enum || args.create_schema {
+        info!("Starting code generation...");
+
+        // Proto generation
+        if args.generate_proto {
+            info!("Generating proto files");
+            proto_generator::generate_protos(
+                paths::database::SCHEMA_FILE,
+                paths::proto::OUTPUT_DIR,
+            );
+
+            if let Err(e) = run_build_script() {
+                error!("Failed to run build script: {}", e);
+            }
+        }
+
+        // gRPC controller generation
+        if args.generate_grpc {
+            info!("Generating gRPC controllers");
+            if let Err(e) = grpc_controller_generator::run_generator() {
+                error!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+
+        // Table enum generation
+        if args.generate_table_enum {
+            info!("Generating table enums");
+            if let Err(e) = table_enum_generator::run_generator() {
+                error!("Failed to generate table enum: {}", e);
+            }
+        }
+
+        // Schema generation
+        if args.create_schema {
+            info!("Running schema generator");
+            if let Err(e) = GeneratorService::run() {
+                error!("Failed to generate schema: {}", e);
+                process::exit(1);
+            }
+        }
+
+        info!("Code generation completed successfully!");
+        process::exit(0);
+    }
+}
+
+/// Handle database operations based on command arguments
+async fn handle_database_operations(args: &CommandArgs) {
+    if args.cleanup {
+        info!("Running cleanup operation only...");
+        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
+            run_cleanup: true,
+            run_migrations: true,
+            initialize_services: false,
+            run_init_sql: false,
+        })
+        .await
+        {
+            Ok(_) => {
+                info!("Database cleanup completed successfully!");
+            }
+            Err(e) => {
+                error!("Error during database cleanup: {}", e);
+            }
+        }
+    }
+    
+    if args.init_db {
+        info!("Running database initialization...");
+        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
+            run_cleanup: false,
+            run_migrations: false,
+            initialize_services: true,
+            run_init_sql: true,
+        })
+        .await
+        {
+            Ok(_) => {
+                info!("Database initialization completed successfully!");
+            }
+            Err(e) => {
+                error!("Error during database initialization: {}", e);
+            }
+        }
+    }
+}
+
+/// Initialize all services and dependencies
+async fn initialize_services() -> std::io::Result<(crate::database::db::AsyncDbPool, aws_sdk_s3::Client, String)> {
+    // Initialize S3 storage
+    let (s3_client, bucket_name) = match providers::storage::initialize().await {
+        Ok((client, bucket)) => (client, bucket),
+        Err(e) => {
+            log::error!("Failed to initialize S3 client: {}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    // Initialize background services
+    if let Err(e) = initialize(EInitializer::BACKGROUND_SERVICES_CONFIG, None).await {
+        log::error!("Failed to initialize background services: {}", e);
+    } else {
+        log::info!("Background services initialized successfully");
+    }
+
+    TransactionService::initialize().await;
+
+    // Initialize background sync service
+    let background_sync_service = match background_sync::BackgroundSyncService::new().await {
+        Ok(service) => service,
+        Err(e) => {
+            log::error!("Failed to initialize BackgroundSyncService: {}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+        }
+    };
+
+    // Spawn background sync service
+    tokio::spawn(async move {
+        if let Err(e) = background_sync_service.init().await {
+            log::error!("Error in background sync service: {}", e);
+        }
+    });
+
+    // Initialize PgListenerService
+    info!("Starting PgListenerService...");
+    if let Err(e) = PgListenerService::initialize().await {
+        log::error!("Failed to initialize PgListenerService: {}", e);
+    } else {
+        log::info!("PgListenerService initialized successfully");
+    }
+
+    // Initialize message sender
+    let sender = create_message_channel();
+    let arc_sender = Arc::new(sender);
+    SENDER.set(arc_sender).expect("Failed to initialize sender");
+
+    // Initialize database pool
+    let pool = db::establish_async_pool();
+    info!("Database connected successfully.");
+
+    // Initialize batch sync
+    if let Err(e) = BatchSyncService::init().await {
+        log::error!("Failed to initialize batch sync: {}", e);
+    } else {
+        log::info!("Batch sync initialized successfully");
+    }
+
+    // Initialize queue service
+    if let Err(e) = QueueService::init().await {
+        log::error!("Failed to initialize queue: {}", e);
+    } else {
+        info!("Queue initialized successfully");
+    }
+    
+    Ok((pool, s3_client, bucket_name))
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+    
+    // Parse configuration
+    let args = parse_command_args();
+    let env_config = parse_env_config();
+    
+    // Initialize logging and cache
+    initialize_logging_and_cache(&env_config);
+
+    // Handle code generation (exits if any generation flags are set)
+    handle_code_generation(&args).await;
+    
+    // Handle database operations
+    handle_database_operations(&args).await;
+    
+    // Initialize all services and dependencies
+    let (pool, s3_client, bucket_name) = initialize_services().await?;
+    
+    // Configure server addresses
+    let grpc_addr = format!("{}:{}", env_config.grpc_url, env_config.grpc_port);
+    let store_server_url = format!("{}:{}", env_config.host, env_config.port);
+    
+    // Start background services
+    spawn_background_services(grpc_addr, env_config.socket_host, env_config.socket_port).await;
+    
+    // Start main HTTP server
+    let server = create_http_server(pool.clone(), s3_client.clone(), bucket_name.clone(), store_server_url.clone())?;
 
     let mut sigint = signal(SignalKind::interrupt())?;
 
