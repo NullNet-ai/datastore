@@ -3,13 +3,18 @@ use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, 
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
+use crate::builders::templates::grpc_controller::grpc_controller_generator;
+use crate::builders::templates::proto_generator;
+use crate::builders::templates::table_enum::table_enum_generator;
+use crate::constants::paths;
 use crate::constants::paths::database::{
     HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_FILE, SCHEMA_TABLES_DIR,
     SYSTEM_FIELDS_FILE,
 };
+use crate::structs::structs::CommandArgs;
 use crate::utils::utils::to_singular;
 use log::{debug, error, info};
-use std::env;
+use std::{env, process};
 use std::fs;
 use std::path::Path;
 
@@ -1498,5 +1503,74 @@ impl GeneratorService {
         }
 
         Ok(filtered_lines.join("\n        "))
+    }
+}
+
+
+fn run_build_script() -> std::io::Result<()> {
+    use std::process::Command;
+
+    info!("Running build script manually...");
+
+    let output = Command::new("cargo").arg("build").arg("--quiet").output()?;
+
+    if output.status.success() {
+        info!("Build script executed successfully");
+    } else {
+        error!(
+            "Build script failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    Ok(())
+}
+
+/// Handle code generation tasks
+pub async fn handle_code_generation(args: &CommandArgs) {
+    if args.generate_proto || args.generate_grpc || args.generate_table_enum || args.create_schema {
+        info!("Starting code generation...");
+
+        // Proto generation
+        if args.generate_proto {
+            info!("Generating proto files");
+            proto_generator::generate_protos(
+                paths::database::SCHEMA_FILE,
+                paths::proto::OUTPUT_DIR,
+            );
+
+            if let Err(e) = run_build_script() {
+                error!("Failed to run build script: {}", e);
+            }
+        }
+
+        // gRPC controller generation
+        if args.generate_grpc {
+            info!("Generating gRPC controllers");
+            if let Err(e) = grpc_controller_generator::run_generator() {
+                error!("Error: {}", e);
+                process::exit(1);
+            }
+        }
+
+        // Table enum generation
+        if args.generate_table_enum {
+            info!("Generating table enums");
+            if let Err(e) = table_enum_generator::run_generator() {
+                error!("Failed to generate table enum: {}", e);
+            }
+        }
+
+        // Schema generation
+        if args.create_schema {
+            info!("Running schema generator");
+            if let Err(e) = GeneratorService::run() {
+                error!("Failed to generate schema: {}", e);
+                process::exit(1);
+            }
+        }
+
+        info!("Code generation completed successfully!");
+        process::exit(0);
     }
 }

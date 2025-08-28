@@ -1,6 +1,6 @@
 use crate::database::db;
-use crate::initializers::init::initialize;
-use crate::initializers::structs::EInitializer;
+use crate::initializers::system_initialization::init::initialize;
+use crate::initializers::system_initialization::structs::EInitializer;
 use crate::lifecycle::logging::{LogCategory, LogLevel};
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::operations::message_stream::pg_listener_service::PgListenerService;

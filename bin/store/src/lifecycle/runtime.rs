@@ -460,6 +460,8 @@ impl RuntimeManager {
                 .configure(|cfg| store_router::configure_store_routes(cfg, app_state.clone()))
                 .configure(listener_router::configure_listener_routes)
                 .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()))
+                // TODO: not sure what happens here if the order is set at above
+                // order issue
                 .configure(health_router::configure_health_routes);
 
             if let Some(hs) = &health_service {
