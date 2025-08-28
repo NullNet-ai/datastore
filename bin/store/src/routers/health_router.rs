@@ -24,6 +24,10 @@ pub fn configure_health_routes(cfg: &mut ServiceConfig) {
             .route(
                 "/health/live",
                 web::get().to(HealthController::liveness_probe),
+            )
+             .route(
+                "/health/phase",
+                web::get().to(HealthController::get_current_phase),
             ),
     );
 }

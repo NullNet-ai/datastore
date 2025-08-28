@@ -1,12 +1,12 @@
 use crate::lifecycle::health_service::HealthService;
 use crate::lifecycle::runtime::check_cache_health;
-use crate::lifecycle::state::{ComponentStatus, HealthMetrics};
+use crate::lifecycle::state::{ComponentStatus, HealthMetrics, LifecyclePhase};
 use actix_web::{web, HttpResponse, Responder};
 use chrono;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
-
+use crate::lifecycle::runtime::RuntimeManager;
 /// Health check response structure
 #[derive(Serialize, Debug)]
 pub struct HealthResponse {
@@ -292,12 +292,22 @@ impl HealthController {
 
         HttpResponse::Ok().json(response)
     }
+
+    pub async fn get_current_phase(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
+        let phase = health_service.get_phase().await;
+        match phase {
+            LifecyclePhase::Initializing => HttpResponse::Ok().json(serde_json::json!({"phase": "Initializing", "status": "starting"})),
+            LifecyclePhase::Starting => HttpResponse::Ok().json(serde_json::json!({"phase": "Starting", "status": "starting"})),
+            LifecyclePhase::Running => HttpResponse::Ok().json(serde_json::json!({"phase": "Running", "status": "healthy"})),
+            LifecyclePhase::ShuttingDown => HttpResponse::Ok().json(serde_json::json!({"phase": "ShuttingDown", "status": "stopping"})),
+            LifecyclePhase::Stopped => HttpResponse::Ok().json(serde_json::json!({"phase": "Stopped", "status": "stopped"})),
+            LifecyclePhase::Error(error_msg) => HttpResponse::InternalServerError().json(serde_json::json!({"phase": "Error", "status": "error", "message": error_msg}))
+        }
+    }
 }
 
 /// Perform database connectivity check
 async fn perform_database_check() -> Result<String, String> {
-    use crate::lifecycle::runtime::RuntimeManager;
-
     // Reuse the existing database health check from runtime module
     match RuntimeManager::check_database_health().await {
         Ok(()) => Ok("Database connection successful".to_string()),
