@@ -1,10 +1,9 @@
 #![recursion_limit = "2056"]
-use actix_web::{mime, web, App, HttpServer};
+use actix_web::{ web, App, HttpServer};
 use builders::templates::grpc_controller::grpc_controller_generator;
 use builders::templates::proto_generator;
 use builders::templates::table_enum::table_enum_generator;
 use dotenv::dotenv;
-use middlewares::auth_middleware::Authentication;
 use providers::operations::batch_sync::background_sync;
 use providers::operations::message_stream::gateway::{create_socket_io, set_streaming_service};
 use std::env;
@@ -16,10 +15,15 @@ mod generated;
 mod initializers;
 mod middlewares;
 mod providers;
+mod routers;
 mod structs;
 // table_enum is now in generated module
 mod utils;
-use crate::controllers::store_controller::{download_file_by_id, get_file_by_id};
+use crate::routers::{
+    configure_organizations_routes, configure_token_routes, configure_store_routes,
+    configure_root_store_routes, configure_listener_routes, configure_file_routes,
+    configure_sync_routes,
+};
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
@@ -31,13 +35,9 @@ use crate::database::db;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::initializers::init::initialize;
 use crate::initializers::structs::EInitializer;
-use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_handler;
-use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::providers::operations::message_stream::pg_listener_service::PgListenerService;
 use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
-use crate::providers::operations::organizations::organization_controller::OrganizationsController;
-use crate::providers::operations::sync::controllers::sync_endpoints_controller;
 use crate::providers::storage::AppState;
 // use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
 use crate::providers::operations::sync::message_manager::{create_message_channel, SENDER};
@@ -46,19 +46,6 @@ use crate::providers::operations::sync::transactions::queue_service::QueueServic
 use crate::providers::operations::sync::transactions::transaction_service::TransactionService;
 
 use crate::generated::grpc_controller::GrpcController;
-use controllers::pg_functions::pg_listener_controller::{
-    create_pg_function, pg_listener_delete, pg_listener_get, test_pg_function_syntax,
-};
-use controllers::root_controller::{
-    root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
-    root_batch_update_records, root_create_record, root_delete_record, root_get_by_filter,
-    root_get_by_id, root_search_suggestions, root_switch_account, root_update_record, root_upsert,
-};
-use controllers::store_controller::{
-    aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
-    create_record, delete_record, get_by_filter, get_by_id, search_suggestions, switch_account,
-    update_record, upload_file, upsert,
-};
 use env_logger::Env;
 use log::{error, info};
 use std::process;
@@ -324,107 +311,20 @@ async fn main() -> std::io::Result<()> {
     });
 
     let server = HttpServer::new(move || {
+        let app_state = AppState {
+            s3_client: s3_client.clone(),
+            bucket_name: bucket_name.clone(),
+        };
+        
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .configure(sync_endpoints_controller::configure)
-            .service(
-                web::scope("/api/organizations")
-                    .wrap(SessionMiddleware)
-                    .route(
-                        "/register",
-                        web::post().to(OrganizationsController::register),
-                    )
-                    .route(
-                        "/register/{id}",
-                        web::put().to(OrganizationsController::reregister_existing_account),
-                    )
-                    .route("/auth", web::post().to(OrganizationsController::auth))
-                    .route("/logout", web::post().to(OrganizationsController::logout)),
-            )
-            .service(web::scope("/api/token").wrap(SessionMiddleware).route(
-                "/verify",
-                web::post().to(OrganizationsController::verify_token),
-            ))
-            .service(
-                web::scope("/api/store/root")
-                    .wrap(ShutdownGuard)
-                    .wrap(Authentication)
-                    .wrap(SessionMiddleware)
-                    .route("/aggregate", web::post().to(root_aggregation_filter))
-                    .route("/{table}", web::post().to(root_create_record))
-                    .route("/upsert/{table}", web::post().to(root_upsert))
-                    .route("/batch/{table}", web::patch().to(root_batch_update_records))
-                    .route(
-                        "/batch/{table}",
-                        web::delete().to(root_batch_delete_records),
-                    )
-                    .route("/{table}/filter", web::post().to(root_get_by_filter))
-                    .route("/{table}/{id}", web::get().to(root_get_by_id))
-                    .route("/{table}/{id}", web::patch().to(root_update_record))
-                    .route("/{table}/{id}", web::delete().to(root_delete_record))
-                    .route("/batch/{table}", web::post().to(root_batch_insert_records))
-                    .route("/switch_account", web::post().to(root_switch_account))
-                    .route(
-                        "/{table}/filter/suggestions",
-                        web::post().to(root_search_suggestions),
-                    ),
-            )
-            .service(
-                web::scope("/api/store")
-                    .app_data(web::Data::new(AppState {
-                        s3_client: s3_client.clone(),
-                        bucket_name: bucket_name.clone(),
-                    }))
-                    .wrap(ShutdownGuard)
-                    .wrap(Authentication)
-                    .wrap(SessionMiddleware)
-                    .route("/aggregate", web::post().to(aggregation_filter))
-                    .route("/{table}", web::post().to(create_record))
-                    .route("/upsert/{table}", web::post().to(upsert))
-                    .route("/batch/{table}", web::patch().to(batch_update_records))
-                    .route("/batch/{table}", web::delete().to(batch_delete_records))
-                    .route("/{table}/filter", web::post().to(get_by_filter))
-                    .route("/{table}/{id}", web::get().to(get_by_id))
-                    .route("/{table}/{id}", web::patch().to(update_record))
-                    .route("/{table}/{id}", web::delete().to(delete_record))
-                    .route("/batch/{table}", web::post().to(batch_insert_records))
-                    .route("/switch_account", web::post().to(switch_account))
-                    .route(
-                        "/{table}/filter/suggestions",
-                        web::post().to(search_suggestions),
-                    ),
-            )
-            .service(
-                web::scope("/api/listener")
-                    .wrap(ShutdownGuard)
-                    .wrap(Authentication)
-                    .wrap(SessionMiddleware)
-                    .route("", web::get().to(pg_listener_get))
-                    .route("/function", web::post().to(create_pg_function))
-                    .route("/test", web::post().to(test_pg_function_syntax))
-                    .route("/{function_name}", web::delete().to(pg_listener_delete)),
-            )
-            .service(
-                web::scope("/api/file")
-                    .app_data(web::Data::new(providers::storage::AppState {
-                        s3_client: s3_client.clone(),
-                        bucket_name: bucket_name.clone(),
-                    }))
-                    .wrap(ShutdownGuard)
-                    .wrap(Authentication)
-                    .wrap(SessionMiddleware)
-                    .route("/{id}", web::get().to(get_file_by_id))
-                    .route("/{id}/download", web::get().to(download_file_by_id))
-                    .app_data(
-                        web::JsonConfig::default()
-                            .limit(1024 * 1024 * 10) // 10MB JSON payload limit
-                            .content_type(|mime| mime == mime::APPLICATION_JSON),
-                    )
-                    .app_data(
-                        web::FormConfig::default().limit(1024 * 1024 * 100), // 100MB form payload limit
-                    )
-                    .route("/upload", web::post().to(upload_file)),
-            )
+            .configure(configure_sync_routes)
+            .configure(configure_organizations_routes)
+            .configure(configure_token_routes)
+            .configure(configure_root_store_routes)
+            .configure(|cfg| configure_store_routes(cfg, app_state.clone()))
+            .configure(configure_listener_routes)
+            .configure(|cfg| configure_file_routes(cfg, app_state.clone()))
     })
     .disable_signals()
     .bind(server_url)?

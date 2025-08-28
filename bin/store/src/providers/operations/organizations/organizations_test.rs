@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::providers::operations::organizations::organization_controller::{
+    use crate::controllers::organization_controller::{
         AuthData, AuthDto, RegisterDto,
     };
     use crate::providers::operations::organizations::structs::{

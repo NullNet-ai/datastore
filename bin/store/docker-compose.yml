@@ -63,13 +63,13 @@ services:
       # Schedule API Configuration
       - SCHEDULE_API=http://api.events.dnamicro.net/api/v1/schedule
       - SCHEDULE_AUTH_API=http://api.events.dnamicro.net/api/v1/auth
-      - SCHEDULE_USERNAME=superadmin@dnamicro.com
+      - SCHEDULE_USERNAME=admin@dnamicro.com
       - SCHEDULE_PASSWORD=ch@ng3m3Pl3@s3!!
       
       # Socket Configuration
       - ROOM=portal-template
       - SOCKET_URL=http://pubsub.events.dnamicro.net
-      - SOCKET_USERNAME=superadmin@dnamicro.com
+      - SOCKET_USERNAME=admin@dnamicro.com
       - SOCKET_PASSWORD=ch@ng3m3Pl3@s3!!
     depends_on:
       - timescaledb

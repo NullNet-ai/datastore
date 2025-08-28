@@ -3,6 +3,7 @@ use aws_sdk_s3::error::ProvideErrorMetadata;
 use aws_sdk_s3::{Client, Config};
 use aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder;
 use std::sync::Arc;
+#[derive(Clone)]
 pub struct AppState {
     pub s3_client: Client,
     pub bucket_name: String, // Store the default bucket name here
