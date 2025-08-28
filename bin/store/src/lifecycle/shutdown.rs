@@ -316,7 +316,7 @@ impl ShutdownManager {
         info!("[SHUTDOWN] Draining active connections");
 
         // Wait for connections to drain naturally
-        tokio::time::sleep(self.config.drain_timeout).await;
+        // tokio::time::sleep(self.config.drain_timeout).await;
 
         // TODO: Implement actual connection monitoring and draining
         // This would typically involve:

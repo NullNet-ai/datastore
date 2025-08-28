@@ -392,20 +392,28 @@ impl RuntimeManager {
         info!("[RUNTIME] Starting HTTP server and main loop");
 
         // Get server configuration from environment
-        let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-        let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+        let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+        let port = std::env::var("PORT").unwrap_or_else(|_| "5000".to_string());
         let bind_address = format!("{}:{}", host, port);
 
         // Create HTTP server
-        let server = self.create_http_server(pool, s3_client, bucket_name, bind_address)?;
-
+        let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
+        
+        info!("[RUNTIME] HTTP server successfully bound to {}", bind_address);
+        
         // Run server with shutdown handling
         tokio::select! {
-            _ = server => {
-                info!("[RUNTIME] HTTP server completed");
+            result = server => {
+                match result {
+                    Ok(_) => info!("[RUNTIME] HTTP server completed successfully"),
+                    Err(e) => {
+                        error!("[RUNTIME] HTTP server error: {}", e);
+                        return Err(Box::new(e));
+                    }
+                }
             },
             _ = self.wait_for_shutdown() => {
-                info!("[RUNTIME] Shutdown signal received");
+                info!("[RUNTIME] Shutdown signal received, stopping HTTP server");
             }
         }
 
@@ -422,11 +430,17 @@ impl RuntimeManager {
     ) -> Result<actix_web::dev::Server, Box<dyn std::error::Error + Send + Sync>> {
         use crate::providers::storage::AppState;
         use crate::routers::*;
-        use actix_web::{web, App, HttpServer};
+        use actix_web::{web, App, HttpServer, middleware::Logger};
 
-        info!("[RUNTIME] HTTP server starting on {}", bind_address);
+        info!("[RUNTIME] Configuring HTTP server for {}", bind_address);
 
         let health_service = self.health_service.clone();
+        
+        // Validate bind address format
+        if !bind_address.contains(':') {
+            return Err(format!("Invalid bind address format: {}", bind_address).into());
+        }
+        
         let server = HttpServer::new(move || {
             let app_state = AppState {
                 s3_client: s3_client.clone(),
@@ -434,15 +448,16 @@ impl RuntimeManager {
             };
 
             let mut app = App::new()
+                .wrap(Logger::default())
                 .app_data(web::Data::new(pool.clone()))
                 .configure(sync_router::configure_sync_routes)
-                .configure(health_router::configure_health_routes)
                 .configure(organizations_router::configure_organizations_routes)
                 .configure(organizations_router::configure_token_routes)
                 .configure(root_store_router::configure_root_store_routes)
                 .configure(|cfg| store_router::configure_store_routes(cfg, app_state.clone()))
                 .configure(listener_router::configure_listener_routes)
-                .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()));
+                .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()))
+                .configure(health_router::configure_health_routes);
 
             if let Some(hs) = &health_service {
                 app = app.app_data(web::Data::new(hs.clone()));
@@ -450,10 +465,16 @@ impl RuntimeManager {
 
             app
         })
+        .workers(1)
         .disable_signals()
-        .bind(bind_address)?
+        .bind(&bind_address)
+        .map_err(|e| {
+            error!("[RUNTIME] Failed to bind HTTP server to {}: {}", bind_address, e);
+            e
+        })?
         .run();
-
+        
+        info!("[RUNTIME] HTTP server configured and ready to start on {}", bind_address);
         Ok(server)
     }
 

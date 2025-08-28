@@ -1,7 +1,7 @@
 use crate::lifecycle::health_service::HealthService;
 use crate::lifecycle::runtime::check_cache_health;
 use crate::lifecycle::state::{ComponentStatus, HealthMetrics};
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder};
 use chrono;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -67,10 +67,12 @@ pub struct LivenessResponse {
     pub uptime_seconds: u64,
 }
 
-/// Basic health check endpoint
-/// Returns 200 OK if the service is healthy, 503 Service Unavailable otherwise
-#[get("/health")]
-pub async fn health_check(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
+pub struct HealthController;
+
+impl HealthController {
+    /// Basic health check endpoint
+    /// Returns 200 OK if the service is healthy, 503 Service Unavailable otherwise
+    pub async fn health_check(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let is_healthy = health_service.is_healthy().await;
     let health_report = health_service.generate_health_report().await;
 
@@ -130,13 +132,12 @@ pub async fn health_check(health_service: web::Data<Arc<HealthService>>) -> impl
     } else {
         HttpResponse::ServiceUnavailable().json(response)
     }
-}
+    }
 
-/// Detailed health check endpoint with comprehensive system information
-#[get("/health/detailed")]
-pub async fn detailed_health_check(
-    health_service: web::Data<Arc<HealthService>>,
-) -> impl Responder {
+    /// Detailed health check endpoint with comprehensive system information
+    pub async fn detailed_health_check(
+        health_service: web::Data<Arc<HealthService>>,
+    ) -> impl Responder {
     let is_healthy = health_service.is_healthy().await;
     let health_report = health_service.generate_health_report().await;
 
@@ -248,12 +249,11 @@ pub async fn detailed_health_check(
     } else {
         HttpResponse::ServiceUnavailable().json(response)
     }
-}
+    }
 
-/// Kubernetes-style readiness probe
-/// Returns 200 if the service is ready to accept traffic
-#[get("/health/ready")]
-pub async fn readiness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
+    /// Kubernetes-style readiness probe
+    /// Returns 200 if the service is ready to accept traffic
+    pub async fn readiness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let health_report = health_service.generate_health_report().await;
     let components = &health_report.components;
     let mut component_ready = HashMap::new();
@@ -277,12 +277,11 @@ pub async fn readiness_probe(health_service: web::Data<Arc<HealthService>>) -> i
     } else {
         HttpResponse::ServiceUnavailable().json(response)
     }
-}
+    }
 
-/// Kubernetes-style liveness probe
-/// Returns 200 if the service is alive (basic functionality)
-#[get("/health/live")]
-pub async fn liveness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
+    /// Kubernetes-style liveness probe
+    /// Returns 200 if the service is alive (basic functionality)
+    pub async fn liveness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {
     let health_report = health_service.generate_health_report().await;
     let health_metrics = &health_report.metrics;
 
@@ -292,6 +291,7 @@ pub async fn liveness_probe(health_service: web::Data<Arc<HealthService>>) -> im
     };
 
     HttpResponse::Ok().json(response)
+    }
 }
 
 /// Perform database connectivity check
