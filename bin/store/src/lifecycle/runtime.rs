@@ -312,13 +312,13 @@ impl RuntimeManager {
             }
         });
 
-        // Start background sync service
+        // Start background batch sync service
         tokio::spawn(async {
             use crate::providers::operations::batch_sync::background_sync::BackgroundSyncService;
             match BackgroundSyncService::new().await {
                 Ok(service) => {
                     if let Err(e) = service.init().await {
-                        error!("Error in background sync service: {}", e);
+                        error!("Error in background batch sync service: {}", e);
                     }
                 }
                 Err(e) => error!("Failed to initialize BackgroundSyncService: {}", e),
@@ -371,7 +371,7 @@ impl RuntimeManager {
             }
         });
 
-        // start running background sync
+        // start running background synced data to the sync server (bin/server)
         tokio::spawn(async {
             if let Err(e) = bg_sync().await {
                 log::error!("Error starting background sync: {}", e);
