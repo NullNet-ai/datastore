@@ -1,17 +1,17 @@
-use actix_web::web;
-use actix_web::web::ServiceConfig;
-use crate::middlewares::auth_middleware::Authentication;
-use crate::middlewares::session_middleware::SessionMiddleware;
-use crate::middlewares::shutdown_middleware::ShutdownGuard;
-use crate::providers::storage::AppState;
 use crate::controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
     create_record, delete_record, get_by_filter, get_by_id, search_suggestions, switch_account,
     update_record, upsert,
 };
+use crate::middlewares::auth_middleware::Authentication;
+use crate::middlewares::session_middleware::SessionMiddleware;
+use crate::middlewares::shutdown_middleware::ShutdownGuard;
+use crate::providers::storage::AppState;
+use actix_web::web;
+use actix_web::web::ServiceConfig;
 
 /// Configure store routes
-/// 
+///
 /// This function sets up all routes for the main store API including:
 /// - CRUD operations (create, read, update, delete)
 /// - Batch operations
@@ -39,6 +39,6 @@ pub fn configure_store_routes(cfg: &mut ServiceConfig, app_state: AppState) {
             .route(
                 "/{table}/filter/suggestions",
                 web::post().to(search_suggestions),
-            )
+            ),
     );
 }

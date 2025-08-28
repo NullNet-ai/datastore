@@ -72,6 +72,8 @@ impl fmt::Display for ApiError {
     }
 }
 
+impl std::error::Error for ApiError {}
+
 impl ApiError {
     pub fn new(status: http::StatusCode, message: impl Into<String>) -> Self {
         Self {

@@ -22,7 +22,7 @@ mod tests {
     ///         "account_secret": "ch@ng3m3Pl3@s3!!"
     ///     }
     /// });
-    /// 
+    ///
     /// // Should return success response with token
     /// assert!(response.success);
     /// assert!(response.data[0]["token"].is_string());
@@ -35,7 +35,7 @@ mod tests {
         let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
         let port = env::var("PORT").unwrap_or_else(|_| "5000".to_string());
         let base_url = format!("http://{}:{}", host, port);
-        
+
         // Test successful login scenario
         println!("  ✓ Testing successful login with valid credentials");
         let login_payload = json!({
@@ -54,30 +54,36 @@ mod tests {
         match response {
             Ok(resp) => {
                 println!("    Status: {}", resp.status());
-                
+
                 if resp.status().is_success() {
                     match resp.json::<serde_json::Value>().await {
                         Ok(json_response) => {
                             println!("    ✓ Received valid JSON response");
-                            println!("    Response: {}", serde_json::to_string_pretty(&json_response).unwrap_or_default());
-                            
+                            println!(
+                                "    Response: {}",
+                                serde_json::to_string_pretty(&json_response).unwrap_or_default()
+                            );
+
                             // Validate actual response structure based on provided example
                             if let Some(session_id) = json_response.get("sessionID") {
                                 println!("    ✓ Session ID received: {}", session_id);
                                 assert!(session_id.is_string());
                             }
-                            
+
                             if let Some(token) = json_response.get("token") {
                                 println!("    ✓ Authentication token received");
                                 assert!(token.is_string());
-                                
+
                                 // Validate JWT token structure (should start with eyJ)
                                 if let Some(token_str) = token.as_str() {
-                                    assert!(token_str.starts_with("eyJ"), "Token should be a valid JWT");
+                                    assert!(
+                                        token_str.starts_with("eyJ"),
+                                        "Token should be a valid JWT"
+                                    );
                                     println!("    ✓ Token appears to be valid JWT format");
                                 }
                             }
-                            
+
                             // Test successful authentication
                             assert!(json_response.get("sessionID").is_some() && json_response.get("token").is_some(),
                                    "Response should contain both sessionID and token for successful authentication");
@@ -88,11 +94,17 @@ mod tests {
                         }
                     }
                 } else {
-                    println!("    ⚠ Server returned non-success status: {}", resp.status());
+                    println!(
+                        "    ⚠ Server returned non-success status: {}",
+                        resp.status()
+                    );
                 }
             }
             Err(e) => {
-                println!("    ⚠ Connection failed (server might not be running): {}", e);
+                println!(
+                    "    ⚠ Connection failed (server might not be running): {}",
+                    e
+                );
                 // Test passes as this is expected when server is not running
             }
         }
@@ -123,7 +135,7 @@ mod tests {
         }
 
         println!("Organization authentication endpoint tests completed!");
-        
+
         // Always pass the test since server might not be running during testing
         assert!(true);
     }

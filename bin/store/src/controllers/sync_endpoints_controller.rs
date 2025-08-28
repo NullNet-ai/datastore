@@ -44,4 +44,3 @@ pub async fn create_endpoint(endpoint_req: web::Json<EndpointRequest>) -> impl R
         }
     }
 }
-

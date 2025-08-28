@@ -1,13 +1,13 @@
-use actix_web::web;
-use actix_web::web::ServiceConfig;
 use crate::controllers::root_controller::{
     root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
     root_batch_update_records, root_create_record, root_delete_record, root_get_by_filter,
     root_get_by_id, root_search_suggestions, root_switch_account, root_update_record, root_upsert,
 };
 use crate::middlewares::auth_middleware::Authentication;
-use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::middlewares::session_middleware::SessionMiddleware;
+use crate::middlewares::shutdown_middleware::ShutdownGuard;
+use actix_web::web;
+use actix_web::web::ServiceConfig;
 
 pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
     cfg.service(
