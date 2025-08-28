@@ -3,7 +3,6 @@ use builders::templates::grpc_controller::grpc_controller_generator;
 use builders::templates::proto_generator;
 use builders::templates::table_enum::table_enum_generator;
 use dotenv::dotenv;
-use providers::operations::batch_sync::background_sync;
 use std::env;
 mod builders;
 mod constants;
@@ -17,7 +16,6 @@ mod providers;
 mod routers;
 mod structs;
 mod utils;
-use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import
@@ -25,20 +23,15 @@ use crate::builders::generator::generator_service::GeneratorService;
 use crate::constants::paths;
 use crate::database::db;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
-use crate::initializers::init::initialize;
-use crate::initializers::structs::EInitializer;
 use crate::middlewares::shutdown_handler;
-use crate::providers::operations::message_stream::pg_listener_service::PgListenerService;
-// use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
-use crate::providers::operations::sync::message_manager::{create_message_channel, SENDER};
-use crate::providers::operations::sync::transactions::queue_service::QueueService;
-use crate::providers::operations::sync::transactions::transaction_service::TransactionService;
-use crate::lifecycle::{ manager::LifecycleManager, logging::{LogConfig, LogLevel}};
-use env_logger::Env;
+use crate::lifecycle::{
+    logging::{LogConfig, LogLevel},
+    manager::LifecycleManager,
+};
 use log::{error, info};
 use std::process;
-use std::sync::Arc;
 use std::time::Duration;
+use env_logger::Env;
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
@@ -71,6 +64,12 @@ struct CommandArgs {
 
 /// Configuration structure for environment variables
 struct EnvConfig {
+    host: String,
+    port: String,
+    grpc_port: String,
+    grpc_url: String,
+    socket_host: String,
+    socket_port: String,
     cache_type: CacheType,
     redis_connection: Option<String>,
     ttl: Option<Duration>,
@@ -256,7 +255,6 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize lifecycle manager
     let mut lifecycle_manager = LifecycleManager::with_config(log_config);
-
 
     // Execute the application lifecycle
     if let Err(e) = lifecycle_manager.execute().await {

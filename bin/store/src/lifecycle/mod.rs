@@ -1,6 +1,6 @@
-pub mod startup;
-pub mod runtime;
-pub mod shutdown;
-pub mod state;
 pub mod logging;
 pub mod manager;
+pub mod runtime;
+pub mod shutdown;
+pub mod startup;
+pub mod state;

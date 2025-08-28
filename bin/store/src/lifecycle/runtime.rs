@@ -1,9 +1,12 @@
-use std::time::{Duration, Instant};
-use log::{info, error, warn, debug};
-use tokio::signal::unix::{signal, SignalKind};
+use crate::{
+    lifecycle::logging::{LogCategory, LogLevel},
+    providers::operations::sync::sync_service::bg_sync,
+};
+use log::{debug, error, info, warn};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
-use crate::{lifecycle::logging::{LogCategory, LogLevel}, providers::operations::sync::sync_service::bg_sync};
 
 /// Runtime health status
 #[derive(Debug, Clone, PartialEq)]
@@ -36,7 +39,7 @@ impl RuntimeManager {
     /// Create a new runtime manager
     pub fn new() -> Self {
         info!("[RUNTIME] Initializing runtime manager");
-        
+
         let metrics = RuntimeMetrics {
             uptime: Duration::from_secs(0),
             health_status: HealthStatus::Healthy,
@@ -44,7 +47,7 @@ impl RuntimeManager {
             processed_requests: 0,
             last_health_check: Instant::now(),
         };
-        
+
         Self {
             start_time: None,
             metrics: Arc::new(RwLock::new(metrics)),
@@ -53,13 +56,13 @@ impl RuntimeManager {
             logger: None,
         }
     }
-    
+
     /// Set the logger for structured logging
     pub fn with_logger(mut self, logger: Arc<crate::lifecycle::logging::LifecycleLogger>) -> Self {
         self.logger = Some(logger);
         self
     }
-    
+
     /// Execute the runtime phase with actual services
     pub async fn execute(
         &mut self,
@@ -68,67 +71,72 @@ impl RuntimeManager {
         bucket_name: String,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.start_time = Some(Instant::now());
-        
+
         if let Some(logger) = &self.logger {
-            logger.log(
-                LogLevel::Info,
-                LogCategory::Runtime,
-                "RuntimeManager",
-                "Starting application runtime phase"
-            ).await;
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Runtime,
+                    "RuntimeManager",
+                    "Starting application runtime phase",
+                )
+                .await;
         }
-        
+
         // Start health monitoring
         self.start_health_monitoring().await;
-        
+
         // Setup signal handlers
         self.setup_signal_handlers().await?;
-        
+
         // Start background services
         self.start_background_services().await?;
-        
+
         // Start HTTP server and run main loop
-        self.run_main_loop_with_server(pool, s3_client, bucket_name).await?;
-        
+        self.run_main_loop_with_server(pool, s3_client, bucket_name)
+            .await?;
+
         if let Some(logger) = &self.logger {
-            logger.log(
-                LogLevel::Info,
-                LogCategory::Runtime,
-                "RuntimeManager",
-                "Runtime phase completed"
-            ).await;
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Runtime,
+                    "RuntimeManager",
+                    "Runtime phase completed",
+                )
+                .await;
         }
         Ok(())
     }
-    
+
     /// Start health monitoring background task
     async fn start_health_monitoring(&self) {
         let metrics = self.metrics.clone();
         let shutdown_requested = self.shutdown_requested.clone();
         let interval = self.health_check_interval;
-        
+
         tokio::spawn(async move {
             let mut health_interval = tokio::time::interval(interval);
-            
+
             loop {
                 health_interval.tick().await;
-                
+
                 // Check if shutdown was requested
                 if *shutdown_requested.read().await {
                     debug!("[RUNTIME] Health monitoring stopping due to shutdown request");
                     break;
                 }
-                
+
                 // Perform health check
                 let health_status = Self::perform_health_check().await;
-                
+
                 // Update metrics
                 {
                     let mut metrics_guard = metrics.write().await;
                     metrics_guard.health_status = health_status.clone();
                     metrics_guard.last_health_check = Instant::now();
                 }
-                
+
                 // Log health status changes
                 match health_status {
                     HealthStatus::Healthy => {
@@ -142,75 +150,78 @@ impl RuntimeManager {
                     }
                 }
             }
-            
+
             info!("[RUNTIME] Health monitoring stopped");
         });
-        
-        info!("[RUNTIME] Health monitoring started with interval: {:?}", interval);
+
+        info!(
+            "[RUNTIME] Health monitoring started with interval: {:?}",
+            interval
+        );
     }
-    
+
     /// Perform comprehensive health check
     async fn perform_health_check() -> HealthStatus {
         // Check database connectivity
         if let Err(e) = Self::check_database_health().await {
             return HealthStatus::Unhealthy(format!("Database connectivity issue: {}", e));
         }
-        
+
         // Check cache system
         if let Err(e) = Self::check_cache_health().await {
             return HealthStatus::Degraded(format!("Cache system issue: {}", e));
         }
-        
+
         // Check memory usage
         if let Some(warning) = Self::check_memory_usage().await {
             return HealthStatus::Degraded(warning);
         }
-        
+
         HealthStatus::Healthy
     }
-    
+
     /// Check database health
     async fn check_database_health() -> Result<(), String> {
         // This would typically involve a simple query to verify connectivity
         // For now, we'll simulate a basic check
         debug!("[RUNTIME] Checking database health");
-        
+
         // TODO: Implement actual database health check
         // Example: SELECT 1 query with timeout
-        
+
         Ok(())
     }
-    
+
     /// Check cache system health
     async fn check_cache_health() -> Result<(), String> {
         debug!("[RUNTIME] Checking cache health");
-        
+
         // TODO: Implement actual cache health check
         // Example: Set/get a test key with timeout
-        
+
         Ok(())
     }
-    
+
     /// Check memory usage
     async fn check_memory_usage() -> Option<String> {
         debug!("[RUNTIME] Checking memory usage");
-        
+
         // TODO: Implement actual memory usage check
         // This would typically check RSS, heap usage, etc.
-        
+
         None
     }
-    
+
     /// Setup signal handlers for graceful shutdown
     async fn setup_signal_handlers(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let shutdown_requested = self.shutdown_requested.clone();
-        
+
         tokio::spawn(async move {
-            let mut sigint = signal(SignalKind::interrupt())
-                .expect("Failed to create SIGINT handler");
-            let mut sigterm = signal(SignalKind::terminate())
-                .expect("Failed to create SIGTERM handler");
-            
+            let mut sigint =
+                signal(SignalKind::interrupt()).expect("Failed to create SIGINT handler");
+            let mut sigterm =
+                signal(SignalKind::terminate()).expect("Failed to create SIGTERM handler");
+
             tokio::select! {
                 _ = sigint.recv() => {
                     info!("[RUNTIME] SIGINT received, requesting graceful shutdown");
@@ -219,33 +230,37 @@ impl RuntimeManager {
                     info!("[RUNTIME] SIGTERM received, requesting graceful shutdown");
                 }
             }
-            
+
             *shutdown_requested.write().await = true;
         });
-        
+
         info!("[RUNTIME] Signal handlers configured");
         Ok(())
     }
-    
+
     /// Start background services
-    async fn start_background_services(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn start_background_services(
+        &self,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(logger) = &self.logger {
-            logger.log(
-                LogLevel::Info,
-                LogCategory::Runtime,
-                "RuntimeManager",
-                "Starting background services"
-            ).await;
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Runtime,
+                    "RuntimeManager",
+                    "Starting background services",
+                )
+                .await;
         }
-        
+
         // Parse environment variables for service configuration
         let grpc_url = std::env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
         let grpc_port = std::env::var("GRPC_PORT").unwrap_or_else(|_| "50051".to_string());
         let socket_host = std::env::var("SOCKET_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
         let socket_port = std::env::var("SOCKET_PORT").unwrap_or_else(|_| "3001".to_string());
-        
+
         let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
-        
+
         // Start gRPC server
         tokio::spawn(async move {
             use crate::generated::grpc_controller::GrpcController;
@@ -254,7 +269,7 @@ impl RuntimeManager {
                 Err(e) => error!("Failed to start gRPC server: {}", e),
             }
         });
-        
+
         // Start background sync service
         tokio::spawn(async {
             use crate::providers::operations::batch_sync::background_sync::BackgroundSyncService;
@@ -267,40 +282,48 @@ impl RuntimeManager {
                 Err(e) => error!("Failed to initialize BackgroundSyncService: {}", e),
             }
         });
-        
+
         // Start Socket.IO server
-         tokio::spawn(async move {
-             use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
-             use crate::providers::operations::message_stream::gateway::{create_socket_io, set_streaming_service};
-             use axum::Router;
-            
+        tokio::spawn(async move {
+            use crate::providers::operations::message_stream::gateway::{
+                create_socket_io, set_streaming_service,
+            };
+            use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
+            use axum::Router;
+
             // Create Socket.IO layer and instance
             let (layer, io) = create_socket_io();
-            
+
             // Initialize the MessageStreamingService
             let streaming_service = MessageStreamingService::new(io);
-            
+
             // Set the streaming service reference
             set_streaming_service(streaming_service.clone());
-            
+
             // Initialize the streaming service (starts broker and routing)
             if let Err(e) = streaming_service.initialize().await {
                 error!("Failed to initialize MessageStreamingService: {}", e);
             } else {
                 info!("MessageStreamingService initialized successfully");
             }
-            
+
             // Create and run the Socket.IO server
             let app = Router::new().layer(layer);
-            let listener = match tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port)).await {
-                Ok(listener) => listener,
-                Err(e) => {
-                    error!("Failed to bind Socket.IO server: {}", e);
-                    return;
-                }
-            };
-            
-            info!("Socket.IO server listening on {}:{}", socket_host, socket_port);
+            let listener =
+                match tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port))
+                    .await
+                {
+                    Ok(listener) => listener,
+                    Err(e) => {
+                        error!("Failed to bind Socket.IO server: {}", e);
+                        return;
+                    }
+                };
+
+            info!(
+                "Socket.IO server listening on {}:{}",
+                socket_host, socket_port
+            );
             if let Err(e) = axum::serve(listener, app).await {
                 error!("Socket.IO server error: {}", e);
             }
@@ -313,11 +336,10 @@ impl RuntimeManager {
             }
         });
 
-        
         info!("[RUNTIME] Background services started");
         Ok(())
     }
-    
+
     /// Run the main application loop with HTTP server
     async fn run_main_loop_with_server(
         &self,
@@ -326,15 +348,15 @@ impl RuntimeManager {
         bucket_name: String,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("[RUNTIME] Starting HTTP server and main loop");
-        
+
         // Get server configuration from environment
         let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
         let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
         let bind_address = format!("{}:{}", host, port);
-        
+
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address)?;
-        
+
         // Run server with shutdown handling
         tokio::select! {
             _ = server => {
@@ -344,10 +366,10 @@ impl RuntimeManager {
                 info!("[RUNTIME] Shutdown signal received");
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Create and configure the HTTP server
     fn create_http_server(
         &self,
@@ -356,18 +378,18 @@ impl RuntimeManager {
         bucket_name: String,
         bind_address: String,
     ) -> Result<actix_web::dev::Server, Box<dyn std::error::Error + Send + Sync>> {
-        use actix_web::{web, App, HttpServer};
-        use crate::routers::*;
         use crate::providers::storage::AppState;
-        
+        use crate::routers::*;
+        use actix_web::{web, App, HttpServer};
+
         info!("[RUNTIME] HTTP server starting on {}", bind_address);
-        
+
         let server = HttpServer::new(move || {
             let app_state = AppState {
                 s3_client: s3_client.clone(),
                 bucket_name: bucket_name.clone(),
             };
-            
+
             App::new()
                 .app_data(web::Data::new(pool.clone()))
                 .configure(sync_router::configure_sync_routes)
@@ -382,10 +404,10 @@ impl RuntimeManager {
         .disable_signals()
         .bind(bind_address)?
         .run();
-        
+
         Ok(server)
     }
-    
+
     /// Wait for shutdown signal
     async fn wait_for_shutdown(&self) {
         loop {
@@ -395,25 +417,25 @@ impl RuntimeManager {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     }
-    
+
     /// Get current runtime metrics
     pub async fn get_metrics(&self) -> RuntimeMetrics {
         let mut metrics = self.metrics.read().await.clone();
-        
+
         // Update uptime if we have a start time
         if let Some(start_time) = self.start_time {
             metrics.uptime = start_time.elapsed();
         }
-        
+
         metrics
     }
-    
+
     /// Request shutdown
     pub async fn request_shutdown(&self) {
         info!("[RUNTIME] Shutdown requested");
         *self.shutdown_requested.write().await = true;
     }
-    
+
     /// Check if shutdown was requested
     pub async fn is_shutdown_requested(&self) -> bool {
         *self.shutdown_requested.read().await

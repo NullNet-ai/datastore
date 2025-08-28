@@ -1,11 +1,11 @@
-use actix_web::{get, web, HttpResponse, Responder};
-use serde::{Serialize};
-use std::collections::HashMap;
-use crate::lifecycle::state::{ComponentStatus, HealthMetrics};
 use crate::lifecycle::manager::LifecycleManager;
+use crate::lifecycle::state::{ComponentStatus, HealthMetrics};
+use actix_web::{get, web, HttpResponse, Responder};
+use chrono;
+use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono;
 
 /// Health check response structure
 #[derive(Serialize, Debug)]
@@ -74,14 +74,14 @@ pub async fn health_check(
     lifecycle_manager: web::Data<Arc<RwLock<LifecycleManager>>>,
 ) -> impl Responder {
     let manager = lifecycle_manager.read().await;
-    
+
     let is_healthy = manager.is_healthy().await;
     let state_manager = manager.state_manager();
-    
+
     // Get system metrics
     let health_metrics = state_manager.get_health_metrics().await;
     let components = state_manager.get_all_components().await;
-    
+
     // Convert components to API format
     let mut component_statuses = HashMap::new();
     for (name, info) in components {
@@ -93,21 +93,32 @@ pub async fn health_check(
             ComponentStatus::Stopped => "stopped",
             ComponentStatus::Failed(_) => "failed",
         };
-        
-        component_statuses.insert(name, ComponentHealthStatus {
-            status: status_str.to_string(),
-            last_check: info.last_health_check.map(|t| {
-                chrono::DateTime::<chrono::Utc>::from(t)
-                    .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-                    .to_string()
-            }),
-            uptime_seconds: info.started_at.map(|t| t.elapsed().unwrap_or_default().as_secs()),
-        });
+
+        component_statuses.insert(
+            name,
+            ComponentHealthStatus {
+                status: status_str.to_string(),
+                last_check: info.last_health_check.map(|t| {
+                    chrono::DateTime::<chrono::Utc>::from(t)
+                        .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                        .to_string()
+                }),
+                uptime_seconds: info
+                    .started_at
+                    .map(|t| t.elapsed().unwrap_or_default().as_secs()),
+            },
+        );
     }
-    
+
     let response = HealthResponse {
-        status: if is_healthy { "healthy".to_string() } else { "unhealthy".to_string() },
-        timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        status: if is_healthy {
+            "healthy".to_string()
+        } else {
+            "unhealthy".to_string()
+        },
+        timestamp: chrono::Utc::now()
+            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+            .to_string(),
         uptime_seconds: health_metrics.uptime.as_secs(),
         components: component_statuses,
         metrics: SystemMetrics {
@@ -117,7 +128,7 @@ pub async fn health_check(
             processed_requests: health_metrics.processed_requests,
         },
     };
-    
+
     if is_healthy {
         HttpResponse::Ok().json(response)
     } else {
@@ -131,14 +142,14 @@ pub async fn detailed_health_check(
     lifecycle_manager: web::Data<Arc<RwLock<LifecycleManager>>>,
 ) -> impl Responder {
     let manager = lifecycle_manager.read().await;
-    
+
     let is_healthy = manager.is_healthy().await;
     let state_manager = manager.state_manager();
-    
+
     // Get system metrics
     let health_metrics = state_manager.get_health_metrics().await;
     let components = state_manager.get_all_components().await;
-    
+
     // Convert components to API format
     let mut component_statuses = HashMap::new();
     for (name, info) in components {
@@ -150,42 +161,67 @@ pub async fn detailed_health_check(
             ComponentStatus::Stopped => "stopped",
             ComponentStatus::Failed(_) => "failed",
         };
-        
-        component_statuses.insert(name, ComponentHealthStatus {
-            status: status_str.to_string(),
-            last_check: info.last_health_check.map(|t| {
-                chrono::DateTime::<chrono::Utc>::from(t)
-                    .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-                    .to_string()
-            }),
-            uptime_seconds: info.started_at.map(|t| t.elapsed().unwrap_or_default().as_secs()),
-        });
+
+        component_statuses.insert(
+            name,
+            ComponentHealthStatus {
+                status: status_str.to_string(),
+                last_check: info.last_health_check.map(|t| {
+                    chrono::DateTime::<chrono::Utc>::from(t)
+                        .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                        .to_string()
+                }),
+                uptime_seconds: info
+                    .started_at
+                    .map(|t| t.elapsed().unwrap_or_default().as_secs()),
+            },
+        );
     }
-    
+
     // Perform detailed checks
     let mut checks = HashMap::new();
-    
+
     // Database connectivity check
     let db_check_start = std::time::Instant::now();
     let db_check = perform_database_check().await;
-    checks.insert("database".to_string(), CheckResult {
-        status: if db_check.is_ok() { "pass".to_string() } else { "fail".to_string() },
-        message: db_check.unwrap_or_else(|e| e),
-        duration_ms: db_check_start.elapsed().as_millis() as u64,
-    });
-    
+    checks.insert(
+        "database".to_string(),
+        CheckResult {
+            status: if db_check.is_ok() {
+                "pass".to_string()
+            } else {
+                "fail".to_string()
+            },
+            message: db_check.unwrap_or_else(|e| e),
+            duration_ms: db_check_start.elapsed().as_millis() as u64,
+        },
+    );
+
     // Memory check
     let memory_check_start = std::time::Instant::now();
     let memory_check = perform_memory_check(&health_metrics).await;
-    checks.insert("memory".to_string(), CheckResult {
-        status: if memory_check.is_ok() { "pass".to_string() } else { "warn".to_string() },
-        message: memory_check.unwrap_or_else(|e| e),
-        duration_ms: memory_check_start.elapsed().as_millis() as u64,
-    });
-    
+    checks.insert(
+        "memory".to_string(),
+        CheckResult {
+            status: if memory_check.is_ok() {
+                "pass".to_string()
+            } else {
+                "warn".to_string()
+            },
+            message: memory_check.unwrap_or_else(|e| e),
+            duration_ms: memory_check_start.elapsed().as_millis() as u64,
+        },
+    );
+
     let response = DetailedHealthResponse {
-        status: if is_healthy { "healthy".to_string() } else { "unhealthy".to_string() },
-        timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        status: if is_healthy {
+            "healthy".to_string()
+        } else {
+            "unhealthy".to_string()
+        },
+        timestamp: chrono::Utc::now()
+            .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+            .to_string(),
         uptime_seconds: health_metrics.uptime.as_secs(),
         components: component_statuses,
         metrics: SystemMetrics {
@@ -196,7 +232,7 @@ pub async fn detailed_health_check(
         },
         checks,
     };
-    
+
     if is_healthy {
         HttpResponse::Ok().json(response)
     } else {
@@ -212,11 +248,11 @@ pub async fn readiness_probe(
 ) -> impl Responder {
     let manager = lifecycle_manager.read().await;
     let state_manager = manager.state_manager();
-    
+
     let components = state_manager.get_all_components().await;
     let mut component_ready = HashMap::new();
     let mut all_ready = true;
-    
+
     for (name, info) in components {
         let is_ready = matches!(info.status, ComponentStatus::Running);
         component_ready.insert(name, is_ready);
@@ -224,12 +260,12 @@ pub async fn readiness_probe(
             all_ready = false;
         }
     }
-    
+
     let response = ReadinessResponse {
         ready: all_ready,
         components: component_ready,
     };
-    
+
     if all_ready {
         HttpResponse::Ok().json(response)
     } else {
@@ -245,14 +281,14 @@ pub async fn liveness_probe(
 ) -> impl Responder {
     let manager = lifecycle_manager.read().await;
     let state_manager = manager.state_manager();
-    
+
     let health_metrics = state_manager.get_health_metrics().await;
-    
+
     let response = LivenessResponse {
         alive: true, // If we can respond, we're alive
         uptime_seconds: health_metrics.uptime.as_secs(),
     };
-    
+
     HttpResponse::Ok().json(response)
 }
 
@@ -260,14 +296,13 @@ pub async fn liveness_probe(
 async fn perform_database_check() -> Result<String, String> {
     // TODO: Implement actual database connectivity check
     // This would typically involve a simple SELECT 1 query
-    match tokio::time::timeout(
-        std::time::Duration::from_secs(5),
-        async {
-            // Simulate database check
-            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-            Result::<(), &str>::Ok(())
-        }
-    ).await {
+    match tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        // Simulate database check
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        Result::<(), &str>::Ok(())
+    })
+    .await
+    {
         Ok(Ok(())) => Ok("Database connection successful".to_string()),
         Ok(Err(_)) => Err("Database connection failed".to_string()),
         Err(_) => Err("Database connection timeout".to_string()),
@@ -278,9 +313,9 @@ async fn perform_database_check() -> Result<String, String> {
 async fn perform_memory_check(metrics: &HealthMetrics) -> Result<String, String> {
     const MEMORY_WARNING_THRESHOLD: u64 = 80; // 80 MB memory usage
     const MEMORY_CRITICAL_THRESHOLD: u64 = 95; // 95 MB memory usage
-    
+
     let memory_usage = metrics.memory_usage_mb.unwrap_or(0);
-    
+
     if memory_usage > MEMORY_CRITICAL_THRESHOLD {
         Err(format!("Critical memory usage: {} MB", memory_usage))
     } else if memory_usage > MEMORY_WARNING_THRESHOLD {

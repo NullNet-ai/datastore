@@ -1,11 +1,11 @@
 use crate::controllers::health_controller::{
-    health_check, detailed_health_check, readiness_probe, liveness_probe
+    detailed_health_check, health_check, liveness_probe, readiness_probe,
 };
 use actix_web::web;
 use actix_web::web::ServiceConfig;
 
 /// Configure health check routes
-/// 
+///
 /// This module provides various health check endpoints:
 /// - `/health` - Basic health status
 /// - `/health/detailed` - Comprehensive health information
@@ -20,6 +20,6 @@ pub fn configure_health_routes(cfg: &mut ServiceConfig) {
             .service(detailed_health_check)
             // Kubernetes-style probes
             .service(readiness_probe)
-            .service(liveness_probe)
+            .service(liveness_probe),
     );
 }
