@@ -284,6 +284,7 @@ impl LifecycleManager {
         self.state_manager
             .update_component_status("StartupManager", ComponentStatus::Stopping)
             .await;
+        
         self.state_manager
             .update_component_status("RuntimeManager", ComponentStatus::Stopping)
             .await;
