@@ -102,10 +102,8 @@ impl LifecycleManager {
         }
 
         // Execute runtime phase
-        info!("[LIFECYCLE] Transitioning to runtime phase");
         self.state_manager.set_phase(LifecyclePhase::Running).await;
         self.update_health_service().await;
-        info!("[LIFECYCLE] About to call execute_runtime");
         match self.execute_runtime().await {
             Ok(_) => {
                 self.logger
@@ -212,7 +210,6 @@ impl LifecycleManager {
 
     /// Execute runtime phase
     async fn execute_runtime(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        info!("[LIFECYCLE] execute_runtime method called");
         // Get the initialized services from startup manager
         let pool = self
             .startup_manager

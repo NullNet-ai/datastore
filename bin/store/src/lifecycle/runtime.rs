@@ -8,6 +8,12 @@ use std::time::{Duration, Instant};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    include!("runtime/tests.rs");
+}
+
 /// Runtime health status
 #[derive(Debug, Clone, PartialEq)]
 pub enum HealthStatus {
@@ -189,14 +195,49 @@ impl RuntimeManager {
 
     /// Check database health
     async fn check_database_health() -> Result<(), String> {
-        // This would typically involve a simple query to verify connectivity
-        // For now, we'll simulate a basic check
+        use crate::database::db::create_connection;
+        use std::time::Duration;
+        
         debug!("[RUNTIME] Checking database health");
 
-        // TODO: Implement actual database health check
-        // Example: SELECT 1 query with timeout
-
-        Ok(())
+        // Perform actual database health check with timeout
+        match tokio::time::timeout(Duration::from_secs(5), async {
+            // Create database connection
+            let client = create_connection().await
+                .map_err(|e| format!("Failed to create database connection: {}", e))?;
+            
+            // Execute simple health check query
+            let rows = client.query("SELECT 1 as health_check", &[])
+                .await
+                .map_err(|e| format!("Health check query failed: {}", e))?;
+            
+            // Verify we got expected result
+            if rows.is_empty() {
+                return Err("Health check query returned no rows".to_string());
+            }
+            
+            let health_value: i32 = rows[0].get(0);
+            if health_value != 1 {
+                return Err(format!("Health check query returned unexpected value: {}", health_value));
+            }
+            
+            debug!("[RUNTIME] Database health check successful");
+            Ok(())
+        }).await {
+            Ok(Ok(())) => {
+                info!("[RUNTIME] Database health check passed");
+                Ok(())
+            },
+            Ok(Err(e)) => {
+                error!("[RUNTIME] Database health check failed: {}", e);
+                Err(e)
+            },
+            Err(_) => {
+                let error_msg = "Database health check timed out after 5 seconds";
+                error!("[RUNTIME] {}", error_msg);
+                Err(error_msg.to_string())
+            }
+        }
     }
 
     /// Check cache system health
