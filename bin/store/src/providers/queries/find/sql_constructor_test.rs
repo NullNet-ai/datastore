@@ -2,8 +2,8 @@
 mod tests {
     use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
     use crate::structs::structs::{
-        ConcatenateField, FilterCriteria,GetByFilter, GroupAdvanceFilter, GroupBy,
-        Join, SortOption,
+        ConcatenateField, FilterCriteria, GetByFilter, GroupAdvanceFilter, GroupBy, Join,
+        SortOption,
     };
     use std::collections::HashMap;
 
