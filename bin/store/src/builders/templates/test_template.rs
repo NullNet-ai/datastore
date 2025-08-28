@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
 
