@@ -285,18 +285,12 @@ pub async fn liveness_probe(
 
 /// Perform database connectivity check
 async fn perform_database_check() -> Result<String, String> {
-    // TODO: Implement actual database connectivity check
-    // This would typically involve a simple SELECT 1 query
-    match tokio::time::timeout(std::time::Duration::from_secs(5), async {
-        // Simulate database check
-        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-        Result::<(), &str>::Ok(())
-    })
-    .await
-    {
-        Ok(Ok(())) => Ok("Database connection successful".to_string()),
-        Ok(Err(_)) => Err("Database connection failed".to_string()),
-        Err(_) => Err("Database connection timeout".to_string()),
+    use crate::lifecycle::runtime::RuntimeManager;
+    
+    // Reuse the existing database health check from runtime module
+    match RuntimeManager::check_database_health().await {
+        Ok(()) => Ok("Database connection successful".to_string()),
+        Err(e) => Err(e),
     }
 }
 

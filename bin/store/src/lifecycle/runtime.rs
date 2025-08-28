@@ -194,7 +194,7 @@ impl RuntimeManager {
     }
 
     /// Check database health
-    async fn check_database_health() -> Result<(), String> {
+    pub async fn check_database_health() -> Result<(), String> {
         use crate::database::db::create_connection;
         use std::time::Duration;
         
