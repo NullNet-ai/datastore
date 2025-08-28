@@ -244,8 +244,6 @@ impl RuntimeManager {
         }
     }
 
-
-
     /// Check memory usage
     async fn check_memory_usage() -> Option<String> {
         debug!("[RUNTIME] Checking memory usage");
@@ -526,10 +524,10 @@ pub async fn check_cache_health() -> Result<String, String> {
             Some(retrieved_value) => {
                 if retrieved_value == test_value {
                     debug!("[RUNTIME] Cache read/write test successful");
-                    
+
                     // Clean up test key
                     cache.remove(&test_key);
-                    
+
                     Ok(())
                 } else {
                     Err("Cache returned incorrect value".to_string())
@@ -541,18 +539,16 @@ pub async fn check_cache_health() -> Result<String, String> {
 
     // Apply timeout to prevent hanging on Redis connection issues
     match timeout(Duration::from_secs(5), health_check).await {
-        Ok(result) => {
-            match result {
-                Ok(_) => {
-                    info!("[RUNTIME] Cache health check passed for {:?}", cache_type);
-                    Ok(format!("Cache ({:?}) connectivity verified", cache_type))
-                }
-                Err(e) => {
-                    error!("[RUNTIME] Cache health check failed: {}", e);
-                    Err(format!("Cache health check failed: {}", e))
-                }
+        Ok(result) => match result {
+            Ok(_) => {
+                info!("[RUNTIME] Cache health check passed for {:?}", cache_type);
+                Ok(format!("Cache ({:?}) connectivity verified", cache_type))
             }
-        }
+            Err(e) => {
+                error!("[RUNTIME] Cache health check failed: {}", e);
+                Err(format!("Cache health check failed: {}", e))
+            }
+        },
         Err(_) => {
             error!("[RUNTIME] Cache health check timed out");
             Err("Cache health check timed out after 5 seconds".to_string())
