@@ -111,10 +111,12 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
             log::info!("Global organization initialized successfully");
 
             // Initialize root account after global organization is successfully created
-            let root_params = Some(crate::initializers::system_initialization::structs::InitializerParams {
-                entity: "account_organizations".to_string(),
-                ..Default::default()
-            });
+            let root_params = Some(
+                crate::initializers::system_initialization::structs::InitializerParams {
+                    entity: "account_organizations".to_string(),
+                    ..Default::default()
+                },
+            );
             if let Err(e) = initialize(EInitializer::ROOT_ACCOUNT_CONFIG, root_params).await {
                 error!("Failed to initialize root account: {}", e);
             } else {

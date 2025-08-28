@@ -1,4 +1,3 @@
-use std::env;
 use crate::builders::templates::proto_generator::diesel_type_to_proto;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
@@ -14,6 +13,7 @@ use diesel::result::Error as DieselError;
 use diesel_async::RunQueryDsl;
 use log::debug;
 use singularize::singularize;
+use std::env;
 use std::time::Duration;
 
 pub fn to_singular(table_name: &str) -> String {

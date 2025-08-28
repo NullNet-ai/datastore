@@ -1,17 +1,17 @@
+use crate::database::schema::database_setup::DatabaseSetupFlags;
+use crate::structs::structs::CommandArgs;
+use base64::prelude::*;
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
 use dotenv::dotenv;
-use once_cell::sync::Lazy;
-use std::env;
 use log::{error, info};
-use base64::prelude::*;
+use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::env;
 use tokio_postgres::types::Type;
 use tokio_postgres::{Client, NoTls};
-use crate::database::schema::database_setup::DatabaseSetupFlags;
-use crate::structs::structs::CommandArgs;
 
 // -- Async Types --
 pub type AsyncDbPool = PoolAsync<AsyncPgConnection>;

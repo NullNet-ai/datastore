@@ -24,7 +24,7 @@ use crate::middlewares::shutdown_handler;
 use crate::utils::utils::{parse_command_args, parse_env_config};
 use env_logger::Env;
 use log::{error, info};
-use structs::structs::{EnvConfig};
+use structs::structs::EnvConfig;
 
 /// Initialize logging and cache configuration
 fn initialize_logging_and_cache(env_config: &EnvConfig) {
@@ -46,7 +46,6 @@ fn initialize_logging_and_cache(env_config: &EnvConfig) {
 
     let _ = cache.cache_type();
 }
-
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

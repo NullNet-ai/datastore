@@ -14,9 +14,9 @@ use crate::constants::paths::database::{
 use crate::structs::structs::CommandArgs;
 use crate::utils::utils::to_singular;
 use log::{debug, error, info};
-use std::{env, process};
 use std::fs;
 use std::path::Path;
+use std::{env, process};
 
 pub struct GeneratorService;
 
@@ -1505,7 +1505,6 @@ impl GeneratorService {
         Ok(filtered_lines.join("\n        "))
     }
 }
-
 
 fn run_build_script() -> std::io::Result<()> {
     use std::process::Command;
