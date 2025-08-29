@@ -1,5 +1,5 @@
-use crate::providers::operations::auth::structs::Claims;
 use crate::config::core::EnvConfig;
+use crate::providers::operations::auth::structs::Claims;
 use actix_web::http::StatusCode;
 use argon2::password_hash::{rand_core::OsRng, SaltString};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};

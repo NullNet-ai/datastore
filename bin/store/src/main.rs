@@ -1,6 +1,7 @@
 #![recursion_limit = "2056"]
 use dotenv::dotenv;
 mod builders;
+mod config;
 mod constants;
 mod controllers;
 mod database;
@@ -12,7 +13,6 @@ mod providers;
 mod routers;
 mod structs;
 mod utils;
-mod config;
 use crate::builders::generator::generator_service;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import
@@ -22,9 +22,9 @@ use crate::lifecycle::{
     manager::LifecycleManager,
 };
 use crate::utils::helpers::{parse_command_args, parse_env_config};
+use config::core::EnvConfig;
 use env_logger::Env;
 use log::{error, info};
-use config::core::EnvConfig;
 
 /// Initialize logging and cache configuration
 fn initialize_logging_and_cache(env_config: &EnvConfig) {

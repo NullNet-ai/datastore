@@ -1,5 +1,5 @@
-use crate::constants::paths;
 use crate::config::core::EnvConfig;
+use crate::constants::paths;
 use log::{info, warn};
 use std::env;
 use std::io::{self, Write};
@@ -31,8 +31,7 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
         let entered_password = rpassword::read_password()?;
 
         // Define the expected password (you might want to store this in an environment variable)
-        let expected_password =
-            config.cleanup_password;
+        let expected_password = config.cleanup_password;
 
         if entered_password == expected_password {
             info!("Password correct. Running database cleanup script...");

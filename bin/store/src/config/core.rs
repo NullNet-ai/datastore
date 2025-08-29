@@ -144,8 +144,7 @@ impl Default for EnvConfig {
             // Security
             jwt_secret: std::env::var("JWT_SECRET")
                 .unwrap_or_else(|_| "Zt7mK#9xL$4nP@2vR8wY5hB3jF6qN9cX7A1B".to_string()),
-            jwt_expires_in: std::env::var("JWT_EXPIRES_IN")
-                .unwrap_or_else(|_| "24h".to_string()),
+            jwt_expires_in: std::env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string()),
             cleanup_password: std::env::var("CLEANUP_PASSWORD")
                 .unwrap_or_else(|_| "admin".to_string()),
             session_expires_in: std::env::var("SESSION_EXPIRES_IN")
@@ -156,8 +155,7 @@ impl Default for EnvConfig {
                 .unwrap_or(1000),
             root_account_password: std::env::var("ROOT_ACCOUNT_PASSWORD")
                 .unwrap_or_else(|_| "pl3@s3ch@ng3m3!!".to_string()),
-            pgp_sym_key: std::env::var("PGP_SYM_KEY")
-                .unwrap_or_else(|_| "".to_string()),
+            pgp_sym_key: std::env::var("PGP_SYM_KEY").unwrap_or_else(|_| "".to_string()),
 
             // Organization Settings
             default_organization_id: std::env::var("DEFAULT_ORGANIZATION_ID")

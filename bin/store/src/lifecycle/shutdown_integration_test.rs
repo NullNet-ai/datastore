@@ -8,7 +8,7 @@ mod tests {
 
     /// Creates a mock EnvConfig for testing purposes
     fn create_test_env_config() -> Arc<EnvConfig> {
-       Arc::new(EnvConfig::default())
+        Arc::new(EnvConfig::default())
     }
     /// Tests BackgroundServiceShutdown creation and basic functionality:
     /// - Service can be created with name and shutdown channel

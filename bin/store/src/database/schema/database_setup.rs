@@ -1,8 +1,8 @@
+use crate::config::core::EnvConfig;
 use crate::constants::paths;
 use crate::database::db::create_connection;
 use crate::initializers::system_initialization::init::initialize;
 use crate::initializers::system_initialization::structs::EInitializer;
-use crate::config::core::EnvConfig;
 use log::{error, info, warn};
 use std::env;
 use std::io::{self, Write};
@@ -40,7 +40,11 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     } else {
         format!(
             "postgres://{}:{}@{}:{}/{}",
-            config.postgres_user, config.postgres_password, config.postgres_host, config.postgres_port, config.postgres_db
+            config.postgres_user,
+            config.postgres_password,
+            config.postgres_host,
+            config.postgres_port,
+            config.postgres_db
         )
     };
 

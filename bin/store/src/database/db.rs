@@ -1,6 +1,6 @@
+use crate::config::core::EnvConfig;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::structs::core::CommandArgs;
-use crate::config::core::EnvConfig;
 use base64::prelude::*;
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;

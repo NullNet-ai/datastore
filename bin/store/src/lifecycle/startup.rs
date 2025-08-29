@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::database::db;
 use crate::initializers::system_initialization::init::initialize;
 use crate::initializers::system_initialization::structs::EInitializer;
@@ -10,7 +11,6 @@ use crate::providers::operations::sync::transactions::transaction_service::Trans
 use crate::providers::storage;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
-use crate::config::core::EnvConfig;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 use std::time::Duration;
@@ -221,13 +221,17 @@ impl StartupManager {
     fn validate_required_variables(&self, validation: &mut StartupValidation) {
         // Check DATABASE_URL from centralized config
         let config = EnvConfig::default();
-        if config.database_url.is_empty() && 
-           (config.postgres_user.is_empty() || config.postgres_password.is_empty() || 
-            config.postgres_host.is_empty() || config.postgres_port.is_empty() || 
-            config.postgres_db.is_empty()) {
-            validation
-                .errors
-                .push("Missing required database configuration: DATABASE_URL or POSTGRES_* variables".to_string());
+        if config.database_url.is_empty()
+            && (config.postgres_user.is_empty()
+                || config.postgres_password.is_empty()
+                || config.postgres_host.is_empty()
+                || config.postgres_port.is_empty()
+                || config.postgres_db.is_empty())
+        {
+            validation.errors.push(
+                "Missing required database configuration: DATABASE_URL or POSTGRES_* variables"
+                    .to_string(),
+            );
             validation.is_valid = false;
         }
 
@@ -319,7 +323,9 @@ impl StartupManager {
     fn validate_database_configuration(&self, validation: &mut StartupValidation) {
         // Validate DATABASE_URL format
         if !self.config.database_url.is_empty() {
-            if !self.config.database_url.starts_with("postgres://") && !self.config.database_url.starts_with("postgresql://") {
+            if !self.config.database_url.starts_with("postgres://")
+                && !self.config.database_url.starts_with("postgresql://")
+            {
                 validation.errors.push("DATABASE_URL must be a valid PostgreSQL connection string starting with 'postgres://' or 'postgresql://'".to_string());
                 validation.is_valid = false;
             }
@@ -382,12 +388,14 @@ impl StartupManager {
             let ttl_secs = ttl.as_secs();
             if ttl_secs == 0 {
                 validation.warnings.push(
-                    "CACHE_TTL is set to 0, cache entries will expire immediately"
-                        .to_string(),
+                    "CACHE_TTL is set to 0, cache entries will expire immediately".to_string(),
                 );
             }
             if ttl_secs > 86400 {
-                validation.warnings.push("CACHE_TTL is set to more than 24 hours, consider if this is intentional".to_string());
+                validation.warnings.push(
+                    "CACHE_TTL is set to more than 24 hours, consider if this is intentional"
+                        .to_string(),
+                );
             }
         }
     }
@@ -413,7 +421,9 @@ impl StartupManager {
 
             // Validate storage endpoint URL
             if !self.config.storage_endpoint.is_empty() {
-                if !self.config.storage_endpoint.starts_with("http://") && !self.config.storage_endpoint.starts_with("https://") {
+                if !self.config.storage_endpoint.starts_with("http://")
+                    && !self.config.storage_endpoint.starts_with("https://")
+                {
                     validation.errors.push("STORAGE_ENDPOINT must be a valid URL starting with 'http://' or 'https://'".to_string());
                     validation.is_valid = false;
                 }
@@ -421,7 +431,10 @@ impl StartupManager {
 
             // Validate SSL verification setting
             if self.config.storage_disable_ssl_verification {
-                validation.warnings.push("SSL verification is disabled for storage, this may be insecure in production".to_string());
+                validation.warnings.push(
+                    "SSL verification is disabled for storage, this may be insecure in production"
+                        .to_string(),
+                );
             }
         }
     }
@@ -466,7 +479,10 @@ impl StartupManager {
 
         // Validate default sensitivity level
         if self.config.default_sensitivity_level == 0 {
-            validation.warnings.push("DEFAULT_SENSITIVITY_LEVEL is set to 0, this may allow unrestricted access".to_string());
+            validation.warnings.push(
+                "DEFAULT_SENSITIVITY_LEVEL is set to 0, this may allow unrestricted access"
+                    .to_string(),
+            );
         }
     }
 
@@ -476,14 +492,12 @@ impl StartupManager {
         let timer = self.config.sync_timer_ms;
         if timer < 1000 {
             validation.warnings.push(
-                "SYNC_TIMER_MS is less than 1000ms, this may cause high CPU usage"
-                    .to_string(),
+                "SYNC_TIMER_MS is less than 1000ms, this may cause high CPU usage".to_string(),
             );
         }
         if timer > 3600000 {
             validation.warnings.push(
-                "SYNC_TIMER_MS is greater than 1 hour, sync may be too infrequent"
-                    .to_string(),
+                "SYNC_TIMER_MS is greater than 1 hour, sync may be too infrequent".to_string(),
             );
         }
 
@@ -513,8 +527,7 @@ impl StartupManager {
             }
             if size > 10000 {
                 validation.warnings.push(
-                    "BATCH_SYNC_SIZE is very large, this may cause memory issues"
-                        .to_string(),
+                    "BATCH_SYNC_SIZE is very large, this may cause memory issues".to_string(),
                 );
             }
         }
@@ -532,7 +545,12 @@ impl StartupManager {
             }
 
             // Basic ULID character validation
-            if !self.config.default_organization_id.chars().all(|c| c.is_ascii_alphanumeric()) {
+            if !self
+                .config
+                .default_organization_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric())
+            {
                 validation.warnings.push("DEFAULT_ORGANIZATION_ID should only contain alphanumeric characters (ULID format)".to_string());
             }
         }
@@ -558,10 +576,12 @@ impl StartupManager {
 
             // Check for common weak passwords
             let weak_passwords = vec!["password", "admin", "123456", "qwerty"];
-            if weak_passwords
-                .iter()
-                .any(|&weak| self.config.default_organization_admin_password.to_lowercase().contains(weak))
-            {
+            if weak_passwords.iter().any(|&weak| {
+                self.config
+                    .default_organization_admin_password
+                    .to_lowercase()
+                    .contains(weak)
+            }) {
                 validation.warnings.push("DEFAULT_ORGANIZATION_ADMIN_PASSWORD appears to be weak, consider using a stronger password".to_string());
             }
         }
