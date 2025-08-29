@@ -5,6 +5,95 @@ mod tests {
     use serde_json::json;
     use tokio;
 
+    /// Authentication response structure for reusable login functionality
+    #[derive(Debug, Clone)]
+    pub struct AuthResponse {
+        pub token: Option<String>,
+        pub session_id: Option<String>,
+        pub is_authenticated: bool,
+        pub server_available: bool,
+    }
+
+    /// Reusable login helper function that can be used across all tests
+    /// Returns authentication data including token and session information
+    /// Handles both online and offline scenarios gracefully
+    pub async fn perform_login() -> AuthResponse {
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // Check server availability first
+        let health_check = client
+            .get(&format!("{}/health", base_url))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+
+        let server_available = health_check.is_ok();
+
+        if !server_available {
+            return AuthResponse {
+                token: None,
+                session_id: None,
+                is_authenticated: false,
+                server_available: false,
+            };
+        }
+
+        // Attempt login with valid credentials
+        let login_payload = json!({
+            "data": {
+                "account_id": "superadmin@dnamicro.com",
+                "account_secret": "ch@ng3m3Pl3@s3!!"
+            }
+        });
+
+        let response = client
+            .post(&format!("{}/api/organizations/auth", base_url))
+            .json(&login_payload)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await;
+
+        match response {
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(json_response) => {
+                        let token = json_response
+                            .get("token")
+                            .and_then(|t| t.as_str())
+                            .map(|s| s.to_string());
+                        let session_id = json_response
+                            .get("sessionID")
+                            .and_then(|s| s.as_str())
+                            .map(|s| s.to_string());
+
+                        let is_authenticated = token.is_some() && session_id.is_some();
+
+                        AuthResponse {
+                            token,
+                            session_id,
+                            is_authenticated,
+                            server_available: true,
+                        }
+                    }
+                    Err(_) => AuthResponse {
+                        token: None,
+                        session_id: None,
+                        is_authenticated: false,
+                        server_available: true,
+                    },
+                }
+            }
+            _ => AuthResponse {
+                token: None,
+                session_id: None,
+                is_authenticated: false,
+                server_available: true,
+            },
+        }
+    }
+
     /// Tests the organization authentication endpoint with database dependency handling:
     /// - Attempts POST request to /api/organizations/auth with valid account credentials
     /// - Gracefully handles database unavailability scenarios
@@ -31,135 +120,42 @@ mod tests {
             "Testing organization authentication endpoint with database dependency handling..."
         );
 
-        let client = reqwest::Client::new();
-        let config = EnvConfig::default();
-        let base_url = format!("http://{}:{}", config.host, config.port);
+        let auth_response = perform_login().await;
 
-        // Check if server is reachable first
-        println!("  ✓ Checking server availability at {}", base_url);
-        let health_check = client
-            .get(&format!("{}/health", base_url))
-            .timeout(std::time::Duration::from_secs(2))
-            .send()
-            .await;
-
-        let server_available = match health_check {
-            Ok(resp) => {
-                println!("    ✓ Server is reachable (status: {})", resp.status());
-                true
-            }
-            Err(e) => {
-                println!("    ⚠ Server is not reachable: {}", e);
-                println!(
-                    "    ℹ This is expected when database is turned off or server is not running"
-                );
-                false
-            }
-        };
-
-        if !server_available {
+        if !auth_response.server_available {
             println!("  ✓ Skipping authentication tests - server/database unavailable");
             println!("  ℹ Test passes gracefully when infrastructure is offline");
-            // Assert that we properly detected server unavailability
             assert!(
-                !server_available,
+                !auth_response.server_available,
                 "Server should be detected as unavailable when health check fails"
             );
-            return; // Early return for offline scenario
+            return;
         }
 
-        // Assert that server is available when we reach this point
-        assert!(
-            server_available,
-            "Server should be available to proceed with authentication tests"
-        );
+        println!("  ✓ Server is available, testing authentication");
 
-        // Test successful login scenario when server is available
-        println!("  ✓ Testing authentication with valid credentials");
-        let login_payload = json!({
-            "data": {
-                "account_id": "superadmin@dnamicro.com",
-                "account_secret": "ch@ng3m3Pl3@s3!!"
-            }
-        });
+        if auth_response.is_authenticated {
+            println!("    ✓ Authentication successful - database is operational");
 
-        let response = client
-            .post(&format!("{}/api/organizations/auth", base_url))
-            .json(&login_payload)
-            .timeout(std::time::Duration::from_secs(5))
-            .send()
-            .await;
-
-        match response {
-            Ok(resp) => {
-                println!("    Status: {}", resp.status());
-
-                if resp.status().is_success() {
-                    match resp.json::<serde_json::Value>().await {
-                        Ok(json_response) => {
-                            println!("    ✓ Received valid JSON response");
-                            println!(
-                                "    Response: {}",
-                                serde_json::to_string_pretty(&json_response).unwrap_or_default()
-                            );
-
-                            // Validate response structure when database is available
-                            let has_session = json_response.get("sessionID").is_some();
-                            let has_token = json_response.get("token").is_some();
-
-                            if has_session && has_token {
-                                println!(
-                                    "    ✓ Authentication successful - database is operational"
-                                );
-
-                                if let Some(token) = json_response.get("token") {
-                                    if let Some(token_str) = token.as_str() {
-                                        if token_str.starts_with("eyJ") {
-                                            println!("    ✓ Valid JWT token received");
-                                            // Assert successful authentication with valid JWT
-                                            assert!(
-                                                token_str.len() > 10,
-                                                "JWT token should have reasonable length"
-                                            );
-                                        }
-                                    }
-                                }
-                                // Assert that authentication was successful when database is operational
-                                assert!(
-                                    has_session && has_token,
-                                    "Authentication should succeed when database is operational"
-                                );
-                            } else {
-                                println!("    ⚠ Incomplete authentication response - possible database issue");
-                                // When database has issues, we expect incomplete responses but test should still pass
-                                // This is acceptable behavior for graceful degradation
-                            }
-                        }
-                        Err(e) => {
-                            println!("    ⚠ Failed to parse JSON response: {}", e);
-                            println!("    ℹ This may indicate database connectivity issues");
-                        }
-                    }
-                } else if resp.status().is_server_error() {
-                    println!(
-                        "    ⚠ Server error ({}): Likely database connection issue",
-                        resp.status()
-                    );
-                } else {
-                    println!("    ⚠ Unexpected status: {}", resp.status());
+            if let Some(token) = &auth_response.token {
+                if token.starts_with("eyJ") {
+                    println!("    ✓ Valid JWT token received");
+                    assert!(token.len() > 10, "JWT token should have reasonable length");
                 }
             }
-            Err(e) => {
-                println!("    ⚠ Request failed: {}", e);
-                println!("    ℹ This is expected when database is offline");
-            }
+
+            assert!(
+                auth_response.is_authenticated,
+                "Authentication should succeed when database is operational"
+            );
+        } else {
+            println!("    ⚠ Authentication failed - possible database issue");
+            println!("    ℹ This is acceptable behavior for graceful degradation");
         }
 
         println!("  ✓ Authentication endpoint test completed");
         println!("  ℹ Test designed to pass gracefully regardless of database state");
 
-        // Assert that the test completed successfully
-        // This test should always pass as it's designed to handle both online and offline scenarios
         assert!(
             true,
             "Test completed - handles both database online and offline scenarios"
@@ -179,6 +175,15 @@ mod tests {
         let config = EnvConfig::default();
         let base_url = format!("http://{}:{}", config.host, config.port);
 
+        // Use reusable login function
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
         // Test payload based on query.filter.concatenated.json
         let filter_payload = json!({
             "pluck": [
@@ -396,12 +401,20 @@ mod tests {
         });
 
         println!("  ✓ Testing POST /api/store/contacts/filter with complex query");
-        let response = client
+        let mut request = client
             .post(&format!("{}/api/store/contacts/filter", base_url))
             .json(&filter_payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await;
+            .timeout(std::time::Duration::from_secs(10));
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+
+        let response = request.send().await;
 
         match response {
             Ok(resp) => {
@@ -415,6 +428,10 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
+                    assert!(
+                        resp.status() != reqwest::StatusCode::UNAUTHORIZED,
+                        "Filter endpoint should not return 401 Unauthorized"
+                    );
                 }
             }
             Err(e) => {
@@ -439,6 +456,16 @@ mod tests {
         let client = reqwest::Client::new();
         let config = EnvConfig::default();
         let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // Use reusable login function
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
 
         // Test payload based on search_suggestions.query.json
         let search_payload = json!({
@@ -556,15 +583,23 @@ mod tests {
         });
 
         println!("  ✓ Testing POST /api/store/contacts/filter/suggestions with search criteria");
-        let response = client
+        let mut request = client
             .post(&format!(
                 "{}/api/store/contacts/filter/suggestions",
                 base_url
             ))
             .json(&search_payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await;
+            .timeout(std::time::Duration::from_secs(10));
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+
+        let response = request.send().await;
 
         match response {
             Ok(resp) => {
@@ -605,6 +640,16 @@ mod tests {
         let client = reqwest::Client::new();
         let config = EnvConfig::default();
         let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // Use reusable login function
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
 
         // Test payload based on find_sorting_non_text_fields.json
         let sort_payload = json!({
@@ -694,12 +739,20 @@ mod tests {
         });
 
         println!("  ✓ Testing POST /api/store/contacts/filter with sorting configuration");
-        let response = client
+        let mut request = client
             .post(&format!("{}/api/store/contacts/filter", base_url))
             .json(&sort_payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await;
+            .timeout(std::time::Duration::from_secs(10));
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+
+        let response = request.send().await;
 
         match response {
             Ok(resp) => {
@@ -737,6 +790,16 @@ mod tests {
         let client = reqwest::Client::new();
         let config = EnvConfig::default();
         let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // Use reusable login function
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
 
         // Test payload based on find_with_self_join_with_nested.json
         let self_join_payload = json!({
@@ -791,15 +854,23 @@ mod tests {
         });
 
         println!("  ✓ Testing POST /api/store/account_organizations/filter with self-join");
-        let response = client
+        let mut request = client
             .post(&format!(
                 "{}/api/store/account_organizations/filter",
                 base_url
             ))
             .json(&self_join_payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await;
+            .timeout(std::time::Duration::from_secs(10));
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+
+        let response = request.send().await;
 
         match response {
             Ok(resp) => {
@@ -837,6 +908,16 @@ mod tests {
         let client = reqwest::Client::new();
         let config = EnvConfig::default();
         let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // Use reusable login function
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
 
         // Test payload based on find_with_self_join_with_nested.json
         let self_join_payload = json!({
@@ -881,15 +962,23 @@ mod tests {
         });
 
         println!("  ✓ Testing POST /api/store/account_organizations/filter with self-join");
-        let response = client
+        let mut request = client
             .post(&format!(
                 "{}/api/store/account_organizations/filter",
                 base_url
             ))
             .json(&self_join_payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await;
+            .timeout(std::time::Duration::from_secs(10));
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+
+        let response = request.send().await;
 
         match response {
             Ok(resp) => {
@@ -930,6 +1019,16 @@ mod tests {
         let config = EnvConfig::default();
         let base_url = format!("http://{}:{}", config.host, config.port);
 
+        // Use reusable login function
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
+
         // Test aggregation payload
         let aggregation_payload = json!({
             "entity": "contacts",
@@ -962,12 +1061,20 @@ mod tests {
         });
 
         println!("  ✓ Testing POST /api/store/aggregate with aggregation operations");
-        let response = client
+        let mut request = client
             .post(&format!("{}/api/store/aggregate", base_url))
             .json(&aggregation_payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await;
+            .timeout(std::time::Duration::from_secs(10));
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+
+        let response = request.send().await;
 
         match response {
             Ok(resp) => {
