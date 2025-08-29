@@ -9,6 +9,7 @@ use actix_web::web::ServiceConfig;
 /// - `/health/detailed` - Comprehensive health information
 /// - `/health/ready` - Kubernetes readiness probe
 /// - `/health/live` - Kubernetes liveness probe
+/// - `/health/phase` - Current deployment phase
 pub fn configure_health_routes(cfg: &mut ServiceConfig) {
     cfg.service(
         web::scope("/api")
