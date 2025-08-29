@@ -34,10 +34,6 @@ Thumbs.db
 .env
 .env.local
 
-# Generated documentation
-/doc/
-/docs/
-
 # Test files
 /tests/*.test.*
 /tests/*.rs

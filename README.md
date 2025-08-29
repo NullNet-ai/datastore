@@ -61,7 +61,7 @@ crdt-workspace/
 │           ├── middlewares/       # Request/response middleware
 │           ├── providers/         # Service providers
 │           ├── structs/          # Data structures and configuration
-│           │   ├── structs.rs     # Core structures including EnvConfig
+│           │   ├── core.rs     # Core structures including EnvConfig
 │           │   └── ...           # Other specialized structures
 │           └── utils/            # Utility functions
 ├── libs/                          # Shared libraries
@@ -91,7 +91,7 @@ crdt-workspace/
 - **`bin/store/src/builders/generator/`** - Code generation tools and scripts
 - **`bin/store/src/constants/paths.rs`** - Centralized path constants for consistency
 - **`bin/store/src/lifecycle/`** - Application lifecycle management system
-- **`bin/store/src/structs/structs.rs`** - Centralized configuration management (EnvConfig)
+- **`bin/store/src/structs/core.rs`** - Centralized configuration management (EnvConfig)
 
 ### Path Management
 
@@ -158,7 +158,7 @@ graph TD
 
 ### Configuration Management
 
-The application uses centralized configuration management through the `EnvConfig` structure in `bin/store/src/structs/structs.rs`:
+The application uses centralized configuration management through the `EnvConfig` structure in `bin/store/src/structs/core.rs`:
 
 - **Centralized Environment Variables** - All environment variable access is centralized through `EnvConfig`
 - **Type Safety** - Configuration values are parsed and validated at startup
@@ -477,7 +477,7 @@ make help
    - **Schema definitions** go in `bin/store/src/database/schema/tables/`
    - **Generated code** is automatically created in `bin/store/src/generated/`
    - **Lifecycle management changes** go in `bin/store/src/lifecycle/`
-   - **Configuration changes** go in `bin/store/src/structs/structs.rs`
+   - **Configuration changes** go in `bin/store/src/structs/core.rs`
 
 3. Format your code:
 

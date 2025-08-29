@@ -1,0 +1,105 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font: bold 18px sans-serif; fill: #2c3e50; }
+      .component { font: 12px sans-serif; fill: #34495e; }
+      .phase { font: bold 14px sans-serif; fill: #ffffff; }
+      .arrow { stroke: #3498db; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .box { fill: #ecf0f1; stroke: #bdc3c7; stroke-width: 2; rx: 8; }
+      .startup-box { fill: #e8f5e8; stroke: #27ae60; stroke-width: 2; rx: 8; }
+      .runtime-box { fill: #e8f4fd; stroke: #3498db; stroke-width: 2; rx: 8; }
+      .shutdown-box { fill: #fdf2e8; stroke: #e67e22; stroke-width: 2; rx: 8; }
+      .manager-box { fill: #f4e8fd; stroke: #9b59b6; stroke-width: 2; rx: 8; }
+      .phase-text { font: bold 12px sans-serif; fill: #2c3e50; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3498db" />
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">CRDT Store Lifecycle Management System</text>
+  
+  <!-- LifecycleManager (Central Orchestrator) -->
+  <rect x="320" y="60" width="160" height="60" class="manager-box"/>
+  <text x="400" y="85" text-anchor="middle" class="phase">LifecycleManager</text>
+  <text x="400" y="105" text-anchor="middle" class="component">Central Orchestrator</text>
+  
+  <!-- Startup Phase -->
+  <rect x="50" y="180" width="200" height="120" class="startup-box"/>
+  <text x="150" y="200" text-anchor="middle" class="phase-text">Startup Phase</text>
+  <text x="70" y="220" class="component">• Initialize Database</text>
+  <text x="70" y="240" class="component">• Setup Services</text>
+  <text x="70" y="260" class="component">• Configure Components</text>
+  <text x="70" y="280" class="component">• Load EnvConfig</text>
+  
+  <!-- Runtime Phase -->
+  <rect x="300" y="180" width="200" height="120" class="runtime-box"/>
+  <text x="400" y="200" text-anchor="middle" class="phase-text">Runtime Phase</text>
+  <text x="320" y="220" class="component">• Health Monitoring</text>
+  <text x="320" y="240" class="component">• Service Management</text>
+  <text x="320" y="260" class="component">• Error Handling</text>
+  <text x="320" y="280" class="component">• gRPC/HTTP Servers</text>
+  
+  <!-- Shutdown Phase -->
+  <rect x="550" y="180" width="200" height="120" class="shutdown-box"/>
+  <text x="650" y="200" text-anchor="middle" class="phase-text">Shutdown Phase</text>
+  <text x="570" y="220" class="component">• Stop Services</text>
+  <text x="570" y="240" class="component">• Cleanup Resources</text>
+  <text x="570" y="260" class="component">• Final Logging</text>
+  <text x="570" y="280" class="component">• Graceful Exit</text>
+  
+  <!-- Component Details -->
+  <rect x="50" y="350" width="150" height="200" class="box"/>
+  <text x="125" y="370" text-anchor="middle" class="phase-text">Core Components</text>
+  <text x="70" y="390" class="component">StartupManager</text>
+  <text x="70" y="410" class="component">RuntimeManager</text>
+  <text x="70" y="430" class="component">ShutdownManager</text>
+  <text x="70" y="450" class="component">StateManager</text>
+  <text x="70" y="470" class="component">HealthService</text>
+  <text x="70" y="490" class="component">LifecycleLogger</text>
+  <text x="70" y="510" class="component">EnvConfig</text>
+  
+  <!-- Configuration Management -->
+  <rect x="250" y="350" width="200" height="200" class="box"/>
+  <text x="350" y="370" text-anchor="middle" class="phase-text">Configuration System</text>
+  <text x="270" y="390" class="component">EnvConfig Structure:</text>
+  <text x="270" y="410" class="component">• host, port</text>
+  <text x="270" y="430" class="component">• grpc_port, grpc_url</text>
+  <text x="270" y="450" class="component">• socket_host, socket_port</text>
+  <text x="270" y="470" class="component">• cache_type</text>
+  <text x="270" y="490" class="component">• redis_connection</text>
+  <text x="270" y="510" class="component">• ttl (time-to-live)</text>
+  
+  <!-- Health Monitoring -->
+  <rect x="500" y="350" width="200" height="200" class="box"/>
+  <text x="600" y="370" text-anchor="middle" class="phase-text">Health Monitoring</text>
+  <text x="520" y="390" class="component">Health Endpoints:</text>
+  <text x="520" y="410" class="component">• /health (readiness)</text>
+  <text x="520" y="430" class="component">• /health/live (liveness)</text>
+  <text x="520" y="450" class="component">• Database checks</text>
+  <text x="520" y="470" class="component">• Cache checks</text>
+  <text x="520" y="490" class="component">• Component status</text>
+  <text x="520" y="510" class="component">• Uptime tracking</text>
+  
+  <!-- Arrows -->
+  <!-- Manager to phases -->
+  <line x1="360" y1="120" x2="150" y2="180" class="arrow"/>
+  <line x1="400" y1="120" x2="400" y2="180" class="arrow"/>
+  <line x1="440" y1="120" x2="650" y2="180" class="arrow"/>
+  
+  <!-- Phase transitions -->
+  <line x1="250" y1="240" x2="300" y2="240" class="arrow"/>
+  <line x1="500" y1="240" x2="550" y2="240" class="arrow"/>
+  
+  <!-- Components to manager -->
+  <line x1="125" y1="350" x2="380" y2="120" class="arrow"/>
+  
+  <!-- Configuration to phases -->
+  <line x1="350" y1="350" x2="150" y2="300" class="arrow"/>
+  <line x1="350" y1="350" x2="400" y2="300" class="arrow"/>
+  
+  <!-- Health monitoring -->
+  <line x1="500" y1="400" x2="450" y2="250" class="arrow"/>
+  
+</svg>
