@@ -23,11 +23,17 @@ static ASYNC_POOL: Lazy<AsyncDbPool> = Lazy::new(|| establish_async_pool());
 pub fn establish_async_pool() -> AsyncDbPool {
     dotenv().ok();
     let config_env = EnvConfig::default();
-    let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(config_env.database_url);
+    let config =
+        AsyncDieselConnectionManager::<AsyncPgConnection>::new(config_env.database_url.clone());
     PoolAsync::builder(config)
         .max_size(20)
         .build()
-        .expect("Failed to create async pool")
+        .unwrap_or_else(|e| {
+            panic!(
+                "Failed to create database connection pool. Database URL: {}. Error: {}. Please ensure PostgreSQL is running and the DATABASE_URL is correct.",
+                config_env.database_url, e
+            )
+        })
 }
 
 pub fn get_async_pool() -> &'static AsyncDbPool {
@@ -37,7 +43,17 @@ pub fn get_async_pool() -> &'static AsyncDbPool {
 pub async fn get_async_connection() -> AsyncDbPooledConnection {
     get_async_pool().get().await.unwrap_or_else(|e| {
         log::error!("Failed to get async connection: {}", e);
-        panic!("Async connection failure");
+        // Check if it's a connection refused error (database not available)
+        let error_msg = e.to_string();
+        if error_msg.contains("Connection refused") || error_msg.contains("connection refused") {
+            panic!("Database is not available. Please ensure PostgreSQL is running and accessible at the configured host and port.");
+        } else if error_msg.contains("timeout") {
+            panic!("Database connection timeout. The database may be overloaded or network issues exist.");
+        } else if error_msg.contains("authentication") || error_msg.contains("password") {
+            panic!("Database authentication failed. Please check your database credentials.");
+        } else {
+            panic!("Database connection failed: {}. Please check your database configuration and ensure PostgreSQL is running.", e);
+        }
     })
 }
 
@@ -57,7 +73,30 @@ pub async fn create_connection() -> Result<Client, Box<dyn std::error::Error>> {
 
     let (client, connection) = tokio_postgres::connect(&connection_string, NoTls)
         .await
-        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        .map_err(|e| {
+            let error_msg = e.to_string();
+            if error_msg.contains("Connection refused") || error_msg.contains("connection refused") {
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::ConnectionRefused,
+                    format!("Database is not available at {}:{}. Please ensure PostgreSQL is running and accessible.", host, port)
+                )) as Box<dyn std::error::Error>
+            } else if error_msg.contains("timeout") {
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    format!("Database connection timeout to {}:{}. The database may be overloaded or network issues exist.", host, port)
+                )) as Box<dyn std::error::Error>
+            } else if error_msg.contains("authentication") || error_msg.contains("password") {
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    format!("Database authentication failed for user '{}' on database '{}'. Please check your credentials.", user, dbname)
+                )) as Box<dyn std::error::Error>
+            } else {
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Database connection failed to {}:{} (database: {}, user: {}): {}. Please check your database configuration.", host, port, dbname, user, e)
+                )) as Box<dyn std::error::Error>
+            }
+        })?;
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
