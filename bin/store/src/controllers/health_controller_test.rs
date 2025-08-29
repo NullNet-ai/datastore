@@ -16,7 +16,7 @@ mod tests {
         // Initialize cache configuration for testing
         use crate::providers::storage::cache::{cache_factory::CacheType, CacheConfig};
         let _ = CacheConfig::init(CacheType::InMemory, None, None);
-        
+
         let health_service = HealthService::new();
         // Set health service to healthy status for testing
         health_service.update_health_status(true).await;
@@ -29,7 +29,7 @@ mod tests {
         // Initialize cache configuration for testing
         use crate::providers::storage::cache::{cache_factory::CacheType, CacheConfig};
         let _ = CacheConfig::init(CacheType::InMemory, None, None);
-        
+
         let state_manager = Arc::new(StateManager::new());
 
         // Add test components
@@ -96,14 +96,17 @@ mod tests {
         // Verify response status
         let status = resp.status();
         println!("    ✓ Verifying response status: {}", status);
-        
+
         if !status.is_success() {
             let body = test::read_body(resp).await;
             let body_str = String::from_utf8_lossy(&body);
             println!("    Response body: {}", body_str);
-            panic!("Health endpoint should return success status, got: {}", status);
+            panic!(
+                "Health endpoint should return success status, got: {}",
+                status
+            );
         }
-        
+
         assert!(
             status.is_success(),
             "Health endpoint should return success status, got: {}",
@@ -112,16 +115,31 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let health_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let health_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify required fields exist
         println!("    ✓ Verifying response structure");
-        assert!(health_response["status"].is_string(), "Status field should exist");
-        assert!(health_response["timestamp"].is_string(), "Timestamp field should exist");
-        assert!(health_response["uptime_seconds"].is_number(), "Uptime field should exist");
-        assert!(health_response["components"].is_object(), "Components field should exist");
-        assert!(health_response["metrics"].is_object(), "Metrics field should exist");
+        assert!(
+            health_response["status"].is_string(),
+            "Status field should exist"
+        );
+        assert!(
+            health_response["timestamp"].is_string(),
+            "Timestamp field should exist"
+        );
+        assert!(
+            health_response["uptime_seconds"].is_number(),
+            "Uptime field should exist"
+        );
+        assert!(
+            health_response["components"].is_object(),
+            "Components field should exist"
+        );
+        assert!(
+            health_response["metrics"].is_object(),
+            "Metrics field should exist"
+        );
 
         println!("Basic health check endpoint test completed successfully!");
     }
@@ -167,7 +185,9 @@ mod tests {
 
         // Test the endpoint
         println!("  ✓ Testing detailed health endpoint");
-        let req = test::TestRequest::get().uri("/health/detailed").to_request();
+        let req = test::TestRequest::get()
+            .uri("/health/detailed")
+            .to_request();
         let resp = test::call_service(&app, req).await;
 
         // Verify response status
@@ -179,21 +199,42 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let health_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let health_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify detailed response structure
         println!("    ✓ Verifying detailed response structure");
-        assert!(health_response["status"].is_string(), "Status field should exist");
-        assert!(health_response["timestamp"].is_string(), "Timestamp field should exist");
-        assert!(health_response["uptime_seconds"].is_number(), "Uptime field should exist");
-        assert!(health_response["components"].is_object(), "Components field should exist");
-        assert!(health_response["metrics"].is_object(), "Metrics field should exist");
-        assert!(health_response["checks"].is_object(), "Checks field should exist");
+        assert!(
+            health_response["status"].is_string(),
+            "Status field should exist"
+        );
+        assert!(
+            health_response["timestamp"].is_string(),
+            "Timestamp field should exist"
+        );
+        assert!(
+            health_response["uptime_seconds"].is_number(),
+            "Uptime field should exist"
+        );
+        assert!(
+            health_response["components"].is_object(),
+            "Components field should exist"
+        );
+        assert!(
+            health_response["metrics"].is_object(),
+            "Metrics field should exist"
+        );
+        assert!(
+            health_response["checks"].is_object(),
+            "Checks field should exist"
+        );
 
         // Verify checks include database and cache
         let checks = &health_response["checks"];
-        assert!(checks["database"].is_object(), "Database check should exist");
+        assert!(
+            checks["database"].is_object(),
+            "Database check should exist"
+        );
         assert!(checks["cache"].is_object(), "Cache check should exist");
 
         println!("Detailed health check endpoint test completed successfully!");
@@ -252,13 +293,19 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let readiness_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let readiness_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify readiness response structure
         println!("    ✓ Verifying readiness response structure");
-        assert!(readiness_response["ready"].is_boolean(), "Ready field should be boolean");
-        assert!(readiness_response["components"].is_object(), "Components field should exist");
+        assert!(
+            readiness_response["ready"].is_boolean(),
+            "Ready field should be boolean"
+        );
+        assert!(
+            readiness_response["components"].is_object(),
+            "Components field should exist"
+        );
 
         println!("Readiness probe endpoint test completed successfully!");
     }
@@ -316,16 +363,25 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let liveness_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let liveness_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify liveness response structure
         println!("    ✓ Verifying liveness response structure");
-        assert!(liveness_response["alive"].is_boolean(), "Alive field should be boolean");
-        assert!(liveness_response["uptime_seconds"].is_number(), "Uptime field should exist");
+        assert!(
+            liveness_response["alive"].is_boolean(),
+            "Alive field should be boolean"
+        );
+        assert!(
+            liveness_response["uptime_seconds"].is_number(),
+            "Uptime field should exist"
+        );
 
         // Verify alive is true (if we can respond, we're alive)
-        assert_eq!(liveness_response["alive"], true, "Service should report as alive");
+        assert_eq!(
+            liveness_response["alive"], true,
+            "Service should report as alive"
+        );
 
         println!("Liveness probe endpoint test completed successfully!");
     }
@@ -359,10 +415,12 @@ mod tests {
         // Create mock dependencies
         println!("  ✓ Creating mock StateManager");
         let state_manager = create_mock_state_manager().await;
-        
+
         // Register a test component
         println!("  ✓ Registering test component");
-        state_manager.register_component("RuntimeManager".to_string()).await;
+        state_manager
+            .register_component("RuntimeManager".to_string())
+            .await;
 
         // Create test application
         println!("  ✓ Setting up test application");
@@ -400,15 +458,27 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let update_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let update_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify response structure
         println!("    ✓ Verifying response structure");
-        assert!(update_response["status"].is_string(), "Status field should exist");
-        assert!(update_response["message"].is_string(), "Message field should exist");
-        assert!(update_response["component"].is_string(), "Component field should exist");
-        assert!(update_response["timestamp"].is_string(), "Timestamp field should exist");
+        assert!(
+            update_response["status"].is_string(),
+            "Status field should exist"
+        );
+        assert!(
+            update_response["message"].is_string(),
+            "Message field should exist"
+        );
+        assert!(
+            update_response["component"].is_string(),
+            "Component field should exist"
+        );
+        assert!(
+            update_response["timestamp"].is_string(),
+            "Timestamp field should exist"
+        );
 
         // Verify response content
         assert_eq!(update_response["status"], "success");
@@ -445,10 +515,12 @@ mod tests {
         // Create mock dependencies
         println!("  ✓ Creating mock StateManager");
         let state_manager = create_mock_state_manager().await;
-        
+
         // Register a test component
         println!("  ✓ Registering test component");
-        state_manager.register_component("RuntimeManager".to_string()).await;
+        state_manager
+            .register_component("RuntimeManager".to_string())
+            .await;
 
         // Create test application
         println!("  ✓ Setting up test application");
@@ -480,16 +552,31 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let record_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let record_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify response structure
         println!("    ✓ Verifying response structure");
-        assert!(record_response["status"].is_string(), "Status field should exist");
-        assert!(record_response["message"].is_string(), "Message field should exist");
-        assert!(record_response["component"].is_string(), "Component field should exist");
-        assert!(record_response["success"].is_boolean(), "Success field should exist");
-        assert!(record_response["timestamp"].is_string(), "Timestamp field should exist");
+        assert!(
+            record_response["status"].is_string(),
+            "Status field should exist"
+        );
+        assert!(
+            record_response["message"].is_string(),
+            "Message field should exist"
+        );
+        assert!(
+            record_response["component"].is_string(),
+            "Component field should exist"
+        );
+        assert!(
+            record_response["success"].is_boolean(),
+            "Success field should exist"
+        );
+        assert!(
+            record_response["timestamp"].is_string(),
+            "Timestamp field should exist"
+        );
 
         // Verify response content
         assert_eq!(record_response["status"], "success");
@@ -513,8 +600,8 @@ mod tests {
         );
 
         let body = test::read_body(resp).await;
-        let record_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let record_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         assert_eq!(record_response["success"], false);
         assert_eq!(record_response["component"], "DatabasePool");
@@ -548,10 +635,12 @@ mod tests {
         // Create mock dependencies
         println!("  ✓ Creating mock StateManager");
         let state_manager = create_mock_state_manager().await;
-        
+
         // Register a test component
         println!("  ✓ Registering test component");
-        state_manager.register_component("RuntimeManager".to_string()).await;
+        state_manager
+            .register_component("RuntimeManager".to_string())
+            .await;
 
         // Create test application
         println!("  ✓ Setting up test application");
@@ -578,7 +667,10 @@ mod tests {
         if !status.is_success() {
             let body = test::read_body(resp).await;
             let body_str = String::from_utf8_lossy(&body);
-            panic!("Component retrieval failed. Status: {}, Body: {}", status, body_str);
+            panic!(
+                "Component retrieval failed. Status: {}, Body: {}",
+                status, body_str
+            );
         }
         assert!(
             status.is_success(),
@@ -587,15 +679,27 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let component_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let component_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify component information structure
         println!("    ✓ Verifying component information structure");
-        assert!(component_response["name"].is_string(), "Name field should exist");
-        assert!(component_response["status"].is_string(), "Status field should exist");
-        assert!(component_response["error_count"].is_number(), "Error count field should exist");
-        assert!(component_response["restart_count"].is_number(), "Restart count field should exist");
+        assert!(
+            component_response["name"].is_string(),
+            "Name field should exist"
+        );
+        assert!(
+            component_response["status"].is_string(),
+            "Status field should exist"
+        );
+        assert!(
+            component_response["error_count"].is_number(),
+            "Error count field should exist"
+        );
+        assert!(
+            component_response["restart_count"].is_number(),
+            "Restart count field should exist"
+        );
 
         // Verify component content
         assert_eq!(component_response["name"], "RuntimeManager");
@@ -658,7 +762,9 @@ mod tests {
 
         // Test snapshot creation
         println!("  ✓ Testing state snapshot creation");
-        let req = test::TestRequest::get().uri("/health/snapshot").to_request();
+        let req = test::TestRequest::get()
+            .uri("/health/snapshot")
+            .to_request();
         let resp = test::call_service(&app, req).await;
 
         // Verify response status
@@ -670,8 +776,8 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let snapshot_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let snapshot_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify snapshot structure (structure depends on StateManager implementation)
         println!("    ✓ Verifying snapshot structure");
@@ -747,14 +853,23 @@ mod tests {
 
         // Parse response body
         let body = test::read_body(resp).await;
-        let config_response: serde_json::Value = serde_json::from_slice(&body)
-            .expect("Response should be valid JSON");
+        let config_response: serde_json::Value =
+            serde_json::from_slice(&body).expect("Response should be valid JSON");
 
         // Verify response structure
         println!("    ✓ Verifying response structure");
-        assert!(config_response["status"].is_string(), "Status field should exist");
-        assert!(config_response["message"].is_string(), "Message field should exist");
-        assert!(config_response["timestamp"].is_string(), "Timestamp field should exist");
+        assert!(
+            config_response["status"].is_string(),
+            "Status field should exist"
+        );
+        assert!(
+            config_response["message"].is_string(),
+            "Message field should exist"
+        );
+        assert!(
+            config_response["timestamp"].is_string(),
+            "Timestamp field should exist"
+        );
 
         // Verify response content - endpoint returns 'info' due to Arc<StateManager> limitations
         assert_eq!(config_response["status"], "info");
@@ -839,9 +954,9 @@ mod tests {
         println!("  ✓ Testing malformed JSON payloads");
         let malformed_payloads = vec![
             "{invalid json}",
-            "{\"key\": }", // Missing value
+            "{\"key\": }",       // Missing value
             "{\"incomplete\": ", // Incomplete JSON
-            "", // Empty string
+            "",                  // Empty string
         ];
 
         for payload in malformed_payloads {

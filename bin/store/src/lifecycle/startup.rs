@@ -56,7 +56,10 @@ impl StartupManager {
 
         // Update StartupManager status to starting
         self.state_manager
-            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Starting)
+            .update_component_status(
+                "StartupManager",
+                crate::lifecycle::state::ComponentStatus::Starting,
+            )
             .await;
 
         self.logger
@@ -127,10 +130,13 @@ impl StartupManager {
         self.setup_messaging_services().await?;
 
         let elapsed = self.start_time.unwrap().elapsed();
-        
+
         // Update StartupManager status to running after successful completion
         self.state_manager
-            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Running)
+            .update_component_status(
+                "StartupManager",
+                crate::lifecycle::state::ComponentStatus::Running,
+            )
             .await;
 
         self.logger

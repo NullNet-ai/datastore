@@ -6,5 +6,5 @@ pub mod root_controller;
 pub mod store_controller;
 pub mod sync_endpoints_controller;
 
-mod store_controller_test;
 mod health_controller_test;
+mod store_controller_test;
