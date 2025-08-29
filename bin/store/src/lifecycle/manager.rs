@@ -287,11 +287,12 @@ impl LifecycleManager {
             }
         };
 
-        // Configure the runtime manager with the logger, health service, shutdown manager, and post-startup callback
+        // Configure the runtime manager with the logger, health service, state manager, shutdown manager, and post-startup callback
         let configured_runtime_manager =
             std::mem::replace(&mut self.runtime_manager, RuntimeManager::new())
                 .with_logger(self.logger.clone())
                 .with_health_service(self.health_service.clone())
+                .with_state_manager(self.state_manager.clone())
                 .with_shutdown_manager(&mut self.shutdown_manager)
                 .with_post_startup_callback(post_startup_callback);
         self.runtime_manager = configured_runtime_manager;

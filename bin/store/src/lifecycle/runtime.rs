@@ -25,6 +25,7 @@ pub struct RuntimeManager {
     health_check_interval: Duration,
     logger: Option<Arc<crate::lifecycle::logging::LifecycleLogger>>,
     health_service: Option<Arc<crate::lifecycle::health_service::HealthService>>,
+    state_manager: Option<Arc<crate::lifecycle::state::StateManager>>,
     post_startup_callback: Option<
         Box<
             dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
@@ -53,6 +54,7 @@ impl RuntimeManager {
             health_check_interval: Duration::from_secs(30),
             logger: None,
             health_service: None,
+            state_manager: None,
             post_startup_callback: None,
             shutdown_manager: None,
             shutdown_callback: None,
@@ -70,6 +72,14 @@ impl RuntimeManager {
         health_service: Arc<crate::lifecycle::health_service::HealthService>,
     ) -> Self {
         self.health_service = Some(health_service);
+        self
+    }
+
+    pub fn with_state_manager(
+        mut self,
+        state_manager: Arc<crate::lifecycle::state::StateManager>,
+    ) -> Self {
+        self.state_manager = Some(state_manager);
         self
     }
 
@@ -581,6 +591,7 @@ impl RuntimeManager {
         info!("[RUNTIME] Configuring HTTP server for {}", bind_address);
 
         let health_service = self.health_service.clone();
+        let state_manager = self.state_manager.clone();
 
         // Validate bind address format
         if !bind_address.contains(':') {
@@ -609,6 +620,10 @@ impl RuntimeManager {
 
             if let Some(hs) = &health_service {
                 app = app.app_data(web::Data::new(hs.clone()));
+            }
+
+            if let Some(sm) = &state_manager {
+                app = app.app_data(web::Data::new(sm.clone()));
             }
 
             app

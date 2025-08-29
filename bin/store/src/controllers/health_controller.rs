@@ -1,10 +1,10 @@
 use crate::lifecycle::health_service::HealthService;
 use crate::lifecycle::runtime::check_cache_health;
 use crate::lifecycle::runtime::RuntimeManager;
-use crate::lifecycle::state::{ComponentStatus, HealthMetrics, LifecyclePhase};
+use crate::lifecycle::state::{ComponentStatus, HealthMetrics, LifecyclePhase, StateManager, StateChangeEvent};
 use actix_web::{web, HttpResponse, Responder};
 use chrono;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 /// Health check response structure
@@ -67,6 +67,54 @@ pub struct ReadinessResponse {
 pub struct LivenessResponse {
     pub alive: bool,
     pub uptime_seconds: u64,
+}
+
+/// Component metadata update request
+#[derive(Deserialize, Debug)]
+pub struct ComponentMetadataRequest {
+    pub key: String,
+    pub value: String,
+}
+
+/// Health check record request
+#[derive(Deserialize, Debug)]
+pub struct HealthCheckRequest {
+    pub success: bool,
+}
+
+/// Monitoring configuration request
+#[derive(Deserialize, Debug)]
+pub struct MonitoringConfigRequest {
+    pub interval_seconds: u64,
+}
+
+/// Component statistics response
+#[derive(Serialize, Debug)]
+pub struct ComponentStatisticsResponse {
+    pub statistics: HashMap<String, HashMap<String, u64>>,
+    pub timestamp: String,
+}
+
+/// Recent events response
+#[derive(Serialize, Debug)]
+pub struct RecentEventsResponse {
+    pub events: Vec<StateChangeEvent>,
+    pub total_count: usize,
+    pub timestamp: String,
+}
+
+/// Component counts response
+#[derive(Serialize, Debug)]
+pub struct ComponentCountsResponse {
+    pub counts: HashMap<ComponentStatus, usize>,
+    pub timestamp: String,
+}
+
+/// Monitoring status response
+#[derive(Serialize, Debug)]
+pub struct MonitoringStatusResponse {
+    pub enabled: bool,
+    pub timestamp: String,
 }
 
 pub struct HealthController;
@@ -328,6 +376,163 @@ impl HealthController {
                 serde_json::json!({"phase": "Error", "status": "error", "message": error_msg}),
             ),
         }
+    }
+
+    /// Update component metadata endpoint
+    /// PUT /health/components/{component_name}/metadata
+    pub async fn update_component_metadata(
+        state_manager: web::Data<Arc<StateManager>>,
+        path: web::Path<String>,
+        req: web::Json<ComponentMetadataRequest>,
+    ) -> impl Responder {
+        let component_name = path.into_inner();
+        
+        state_manager
+            .update_component_metadata(&component_name, req.key.clone(), req.value.clone())
+            .await;
+
+        HttpResponse::Ok().json(serde_json::json!({
+            "status": "success",
+            "message": format!("Metadata updated for component: {}", component_name),
+            "component": component_name,
+            "key": req.key,
+            "value": req.value,
+            "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
+        }))
+    }
+
+    /// Record health check endpoint
+    /// POST /health/components/{component_name}/health-check
+    pub async fn record_health_check(
+        state_manager: web::Data<Arc<StateManager>>,
+        path: web::Path<String>,
+        req: web::Json<HealthCheckRequest>,
+    ) -> impl Responder {
+        let component_name = path.into_inner();
+        
+        state_manager
+            .record_health_check(&component_name, req.success)
+            .await;
+
+        HttpResponse::Ok().json(serde_json::json!({
+            "status": "success",
+            "message": format!("Health check recorded for component: {}", component_name),
+            "component": component_name,
+            "success": req.success,
+            "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
+        }))
+    }
+
+    /// Get component information endpoint
+    /// GET /health/components/{component_name}
+    pub async fn get_component(
+        state_manager: web::Data<Arc<StateManager>>,
+        path: web::Path<String>,
+    ) -> impl Responder {
+        let component_name = path.into_inner();
+        
+        match state_manager.get_component(&component_name).await {
+            Some(component) => HttpResponse::Ok().json(component),
+            None => HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Component not found",
+                "component": component_name,
+                "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
+            }))
+        }
+    }
+
+    /// Create state snapshot endpoint
+    /// GET /health/snapshot
+    pub async fn create_snapshot(
+        state_manager: web::Data<Arc<StateManager>>,
+    ) -> impl Responder {
+        let snapshot = state_manager.create_snapshot().await;
+        HttpResponse::Ok().json(snapshot)
+    }
+
+    /// Get recent events endpoint
+    /// GET /health/events?limit=100
+    pub async fn get_recent_events(
+        state_manager: web::Data<Arc<StateManager>>,
+        query: web::Query<HashMap<String, String>>,
+    ) -> impl Responder {
+        let limit = query
+            .get("limit")
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or(100);
+        
+        let events = state_manager.get_recent_events(Some(limit)).await;
+        let total_count = events.len();
+        
+        let response = RecentEventsResponse {
+            events,
+            total_count,
+            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        };
+        
+        HttpResponse::Ok().json(response)
+    }
+
+    /// Get component counts endpoint
+    /// GET /health/components/counts
+    pub async fn get_component_counts(
+        state_manager: web::Data<Arc<StateManager>>,
+    ) -> impl Responder {
+        let counts = state_manager.get_component_counts().await;
+        
+        let response = ComponentCountsResponse {
+            counts,
+            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        };
+        
+        HttpResponse::Ok().json(response)
+    }
+
+    /// Get monitoring status endpoint
+    /// GET /health/monitoring/status
+    pub async fn get_monitoring_status(
+        state_manager: web::Data<Arc<StateManager>>,
+    ) -> impl Responder {
+        let enabled = state_manager.is_monitoring_enabled().await;
+        
+        let response = MonitoringStatusResponse {
+            enabled,
+            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        };
+        
+        HttpResponse::Ok().json(response)
+    }
+
+    /// Set metrics collection interval endpoint
+    /// PUT /health/monitoring/interval
+    pub async fn set_metrics_interval(
+        _state_manager: web::Data<Arc<StateManager>>,
+        req: web::Json<MonitoringConfigRequest>,
+    ) -> impl Responder {
+        // Note: StateManager::set_metrics_interval requires &mut self, 
+        // which is not compatible with Arc<StateManager>. 
+        // This endpoint returns a message indicating the limitation.
+        HttpResponse::Ok().json(serde_json::json!({
+            "status": "info",
+            "message": "Metrics interval configuration is set during StateManager initialization",
+            "requested_interval_seconds": req.interval_seconds,
+            "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
+        }))
+    }
+
+    /// Get component statistics endpoint
+    /// GET /health/components/statistics
+    pub async fn get_component_statistics(
+        state_manager: web::Data<Arc<StateManager>>,
+    ) -> impl Responder {
+        let statistics = state_manager.get_component_statistics().await;
+        
+        let response = ComponentStatisticsResponse {
+            statistics,
+            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+        };
+        
+        HttpResponse::Ok().json(response)
     }
 }
 
