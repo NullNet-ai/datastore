@@ -45,14 +45,6 @@ pub struct RuntimeManager {
     config: Arc<EnvConfig>,
 }
 
-impl Default for RuntimeManager {
-    fn default() -> Self {
-        // This is a placeholder implementation for Default
-        // In practice, RuntimeManager should be created with proper config
-        panic!("RuntimeManager::default() should not be used. Use RuntimeManager::new(config) instead.")
-    }
-}
-
 impl RuntimeManager {
     /// Create a new runtime manager
     pub fn new(config: Arc<EnvConfig>) -> Self {

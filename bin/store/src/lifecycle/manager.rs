@@ -495,22 +495,25 @@ impl LifecycleManager {
         let shutdown_flag = self.runtime_manager.get_shutdown_flag();
         let logger = self.logger.clone();
 
-        self.runtime_manager =
-            std::mem::take(&mut self.runtime_manager).with_shutdown_callback(move || {
-                let shutdown_flag = shutdown_flag.clone();
-                let logger = logger.clone();
-                async move {
-                    // Set the shutdown flag directly (since we can't call self.request_shutdown from here)
-                    *shutdown_flag.write().await = true;
-                    logger
-                        .log(
-                            LogLevel::Info,
-                            LogCategory::Lifecycle,
-                            "LifecycleManager",
-                            "Graceful shutdown requested via signal",
-                        )
-                        .await;
-                }
-            });
+        // Create a new RuntimeManager with the shutdown callback to avoid Default::default()
+        let mut temp_runtime_manager = RuntimeManager::new(self.config.clone());
+        std::mem::swap(&mut self.runtime_manager, &mut temp_runtime_manager);
+
+        self.runtime_manager = temp_runtime_manager.with_shutdown_callback(move || {
+            let shutdown_flag = shutdown_flag.clone();
+            let logger = logger.clone();
+            async move {
+                // Set the shutdown flag directly (since we can't call self.request_shutdown from here)
+                *shutdown_flag.write().await = true;
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::Lifecycle,
+                        "LifecycleManager",
+                        "Graceful shutdown requested via signal",
+                    )
+                    .await;
+            }
+        });
     }
 }
