@@ -438,7 +438,7 @@ macro_rules! generate_batch_update_method {
                         .ok_or_else(|| Status::invalid_argument("Updates are required"))?;
 
                     // Convert FilterCriteria proto messages to internal FilterCriteria structs
-                    let filter_criteria: Vec<crate::structs::structs::FilterCriteria> = body
+                    let filter_criteria: Vec<crate::structs::core::FilterCriteria> = body
                         .advance_filters
                         .into_iter()
                         .filter_map(|filter| crate::structs::grpc_struct_converter::convert_filter_criteria(&filter))
@@ -839,7 +839,7 @@ macro_rules! generate_batch_delete_method {
                     let updates = delete_updates.record;
 
                     // Convert FilterCriteria directly using the converter
-                    let filter_criteria: Vec<crate::structs::structs::FilterCriteria> = body
+                    let filter_criteria: Vec<crate::structs::core::FilterCriteria> = body
                         .advance_filters
                         .into_iter()
                         .filter_map(|filter| crate::structs::grpc_struct_converter::convert_filter_criteria(&filter))

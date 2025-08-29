@@ -3,11 +3,11 @@ mod tests {
     use crate::providers::queries::batch_update::sql_constructor::BatchUpdateFilterWrapper;
     use crate::providers::queries::batch_update::BatchUpdateSQLConstructor;
     use crate::providers::queries::find::sql_constructor::QueryFilter;
-    use crate::structs::structs::{FilterCriteria, FilterOperator};
+    use crate::structs::core::{FilterCriteria, FilterOperator};
 
     // Helper function to create test FilterCriteria
     fn create_test_filter_criteria() -> Vec<FilterCriteria> {
-        use crate::structs::structs::LogicalOperator;
+        use crate::structs::core::LogicalOperator;
         vec![
             FilterCriteria::Criteria {
                 field: "status".to_string(),

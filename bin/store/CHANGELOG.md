@@ -5,10 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.1.75
+## 0.2.0
 ### Author
 Bert
 ### Added
+- ***System Lifecycle***:
+  - **LifecycleManager**: Central orchestrator for application startup, runtime, and shutdown phases
+  - **StartupManager**: Handles database initialization, service setup, and component configuration
+  - **RuntimeManager**: Manages health monitoring, service operations, and error handling during runtime
+  - **ShutdownManager**: Ensures graceful shutdown with proper resource cleanup and service termination
+  - **HealthService**: Comprehensive health monitoring with `/health` and `/health/live` endpoints
+  - **LifecycleLogger**: Specialized logging system for lifecycle events and state transitions
+  - **EnvConfig Integration**: Centralized configuration management replacing direct environment variable reads
+  - **Memory Safety Fixes**: Resolved `RuntimeManager::default()` panic by replacing `std::mem::take` with proper swap patterns
+  - **Lifecycle Documentation**: Added comprehensive README sections and visual SVG diagram for system architecture
 - ***Unit tests***:
   - **Authentication Service Tests** (`auth_service_test.rs`):
     - Password hashing consistency with bcrypt format and different salts

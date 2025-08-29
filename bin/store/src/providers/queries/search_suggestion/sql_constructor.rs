@@ -7,7 +7,7 @@ use crate::providers::queries::search_suggestion::{
     structs::{ConcatenatedExpressions, FieldFiltersResult},
     utils::get_field_filters,
 };
-use crate::structs::structs::{
+use crate::structs::core::{
     ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
 };
 pub trait QuerySearchSuggestion {
@@ -42,7 +42,7 @@ impl QueryFilter for SearchSuggestionParams {
         self.offset
     }
 
-    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
+    fn get_group_advance_filters(&self) -> &[crate::structs::core::GroupAdvanceFilter] {
         &self.group_advance_filters
     }
 

@@ -50,9 +50,19 @@ crdt-workspace/
 │           │   ├── table_enum.rs  # Generated table enumerations
 │           │   └── grpc_controller.rs
 │           ├── initializers/      # Application initialization
+│           ├── lifecycle/         # Application lifecycle management
+│           │   ├── manager.rs     # Main lifecycle orchestrator
+│           │   ├── startup.rs     # Startup phase management
+│           │   ├── runtime.rs     # Runtime phase management
+│           │   ├── shutdown.rs    # Shutdown phase management
+│           │   ├── state.rs       # State management and transitions
+│           │   ├── health_service.rs # Health monitoring service
+│           │   └── logging.rs     # Lifecycle logging system
 │           ├── middlewares/       # Request/response middleware
 │           ├── providers/         # Service providers
-│           ├── structs/          # Data structures
+│           ├── structs/          # Data structures and configuration
+│           │   ├── structs.rs     # Core structures including EnvConfig
+│           │   └── ...           # Other specialized structures
 │           └── utils/            # Utility functions
 ├── libs/                          # Shared libraries
 │   ├── hlc/                      # Hybrid Logical Clock implementation
@@ -80,6 +90,8 @@ crdt-workspace/
 - **`bin/store/migrations/`** - Database migration files
 - **`bin/store/src/builders/generator/`** - Code generation tools and scripts
 - **`bin/store/src/constants/paths.rs`** - Centralized path constants for consistency
+- **`bin/store/src/lifecycle/`** - Application lifecycle management system
+- **`bin/store/src/structs/structs.rs`** - Centralized configuration management (EnvConfig)
 
 ### Path Management
 
@@ -90,6 +102,80 @@ The project uses centralized path constants defined in `bin/store/src/constants/
 - **Build script paths** - Code generation and build automation scripts
 
 When adding new features or modifying existing ones, always reference these constants rather than hardcoding paths to maintain consistency and ease of maintenance.
+
+### Lifecycle Management System
+
+The application uses a comprehensive lifecycle management system located in `bin/store/src/lifecycle/` that orchestrates all phases of the application's execution:
+
+- **`manager.rs`** - Main lifecycle orchestrator that coordinates all components
+- **`startup.rs`** - Handles application initialization and startup procedures
+- **`runtime.rs`** - Manages the main execution phase and health monitoring
+- **`shutdown.rs`** - Coordinates graceful shutdown procedures
+- **`state.rs`** - Manages application state transitions and component status
+- **`health_service.rs`** - Provides health monitoring and reporting capabilities
+- **`logging.rs`** - Specialized logging system for lifecycle events
+
+#### Lifecycle Architecture
+
+![Lifecycle Diagram](docs/lifecycle-diagram.svg)
+
+*Figure: CRDT Store Lifecycle Management System - Visual representation of the application's startup, runtime, and shutdown phases with their core components and interactions.*
+
+#### Lifecycle Phases
+
+```mermaid
+graph TD
+    A[Application Start] --> B[LifecycleManager::new]
+    B --> C[Startup Phase]
+    C --> D[Runtime Phase]
+    D --> E[Health Monitoring]
+    E --> F{Shutdown Signal?}
+    F -->|No| E
+    F -->|Yes| G[Shutdown Phase]
+    G --> H[Application Exit]
+    
+    subgraph "Startup Phase"
+        C1[Initialize Database]
+        C2[Setup Services]
+        C3[Configure Components]
+        C --> C1 --> C2 --> C3
+    end
+    
+    subgraph "Runtime Phase"
+        D1[Health Checks]
+        D2[Service Monitoring]
+        D3[Error Handling]
+        D --> D1 --> D2 --> D3
+    end
+    
+    subgraph "Shutdown Phase"
+        G1[Stop Services]
+        G2[Cleanup Resources]
+        G3[Final Logging]
+        G --> G1 --> G2 --> G3
+    end
+```
+
+### Configuration Management
+
+The application uses centralized configuration management through the `EnvConfig` structure in `bin/store/src/structs/structs.rs`:
+
+- **Centralized Environment Variables** - All environment variable access is centralized through `EnvConfig`
+- **Type Safety** - Configuration values are parsed and validated at startup
+- **Consistent Access** - All components receive configuration through dependency injection
+- **Easy Testing** - Configuration can be easily mocked for testing purposes
+
+#### Key Configuration Fields
+
+- `host` - Application host address
+- `port` - HTTP server port
+- `grpc_port` - gRPC server port
+- `grpc_url` - gRPC server URL
+- `socket_host` - WebSocket host
+- `socket_port` - WebSocket port
+- `cache_type` - Cache implementation type (Redis/In-Memory)
+- `redis_connection` - Redis connection string (optional)
+- `ttl` - Cache time-to-live duration (optional)
 
 ## Prerequisites
 
@@ -390,6 +476,8 @@ make help
    - **Store application changes** (CRDT implementation) go in `bin/store/`
    - **Schema definitions** go in `bin/store/src/database/schema/tables/`
    - **Generated code** is automatically created in `bin/store/src/generated/`
+   - **Lifecycle management changes** go in `bin/store/src/lifecycle/`
+   - **Configuration changes** go in `bin/store/src/structs/structs.rs`
 
 3. Format your code:
 

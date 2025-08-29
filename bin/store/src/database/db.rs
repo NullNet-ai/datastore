@@ -1,13 +1,15 @@
+use crate::database::schema::database_setup::DatabaseSetupFlags;
+use crate::structs::core::CommandArgs;
+use base64::prelude::*;
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
 use dotenv::dotenv;
+use log::{error, info};
 use once_cell::sync::Lazy;
-use std::env;
-
-use base64::prelude::*;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::env;
 use tokio_postgres::types::Type;
 use tokio_postgres::{Client, NoTls};
 
@@ -444,5 +446,46 @@ impl DatabaseTypeConverter {
         };
 
         Ok(value)
+    }
+}
+
+/// Handle database operations based on command arguments
+pub async fn handle_database_operations(args: &CommandArgs) {
+    if args.cleanup {
+        info!("Running cleanup operation only...");
+        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
+            run_cleanup: true,
+            run_migrations: true,
+            initialize_services: false,
+            run_init_sql: false,
+        })
+        .await
+        {
+            Ok(_) => {
+                info!("Database cleanup completed successfully!");
+            }
+            Err(e) => {
+                error!("Error during database cleanup: {}", e);
+            }
+        }
+    }
+
+    if args.init_db {
+        info!("Running database initialization...");
+        match crate::database::schema::database_setup::setup_database(DatabaseSetupFlags {
+            run_cleanup: false,
+            run_migrations: false,
+            initialize_services: true,
+            run_init_sql: true,
+        })
+        .await
+        {
+            Ok(_) => {
+                info!("Database initialization completed successfully!");
+            }
+            Err(e) => {
+                error!("Error during database initialization: {}", e);
+            }
+        }
     }
 }

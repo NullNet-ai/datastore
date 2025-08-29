@@ -14,11 +14,11 @@ use crate::providers::queries::search_suggestion::{
 };
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
-use crate::structs::structs::{
+use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
-use crate::utils::utils::table_exists;
+use crate::utils::helpers::table_exists;
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -71,6 +71,8 @@ impl fmt::Display for ApiError {
         write!(f, "{}", self.message)
     }
 }
+
+impl std::error::Error for ApiError {}
 
 impl ApiError {
     pub fn new(status: http::StatusCode, message: impl Into<String>) -> Self {
@@ -1285,10 +1287,6 @@ pub async fn get_by_filter(
 
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
-
-    // Wrap your original query with row_to_json
-    // This is slower approach by flixible
-    // TODO: create a better way of handling dynamic queries
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
     let results = match diesel::dsl::sql_query(&final_query)
@@ -1402,7 +1400,6 @@ pub async fn aggregation_filter(
 
 // files implementation
 // Query
-// TODO: get file metadat from database
 pub async fn get_file_by_id(
     auth: HttpRequest,
     path_params: web::Path<String>,

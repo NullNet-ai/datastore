@@ -7,7 +7,7 @@ mod tests {
     use crate::providers::queries::search_suggestion::utils::{
         format_filters, generate_concatenated_expressions, get_field_filters,
     };
-    use crate::structs::structs::{ConcatenateField, FilterCriteria, FilterOperator, MatchPattern};
+    use crate::structs::core::{ConcatenateField, FilterCriteria, FilterOperator, MatchPattern};
     use serde_json::json;
     use std::collections::HashMap;
     use std::env;

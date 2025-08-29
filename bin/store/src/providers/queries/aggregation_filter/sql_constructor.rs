@@ -1,9 +1,9 @@
 use crate::{
     providers::queries::find::{sql_constructor::QueryFilter, SQLConstructor},
+    structs::core::{Aggregation, AggregationFilter, AggregationOrder, FilterCriteria, Join},
     structs::grpc_struct_converter::{
         convert_aggregation, convert_aggregation_order, convert_filter_criteria, convert_join,
     },
-    structs::structs::{Aggregation, AggregationFilter, AggregationOrder, FilterCriteria, Join},
 };
 
 // Trait specifically for aggregation query filters
@@ -93,14 +93,14 @@ where
         for aggregation in aggregations {
             sql.push_str(", ");
             let agg_type = match aggregation.aggregation {
-                crate::structs::structs::AggregationType::Sum => "SUM",
-                crate::structs::structs::AggregationType::Count => "COUNT",
-                crate::structs::structs::AggregationType::Avg => "AVG",
-                crate::structs::structs::AggregationType::Min => "MIN",
-                crate::structs::structs::AggregationType::Max => "MAX",
-                crate::structs::structs::AggregationType::StdDev => "STDDEV",
-                crate::structs::structs::AggregationType::Variance => "VARIANCE",
-                crate::structs::structs::AggregationType::ArrayAgg => "ARRAY_AGG",
+                crate::structs::core::AggregationType::Sum => "SUM",
+                crate::structs::core::AggregationType::Count => "COUNT",
+                crate::structs::core::AggregationType::Avg => "AVG",
+                crate::structs::core::AggregationType::Min => "MIN",
+                crate::structs::core::AggregationType::Max => "MAX",
+                crate::structs::core::AggregationType::StdDev => "STDDEV",
+                crate::structs::core::AggregationType::Variance => "VARIANCE",
+                crate::structs::core::AggregationType::ArrayAgg => "ARRAY_AGG",
             };
 
             sql.push_str(&format!(
@@ -192,7 +192,7 @@ impl AggregationQueryFilter for AggregationFilter {
         "mm/dd/YYYY" // Default format for aggregation queries
     }
 
-    fn get_aggregations(&self) -> &[crate::structs::structs::Aggregation] {
+    fn get_aggregations(&self) -> &[crate::structs::core::Aggregation] {
         &self.aggregations
     }
 

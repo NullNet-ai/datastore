@@ -1,7 +1,7 @@
 use crate::builders::generator::field_definition::{ParsedField, TableDefinition};
 use crate::builders::generator::utils::{FieldTypeParser, StringUtils};
 use crate::constants::paths;
-use crate::utils::utils::to_singular;
+use crate::utils::helpers::to_singular;
 use std::fs;
 
 pub struct ModelGenerator;

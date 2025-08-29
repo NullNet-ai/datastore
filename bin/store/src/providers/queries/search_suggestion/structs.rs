@@ -2,7 +2,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
 
-use crate::structs::structs::FilterCriteria;
+use crate::structs::core::FilterCriteria;
 
 pub struct SearchSuggestionCache {}
 

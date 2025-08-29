@@ -1,8 +1,8 @@
 use crate::db::db::DbPooledConnection;
 use crate::models::crdt_messages::CrdtMessage;
 use crate::models::crdt_messages_merkle::CrdtMessagesMerkle;
-use crate::schema::schema::crdt_messages;
-use crate::schema::schema::crdt_messages_merkles::dsl::*;
+use crate::schema::core::crdt_messages;
+use crate::schema::core::crdt_messages_merkles::dsl::*;
 use ::merkle::MerkleTree;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -119,7 +119,7 @@ pub fn get_all_messages_from_timestamp(
     message_group_id: &str,
     message_client_id: &str,
 ) -> Result<Vec<CrdtMessage>, DieselError> {
-    use crate::schema::schema::crdt_messages::dsl::*;
+    use crate::schema::core::crdt_messages::dsl::*;
 
     crdt_messages
         .filter(

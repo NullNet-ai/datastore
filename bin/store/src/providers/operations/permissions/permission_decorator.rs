@@ -6,7 +6,7 @@ use crate::providers::operations::permissions::permission_utils::{
 };
 use crate::providers::operations::permissions::permissions_queries::PermissionQueryParams;
 use crate::providers::operations::permissions::structs::{DataPermissions, SchemaItem};
-use crate::structs::structs::{ApiResponse, Auth};
+use crate::structs::core::{ApiResponse, Auth};
 use crate::utils::request_type_handler::{RequestType, RequestTypeHandler};
 use actix_web::web::BytesMut;
 use actix_web::ResponseError;

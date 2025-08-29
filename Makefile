@@ -890,3 +890,12 @@ store-initialize-device:
 	@echo "✅ Device initialization completed! Waiting 1 second before exit..."
 	@sleep 1
 	@echo "🏁 Exiting store-initialize-device"
+
+
+code-eval: 
+	@echo "Running code evaluation..."
+	@cd bin/store && cargo clippy
+
+code-eval-fix:
+	@echo "Running code evaluation fix..."
+	@cd bin/store && cargo clippy --fix

@@ -45,4 +45,7 @@ Thumbs.db
 
 # Log files
 /logs/
-/logs/bin/store/logs/*
+/bin/store/logs/*
+
+# Test queries
+/bin/store/tests/*

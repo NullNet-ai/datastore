@@ -2,7 +2,7 @@ use crate::generated::models::session_model::SessionModel;
 use crate::providers::operations::auth::auth_service::verify;
 use crate::providers::operations::auth::structs::Claims;
 use crate::providers::operations::auth::structs::Origin;
-use crate::structs::structs::{ApiResponse, Auth};
+use crate::structs::core::{ApiResponse, Auth};
 use actix_web::HttpMessage;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
@@ -376,9 +376,9 @@ pub fn validate_root_access(claims: &Claims, is_root_request: bool) -> Result<()
 pub fn validate_grpc_request_with_root_access<T>(
     request: &tonic::Request<T>,
     request_type: &str,
-) -> Result<(crate::structs::structs::Auth, Claims), tonic::Status> {
+) -> Result<(crate::structs::core::Auth, Claims), tonic::Status> {
     // Get auth data
-    let auth_data = match request.extensions().get::<crate::structs::structs::Auth>() {
+    let auth_data = match request.extensions().get::<crate::structs::core::Auth>() {
         Some(data) => data.clone(),
         None => {
             return Err(tonic::Status::internal(

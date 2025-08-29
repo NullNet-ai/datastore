@@ -44,8 +44,3 @@ pub async fn create_endpoint(endpoint_req: web::Json<EndpointRequest>) -> impl R
         }
     }
 }
-
-// Function to configure and register the controller routes
-pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(get_sync_endpoints).service(create_endpoint);
-}

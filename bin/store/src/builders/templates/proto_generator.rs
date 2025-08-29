@@ -6,7 +6,7 @@ use std::path::Path;
 use crate::constants::paths::proto::BUILD_SCRIPT;
 use crate::constants::paths::templates::PROTO_FILE_NAME;
 use crate::constants::paths::GENERATED_DIR;
-use crate::utils::utils::{parse_tables, to_singular, Table};
+use crate::utils::helpers::{parse_tables, to_singular, Table};
 
 pub fn generate_protos(schema_path: &str, output_dir: &str) {
     info!("Starting proto generation from schema: {}", schema_path);

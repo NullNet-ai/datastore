@@ -17,7 +17,7 @@ use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::AccountType;
 use crate::providers::operations::organizations::structs::Register;
 use crate::providers::operations::sync::sync_service;
-use crate::utils::utils;
+use crate::utils::helpers;
 use actix_web::http::StatusCode;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -211,7 +211,7 @@ pub async fn register(
             vec!["Personal".to_string()],
             None,
             if organizations_counter.is_some() {
-                match utils::generate_code("organizations").await {
+                match helpers::generate_code("organizations").await {
                     Ok(code) => code,
                     Err(_) => None,
                 }
@@ -259,7 +259,7 @@ pub async fn register(
             vec!["Team".to_string()],
             params.organization_id.clone(),
             if organizations_counter.is_some() {
-                utils::generate_code("organizations").await?
+                helpers::generate_code("organizations").await?
             } else {
                 None
             },
@@ -287,7 +287,7 @@ pub async fn register(
                     categories: Some(contact_categories.clone().unwrap_or_else(|| vec!["Contact".to_string()])),
                     account_id: Some(_account_id.clone()),
                     code: if organizations_counter.is_some() {
-                        utils::generate_code("organizations").await?
+                        helpers::generate_code("organizations").await?
                     } else {
                         None
                     },
@@ -348,7 +348,7 @@ pub async fn register(
                     role_id: Some(role_id.clone()),
                     is_invited: Some(is_invited),
                     code: if account_organizations_counter.is_some() {
-                        utils::generate_code("account_organizations").await?
+                        helpers::generate_code("account_organizations").await?
                     } else {
                         None
                     },
@@ -428,7 +428,7 @@ pub async fn register(
                         )
                     })?;
                 let code = if devices_counter.is_some() {
-                    utils::generate_code("devices").await?
+                    helpers::generate_code("devices").await?
                 } else {
                     None
                 };

@@ -2,7 +2,7 @@ use crate::builders::templates::proto_generator::{Case, CaseConvert};
 use crate::constants::paths::database::SCHEMA_FILE;
 use crate::constants::paths::grpc::CONTROLLER_FILE;
 use crate::constants::paths::proto::SOURCE_FILE;
-use crate::utils::utils::{parse_tables, to_singular};
+use crate::utils::helpers::{parse_tables, to_singular};
 use log::{error, info, warn};
 use regex::Regex;
 use std::fs::{self, File};
@@ -104,7 +104,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
     )?;
     writeln!(file, "use crate::providers::queries::find::DynamicResult;")?;
 
-    writeln!(file, "use crate::structs::structs::RequestBody;")?;
+    writeln!(file, "use crate::structs::core::RequestBody;")?;
     writeln!(
         file,
         "use crate::providers::operations::sync::sync_service::update;"

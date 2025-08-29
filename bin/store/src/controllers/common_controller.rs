@@ -3,7 +3,7 @@ use crate::database::db::{self, DatabaseTypeConverter};
 use crate::database::schema::verify::field_exists_in_table;
 use crate::generated::table_enum::{generate_code, Table};
 use crate::providers::operations::sync::sync_service::{insert, update};
-use crate::structs::structs::{ApiResponse, Auth, RequestBody};
+use crate::structs::core::{ApiResponse, Auth, RequestBody};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
 use actix_web::http;
@@ -210,7 +210,7 @@ pub fn convert_params_to_sql_types(
 //     is_root: bool,
 //     organization_id: Option<String>,
 // ) -> Result<(usize, Vec<Value>), String> {
-//     let filter_criteria: Vec<crate::structs::structs::FilterCriteria> =
+//     let filter_criteria: Vec<crate::structs::core::FilterCriteria> =
 //         serde_json::from_value(Value::Array(filters))
 //             .map_err(|e| format!("Failed to parse filters: {}", e))?;
 //

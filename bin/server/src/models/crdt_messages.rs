@@ -1,4 +1,4 @@
-use crate::schema::schema::crdt_messages;
+use crate::schema::core::crdt_messages;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

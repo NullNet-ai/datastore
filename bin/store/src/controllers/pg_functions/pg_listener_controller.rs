@@ -1,6 +1,6 @@
 use crate::controllers::common_controller::process_and_insert_record;
 use crate::database::db::get_async_connection;
-use crate::structs::structs::{ApiResponse, Auth};
+use crate::structs::core::{ApiResponse, Auth};
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
 use serde_json::{json, Value};

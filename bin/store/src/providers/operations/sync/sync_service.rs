@@ -1,6 +1,5 @@
 use crate::database::db;
 use crate::generated::models::crdt_message_model::CrdtMessageModel;
-use crate::middlewares::shutdown_handler;
 use crate::providers::operations::sync::hlc::hlc_service::HlcService;
 use crate::providers::operations::sync::message_manager::get_sender;
 use crate::providers::operations::sync::message_service;
@@ -367,6 +366,16 @@ pub async fn process_queue(
 }
 
 pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
+    bg_sync_with_shutdown_check(|| async { false }).await
+}
+
+pub async fn bg_sync_with_shutdown_check<F, Fut>(
+    shutdown_check: F,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    F: Fn() -> Fut + Send + Sync,
+    Fut: std::future::Future<Output = bool> + Send,
+{
     let sync_enabled = std::env::var("SYNC_ENABLED").unwrap_or_else(|_| "false".to_string());
     let mut conn = db::get_async_connection().await;
 
@@ -374,7 +383,7 @@ pub async fn bg_sync() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    if shutdown_handler::is_shutdown_requested() {
+    if shutdown_check().await {
         return Ok(());
     }
     log::debug!("Sync Service Initialized");

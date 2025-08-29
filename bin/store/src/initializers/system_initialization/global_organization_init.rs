@@ -11,7 +11,7 @@ impl GlobalOrganizationInitializer {
 
     pub async fn initialize(
         &self,
-        _params: Option<crate::initializers::structs::InitializerParams>,
+        _params: Option<crate::initializers::system_initialization::structs::InitializerParams>,
     ) -> Result<(), ApiError> {
         // Get environment variables
         let default_organization_id = std::env::var("DEFAULT_ORGANIZATION_ID")
