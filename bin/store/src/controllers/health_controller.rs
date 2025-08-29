@@ -9,6 +9,7 @@ use chrono;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 /// Health check response structure
 #[derive(Serialize, Debug)]
 pub struct HealthResponse {
@@ -512,16 +513,16 @@ impl HealthController {
     /// Set metrics collection interval endpoint
     /// PUT /health/monitoring/interval
     pub async fn set_metrics_interval(
-        _state_manager: web::Data<Arc<StateManager>>,
+        state_manager: web::Data<Arc<StateManager>>,
         req: web::Json<MonitoringConfigRequest>,
     ) -> impl Responder {
-        // Note: StateManager::set_metrics_interval requires &mut self,
-        // which is not compatible with Arc<StateManager>.
-        // This endpoint returns a message indicating the limitation.
+        let interval = Duration::from_secs(req.interval_seconds);
+        state_manager.set_metrics_interval(interval).await;
+        
         HttpResponse::Ok().json(serde_json::json!({
-            "status": "info",
-            "message": "Metrics interval configuration is set during StateManager initialization",
-            "requested_interval_seconds": req.interval_seconds,
+            "status": "success",
+            "message": "Metrics collection interval updated successfully",
+            "interval_seconds": req.interval_seconds,
             "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
         }))
     }

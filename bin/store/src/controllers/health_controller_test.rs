@@ -871,8 +871,8 @@ mod tests {
             "Timestamp field should exist"
         );
 
-        // Verify response content - endpoint returns 'info' due to Arc<StateManager> limitations
-        assert_eq!(config_response["status"], "info");
+        // Verify response content - endpoint now successfully sets the metrics interval
+        assert_eq!(config_response["status"], "success");
 
         println!("Monitoring configuration endpoint test completed successfully!");
     }

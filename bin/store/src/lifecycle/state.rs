@@ -88,7 +88,7 @@ pub struct StateManager {
     event_history: Arc<RwLock<Vec<StateChangeEvent>>>,
     max_history_size: usize,
     monitoring_enabled: Arc<RwLock<bool>>,
-    metrics_collection_interval: Duration,
+    metrics_collection_interval: Arc<RwLock<Duration>>,
     logger: Option<Arc<LifecycleLogger>>,
 }
 
@@ -118,7 +118,7 @@ impl StateManager {
             event_history: Arc::new(RwLock::new(Vec::new())),
             max_history_size: 1000,
             monitoring_enabled: Arc::new(RwLock::new(true)),
-            metrics_collection_interval: Duration::from_secs(30),
+            metrics_collection_interval: Arc::new(RwLock::new(Duration::from_secs(30))),
             logger: None,
         }
     }
@@ -146,7 +146,7 @@ impl StateManager {
             event_history: Arc::new(RwLock::new(Vec::new())),
             max_history_size: 1000,
             monitoring_enabled: Arc::new(RwLock::new(false)),
-            metrics_collection_interval: Duration::from_secs(60),
+            metrics_collection_interval: Arc::new(RwLock::new(Duration::from_secs(60))),
             logger: Some(logger),
         }
     }
@@ -517,7 +517,7 @@ impl StateManager {
         let monitoring_enabled = self.monitoring_enabled.clone();
         let health_metrics = self.health_metrics.clone();
         let components = self.components.clone();
-        let interval_duration = self.metrics_collection_interval;
+        let interval_duration = *self.metrics_collection_interval.read().await;
         let logger = self.logger.clone();
 
         *monitoring_enabled.write().await = true;
@@ -663,8 +663,8 @@ impl StateManager {
     }
 
     /// Set metrics collection interval
-    pub async fn set_metrics_interval(&mut self, interval: Duration) {
-        self.metrics_collection_interval = interval;
+    pub async fn set_metrics_interval(&self, interval: Duration) {
+        *self.metrics_collection_interval.write().await = interval;
         info!(
             "[STATE] Metrics collection interval updated to: {:?}",
             interval
