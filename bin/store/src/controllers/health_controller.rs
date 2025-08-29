@@ -518,7 +518,7 @@ impl HealthController {
     ) -> impl Responder {
         let interval = Duration::from_secs(req.interval_seconds);
         state_manager.set_metrics_interval(interval).await;
-        
+
         HttpResponse::Ok().json(serde_json::json!({
             "status": "success",
             "message": "Metrics collection interval updated successfully",
