@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
     use crate::config::core::EnvConfig;
-    use std::env;
-
     use reqwest;
     use serde_json::json;
     use tokio;

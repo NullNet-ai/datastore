@@ -17,7 +17,6 @@ use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use once_cell::sync::Lazy;
 use serde_json::json;
 use std::collections::HashMap;
-use std::env;
 use std::sync::Mutex;
 
 #[derive(QueryableByName, Debug)]

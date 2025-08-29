@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use socketioxide::extract::{Data, SocketRef};
 use socketioxide::SocketIo;
 use std::collections::HashMap;
-use std::env;
 use std::sync::{Arc, Mutex, OnceLock};
 
 #[derive(Debug, Serialize, Deserialize)]

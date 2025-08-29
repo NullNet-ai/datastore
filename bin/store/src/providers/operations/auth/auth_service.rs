@@ -6,7 +6,6 @@ use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::env;
 use std::io::{Error, ErrorKind};
 use std::sync::Mutex;
 

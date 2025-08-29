@@ -1,6 +1,7 @@
 use crate::providers::storage::cache::cache_factory::CacheType;
 use std::time::Duration;
 /// Configuration structure for environment variables
+#[allow(unused)]
 pub struct EnvConfig {
     // Server Configuration
     pub host: String,
@@ -121,7 +122,7 @@ impl Default for EnvConfig {
             grpc_port: std::env::var("GRPC_PORT").unwrap_or_else(|_| "9000".to_string()),
             grpc_url: std::env::var("GRPC_URL").unwrap_or_else(|_| "0.0.0.0".to_string()),
             socket_host: std::env::var("SOCKET_HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-            socket_port: std::env::var("SOCKET_PORT").unwrap_or_else(|_| "3000".to_string()),
+            socket_port: std::env::var("SOCKET_PORT").unwrap_or_else(|_| "3001".to_string()),
             rust_log: std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string()),
             debug: std::env::var("DEBUG")
                 .unwrap_or_else(|_| "false".to_string())

@@ -10,7 +10,6 @@ use log::{error, info};
 use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::env;
 use tokio_postgres::types::Type;
 use tokio_postgres::{Client, NoTls};
 

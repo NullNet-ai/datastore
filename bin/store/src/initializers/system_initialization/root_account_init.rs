@@ -12,7 +12,6 @@ use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::{AsyncConnection, RunQueryDsl};
-use std::env;
 
 pub struct RootAccountInitializer;
 

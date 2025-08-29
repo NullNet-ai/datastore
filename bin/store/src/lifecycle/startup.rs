@@ -13,7 +13,6 @@ use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
 use log::{debug, error, info, warn};
 use std::sync::Arc;
-use std::time::Duration;
 use std::time::Instant;
 
 /// Startup configuration validation result
