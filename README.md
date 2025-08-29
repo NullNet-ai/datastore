@@ -11,73 +11,43 @@ crdt-workspace/
 ├── Cargo.toml                     # Workspace configuration
 ├── Makefile                       # Build automation and development commands
 ├── README.md                      # Project documentation
-├── bin/                           # Binary applications
-│   ├── main/                      # Main executable application
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs
-│   │       └── main.rs
-│   ├── server/                    # Server application
-│   │   ├── Cargo.toml
-│   │   ├── Dockerfile
-│   │   ├── build.rs
-│   │   ├── migrations/            # Server database migrations
-│   │   └── src/
-│   │       ├── controllers/       # API controllers
-│   │       ├── db/               # Database connections
-│   │       ├── models/           # Data models
-│   │       ├── schema/           # Database schema definitions
-│   │       └── sync/             # Synchronization logic
-│   └── store/                     # Store application (main CRDT implementation)
-│       ├── Cargo.toml
-│       ├── Dockerfile
-│       ├── docker-compose.yml     # Development services (TimescaleDB, Redis)
-│       ├── migrations/            # Store database migrations
-│       └── src/
-│           ├── builders/          # Code generation and build tools
-│           │   └── generator/     # Schema and proto generators
-│           ├── constants/         # Application constants and paths
-│           ├── controllers/       # gRPC and API controllers
-│           ├── database/          # Database schema and operations
-│           │   └── schema/        # Database schema definitions
-│           │       ├── tables/    # Individual table definitions
-│           │       ├── hypertables.rs
-│           │       └── init.sql
-│           ├── generated/         # Auto-generated code (do not edit manually)
-│           │   ├── models/        # Generated data models
-│           │   ├── proto/         # Generated protobuf files
-│           │   ├── schema.rs      # Generated database schema
-│           │   ├── table_enum.rs  # Generated table enumerations
-│           │   └── grpc_controller.rs
-│           ├── initializers/      # Application initialization
-│           ├── lifecycle/         # Application lifecycle management
-│           │   ├── manager.rs     # Main lifecycle orchestrator
-│           │   ├── startup.rs     # Startup phase management
-│           │   ├── runtime.rs     # Runtime phase management
-│           │   ├── shutdown.rs    # Shutdown phase management
-│           │   ├── state.rs       # State management and transitions
-│           │   ├── health_service.rs # Health monitoring service
-│           │   └── logging.rs     # Lifecycle logging system
-│           ├── middlewares/       # Request/response middleware
-│           ├── providers/         # Service providers
-│           ├── structs/          # Data structures and configuration
-│           │   ├── core.rs     # Core structures including EnvConfig
-│           │   └── ...           # Other specialized structures
-│           └── utils/            # Utility functions
+├── bin/store/                     # CRDT Store application
+│   ├── Cargo.toml
+│   ├── Dockerfile
+│   ├── docker-compose.yml         # Development services (TimescaleDB, Redis)
+│   ├── migrations/                # Database migrations
+│   └── src/
+│       ├── builders/              # Code generation and build tools
+│       │   ├── generator/         # Schema and proto generators
+│       │   └── templates/         # Code generation templates
+│       ├── constants/             # Application constants and paths
+│       ├── controllers/           # gRPC and API controllers
+│       ├── database/              # Database schema and operations
+│       │   └── schema/            # Database schema definitions
+│       │       ├── tables/        # Individual table definitions
+│       │       └── sql/           # SQL scripts
+│       ├── generated/             # Auto-generated code (do not edit manually)
+│       │   ├── models/            # Generated data models
+│       │   ├── proto/             # Generated protobuf files
+│       │   └── schema.rs          # Generated database schema
+│       ├── initializers/          # Application initialization
+│       ├── lifecycle/             # Application lifecycle management
+│       │   ├── manager.rs         # Main lifecycle orchestrator
+│       │   ├── startup.rs         # Startup phase management
+│       │   ├── runtime.rs         # Runtime phase management
+│       │   ├── shutdown.rs        # Shutdown phase management
+│       │   ├── health_service.rs  # Health monitoring service
+│       │   └── logging.rs         # Lifecycle logging system
+│       ├── middlewares/           # Request/response middleware
+│       ├── providers/             # Service providers
+│       ├── routers/               # HTTP route handlers
+│       ├── structs/               # Data structures and configuration
+│       └── utils/                 # Utility functions
 ├── libs/                          # Shared libraries
 │   ├── hlc/                      # Hybrid Logical Clock implementation
-│   │   ├── Cargo.toml
-│   │   └── src/lib.rs
 │   └── merkle/                   # Merkle Tree implementation
-│       ├── Cargo.toml
-│       ├── proto/tree.proto      # Merkle tree protobuf definitions
-│       └── src/lib.rs
-├── mcp-proto-generator/          # MCP protocol buffer generator
-├── scripts/                      # Development and deployment scripts
-│   ├── post-checkout            # Git hook scripts
-│   ├── pre-push
-│   └── setup-hooks.sh
-└── tests/                        # Integration tests
+├── docs/                          # Documentation and diagrams
+└── scripts/                       # Development and deployment scripts
 ```
 
 ### Key Directories Explained
@@ -114,12 +84,6 @@ The application uses a comprehensive lifecycle management system located in `bin
 - **`state.rs`** - Manages application state transitions and component status
 - **`health_service.rs`** - Provides health monitoring and reporting capabilities
 - **`logging.rs`** - Specialized logging system for lifecycle events
-
-#### Lifecycle Architecture
-
-![Lifecycle Diagram](docs/lifecycle-diagram.svg)
-
-*Figure: CRDT Store Lifecycle Management System - Visual representation of the application's startup, runtime, and shutdown phases with their core components and interactions.*
 
 #### Lifecycle Phases
 
