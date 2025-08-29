@@ -3,11 +3,11 @@ use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
 use crate::providers::operations::sync::message_manager;
 use actix_web::dev::ServerHandle;
 use log::{error, info, warn};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
-use serde::{Serialize, Deserialize};
 
 /// Shutdown phase stages
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -202,7 +202,9 @@ impl ShutdownManager {
         let current_stage = self.get_stage().await;
         let elapsed_time = self.get_elapsed_time();
         for callback in &self.callbacks {
-            callback.on_shutdown_stage_changed(current_stage.clone(), elapsed_time).await;
+            callback
+                .on_shutdown_stage_changed(current_stage.clone(), elapsed_time)
+                .await;
         }
     }
 

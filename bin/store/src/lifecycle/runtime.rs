@@ -525,10 +525,10 @@ impl RuntimeManager {
 
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
-        
+
         // Get server handle for shutdown integration
         let server_handle = server.handle();
-        
+
         // Register HTTP server shutdown service with shutdown manager if available
         if let Some(shutdown_manager_ptr) = self.shutdown_manager {
             let shutdown_manager = unsafe { &mut *shutdown_manager_ptr };

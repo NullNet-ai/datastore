@@ -126,8 +126,13 @@ impl HealthController {
                 cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
                 active_connections: health_metrics.active_connections,
                 processed_requests: health_metrics.processed_requests,
-                shutdown_stage: health_metrics.shutdown_stage.as_ref().map(|stage| format!("{:?}", stage)),
-                shutdown_elapsed_seconds: health_metrics.shutdown_elapsed_time.map(|duration| duration.as_secs_f64()),
+                shutdown_stage: health_metrics
+                    .shutdown_stage
+                    .as_ref()
+                    .map(|stage| format!("{:?}", stage)),
+                shutdown_elapsed_seconds: health_metrics
+                    .shutdown_elapsed_time
+                    .map(|duration| duration.as_secs_f64()),
             },
         };
 
@@ -244,8 +249,13 @@ impl HealthController {
                 cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
                 active_connections: health_metrics.active_connections,
                 processed_requests: health_metrics.processed_requests,
-                shutdown_stage: health_metrics.shutdown_stage.as_ref().map(|stage| format!("{:?}", stage)),
-                shutdown_elapsed_seconds: health_metrics.shutdown_elapsed_time.map(|duration| duration.as_secs_f64()),
+                shutdown_stage: health_metrics
+                    .shutdown_stage
+                    .as_ref()
+                    .map(|stage| format!("{:?}", stage)),
+                shutdown_elapsed_seconds: health_metrics
+                    .shutdown_elapsed_time
+                    .map(|duration| duration.as_secs_f64()),
             },
             checks,
         };

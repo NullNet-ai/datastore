@@ -702,30 +702,38 @@ impl Default for StateManager {
 
 #[async_trait::async_trait]
 impl ShutdownCallback for StateManager {
-    async fn on_shutdown_stage_changed(&self, stage: ShutdownStage, elapsed_time: Option<Duration>) {
-        info!("[STATE] Received shutdown stage update: {:?}, elapsed: {:?}", stage, elapsed_time);
-        
+    async fn on_shutdown_stage_changed(
+        &self,
+        stage: ShutdownStage,
+        elapsed_time: Option<Duration>,
+    ) {
+        info!(
+            "[STATE] Received shutdown stage update: {:?}, elapsed: {:?}",
+            stage, elapsed_time
+        );
+
         self.update_health_metrics(|metrics| {
             metrics.shutdown_stage = Some(stage.clone());
             metrics.shutdown_elapsed_time = elapsed_time;
             metrics.last_updated = SystemTime::now();
-        }).await;
-        
+        })
+        .await;
+
         // Update lifecycle phase based on shutdown stage
         match stage {
-            ShutdownStage::NotStarted => {},
-            ShutdownStage::StoppingHttpServer | 
-            ShutdownStage::DrainConnections | 
-            ShutdownStage::StoppingBackgroundServices | 
-            ShutdownStage::CleanupResources => {
+            ShutdownStage::NotStarted => {}
+            ShutdownStage::StoppingHttpServer
+            | ShutdownStage::DrainConnections
+            | ShutdownStage::StoppingBackgroundServices
+            | ShutdownStage::CleanupResources => {
                 self.set_phase(LifecyclePhase::ShuttingDown).await;
-            },
+            }
             ShutdownStage::Completed => {
                 self.set_phase(LifecyclePhase::Stopped).await;
-            },
+            }
             ShutdownStage::Failed(error) => {
                 self.set_phase(LifecyclePhase::Error(error)).await;
-            },
+            }
         }
     }
 }
