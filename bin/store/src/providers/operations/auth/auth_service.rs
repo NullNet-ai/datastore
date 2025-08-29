@@ -1,4 +1,5 @@
 use crate::providers::operations::auth::structs::Claims;
+use crate::config::core::EnvConfig;
 use actix_web::http::StatusCode;
 use argon2::password_hash::{rand_core::OsRng, SaltString};
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -65,7 +66,8 @@ pub fn verify(token: &str) -> Result<Claims, Box<dyn std::error::Error>> {
     }
 
     // If not in cache, verify with JWT
-    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "Ch@ng3m3Pl3@s3!!".to_string());
+    let config = EnvConfig::default();
+    let jwt_secret = &config.jwt_secret;
 
     // Simplified verification similar to the JavaScript version
     match jsonwebtoken::decode::<Claims>(

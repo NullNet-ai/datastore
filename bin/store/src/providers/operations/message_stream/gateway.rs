@@ -2,6 +2,7 @@ use crate::providers::operations::auth::structs::Claims;
 use crate::providers::operations::message_stream::shared_state::get_shared_state;
 use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
 use crate::providers::operations::message_stream::token_bucket::TokenBucket;
+use crate::config::core::EnvConfig;
 use chrono;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use log::{info, warn};
@@ -176,8 +177,8 @@ pub fn broadcast_to_organization(
 }
 
 fn verify_token(token: &str) -> Result<Claims, String> {
-    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default_secret".to_string());
-    let key = DecodingKey::from_secret(secret.as_bytes());
+    let config = EnvConfig::default();
+    let key = DecodingKey::from_secret(config.jwt_secret.as_bytes());
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = false;
 

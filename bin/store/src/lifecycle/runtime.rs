@@ -1,7 +1,7 @@
 use crate::{
     lifecycle::logging::{LogCategory, LogLevel},
     providers::operations::sync::sync_service::bg_sync_with_shutdown_check,
-    structs::core::EnvConfig,
+    config::core::EnvConfig,
 };
 use log::{debug, error, info, warn};
 use std::sync::Arc;

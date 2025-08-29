@@ -12,6 +12,7 @@ mod providers;
 mod routers;
 mod structs;
 mod utils;
+mod config;
 use crate::builders::generator::generator_service;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import
@@ -23,7 +24,7 @@ use crate::lifecycle::{
 use crate::utils::helpers::{parse_command_args, parse_env_config};
 use env_logger::Env;
 use log::{error, info};
-use structs::core::EnvConfig;
+use config::core::EnvConfig;
 
 /// Initialize logging and cache configuration
 fn initialize_logging_and_cache(env_config: &EnvConfig) {

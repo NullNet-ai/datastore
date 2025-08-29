@@ -2,6 +2,7 @@ use crate::constants::paths;
 use crate::database::db::create_connection;
 use crate::initializers::system_initialization::init::initialize;
 use crate::initializers::system_initialization::structs::EInitializer;
+use crate::config::core::EnvConfig;
 use log::{error, info, warn};
 use std::env;
 use std::io::{self, Write};
@@ -33,17 +34,15 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     // Get database connection from db.rs
     let db_client = create_connection().await?;
 
-    let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
-        let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-        let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-        let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
-        let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-        let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+    let config = EnvConfig::default();
+    let database_url = if !config.database_url.is_empty() {
+        config.database_url
+    } else {
         format!(
             "postgres://{}:{}@{}:{}/{}",
-            user, password, host, port, dbname
+            config.postgres_user, config.postgres_password, config.postgres_host, config.postgres_port, config.postgres_db
         )
-    });
+    };
 
     // Get the project directory
     let current_dir = env::current_dir()?.to_string_lossy().to_string();
@@ -53,13 +52,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         info!("Step 1: Database cleanup requested...");
 
         // Get the expected password from environment variable
-        let expected_password = match env::var("CLEANUP_PASSWORD") {
-            Ok(password) => password,
-            Err(e) => {
-                error!("CLEANUP_PASSWORD environment variable error: {}", e);
-                return Err(format!("CLEANUP_PASSWORD environment variable error: {}", e).into());
-            }
-        };
+        let expected_password = &config.cleanup_password;
 
         // Prompt for password
         print!("Enter password for database cleanup: ");
@@ -68,7 +61,7 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         // Read password securely
         let entered_password = rpassword::read_password()?;
 
-        if entered_password == expected_password {
+        if entered_password == *expected_password {
             info!("Password correct. Running database cleanup script...");
 
             // Run cleanup.sql using database connection

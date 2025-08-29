@@ -4,6 +4,7 @@ use crate::generated::models::account_model::AccountModel;
 use crate::generated::schema::accounts;
 use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::LoginResponse;
+use crate::config::core::EnvConfig;
 use crate::utils::helpers::time_string_to_ms;
 use actix_web::http::StatusCode;
 use chrono::{Duration, Utc};
@@ -169,8 +170,6 @@ pub async fn auth(
         let new_token = sign(&token_value).await?;
 
         // Cache the token
-        // let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-        // let expiration_ms = time_string_to_ms(&jwt_expires_in);
         let mut cache = TOKEN_CACHE.lock().map_err(|e| {
             ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -293,10 +292,9 @@ pub async fn get_root_account_info(
             json!({})
         }
         Err(e) => {
-            if let Some(debug) = std::env::var("DEBUG").ok() {
-                if debug == "true" {
-                    log::error!("{}", e);
-                }
+            let config = EnvConfig::default();
+            if config.debug {
+                log::error!("{}", e);
             }
             return Err(ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -395,8 +393,6 @@ pub async fn root_auth(
     let new_token = sign(&token_value).await?;
 
     // Cache the token
-    // let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
-    // let expiration_ms = time_string_to_ms(&jwt_expires_in);
     let mut cache = TOKEN_CACHE.lock().map_err(|e| {
         ApiError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -504,10 +500,9 @@ pub async fn get_account_with_profile_and_org_by_account_id(
             Ok(serde_json::json!({}))
         }
         Err(e) => {
-            if let Some(debug) = std::env::var("DEBUG").ok() {
-                if debug == "true" {
-                    log::error!("{}", e);
-                }
+            let config = EnvConfig::default();
+            if config.debug {
+                log::error!("{}", e);
             }
             Err(ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -621,10 +616,9 @@ pub async fn get_account_with_profile_and_org(
             Ok(serde_json::json!({}))
         }
         Err(e) => {
-            if let Some(debug) = std::env::var("DEBUG").ok() {
-                if debug == "true" {
-                    log::error!("{}", e);
-                }
+            let config = EnvConfig::default();
+            if config.debug {
+                log::error!("{}", e);
             }
             Err(ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -675,10 +669,9 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
             Ok(serde_json::json!({}))
         }
         Err(e) => {
-            if let Some(debug) = std::env::var("DEBUG").ok() {
-                if debug == "true" {
-                    log::error!("{}", e);
-                }
+            let config = EnvConfig::default();
+            if config.debug {
+                log::error!("{}", e);
             }
             Err(ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -946,8 +939,9 @@ pub async fn get_account(
 }
 
 pub async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
-    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "Ch@ng3m3Pl3@s3!!".to_string());
-    let jwt_expires_in = env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string());
+    let config = EnvConfig::default();
+    let jwt_secret = &config.jwt_secret;
+    let jwt_expires_in = &config.jwt_expires_in;
 
     // Set token expiration using JWT_EXPIRES_IN
     let expiration_ms = time_string_to_ms(&jwt_expires_in).unwrap_or(24 * 60 * 60 * 1000); // Default to 24h

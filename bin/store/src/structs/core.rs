@@ -1,6 +1,5 @@
 use crate::database::schema::forbidden_tables;
 use crate::providers::operations::sync::hlc::mutable_timestamp::MutableTimestamp;
-use crate::providers::storage::cache::cache_factory::CacheType;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
 use diesel::sql_types::Text;
@@ -9,7 +8,6 @@ use merkle::MerkleTree;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
-use std::time::Duration;
 use ulid::Ulid;
 use uuid::Uuid;
 /// Configuration structure for command-line arguments
@@ -22,18 +20,7 @@ pub struct CommandArgs {
     pub create_schema: bool,
 }
 
-/// Configuration structure for environment variables
-pub struct EnvConfig {
-    pub host: String,
-    pub port: String,
-    pub grpc_port: String,
-    pub grpc_url: String,
-    pub socket_host: String,
-    pub socket_port: String,
-    pub cache_type: CacheType,
-    pub redis_connection: Option<String>,
-    pub ttl: Option<Duration>,
-}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

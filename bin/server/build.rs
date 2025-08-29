@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Install diesel_cli if not already installed
         let diesel_result = Command::new("cargo")
-            .args(&[
+            .args([
                 "install",
                 "diesel_cli",
                 "--no-default-features",
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Run migrations
                 let migration_result = Command::new("diesel")
                     .env("DATABASE_URL", database_url)
-                    .args(&["migration", "run"])
+                    .args(["migration", "run"])
                     .status();
 
                 match migration_result {

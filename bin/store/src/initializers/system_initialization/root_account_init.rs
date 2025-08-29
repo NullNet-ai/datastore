@@ -7,6 +7,7 @@ use crate::generated::models::counter_model::CounterModel;
 use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema;
 use crate::initializers::system_initialization::structs::InitializerParams;
+use crate::config::core::EnvConfig;
 use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
@@ -35,7 +36,7 @@ impl RootAccountInitializer {
         let personal_organization_id = "01JSN4XA2C3A7RHN3MNZZJGBR3".to_string();
         let account_id = "root".to_string();
         let account_secret =
-            env::var("ROOT_ACCOUNT_PASSWORD").unwrap_or_else(|_| "pl3@s3ch@ng3m3!!".to_string());
+            EnvConfig::default().root_account_password;
 
         let mut conn = db::get_async_connection().await;
 
