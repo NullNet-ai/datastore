@@ -120,8 +120,6 @@ impl RuntimeManager {
         self
     }
 
-
-
     /// Execute the runtime phase with actual services
     pub async fn execute(
         &mut self,
@@ -730,8 +728,6 @@ impl RuntimeManager {
 
         metrics
     }
-
-
 
     /// Check if shutdown was requested
     pub async fn is_shutdown_requested(&self) -> bool {
