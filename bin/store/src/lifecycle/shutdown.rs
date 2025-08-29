@@ -7,9 +7,10 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
+use serde::{Serialize, Deserialize};
 
 /// Shutdown phase stages
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ShutdownStage {
     NotStarted,
     StoppingHttpServer,
@@ -24,7 +25,11 @@ pub enum ShutdownStage {
 #[derive(Debug, Clone)]
 pub struct ShutdownConfig {
     pub graceful_timeout: Duration,
+    // TODO: need to have a scenario where we need to force shutdown
+    #[allow(dead_code)]
     pub force_timeout: Duration,
+    // TODO: need to have a scenario where we need to drain connections
+    #[allow(dead_code)]
     pub drain_timeout: Duration,
 }
 
@@ -45,6 +50,7 @@ pub struct ShutdownManager {
     start_time: Option<Instant>,
     services: Vec<Box<dyn ShutdownService + Send + Sync>>,
     logger: Option<Arc<crate::lifecycle::logging::LifecycleLogger>>,
+    callbacks: Vec<Arc<dyn ShutdownCallback + Send + Sync>>,
 }
 
 /// Trait for services that need graceful shutdown
@@ -58,6 +64,13 @@ pub trait ShutdownService {
 
     /// Force shutdown if graceful shutdown fails
     async fn force_shutdown(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+}
+
+/// Trait for callbacks that receive shutdown progress updates
+#[async_trait::async_trait]
+pub trait ShutdownCallback {
+    /// Called when shutdown stage changes
+    async fn on_shutdown_stage_changed(&self, stage: ShutdownStage, elapsed_time: Option<Duration>);
 }
 
 /// HTTP Server shutdown wrapper
@@ -165,6 +178,7 @@ impl ShutdownManager {
             start_time: None,
             services: Vec::new(),
             logger: None,
+            callbacks: Vec::new(),
         }
     }
 
@@ -175,6 +189,21 @@ impl ShutdownManager {
             service.name()
         );
         self.services.push(service);
+    }
+
+    /// Register a callback for shutdown progress updates
+    pub fn register_callback(&mut self, callback: Arc<dyn ShutdownCallback + Send + Sync>) {
+        info!("[SHUTDOWN] Registering shutdown callback");
+        self.callbacks.push(callback);
+    }
+
+    /// Notify all callbacks of stage change
+    async fn notify_callbacks(&self) {
+        let current_stage = self.get_stage().await;
+        let elapsed_time = self.get_elapsed_time();
+        for callback in &self.callbacks {
+            callback.on_shutdown_stage_changed(current_stage.clone(), elapsed_time).await;
+        }
     }
 
     /// Execute graceful shutdown
@@ -196,6 +225,7 @@ impl ShutdownManager {
 
         // Set initial stage
         *self.stage.write().await = ShutdownStage::StoppingHttpServer;
+        self.notify_callbacks().await;
 
         // Execute shutdown stages
         if let Err(e) = self.execute_shutdown_stages().await {
@@ -211,11 +241,14 @@ impl ShutdownManager {
             } else {
                 error!("[SHUTDOWN] Shutdown failed: {}", e);
             }
-            *self.stage.write().await = ShutdownStage::Failed(e.to_string());
+            let failed_stage = ShutdownStage::Failed(e.to_string());
+            *self.stage.write().await = failed_stage.clone();
+            self.notify_callbacks().await;
             return Err(e);
         }
 
         *self.stage.write().await = ShutdownStage::Completed;
+        self.notify_callbacks().await;
 
         let elapsed = self.start_time.unwrap().elapsed();
         if let Some(logger) = &self.logger {
@@ -246,14 +279,17 @@ impl ShutdownManager {
 
         // Stage 2: Drain connections
         *self.stage.write().await = ShutdownStage::DrainConnections;
+        self.notify_callbacks().await;
         self.drain_connections().await?;
 
         // Stage 3: Stop background services
         *self.stage.write().await = ShutdownStage::StoppingBackgroundServices;
+        self.notify_callbacks().await;
         self.stop_background_services().await?;
 
         // Stage 4: Cleanup resources
         *self.stage.write().await = ShutdownStage::CleanupResources;
+        self.notify_callbacks().await;
         self.cleanup_resources().await?;
 
         // Check if we exceeded the total timeout
@@ -398,6 +434,8 @@ impl ShutdownManager {
     }
 
     /// Force shutdown (emergency)
+    // TODO: need to have a scenario where we need to force shutdown
+    #[allow(dead_code)]
     pub async fn force_shutdown(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         warn!("[SHUTDOWN] Initiating force shutdown");
 

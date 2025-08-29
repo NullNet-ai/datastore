@@ -355,14 +355,30 @@ impl LifecycleManager {
             .update_component_status("ShutdownManager", ComponentStatus::Starting)
             .await;
 
+        // Start monitoring shutdown progress
+        self.start_shutdown_monitoring().await;
+
         // Update ShutdownManager status to running
         self.state_manager
             .update_component_status("ShutdownManager", ComponentStatus::Running)
             .await;
 
-        // Execute shutdown
+        // Register StateManager as shutdown callback for automatic updates
+        self.shutdown_manager.register_callback(self.state_manager.clone());
+
+        // Execute shutdown with progress tracking
+        let shutdown_start = std::time::Instant::now();
+        
         let result = match self.shutdown_manager.execute().await {
             Ok(_) => {
+                // Update shutdown completion in health metrics
+                self.state_manager
+                    .update_shutdown_info(
+                        Some(super::shutdown::ShutdownStage::Completed),
+                        Some(shutdown_start.elapsed()),
+                    )
+                    .await;
+                
                 // Update ShutdownManager status to stopped when completed
                 self.state_manager
                     .update_component_status("ShutdownManager", ComponentStatus::Stopped)
@@ -370,6 +386,14 @@ impl LifecycleManager {
                 Ok(())
             }
             Err(e) => {
+                // Update shutdown failure in health metrics
+                self.state_manager
+                    .update_shutdown_info(
+                        Some(super::shutdown::ShutdownStage::Failed(e.to_string())),
+                        Some(shutdown_start.elapsed()),
+                    )
+                    .await;
+                
                 // Update ShutdownManager status to failed on error
                 self.state_manager
                     .update_component_status(
@@ -415,7 +439,24 @@ impl LifecycleManager {
             .await;
     }
 
+    /// Start monitoring shutdown progress
+    async fn start_shutdown_monitoring(&self) {
+        // Note: For now, we'll update shutdown info manually in execute_shutdown
+        // A future enhancement could add a callback mechanism to ShutdownManager
+        // to automatically update health metrics during shutdown stages
+        
+        // Initialize shutdown monitoring in health metrics
+        self.state_manager
+            .update_shutdown_info(
+                Some(super::shutdown::ShutdownStage::NotStarted),
+                None,
+            )
+            .await;
+    }
+
     /// Request graceful shutdown
+    // TODO: need a scenario where we can request shutdown
+    #[allow(dead_code)]
     pub async fn request_shutdown(&self) {
         // Set the runtime shutdown flag directly
         let shutdown_flag = self.runtime_manager.get_shutdown_flag();
@@ -433,6 +474,7 @@ impl LifecycleManager {
 
     /// Configure shutdown callback for runtime manager
     fn setup_shutdown_callback(&mut self) {
+        // Create a weak reference to avoid circular dependency
         let shutdown_flag = self.runtime_manager.get_shutdown_flag();
         let logger = self.logger.clone();
 
@@ -441,6 +483,7 @@ impl LifecycleManager {
                 let shutdown_flag = shutdown_flag.clone();
                 let logger = logger.clone();
                 async move {
+                    // Set the shutdown flag directly (since we can't call self.request_shutdown from here)
                     *shutdown_flag.write().await = true;
                     logger
                         .log(

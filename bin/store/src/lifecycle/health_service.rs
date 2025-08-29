@@ -108,6 +108,8 @@ impl HealthService {
                     processed_requests: 0,
                     error_rate: 0.0,
                     last_updated: std::time::SystemTime::now(),
+                    shutdown_stage: None,
+                    shutdown_elapsed_time: None,
                 },
                 components: HashMap::new(),
             }

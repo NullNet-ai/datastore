@@ -1,4 +1,5 @@
 use crate::lifecycle::logging::{LifecycleLogger, LogCategory, LogLevel};
+use crate::lifecycle::shutdown::{ShutdownCallback, ShutdownStage};
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -53,6 +54,10 @@ pub struct HealthMetrics {
     pub processed_requests: u64,
     pub error_rate: f64,
     pub last_updated: SystemTime,
+    /// Current shutdown stage (if shutting down)
+    pub shutdown_stage: Option<crate::lifecycle::shutdown::ShutdownStage>,
+    /// Elapsed time since shutdown started
+    pub shutdown_elapsed_time: Option<Duration>,
 }
 
 /// Lifecycle state snapshot
@@ -101,6 +106,8 @@ impl StateManager {
             processed_requests: 0,
             error_rate: 0.0,
             last_updated: SystemTime::now(),
+            shutdown_stage: None,
+            shutdown_elapsed_time: None,
         };
 
         Self {
@@ -127,6 +134,8 @@ impl StateManager {
             processed_requests: 0,
             error_rate: 0.0,
             last_updated: SystemTime::now(),
+            shutdown_stage: None,
+            shutdown_elapsed_time: None,
         };
 
         Self {
@@ -359,6 +368,19 @@ impl StateManager {
         let mut metrics = self.health_metrics.write().await;
         updater(&mut *metrics);
         metrics.last_updated = SystemTime::now();
+    }
+
+    /// Update shutdown information in health metrics
+    pub async fn update_shutdown_info(
+        &self,
+        stage: Option<crate::lifecycle::shutdown::ShutdownStage>,
+        elapsed_time: Option<Duration>,
+    ) {
+        self.update_health_metrics(|metrics| {
+            metrics.shutdown_stage = stage;
+            metrics.shutdown_elapsed_time = elapsed_time;
+        })
+        .await;
     }
 
     /// Get current health metrics
@@ -675,5 +697,35 @@ impl StateManager {
 impl Default for StateManager {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[async_trait::async_trait]
+impl ShutdownCallback for StateManager {
+    async fn on_shutdown_stage_changed(&self, stage: ShutdownStage, elapsed_time: Option<Duration>) {
+        info!("[STATE] Received shutdown stage update: {:?}, elapsed: {:?}", stage, elapsed_time);
+        
+        self.update_health_metrics(|metrics| {
+            metrics.shutdown_stage = Some(stage.clone());
+            metrics.shutdown_elapsed_time = elapsed_time;
+            metrics.last_updated = SystemTime::now();
+        }).await;
+        
+        // Update lifecycle phase based on shutdown stage
+        match stage {
+            ShutdownStage::NotStarted => {},
+            ShutdownStage::StoppingHttpServer | 
+            ShutdownStage::DrainConnections | 
+            ShutdownStage::StoppingBackgroundServices | 
+            ShutdownStage::CleanupResources => {
+                self.set_phase(LifecyclePhase::ShuttingDown).await;
+            },
+            ShutdownStage::Completed => {
+                self.set_phase(LifecyclePhase::Stopped).await;
+            },
+            ShutdownStage::Failed(error) => {
+                self.set_phase(LifecyclePhase::Error(error)).await;
+            },
+        }
     }
 }

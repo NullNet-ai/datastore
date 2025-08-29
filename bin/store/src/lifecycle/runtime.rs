@@ -16,20 +16,11 @@ pub enum HealthStatus {
     Unhealthy(String),
 }
 
-/// Runtime metrics
-#[derive(Debug, Clone)]
-pub struct RuntimeMetrics {
-    pub uptime: Duration,
-    pub health_status: HealthStatus,
-    pub active_connections: u64,
-    pub processed_requests: u64,
-    pub last_health_check: Instant,
-}
+// RuntimeMetrics removed - using HealthService/HealthMetrics instead
 
 /// Runtime manager responsible for application execution phase
 pub struct RuntimeManager {
     start_time: Option<Instant>,
-    metrics: Arc<RwLock<RuntimeMetrics>>,
     shutdown_requested: Arc<RwLock<bool>>,
     health_check_interval: Duration,
     logger: Option<Arc<crate::lifecycle::logging::LifecycleLogger>>,
@@ -56,17 +47,8 @@ impl RuntimeManager {
     pub fn new() -> Self {
         info!("[RUNTIME] Initializing runtime manager");
 
-        let metrics = RuntimeMetrics {
-            uptime: Duration::from_secs(0),
-            health_status: HealthStatus::Healthy,
-            active_connections: 0,
-            processed_requests: 0,
-            last_health_check: Instant::now(),
-        };
-
         Self {
             start_time: None,
-            metrics: Arc::new(RwLock::new(metrics)),
             shutdown_requested: Arc::new(RwLock::new(false)),
             health_check_interval: Duration::from_secs(30),
             logger: None,
@@ -171,8 +153,8 @@ impl RuntimeManager {
 
     /// Start health monitoring background task
     async fn start_health_monitoring(&self) {
-        let metrics = self.metrics.clone();
         let shutdown_requested = self.shutdown_requested.clone();
+        let health_service = self.health_service.clone();
         let interval = self.health_check_interval;
 
         tokio::spawn(async move {
@@ -190,11 +172,10 @@ impl RuntimeManager {
                 // Perform health check
                 let health_status = Self::perform_health_check().await;
 
-                // Update metrics
-                {
-                    let mut metrics_guard = metrics.write().await;
-                    metrics_guard.health_status = health_status.clone();
-                    metrics_guard.last_health_check = Instant::now();
+                // Update health service if available
+                if let Some(health_service) = &health_service {
+                    let is_healthy = matches!(health_status, HealthStatus::Healthy);
+                    health_service.update_health_status(is_healthy).await;
                 }
 
                 // Log health status changes
@@ -544,6 +525,17 @@ impl RuntimeManager {
 
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
+        
+        // Get server handle for shutdown integration
+        let server_handle = server.handle();
+        
+        // Register HTTP server shutdown service with shutdown manager if available
+        if let Some(shutdown_manager_ptr) = self.shutdown_manager {
+            let shutdown_manager = unsafe { &mut *shutdown_manager_ptr };
+            let http_shutdown = crate::lifecycle::shutdown::HttpServerShutdown::new(server_handle);
+            shutdown_manager.register_service(Box::new(http_shutdown));
+            info!("[RUNTIME] HTTP server shutdown service registered");
+        }
 
         info!(
             "[RUNTIME] HTTP server successfully bound to {}",
@@ -715,23 +707,6 @@ impl RuntimeManager {
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-    }
-
-    /// Get current runtime metrics
-    pub async fn get_metrics(&self) -> RuntimeMetrics {
-        let mut metrics = self.metrics.read().await.clone();
-
-        // Update uptime if we have a start time
-        if let Some(start_time) = self.start_time {
-            metrics.uptime = start_time.elapsed();
-        }
-
-        metrics
-    }
-
-    /// Check if shutdown was requested
-    pub async fn is_shutdown_requested(&self) -> bool {
-        *self.shutdown_requested.read().await
     }
 
     /// Get shutdown flag for external management

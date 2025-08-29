@@ -32,6 +32,8 @@ pub struct SystemMetrics {
     pub cpu_usage_percent: f64,
     pub active_connections: u64,
     pub processed_requests: u64,
+    pub shutdown_stage: Option<String>,
+    pub shutdown_elapsed_seconds: Option<f64>,
 }
 
 /// Detailed health check response
@@ -124,6 +126,8 @@ impl HealthController {
                 cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
                 active_connections: health_metrics.active_connections,
                 processed_requests: health_metrics.processed_requests,
+                shutdown_stage: health_metrics.shutdown_stage.as_ref().map(|stage| format!("{:?}", stage)),
+                shutdown_elapsed_seconds: health_metrics.shutdown_elapsed_time.map(|duration| duration.as_secs_f64()),
             },
         };
 
@@ -240,6 +244,8 @@ impl HealthController {
                 cpu_usage_percent: health_metrics.cpu_usage_percent.unwrap_or(0.0),
                 active_connections: health_metrics.active_connections,
                 processed_requests: health_metrics.processed_requests,
+                shutdown_stage: health_metrics.shutdown_stage.as_ref().map(|stage| format!("{:?}", stage)),
+                shutdown_elapsed_seconds: health_metrics.shutdown_elapsed_time.map(|duration| duration.as_secs_f64()),
             },
             checks,
         };

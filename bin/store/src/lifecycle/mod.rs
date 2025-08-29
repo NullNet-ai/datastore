@@ -9,3 +9,4 @@ pub mod state;
 pub mod logging_test;
 pub mod runtime_test;
 pub mod shutdown_integration_test;
+pub mod shutdown_callback_test;
