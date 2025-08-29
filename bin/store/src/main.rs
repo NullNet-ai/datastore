@@ -20,10 +20,10 @@ use crate::lifecycle::{
     logging::{LogConfig, LogLevel},
     manager::LifecycleManager,
 };
-use crate::utils::utils::{parse_command_args, parse_env_config};
+use crate::utils::helpers::{parse_command_args, parse_env_config};
 use env_logger::Env;
 use log::{error, info};
-use structs::structs::EnvConfig;
+use structs::core::EnvConfig;
 
 /// Initialize logging and cache configuration
 fn initialize_logging_and_cache(env_config: &EnvConfig) {

@@ -10,8 +10,8 @@ use crate::generated::models::session_model::SessionModel;
 use crate::generated::models::signed_in_activity_model::SignedInActivityModel;
 use crate::generated::schema::{account_organizations, sessions};
 use crate::generated::table_enum::generate_code;
-use crate::structs::structs::{Auth, RequestBody};
-use crate::utils::utils::time_string_to_ms;
+use crate::structs::core::{Auth, RequestBody};
+use crate::utils::helpers::time_string_to_ms;
 use serde_json::json;
 
 #[derive(Clone, Debug)]
@@ -454,7 +454,7 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
             })?;
 
             // Create a RequestBody wrapper to use process_record
-            let mut request_body = crate::structs::structs::RequestBody {
+            let mut request_body = crate::structs::core::RequestBody {
                 record: updated_session,
             };
 
@@ -477,7 +477,7 @@ pub async fn prune_expired_sessions() -> Result<usize, diesel::result::Error> {
                 .unwrap_or_default()
                 .unwrap_or_else(|| "system".to_string());
 
-            let auth = crate::structs::structs::Auth {
+            let auth = crate::structs::core::Auth {
                 organization_id: default_organization_id,
                 responsible_account: responsible_account_id,
                 sensitivity_level: 0,

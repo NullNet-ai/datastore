@@ -10,7 +10,7 @@ use crate::providers::operations::sync::transactions::transaction_service::Trans
 use crate::providers::storage;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
-use crate::structs::structs::EnvConfig;
+use crate::structs::core::EnvConfig;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 use std::time::Duration;

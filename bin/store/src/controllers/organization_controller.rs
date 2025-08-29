@@ -6,7 +6,7 @@ use crate::providers::operations::organizations::auth_service::{auth, root_auth}
 use crate::providers::operations::organizations::organization_service::register;
 use crate::providers::operations::organizations::structs::Register;
 use crate::providers::operations::sync::sync_service;
-use crate::structs::structs::ApiResponse;
+use crate::structs::core::ApiResponse;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
@@ -88,7 +88,7 @@ impl OrganizationsController {
         let session = match &session_option {
             Some(session) => session,
             None => {
-                return HttpResponse::Unauthorized().json(crate::structs::structs::ApiResponse {
+                return HttpResponse::Unauthorized().json(crate::structs::core::ApiResponse {
                     success: false,
                     message: "Session doesn't exist in the login request".to_string(),
                     count: 0,
@@ -101,7 +101,7 @@ impl OrganizationsController {
         let session_id = match &session.id {
             Some(id) => id.clone(),
             None => {
-                return HttpResponse::BadRequest().json(crate::structs::structs::ApiResponse {
+                return HttpResponse::BadRequest().json(crate::structs::core::ApiResponse {
                     success: false,
                     message: "Session ID doesn't exist in the organization_controller".to_string(),
                     count: 0,

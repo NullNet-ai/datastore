@@ -3,7 +3,7 @@
 // to reuse WHERE clause logic from find/sql_constructor.rs
 
 use crate::providers::queries::batch_update::BatchUpdateSQLConstructor;
-use crate::structs::structs::{
+use crate::structs::core::{
     FilterCriteria as StructsFilterCriteria, FilterOperator as StructsFilterOperator,
     LogicalOperator as StructsLogicalOperator,
 };
@@ -31,7 +31,7 @@ pub fn example_batch_update_usage() {
         },
     ];
 
-    // Example filter criteria for advanced approach (uses structs::structs::FilterCriteria)
+    // Example filter criteria for advanced approach (uses structs::core::FilterCriteria)
     let advanced_filters = vec![
         StructsFilterCriteria::Criteria {
             field: "status".to_string(),

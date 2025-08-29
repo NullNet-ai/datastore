@@ -4,7 +4,7 @@ use super::runtime::RuntimeManager;
 use super::shutdown::ShutdownManager;
 use super::startup::StartupManager;
 use super::state::{ComponentStatus, LifecyclePhase, StateManager};
-use crate::structs::structs::EnvConfig;
+use crate::structs::core::EnvConfig;
 use log::info;
 use std::sync::Arc;
 

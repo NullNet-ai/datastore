@@ -1,5 +1,5 @@
 use crate::generated::store;
-use crate::structs::structs::{
+use crate::structs::core::{
     Aggregation, AggregationOrder, AggregationType, FieldRelation, FilterCriteria, FilterOperator,
     Join, LogicalOperator, MatchPattern, RelationEndpoint,
 };

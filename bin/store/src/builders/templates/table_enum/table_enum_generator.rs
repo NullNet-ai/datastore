@@ -1,7 +1,7 @@
 use crate::builders::templates::proto_generator::{Case, CaseConvert};
 use crate::constants::paths::database::{SCHEMA_FILE, TABLE_ENUM_FILE};
 use crate::database::schema::verify::field_exists_in_table;
-use crate::utils::utils::{parse_tables, to_singular};
+use crate::utils::helpers::{parse_tables, to_singular};
 use log::{error, info, warn};
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -38,7 +38,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
         )?;
     }
     writeln!(file, "use crate::generated::schema;")?;
-    writeln!(file, "use crate::structs::structs::{{Auth, RequestBody}};")?;
+    writeln!(file, "use crate::structs::core::{{Auth, RequestBody}};")?;
     writeln!(file, "use actix_web::web;")?;
     writeln!(file, "use diesel::associations::HasTable;")?;
     writeln!(file, "use diesel::prelude::*;")?;

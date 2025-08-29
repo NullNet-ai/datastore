@@ -2,7 +2,7 @@ use crate::providers::queries::search_suggestion::structs::{
     AliasedJoinedEntity, ConcatenatedExpressions, FieldExpression, FieldFiltersResult,
     FormatFilterResponse,
 };
-use crate::structs::structs::{ConcatenateField, FilterCriteria, MatchPattern};
+use crate::structs::core::{ConcatenateField, FilterCriteria, MatchPattern};
 use pluralizer::pluralize;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};

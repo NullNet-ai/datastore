@@ -1,4 +1,4 @@
-use crate::structs::structs::ApiResponse;
+use crate::structs::core::ApiResponse;
 use log::debug;
 
 pub fn error_check_permission(account_id: &str, role: Option<&str>) -> Option<ApiResponse> {

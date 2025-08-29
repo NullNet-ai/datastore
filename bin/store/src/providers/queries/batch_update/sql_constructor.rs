@@ -1,5 +1,5 @@
 use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
-use crate::structs::structs::{FilterCriteria as StructsFilterCriteria, Join};
+use crate::structs::core::{FilterCriteria as StructsFilterCriteria, Join};
 use crate::utils::structs::FilterCriteria as UtilsFilterCriteria;
 
 // Simplified wrapper for batch update filtering that reuses existing logic
@@ -48,7 +48,7 @@ impl BatchUpdateSQLConstructor {
     }
 
     // Use the find module's approach (more advanced, supports complex filtering)
-    // Note: SQLConstructor expects structs::structs::FilterCriteria
+    // Note: SQLConstructor expects structs::core::FilterCriteria
     pub fn construct_where_clauses_advanced(
         &self,
         filters: &[StructsFilterCriteria],

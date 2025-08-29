@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::super::validations::Validation;
-    use crate::structs::structs::{
+    use crate::structs::core::{
         ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter,
         LogicalOperator, MatchPattern,
     };

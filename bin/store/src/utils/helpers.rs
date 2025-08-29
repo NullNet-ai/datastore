@@ -6,7 +6,7 @@ use crate::generated::models::counter_model::CounterModel;
 use crate::generated::schema::counters;
 use crate::generated::table_enum::Table as TableEnum;
 use crate::providers::storage::cache::cache_factory::CacheType;
-use crate::structs::structs::{CommandArgs, EnvConfig};
+use crate::structs::core::{CommandArgs, EnvConfig};
 use actix_web::http;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

@@ -17,8 +17,8 @@ use woothee::parser::Parser;
 
 pub use super::session_core::prune_expired_sessions;
 use super::session_core::{DeviceInfo, SessionManager};
-use crate::structs::structs::{ApiResponse, Auth};
-use crate::utils::utils::time_string_to_ms;
+use crate::structs::core::{ApiResponse, Auth};
+use crate::utils::helpers::time_string_to_ms;
 use crate::{
     generated::models::session_model::SessionModel,
     providers::operations::auth::structs::{Claims, Origin},

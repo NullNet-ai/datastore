@@ -1,4 +1,4 @@
-use crate::schema::schema::sync_endpoint_groups;
+use crate::schema::core::sync_endpoint_groups;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

@@ -21,7 +21,7 @@ use crate::generated::models::test_hypertable_model::TestHypertableModel;
 use crate::generated::models::account_phone_number_model::AccountPhoneNumberModel;
 use crate::generated::models::account_signature_model::AccountSignatureModel;
 use crate::generated::schema;
-use crate::structs::structs::{Auth, RequestBody};
+use crate::structs::core::{Auth, RequestBody};
 use actix_web::web;
 use diesel::associations::HasTable;
 use diesel::prelude::*;

@@ -2,7 +2,7 @@
 mod tests {
     use super::super::shutdown::{BackgroundServiceShutdown, ShutdownManager, ShutdownService};
     use crate::providers::storage::cache::cache_factory::CacheType;
-    use crate::structs::structs::EnvConfig;
+    use crate::structs::core::EnvConfig;
     use std::sync::Arc;
     use tokio::sync::mpsc;
     use tokio::time::{timeout, Duration};

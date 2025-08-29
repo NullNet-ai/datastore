@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
-    use crate::structs::structs::{
+    use crate::structs::core::{
         ConcatenateField, FilterCriteria, GetByFilter, GroupAdvanceFilter, GroupBy, Join,
         SortOption,
     };

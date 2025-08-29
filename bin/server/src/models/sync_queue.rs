@@ -1,4 +1,4 @@
-use crate::schema::schema::sync_queues;
+use crate::schema::core::sync_queues;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

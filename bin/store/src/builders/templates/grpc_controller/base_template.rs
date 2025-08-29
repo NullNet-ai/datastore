@@ -17,7 +17,7 @@ use diesel_async::RunQueryDsl;
 use log::info;
 
 use crate::providers::operations::sync::sync_service::update;
-use crate::structs::structs::RequestBody;
+use crate::structs::core::RequestBody;
 use crate::table_enum::Table;
 use crate::utils::utils::table_exists;
 use serde_json::Value;

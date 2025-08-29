@@ -1,4 +1,4 @@
-use crate::schema::schema::sync_transactions;
+use crate::schema::core::sync_transactions;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

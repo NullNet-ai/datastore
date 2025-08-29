@@ -1,4 +1,4 @@
-use crate::schema::schema::crdt_messages_merkles;
+use crate::schema::core::crdt_messages_merkles;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 

@@ -1,7 +1,7 @@
 // use serde::{Serialize, Deserialize};
 // use serde_json::Value;
 use crate::database::schema::verify::field_exists_in_table;
-use crate::structs::structs::{ApiResponse, FilterCriteria, GetByFilter};
+use crate::structs::core::{ApiResponse, FilterCriteria, GetByFilter};
 use pluralizer::pluralize;
 
 // #[derive(Serialize, Deserialize)]
@@ -889,11 +889,11 @@ impl<'a, 'b> Validation<'a, 'b> {
                     if values.is_empty()
                         && !matches!(
                             operator,
-                            crate::structs::structs::FilterOperator::IsNull
-                                | crate::structs::structs::FilterOperator::IsNotNull
-                                | crate::structs::structs::FilterOperator::IsEmpty
-                                | crate::structs::structs::FilterOperator::IsNotEmpty
-                                | crate::structs::structs::FilterOperator::HasNoValue
+                            crate::structs::core::FilterOperator::IsNull
+                                | crate::structs::core::FilterOperator::IsNotNull
+                                | crate::structs::core::FilterOperator::IsEmpty
+                                | crate::structs::core::FilterOperator::IsNotEmpty
+                                | crate::structs::core::FilterOperator::HasNoValue
                         )
                     {
                         return ApiResponse {
@@ -927,8 +927,8 @@ impl<'a, 'b> Validation<'a, 'b> {
             self.request_body.group_advance_filters.iter().enumerate()
         {
             let filters = match group_filter {
-                crate::structs::structs::GroupAdvanceFilter::Criteria { filters, .. } => filters,
-                crate::structs::structs::GroupAdvanceFilter::Operator { filters, .. } => filters,
+                crate::structs::core::GroupAdvanceFilter::Criteria { filters, .. } => filters,
+                crate::structs::core::GroupAdvanceFilter::Operator { filters, .. } => filters,
             };
 
             for (filter_index, filter) in filters.iter().enumerate() {
@@ -982,11 +982,11 @@ impl<'a, 'b> Validation<'a, 'b> {
                         if values.is_empty()
                             && !matches!(
                                 operator,
-                                crate::structs::structs::FilterOperator::IsNull
-                                    | crate::structs::structs::FilterOperator::IsNotNull
-                                    | crate::structs::structs::FilterOperator::IsEmpty
-                                    | crate::structs::structs::FilterOperator::IsNotEmpty
-                                    | crate::structs::structs::FilterOperator::HasNoValue
+                                crate::structs::core::FilterOperator::IsNull
+                                    | crate::structs::core::FilterOperator::IsNotNull
+                                    | crate::structs::core::FilterOperator::IsEmpty
+                                    | crate::structs::core::FilterOperator::IsNotEmpty
+                                    | crate::structs::core::FilterOperator::HasNoValue
                             )
                         {
                             return ApiResponse {

@@ -11,8 +11,8 @@ use crate::constants::paths::database::{
     HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_FILE, SCHEMA_TABLES_DIR,
     SYSTEM_FIELDS_FILE,
 };
-use crate::structs::structs::CommandArgs;
-use crate::utils::utils::to_singular;
+use crate::structs::core::CommandArgs;
+use crate::utils::helpers::to_singular;
 use log::{debug, error, info};
 use std::fs;
 use std::path::Path;

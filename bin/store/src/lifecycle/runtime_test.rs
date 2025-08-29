@@ -2,7 +2,7 @@
 mod tests {
     use crate::lifecycle::runtime::{check_cache_health, RuntimeManager};
     use crate::providers::storage::cache::cache_factory::CacheType;
-    use crate::structs::structs::EnvConfig;
+    use crate::structs::core::EnvConfig;
     use std::sync::Arc;
     use std::time::Duration;
     use tokio;

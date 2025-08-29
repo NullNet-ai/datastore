@@ -1,6 +1,6 @@
 // Note: This middleware is deprecated in favor of the integrated shutdown system
 // in LifecycleManager. Consider removing this file if no longer needed.
-use crate::structs::structs::ApiResponse;
+use crate::structs::core::ApiResponse;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::{

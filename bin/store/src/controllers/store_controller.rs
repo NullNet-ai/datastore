@@ -14,11 +14,11 @@ use crate::providers::queries::search_suggestion::{
 };
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
-use crate::structs::structs::{
+use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
-use crate::utils::utils::table_exists;
+use crate::utils::helpers::table_exists;
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;

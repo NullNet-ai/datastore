@@ -2,9 +2,10 @@ use crate::controllers::gateway;
 use crate::db;
 use crate::models::crdt_client_message::*;
 use crate::models::crdt_messages::CrdtMessage;
-use crate::schema::schema::crdt_client_messages::client_id;
-use crate::schema::schema::crdt_client_messages::dsl::crdt_client_messages;
-use crate::structs::structs::{QueryParams, SyncRequestBody};
+use crate::schema::core::crdt_client_messages::client_id;
+use crate::schema::core::crdt_client_messages::dsl::crdt_client_messages;
+
+use crate::structs::core::{QueryParams, SyncRequestBody};
 use crate::sync::crdt::crdt_service::{self, deserialize_value, get_all_messages_from_timestamp};
 use actix_web::error::BlockingError;
 use actix_web::Responder;

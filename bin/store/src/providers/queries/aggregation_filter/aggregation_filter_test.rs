@@ -4,7 +4,7 @@ mod tests {
         AggregationFilterWrapper, AggregationQueryFilter, AggregationSQLConstructor,
     };
     use crate::providers::queries::find::sql_constructor::QueryFilter;
-    use crate::structs::structs::{Aggregation, AggregationFilter, AggregationType};
+    use crate::structs::core::{Aggregation, AggregationFilter, AggregationType};
 
     // Helper function to create a test AggregationFilter
     fn create_test_aggregation_filter() -> AggregationFilter {

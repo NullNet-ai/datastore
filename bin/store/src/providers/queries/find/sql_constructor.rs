@@ -1,6 +1,6 @@
 use crate::{
     database::schema::hypertables::is_hypertable,
-    structs::structs::{
+    structs::core::{
         ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
         Join, LogicalOperator, MatchPattern, SortOption,
     },
@@ -30,7 +30,7 @@ pub trait QueryFilter {
             std::sync::LazyLock::new(|| HashMap::new());
         &EMPTY
     }
-    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
+    fn get_group_advance_filters(&self) -> &[crate::structs::core::GroupAdvanceFilter] {
         &[]
     }
     fn get_concatenate_fields(&self) -> &[ConcatenateField] {
@@ -92,7 +92,7 @@ impl QueryFilter for GetByFilter {
         &self.pluck_group_object
     }
 
-    fn get_group_advance_filters(&self) -> &[crate::structs::structs::GroupAdvanceFilter] {
+    fn get_group_advance_filters(&self) -> &[crate::structs::core::GroupAdvanceFilter] {
         &self.group_advance_filters
     }
 

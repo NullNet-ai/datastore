@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use controllers::controllers::{delete_chunk, get_chunk, sync};
+use controllers::main_controllers::{delete_chunk, get_chunk, sync};
 use dotenv::dotenv;
 use env_logger::Env;
 use std::env;
