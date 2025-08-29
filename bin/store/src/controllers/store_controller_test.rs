@@ -28,7 +28,9 @@ mod tests {
     /// ```
     #[tokio::test]
     async fn should_able_to_login() {
-        println!("Testing organization authentication endpoint with database dependency handling...");
+        println!(
+            "Testing organization authentication endpoint with database dependency handling..."
+        );
 
         let client = reqwest::Client::new();
         let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
@@ -50,7 +52,9 @@ mod tests {
             }
             Err(e) => {
                 println!("    ⚠ Server is not reachable: {}", e);
-                println!("    ℹ This is expected when database is turned off or server is not running");
+                println!(
+                    "    ℹ This is expected when database is turned off or server is not running"
+                );
                 false
             }
         };
@@ -59,12 +63,18 @@ mod tests {
             println!("  ✓ Skipping authentication tests - server/database unavailable");
             println!("  ℹ Test passes gracefully when infrastructure is offline");
             // Assert that we properly detected server unavailability
-            assert!(!server_available, "Server should be detected as unavailable when health check fails");
+            assert!(
+                !server_available,
+                "Server should be detected as unavailable when health check fails"
+            );
             return; // Early return for offline scenario
         }
-        
+
         // Assert that server is available when we reach this point
-        assert!(server_available, "Server should be available to proceed with authentication tests");
+        assert!(
+            server_available,
+            "Server should be available to proceed with authentication tests"
+        );
 
         // Test successful login scenario when server is available
         println!("  ✓ Testing authentication with valid credentials");
@@ -100,19 +110,27 @@ mod tests {
                             let has_token = json_response.get("token").is_some();
 
                             if has_session && has_token {
-                                println!("    ✓ Authentication successful - database is operational");
-                                
+                                println!(
+                                    "    ✓ Authentication successful - database is operational"
+                                );
+
                                 if let Some(token) = json_response.get("token") {
                                     if let Some(token_str) = token.as_str() {
                                         if token_str.starts_with("eyJ") {
                                             println!("    ✓ Valid JWT token received");
                                             // Assert successful authentication with valid JWT
-                                            assert!(token_str.len() > 10, "JWT token should have reasonable length");
+                                            assert!(
+                                                token_str.len() > 10,
+                                                "JWT token should have reasonable length"
+                                            );
                                         }
                                     }
                                 }
                                 // Assert that authentication was successful when database is operational
-                                assert!(has_session && has_token, "Authentication should succeed when database is operational");
+                                assert!(
+                                    has_session && has_token,
+                                    "Authentication should succeed when database is operational"
+                                );
                             } else {
                                 println!("    ⚠ Incomplete authentication response - possible database issue");
                                 // When database has issues, we expect incomplete responses but test should still pass
@@ -125,7 +143,10 @@ mod tests {
                         }
                     }
                 } else if resp.status().is_server_error() {
-                    println!("    ⚠ Server error ({}): Likely database connection issue", resp.status());
+                    println!(
+                        "    ⚠ Server error ({}): Likely database connection issue",
+                        resp.status()
+                    );
                 } else {
                     println!("    ⚠ Unexpected status: {}", resp.status());
                 }
@@ -138,10 +159,13 @@ mod tests {
 
         println!("  ✓ Authentication endpoint test completed");
         println!("  ℹ Test designed to pass gracefully regardless of database state");
-        
+
         // Assert that the test completed successfully
         // This test should always pass as it's designed to handle both online and offline scenarios
-        assert!(true, "Test completed - handles both database online and offline scenarios");
+        assert!(
+            true,
+            "Test completed - handles both database online and offline scenarios"
+        );
     }
 
     #[test]
