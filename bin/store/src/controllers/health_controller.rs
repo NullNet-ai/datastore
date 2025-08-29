@@ -1,10 +1,12 @@
 use crate::lifecycle::health_service::HealthService;
 use crate::lifecycle::runtime::check_cache_health;
 use crate::lifecycle::runtime::RuntimeManager;
-use crate::lifecycle::state::{ComponentStatus, HealthMetrics, LifecyclePhase, StateManager, StateChangeEvent};
+use crate::lifecycle::state::{
+    ComponentStatus, HealthMetrics, LifecyclePhase, StateChangeEvent, StateManager,
+};
 use actix_web::{web, HttpResponse, Responder};
 use chrono;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 /// Health check response structure
@@ -386,7 +388,7 @@ impl HealthController {
         req: web::Json<ComponentMetadataRequest>,
     ) -> impl Responder {
         let component_name = path.into_inner();
-        
+
         state_manager
             .update_component_metadata(&component_name, req.key.clone(), req.value.clone())
             .await;
@@ -409,7 +411,7 @@ impl HealthController {
         req: web::Json<HealthCheckRequest>,
     ) -> impl Responder {
         let component_name = path.into_inner();
-        
+
         state_manager
             .record_health_check(&component_name, req.success)
             .await;
@@ -430,22 +432,20 @@ impl HealthController {
         path: web::Path<String>,
     ) -> impl Responder {
         let component_name = path.into_inner();
-        
+
         match state_manager.get_component(&component_name).await {
             Some(component) => HttpResponse::Ok().json(component),
             None => HttpResponse::NotFound().json(serde_json::json!({
                 "error": "Component not found",
                 "component": component_name,
                 "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
-            }))
+            })),
         }
     }
 
     /// Create state snapshot endpoint
     /// GET /health/snapshot
-    pub async fn create_snapshot(
-        state_manager: web::Data<Arc<StateManager>>,
-    ) -> impl Responder {
+    pub async fn create_snapshot(state_manager: web::Data<Arc<StateManager>>) -> impl Responder {
         let snapshot = state_manager.create_snapshot().await;
         HttpResponse::Ok().json(snapshot)
     }
@@ -460,16 +460,18 @@ impl HealthController {
             .get("limit")
             .and_then(|s| s.parse::<usize>().ok())
             .unwrap_or(100);
-        
+
         let events = state_manager.get_recent_events(Some(limit)).await;
         let total_count = events.len();
-        
+
         let response = RecentEventsResponse {
             events,
             total_count,
-            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .to_string(),
         };
-        
+
         HttpResponse::Ok().json(response)
     }
 
@@ -479,12 +481,14 @@ impl HealthController {
         state_manager: web::Data<Arc<StateManager>>,
     ) -> impl Responder {
         let counts = state_manager.get_component_counts().await;
-        
+
         let response = ComponentCountsResponse {
             counts,
-            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .to_string(),
         };
-        
+
         HttpResponse::Ok().json(response)
     }
 
@@ -494,12 +498,14 @@ impl HealthController {
         state_manager: web::Data<Arc<StateManager>>,
     ) -> impl Responder {
         let enabled = state_manager.is_monitoring_enabled().await;
-        
+
         let response = MonitoringStatusResponse {
             enabled,
-            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .to_string(),
         };
-        
+
         HttpResponse::Ok().json(response)
     }
 
@@ -509,8 +515,8 @@ impl HealthController {
         _state_manager: web::Data<Arc<StateManager>>,
         req: web::Json<MonitoringConfigRequest>,
     ) -> impl Responder {
-        // Note: StateManager::set_metrics_interval requires &mut self, 
-        // which is not compatible with Arc<StateManager>. 
+        // Note: StateManager::set_metrics_interval requires &mut self,
+        // which is not compatible with Arc<StateManager>.
         // This endpoint returns a message indicating the limitation.
         HttpResponse::Ok().json(serde_json::json!({
             "status": "info",
@@ -526,12 +532,14 @@ impl HealthController {
         state_manager: web::Data<Arc<StateManager>>,
     ) -> impl Responder {
         let statistics = state_manager.get_component_statistics().await;
-        
+
         let response = ComponentStatisticsResponse {
             statistics,
-            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%dT%H:%M:%S%.3fZ")
+                .to_string(),
         };
-        
+
         HttpResponse::Ok().json(response)
     }
 }
