@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
 use crate::generated::models::account_model::AccountModel;
@@ -24,7 +25,6 @@ use diesel::result::Error as DieselError;
 use diesel_async::RunQueryDsl;
 use serde_json::json;
 use serde_json::Value;
-use std::env;
 use ulid::Ulid;
 
 pub fn get_defaults() -> (
@@ -38,26 +38,16 @@ pub fn get_defaults() -> (
     String,
     String,
 ) {
-    let default_organization_id = env::var("DEFAULT_ORGANIZATION_ID")
-        .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string());
-    let default_organization_name =
-        env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "global-organization".to_string());
-    let default_organization_admin_email = env::var("DEFAULT_ORGANIZATION_ADMIN_EMAIL")
-        .unwrap_or_else(|_| "admin@dnamicro.com".to_string());
-    let default_organization_admin_password = env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD")
-        .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
-    let default_device_id =
-        env::var("DEFAULT_DEVICE_ID").unwrap_or_else(|_| "system_device".to_string());
-    let default_device_secret =
-        env::var("DEFAULT_DEVICE_SECRET").unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
-    let debug = env::var("DEBUG")
-        .unwrap_or_else(|_| "false".to_string())
-        .to_lowercase()
-        == "true";
-    let super_admin_id =
-        env::var("SUPER_ADMIN_ID").unwrap_or_else(|_| "01JCSAG79KQ1WM0F9B47Q700P1".to_string());
-    let system_device_ulid =
-        env::var("SYSTEM_DEVICE_ULID").unwrap_or_else(|_| "01JT1R1B2XMDDB7WY3JC84DV55".to_string());
+    let config = EnvConfig::default();
+    let default_organization_id = config.default_organization_id;
+    let default_organization_name = config.default_organization_name;
+    let default_organization_admin_email = config.default_organization_admin_email;
+    let default_organization_admin_password = config.default_organization_admin_password;
+    let default_device_id = config.default_device_id;
+    let default_device_secret = config.default_device_secret;
+    let debug = config.debug;
+    let super_admin_id = config.super_admin_id;
+    let system_device_ulid = config.system_device_ulid;
 
     (
         default_organization_id,

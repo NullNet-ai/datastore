@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::providers::operations::auth::structs::Claims;
 use crate::providers::operations::message_stream::shared_state::get_shared_state;
 use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
@@ -9,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use socketioxide::extract::{Data, SocketRef};
 use socketioxide::SocketIo;
 use std::collections::HashMap;
-use std::env;
 use std::sync::{Arc, Mutex, OnceLock};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -176,8 +176,8 @@ pub fn broadcast_to_organization(
 }
 
 fn verify_token(token: &str) -> Result<Claims, String> {
-    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "default_secret".to_string());
-    let key = DecodingKey::from_secret(secret.as_bytes());
+    let config = EnvConfig::default();
+    let key = DecodingKey::from_secret(config.jwt_secret.as_bytes());
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = false;
 

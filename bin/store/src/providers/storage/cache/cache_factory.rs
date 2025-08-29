@@ -16,17 +16,6 @@ pub enum CacheType {
     Redis,
 }
 
-impl CacheType {
-    /// Parse a string into a CacheType
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s.to_lowercase().as_str() {
-            "inmemory" | "in-memory" | "memory" => Some(CacheType::InMemory),
-            "redis" => Some(CacheType::Redis),
-            _ => None,
-        }
-    }
-}
-
 /// Factory for creating cache instances
 pub struct CacheFactory;
 

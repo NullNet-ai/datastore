@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::structs::core::CommandArgs;
 use base64::prelude::*;
@@ -9,7 +10,6 @@ use log::{error, info};
 use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::env;
 use tokio_postgres::types::Type;
 use tokio_postgres::{Client, NoTls};
 
@@ -22,8 +22,8 @@ static ASYNC_POOL: Lazy<AsyncDbPool> = Lazy::new(|| establish_async_pool());
 
 pub fn establish_async_pool() -> AsyncDbPool {
     dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(database_url);
+    let config_env = EnvConfig::default();
+    let config = AsyncDieselConnectionManager::<AsyncPgConnection>::new(config_env.database_url);
     PoolAsync::builder(config)
         .max_size(20)
         .build()
@@ -43,11 +43,12 @@ pub async fn get_async_connection() -> AsyncDbPooledConnection {
 
 //raw database connection
 pub async fn create_connection() -> Result<Client, Box<dyn std::error::Error>> {
-    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
-    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+    let config = EnvConfig::default();
+    let user = config.postgres_user;
+    let password = config.postgres_password;
+    let dbname = config.postgres_db;
+    let host = config.postgres_host;
+    let port = config.postgres_port;
 
     let connection_string = format!(
         "host={} port={} user={} password={} dbname={}",
@@ -75,11 +76,12 @@ pub async fn create_connection_with_polling() -> Result<
     ),
     Box<dyn std::error::Error + Send + Sync>,
 > {
-    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "test".to_string());
-    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+    let config = EnvConfig::default();
+    let user = config.postgres_user;
+    let password = config.postgres_password;
+    let dbname = config.postgres_db;
+    let host = config.postgres_host;
+    let port = config.postgres_port;
 
     let connection_string = format!(
         "host={} port={} user={} password={} dbname={}",

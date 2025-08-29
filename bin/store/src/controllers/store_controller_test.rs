@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::env;
-
+    use crate::config::core::EnvConfig;
     use reqwest;
     use serde_json::json;
     use tokio;
@@ -33,9 +32,8 @@ mod tests {
         );
 
         let client = reqwest::Client::new();
-        let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-        let port = env::var("PORT").unwrap_or_else(|_| "5000".to_string());
-        let base_url = format!("http://{}:{}", host, port);
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
 
         // Check if server is reachable first
         println!("  ✓ Checking server availability at {}", base_url);

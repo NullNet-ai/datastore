@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::constants::paths;
 use log::{info, warn};
 use std::env;
@@ -8,11 +9,12 @@ use std::process::Command;
 #[allow(warnings)]
 pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
     // Get database connection info from environment variables
-    let user = env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string());
-    let password = env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-    let dbname = env::var("POSTGRES_DB").unwrap_or_else(|_| "nullnet".to_string());
-    let host = env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = env::var("POSTGRES_PORT").unwrap_or_else(|_| "5433".to_string());
+    let config = EnvConfig::default();
+    let user = config.postgres_user;
+    let password = config.postgres_password;
+    let dbname = config.postgres_db;
+    let host = config.postgres_host;
+    let port = config.postgres_port;
 
     // Get the project directory
     let current_dir = env::current_dir()?.to_string_lossy().to_string();
@@ -29,8 +31,7 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
         let entered_password = rpassword::read_password()?;
 
         // Define the expected password (you might want to store this in an environment variable)
-        let expected_password =
-            env::var("CLEANUP_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
+        let expected_password = config.cleanup_password;
 
         if entered_password == expected_password {
             info!("Password correct. Running database cleanup script...");

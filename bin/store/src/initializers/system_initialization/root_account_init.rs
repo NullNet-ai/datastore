@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
 use crate::generated::models::account_model::AccountModel;
@@ -11,7 +12,6 @@ use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::{AsyncConnection, RunQueryDsl};
-use std::env;
 
 pub struct RootAccountInitializer;
 
@@ -34,8 +34,7 @@ impl RootAccountInitializer {
         let root_account_id = "01JM3GTWCHR3CM2NP85C0Q2KN1".to_string();
         let personal_organization_id = "01JSN4XA2C3A7RHN3MNZZJGBR3".to_string();
         let account_id = "root".to_string();
-        let account_secret =
-            env::var("ROOT_ACCOUNT_PASSWORD").unwrap_or_else(|_| "pl3@s3ch@ng3m3!!".to_string());
+        let account_secret = EnvConfig::default().root_account_password;
 
         let mut conn = db::get_async_connection().await;
 

@@ -1,25 +1,14 @@
 #[cfg(test)]
 mod tests {
     use super::super::shutdown::{BackgroundServiceShutdown, ShutdownManager, ShutdownService};
-    use crate::providers::storage::cache::cache_factory::CacheType;
-    use crate::structs::core::EnvConfig;
+    use crate::config::core::EnvConfig;
     use std::sync::Arc;
     use tokio::sync::mpsc;
     use tokio::time::{timeout, Duration};
 
     /// Creates a mock EnvConfig for testing purposes
     fn create_test_env_config() -> Arc<EnvConfig> {
-        Arc::new(EnvConfig {
-            host: "localhost".to_string(),
-            port: "8080".to_string(),
-            grpc_port: "50051".to_string(),
-            grpc_url: "http://localhost:50051".to_string(),
-            socket_host: "localhost".to_string(),
-            socket_port: "3000".to_string(),
-            cache_type: CacheType::InMemory,
-            redis_connection: None,
-            ttl: Some(Duration::from_secs(300)),
-        })
+        Arc::new(EnvConfig::default())
     }
     /// Tests BackgroundServiceShutdown creation and basic functionality:
     /// - Service can be created with name and shutdown channel

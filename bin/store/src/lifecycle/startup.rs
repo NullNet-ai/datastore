@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::database::db;
 use crate::initializers::system_initialization::init::initialize;
 use crate::initializers::system_initialization::structs::EInitializer;
@@ -10,10 +11,8 @@ use crate::providers::operations::sync::transactions::transaction_service::Trans
 use crate::providers::storage;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
-use crate::structs::core::EnvConfig;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
-use std::time::Duration;
 use std::time::Instant;
 
 /// Startup configuration validation result
@@ -219,11 +218,19 @@ impl StartupManager {
 
     /// Validate required environment variables
     fn validate_required_variables(&self, validation: &mut StartupValidation) {
-        // Check DATABASE_URL since it's still read directly by database connection
-        if std::env::var("DATABASE_URL").is_err() {
-            validation
-                .errors
-                .push("Missing required environment variable: DATABASE_URL".to_string());
+        // Check DATABASE_URL from centralized config
+        let config = EnvConfig::default();
+        if config.database_url.is_empty()
+            && (config.postgres_user.is_empty()
+                || config.postgres_password.is_empty()
+                || config.postgres_host.is_empty()
+                || config.postgres_port.is_empty()
+                || config.postgres_db.is_empty())
+        {
+            validation.errors.push(
+                "Missing required database configuration: DATABASE_URL or POSTGRES_* variables"
+                    .to_string(),
+            );
             validation.is_valid = false;
         }
 
@@ -314,14 +321,16 @@ impl StartupManager {
     /// Validate database configuration
     fn validate_database_configuration(&self, validation: &mut StartupValidation) {
         // Validate DATABASE_URL format
-        if let Ok(db_url) = std::env::var("DATABASE_URL") {
-            if !db_url.starts_with("postgres://") && !db_url.starts_with("postgresql://") {
+        if !self.config.database_url.is_empty() {
+            if !self.config.database_url.starts_with("postgres://")
+                && !self.config.database_url.starts_with("postgresql://")
+            {
                 validation.errors.push("DATABASE_URL must be a valid PostgreSQL connection string starting with 'postgres://' or 'postgresql://'".to_string());
                 validation.is_valid = false;
             }
 
             // Basic URL validation
-            if !db_url.contains("@") || !db_url.contains("/") {
+            if !self.config.database_url.contains("@") || !self.config.database_url.contains("/") {
                 validation.errors.push(
                     "DATABASE_URL appears to be malformed (missing @ or / characters)".to_string(),
                 );
@@ -330,80 +339,62 @@ impl StartupManager {
         }
 
         // Validate individual PostgreSQL components if provided
-        if let Ok(port_str) = std::env::var("POSTGRES_PORT") {
-            match port_str.parse::<u16>() {
-                Ok(port) => {
-                    if port == 0 {
-                        validation
-                            .errors
-                            .push("POSTGRES_PORT cannot be 0".to_string());
-                        validation.is_valid = false;
-                    }
-                }
-                Err(_) => {
+        match self.config.postgres_port.parse::<u16>() {
+            Ok(port) => {
+                if port == 0 {
                     validation
                         .errors
-                        .push("POSTGRES_PORT must be a valid integer".to_string());
+                        .push("POSTGRES_PORT cannot be 0".to_string());
                     validation.is_valid = false;
                 }
+            }
+            Err(_) => {
+                validation
+                    .errors
+                    .push("POSTGRES_PORT must be a valid integer".to_string());
+                validation.is_valid = false;
             }
         }
     }
 
     /// Validate cache configuration
     fn validate_cache_configuration(&self, validation: &mut StartupValidation) {
-        let cache_type = std::env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
-
-        // Validate cache type
-        match cache_type.as_str() {
-            "inmemory" | "redis" => {}
-            _ => {
-                validation.errors.push(format!(
-                    "Invalid CACHE_TYPE '{}'. Must be 'inmemory' or 'redis'",
-                    cache_type
-                ));
-                validation.is_valid = false;
-            }
-        }
-
         // Validate Redis configuration if using Redis cache
-        if cache_type == "redis" {
-            if std::env::var("REDIS_CONNECTION").is_err() {
-                validation
-                    .errors
-                    .push("REDIS_CONNECTION required when CACHE_TYPE is 'redis'".to_string());
-                validation.is_valid = false;
-            } else if let Ok(redis_url) = std::env::var("REDIS_CONNECTION") {
-                if !redis_url.starts_with("redis://") {
-                    validation.errors.push(
-                        "REDIS_CONNECTION must be a valid Redis URL starting with 'redis://'"
-                            .to_string(),
-                    );
+        match self.config.cache_type {
+            CacheType::Redis => {
+                if self.config.redis_connection.is_none() {
+                    validation
+                        .errors
+                        .push("REDIS_CONNECTION required when CACHE_TYPE is 'redis'".to_string());
                     validation.is_valid = false;
+                } else if let Some(ref redis_url) = self.config.redis_connection {
+                    if !redis_url.starts_with("redis://") {
+                        validation.errors.push(
+                            "REDIS_CONNECTION must be a valid Redis URL starting with 'redis://'"
+                                .to_string(),
+                        );
+                        validation.is_valid = false;
+                    }
                 }
+            }
+            CacheType::InMemory => {
+                // InMemory cache doesn't require additional validation
             }
         }
 
         // Validate cache TTL
-        if let Ok(ttl_str) = std::env::var("CACHE_TTL") {
-            match ttl_str.parse::<u64>() {
-                Ok(ttl) => {
-                    if ttl == 0 {
-                        validation.warnings.push(
-                            "CACHE_TTL is set to 0, cache entries will expire immediately"
-                                .to_string(),
-                        );
-                    }
-                    if ttl > 86400 {
-                        validation.warnings.push("CACHE_TTL is set to more than 24 hours, consider if this is intentional".to_string());
-                    }
-                }
-                Err(_) => {
-                    validation
-                        .errors
-                        .push("CACHE_TTL must be a valid integer (seconds)".to_string());
-                    validation.is_valid = false;
-                }
+        if let Some(ttl) = self.config.ttl {
+            let ttl_secs = ttl.as_secs();
+            if ttl_secs == 0 {
+                validation.warnings.push(
+                    "CACHE_TTL is set to 0, cache entries will expire immediately".to_string(),
+                );
+            }
+            if ttl_secs > 86400 {
+                validation.warnings.push(
+                    "CACHE_TTL is set to more than 24 hours, consider if this is intentional"
+                        .to_string(),
+                );
             }
         }
     }
@@ -411,58 +402,38 @@ impl StartupManager {
     /// Validate storage configuration
     fn validate_storage_configuration(&self, validation: &mut StartupValidation) {
         // Check if storage is disabled
-        if let Ok(disable_storage) = std::env::var("DISABLE_STORAGE") {
-            match disable_storage.to_lowercase().as_str() {
-                "true" | "false" => {}
-                _ => {
-                    validation
-                        .errors
-                        .push("DISABLE_STORAGE must be 'true' or 'false'".to_string());
+        if !self.config.disable_storage {
+            // Storage is enabled, validate storage configuration
+            let storage_vars = [
+                ("STORAGE_ENDPOINT", &self.config.storage_endpoint),
+                ("STORAGE_ACCESS_KEY", &self.config.storage_access_key),
+                ("STORAGE_SECRET_KEY", &self.config.storage_secret_key),
+                ("STORAGE_BUCKET_NAME", &self.config.storage_bucket_name),
+            ];
+
+            for (var_name, var_value) in storage_vars {
+                if var_value.is_empty() {
+                    validation.errors.push(format!("Missing required storage variable: {} (required when DISABLE_STORAGE is not 'true')", var_name));
                     validation.is_valid = false;
                 }
             }
 
-            // If storage is enabled, validate storage configuration
-            if disable_storage.to_lowercase() != "true" {
-                let required_storage_vars = vec![
-                    "STORAGE_ENDPOINT",
-                    "STORAGE_ACCESS_KEY",
-                    "STORAGE_SECRET_KEY",
-                    "STORAGE_BUCKET_NAME",
-                ];
-
-                for var in required_storage_vars {
-                    if std::env::var(var).is_err() {
-                        validation.errors.push(format!("Missing required storage variable: {} (required when DISABLE_STORAGE is not 'true')", var));
-                        validation.is_valid = false;
-                    }
+            // Validate storage endpoint URL
+            if !self.config.storage_endpoint.is_empty() {
+                if !self.config.storage_endpoint.starts_with("http://")
+                    && !self.config.storage_endpoint.starts_with("https://")
+                {
+                    validation.errors.push("STORAGE_ENDPOINT must be a valid URL starting with 'http://' or 'https://'".to_string());
+                    validation.is_valid = false;
                 }
+            }
 
-                // Validate storage endpoint URL
-                if let Ok(endpoint) = std::env::var("STORAGE_ENDPOINT") {
-                    if !endpoint.starts_with("http://") && !endpoint.starts_with("https://") {
-                        validation.errors.push("STORAGE_ENDPOINT must be a valid URL starting with 'http://' or 'https://'".to_string());
-                        validation.is_valid = false;
-                    }
-                }
-
-                // Validate SSL verification setting
-                if let Ok(disable_ssl) = std::env::var("STORAGE_DISABLE_SSL_VERIFICATION") {
-                    match disable_ssl.to_lowercase().as_str() {
-                        "true" | "false" => {}
-                        _ => {
-                            validation.errors.push(
-                                "STORAGE_DISABLE_SSL_VERIFICATION must be 'true' or 'false'"
-                                    .to_string(),
-                            );
-                            validation.is_valid = false;
-                        }
-                    }
-
-                    if disable_ssl.to_lowercase() == "true" {
-                        validation.warnings.push("SSL verification is disabled for storage, this may be insecure in production".to_string());
-                    }
-                }
+            // Validate SSL verification setting
+            if self.config.storage_disable_ssl_verification {
+                validation.warnings.push(
+                    "SSL verification is disabled for storage, this may be insecure in production"
+                        .to_string(),
+                );
             }
         }
     }
@@ -470,8 +441,8 @@ impl StartupManager {
     /// Validate security configuration
     fn validate_security_configuration(&self, validation: &mut StartupValidation) {
         // Validate JWT secret
-        if let Ok(jwt_secret) = std::env::var("JWT_SECRET") {
-            if jwt_secret.len() < 32 {
+        if !self.config.jwt_secret.is_empty() {
+            if self.config.jwt_secret.len() < 32 {
                 validation.errors.push(
                     "JWT_SECRET must be at least 32 characters long for security".to_string(),
                 );
@@ -482,7 +453,7 @@ impl StartupManager {
             let weak_secrets = vec!["secret", "password", "123456", "admin", "test"];
             if weak_secrets
                 .iter()
-                .any(|&weak| jwt_secret.to_lowercase().contains(weak))
+                .any(|&weak| self.config.jwt_secret.to_lowercase().contains(weak))
             {
                 validation.warnings.push("JWT_SECRET appears to contain common weak patterns, consider using a stronger secret".to_string());
             }
@@ -494,128 +465,69 @@ impl StartupManager {
         }
 
         // Validate session expiration
-        if let Ok(session_expires) = std::env::var("SESSION_EXPIRES_IN") {
+        if !self.config.session_expires_in.is_empty() {
             // Basic validation for session expiration format (should end with 'd', 'h', 'm', or 's')
-            if !session_expires.ends_with('d')
-                && !session_expires.ends_with('h')
-                && !session_expires.ends_with('m')
-                && !session_expires.ends_with('s')
+            if !self.config.session_expires_in.ends_with('d')
+                && !self.config.session_expires_in.ends_with('h')
+                && !self.config.session_expires_in.ends_with('m')
+                && !self.config.session_expires_in.ends_with('s')
             {
                 validation.warnings.push("SESSION_EXPIRES_IN should end with 'd' (days), 'h' (hours), 'm' (minutes), or 's' (seconds)".to_string());
             }
         }
 
         // Validate default sensitivity level
-        if let Ok(sensitivity_str) = std::env::var("DEFAULT_SENSITIVITY_LEVEL") {
-            match sensitivity_str.parse::<u32>() {
-                Ok(level) => {
-                    if level == 0 {
-                        validation.warnings.push("DEFAULT_SENSITIVITY_LEVEL is set to 0, this may allow unrestricted access".to_string());
-                    }
-                }
-                Err(_) => {
-                    validation
-                        .errors
-                        .push("DEFAULT_SENSITIVITY_LEVEL must be a valid integer".to_string());
-                    validation.is_valid = false;
-                }
-            }
+        if self.config.default_sensitivity_level == 0 {
+            validation.warnings.push(
+                "DEFAULT_SENSITIVITY_LEVEL is set to 0, this may allow unrestricted access"
+                    .to_string(),
+            );
         }
     }
 
     /// Validate sync configuration
     fn validate_sync_configuration(&self, validation: &mut StartupValidation) {
-        // Validate sync enabled flag
-        if let Ok(sync_enabled) = std::env::var("SYNC_ENABLED") {
-            match sync_enabled.to_lowercase().as_str() {
-                "true" | "false" => {}
-                _ => {
-                    validation
-                        .errors
-                        .push("SYNC_ENABLED must be 'true' or 'false'".to_string());
-                    validation.is_valid = false;
-                }
-            }
-        }
-
         // Validate sync timer
-        if let Ok(timer_str) = std::env::var("SYNC_TIMER_MS") {
-            match timer_str.parse::<u64>() {
-                Ok(timer) => {
-                    if timer < 1000 {
-                        validation.warnings.push(
-                            "SYNC_TIMER_MS is less than 1000ms, this may cause high CPU usage"
-                                .to_string(),
-                        );
-                    }
-                    if timer > 3600000 {
-                        validation.warnings.push(
-                            "SYNC_TIMER_MS is greater than 1 hour, sync may be too infrequent"
-                                .to_string(),
-                        );
-                    }
-                }
-                Err(_) => {
-                    validation
-                        .errors
-                        .push("SYNC_TIMER_MS must be a valid integer (milliseconds)".to_string());
-                    validation.is_valid = false;
-                }
-            }
+        let timer = self.config.sync_timer_ms;
+        if timer < 1000 {
+            validation.warnings.push(
+                "SYNC_TIMER_MS is less than 1000ms, this may cause high CPU usage".to_string(),
+            );
+        }
+        if timer > 3600000 {
+            validation.warnings.push(
+                "SYNC_TIMER_MS is greater than 1 hour, sync may be too infrequent".to_string(),
+            );
         }
 
         // Validate batch sync configuration
-        if let Ok(batch_enabled) = std::env::var("BATCH_SYNC_ENABLED") {
-            match batch_enabled.to_lowercase().as_str() {
-                "true" | "false" => {}
-                _ => {
-                    validation
-                        .errors
-                        .push("BATCH_SYNC_ENABLED must be 'true' or 'false'".to_string());
-                    validation.is_valid = false;
+        if self.config.batch_sync_enabled {
+            // Validate batch sync type
+            if !self.config.batch_sync_type.is_empty() {
+                match self.config.batch_sync_type.as_str() {
+                    "round-robin" | "weighted-round-robin" => {}
+                    _ => {
+                        validation.errors.push(
+                            "BATCH_SYNC_TYPE must be 'round-robin' or 'weighted-round-robin'"
+                                .to_string(),
+                        );
+                        validation.is_valid = false;
+                    }
                 }
             }
 
-            if batch_enabled.to_lowercase() == "true" {
-                // Validate batch sync type
-                if let Ok(batch_type) = std::env::var("BATCH_SYNC_TYPE") {
-                    match batch_type.as_str() {
-                        "round-robin" | "weighted-round-robin" => {}
-                        _ => {
-                            validation.errors.push(
-                                "BATCH_SYNC_TYPE must be 'round-robin' or 'weighted-round-robin'"
-                                    .to_string(),
-                            );
-                            validation.is_valid = false;
-                        }
-                    }
-                }
-
-                // Validate batch size
-                if let Ok(size_str) = std::env::var("BATCH_SYNC_SIZE") {
-                    match size_str.parse::<u32>() {
-                        Ok(size) => {
-                            if size == 0 {
-                                validation
-                                    .errors
-                                    .push("BATCH_SYNC_SIZE cannot be 0".to_string());
-                                validation.is_valid = false;
-                            }
-                            if size > 10000 {
-                                validation.warnings.push(
-                                    "BATCH_SYNC_SIZE is very large, this may cause memory issues"
-                                        .to_string(),
-                                );
-                            }
-                        }
-                        Err(_) => {
-                            validation
-                                .errors
-                                .push("BATCH_SYNC_SIZE must be a valid integer".to_string());
-                            validation.is_valid = false;
-                        }
-                    }
-                }
+            // Validate batch size
+            let size = self.config.batch_sync_size;
+            if size == 0 {
+                validation
+                    .errors
+                    .push("BATCH_SYNC_SIZE cannot be 0".to_string());
+                validation.is_valid = false;
+            }
+            if size > 10000 {
+                validation.warnings.push(
+                    "BATCH_SYNC_SIZE is very large, this may cause memory issues".to_string(),
+                );
             }
         }
     }
@@ -623,8 +535,8 @@ impl StartupManager {
     /// Validate organization configuration
     fn validate_organization_configuration(&self, validation: &mut StartupValidation) {
         // Validate default organization ID format (should be ULID)
-        if let Ok(org_id) = std::env::var("DEFAULT_ORGANIZATION_ID") {
-            if org_id.len() != 26 {
+        if !self.config.default_organization_id.is_empty() {
+            if self.config.default_organization_id.len() != 26 {
                 validation.warnings.push(
                     "DEFAULT_ORGANIZATION_ID should be 26 characters long (ULID format)"
                         .to_string(),
@@ -632,21 +544,19 @@ impl StartupManager {
             }
 
             // Basic ULID character validation
-            if !org_id.chars().all(|c| c.is_ascii_alphanumeric()) {
+            if !self
+                .config
+                .default_organization_id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric())
+            {
                 validation.warnings.push("DEFAULT_ORGANIZATION_ID should only contain alphanumeric characters (ULID format)".to_string());
             }
         }
 
         // Validate organization name
-        if let Ok(org_name) = std::env::var("DEFAULT_ORGANIZATION_NAME") {
-            if org_name.is_empty() {
-                validation
-                    .errors
-                    .push("DEFAULT_ORGANIZATION_NAME cannot be empty".to_string());
-                validation.is_valid = false;
-            }
-
-            if org_name.len() > 100 {
+        if !self.config.default_organization_name.is_empty() {
+            if self.config.default_organization_name.len() > 100 {
                 validation.warnings.push(
                     "DEFAULT_ORGANIZATION_NAME is very long, consider shortening it".to_string(),
                 );
@@ -654,8 +564,8 @@ impl StartupManager {
         }
 
         // Validate organization admin password
-        if let Ok(admin_password) = std::env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD") {
-            if admin_password.len() < 8 {
+        if !self.config.default_organization_admin_password.is_empty() {
+            if self.config.default_organization_admin_password.len() < 8 {
                 validation.errors.push(
                     "DEFAULT_ORGANIZATION_ADMIN_PASSWORD must be at least 8 characters long"
                         .to_string(),
@@ -665,17 +575,19 @@ impl StartupManager {
 
             // Check for common weak passwords
             let weak_passwords = vec!["password", "admin", "123456", "qwerty"];
-            if weak_passwords
-                .iter()
-                .any(|&weak| admin_password.to_lowercase().contains(weak))
-            {
+            if weak_passwords.iter().any(|&weak| {
+                self.config
+                    .default_organization_admin_password
+                    .to_lowercase()
+                    .contains(weak)
+            }) {
                 validation.warnings.push("DEFAULT_ORGANIZATION_ADMIN_PASSWORD appears to be weak, consider using a stronger password".to_string());
             }
         }
 
         // Validate group ID format (should be ULID)
-        if let Ok(group_id) = std::env::var("GROUP_ID") {
-            if group_id.len() != 26 {
+        if !self.config.group_id.is_empty() {
+            if self.config.group_id.len() != 26 {
                 validation
                     .warnings
                     .push("GROUP_ID should be 26 characters long (ULID format)".to_string());
@@ -698,13 +610,9 @@ impl StartupManager {
             .await;
 
         // Initialize cache configuration
-        let cache_type_str = std::env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
-        let cache_type = CacheType::from_str(&cache_type_str).unwrap_or(CacheType::InMemory);
-        let redis_connection = std::env::var("REDIS_CONNECTION").ok();
-        let ttl = std::env::var("CACHE_TTL")
-            .ok()
-            .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
-            .map(Duration::from_secs);
+        let cache_type = self.config.cache_type.clone();
+        let redis_connection = self.config.redis_connection.clone();
+        let ttl = self.config.ttl;
 
         CacheConfig::init(cache_type.clone(), redis_connection, ttl);
 

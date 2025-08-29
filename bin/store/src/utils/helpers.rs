@@ -1,12 +1,12 @@
 use crate::builders::templates::proto_generator::diesel_type_to_proto;
+use crate::config::core::EnvConfig;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
 use crate::database::schema::system_tables::is_system_table;
 use crate::generated::models::counter_model::CounterModel;
 use crate::generated::schema::counters;
 use crate::generated::table_enum::Table as TableEnum;
-use crate::providers::storage::cache::cache_factory::CacheType;
-use crate::structs::core::{CommandArgs, EnvConfig};
+use crate::structs::core::CommandArgs;
 use actix_web::http;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -14,8 +14,6 @@ use diesel_async::RunQueryDsl;
 use log::debug;
 use singularize::singularize;
 use std::env;
-use std::time::Duration;
-
 pub fn to_singular(table_name: &str) -> String {
     let singular = singularize(table_name);
     singular
@@ -289,39 +287,19 @@ pub fn time_string_to_ms(time_str: &str) -> Result<u64, Box<dyn std::error::Erro
 /// Parse command-line arguments
 pub fn parse_command_args() -> CommandArgs {
     let args: Vec<String> = env::args().collect();
+    let config = EnvConfig::default();
 
     CommandArgs {
         cleanup: args.contains(&"--cleanup".to_string()),
         init_db: args.contains(&"--init-db".to_string()),
-        generate_proto: env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string())
-            == "true",
-        generate_grpc: env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true",
-        generate_table_enum: env::var("GENERATE_TABLE_ENUM")
-            .unwrap_or_else(|_| "false".to_string())
-            == "true",
-        create_schema: env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true",
+        generate_proto: config.generate_proto,
+        generate_grpc: config.generate_grpc,
+        generate_table_enum: config.generate_table_enum,
+        create_schema: config.create_schema,
     }
 }
 
 /// Parse environment configuration
 pub fn parse_env_config() -> EnvConfig {
-    let cache_type_str = env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
-    let cache_type = CacheType::from_str(&cache_type_str).unwrap_or(CacheType::InMemory);
-    let redis_connection = env::var("REDIS_CONNECTION").ok();
-    let ttl = env::var("CACHE_TTL")
-        .ok()
-        .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
-        .map(Duration::from_secs);
-
-    EnvConfig {
-        host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-        port: env::var("PORT").unwrap_or_else(|_| "5000".to_string()),
-        grpc_port: env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string()),
-        grpc_url: env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string()),
-        socket_host: env::var("SOCKET_HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-        socket_port: env::var("SOCKET_PORT").unwrap_or_else(|_| "3001".to_string()),
-        cache_type,
-        redis_connection,
-        ttl,
-    }
+    EnvConfig::default()
 }
