@@ -236,12 +236,12 @@ impl LifecycleManager {
         let state_manager = self.state_manager.clone();
         let health_service = self.health_service.clone();
         let logger = self.logger.clone();
-        
+
         let post_startup_callback = move || {
             let state_manager = state_manager.clone();
             let health_service = health_service.clone();
             let logger = logger.clone();
-            
+
             async move {
                 // Call lifecycle manager functions after server startup
                 let current_phase = state_manager.get_phase().await;
@@ -258,10 +258,13 @@ impl LifecycleManager {
                         LogLevel::Info,
                         LogCategory::Monitoring,
                         "LifecycleManager",
-                        &format!("Post-startup status - Phase: {:?}, Healthy: {}", current_phase, is_healthy),
+                        &format!(
+                            "Post-startup status - Phase: {:?}, Healthy: {}",
+                            current_phase, is_healthy
+                        ),
                     )
                     .await;
-                
+
                 logger
                     .log(
                         LogLevel::Info,
@@ -272,13 +275,14 @@ impl LifecycleManager {
                     .await;
             }
         };
-        
+
         // Configure the runtime manager with the logger, health service, shutdown manager, and post-startup callback
-        let configured_runtime_manager = std::mem::replace(&mut self.runtime_manager, RuntimeManager::new())
-            .with_logger(self.logger.clone())
-            .with_health_service(self.health_service.clone())
-            .with_shutdown_manager(&mut self.shutdown_manager)
-            .with_post_startup_callback(post_startup_callback);
+        let configured_runtime_manager =
+            std::mem::replace(&mut self.runtime_manager, RuntimeManager::new())
+                .with_logger(self.logger.clone())
+                .with_health_service(self.health_service.clone())
+                .with_shutdown_manager(&mut self.shutdown_manager)
+                .with_post_startup_callback(post_startup_callback);
         self.runtime_manager = configured_runtime_manager;
 
         // Update RuntimeManager status to running

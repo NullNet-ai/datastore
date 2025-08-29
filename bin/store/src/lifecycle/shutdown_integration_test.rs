@@ -29,10 +29,8 @@ mod tests {
 
         // Create BackgroundServiceShutdown instance
         println!("  ✓ Creating BackgroundServiceShutdown instance");
-        let mut service = BackgroundServiceShutdown::new(
-            "test-background-service".to_string(),
-            shutdown_tx,
-        );
+        let mut service =
+            BackgroundServiceShutdown::new("test-background-service".to_string(), shutdown_tx);
 
         // Test service name
         println!("  ✓ Verifying service name");
@@ -46,8 +44,14 @@ mod tests {
         // Verify shutdown signal was received
         println!("  ✓ Verifying shutdown signal reception");
         let signal_received = timeout(Duration::from_millis(100), shutdown_rx.recv()).await;
-        assert!(signal_received.is_ok(), "Should receive shutdown signal within timeout");
-        assert!(signal_received.unwrap().is_some(), "Should receive actual signal");
+        assert!(
+            signal_received.is_ok(),
+            "Should receive shutdown signal within timeout"
+        );
+        assert!(
+            signal_received.unwrap().is_some(),
+            "Should receive actual signal"
+        );
 
         println!("BackgroundServiceShutdown creation tests completed successfully!");
     }
@@ -80,18 +84,10 @@ mod tests {
         let (socket_tx, mut socket_rx) = mpsc::channel::<()>(1);
         let (sync_tx, mut sync_rx) = mpsc::channel::<()>(1);
 
-        let grpc_service = BackgroundServiceShutdown::new(
-            "grpc-server".to_string(),
-            grpc_tx,
-        );
-        let socket_service = BackgroundServiceShutdown::new(
-            "socket-io-server".to_string(),
-            socket_tx,
-        );
-        let sync_service = BackgroundServiceShutdown::new(
-            "background-sync".to_string(),
-            sync_tx,
-        );
+        let grpc_service = BackgroundServiceShutdown::new("grpc-server".to_string(), grpc_tx);
+        let socket_service =
+            BackgroundServiceShutdown::new("socket-io-server".to_string(), socket_tx);
+        let sync_service = BackgroundServiceShutdown::new("background-sync".to_string(), sync_tx);
 
         // Register services with shutdown manager
         println!("  ✓ Registering services with ShutdownManager");
@@ -106,18 +102,24 @@ mod tests {
 
         // Verify all services received shutdown signals
         println!("  ✓ Verifying all services received shutdown signals");
-        
+
         let grpc_signal = timeout(Duration::from_millis(100), grpc_rx.recv()).await;
-        assert!(grpc_signal.is_ok() && grpc_signal.unwrap().is_some(), 
-                "gRPC service should receive shutdown signal");
+        assert!(
+            grpc_signal.is_ok() && grpc_signal.unwrap().is_some(),
+            "gRPC service should receive shutdown signal"
+        );
 
         let socket_signal = timeout(Duration::from_millis(100), socket_rx.recv()).await;
-        assert!(socket_signal.is_ok() && socket_signal.unwrap().is_some(), 
-                "Socket.IO service should receive shutdown signal");
+        assert!(
+            socket_signal.is_ok() && socket_signal.unwrap().is_some(),
+            "Socket.IO service should receive shutdown signal"
+        );
 
         let sync_signal = timeout(Duration::from_millis(100), sync_rx.recv()).await;
-        assert!(sync_signal.is_ok() && sync_signal.unwrap().is_some(), 
-                "Background sync service should receive shutdown signal");
+        assert!(
+            sync_signal.is_ok() && sync_signal.unwrap().is_some(),
+            "Background sync service should receive shutdown signal"
+        );
 
         println!("ShutdownManager coordination tests completed successfully!");
     }
@@ -152,37 +154,42 @@ mod tests {
         println!("  ✓ Testing shutdown with closed channel");
         let (closed_tx, closed_rx) = mpsc::channel::<()>(1);
         drop(closed_rx); // Close the receiver
-        
-        let mut closed_service = BackgroundServiceShutdown::new(
-            "closed-service".to_string(),
-            closed_tx,
-        );
-        
+
+        let mut closed_service =
+            BackgroundServiceShutdown::new("closed-service".to_string(), closed_tx);
+
         let closed_shutdown_result = closed_service.shutdown().await;
         // Should still succeed even if channel is closed
-        assert!(closed_shutdown_result.is_ok(), "Shutdown should handle closed channels gracefully");
+        assert!(
+            closed_shutdown_result.is_ok(),
+            "Shutdown should handle closed channels gracefully"
+        );
 
         // Test multiple shutdown calls on same service
         println!("  ✓ Testing multiple shutdown calls on same service");
         let (multi_tx, mut multi_rx) = mpsc::channel::<()>(1);
-        let mut multi_service = BackgroundServiceShutdown::new(
-            "multi-shutdown-service".to_string(),
-            multi_tx,
-        );
-        
+        let mut multi_service =
+            BackgroundServiceShutdown::new("multi-shutdown-service".to_string(), multi_tx);
+
         // First shutdown call
         let first_shutdown = multi_service.shutdown().await;
         assert!(first_shutdown.is_ok(), "First shutdown should succeed");
-        
+
         // Second shutdown call (should handle gracefully)
         let second_shutdown = multi_service.shutdown().await;
-        assert!(second_shutdown.is_ok(), "Second shutdown should handle gracefully");
-        
+        assert!(
+            second_shutdown.is_ok(),
+            "Second shutdown should handle gracefully"
+        );
+
         // Verify only one signal was sent (first shutdown call should send signal)
         let signal_received = timeout(Duration::from_millis(100), multi_rx.recv()).await;
-        assert!(signal_received.is_ok(), "Should receive shutdown signal from first call");
+        assert!(
+            signal_received.is_ok(),
+            "Should receive shutdown signal from first call"
+        );
         println!("  ✓ Received first shutdown signal");
-        
+
         // Verify no additional signals are sent (second call should be no-op since tx was taken)
         // The channel should be closed after the sender is dropped
         let no_more_signals = timeout(Duration::from_millis(50), multi_rx.recv()).await;
@@ -217,39 +224,41 @@ mod tests {
 
         // This test verifies the integration points without running full services
         println!("  ✓ Verifying integration architecture");
-        
+
         // Test that RuntimeManager can hold ShutdownManager reference
         use crate::lifecycle::runtime::RuntimeManager;
         let mut shutdown_manager = ShutdownManager::new();
-        
+
         println!("  ✓ Creating RuntimeManager with ShutdownManager reference");
 
-        let _runtime_manager = RuntimeManager::new()
-            .with_shutdown_manager(&mut shutdown_manager);
+        let _runtime_manager = RuntimeManager::new().with_shutdown_manager(&mut shutdown_manager);
 
         // Verify the runtime manager was configured correctly
         // (This is a structural test since we can't easily test the private field)
         println!("  ✓ RuntimeManager configured with ShutdownManager successfully");
-        
+
         // Test service registration pattern
         println!("  ✓ Testing service registration pattern");
         let (test_tx, mut test_rx) = mpsc::channel::<()>(1);
-        let test_service = BackgroundServiceShutdown::new(
-            "integration-test-service".to_string(),
-            test_tx,
-        );
-        
+        let test_service =
+            BackgroundServiceShutdown::new("integration-test-service".to_string(), test_tx);
+
         shutdown_manager.register_service(Box::new(test_service));
-        
+
         // Verify shutdown works through the manager
         println!("  ✓ Testing shutdown through manager");
         let shutdown_result = shutdown_manager.execute().await;
-        assert!(shutdown_result.is_ok(), "Integrated shutdown should succeed");
-        
+        assert!(
+            shutdown_result.is_ok(),
+            "Integrated shutdown should succeed"
+        );
+
         // Verify service received signal
         let integration_signal = timeout(Duration::from_millis(100), test_rx.recv()).await;
-        assert!(integration_signal.is_ok() && integration_signal.unwrap().is_some(), 
-                "Integration test service should receive shutdown signal");
+        assert!(
+            integration_signal.is_ok() && integration_signal.unwrap().is_some(),
+            "Integration test service should receive shutdown signal"
+        );
 
         println!("RuntimeManager and ShutdownManager integration tests completed successfully!");
     }

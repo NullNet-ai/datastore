@@ -34,7 +34,13 @@ pub struct RuntimeManager {
     health_check_interval: Duration,
     logger: Option<Arc<crate::lifecycle::logging::LifecycleLogger>>,
     health_service: Option<Arc<crate::lifecycle::health_service::HealthService>>,
-    post_startup_callback: Option<Box<dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> + Send + Sync>>,
+    post_startup_callback: Option<
+        Box<
+            dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+                + Send
+                + Sync,
+        >,
+    >,
     shutdown_manager: Option<*mut crate::lifecycle::shutdown::ShutdownManager>,
 }
 
@@ -78,10 +84,7 @@ impl RuntimeManager {
     }
 
     /// Set post-startup callback for lifecycle hooks
-    pub fn with_post_startup_callback<F, Fut>(
-        mut self,
-        callback: F,
-    ) -> Self 
+    pub fn with_post_startup_callback<F, Fut>(mut self, callback: F) -> Self
     where
         F: Fn() -> Fut + Send + Sync + 'static,
         Fut: std::future::Future<Output = ()> + Send + 'static,
@@ -91,7 +94,10 @@ impl RuntimeManager {
     }
 
     /// Set the shutdown manager for service registration
-    pub fn with_shutdown_manager(mut self, shutdown_manager: &mut crate::lifecycle::shutdown::ShutdownManager) -> Self {
+    pub fn with_shutdown_manager(
+        mut self,
+        shutdown_manager: &mut crate::lifecycle::shutdown::ShutdownManager,
+    ) -> Self {
         self.shutdown_manager = Some(shutdown_manager as *mut _);
         self
     }
@@ -331,7 +337,8 @@ impl RuntimeManager {
 
         // Create shutdown channels for each service
         let (grpc_shutdown_tx, mut grpc_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
-        let (batch_sync_shutdown_tx, mut batch_sync_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
+        let (batch_sync_shutdown_tx, mut batch_sync_shutdown_rx) =
+            tokio::sync::mpsc::channel::<()>(1);
         let (socket_shutdown_tx, mut socket_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
         let (bg_sync_shutdown_tx, mut bg_sync_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
 
@@ -340,48 +347,49 @@ impl RuntimeManager {
         if let Some(shutdown_manager_ptr) = self.shutdown_manager {
             info!("[RUNTIME] Shutdown manager found, registering background services");
             use crate::lifecycle::shutdown::BackgroundServiceShutdown;
-            
+
             unsafe {
                 let shutdown_manager = &mut *shutdown_manager_ptr;
-                
+
                 // Register gRPC service
-                 let grpc_service = BackgroundServiceShutdown::new(
-                     "grpc-server".to_string(),
-                     grpc_shutdown_tx,
-                 );
-                 shutdown_manager.register_service(Box::new(grpc_service));
-                 
-                 // Register batch sync service
-                 let batch_sync_service = BackgroundServiceShutdown::new(
-                     "batch-sync-service".to_string(),
-                     batch_sync_shutdown_tx,
-                 );
-                 shutdown_manager.register_service(Box::new(batch_sync_service));
-                 
-                 // Register Socket.IO service
-                 let socket_service = BackgroundServiceShutdown::new(
-                     "socket-io-server".to_string(),
-                     socket_shutdown_tx,
-                 );
-                 shutdown_manager.register_service(Box::new(socket_service));
-                 
-                 // Register background sync service
-                 let bg_sync_service = BackgroundServiceShutdown::new(
-                     "background-sync".to_string(),
-                     bg_sync_shutdown_tx,
-                 );
-                 shutdown_manager.register_service(Box::new(bg_sync_service));
-                
-                info!("[RUNTIME] Registered {} background services with shutdown manager", 4);
-             }
-         } else {
-             info!("[RUNTIME] No shutdown manager available, skipping service registration");
-         }
+                let grpc_service =
+                    BackgroundServiceShutdown::new("grpc-server".to_string(), grpc_shutdown_tx);
+                shutdown_manager.register_service(Box::new(grpc_service));
+
+                // Register batch sync service
+                let batch_sync_service = BackgroundServiceShutdown::new(
+                    "batch-sync-service".to_string(),
+                    batch_sync_shutdown_tx,
+                );
+                shutdown_manager.register_service(Box::new(batch_sync_service));
+
+                // Register Socket.IO service
+                let socket_service = BackgroundServiceShutdown::new(
+                    "socket-io-server".to_string(),
+                    socket_shutdown_tx,
+                );
+                shutdown_manager.register_service(Box::new(socket_service));
+
+                // Register background sync service
+                let bg_sync_service = BackgroundServiceShutdown::new(
+                    "background-sync".to_string(),
+                    bg_sync_shutdown_tx,
+                );
+                shutdown_manager.register_service(Box::new(bg_sync_service));
+
+                info!(
+                    "[RUNTIME] Registered {} background services with shutdown manager",
+                    4
+                );
+            }
+        } else {
+            info!("[RUNTIME] No shutdown manager available, skipping service registration");
+        }
 
         // Start gRPC server
         tokio::spawn(async move {
             use crate::generated::grpc_controller::GrpcController;
-            
+
             tokio::select! {
                 result = GrpcController::init(&grpc_addr) => {
                     match result {
@@ -398,7 +406,7 @@ impl RuntimeManager {
         // Start background batch sync service
         tokio::spawn(async move {
             use crate::providers::operations::batch_sync::background_sync::BackgroundSyncService;
-            
+
             tokio::select! {
                 _ = async {
                     match BackgroundSyncService::new().await {
@@ -602,7 +610,7 @@ impl RuntimeManager {
     /// Call post-startup hooks using the provided callback
     async fn call_post_startup_hooks(&self) {
         info!("[RUNTIME] ===== ENTERING call_post_startup_hooks =====");
-        
+
         // Log server startup completion
         if let Some(logger) = &self.logger {
             info!("[RUNTIME] Using lifecycle logger for post-startup hooks");
@@ -662,7 +670,7 @@ impl RuntimeManager {
                 info!("[RUNTIME] No post-startup callback configured, skipping hooks (no logger)");
             }
         }
-        
+
         info!("[RUNTIME] ===== EXITING call_post_startup_hooks =====");
     }
 
