@@ -143,8 +143,15 @@ impl LifecycleLogger {
         message: &str,
         correlation_id: String,
     ) {
-        self.log_with_metadata(level, category, component, message, HashMap::new(), Some(correlation_id))
-            .await;
+        self.log_with_metadata(
+            level,
+            category,
+            component,
+            message,
+            HashMap::new(),
+            Some(correlation_id),
+        )
+        .await;
     }
 
     /// Log a lifecycle event without correlation ID (for cases where correlation tracking is not needed)

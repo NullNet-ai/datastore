@@ -60,7 +60,10 @@ impl HealthService {
                     LogLevel::Info,
                     LogCategory::Health,
                     "HealthService",
-                    &format!("Health status updated to: {}", if is_healthy { "healthy" } else { "unhealthy" }),
+                    &format!(
+                        "Health status updated to: {}",
+                        if is_healthy { "healthy" } else { "unhealthy" }
+                    ),
                 )
                 .await;
         }
@@ -74,7 +77,10 @@ impl HealthService {
                     LogLevel::Debug,
                     LogCategory::Health,
                     "HealthService",
-                    &format!("Health report updated with {} components", report.components.len()),
+                    &format!(
+                        "Health report updated with {} components",
+                        report.components.len()
+                    ),
                 )
                 .await;
         }
