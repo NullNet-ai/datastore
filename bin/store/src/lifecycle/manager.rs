@@ -20,14 +20,14 @@ pub struct LifecycleManager {
 impl LifecycleManager {
     /// Create a new lifecycle manager
     pub fn new() -> Self {
-        let state_manager = Arc::new(StateManager::new());
         let logger = Arc::new(LifecycleLogger::default());
-        let health_service = Arc::new(HealthService::new());
+        let state_manager = Arc::new(StateManager::with_logger(logger.clone()));
+        let health_service = Arc::new(HealthService::with_logger(logger.clone()));
         Self {
             state_manager: state_manager.clone(),
             logger: logger.clone(),
             startup_manager: StartupManager::new(state_manager.clone(), logger.clone()),
-            runtime_manager: RuntimeManager::new(),
+            runtime_manager: RuntimeManager::new().with_logger(logger.clone()),
             shutdown_manager: ShutdownManager::new().with_logger(logger.clone()),
             health_service,
         }
@@ -35,9 +35,9 @@ impl LifecycleManager {
 
     /// Create a lifecycle manager with custom configuration
     pub fn with_config(log_config: LogConfig) -> Self {
-        let state_manager = Arc::new(StateManager::new());
         let logger = Arc::new(LifecycleLogger::new(log_config));
-        let health_service = Arc::new(HealthService::new());
+        let state_manager = Arc::new(StateManager::with_logger(logger.clone()));
+        let health_service = Arc::new(HealthService::with_logger(logger.clone()));
         Self {
             state_manager: state_manager.clone(),
             logger: logger.clone(),

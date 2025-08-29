@@ -1,3 +1,4 @@
+use crate::lifecycle::logging::{LifecycleLogger, LogCategory, LogLevel};
 use crate::lifecycle::state::{ComponentInfo, HealthMetrics, LifecyclePhase};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -15,6 +16,7 @@ pub struct HealthService {
     phase: Arc<RwLock<LifecyclePhase>>,
     is_healthy: Arc<RwLock<bool>>,
     health_report: Arc<RwLock<Option<HealthReport>>>,
+    logger: Option<Arc<LifecycleLogger>>,
 }
 
 impl HealthService {
@@ -23,18 +25,59 @@ impl HealthService {
             phase: Arc::new(RwLock::new(LifecyclePhase::Initializing)),
             is_healthy: Arc::new(RwLock::new(false)),
             health_report: Arc::new(RwLock::new(None)),
+            logger: None,
+        }
+    }
+
+    /// Create a new health service with logger
+    pub fn with_logger(logger: Arc<LifecycleLogger>) -> Self {
+        Self {
+            phase: Arc::new(RwLock::new(LifecyclePhase::Initializing)),
+            is_healthy: Arc::new(RwLock::new(false)),
+            health_report: Arc::new(RwLock::new(None)),
+            logger: Some(logger),
         }
     }
 
     pub async fn update_phase(&self, phase: LifecyclePhase) {
+        if let Some(logger) = &self.logger {
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Health,
+                    "HealthService",
+                    &format!("Updating lifecycle phase to: {:?}", phase),
+                )
+                .await;
+        }
         *self.phase.write().await = phase;
     }
 
     pub async fn update_health_status(&self, is_healthy: bool) {
+        if let Some(logger) = &self.logger {
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Health,
+                    "HealthService",
+                    &format!("Health status updated to: {}", if is_healthy { "healthy" } else { "unhealthy" }),
+                )
+                .await;
+        }
         *self.is_healthy.write().await = is_healthy;
     }
 
     pub async fn update_health_report(&self, report: HealthReport) {
+        if let Some(logger) = &self.logger {
+            logger
+                .log(
+                    LogLevel::Debug,
+                    LogCategory::Health,
+                    "HealthService",
+                    &format!("Health report updated with {} components", report.components.len()),
+                )
+                .await;
+        }
         *self.health_report.write().await = Some(report);
     }
 

@@ -1,3 +1,4 @@
+use crate::lifecycle::logging::{LifecycleLogger, LogCategory, LogLevel};
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -83,6 +84,7 @@ pub struct StateManager {
     max_history_size: usize,
     monitoring_enabled: Arc<RwLock<bool>>,
     metrics_collection_interval: Duration,
+    logger: Option<Arc<LifecycleLogger>>,
 }
 
 impl StateManager {
@@ -110,6 +112,33 @@ impl StateManager {
             max_history_size: 1000,
             monitoring_enabled: Arc::new(RwLock::new(true)),
             metrics_collection_interval: Duration::from_secs(30),
+            logger: None,
+        }
+    }
+
+    /// Create a state manager with logger
+    pub fn with_logger(logger: Arc<LifecycleLogger>) -> Self {
+        let health_metrics = HealthMetrics {
+            overall_status: ComponentStatus::NotStarted,
+            uptime: Duration::from_secs(0),
+            memory_usage_mb: None,
+            cpu_usage_percent: None,
+            active_connections: 0,
+            processed_requests: 0,
+            error_rate: 0.0,
+            last_updated: SystemTime::now(),
+        };
+
+        Self {
+            phase: Arc::new(RwLock::new(LifecyclePhase::Initializing)),
+            components: Arc::new(RwLock::new(HashMap::new())),
+            health_metrics: Arc::new(RwLock::new(health_metrics)),
+            start_time: Instant::now(),
+            event_history: Arc::new(RwLock::new(Vec::new())),
+            max_history_size: 1000,
+            monitoring_enabled: Arc::new(RwLock::new(false)),
+            metrics_collection_interval: Duration::from_secs(60),
+            logger: Some(logger),
         }
     }
 
@@ -122,10 +151,23 @@ impl StateManager {
             old
         };
 
-        info!(
-            "[STATE] Lifecycle phase changed: {:?} -> {:?}",
-            old_phase, phase
-        );
+        // Log phase transition with structured logging
+        if let Some(logger) = &self.logger {
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::State,
+                    "StateManager",
+                    &format!("Phase transition: {:?} -> {:?}", old_phase, phase),
+                )
+                .await;
+        } else {
+            // Fallback to standard logging
+            info!(
+                "[STATE] Lifecycle phase changed: {:?} -> {:?}",
+                old_phase, phase
+            );
+        }
 
         // Update overall health status based on phase
         let overall_status = match &phase {
@@ -204,16 +246,41 @@ impl StateManager {
                     message: None,
                 })
             } else {
-                warn!("[STATE] Attempted to update unknown component: {}", name);
+                if let Some(logger) = &self.logger {
+                    logger
+                        .log(
+                            LogLevel::Warn,
+                            LogCategory::State,
+                            "StateManager",
+                            &format!("Attempted to update unknown component: {}", name),
+                        )
+                        .await;
+                } else {
+                    warn!("[STATE] Attempted to update unknown component: {}", name);
+                }
                 None
             }
         };
 
         if let Some(event) = event {
-            info!(
-                "[STATE] Component status changed: {} -> {:?}",
-                name, event.new_status
-            );
+            if let Some(logger) = &self.logger {
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::State,
+                        "StateManager",
+                        &format!(
+                            "Component status changed: {} -> {:?}",
+                            name, event.new_status
+                        ),
+                    )
+                    .await;
+            } else {
+                info!(
+                    "[STATE] Component status changed: {} -> {:?}",
+                    name, event.new_status
+                );
+            }
             self.add_event(event).await;
         }
     }
@@ -245,9 +312,31 @@ impl StateManager {
 
             if !success {
                 component.error_count += 1;
-                warn!("[STATE] Health check failed for component: {}", name);
+                if let Some(logger) = &self.logger {
+                    logger
+                        .log(
+                            LogLevel::Warn,
+                            LogCategory::Health,
+                            "StateManager",
+                            &format!("Health check failed for component: {}", name),
+                        )
+                        .await;
+                } else {
+                    warn!("[STATE] Health check failed for component: {}", name);
+                }
             } else {
-                debug!("[STATE] Health check passed for component: {}", name);
+                if let Some(logger) = &self.logger {
+                    logger
+                        .log(
+                            LogLevel::Debug,
+                            LogCategory::Health,
+                            "StateManager",
+                            &format!("Health check passed for component: {}", name),
+                        )
+                        .await;
+                } else {
+                    debug!("[STATE] Health check passed for component: {}", name);
+                }
             }
         }
     }
@@ -407,6 +496,7 @@ impl StateManager {
         let health_metrics = self.health_metrics.clone();
         let components = self.components.clone();
         let interval_duration = self.metrics_collection_interval;
+        let logger = self.logger.clone();
 
         *monitoring_enabled.write().await = true;
 
@@ -418,7 +508,18 @@ impl StateManager {
 
                 // Check if monitoring is still enabled
                 if !*monitoring_enabled.read().await {
-                    debug!("[STATE] Monitoring disabled, stopping background task");
+                    if let Some(logger) = &logger {
+                        logger
+                            .log(
+                                LogLevel::Debug,
+                                LogCategory::Monitoring,
+                                "StateManager",
+                                "Monitoring disabled, stopping background task",
+                            )
+                            .await;
+                    } else {
+                        debug!("[STATE] Monitoring disabled, stopping background task");
+                    }
                     break;
                 }
 
@@ -428,20 +529,56 @@ impl StateManager {
                 // Update component health checks
                 Self::update_component_health_checks(&components).await;
 
-                debug!("[STATE] Metrics collection completed");
+                if let Some(logger) = &logger {
+                    logger
+                        .log(
+                            LogLevel::Debug,
+                            LogCategory::Monitoring,
+                            "StateManager",
+                            "Metrics collection completed",
+                        )
+                        .await;
+                } else {
+                    debug!("[STATE] Metrics collection completed");
+                }
             }
         });
 
-        info!(
-            "[STATE] Background monitoring started with interval: {:?}",
-            interval_duration
-        );
+        if let Some(logger) = &self.logger {
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Monitoring,
+                    "StateManager",
+                    &format!(
+                        "Background monitoring started with interval: {:?}",
+                        interval_duration
+                    ),
+                )
+                .await;
+        } else {
+            info!(
+                "[STATE] Background monitoring started with interval: {:?}",
+                interval_duration
+            );
+        }
     }
 
     /// Stop background monitoring
     pub async fn stop_monitoring(&self) {
         *self.monitoring_enabled.write().await = false;
-        info!("[STATE] Background monitoring stopped");
+        if let Some(logger) = &self.logger {
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Monitoring,
+                    "StateManager",
+                    "Background monitoring stopped",
+                )
+                .await;
+        } else {
+            info!("[STATE] Background monitoring stopped");
+        }
     }
 
     /// Collect system metrics (CPU, memory, etc.)
