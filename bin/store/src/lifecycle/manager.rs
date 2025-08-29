@@ -302,6 +302,9 @@ impl LifecycleManager {
             .update_component_status("RuntimeManager", ComponentStatus::Running)
             .await;
 
+        // Update health service with the new RuntimeManager status
+        self.update_health_service().await;
+
         // Execute runtime with required parameters
         // This will run until a shutdown signal is received
         match self

@@ -39,7 +39,15 @@ pub fn configure_health_routes(cfg: &mut ServiceConfig) {
                 "/health/phase",
                 web::get().to(HealthController::get_current_phase),
             )
-            // Monitoring endpoints
+            // Monitoring endpoints - specific routes must come before parameterized routes
+            .route(
+                "/health/components/counts",
+                web::get().to(HealthController::get_component_counts),
+            )
+            .route(
+                "/health/components/statistics",
+                web::get().to(HealthController::get_component_statistics),
+            )
             .route(
                 "/health/components/{component_name}/metadata",
                 web::put().to(HealthController::update_component_metadata),
@@ -61,20 +69,12 @@ pub fn configure_health_routes(cfg: &mut ServiceConfig) {
                 web::get().to(HealthController::get_recent_events),
             )
             .route(
-                "/health/components/counts",
-                web::get().to(HealthController::get_component_counts),
-            )
-            .route(
                 "/health/monitoring/status",
                 web::get().to(HealthController::get_monitoring_status),
             )
             .route(
                 "/health/monitoring/interval",
                 web::put().to(HealthController::set_metrics_interval),
-            )
-            .route(
-                "/health/components/statistics",
-                web::get().to(HealthController::get_component_statistics),
             ),
     );
 }

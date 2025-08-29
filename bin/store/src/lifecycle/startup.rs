@@ -54,6 +54,11 @@ impl StartupManager {
     pub async fn execute(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.start_time = Some(Instant::now());
 
+        // Update StartupManager status to starting
+        self.state_manager
+            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Starting)
+            .await;
+
         self.logger
             .log(
                 LogLevel::Info,
@@ -122,6 +127,12 @@ impl StartupManager {
         self.setup_messaging_services().await?;
 
         let elapsed = self.start_time.unwrap().elapsed();
+        
+        // Update StartupManager status to running after successful completion
+        self.state_manager
+            .update_component_status("StartupManager", crate::lifecycle::state::ComponentStatus::Running)
+            .await;
+
         self.logger
             .log(
                 LogLevel::Info,

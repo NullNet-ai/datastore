@@ -72,20 +72,20 @@ pub struct LivenessResponse {
 }
 
 /// Component metadata update request
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ComponentMetadataRequest {
     pub key: String,
     pub value: String,
 }
 
 /// Health check record request
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct HealthCheckRequest {
     pub success: bool,
 }
 
 /// Monitoring configuration request
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct MonitoringConfigRequest {
     pub interval_seconds: u64,
 }
