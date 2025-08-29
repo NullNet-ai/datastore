@@ -119,7 +119,7 @@ impl LifecycleLogger {
         Ok(())
     }
 
-    /// Log a lifecycle event
+    /// Log a lifecycle event with automatic correlation ID generation
     pub async fn log(
         &self,
         level: LogLevel,
@@ -129,6 +129,55 @@ impl LifecycleLogger {
     ) {
         self.log_with_metadata(level, category, component, message, HashMap::new(), None)
             .await;
+    }
+
+    /// Log a lifecycle event with a specific correlation ID
+    #[allow(dead_code)]
+    pub async fn log_with_correlation(
+        &self,
+        level: LogLevel,
+        category: LogCategory,
+        component: &str,
+        message: &str,
+        correlation_id: String,
+    ) {
+        self.log_with_metadata(level, category, component, message, HashMap::new(), Some(correlation_id))
+            .await;
+    }
+
+    /// Log a lifecycle event without correlation ID (for cases where correlation tracking is not needed)
+    #[allow(dead_code)]
+    pub async fn log_without_correlation(
+        &self,
+        level: LogLevel,
+        category: LogCategory,
+        component: &str,
+        message: &str,
+    ) {
+        let entry = LogEntry {
+            timestamp: SystemTime::now(),
+            level: level.clone(),
+            category: category.clone(),
+            component: component.to_string(),
+            message: message.to_string(),
+            metadata: HashMap::new(),
+            correlation_id: None,
+        };
+
+        // Store entry if structured logging is enabled
+        if self.config.enable_structured {
+            self.store_entry(entry.clone()).await;
+        }
+
+        // Output to console if enabled
+        if self.config.enable_console {
+            self.output_to_console(&entry).await;
+        }
+
+        // Output to file if enabled
+        if self.config.enable_file {
+            self.output_to_file(&entry).await;
+        }
     }
 
     /// Log with metadata
@@ -141,6 +190,12 @@ impl LifecycleLogger {
         metadata: HashMap<String, String>,
         correlation_id: Option<String>,
     ) {
+        // Generate correlation ID if none provided
+        let correlation_id = match correlation_id {
+            Some(id) => Some(id),
+            None => Some(self.generate_correlation_id().await),
+        };
+
         let entry = LogEntry {
             timestamp: SystemTime::now(),
             level: level.clone(),
@@ -386,10 +441,33 @@ macro_rules! lifecycle_log {
     };
 }
 
+/// Macro for logging with a specific correlation ID
+#[macro_export]
+macro_rules! lifecycle_log_with_correlation {
+    ($logger:expr, $level:expr, $category:expr, $component:expr, $correlation_id:expr, $($arg:tt)*) => {
+        $logger.log_with_correlation($level, $category, $component, &format!($($arg)*), $correlation_id).await
+    };
+}
+
+/// Macro for logging without correlation ID
+#[macro_export]
+macro_rules! lifecycle_log_without_correlation {
+    ($logger:expr, $level:expr, $category:expr, $component:expr, $($arg:tt)*) => {
+        $logger.log_without_correlation($level, $category, $component, &format!($($arg)*)).await
+    };
+}
+
 #[macro_export]
 macro_rules! lifecycle_info {
     ($logger:expr, $category:expr, $component:expr, $($arg:tt)*) => {
         lifecycle_log!($logger, crate::lifecycle::logging::LogLevel::Info, $category, $component, $($arg)*)
+    };
+}
+
+#[macro_export]
+macro_rules! lifecycle_info_with_correlation {
+    ($logger:expr, $category:expr, $component:expr, $correlation_id:expr, $($arg:tt)*) => {
+        lifecycle_log_with_correlation!($logger, crate::lifecycle::logging::LogLevel::Info, $category, $component, $correlation_id, $($arg)*)
     };
 }
 
@@ -401,9 +479,23 @@ macro_rules! lifecycle_warn {
 }
 
 #[macro_export]
+macro_rules! lifecycle_warn_with_correlation {
+    ($logger:expr, $category:expr, $component:expr, $correlation_id:expr, $($arg:tt)*) => {
+        lifecycle_log_with_correlation!($logger, crate::lifecycle::logging::LogLevel::Warn, $category, $component, $correlation_id, $($arg)*)
+    };
+}
+
+#[macro_export]
 macro_rules! lifecycle_error {
     ($logger:expr, $category:expr, $component:expr, $($arg:tt)*) => {
         lifecycle_log!($logger, crate::lifecycle::logging::LogLevel::Error, $category, $component, $($arg)*)
+    };
+}
+
+#[macro_export]
+macro_rules! lifecycle_error_with_correlation {
+    ($logger:expr, $category:expr, $component:expr, $correlation_id:expr, $($arg:tt)*) => {
+        lifecycle_log_with_correlation!($logger, crate::lifecycle::logging::LogLevel::Error, $category, $component, $correlation_id, $($arg)*)
     };
 }
 

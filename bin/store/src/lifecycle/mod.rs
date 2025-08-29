@@ -7,3 +7,4 @@ pub mod startup;
 pub mod state;
 
 pub mod runtime_test;
+pub mod logging_test;
