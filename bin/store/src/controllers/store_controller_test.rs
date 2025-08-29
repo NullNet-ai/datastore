@@ -1,11 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use crate::{config::core::EnvConfig, providers::queries::find::SQLConstructor, structs::core::GetByFilter};
+    use crate::{
+        config::core::EnvConfig, providers::queries::find::SQLConstructor,
+        structs::core::GetByFilter,
+    };
     use reqwest;
     use serde_json::json;
-    use tokio;
     use std::fs;
     use std::path::Path;
+    use tokio;
 
     /// Authentication response structure for reusable login functionality
     #[derive(Debug, Clone)]
@@ -22,11 +25,16 @@ mod tests {
         "contacts".to_string()
     }
 
-    fn get_raw_query(payload: &serde_json::Value, table: String, is_root: bool, timezone: Option<String>) -> Result<String, String> {
+    fn get_raw_query(
+        payload: &serde_json::Value,
+        table: String,
+        is_root: bool,
+        timezone: Option<String>,
+    ) -> Result<String, String> {
         // Convert the JSON payload to GetByFilter struct
         let filter: GetByFilter = serde_json::from_value(payload.clone())
             .map_err(|e| format!("Failed to parse payload as GetByFilter: {}", e))?;
-        
+
         let mut sql_constructor = SQLConstructor::new(filter, table, is_root, timezone);
 
         sql_constructor.construct()
@@ -36,18 +44,21 @@ mod tests {
     /// Uses naming convention: invalid_sql_<test_fn_name>.sql
     fn write_sql_to_file(sql_query: &str, test_fn_name: &str) -> Result<(), std::io::Error> {
         let raw_queries_dir = Path::new("raw_queries");
-        
+
         // Create directory if it doesn't exist
         if !raw_queries_dir.exists() {
             fs::create_dir_all(raw_queries_dir)?;
         }
-        
+
         let filename = format!("invalid_sql_{}.sql", test_fn_name);
         let file_path = raw_queries_dir.join(filename);
-        
+
         fs::write(file_path, sql_query)?;
-        println!("    ✓ SQL query written to: raw_queries/invalid_sql_{}.sql", test_fn_name);
-        
+        println!(
+            "    ✓ SQL query written to: raw_queries/invalid_sql_{}.sql",
+            test_fn_name
+        );
+
         Ok(())
     }
 
@@ -55,16 +66,18 @@ mod tests {
     /// Returns the query results as JSON or an error message
     async fn execute_raw_sql_query(sql_query: &str) -> Result<Vec<serde_json::Value>, String> {
         use crate::database::db::{create_connection, DatabaseTypeConverter};
-        
+
         // Create database connection
-        let client = create_connection().await
+        let client = create_connection()
+            .await
             .map_err(|e| format!("Failed to connect to database: {}", e))?;
-        
+
         // Execute the query
-        let rows = client.query(sql_query, &[])
+        let rows = client
+            .query(sql_query, &[])
             .await
             .map_err(|e| format!("Failed to execute query: {}", e))?;
-        
+
         // Convert rows to JSON
         let mut results = Vec::new();
         for row in rows {
@@ -73,7 +86,7 @@ mod tests {
                 Err(e) => return Err(format!("Failed to convert row to JSON: {}", e)),
             }
         }
-        
+
         Ok(results)
     }
 
@@ -85,21 +98,21 @@ mod tests {
         table: String,
         is_root: bool,
         timezone: Option<String>,
-        test_name: &str
+        test_name: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
         // Generate the SQL query from the payload
         let sql_query = match get_raw_query(payload, table, is_root, timezone) {
             Ok(query) => query,
-            Err(e) => return Err(format!("SQL generation failed: {}", e))
+            Err(e) => return Err(format!("SQL generation failed: {}", e)),
         };
-        
+
         println!("Generated SQL Query:\n{}", sql_query);
-        
+
         // Write SQL query to file
         if let Err(e) = write_sql_to_file(&sql_query, test_name) {
             eprintln!("Warning: Failed to write SQL to file: {}", e);
         }
-        
+
         // Execute the generated SQL query
         execute_raw_sql_query(&sql_query).await
     }
@@ -296,9 +309,16 @@ mod tests {
             ]
         });
 
-        println!("  ✓ Testing POST /api/store/{}/filter with basic payload", get_table_name());
+        println!(
+            "  ✓ Testing POST /api/store/{}/filter with basic payload",
+            get_table_name()
+        );
         let mut request = client
-            .post(&format!("{}/api/store/{}/filter", base_url, get_table_name()))
+            .post(&format!(
+                "{}/api/store/{}/filter",
+                base_url,
+                get_table_name()
+            ))
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10));
 
@@ -324,17 +344,30 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
-                    
+
                     // Generate and execute SQL query for debugging using combined function
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
-                    match generate_and_execute_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string()), "should_handle_basic_filter").await {
+                    match generate_and_execute_query(
+                        &payload,
+                        get_table_name(),
+                        true,
+                        Some("Asia/Manila".to_string()),
+                        "should_handle_basic_filter",
+                    )
+                    .await
+                    {
                         Ok(results) => {
                             println!("    ✓ Combined function executed successfully!");
                             println!("    📊 Query returned {} rows", results.len());
                             if !results.is_empty() {
                                 println!("    📋 First few results:");
                                 for (i, result) in results.iter().take(3).enumerate() {
-                                    println!("      Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                                    println!(
+                                        "      Row {}: {}",
+                                        i + 1,
+                                        serde_json::to_string_pretty(result)
+                                            .unwrap_or_else(|_| "Invalid JSON".to_string())
+                                    );
                                 }
                             }
                             println!("    ℹ The SQL query is valid and executable, but the API endpoint has other issues");
@@ -342,10 +375,17 @@ mod tests {
                         Err(e) => {
                             println!("    ⚠ Combined function failed: {}", e);
                             println!("    ℹ This could indicate SQL generation or database execution issues");
-                            
+
                             // Fallback to write SQL to file for analysis
-                            if let Ok(raw_query) = get_raw_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string())) {
-                                if let Err(file_err) = write_sql_to_file(&raw_query, "should_handle_basic_filter") {
+                            if let Ok(raw_query) = get_raw_query(
+                                &payload,
+                                get_table_name(),
+                                true,
+                                Some("Asia/Manila".to_string()),
+                            ) {
+                                if let Err(file_err) =
+                                    write_sql_to_file(&raw_query, "should_handle_basic_filter")
+                                {
                                     println!("    ⚠ Failed to write SQL to file: {}", file_err);
                                 } else {
                                     println!("    ✓ SQL query written to: raw_queries/invalid_sql_should_handle_basic_filter.sql");
@@ -606,7 +646,11 @@ mod tests {
 
         println!("  ✓ Testing POST /api/store/{}/filter with complex query using this credentials: {}:{}", get_table_name(), auth_response.username, auth_response.password);
         let mut request = client
-            .post(&format!("{}/api/store/{}/filter", base_url, get_table_name()))
+            .post(&format!(
+                "{}/api/store/{}/filter",
+                base_url,
+                get_table_name()
+            ))
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10));
 
@@ -629,14 +673,27 @@ mod tests {
                     println!("    ⚠ Non-success status: {}", resp.status());
                     // Generate and execute SQL query for debugging using combined function
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
-                    match generate_and_execute_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string()), "should_handle_complex_filter_with_concatenated_fields").await {
+                    match generate_and_execute_query(
+                        &payload,
+                        get_table_name(),
+                        true,
+                        Some("Asia/Manila".to_string()),
+                        "should_handle_complex_filter_with_concatenated_fields",
+                    )
+                    .await
+                    {
                         Ok(results) => {
                             println!("    ✓ Combined function executed successfully!");
                             println!("    📊 Query returned {} rows", results.len());
                             if !results.is_empty() {
                                 println!("    📋 First few results:");
                                 for (i, result) in results.iter().take(3).enumerate() {
-                                    println!("      Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                                    println!(
+                                        "      Row {}: {}",
+                                        i + 1,
+                                        serde_json::to_string_pretty(result)
+                                            .unwrap_or_else(|_| "Invalid JSON".to_string())
+                                    );
                                 }
                             }
                             println!("    ℹ The SQL query is valid and executable, but the API endpoint has other issues");
@@ -644,10 +701,17 @@ mod tests {
                         Err(e) => {
                             println!("    ⚠ Combined function failed: {}", e);
                             println!("    ℹ This could indicate SQL generation or database execution issues");
-                            
+
                             // Fallback to write SQL to file for analysis
-                            if let Ok(raw_query) = get_raw_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string())) {
-                                if let Err(file_err) = write_sql_to_file(&raw_query, "should_handle_basic_filter") {
+                            if let Ok(raw_query) = get_raw_query(
+                                &payload,
+                                get_table_name(),
+                                true,
+                                Some("Asia/Manila".to_string()),
+                            ) {
+                                if let Err(file_err) =
+                                    write_sql_to_file(&raw_query, "should_handle_basic_filter")
+                                {
                                     println!("    ⚠ Failed to write SQL to file: {}", file_err);
                                 } else {
                                     println!("    ✓ SQL query written to: raw_queries/invalid_sql_should_handle_complex_filter_with_concatenated_fields.sql");
@@ -681,27 +745,43 @@ mod tests {
 
         // Demonstrate direct SQL execution using the combined generate_and_execute_query function
         println!("\n  📊 Testing direct SQL execution using generate_and_execute_query...");
-        
-        match generate_and_execute_query(&payload, get_table_name(), true, None, "should_handle_complex_filter_with_concatenated_fields").await {
+
+        match generate_and_execute_query(
+            &payload,
+            get_table_name(),
+            true,
+            None,
+            "should_handle_complex_filter_with_concatenated_fields",
+        )
+        .await
+        {
             Ok(results) => {
                 println!("  ✓ Combined function executed successfully!");
                 println!("  📊 Query returned {} rows", results.len());
-                
+
                 // Display first few results if any
                 if !results.is_empty() {
                     println!("  📋 Sample results:");
                     for (i, result) in results.iter().take(3).enumerate() {
-                        println!("    Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                        println!(
+                            "    Row {}: {}",
+                            i + 1,
+                            serde_json::to_string_pretty(result)
+                                .unwrap_or_else(|_| "Invalid JSON".to_string())
+                        );
                     }
                 }
             }
             Err(e) => {
                 println!("  ⚠ Combined function failed: {}", e);
                 println!("  ℹ This could indicate SQL generation or database execution issues");
-                
+
                 // Fallback to write SQL to file for analysis
                 if let Ok(sql_query) = get_raw_query(&payload, get_table_name(), true, None) {
-                    if let Err(file_err) = write_sql_to_file(&sql_query, "should_handle_complex_filter_with_concatenated_fields") {
+                    if let Err(file_err) = write_sql_to_file(
+                        &sql_query,
+                        "should_handle_complex_filter_with_concatenated_fields",
+                    ) {
                         println!("  ⚠ Failed to write SQL to file: {}", file_err);
                     } else {
                         println!("  ✓ SQL query saved to file for analysis");
@@ -709,7 +789,7 @@ mod tests {
                 }
             }
         }
-        
+
         println!("  ✓ Complex filter test completed");
         assert!(true, "Test completed - handles complex filter scenarios");
     }
@@ -853,11 +933,15 @@ mod tests {
             "limit": 100
         });
 
-        println!("  ✓ Testing POST /api/store/{}/filter/suggestions with search criteria", get_table_name());
+        println!(
+            "  ✓ Testing POST /api/store/{}/filter/suggestions with search criteria",
+            get_table_name()
+        );
         let mut request = client
             .post(&format!(
                 "{}/api/store/{}/filter/suggestions",
-                base_url, get_table_name()
+                base_url,
+                get_table_name()
             ))
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10));
@@ -884,27 +968,48 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
-                    
+
                     // Generate and execute SQL query for debugging using combined function
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
-                    match generate_and_execute_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string()), "should_handle_sorting_non_text_fields").await {
+                    match generate_and_execute_query(
+                        &payload,
+                        get_table_name(),
+                        true,
+                        Some("Asia/Manila".to_string()),
+                        "should_handle_sorting_non_text_fields",
+                    )
+                    .await
+                    {
                         Ok(results) => {
                             println!("    ✓ Combined function executed successfully!");
                             println!("    📊 Query returned {} rows", results.len());
                             if !results.is_empty() {
                                 println!("    📋 First few results:");
                                 for (i, result) in results.iter().take(3).enumerate() {
-                                    println!("      Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                                    println!(
+                                        "      Row {}: {}",
+                                        i + 1,
+                                        serde_json::to_string_pretty(result)
+                                            .unwrap_or_else(|_| "Invalid JSON".to_string())
+                                    );
                                 }
                             }
                         }
                         Err(e) => {
                             println!("    ⚠ Combined function failed: {}", e);
                             println!("    ℹ This could indicate SQL generation or database execution issues");
-                            
+
                             // Fallback to write SQL to file for analysis
-                            if let Ok(raw_query) = get_raw_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string())) {
-                                if let Err(file_err) = write_sql_to_file(&raw_query, "should_handle_sorting_non_text_fields") {
+                            if let Ok(raw_query) = get_raw_query(
+                                &payload,
+                                get_table_name(),
+                                true,
+                                Some("Asia/Manila".to_string()),
+                            ) {
+                                if let Err(file_err) = write_sql_to_file(
+                                    &raw_query,
+                                    "should_handle_sorting_non_text_fields",
+                                ) {
                                     println!("    ⚠ Failed to write SQL to file: {}", file_err);
                                 } else {
                                     println!("    ✓ SQL query written to: raw_queries/invalid_sql_should_handle_sorting_non_text_fields.sql");
@@ -1038,9 +1143,16 @@ mod tests {
             "limit": 100
         });
 
-        println!("  ✓ Testing POST /api/store/{}/filter with sorting configuration", get_table_name());
+        println!(
+            "  ✓ Testing POST /api/store/{}/filter with sorting configuration",
+            get_table_name()
+        );
         let mut request = client
-            .post(&format!("{}/api/store/{}/filter", base_url, get_table_name()))
+            .post(&format!(
+                "{}/api/store/{}/filter",
+                base_url,
+                get_table_name()
+            ))
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10));
 
@@ -1066,27 +1178,48 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
-                    
+
                     // Generate and execute SQL query for debugging using combined function
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
-                    match generate_and_execute_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string()), "should_handle_self_join_with_nested_relationships").await {
+                    match generate_and_execute_query(
+                        &payload,
+                        get_table_name(),
+                        true,
+                        Some("Asia/Manila".to_string()),
+                        "should_handle_self_join_with_nested_relationships",
+                    )
+                    .await
+                    {
                         Ok(results) => {
                             println!("    ✓ Combined function executed successfully!");
                             println!("    📊 Query returned {} rows", results.len());
                             if !results.is_empty() {
                                 println!("    📋 First few results:");
                                 for (i, result) in results.iter().take(3).enumerate() {
-                                    println!("      Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                                    println!(
+                                        "      Row {}: {}",
+                                        i + 1,
+                                        serde_json::to_string_pretty(result)
+                                            .unwrap_or_else(|_| "Invalid JSON".to_string())
+                                    );
                                 }
                             }
                         }
                         Err(e) => {
                             println!("    ⚠ Combined function failed: {}", e);
                             println!("    ℹ This could indicate SQL generation or database execution issues");
-                            
+
                             // Fallback to write SQL to file for analysis
-                            if let Ok(raw_query) = get_raw_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string())) {
-                                if let Err(file_err) = write_sql_to_file(&raw_query, "should_handle_self_join_with_nested_relationships") {
+                            if let Ok(raw_query) = get_raw_query(
+                                &payload,
+                                get_table_name(),
+                                true,
+                                Some("Asia/Manila".to_string()),
+                            ) {
+                                if let Err(file_err) = write_sql_to_file(
+                                    &raw_query,
+                                    "should_handle_self_join_with_nested_relationships",
+                                ) {
                                     println!("    ⚠ Failed to write SQL to file: {}", file_err);
                                 } else {
                                     println!("    ✓ SQL query written to: raw_queries/invalid_sql_should_handle_self_join_with_nested_relationships.sql");
@@ -1182,7 +1315,10 @@ mod tests {
             "limit": 100
         });
 
-        println!("  ✓ Testing POST /api/store/{}/filter with self-join",get_table_name());
+        println!(
+            "  ✓ Testing POST /api/store/{}/filter with self-join",
+            get_table_name()
+        );
         let mut request = client
             .post(&format!(
                 "{}/api/store/{}/filter",
@@ -1214,27 +1350,48 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
-                    
+
                     // Generate and execute SQL query for debugging using combined function
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
-                    match generate_and_execute_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string()), "should_handle_account_organizations_self_join_nested").await {
+                    match generate_and_execute_query(
+                        &payload,
+                        get_table_name(),
+                        true,
+                        Some("Asia/Manila".to_string()),
+                        "should_handle_account_organizations_self_join_nested",
+                    )
+                    .await
+                    {
                         Ok(results) => {
                             println!("    ✓ Combined function executed successfully!");
                             println!("    📊 Query returned {} rows", results.len());
                             if !results.is_empty() {
                                 println!("    📋 First few results:");
                                 for (i, result) in results.iter().take(3).enumerate() {
-                                    println!("      Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                                    println!(
+                                        "      Row {}: {}",
+                                        i + 1,
+                                        serde_json::to_string_pretty(result)
+                                            .unwrap_or_else(|_| "Invalid JSON".to_string())
+                                    );
                                 }
                             }
                         }
                         Err(e) => {
                             println!("    ⚠ Combined function failed: {}", e);
                             println!("    ℹ This could indicate SQL generation or database execution issues");
-                            
+
                             // Fallback to write SQL to file for analysis
-                            if let Ok(raw_query) = get_raw_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string())) {
-                                if let Err(file_err) = write_sql_to_file(&raw_query, "should_handle_account_organizations_self_join_nested") {
+                            if let Ok(raw_query) = get_raw_query(
+                                &payload,
+                                get_table_name(),
+                                true,
+                                Some("Asia/Manila".to_string()),
+                            ) {
+                                if let Err(file_err) = write_sql_to_file(
+                                    &raw_query,
+                                    "should_handle_account_organizations_self_join_nested",
+                                ) {
                                     println!("    ⚠ Failed to write SQL to file: {}", file_err);
                                 } else {
                                     println!("    ✓ SQL query written to: raw_queries/invalid_sql_should_handle_account_organizations_self_join_nested.sql");
@@ -1448,17 +1605,30 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
-                    
+
                     // Generate and execute SQL query for debugging using combined function
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
-                    match generate_and_execute_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string()), "should_handle_aggregation_filter_operations").await {
+                    match generate_and_execute_query(
+                        &payload,
+                        get_table_name(),
+                        true,
+                        Some("Asia/Manila".to_string()),
+                        "should_handle_aggregation_filter_operations",
+                    )
+                    .await
+                    {
                         Ok(results) => {
                             println!("    ✓ Combined function executed successfully!");
                             println!("    📊 Query returned {} rows", results.len());
                             if !results.is_empty() {
                                 println!("    📋 First few results:");
                                 for (i, result) in results.iter().take(3).enumerate() {
-                                    println!("      Row {}: {}", i + 1, serde_json::to_string_pretty(result).unwrap_or_else(|_| "Invalid JSON".to_string()));
+                                    println!(
+                                        "      Row {}: {}",
+                                        i + 1,
+                                        serde_json::to_string_pretty(result)
+                                            .unwrap_or_else(|_| "Invalid JSON".to_string())
+                                    );
                                 }
                             }
                             println!("    ℹ The SQL query is valid and executable, but the API endpoint has other issues");
@@ -1466,10 +1636,18 @@ mod tests {
                         Err(e) => {
                             println!("    ⚠ Combined function failed: {}", e);
                             println!("    ℹ This could indicate SQL generation or database execution issues");
-                            
+
                             // Fallback to write SQL to file for analysis
-                            if let Ok(raw_query) = get_raw_query(&payload, get_table_name(), true, Some("Asia/Manila".to_string())) {
-                                if let Err(file_err) = write_sql_to_file(&raw_query, "should_handle_aggregation_filter_operations") {
+                            if let Ok(raw_query) = get_raw_query(
+                                &payload,
+                                get_table_name(),
+                                true,
+                                Some("Asia/Manila".to_string()),
+                            ) {
+                                if let Err(file_err) = write_sql_to_file(
+                                    &raw_query,
+                                    "should_handle_aggregation_filter_operations",
+                                ) {
                                     println!("    ⚠ Failed to write SQL to file: {}", file_err);
                                 } else {
                                     println!("    ✓ SQL query written to: raw_queries/invalid_sql_should_handle_aggregation_filter_operations.sql");
