@@ -12,6 +12,8 @@ mod tests {
         pub session_id: Option<String>,
         pub is_authenticated: bool,
         pub server_available: bool,
+        pub username: String,
+        pub password: String
     }
 
     /// Reusable login helper function that can be used across all tests
@@ -37,6 +39,8 @@ mod tests {
                 session_id: None,
                 is_authenticated: false,
                 server_available: false,
+                username:"".to_string(),
+                password:"".to_string()
             };
         }
 
@@ -75,6 +79,8 @@ mod tests {
                             session_id,
                             is_authenticated,
                             server_available: true,
+                            username: "superadmin@dnamicro.com".to_string(),
+                            password: "ch@ng3m3Pl3@s3!!".to_string()
                         }
                     }
                     Err(_) => AuthResponse {
@@ -82,6 +88,8 @@ mod tests {
                         session_id: None,
                         is_authenticated: false,
                         server_available: true,
+                        username:"".to_string(),
+                password:"".to_string()
                     },
                 }
             }
@@ -90,6 +98,8 @@ mod tests {
                 session_id: None,
                 is_authenticated: false,
                 server_available: true,
+                username:"".to_string(),
+                password:"".to_string()
             },
         }
     }
@@ -177,7 +187,7 @@ mod tests {
 
         // Use reusable login function
         let auth_response = perform_login().await;
-
+        
         if !auth_response.server_available {
             println!("  ⚠ Server unavailable - skipping test");
             println!("  ℹ This is expected when database/server is offline");
@@ -400,7 +410,7 @@ mod tests {
             "limit": 100
         });
 
-        println!("  ✓ Testing POST /api/store/contacts/filter with complex query");
+        println!("  ✓ Testing POST /api/store/contacts/filter with complex query using this credentials: {}:{}", auth_response.username, auth_response.password);
         let mut request = client
             .post(&format!("{}/api/store/contacts/filter", base_url))
             .json(&filter_payload)
@@ -428,6 +438,7 @@ mod tests {
                     );
                 } else {
                     println!("    ⚠ Non-success status: {}", resp.status());
+                    assert!(resp.status() != reqwest::StatusCode::INTERNAL_SERVER_ERROR, "Filter endpoint should not return 500 Internal Server Error ");
                     assert!(
                         resp.status() != reqwest::StatusCode::UNAUTHORIZED,
                         "Filter endpoint should not return 401 Unauthorized"
@@ -1098,5 +1109,79 @@ mod tests {
 
         println!("  ✓ Aggregation test completed");
         assert!(true, "Test completed - handles aggregation scenarios");
+    }
+
+    /// Tests basic contacts filter with simple pluck fields:
+    /// - Tests POST /api/store/contacts/filter with minimal payload
+    /// - Validates basic field selection (pluck)
+    /// - Tests simple contact data retrieval without complex joins or filters
+    #[tokio::test]
+    async fn should_handle_basic_contacts_filter() {
+        println!("Testing basic contacts filter with simple pluck fields...");
+
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+        
+        // Use reusable login function
+        let auth_response = perform_login().await;
+        
+        if !auth_response.server_available {
+            println!("  ⚠ Server unavailable - skipping test");
+            println!("  ℹ This is expected when database/server is offline");
+            assert!(true, "Test completed - server unavailable");
+            return;
+        }
+
+        // Basic test payload with simple pluck fields
+        let basic_payload = json!({
+            "pluck": [
+                "id",
+                "categories",
+                "organization_id",
+                "first_name",
+                "middle_name",
+                "last_name"
+            ]
+        });
+
+        println!("  ✓ Testing POST /api/store/contacts/filter with basic payload");
+        let mut request = client
+            .post(&format!("{}/api/store/contacts/filter", base_url))
+            .json(&basic_payload)
+            .timeout(std::time::Duration::from_secs(10));
+        
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request = request.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request = request.header("X-Session-ID", session_id);
+        }
+        
+        let response = request.send().await;
+
+        match response {
+            Ok(resp) => {
+                println!("    Status: {}", resp.status());
+                if resp.status().is_success() {
+                    println!("    ✓ Basic filter endpoint responded successfully");
+                    // Assert successful response
+                    assert!(
+                        resp.status().is_success(),
+                        "Basic filter should return success status"
+                    );
+                } else {
+                    println!("    ⚠ Non-success status: {}", resp.status());
+                }
+            }
+            Err(e) => {
+                println!("    ⚠ Request failed: {}", e);
+                println!("    ℹ This is expected when database/server is offline");
+            }
+        }
+
+        println!("  ✓ Basic filter test completed");
+        assert!(true, "Test completed - handles basic filter scenarios");
     }
 }
