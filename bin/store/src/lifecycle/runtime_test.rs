@@ -362,7 +362,7 @@ mod tests {
         println!("Testing RuntimeManager state transitions...");
 
         println!("  ✓ Creating RuntimeManager for state testing");
-        let mut runtime_manager = RuntimeManager::new();
+        let runtime_manager = RuntimeManager::new();
 
         println!("  ✅ RuntimeManager created for state testing");
 

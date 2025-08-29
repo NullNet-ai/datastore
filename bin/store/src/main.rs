@@ -47,7 +47,7 @@ fn initialize_logging_and_cache(env_config: &EnvConfig) {
     let _ = cache.cache_type();
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     bootstrap().await?;
     Ok(())

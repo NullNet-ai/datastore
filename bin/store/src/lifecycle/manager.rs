@@ -232,10 +232,54 @@ impl LifecycleManager {
             .update_component_status("RuntimeManager", ComponentStatus::Starting)
             .await;
 
-        // Configure the runtime manager with the logger and health service
-        self.runtime_manager = RuntimeManager::new()
+        // Create post-startup callback that calls lifecycle manager functions
+        let state_manager = self.state_manager.clone();
+        let health_service = self.health_service.clone();
+        let logger = self.logger.clone();
+        
+        let post_startup_callback = move || {
+            let state_manager = state_manager.clone();
+            let health_service = health_service.clone();
+            let logger = logger.clone();
+            
+            async move {
+                // Call lifecycle manager functions after server startup
+                let current_phase = state_manager.get_phase().await;
+                let is_healthy = {
+                    let healthy = state_manager.is_healthy().await;
+                    health_service.update_health_status(healthy).await;
+                    healthy
+                };
+                let health_report = state_manager.generate_health_report().await;
+
+                // Log the results
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::Monitoring,
+                        "LifecycleManager",
+                        &format!("Post-startup status - Phase: {:?}, Healthy: {}", current_phase, is_healthy),
+                    )
+                    .await;
+                
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::Monitoring,
+                        "LifecycleManager",
+                        &format!("Health Report: {}", health_report),
+                    )
+                    .await;
+            }
+        };
+        
+        // Configure the runtime manager with the logger, health service, shutdown manager, and post-startup callback
+        let configured_runtime_manager = std::mem::replace(&mut self.runtime_manager, RuntimeManager::new())
             .with_logger(self.logger.clone())
-            .with_health_service(self.health_service.clone());
+            .with_health_service(self.health_service.clone())
+            .with_shutdown_manager(&mut self.shutdown_manager)
+            .with_post_startup_callback(post_startup_callback);
+        self.runtime_manager = configured_runtime_manager;
 
         // Update RuntimeManager status to running
         self.state_manager
@@ -334,33 +378,6 @@ impl LifecycleManager {
             .await;
 
         result
-    }
-
-    /// Get state manager reference
-    pub fn state_manager(&self) -> &Arc<StateManager> {
-        &self.state_manager
-    }
-
-    /// Get logger reference
-    pub fn logger(&self) -> &Arc<LifecycleLogger> {
-        &self.logger
-    }
-
-    /// Get current lifecycle phase
-    pub async fn get_phase(&self) -> LifecyclePhase {
-        self.state_manager.get_phase().await
-    }
-
-    /// Check if system is healthy
-    pub async fn is_healthy(&self) -> bool {
-        let is_healthy = self.state_manager.is_healthy().await;
-        self.health_service.update_health_status(is_healthy).await;
-        is_healthy
-    }
-
-    /// Generate a comprehensive health report
-    pub async fn generate_health_report(&self) -> String {
-        self.state_manager.generate_health_report().await
     }
 
     /// Update health service with current state

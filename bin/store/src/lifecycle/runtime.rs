@@ -34,6 +34,8 @@ pub struct RuntimeManager {
     health_check_interval: Duration,
     logger: Option<Arc<crate::lifecycle::logging::LifecycleLogger>>,
     health_service: Option<Arc<crate::lifecycle::health_service::HealthService>>,
+    post_startup_callback: Option<Box<dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> + Send + Sync>>,
+    shutdown_manager: Option<*mut crate::lifecycle::shutdown::ShutdownManager>,
 }
 
 impl RuntimeManager {
@@ -56,6 +58,8 @@ impl RuntimeManager {
             health_check_interval: Duration::from_secs(30),
             logger: None,
             health_service: None,
+            post_startup_callback: None,
+            shutdown_manager: None,
         }
     }
 
@@ -73,6 +77,25 @@ impl RuntimeManager {
         self
     }
 
+    /// Set post-startup callback for lifecycle hooks
+    pub fn with_post_startup_callback<F, Fut>(
+        mut self,
+        callback: F,
+    ) -> Self 
+    where
+        F: Fn() -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = ()> + Send + 'static,
+    {
+        self.post_startup_callback = Some(Box::new(move || Box::pin(callback())));
+        self
+    }
+
+    /// Set the shutdown manager for service registration
+    pub fn with_shutdown_manager(mut self, shutdown_manager: &mut crate::lifecycle::shutdown::ShutdownManager) -> Self {
+        self.shutdown_manager = Some(shutdown_manager as *mut _);
+        self
+    }
+
     /// Execute the runtime phase with actual services
     pub async fn execute(
         &mut self,
@@ -80,6 +103,7 @@ impl RuntimeManager {
         s3_client: aws_sdk_s3::Client,
         bucket_name: String,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        info!("[RUNTIME] ===== ENTERING RuntimeManager::execute =====");
         self.start_time = Some(Instant::now());
 
         if let Some(logger) = &self.logger {
@@ -103,8 +127,10 @@ impl RuntimeManager {
         self.start_background_services().await?;
 
         // Start HTTP server and run main loop
+        info!("[RUNTIME] About to call run_main_loop_with_server");
         self.run_main_loop_with_server(pool, s3_client, bucket_name)
             .await?;
+        info!("[RUNTIME] run_main_loop_with_server completed");
 
         if let Some(logger) = &self.logger {
             logger
@@ -303,25 +329,90 @@ impl RuntimeManager {
 
         let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
 
+        // Create shutdown channels for each service
+        let (grpc_shutdown_tx, mut grpc_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
+        let (batch_sync_shutdown_tx, mut batch_sync_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
+        let (socket_shutdown_tx, mut socket_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
+        let (bg_sync_shutdown_tx, mut bg_sync_shutdown_rx) = tokio::sync::mpsc::channel::<()>(1);
+
+        // Register services with shutdown manager if available
+        info!("[RUNTIME] Checking if shutdown manager is available for service registration");
+        if let Some(shutdown_manager_ptr) = self.shutdown_manager {
+            info!("[RUNTIME] Shutdown manager found, registering background services");
+            use crate::lifecycle::shutdown::BackgroundServiceShutdown;
+            
+            unsafe {
+                let shutdown_manager = &mut *shutdown_manager_ptr;
+                
+                // Register gRPC service
+                 let grpc_service = BackgroundServiceShutdown::new(
+                     "grpc-server".to_string(),
+                     grpc_shutdown_tx,
+                 );
+                 shutdown_manager.register_service(Box::new(grpc_service));
+                 
+                 // Register batch sync service
+                 let batch_sync_service = BackgroundServiceShutdown::new(
+                     "batch-sync-service".to_string(),
+                     batch_sync_shutdown_tx,
+                 );
+                 shutdown_manager.register_service(Box::new(batch_sync_service));
+                 
+                 // Register Socket.IO service
+                 let socket_service = BackgroundServiceShutdown::new(
+                     "socket-io-server".to_string(),
+                     socket_shutdown_tx,
+                 );
+                 shutdown_manager.register_service(Box::new(socket_service));
+                 
+                 // Register background sync service
+                 let bg_sync_service = BackgroundServiceShutdown::new(
+                     "background-sync".to_string(),
+                     bg_sync_shutdown_tx,
+                 );
+                 shutdown_manager.register_service(Box::new(bg_sync_service));
+                
+                info!("[RUNTIME] Registered {} background services with shutdown manager", 4);
+             }
+         } else {
+             info!("[RUNTIME] No shutdown manager available, skipping service registration");
+         }
+
         // Start gRPC server
         tokio::spawn(async move {
             use crate::generated::grpc_controller::GrpcController;
-            match GrpcController::init(&grpc_addr).await {
-                Ok(_) => info!("gRPC server started successfully on {}", grpc_addr),
-                Err(e) => error!("Failed to start gRPC server: {}", e),
+            
+            tokio::select! {
+                result = GrpcController::init(&grpc_addr) => {
+                    match result {
+                        Ok(_) => info!("gRPC server started successfully on {}", grpc_addr),
+                        Err(e) => error!("Failed to start gRPC server: {}", e),
+                    }
+                }
+                _ = grpc_shutdown_rx.recv() => {
+                    info!("gRPC server received shutdown signal");
+                }
             }
         });
 
         // Start background batch sync service
-        tokio::spawn(async {
+        tokio::spawn(async move {
             use crate::providers::operations::batch_sync::background_sync::BackgroundSyncService;
-            match BackgroundSyncService::new().await {
-                Ok(service) => {
-                    if let Err(e) = service.init().await {
-                        error!("Error in background batch sync service: {}", e);
+            
+            tokio::select! {
+                _ = async {
+                    match BackgroundSyncService::new().await {
+                        Ok(service) => {
+                            if let Err(e) = service.init().await {
+                                error!("Error in background batch sync service: {}", e);
+                            }
+                        }
+                        Err(e) => error!("Failed to initialize BackgroundSyncService: {}", e),
                     }
+                } => {}
+                _ = batch_sync_shutdown_rx.recv() => {
+                    info!("Background batch sync service received shutdown signal");
                 }
-                Err(e) => error!("Failed to initialize BackgroundSyncService: {}", e),
             }
         });
 
@@ -333,48 +424,62 @@ impl RuntimeManager {
             use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
             use axum::Router;
 
-            // Create Socket.IO layer and instance
-            let (layer, io) = create_socket_io();
+            tokio::select! {
+                _ = async {
+                    // Create Socket.IO layer and instance
+                    let (layer, io) = create_socket_io();
 
-            // Initialize the MessageStreamingService
-            let streaming_service = MessageStreamingService::new(io);
+                    // Initialize the MessageStreamingService
+                    let streaming_service = MessageStreamingService::new(io);
 
-            // Set the streaming service reference
-            set_streaming_service(streaming_service.clone());
+                    // Set the streaming service reference
+                    set_streaming_service(streaming_service.clone());
 
-            // Initialize the streaming service (starts broker and routing)
-            if let Err(e) = streaming_service.initialize().await {
-                error!("Failed to initialize MessageStreamingService: {}", e);
-            } else {
-                info!("MessageStreamingService initialized successfully");
-            }
-
-            // Create and run the Socket.IO server
-            let app = Router::new().layer(layer);
-            let listener =
-                match tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port))
-                    .await
-                {
-                    Ok(listener) => listener,
-                    Err(e) => {
-                        error!("Failed to bind Socket.IO server: {}", e);
-                        return;
+                    // Initialize the streaming service (starts broker and routing)
+                    if let Err(e) = streaming_service.initialize().await {
+                        error!("Failed to initialize MessageStreamingService: {}", e);
+                    } else {
+                        info!("MessageStreamingService initialized successfully");
                     }
-                };
 
-            info!(
-                "Socket.IO server listening on {}:{}",
-                socket_host, socket_port
-            );
-            if let Err(e) = axum::serve(listener, app).await {
-                error!("Socket.IO server error: {}", e);
+                    // Create and run the Socket.IO server
+                    let app = Router::new().layer(layer);
+                    let listener =
+                        match tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port))
+                            .await
+                        {
+                            Ok(listener) => listener,
+                            Err(e) => {
+                                error!("Failed to bind Socket.IO server: {}", e);
+                                return;
+                            }
+                        };
+
+                    info!(
+                        "Socket.IO server listening on {}:{}",
+                        socket_host, socket_port
+                    );
+                    if let Err(e) = axum::serve(listener, app).await {
+                        error!("Socket.IO server error: {}", e);
+                    }
+                } => {}
+                _ = socket_shutdown_rx.recv() => {
+                    info!("Socket.IO server received shutdown signal");
+                }
             }
         });
 
         // start running background synced data to the sync server (bin/server)
-        tokio::spawn(async {
-            if let Err(e) = bg_sync().await {
-                log::error!("Error starting background sync: {}", e);
+        tokio::spawn(async move {
+            tokio::select! {
+                _ = async {
+                    if let Err(e) = bg_sync().await {
+                        log::error!("Error starting background sync: {}", e);
+                    }
+                } => {}
+                _ = bg_sync_shutdown_rx.recv() => {
+                    info!("Background sync received shutdown signal");
+                }
             }
         });
 
@@ -403,6 +508,11 @@ impl RuntimeManager {
             "[RUNTIME] HTTP server successfully bound to {}",
             bind_address
         );
+
+        // Call post-startup hooks after server is successfully bound
+        info!("[RUNTIME] About to call post-startup hooks...");
+        self.call_post_startup_hooks().await;
+        info!("[RUNTIME] Post-startup hooks call completed");
 
         // Run server with shutdown handling
         tokio::select! {
@@ -487,6 +597,73 @@ impl RuntimeManager {
             bind_address
         );
         Ok(server)
+    }
+
+    /// Call post-startup hooks using the provided callback
+    async fn call_post_startup_hooks(&self) {
+        info!("[RUNTIME] ===== ENTERING call_post_startup_hooks =====");
+        
+        // Log server startup completion
+        if let Some(logger) = &self.logger {
+            info!("[RUNTIME] Using lifecycle logger for post-startup hooks");
+            logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Runtime,
+                    "RuntimeManager",
+                    "HTTP server started successfully, executing post-startup hooks",
+                )
+                .await;
+        } else {
+            info!("[RUNTIME] HTTP server started successfully, executing post-startup hooks (no logger)");
+        }
+
+        // Execute the post-startup callback if provided
+        if let Some(callback) = &self.post_startup_callback {
+            info!("[RUNTIME] Post-startup callback found, executing...");
+            if let Some(logger) = &self.logger {
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::Runtime,
+                        "RuntimeManager",
+                        "Executing post-startup callback",
+                    )
+                    .await;
+            } else {
+                info!("[RUNTIME] Executing post-startup callback (no logger)");
+            }
+            let future = callback();
+            future.await;
+            if let Some(logger) = &self.logger {
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::Runtime,
+                        "RuntimeManager",
+                        "Post-startup callback completed",
+                    )
+                    .await;
+            } else {
+                info!("[RUNTIME] Post-startup callback completed (no logger)");
+            }
+        } else {
+            info!("[RUNTIME] No post-startup callback found!");
+            if let Some(logger) = &self.logger {
+                logger
+                    .log(
+                        LogLevel::Info,
+                        LogCategory::Runtime,
+                        "RuntimeManager",
+                        "No post-startup callback configured, skipping hooks",
+                    )
+                    .await;
+            } else {
+                info!("[RUNTIME] No post-startup callback configured, skipping hooks (no logger)");
+            }
+        }
+        
+        info!("[RUNTIME] ===== EXITING call_post_startup_hooks =====");
     }
 
     /// Wait for shutdown signal

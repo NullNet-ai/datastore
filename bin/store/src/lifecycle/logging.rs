@@ -340,6 +340,8 @@ impl LifecycleLogger {
     }
 
     /// Get recent log entries
+    // TODO: this will be implemented for reporting later
+    #[allow(dead_code)]
     pub async fn get_recent_entries(&self, limit: Option<usize>) -> Vec<LogEntry> {
         let entries = self.entries.read().await;
         let limit = limit.unwrap_or(100).min(entries.len());
@@ -348,6 +350,8 @@ impl LifecycleLogger {
     }
 
     /// Get entries by category
+    // TODO: this will be implemented for reporting later
+    #[allow(dead_code)]
     pub async fn get_entries_by_category(
         &self,
         category: LogCategory,
@@ -366,6 +370,8 @@ impl LifecycleLogger {
     }
 
     /// Get entries by component
+    // TODO: this will be implemented for reporting later
+    #[allow(dead_code)]
     pub async fn get_entries_by_component(
         &self,
         component: &str,
@@ -384,6 +390,8 @@ impl LifecycleLogger {
     }
 
     /// Get entries by level
+    // TODO: this will be implemented for reporting later
+    #[allow(dead_code)]
     pub async fn get_entries_by_level(
         &self,
         level: LogLevel,
@@ -402,6 +410,8 @@ impl LifecycleLogger {
     }
 
     /// Clear all stored entries
+    // TODO: this will be implemented for reporting later
+    #[allow(dead_code)]
     pub async fn clear_entries(&self) {
         let mut entries = self.entries.write().await;
         entries.clear();
@@ -409,6 +419,8 @@ impl LifecycleLogger {
     }
 
     /// Get log statistics
+    // TODO: this will be implemented for reporting later
+    #[allow(dead_code)]
     pub async fn get_statistics(&self) -> HashMap<String, u64> {
         let entries = self.entries.read().await;
         let mut stats = HashMap::new();
