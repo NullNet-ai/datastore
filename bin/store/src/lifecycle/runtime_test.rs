@@ -1,8 +1,26 @@
 #[cfg(test)]
 mod tests {
     use crate::lifecycle::runtime::{check_cache_health, RuntimeManager};
+    use crate::providers::storage::cache::cache_factory::CacheType;
+    use crate::structs::structs::EnvConfig;
+    use std::sync::Arc;
     use std::time::Duration;
     use tokio;
+
+    /// Creates a mock EnvConfig for testing purposes
+    fn create_test_env_config() -> Arc<EnvConfig> {
+        Arc::new(EnvConfig {
+            host: "localhost".to_string(),
+            port: "8080".to_string(),
+            grpc_port: "50051".to_string(),
+            grpc_url: "http://localhost:50051".to_string(),
+            socket_host: "localhost".to_string(),
+            socket_port: "3000".to_string(),
+            cache_type: CacheType::InMemory,
+            redis_connection: None,
+            ttl: Some(Duration::from_secs(300)),
+        })
+    }
 
     /// Test database health check functionality
     ///
@@ -306,9 +324,11 @@ mod tests {
     ///
     /// ```
     /// use crate::lifecycle::runtime::RuntimeManager;
+    /// use std::sync::Arc;
     ///
     /// // Test RuntimeManager creation
-    /// let runtime_manager = RuntimeManager::new();
+    /// let config = create_test_env_config();
+    /// let runtime_manager = RuntimeManager::new(config);
     /// // Should not panic and should create a valid instance
     /// ```
     #[tokio::test]
@@ -317,7 +337,8 @@ mod tests {
 
         // Create a new RuntimeManager instance
         println!("  ✓ Creating new RuntimeManager instance");
-        let runtime_manager = RuntimeManager::new();
+        let config = create_test_env_config();
+        let runtime_manager = RuntimeManager::new(config);
 
         println!("  ✅ RuntimeManager created successfully");
 
@@ -325,7 +346,8 @@ mod tests {
         println!("  ✓ Verifying RuntimeManager instance is valid");
 
         // Test that we can create multiple instances without issues
-        let _second_manager = RuntimeManager::new();
+        let config2 = create_test_env_config();
+        let _second_manager = RuntimeManager::new(config2);
         println!("  ✓ Multiple RuntimeManager instances can be created");
 
         // Verify that the manager exists and is properly constructed
@@ -352,9 +374,11 @@ mod tests {
     ///
     /// ```
     /// use crate::lifecycle::runtime::RuntimeManager;
+    /// use std::sync::Arc;
     ///
     /// // Test state management
-    /// let mut runtime_manager = RuntimeManager::new();
+    /// let config = create_test_env_config();
+    /// let mut runtime_manager = RuntimeManager::new(config);
     /// // Should handle state transitions properly
     /// ```
     #[tokio::test]
@@ -362,7 +386,8 @@ mod tests {
         println!("Testing RuntimeManager state transitions...");
 
         println!("  ✓ Creating RuntimeManager for state testing");
-        let runtime_manager = RuntimeManager::new();
+        let config = create_test_env_config();
+        let runtime_manager = RuntimeManager::new(config);
 
         println!("  ✅ RuntimeManager created for state testing");
 
@@ -370,8 +395,10 @@ mod tests {
         println!("  ✓ Testing multiple RuntimeManager operations");
 
         // Create multiple managers to test state isolation
-        let manager1 = RuntimeManager::new();
-        let manager2 = RuntimeManager::new();
+        let config1 = create_test_env_config();
+        let config2 = create_test_env_config();
+        let manager1 = RuntimeManager::new(config1);
+        let manager2 = RuntimeManager::new(config2);
 
         // Verify that each manager is independent
         assert!(

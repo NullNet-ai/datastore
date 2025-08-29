@@ -10,6 +10,7 @@ use crate::providers::operations::sync::transactions::transaction_service::Trans
 use crate::providers::storage;
 use crate::providers::storage::cache::cache_factory::CacheType;
 use crate::providers::storage::cache::{cache, CacheConfig};
+use crate::structs::structs::EnvConfig;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 use std::time::Duration;
@@ -31,6 +32,7 @@ pub struct StartupManager {
     pub bucket_name: Option<String>,
     state_manager: Arc<crate::lifecycle::state::StateManager>,
     logger: Arc<crate::lifecycle::logging::LifecycleLogger>,
+    config: Arc<EnvConfig>,
 }
 
 impl StartupManager {
@@ -38,6 +40,7 @@ impl StartupManager {
     pub fn new(
         state_manager: Arc<crate::lifecycle::state::StateManager>,
         logger: Arc<crate::lifecycle::logging::LifecycleLogger>,
+        config: Arc<EnvConfig>,
     ) -> Self {
         info!("[STARTUP] Initializing startup manager");
         Self {
@@ -47,6 +50,7 @@ impl StartupManager {
             bucket_name: None,
             state_manager,
             logger,
+            config,
         }
     }
 
@@ -215,93 +219,94 @@ impl StartupManager {
 
     /// Validate required environment variables
     fn validate_required_variables(&self, validation: &mut StartupValidation) {
-        let required_vars = vec!["DATABASE_URL", "HOST", "PORT"];
-
-        for var in required_vars {
-            if std::env::var(var).is_err() {
-                validation
-                    .errors
-                    .push(format!("Missing required environment variable: {}", var));
-                validation.is_valid = false;
-            }
+        // Check DATABASE_URL since it's still read directly by database connection
+        if std::env::var("DATABASE_URL").is_err() {
+            validation
+                .errors
+                .push("Missing required environment variable: DATABASE_URL".to_string());
+            validation.is_valid = false;
         }
 
-        // Check for recommended variables
-        let recommended_vars = vec!["GRPC_PORT", "SOCKET_PORT", "CACHE_TYPE", "RUST_LOG"];
-
-        for var in recommended_vars {
-            if std::env::var(var).is_err() {
-                validation.warnings.push(format!(
-                    "Recommended environment variable not set: {} (using default)",
-                    var
-                ));
-            }
+        // Validate that config has required values (these are now guaranteed by EnvConfig)
+        if self.config.host.is_empty() {
+            validation
+                .errors
+                .push("HOST configuration is empty".to_string());
+            validation.is_valid = false;
         }
+
+        if self.config.port.is_empty() {
+            validation
+                .errors
+                .push("PORT configuration is empty".to_string());
+            validation.is_valid = false;
+        }
+
+        // Log configuration values being used
+        info!("[STARTUP] Using HOST: {}", self.config.host);
+        info!("[STARTUP] Using PORT: {}", self.config.port);
+        info!("[STARTUP] Using GRPC_PORT: {}", self.config.grpc_port);
+        info!("[STARTUP] Using SOCKET_PORT: {}", self.config.socket_port);
     }
 
     /// Validate port configurations
     fn validate_port_configurations(&self, validation: &mut StartupValidation) {
         // Validate main HTTP port
-        if let Ok(port_str) = std::env::var("PORT") {
-            match port_str.parse::<u16>() {
-                Ok(port) => {
-                    if port < 1024 {
-                        validation.warnings.push(
-                            "PORT is set to a privileged port (<1024), ensure proper permissions"
-                                .to_string(),
-                        );
-                    }
+        match self.config.port.parse::<u16>() {
+            Ok(port) => {
+                if port < 1024 {
+                    validation.warnings.push(
+                        "PORT is set to a privileged port (<1024), ensure proper permissions"
+                            .to_string(),
+                    );
                 }
-                Err(_) => {
-                    validation
-                        .errors
-                        .push("PORT must be a valid integer".to_string());
-                    validation.is_valid = false;
-                }
+            }
+            Err(_) => {
+                validation
+                    .errors
+                    .push("PORT must be a valid integer".to_string());
+                validation.is_valid = false;
             }
         }
 
         // Validate gRPC port
-        if let Ok(grpc_port_str) = std::env::var("GRPC_PORT") {
-            match grpc_port_str.parse::<u16>() {
-                Ok(port) => {
-                    if port < 1024 {
-                        validation.warnings.push("GRPC_PORT is set to a privileged port (<1024), ensure proper permissions".to_string());
-                    }
+        match self.config.grpc_port.parse::<u16>() {
+            Ok(grpc_port) => {
+                if grpc_port < 1024 {
+                    validation.warnings.push(
+                        "GRPC_PORT is set to a privileged port (<1024), ensure proper permissions"
+                            .to_string(),
+                    );
+                }
 
-                    // Check for port conflicts
-                    if let Ok(http_port_str) = std::env::var("PORT") {
-                        if let Ok(http_port) = http_port_str.parse::<u16>() {
-                            if port == http_port {
-                                validation
-                                    .errors
-                                    .push("GRPC_PORT cannot be the same as PORT".to_string());
-                                validation.is_valid = false;
-                            }
-                        }
+                // Check for port conflicts
+                if let Ok(http_port) = self.config.port.parse::<u16>() {
+                    if grpc_port == http_port {
+                        validation
+                            .errors
+                            .push("GRPC_PORT cannot be the same as PORT".to_string());
+                        validation.is_valid = false;
                     }
                 }
-                Err(_) => {
-                    validation
-                        .errors
-                        .push("GRPC_PORT must be a valid integer".to_string());
-                    validation.is_valid = false;
-                }
+            }
+            Err(_) => {
+                validation
+                    .errors
+                    .push("GRPC_PORT must be a valid integer".to_string());
+                validation.is_valid = false;
             }
         }
 
         // Validate socket port
-        if let Ok(socket_port_str) = std::env::var("SOCKET_PORT") {
-            match socket_port_str.parse::<u16>() {
-                Ok(_port) => {
-                    // Port is valid u16, no additional checks needed
-                }
-                Err(_) => {
-                    validation
-                        .errors
-                        .push("SOCKET_PORT must be a valid integer".to_string());
-                    validation.is_valid = false;
-                }
+        match self.config.socket_port.parse::<u16>() {
+            Ok(_port) => {
+                // Port is valid u16, no additional checks needed
+            }
+            Err(_) => {
+                validation
+                    .errors
+                    .push("SOCKET_PORT must be a valid integer".to_string());
+                validation.is_valid = false;
             }
         }
     }

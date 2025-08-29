@@ -1,6 +1,7 @@
 use crate::{
     lifecycle::logging::{LogCategory, LogLevel},
     providers::operations::sync::sync_service::bg_sync_with_shutdown_check,
+    structs::structs::EnvConfig,
 };
 use log::{debug, error, info, warn};
 use std::sync::Arc;
@@ -41,11 +42,20 @@ pub struct RuntimeManager {
                 + Sync,
         >,
     >,
+    config: Arc<EnvConfig>,
+}
+
+impl Default for RuntimeManager {
+    fn default() -> Self {
+        // This is a placeholder implementation for Default
+        // In practice, RuntimeManager should be created with proper config
+        panic!("RuntimeManager::default() should not be used. Use RuntimeManager::new(config) instead.")
+    }
 }
 
 impl RuntimeManager {
     /// Create a new runtime manager
-    pub fn new() -> Self {
+    pub fn new(config: Arc<EnvConfig>) -> Self {
         info!("[RUNTIME] Initializing runtime manager");
 
         Self {
@@ -58,6 +68,7 @@ impl RuntimeManager {
             post_startup_callback: None,
             shutdown_manager: None,
             shutdown_callback: None,
+            config,
         }
     }
 
@@ -345,11 +356,11 @@ impl RuntimeManager {
                 .await;
         }
 
-        // Parse environment variables for service configuration
-        let grpc_url = std::env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
-        let grpc_port = std::env::var("GRPC_PORT").unwrap_or_else(|_| "50051".to_string());
-        let socket_host = std::env::var("SOCKET_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-        let socket_port = std::env::var("SOCKET_PORT").unwrap_or_else(|_| "3001".to_string());
+        // Parse configuration for service configuration
+        let grpc_url = self.config.grpc_url.clone();
+        let grpc_port = self.config.grpc_port.clone();
+        let socket_host = self.config.socket_host.clone();
+        let socket_port = self.config.socket_port.clone();
 
         let grpc_addr = format!("{}:{}", grpc_url, grpc_port);
 
@@ -528,10 +539,8 @@ impl RuntimeManager {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("[RUNTIME] Starting HTTP server and main loop");
 
-        // Get server configuration from environment
-        let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-        let port = std::env::var("PORT").unwrap_or_else(|_| "5000".to_string());
-        let bind_address = format!("{}:{}", host, port);
+        // Get server configuration from config
+        let bind_address = format!("{}:{}", self.config.host, self.config.port);
 
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
@@ -730,11 +739,7 @@ impl RuntimeManager {
     }
 }
 
-impl Default for RuntimeManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// RuntimeManager no longer implements Default since it requires config parameter
 
 /// Check cache system health
 pub async fn check_cache_health() -> Result<String, String> {

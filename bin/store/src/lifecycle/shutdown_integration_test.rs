@@ -1,8 +1,26 @@
 #[cfg(test)]
 mod tests {
     use super::super::shutdown::{BackgroundServiceShutdown, ShutdownManager, ShutdownService};
+    use crate::providers::storage::cache::cache_factory::CacheType;
+    use crate::structs::structs::EnvConfig;
+    use std::sync::Arc;
     use tokio::sync::mpsc;
     use tokio::time::{timeout, Duration};
+
+    /// Creates a mock EnvConfig for testing purposes
+    fn create_test_env_config() -> Arc<EnvConfig> {
+        Arc::new(EnvConfig {
+            host: "localhost".to_string(),
+            port: "8080".to_string(),
+            grpc_port: "50051".to_string(),
+            grpc_url: "http://localhost:50051".to_string(),
+            socket_host: "localhost".to_string(),
+            socket_port: "3000".to_string(),
+            cache_type: CacheType::InMemory,
+            redis_connection: None,
+            ttl: Some(Duration::from_secs(300)),
+        })
+    }
     /// Tests BackgroundServiceShutdown creation and basic functionality:
     /// - Service can be created with name and shutdown channel
     /// - Service name is correctly stored and retrieved
@@ -213,9 +231,11 @@ mod tests {
     /// ```
     /// use crate::lifecycle::runtime::RuntimeManager;
     /// use crate::lifecycle::shutdown::ShutdownManager;
+    /// use std::sync::Arc;
     ///
     /// let mut shutdown_manager = ShutdownManager::new();
-    /// let runtime_manager = RuntimeManager::new()
+    /// let config = create_test_env_config();
+    /// let runtime_manager = RuntimeManager::new(config)
     ///     .with_shutdown_manager(&mut shutdown_manager);
     /// ```
     #[tokio::test]
@@ -231,7 +251,9 @@ mod tests {
 
         println!("  ✓ Creating RuntimeManager with ShutdownManager reference");
 
-        let _runtime_manager = RuntimeManager::new().with_shutdown_manager(&mut shutdown_manager);
+        let config = create_test_env_config();
+        let _runtime_manager =
+            RuntimeManager::new(config).with_shutdown_manager(&mut shutdown_manager);
 
         // Verify the runtime manager was configured correctly
         // (This is a structural test since we can't easily test the private field)

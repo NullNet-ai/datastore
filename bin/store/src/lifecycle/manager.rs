@@ -4,10 +4,11 @@ use super::runtime::RuntimeManager;
 use super::shutdown::ShutdownManager;
 use super::startup::StartupManager;
 use super::state::{ComponentStatus, LifecyclePhase, StateManager};
+use crate::structs::structs::EnvConfig;
 use log::info;
 use std::sync::Arc;
 
-/// Main lifecycle manager that orchestrates all phases
+/// Main lifecycle manager that orchestrates all phases#[derive(Debug)]
 pub struct LifecycleManager {
     state_manager: Arc<StateManager>,
     logger: Arc<LifecycleLogger>,
@@ -15,12 +16,14 @@ pub struct LifecycleManager {
     runtime_manager: RuntimeManager,
     shutdown_manager: ShutdownManager,
     health_service: Arc<HealthService>,
+    config: Arc<EnvConfig>,
 }
 
 impl LifecycleManager {
-    /// Create a new lifecycle manager
-    pub fn new() -> Self {
-        let logger = Arc::new(LifecycleLogger::default());
+    /// Create a new lifecycle manager with default configuration
+    #[allow(dead_code)]
+    pub fn new(config: Arc<EnvConfig>) -> Self {
+        let logger = Arc::new(LifecycleLogger::new(LogConfig::default()));
         let state_manager = Arc::new(StateManager::with_logger(logger.clone()));
         let health_service = Arc::new(HealthService::with_logger(logger.clone()));
 
@@ -28,17 +31,22 @@ impl LifecycleManager {
         let manager = Self {
             state_manager: state_manager.clone(),
             logger: logger.clone(),
-            startup_manager: StartupManager::new(state_manager.clone(), logger.clone()),
-            runtime_manager: RuntimeManager::new().with_logger(logger.clone()),
+            startup_manager: StartupManager::new(
+                state_manager.clone(),
+                logger.clone(),
+                config.clone(),
+            ),
+            runtime_manager: RuntimeManager::new(config.clone()).with_logger(logger.clone()),
             shutdown_manager: ShutdownManager::new().with_logger(logger.clone()),
             health_service,
+            config,
         };
 
         manager
     }
 
     /// Create a lifecycle manager with custom configuration
-    pub fn with_config(log_config: LogConfig) -> Self {
+    pub fn with_config(log_config: LogConfig, config: Arc<EnvConfig>) -> Self {
         let logger = Arc::new(LifecycleLogger::new(log_config));
         let state_manager = Arc::new(StateManager::with_logger(logger.clone()));
         let health_service = Arc::new(HealthService::with_logger(logger.clone()));
@@ -46,10 +54,15 @@ impl LifecycleManager {
         let manager = Self {
             state_manager: state_manager.clone(),
             logger: logger.clone(),
-            startup_manager: StartupManager::new(state_manager.clone(), logger.clone()),
-            runtime_manager: RuntimeManager::new().with_logger(logger.clone()),
+            startup_manager: StartupManager::new(
+                state_manager.clone(),
+                logger.clone(),
+                config.clone(),
+            ),
+            runtime_manager: RuntimeManager::new(config.clone()).with_logger(logger.clone()),
             shutdown_manager: ShutdownManager::new().with_logger(logger.clone()),
             health_service,
+            config,
         };
 
         manager
@@ -288,13 +301,15 @@ impl LifecycleManager {
         };
 
         // Configure the runtime manager with the logger, health service, state manager, shutdown manager, and post-startup callback
-        let configured_runtime_manager =
-            std::mem::replace(&mut self.runtime_manager, RuntimeManager::new())
-                .with_logger(self.logger.clone())
-                .with_health_service(self.health_service.clone())
-                .with_state_manager(self.state_manager.clone())
-                .with_shutdown_manager(&mut self.shutdown_manager)
-                .with_post_startup_callback(post_startup_callback);
+        let configured_runtime_manager = std::mem::replace(
+            &mut self.runtime_manager,
+            RuntimeManager::new(self.config.clone()),
+        )
+        .with_logger(self.logger.clone())
+        .with_health_service(self.health_service.clone())
+        .with_state_manager(self.state_manager.clone())
+        .with_shutdown_manager(&mut self.shutdown_manager)
+        .with_post_startup_callback(post_startup_callback);
         self.runtime_manager = configured_runtime_manager;
 
         // Update RuntimeManager status to running
@@ -497,11 +512,5 @@ impl LifecycleManager {
                         .await;
                 }
             });
-    }
-}
-
-impl Default for LifecycleManager {
-    fn default() -> Self {
-        Self::new()
     }
 }

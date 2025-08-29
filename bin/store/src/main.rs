@@ -80,7 +80,8 @@ async fn bootstrap() -> std::io::Result<()> {
     };
 
     // Initialize lifecycle manager
-    let mut lifecycle_manager = LifecycleManager::with_config(log_config);
+    let mut lifecycle_manager =
+        LifecycleManager::with_config(log_config, std::sync::Arc::new(env_config));
 
     // Execute the application lifecycle
     if let Err(e) = lifecycle_manager.execute().await {
