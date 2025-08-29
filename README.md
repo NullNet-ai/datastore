@@ -20,6 +20,9 @@ crdt-workspace/
 │       ├── builders/              # Code generation and build tools
 │       │   ├── generator/         # Schema and proto generators
 │       │   └── templates/         # Code generation templates
+│       ├── config/                # Configuration management
+│       │   ├── core.rs            # Centralized environment configuration (EnvConfig)
+│       │   └── mod.rs             # Configuration module exports
 │       ├── constants/             # Application constants and paths
 │       ├── controllers/           # gRPC and API controllers
 │       ├── database/              # Database schema and operations
@@ -61,7 +64,8 @@ crdt-workspace/
 - **`bin/store/src/builders/generator/`** - Code generation tools and scripts
 - **`bin/store/src/constants/paths.rs`** - Centralized path constants for consistency
 - **`bin/store/src/lifecycle/`** - Application lifecycle management system
-- **`bin/store/src/structs/core.rs`** - Centralized configuration management (EnvConfig)
+- **`bin/store/src/config/`** - Configuration management system
+- **`bin/store/src/config/core.rs`** - Centralized environment configuration (EnvConfig)
 
 ### Path Management
 
@@ -122,7 +126,7 @@ graph TD
 
 ### Configuration Management
 
-The application uses centralized configuration management through the `EnvConfig` structure in `bin/store/src/structs/core.rs`:
+The application uses centralized configuration management through the `EnvConfig` structure in `bin/store/src/config/core.rs`:
 
 - **Centralized Environment Variables** - All environment variable access is centralized through `EnvConfig`
 - **Type Safety** - Configuration values are parsed and validated at startup
