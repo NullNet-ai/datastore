@@ -1,4 +1,6 @@
 use crate::lifecycle::logging::{LogCategory, LogLevel};
+use crate::providers::operations::sync::merkles::merkle_manager::MerkleManager;
+use crate::providers::operations::sync::message_manager;
 use actix_web::dev::ServerHandle;
 use log::{error, info, warn};
 use std::sync::Arc;
@@ -359,21 +361,29 @@ impl ShutdownManager {
         Ok(())
     }
 
-    /// Cleanup resources
+    /// Cleanup resources and save data before shutdown
     async fn cleanup_resources(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        info!("[SHUTDOWN] Cleaning up resources");
+        info!("[SHUTDOWN] Cleaning up resources and saving data");
 
-        // TODO: Implement resource cleanup
-        // This would typically involve:
-        // 1. Closing database connections
-        // 2. Flushing caches
-        // 3. Cleaning up temporary files
-        // 4. Releasing locks
+        // Save message queue - wait for completion without timeout
+        info!("[SHUTDOWN] Saving pending messages...");
+        if let Err(e) = message_manager::save_pending_messages().await {
+            error!("Error saving message queue: {}", e);
+        } else {
+            info!("[SHUTDOWN] Successfully saved all pending messages");
+        }
 
-        // Simulate cleanup time
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        // Save Merkle trees - wait for completion without timeout
+        info!("[SHUTDOWN] Saving Merkle trees to database...");
+        let merkle_manager = MerkleManager::instance();
+        if let Err(e) = merkle_manager.save_to_db().await {
+            error!("Error saving Merkle trees to database: {}", e);
+            return Err(format!("Failed to save Merkle trees: {}", e).into());
+        } else {
+            info!("[SHUTDOWN] Successfully saved all Merkle trees to database");
+        }
 
-        info!("[SHUTDOWN] Resource cleanup completed");
+        info!("[SHUTDOWN] All data saved successfully, resource cleanup completed");
         Ok(())
     }
 

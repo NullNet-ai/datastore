@@ -1,4 +1,5 @@
-use crate::shutdown_handler::is_shutdown_requested;
+// Note: This middleware is deprecated in favor of the integrated shutdown system
+// in LifecycleManager. Consider removing this file if no longer needed.
 use crate::structs::structs::ApiResponse;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
@@ -50,7 +51,8 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Check if shutdown has been requested
-        if is_shutdown_requested() {
+        // Note: This middleware is deprecated - shutdown is now handled by LifecycleManager
+        if false { // Disabled - use LifecycleManager instead
             let (http_req, _) = req.into_parts();
 
             // Create the JSON response
@@ -98,7 +100,8 @@ pub struct GrpcShutdownInterceptor;
 impl Interceptor for GrpcShutdownInterceptor {
     fn call(&mut self, request: Request<()>) -> Result<Request<()>, Status> {
         // Check if shutdown has been requested
-        if is_shutdown_requested() {
+        // Note: This interceptor is deprecated - shutdown is now handled by LifecycleManager
+        if false { // Disabled - use LifecycleManager instead
             // Return a UNAVAILABLE status with a message
             return Err(Status::unavailable(
                 "Server is shutting down, please try again later",

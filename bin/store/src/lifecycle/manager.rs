@@ -23,14 +23,18 @@ impl LifecycleManager {
         let logger = Arc::new(LifecycleLogger::default());
         let state_manager = Arc::new(StateManager::with_logger(logger.clone()));
         let health_service = Arc::new(HealthService::with_logger(logger.clone()));
-        Self {
+        
+        // Create a placeholder for self-reference
+        let manager = Self {
             state_manager: state_manager.clone(),
             logger: logger.clone(),
             startup_manager: StartupManager::new(state_manager.clone(), logger.clone()),
             runtime_manager: RuntimeManager::new().with_logger(logger.clone()),
             shutdown_manager: ShutdownManager::new().with_logger(logger.clone()),
             health_service,
-        }
+        };
+        
+        manager
     }
 
     /// Create a lifecycle manager with custom configuration
@@ -38,14 +42,17 @@ impl LifecycleManager {
         let logger = Arc::new(LifecycleLogger::new(log_config));
         let state_manager = Arc::new(StateManager::with_logger(logger.clone()));
         let health_service = Arc::new(HealthService::with_logger(logger.clone()));
-        Self {
+        
+        let manager = Self {
             state_manager: state_manager.clone(),
             logger: logger.clone(),
             startup_manager: StartupManager::new(state_manager.clone(), logger.clone()),
             runtime_manager: RuntimeManager::new().with_logger(logger.clone()),
             shutdown_manager: ShutdownManager::new().with_logger(logger.clone()),
             health_service,
-        }
+        };
+        
+        manager
     }
 
     /// Execute the complete application lifecycle
@@ -104,6 +111,10 @@ impl LifecycleManager {
         // Execute runtime phase
         self.state_manager.set_phase(LifecyclePhase::Running).await;
         self.update_health_service().await;
+        
+        // Setup shutdown callback before starting runtime
+        self.setup_shutdown_callback();
+        
         match self.execute_runtime().await {
             Ok(_) => {
                 self.logger
@@ -406,7 +417,9 @@ impl LifecycleManager {
 
     /// Request graceful shutdown
     pub async fn request_shutdown(&self) {
-        self.runtime_manager.request_shutdown().await;
+        // Set the runtime shutdown flag directly
+        let shutdown_flag = self.runtime_manager.get_shutdown_flag();
+        *shutdown_flag.write().await = true;
 
         self.logger
             .log(
@@ -416,6 +429,29 @@ impl LifecycleManager {
                 "Graceful shutdown requested",
             )
             .await;
+    }
+
+    /// Configure shutdown callback for runtime manager
+    fn setup_shutdown_callback(&mut self) {
+        let shutdown_flag = self.runtime_manager.get_shutdown_flag();
+        let logger = self.logger.clone();
+        
+        self.runtime_manager = std::mem::take(&mut self.runtime_manager)
+            .with_shutdown_callback(move || {
+                let shutdown_flag = shutdown_flag.clone();
+                let logger = logger.clone();
+                async move {
+                    *shutdown_flag.write().await = true;
+                    logger
+                        .log(
+                            LogLevel::Info,
+                            LogCategory::Lifecycle,
+                            "LifecycleManager",
+                            "Graceful shutdown requested via signal",
+                        )
+                        .await;
+                }
+            });
     }
 }
 

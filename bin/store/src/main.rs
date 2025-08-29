@@ -20,7 +20,6 @@ use crate::lifecycle::{
     logging::{LogConfig, LogLevel},
     manager::LifecycleManager,
 };
-use crate::middlewares::shutdown_handler;
 use crate::utils::utils::{parse_command_args, parse_env_config};
 use env_logger::Env;
 use log::{error, info};

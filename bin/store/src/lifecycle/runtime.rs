@@ -1,6 +1,6 @@
 use crate::{
     lifecycle::logging::{LogCategory, LogLevel},
-    providers::operations::sync::sync_service::bg_sync,
+    providers::operations::sync::sync_service::bg_sync_with_shutdown_check,
 };
 use log::{debug, error, info, warn};
 use std::sync::Arc;
@@ -42,6 +42,13 @@ pub struct RuntimeManager {
         >,
     >,
     shutdown_manager: Option<*mut crate::lifecycle::shutdown::ShutdownManager>,
+    shutdown_callback: Option<
+        Arc<
+            dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+                + Send
+                + Sync,
+        >,
+    >,
 }
 
 impl RuntimeManager {
@@ -66,6 +73,7 @@ impl RuntimeManager {
             health_service: None,
             post_startup_callback: None,
             shutdown_manager: None,
+            shutdown_callback: None,
         }
     }
 
@@ -101,6 +109,18 @@ impl RuntimeManager {
         self.shutdown_manager = Some(shutdown_manager as *mut _);
         self
     }
+
+    /// Set shutdown callback function
+    pub fn with_shutdown_callback<F, Fut>(mut self, callback: F) -> Self
+    where
+        F: Fn() -> Fut + Send + Sync + 'static,
+        Fut: std::future::Future<Output = ()> + Send + 'static,
+    {
+        self.shutdown_callback = Some(Arc::new(move || Box::pin(callback())));
+        self
+    }
+
+
 
     /// Execute the runtime phase with actual services
     pub async fn execute(
@@ -288,6 +308,7 @@ impl RuntimeManager {
 
     /// Setup signal handlers for graceful shutdown
     async fn setup_signal_handlers(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let shutdown_callback = self.shutdown_callback.clone();
         let shutdown_requested = self.shutdown_requested.clone();
 
         tokio::spawn(async move {
@@ -305,7 +326,15 @@ impl RuntimeManager {
                 }
             }
 
-            *shutdown_requested.write().await = true;
+            // Call shutdown callback if available, otherwise set flag directly
+            if let Some(callback) = shutdown_callback {
+                info!("[RUNTIME] Calling shutdown callback");
+                callback().await;
+            } else {
+                info!("[RUNTIME] No shutdown callback, setting flag directly");
+                *shutdown_requested.write().await = true;
+            }
+            info!("[RUNTIME] Shutdown request processed, runtime will terminate gracefully");
         });
 
         info!("[RUNTIME] Signal handlers configured");
@@ -478,10 +507,16 @@ impl RuntimeManager {
         });
 
         // start running background synced data to the sync server (bin/server)
+        let shutdown_flag = self.shutdown_requested.clone();
         tokio::spawn(async move {
             tokio::select! {
                 _ = async {
-                    if let Err(e) = bg_sync().await {
+                    if let Err(e) = bg_sync_with_shutdown_check(move || {
+                        let shutdown_flag = shutdown_flag.clone();
+                        async move {
+                            *shutdown_flag.read().await
+                        }
+                    }).await {
                         log::error!("Error starting background sync: {}", e);
                     }
                 } => {}
@@ -696,15 +731,16 @@ impl RuntimeManager {
         metrics
     }
 
-    /// Request shutdown
-    pub async fn request_shutdown(&self) {
-        info!("[RUNTIME] Shutdown requested");
-        *self.shutdown_requested.write().await = true;
-    }
+
 
     /// Check if shutdown was requested
     pub async fn is_shutdown_requested(&self) -> bool {
         *self.shutdown_requested.read().await
+    }
+
+    /// Get shutdown flag for external management
+    pub fn get_shutdown_flag(&self) -> Arc<RwLock<bool>> {
+        self.shutdown_requested.clone()
     }
 }
 
