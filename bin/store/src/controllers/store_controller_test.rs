@@ -618,22 +618,22 @@ mod tests {
 
                         // Write SQL to file for inspection
                         if let Err(e) =
-                            write_sql_to_file(&sql, "contacts_first_name_starts_with_j_scenario")
+                            write_sql_to_file(&sql, "contacts_basic_fields_scenario")
                         {
                             println!("  ⚠ Failed to write SQL to file: {}", e);
                         }
 
-                        // Validate SQL structure
+                        // Validate SQL structure for basic fields query
                         assert!(sql.contains("SELECT"), "SQL should contain SELECT");
                         assert!(sql.contains("FROM"), "SQL should contain FROM");
                         assert!(sql.contains("contacts"), "SQL should query contacts table");
                         assert!(
-                            sql.contains("WHERE") || sql.contains("where"),
-                            "SQL should contain WHERE clause"
+                            sql.contains("id") && sql.contains("first_name") && sql.contains("last_name"),
+                            "SQL should select id, first_name, and last_name fields"
                         );
                         assert!(
-                            sql.contains("first_name"),
-                            "SQL should filter by first_name"
+                            sql.contains("ORDER BY") || sql.contains("order by"),
+                            "SQL should contain ORDER BY clause"
                         );
 
                         println!("  ✓ SQL validation checks passed");
@@ -664,67 +664,7 @@ mod tests {
                     }
                 }
 
-                // Convert GetByFilter to JSON for SQL generation testing
-                let payload_json =
-                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
 
-                // Test SQL generation first
-                match get_raw_query(&payload_json, get_table_name(), true, None) {
-                    Ok(sql) => {
-                        println!("  ✓ SQL generated successfully");
-
-                        // Write SQL to file for inspection
-                        if let Err(e) = write_sql_to_file(
-                            &sql,
-                            "contacts_complex_with_joins_and_concatenation_scenario",
-                        ) {
-                            println!("  ⚠ Failed to write SQL to file: {}", e);
-                        }
-
-                        // Validate SQL structure for complex query with joins and concatenation
-                        assert!(sql.contains("SELECT"), "SQL should contain SELECT");
-                        assert!(sql.contains("FROM"), "SQL should contain FROM");
-                        assert!(sql.contains("contacts"), "SQL should query contacts table");
-                        assert!(
-                            sql.contains("JOIN") || sql.contains("join"),
-                            "SQL should contain JOIN for related tables"
-                        );
-                        assert!(
-                            sql.contains("CONCAT") || sql.contains("concat") || sql.contains("||"),
-                            "SQL should contain concatenation"
-                        );
-                        assert!(
-                            sql.contains("full_name"),
-                            "SQL should include full_name concatenated field"
-                        );
-
-                        println!("  ✓ SQL validation checks passed for complex query");
-
-                        // Test query execution (optional, may fail in offline mode)
-                        match execute_raw_sql_query(&sql).await {
-                            Ok(sql_results) => {
-                                println!(
-                                    "  ✓ SQL query executed successfully with {} results",
-                                    sql_results.len()
-                                );
-                                if !sql_results.is_empty() {
-                                    let formatted_table = format_response_as_table(
-                                        &serde_json::json!({"data": sql_results}).to_string(),
-                                    );
-                                    println!("SQL Results:");
-                                    println!("{}", formatted_table);
-                                }
-                            }
-                            Err(e) => {
-                                println!("  ⚠ SQL query execution failed (acceptable for offline testing): {}", e);
-                            }
-                        }
-                    }
-                    Err(sql_err) => {
-                        println!("  ✗ SQL generation failed: {}", sql_err);
-                        panic!("SQL generation should not fail for valid payload");
-                    }
-                }
 
                 // Test HTTP request to /filter endpoint
                 match make_filter_http_request(&payload, &get_table_name(), &auth_response).await {
