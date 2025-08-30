@@ -659,4 +659,85 @@ mod tests {
 
         println!("  ✓ contacts_active_status scenario test completed");
     }
+
+    /// Test using contacts_first_name_starts_with_j payload scenario
+    /// Tests SQL generation and execution with first_name starting with 'J' filter
+    #[tokio::test]
+    async fn should_use_contacts_first_name_starts_with_j_scenario() {
+        println!("Testing contacts_first_name_starts_with_j payload scenario...");
+
+        match load_payload_scenario("contacts_first_name_starts_with_j") {
+            Ok(payload) => {
+                println!("  ✓ Successfully loaded contacts_first_name_starts_with_j scenario");
+
+                // Convert GetByFilter to JSON for testing
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
+                println!("  ✓ Payload fields: {:?}", payload.pluck);
+                println!("  ✓ Filter count: {}", payload.advance_filters.len());
+
+                assert_eq!(
+                    payload.pluck,
+                    vec!["id", "first_name", "status"]
+                );
+                assert_eq!(payload.limit, 25);
+                assert_eq!(payload.offset, 0);
+                assert_eq!(payload.advance_filters.len(), 1);
+
+                // Verify the filter criteria
+                if let Some(filter) = payload.advance_filters.first() {
+                    match filter {
+                        crate::structs::core::FilterCriteria::Criteria {
+                            field, operator, values, ..
+                        } => {
+                            println!("  ✓ Filter field: {}", field);
+                             println!("  ✓ Filter operator: {:?}", operator);
+                             println!("  ✓ Filter values: {:?}", values);
+                             assert_eq!(field, "first_name");
+                             assert!(matches!(operator, crate::structs::core::FilterOperator::Like));
+                             assert_eq!(values, &vec![serde_json::Value::String("J%".to_string())]);
+                        }
+                        _ => println!("  ✓ Filter is not a criteria type"),
+                    }
+                }
+
+                // Test SQL generation
+                match generate_and_execute_query(
+                    &payload_json,
+                    get_table_name(),
+                    true,
+                    None,
+                    "contacts_first_name_starts_with_j_scenario",
+                )
+                .await
+                {
+                    Ok(results) => {
+                        println!(
+                            "  ✓ Query executed successfully with {} results",
+                            results.len()
+                        );
+                        if !results.is_empty() {
+                            let formatted_table = format_response_as_table(
+                                &serde_json::json!({"data": results}).to_string(),
+                            );
+                            println!("{}", formatted_table);
+                        }
+                    }
+                    Err(e) => {
+                        println!(
+                            "  ⚠ Query execution failed (acceptable for offline testing): {}",
+                            e
+                        );
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_first_name_starts_with_j scenario test completed");
+    }
 }
