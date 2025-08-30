@@ -1077,9 +1077,40 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 );
             }
         }
+        
+        // Determine the correct from table reference
+        // If the from entity has an alias, use it; otherwise check if it matches an existing alias from previous joins
+        let from_table_ref = if let Some(from_alias) = &join.field_relation.from.alias {
+            from_alias.as_str()
+        } else {
+            // Check if the from entity matches any previous join's alias
+            let from_entity = &join.field_relation.from.entity;
+            
+            // Look for a previous join that created this alias
+            let matching_alias = self.request_body.get_joins().iter()
+                .find_map(|j| {
+                    if let Some(alias) = &j.field_relation.to.alias {
+                        if alias == from_entity {
+                            return Some(alias.as_str());
+                        }
+                    }
+                    None
+                });
+            
+            matching_alias.unwrap_or_else(|| {
+                // If no alias found and from_entity equals main table, use main table
+                if from_entity == &self.table {
+                    &self.table
+                } else {
+                    // Otherwise use the from_entity as-is (it should be an alias)
+                    from_entity
+                }
+            })
+        };
+        
         format!(
             "\"{}\".\"{}\" = \"{}\".\"{}\"",
-            self.table, from_field, alias, to_field
+            from_table_ref, from_field, alias, to_field
         )
     }
 
@@ -1390,10 +1421,22 @@ impl<T: QueryFilter> SQLConstructor<T> {
             );
         }
 
-        let from_table_ref = if is_self_join {
-            &self.table
+        // Determine the correct from table reference for the join condition
+        let from_table_ref = if let Some(alias) = &join.field_relation.from.alias {
+            alias.as_str()
         } else {
-            &self.table
+            // Check if from_entity matches any alias from previous joins
+            let joins = self.request_body.get_joins();
+            let mut found_alias = None;
+            for j in joins {
+                if let Some(to_alias) = &j.field_relation.to.alias {
+                    if to_alias == from_entity {
+                        found_alias = Some(to_alias.as_str());
+                        break;
+                    }
+                }
+            }
+            found_alias.unwrap_or(if is_self_join { &self.table } else { from_entity })
         };
 
         format!(
@@ -1401,7 +1444,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
             selected_fields,
             to_entity, lateral_alias,
             combined_where,
-            from_table_ref, from_field, lateral_alias, to_field,
+            lateral_alias, to_field, from_table_ref, from_field,
             to_alias
         )
     }

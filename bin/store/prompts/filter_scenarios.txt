@@ -15,3 +15,5 @@ Run make store
 after creating the unit tests from /controllers/store_controller_test.rs fix the issues in /providers/queries/find/sql_constructor.rs
 
 and if the issue is fix re-run the store, if still persist check /providers/queries/find files
+
+ALWAYS re run the store every changes in /providers/queries/find/sql_constructor.rs file then continue fixing issues.

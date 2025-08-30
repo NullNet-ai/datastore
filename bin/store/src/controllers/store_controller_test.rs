@@ -743,4 +743,116 @@ mod tests {
 
         println!("  ✓ contacts_first_name_starts_with_j scenario test completed");
     }
+
+    /// Test using contacts_complex_with_joins_and_concatenation payload scenario
+    /// Tests SQL generation and execution with complex joins, concatenated fields, and multiple filters
+    #[tokio::test]
+    async fn should_use_contacts_complex_with_joins_and_concatenation_scenario() {
+        println!("Testing contacts_complex_with_joins_and_concatenation payload scenario...");
+
+        match load_payload_scenario("contacts_complex_with_joins_and_concatenation") {
+            Ok(payload) => {
+                println!("  ✓ Successfully loaded contacts_complex_with_joins_and_concatenation scenario");
+
+                // Convert GetByFilter to JSON for testing
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
+                println!("  ✓ Payload fields: {:?}", payload.pluck);
+                println!("  ✓ Joins count: {}", payload.joins.len());
+                println!("  ✓ Concatenate fields count: {}", payload.concatenate_fields.len());
+                println!("  ✓ Advance filters count: {}", payload.advance_filters.len());
+                
+                // Validate the complex scenario structure
+                assert_eq!(payload.pluck, vec!["id", "categories", "organization_id", "first_name", "middle_name", "last_name"]);
+                assert_eq!(payload.limit, 100);
+                assert_eq!(payload.offset, 0);
+                assert_eq!(payload.date_format, "mm/dd/YYYY");
+                assert_eq!(payload.joins.len(), 6); // 6 joins as specified
+                assert_eq!(payload.concatenate_fields.len(), 4); // 4 concatenated fields
+                assert_eq!(payload.advance_filters.len(), 3); // 2 criteria + 1 operator
+                assert_eq!(payload.multiple_sort.len(), 1); // 1 sort option
+                
+                // Validate pluck_object structure
+                assert!(payload.pluck_object.contains_key("contacts"));
+                assert!(payload.pluck_object.contains_key("created_by_account_organizations"));
+                assert!(payload.pluck_object.contains_key("created_by"));
+                assert!(payload.pluck_object.contains_key("updated_by_account_organizations"));
+                assert!(payload.pluck_object.contains_key("updated_by"));
+                assert!(payload.pluck_object.contains_key("contact_emails"));
+                assert!(payload.pluck_object.contains_key("contact_phone_numbers"));
+                
+                // Validate concatenate fields
+                let concat_field_names: Vec<String> = payload.concatenate_fields.iter()
+                    .map(|f| f.field_name.clone())
+                    .collect();
+                assert!(concat_field_names.contains(&"full_name".to_string()));
+                assert!(concat_field_names.contains(&"created_date_time".to_string()));
+                assert!(concat_field_names.contains(&"updated_date_time".to_string()));
+
+                // Test SQL generation
+                match generate_and_execute_query(
+                    &payload_json,
+                    get_table_name(),
+                    true,
+                    None,
+                    "contacts_complex_with_joins_and_concatenation_scenario",
+                )
+                .await
+                {
+                    Ok(results) => {
+                        println!(
+                            "  ✓ Query executed successfully with {} results",
+                            results.len()
+                        );
+                        if !results.is_empty() {
+                            let formatted_table = format_response_as_table(
+                                &serde_json::json!({"data": results}).to_string(),
+                            );
+                            println!("{}", formatted_table);
+                        }
+                    }
+                    Err(e) => {
+                        println!(
+                            "  ⚠ Query execution failed (acceptable for offline testing): {}",
+                            e
+                        );
+                        // Still validate that SQL was generated properly
+                        match get_raw_query(&payload_json, get_table_name(), true, None) {
+                            Ok(sql) => {
+                                println!("  ✓ SQL generation successful");
+                                println!("  ℹ Generated SQL contains expected elements:");
+                                
+                                // Validate SQL contains expected joins
+                                assert!(sql.contains("LEFT JOIN"), "SQL should contain LEFT JOIN");
+                                assert!(sql.contains("contact_emails"), "SQL should join contact_emails");
+                                assert!(sql.contains("contact_phone_numbers"), "SQL should join contact_phone_numbers");
+                                assert!(sql.contains("account_organizations"), "SQL should join account_organizations");
+                                
+                                // Validate SQL contains concatenated fields
+                                assert!(sql.contains("COALESCE"), "SQL should contain COALESCE for concatenation");
+                                
+                                // Validate SQL contains filters
+                                assert!(sql.contains("created_date_time"), "SQL should filter by created_date_time");
+                                assert!(sql.contains("status"), "SQL should filter by status");
+                                assert!(sql.contains("Active") || sql.contains("Draft"), "SQL should filter by Active or Draft status");
+                                
+                                println!("  ✓ All SQL validation checks passed");
+                            }
+                            Err(sql_err) => {
+                                println!("  ✗ SQL generation failed: {}", sql_err);
+                                panic!("SQL generation should not fail for valid payload");
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_complex_with_joins_and_concatenation scenario test completed");
+    }
 }

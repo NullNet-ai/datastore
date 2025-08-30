@@ -1,0 +1,38 @@
+{
+  "pluck": [
+    "id",
+    "status",
+    "first_name",
+    "last_name"
+  ],
+  "pluck_object": {},
+  "pluck_group_object": {},
+  "advance_filters": [
+    {
+      "type": "criteria",
+      "field": "status",
+      "operator": "equal",
+      "values": [
+        "Active"
+      ],
+      "case_sensitive": null,
+      "parse_as": "text",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
+    }
+  ],
+  "group_advance_filters": [],
+  "joins": [],
+  "group_by": null,
+  "concatenate_fields": [],
+  "multiple_sort": [],
+  "date_format": "YYYY-MM-DD HH24:MI:SS",
+  "order_by": "id",
+  "order_direction": "ASC",
+  "is_case_sensitive_sorting": null,
+  "offset": 0,
+  "limit": 25,
+  "distinct_by": null,
+  "timezone": null
+}
