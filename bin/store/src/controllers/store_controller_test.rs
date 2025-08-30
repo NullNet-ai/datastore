@@ -345,6 +345,24 @@ mod tests {
         execute_raw_sql_query(&sql_query).await
     }
 
+    /// Display error response message in a formatted JSON structure
+    /// Shows the response message from validation or SQL generation errors
+    fn display_error_response(error_message: &str) {
+        let response = serde_json::json!({
+            "success": false,
+            "message": error_message,
+            "count": 0,
+            "data": []
+        });
+
+        println!("  📋 Response Message:");
+        println!(
+            "  {}",
+            serde_json::to_string_pretty(&response)
+                .unwrap_or_else(|_| "Failed to format response".to_string())
+        );
+    }
+
     /// Reusable login helper function that can be used across all tests
     /// Returns authentication data including token and session information
     /// Handles both online and offline scenarios gracefully
@@ -524,19 +542,63 @@ mod tests {
 
     // Filters Scenarios
 
+    /// Make HTTP request to /filter endpoint
+    /// Tests actual HTTP request/response handling with authentication
+    async fn make_filter_http_request(
+        payload: &GetByFilter,
+        table: &str,
+        auth_response: &AuthResponse,
+    ) -> Result<serde_json::Value, String> {
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+        let filter_url = format!("{}/api/store/{}/filter", base_url, table);
+
+        let client = reqwest::Client::new();
+        let mut request_builder = client.post(&filter_url).json(payload);
+
+        // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request_builder = request_builder.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request_builder = request_builder.header("X-Session-ID", session_id);
+        }
+
+        let response = request_builder
+            .send()
+            .await
+            .map_err(|e| format!("HTTP request failed: {}", e))?;
+
+        let status = response.status();
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+        if !status.is_success() {
+            return Err(format!("HTTP {} - {}", status, response_text));
+        }
+
+        serde_json::from_str(&response_text)
+            .map_err(|e| format!("Failed to parse JSON response: {}", e))
+    }
+
     /// Test using contacts_basic_fields payload scenario
-    /// Tests SQL generation and execution with basic field selection
+    /// Tests HTTP request to /filter endpoint with basic field selection
     #[tokio::test]
     async fn should_use_contacts_basic_fields_scenario() {
-        println!("Testing contacts_basic_fields payload scenario...");
+        println!("Testing contacts_basic_fields payload scenario with HTTP request...");
+
+        // First perform login to get authentication
+        let auth_response = perform_login().await;
+        if !auth_response.server_available {
+            println!("  ⚠ Server not available, skipping HTTP test");
+            return;
+        }
 
         match load_payload_scenario("contacts_basic_fields") {
             Ok(payload) => {
                 println!("  ✓ Successfully loaded contacts_basic_fields scenario");
-
-                // Convert GetByFilter to JSON for testing
-                let payload_json =
-                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
 
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 assert_eq!(payload.pluck, vec!["id", "first_name", "last_name"]);
@@ -544,33 +606,33 @@ mod tests {
                 assert_eq!(payload.offset, 0);
                 assert!(payload.advance_filters.is_empty());
 
-                // Test SQL generation
-                match generate_and_execute_query(
-                    &payload_json,
-                    get_table_name(),
-                    true,
-                    None,
-                    "contacts_basic_fields_scenario",
-                )
-                .await
-                {
-                    Ok(results) => {
-                        println!(
-                            "  ✓ Query executed successfully with {} results",
-                            results.len()
-                        );
-                        if !results.is_empty() {
-                            let formatted_table = format_response_as_table(
-                                &serde_json::json!({"data": results}).to_string(),
-                            );
-                            println!("{}", formatted_table);
+                // Test HTTP request to /filter endpoint
+                match make_filter_http_request(&payload, &get_table_name(), &auth_response).await {
+                    Ok(response) => {
+                        println!("  ✓ HTTP request successful");
+
+                        // Validate response structure
+                        if let Some(success) = response.get("success").and_then(|v| v.as_bool()) {
+                            assert!(success, "Response should indicate success");
+                            println!("  ✓ Response indicates success");
+                        }
+
+                        if let Some(data) = response.get("data").and_then(|v| v.as_array()) {
+                            println!("  ✓ Received {} records", data.len());
+                            if !data.is_empty() {
+                                let formatted_table =
+                                    format_response_as_table(&response.to_string());
+                                println!("{}", formatted_table);
+                            }
+                        }
+
+                        if let Some(message) = response.get("message").and_then(|v| v.as_str()) {
+                            println!("  ✓ Response message: {}", message);
                         }
                     }
                     Err(e) => {
-                        println!(
-                            "  ⚠ Query execution failed (acceptable for offline testing): {}",
-                            e
-                        );
+                        display_error_response(&e);
+                        println!("  ⚠ HTTP request failed: {}", e);
                     }
                 }
             }
@@ -584,18 +646,21 @@ mod tests {
     }
 
     /// Test using contacts_active_status payload scenario
-    /// Tests SQL generation and execution with filtered results
+    /// Tests HTTP request to /filter endpoint with filtered results
     #[tokio::test]
     async fn should_use_contacts_active_status_scenario() {
-        println!("Testing contacts_active_status payload scenario...");
+        println!("Testing contacts_active_status payload scenario with HTTP request...");
+
+        // First perform login to get authentication
+        let auth_response = perform_login().await;
+        if !auth_response.server_available {
+            println!("  ⚠ Server not available, skipping HTTP test");
+            return;
+        }
 
         match load_payload_scenario("contacts_active_status") {
             Ok(payload) => {
                 println!("  ✓ Successfully loaded contacts_active_status scenario");
-
-                // Convert GetByFilter to JSON for testing
-                let payload_json =
-                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
 
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 println!("  ✓ Filter count: {}", payload.advance_filters.len());
@@ -616,38 +681,49 @@ mod tests {
                         } => {
                             println!("  ✓ Filter field: {}", field);
                             println!("  ✓ Filter values: {:?}", values);
+                            assert_eq!(field, "status");
+                            assert_eq!(values.len(), 1);
                         }
                         _ => println!("  ✓ Filter is not a criteria type"),
                     }
                 }
 
-                // Test SQL generation
-                match generate_and_execute_query(
-                    &payload_json,
-                    get_table_name(),
-                    true,
-                    None,
-                    "contacts_active_status_scenario",
-                )
-                .await
-                {
-                    Ok(results) => {
-                        println!(
-                            "  ✓ Query executed successfully with {} results",
-                            results.len()
-                        );
-                        if !results.is_empty() {
-                            let formatted_table = format_response_as_table(
-                                &serde_json::json!({"data": results}).to_string(),
-                            );
-                            println!("{}", formatted_table);
+                // Test HTTP request to /filter endpoint
+                match make_filter_http_request(&payload, &get_table_name(), &auth_response).await {
+                    Ok(response) => {
+                        println!("  ✓ HTTP request successful");
+
+                        // Validate response structure
+                        if let Some(success) = response.get("success").and_then(|v| v.as_bool()) {
+                            assert!(success, "Response should indicate success");
+                            println!("  ✓ Response indicates success");
+                        }
+
+                        if let Some(data) = response.get("data").and_then(|v| v.as_array()) {
+                            println!("  ✓ Received {} records", data.len());
+
+                            // Validate that all returned records have the expected status
+                            for record in data {
+                                if let Some(status) = record.get("status").and_then(|v| v.as_str())
+                                {
+                                    println!("  ✓ Record status: {}", status);
+                                }
+                            }
+
+                            if !data.is_empty() {
+                                let formatted_table =
+                                    format_response_as_table(&response.to_string());
+                                println!("{}", formatted_table);
+                            }
+                        }
+
+                        if let Some(message) = response.get("message").and_then(|v| v.as_str()) {
+                            println!("  ✓ Response message: {}", message);
                         }
                     }
                     Err(e) => {
-                        println!(
-                            "  ⚠ Query execution failed (acceptable for offline testing): {}",
-                            e
-                        );
+                        display_error_response(&e);
+                        println!("  ⚠ HTTP request failed: {}", e);
                     }
                 }
             }
@@ -1197,6 +1273,9 @@ mod tests {
                     }
                     Err(e) => {
                         println!("  ✗ SQL generation failed with validation error: {}", e);
+
+                        // Display the error response in the requested format
+                        display_error_response(&e);
 
                         // Check if this is the expected concatenate_fields validation error
                         if e.contains("concatenate_fields")

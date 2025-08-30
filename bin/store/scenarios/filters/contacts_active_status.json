@@ -27,7 +27,7 @@
   "group_by": null,
   "concatenate_fields": [],
   "multiple_sort": [],
-  "date_format": "YYYY-MM-DD HH24:MI:SS",
+  "date_format": "YYYY-mm-dd",
   "order_by": "id",
   "order_direction": "ASC",
   "is_case_sensitive_sorting": null,
