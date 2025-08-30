@@ -677,10 +677,7 @@ mod tests {
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 println!("  ✓ Filter count: {}", payload.advance_filters.len());
 
-                assert_eq!(
-                    payload.pluck,
-                    vec!["id", "first_name", "status"]
-                );
+                assert_eq!(payload.pluck, vec!["id", "first_name", "status"]);
                 assert_eq!(payload.limit, 25);
                 assert_eq!(payload.offset, 0);
                 assert_eq!(payload.advance_filters.len(), 1);
@@ -689,14 +686,20 @@ mod tests {
                 if let Some(filter) = payload.advance_filters.first() {
                     match filter {
                         crate::structs::core::FilterCriteria::Criteria {
-                            field, operator, values, ..
+                            field,
+                            operator,
+                            values,
+                            ..
                         } => {
                             println!("  ✓ Filter field: {}", field);
-                             println!("  ✓ Filter operator: {:?}", operator);
-                             println!("  ✓ Filter values: {:?}", values);
-                             assert_eq!(field, "first_name");
-                             assert!(matches!(operator, crate::structs::core::FilterOperator::Like));
-                             assert_eq!(values, &vec![serde_json::Value::String("J%".to_string())]);
+                            println!("  ✓ Filter operator: {:?}", operator);
+                            println!("  ✓ Filter values: {:?}", values);
+                            assert_eq!(field, "first_name");
+                            assert!(matches!(
+                                operator,
+                                crate::structs::core::FilterOperator::Like
+                            ));
+                            assert_eq!(values, &vec![serde_json::Value::String("J%".to_string())]);
                         }
                         _ => println!("  ✓ Filter is not a criteria type"),
                     }
