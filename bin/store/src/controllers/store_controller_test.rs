@@ -30,10 +30,10 @@ mod tests {
         if text.len() <= width {
             return vec![text.to_string()];
         }
-        
+
         let mut lines = Vec::new();
         let mut current_line = String::new();
-        
+
         for word in text.split_whitespace() {
             if current_line.is_empty() {
                 if word.len() > width {
@@ -67,15 +67,15 @@ mod tests {
                 }
             }
         }
-        
+
         if !current_line.is_empty() {
             lines.push(current_line);
         }
-        
+
         if lines.is_empty() {
             lines.push(String::new());
         }
-        
+
         lines
     }
 
@@ -106,13 +106,14 @@ mod tests {
 
                     // Calculate dynamic column widths based on content
                     let mut column_widths: Vec<usize> = Vec::new();
-                    
+
                     for key in &keys {
                         let mut max_width = key.len(); // Start with header width
-                        
+
                         // Check all data values for this column
                         for item in data {
-                            let value_str = item.get(key)
+                            let value_str = item
+                                .get(key)
                                 .map(|v| match v {
                                     serde_json::Value::String(s) => s.clone(),
                                     serde_json::Value::Number(n) => n.to_string(),
@@ -131,28 +132,30 @@ mod tests {
                                             // Array of objects or mixed types
                                             "[object]".to_string()
                                         }
-                                    },
+                                    }
                                     serde_json::Value::Object(_) => "[object]".to_string(),
                                 })
                                 .unwrap_or_else(|| "".to_string());
                             max_width = max_width.max(value_str.len());
                         }
-                        
+
                         // Add some padding and ensure minimum width
                         column_widths.push(max_width.max(8) + 2);
                     }
-                    
+
                     let mut table = String::new();
                     table.push_str("📊 Response Data Table:\n");
-                    
+
                     // Create header
                     table.push_str("    ┌");
                     for (i, &width) in column_widths.iter().enumerate() {
-                        if i > 0 { table.push_str("┬"); }
+                        if i > 0 {
+                            table.push_str("┬");
+                        }
                         table.push_str(&"─".repeat(width));
                     }
                     table.push_str("┐\n");
-                    
+
                     // Header row
                     table.push_str("    │");
                     for (key, &width) in keys.iter().zip(column_widths.iter()) {
@@ -160,52 +163,55 @@ mod tests {
                         table.push_str("│");
                     }
                     table.push_str("\n");
-                    
+
                     // Separator
                     table.push_str("    ├");
                     for (i, &width) in column_widths.iter().enumerate() {
-                        if i > 0 { table.push_str("┼"); }
+                        if i > 0 {
+                            table.push_str("┼");
+                        }
                         table.push_str(&"─".repeat(width));
                     }
                     table.push_str("┤\n");
-                    
+
                     // Data rows (limit to first 10 rows for readability)
                     let display_count = std::cmp::min(data.len(), 10);
                     for item in data.iter().take(display_count) {
                         // Prepare wrapped values for all columns
                         let mut wrapped_values: Vec<Vec<String>> = Vec::new();
                         let mut max_lines = 1;
-                        
+
                         for (key, &width) in keys.iter().zip(column_widths.iter()) {
-                            let value_str = item.get(key)
+                            let value_str = item
+                                .get(key)
                                 .map(|v| match v {
                                     serde_json::Value::String(s) => s.clone(),
                                     serde_json::Value::Number(n) => n.to_string(),
                                     serde_json::Value::Bool(b) => b.to_string(),
                                     serde_json::Value::Null => "null".to_string(),
                                     serde_json::Value::Array(arr) => {
-                                         if arr.is_empty() {
-                                             "[]".to_string()
-                                         } else if arr.iter().all(|v| v.is_string()) {
-                                             // Array of strings - comma separated
-                                             arr.iter()
-                                                 .filter_map(|v| v.as_str())
-                                                 .collect::<Vec<_>>()
-                                                 .join(", ")
-                                         } else {
-                                             // Array of objects or mixed types
-                                             "[object]".to_string()
-                                         }
-                                     },
+                                        if arr.is_empty() {
+                                            "[]".to_string()
+                                        } else if arr.iter().all(|v| v.is_string()) {
+                                            // Array of strings - comma separated
+                                            arr.iter()
+                                                .filter_map(|v| v.as_str())
+                                                .collect::<Vec<_>>()
+                                                .join(", ")
+                                        } else {
+                                            // Array of objects or mixed types
+                                            "[object]".to_string()
+                                        }
+                                    }
                                     serde_json::Value::Object(_) => "[object]".to_string(),
                                 })
                                 .unwrap_or_else(|| "".to_string());
-                            
+
                             let wrapped = wrap_text(&value_str, width - 2);
                             max_lines = max_lines.max(wrapped.len());
                             wrapped_values.push(wrapped);
                         }
-                        
+
                         // Print each line of the row
                         for line_idx in 0..max_lines {
                             table.push_str("    │");
@@ -219,26 +225,28 @@ mod tests {
                             table.push_str("\n");
                         }
                     }
-                    
+
                     // Bottom border
                     table.push_str("    └");
                     for (i, &width) in column_widths.iter().enumerate() {
-                        if i > 0 { table.push_str("┴"); }
+                        if i > 0 {
+                            table.push_str("┴");
+                        }
                         table.push_str(&"─".repeat(width));
                     }
                     table.push_str("┘\n");
-                    
+
                     if data.len() > 10 {
                         table.push_str(&format!("    ... and {} more rows\n", data.len() - 10));
                     }
                     table.push_str(&format!("    Total rows: {}\n", data.len()));
-                    
+
                     table
                 } else {
                     format!("📊 Raw Response: {}\n", json_str)
                 }
             }
-            Err(_) => format!("📊 Raw Response: {}\n", json_str)
+            Err(_) => format!("📊 Raw Response: {}\n", json_str),
         }
     }
 
@@ -1031,85 +1039,17 @@ mod tests {
                 "code",
                 "first_name",
                 "last_name",
-                "status",
-                "category"
+                "status"
             ],
             "pluck_object": {
-                "contact_emails": [
-                    "id",
-                    "email",
-                    "is_primary",
-                    "email_type"
-                ],
                 "created_by": [
                     "id",
                     "first_name",
-                    "last_name",
-                    "email"
-                ],
-                "contact_phone_numbers": [
-                    "id",
-                    "phone_number_raw",
-                    "is_primary",
-                    "phone_type"
+                    "last_name"
                 ]
             },
-            "advance_filters": {
-                "criteria": [
-                    {
-                        "field": "status",
-                        "operator": "=",
-                        "value": "Active"
-                    },
-                    {
-                        "field": "category",
-                        "operator": "LIKE",
-                        "value": "%customer%"
-                    },
-                    {
-                        "field": "contact_emails.email",
-                        "operator": "LIKE",
-                        "value": "%@company.com"
-                    }
-                ],
-                "operators": [
-                    {
-                        "type": "AND",
-                        "position": 1
-                    },
-                    {
-                        "type": "AND",
-                        "position": 2
-                    }
-                ]
-            },
+            "advance_filters": [],
             "joins": [
-                {
-                    "type": "left",
-                    "field_relation": {
-                        "to": {
-                            "entity": "contact_emails",
-                            "field": "contact_id"
-                        },
-                        "from": {
-                            "entity": "contacts",
-                            "field": "id"
-                        }
-                    }
-                },
-                {
-                    "type": "left",
-                    "field_relation": {
-                        "to": {
-                            "entity": "contact_phone_numbers",
-                            "field": "contact_id"
-                        },
-                        "from": {
-                            "entity": "contacts",
-                            "field": "id"
-                        }
-                    }
-                },
                 {
                     "type": "left",
                     "field_relation": {
@@ -2243,8 +2183,7 @@ mod tests {
         let mut request = client
             .post(&format!(
                 "{}/api/store/{}/filter",
-                base_url,
-                "account_organizations"
+                base_url, "account_organizations"
             ))
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10));

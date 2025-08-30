@@ -48,3 +48,6 @@ Thumbs.db
 
 # Invalid Raw Queries
 /bin/store/raw_queries/*
+
+# Scenario files
+/bin/store/scenarios/*
