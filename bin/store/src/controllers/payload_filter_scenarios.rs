@@ -71,7 +71,6 @@ impl Scenario {
 
 /// Main struct for managing payload filters and scenarios
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct PayloadFilterScenarios {
     main_table: String,
     default_payload: GetByFilter,
@@ -79,6 +78,7 @@ pub struct PayloadFilterScenarios {
     scenarios: HashMap<String, Scenario>,
 }
 
+#[allow(dead_code)]
 impl PayloadFilterScenarios {
     /// Creates a new PayloadFilterScenarios instance
     pub fn new(main_table: String, default_payload: GetByFilter) -> Self {

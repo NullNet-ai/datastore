@@ -12,6 +12,7 @@ mod tests {
 
     /// Authentication response structure for reusable login functionality
     #[derive(Debug, Clone)]
+    #[allow(dead_code)]
     pub struct AuthResponse {
         pub token: Option<String>,
         pub session_id: Option<String>,
