@@ -25,6 +25,223 @@ mod tests {
         "contacts".to_string()
     }
 
+    /// Wraps text to fit within specified width
+    fn wrap_text(text: &str, width: usize) -> Vec<String> {
+        if text.len() <= width {
+            return vec![text.to_string()];
+        }
+        
+        let mut lines = Vec::new();
+        let mut current_line = String::new();
+        
+        for word in text.split_whitespace() {
+            if current_line.is_empty() {
+                if word.len() > width {
+                    // Handle very long words by breaking them
+                    let mut remaining = word;
+                    while remaining.len() > width {
+                        lines.push(remaining.chars().take(width).collect());
+                        remaining = &remaining[width..];
+                    }
+                    if !remaining.is_empty() {
+                        current_line = remaining.to_string();
+                    }
+                } else {
+                    current_line = word.to_string();
+                }
+            } else if current_line.len() + 1 + word.len() <= width {
+                current_line.push(' ');
+                current_line.push_str(word);
+            } else {
+                lines.push(current_line);
+                if word.len() > width {
+                    // Handle very long words by breaking them
+                    let mut remaining = word;
+                    while remaining.len() > width {
+                        lines.push(remaining.chars().take(width).collect());
+                        remaining = &remaining[width..];
+                    }
+                    current_line = remaining.to_string();
+                } else {
+                    current_line = word.to_string();
+                }
+            }
+        }
+        
+        if !current_line.is_empty() {
+            lines.push(current_line);
+        }
+        
+        if lines.is_empty() {
+            lines.push(String::new());
+        }
+        
+        lines
+    }
+
+    /// Formats JSON response data as a table for better readability with word wrapping
+    fn format_response_as_table(json_str: &str) -> String {
+        match serde_json::from_str::<serde_json::Value>(json_str) {
+            Ok(json_value) => {
+                if let Some(data) = json_value.get("data").and_then(|d| d.as_array()) {
+                    if data.is_empty() {
+                        return "📊 Table: No data found".to_string();
+                    }
+
+                    // Get all unique keys from all objects
+                    let mut all_keys = std::collections::HashSet::new();
+                    for item in data {
+                        if let Some(obj) = item.as_object() {
+                            for key in obj.keys() {
+                                all_keys.insert(key.clone());
+                            }
+                        }
+                    }
+                    let mut keys: Vec<String> = all_keys.into_iter().collect();
+                    keys.sort();
+
+                    if keys.is_empty() {
+                        return "📊 Table: No valid data structure found".to_string();
+                    }
+
+                    // Calculate dynamic column widths based on content
+                    let mut column_widths: Vec<usize> = Vec::new();
+                    
+                    for key in &keys {
+                        let mut max_width = key.len(); // Start with header width
+                        
+                        // Check all data values for this column
+                        for item in data {
+                            let value_str = item.get(key)
+                                .map(|v| match v {
+                                    serde_json::Value::String(s) => s.clone(),
+                                    serde_json::Value::Number(n) => n.to_string(),
+                                    serde_json::Value::Bool(b) => b.to_string(),
+                                    serde_json::Value::Null => "null".to_string(),
+                                    serde_json::Value::Array(arr) => {
+                                        if arr.is_empty() {
+                                            "[]".to_string()
+                                        } else if arr.iter().all(|v| v.is_string()) {
+                                            // Array of strings - comma separated
+                                            arr.iter()
+                                                .filter_map(|v| v.as_str())
+                                                .collect::<Vec<_>>()
+                                                .join(", ")
+                                        } else {
+                                            // Array of objects or mixed types
+                                            "[object]".to_string()
+                                        }
+                                    },
+                                    serde_json::Value::Object(_) => "[object]".to_string(),
+                                })
+                                .unwrap_or_else(|| "".to_string());
+                            max_width = max_width.max(value_str.len());
+                        }
+                        
+                        // Add some padding and ensure minimum width
+                        column_widths.push(max_width.max(8) + 2);
+                    }
+                    
+                    let mut table = String::new();
+                    table.push_str("📊 Response Data Table:\n");
+                    
+                    // Create header
+                    table.push_str("    ┌");
+                    for (i, &width) in column_widths.iter().enumerate() {
+                        if i > 0 { table.push_str("┬"); }
+                        table.push_str(&"─".repeat(width));
+                    }
+                    table.push_str("┐\n");
+                    
+                    // Header row
+                    table.push_str("    │");
+                    for (key, &width) in keys.iter().zip(column_widths.iter()) {
+                        table.push_str(&format!("{:^width$}", key, width = width));
+                        table.push_str("│");
+                    }
+                    table.push_str("\n");
+                    
+                    // Separator
+                    table.push_str("    ├");
+                    for (i, &width) in column_widths.iter().enumerate() {
+                        if i > 0 { table.push_str("┼"); }
+                        table.push_str(&"─".repeat(width));
+                    }
+                    table.push_str("┤\n");
+                    
+                    // Data rows (limit to first 10 rows for readability)
+                    let display_count = std::cmp::min(data.len(), 10);
+                    for item in data.iter().take(display_count) {
+                        // Prepare wrapped values for all columns
+                        let mut wrapped_values: Vec<Vec<String>> = Vec::new();
+                        let mut max_lines = 1;
+                        
+                        for (key, &width) in keys.iter().zip(column_widths.iter()) {
+                            let value_str = item.get(key)
+                                .map(|v| match v {
+                                    serde_json::Value::String(s) => s.clone(),
+                                    serde_json::Value::Number(n) => n.to_string(),
+                                    serde_json::Value::Bool(b) => b.to_string(),
+                                    serde_json::Value::Null => "null".to_string(),
+                                    serde_json::Value::Array(arr) => {
+                                         if arr.is_empty() {
+                                             "[]".to_string()
+                                         } else if arr.iter().all(|v| v.is_string()) {
+                                             // Array of strings - comma separated
+                                             arr.iter()
+                                                 .filter_map(|v| v.as_str())
+                                                 .collect::<Vec<_>>()
+                                                 .join(", ")
+                                         } else {
+                                             // Array of objects or mixed types
+                                             "[object]".to_string()
+                                         }
+                                     },
+                                    serde_json::Value::Object(_) => "[object]".to_string(),
+                                })
+                                .unwrap_or_else(|| "".to_string());
+                            
+                            let wrapped = wrap_text(&value_str, width - 2);
+                            max_lines = max_lines.max(wrapped.len());
+                            wrapped_values.push(wrapped);
+                        }
+                        
+                        // Print each line of the row
+                        for line_idx in 0..max_lines {
+                            table.push_str("    │");
+                            for (col_idx, wrapped_col) in wrapped_values.iter().enumerate() {
+                                let empty_string = String::new();
+                                let line_text = wrapped_col.get(line_idx).unwrap_or(&empty_string);
+                                let width = column_widths[col_idx];
+                                table.push_str(&format!("{:<width$}", line_text, width = width));
+                                table.push_str("│");
+                            }
+                            table.push_str("\n");
+                        }
+                    }
+                    
+                    // Bottom border
+                    table.push_str("    └");
+                    for (i, &width) in column_widths.iter().enumerate() {
+                        if i > 0 { table.push_str("┴"); }
+                        table.push_str(&"─".repeat(width));
+                    }
+                    table.push_str("┘\n");
+                    
+                    if data.len() > 10 {
+                        table.push_str(&format!("    ... and {} more rows\n", data.len() - 10));
+                    }
+                    table.push_str(&format!("    Total rows: {}\n", data.len()));
+                    
+                    table
+                } else {
+                    format!("📊 Raw Response: {}\n", json_str)
+                }
+            }
+            Err(_) => format!("📊 Raw Response: {}\n", json_str)
+        }
+    }
+
     fn get_raw_query(
         payload: &serde_json::Value,
         table: String,
@@ -514,10 +731,11 @@ mod tests {
                         get_table_name()
                     );
 
-                    // Print the response body
+                    // Print the response body in table format
                     match resp.text().await {
                         Ok(body) => {
-                            println!("    📄 Response body: {}", body);
+                            let formatted_table = format_response_as_table(&body);
+                            println!("{}", formatted_table);
                         }
                         Err(e) => {
                             println!("    ⚠ Failed to read response body: {}", e);
@@ -737,10 +955,11 @@ mod tests {
                         get_table_name()
                     );
 
-                    // Print the response body
+                    // Print the response body in table format
                     match resp.text().await {
                         Ok(body) => {
-                            println!("    📄 Response body: {}", body);
+                            let formatted_table = format_response_as_table(&body);
+                            println!("{}", formatted_table);
                         }
                         Err(e) => {
                             println!("    ⚠ Failed to read response body: {}", e);
@@ -1002,10 +1221,11 @@ mod tests {
                 if resp.status().is_success() {
                     println!("    ✓ {} filter with pluck_object, advance_filters and join responded successfully", get_table_name());
 
-                    // Print the response body
+                    // Print the response body in table format
                     match resp.text().await {
                         Ok(body) => {
-                            println!("    📄 Response body: {}", body);
+                            let formatted_table = format_response_as_table(&body);
+                            println!("{}", formatted_table);
                         }
                         Err(e) => {
                             println!("    ⚠ Failed to read response body: {}", e);

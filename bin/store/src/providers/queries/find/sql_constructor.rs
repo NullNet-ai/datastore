@@ -194,7 +194,6 @@ impl<T: QueryFilter> SQLConstructor<T> {
         sql.push_str(&self.construct_order_by());
         sql.push_str(&self.construct_offset());
         sql.push_str(&self.construct_limit());
-        dbg!(&sql);
         Ok(sql)
     }
 
