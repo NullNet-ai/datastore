@@ -271,6 +271,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     &normalized_entity
                 };
                 if target_table == table || normalized_target_table == table {
+                    // Use the normalized table name for COALESCE expression generation
+                    let table_for_coalesce = if concat_field.aliased_entity.is_some() {
+                        target_table
+                    } else {
+                        &normalized_entity
+                    };
+                    
                     // Generate concatenated expression
                     let concatenated_expression = concat_field
                         .fields
@@ -279,7 +286,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             format!(
                                 "COALESCE({}, '')",
                                 Self::get_field_with_parse_as(
-                                    table,
+                                    table_for_coalesce,
                                     f,
                                     format_str,
                                     None,
@@ -578,8 +585,8 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         && (field.entity == self.table || normalized_entity == self.table));
 
                 if matches_main_table {
-                    // Priority: aliased_entity takes precedence over entity
-                    let table_name = field.aliased_entity.as_deref().unwrap_or(&field.entity);
+                    // Priority: aliased_entity takes precedence over entity (normalized)
+                    let table_name = field.aliased_entity.as_deref().unwrap_or(&normalized_entity);
 
                     let concatenated_expression = field
                         .fields
@@ -812,10 +819,12 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         || normalized_entity == to_alias
                 })
                 .for_each(|field| {
+                    // Use normalized entity name when no aliased_entity is present
+                    let normalized_entity = self.normalize_entity_name(&field.entity);
                     let table_name = field
                         .aliased_entity
                         .as_deref()
-                        .unwrap_or(field.entity.as_str());
+                        .unwrap_or(&normalized_entity);
                     let concatenated_expression = field
                         .fields
                         .iter()
