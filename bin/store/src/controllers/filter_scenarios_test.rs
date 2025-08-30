@@ -72,6 +72,43 @@ mod tests {
         }
     }
 
+    /// Creates filter scenario 3: Get records with id, first_name, status from contacts table where first_name starts with "J"
+    fn create_contacts_first_name_starts_with_j_filter() -> GetByFilter {
+        GetByFilter {
+            pluck: vec![
+                "id".to_string(),
+                "first_name".to_string(),
+                "status".to_string(),
+            ],
+            pluck_object: Default::default(),
+            pluck_group_object: Default::default(),
+            advance_filters: vec![FilterCriteria::Criteria {
+                field: "first_name".to_string(),
+                entity: None,
+                operator: FilterOperator::Like,
+                values: vec![json!("J%")],
+                case_sensitive: None,
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: None,
+                has_group_count: None,
+            }],
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            order_by: "id".to_string(),
+            order_direction: "ASC".to_string(),
+            is_case_sensitive_sorting: None,
+            limit: 25,
+            offset: 0,
+            distinct_by: None,
+            timezone: None,
+        }
+    }
+
     /// Test creating filter scenario 1: Basic contacts fields
     #[tokio::test]
     async fn should_create_contacts_basic_fields_scenario() {
@@ -224,10 +261,10 @@ mod tests {
         );
     }
 
-    /// Test loading and using both created scenarios
+    /// Test creating filter scenario 3: Contacts with first_name starting with "J"
     #[tokio::test]
-    async fn should_load_and_use_created_scenarios() {
-        println!("Testing loading and using both created filter scenarios...");
+    async fn should_create_contacts_first_name_starts_with_j_scenario() {
+        println!("Testing creation of contacts first_name starts with J filter scenario...");
 
         let default_filter = GetByFilter {
             pluck: vec![],
@@ -252,9 +289,95 @@ mod tests {
         let mut payload_filters =
             PayloadFilterScenarios::new("contacts".to_string(), default_filter);
 
-        // Create both scenarios
+        let scenario_filter = create_contacts_first_name_starts_with_j_filter();
+        let result = payload_filters.create_scenario_with_description(
+            "contacts_first_name_starts_with_j".to_string(),
+            "Retrieve records with id, first_name, and status fields from the contacts table, filtered for first_name starting with J".to_string(),
+            scenario_filter.clone(),
+        );
+
+        println!("  ✓ Creating scenario with first_name filter (names starting with J)");
+        assert!(
+            result.is_ok(),
+            "Failed to create contacts_first_name_starts_with_j scenario"
+        );
+        assert!(payload_filters.has_scenario("contacts_first_name_starts_with_j"));
+
+        // Verify the scenario was created correctly
+        let created_scenario = payload_filters
+            .get_scenario("contacts_first_name_starts_with_j")
+            .unwrap();
+        assert_eq!(created_scenario.name, "contacts_first_name_starts_with_j");
+        assert_eq!(created_scenario.filter.pluck, scenario_filter.pluck);
+        assert_eq!(created_scenario.filter.limit, 25);
+
+        // Verify advance_filters contains the Like filter for first_name
+        assert!(!created_scenario.filter.advance_filters.is_empty());
+        let filters = &created_scenario.filter.advance_filters;
+        assert_eq!(filters.len(), 1);
+
+        match &filters[0] {
+            FilterCriteria::Criteria {
+                field,
+                operator,
+                values,
+                ..
+            } => {
+                assert_eq!(field, "first_name");
+                assert!(matches!(operator, FilterOperator::Like));
+                assert_eq!(values.len(), 1);
+                assert_eq!(values[0], json!("J%"));
+            }
+            _ => panic!("Expected Criteria filter, got LogicalOperator"),
+        }
+
+        // Verify file was created
+        let file_path = Path::new("scenarios/filters/contacts_first_name_starts_with_j.json");
+        assert!(file_path.exists(), "Scenario file should be created");
+
+        println!("  ✓ Scenario file created at: {:?}", file_path);
+        println!("  ✓ contacts_first_name_starts_with_j scenario created successfully");
+
+        // Keep the scenario file for persistent use
+        println!("  ✓ Scenario file persisted at: {:?}", file_path);
+        assert!(
+            true,
+            "Test completed - contacts first_name starts with J scenario creation"
+        );
+    }
+
+    /// Test loading and using all created scenarios
+    #[tokio::test]
+    async fn should_load_and_use_created_scenarios() {
+        println!("Testing loading and using all created filter scenarios...");
+
+        let default_filter = GetByFilter {
+            pluck: vec![],
+            pluck_object: Default::default(),
+            pluck_group_object: Default::default(),
+            advance_filters: vec![],
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            order_by: "id".to_string(),
+            order_direction: "ASC".to_string(),
+            is_case_sensitive_sorting: None,
+            limit: 10,
+            offset: 0,
+            distinct_by: None,
+            timezone: None,
+        };
+
+        let mut payload_filters =
+            PayloadFilterScenarios::new("contacts".to_string(), default_filter);
+
+        // Create all three scenarios
         let basic_filter = create_contacts_basic_fields_filter();
         let active_filter = create_contacts_active_status_filter();
+        let starts_with_j_filter = create_contacts_first_name_starts_with_j_filter();
 
         payload_filters
             .create_scenario_with_description(
@@ -272,8 +395,16 @@ mod tests {
             )
             .unwrap();
 
-        println!("  ✓ Both scenarios created successfully");
-        assert_eq!(payload_filters.scenario_count(), 2);
+        payload_filters
+            .create_scenario_with_description(
+                "contacts_first_name_starts_with_j".to_string(),
+                "Contacts with first_name starting with J scenario".to_string(),
+                starts_with_j_filter,
+            )
+            .unwrap();
+
+        println!("  ✓ All three scenarios created successfully");
+        assert_eq!(payload_filters.scenario_count(), 3);
 
         // Test setting current scenario to basic fields
         payload_filters
@@ -294,9 +425,19 @@ mod tests {
         assert_eq!(current_filter.advance_filters.len(), 1);
         println!("  ✓ Active status scenario set as current and verified");
 
+        // Test setting current scenario to first_name starts with J
+        payload_filters
+            .set_current_scenario("contacts_first_name_starts_with_j")
+            .unwrap();
+        let current_filter = payload_filters.get_current_filter();
+        assert_eq!(current_filter.pluck.len(), 3);
+        assert!(!current_filter.advance_filters.is_empty());
+        assert_eq!(current_filter.advance_filters.len(), 1);
+        println!("  ✓ First name starts with J scenario set as current and verified");
+
         // Keep the scenario files for persistent use
-        println!("  ✓ Both scenario files persisted for future use");
-        println!("  ✓ Both scenarios loaded and used successfully");
+        println!("  ✓ All scenario files persisted for future use");
+        println!("  ✓ All scenarios loaded and used successfully");
         assert!(true, "Test completed - scenario loading and usage");
     }
 }
