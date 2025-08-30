@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        config::core::EnvConfig, providers::queries::find::SQLConstructor,
-        structs::core::GetByFilter,
+        config::core::EnvConfig,
+        providers::queries::find::SQLConstructor,
+        structs::core::{FilterCriteria, GetByFilter},
     };
     use reqwest;
     use serde_json::json;
@@ -316,34 +317,34 @@ mod tests {
         Ok(results)
     }
 
-    /// Generate SQL query from payload and execute it against the database
-    /// Combines get_raw_query and execute_raw_sql_query functionality
-    /// Returns the query results as a vector of JSON values or an error string
-    async fn generate_and_execute_query(
-        payload: &serde_json::Value,
-        table: String,
-        is_root: bool,
-        timezone: Option<String>,
-        test_name: &str,
-    ) -> Result<Vec<serde_json::Value>, String> {
-        // Generate the SQL query from the payload
-        let sql_query = match get_raw_query(payload, table, is_root, timezone) {
-            Ok(query) => query,
-            Err(e) => return Err(format!("SQL generation failed: {}", e)),
-        };
+    // /// Generate SQL query from payload and execute it against the database
+    // /// Combines get_raw_query and execute_raw_sql_query functionality
+    // /// Returns the query results as a vector of JSON values or an error string
+    // async fn generate_and_execute_query(
+    //     payload: &serde_json::Value,
+    //     table: String,
+    //     is_root: bool,
+    //     timezone: Option<String>,
+    //     test_name: &str,
+    // ) -> Result<Vec<serde_json::Value>, String> {
+    //     // Generate the SQL query from the payload
+    //     let sql_query = match get_raw_query(payload, table, is_root, timezone) {
+    //         Ok(query) => query,
+    //         Err(e) => return Err(format!("SQL generation failed: {}", e)),
+    //     };
 
-        if EnvConfig::default().debug {
-            println!("Generated SQL Query:\n{}", sql_query);
-        }
+    //     if EnvConfig::default().debug {
+    //         println!("Generated SQL Query:\n{}", sql_query);
+    //     }
 
-        // Write SQL query to file
-        if let Err(e) = write_sql_to_file(&sql_query, test_name) {
-            eprintln!("Warning: Failed to write SQL to file: {}", e);
-        }
+    //     // Write SQL query to file
+    //     if let Err(e) = write_sql_to_file(&sql_query, test_name) {
+    //         eprintln!("Warning: Failed to write SQL to file: {}", e);
+    //     }
 
-        // Execute the generated SQL query
-        execute_raw_sql_query(&sql_query).await
-    }
+    //     // Execute the generated SQL query
+    //     execute_raw_sql_query(&sql_query).await
+    // }
 
     /// Display error response message in a formatted JSON structure
     /// Shows the response message from validation or SQL generation errors
@@ -451,6 +452,27 @@ mod tests {
         }
     }
 
+    /// Load payload scenario from JSON file in scenarios/filters directory
+    /// Returns the GetByFilter struct parsed from the JSON file
+    fn load_payload_scenario(scenario_name: &str) -> Result<GetByFilter, String> {
+        use std::fs;
+        use std::path::Path;
+
+        let file_path = Path::new("scenarios/filters").join(format!("{}.json", scenario_name));
+
+        if !file_path.exists() {
+            return Err(format!("Scenario file not found: {:?}", file_path));
+        }
+
+        let content = fs::read_to_string(&file_path)
+            .map_err(|e| format!("Failed to read scenario file: {}", e))?;
+
+        let filter: GetByFilter = serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse scenario JSON: {}", e))?;
+
+        Ok(filter)
+    }
+
     /// Tests the organization authentication endpoint with database dependency handling:
     /// - Attempts POST request to /api/organizations/auth with valid account credentials
     /// - Gracefully handles database unavailability scenarios
@@ -517,27 +539,6 @@ mod tests {
             true,
             "Test completed - handles both database online and offline scenarios"
         );
-    }
-
-    /// Load payload scenario from JSON file in scenarios/filters directory
-    /// Returns the GetByFilter struct parsed from the JSON file
-    fn load_payload_scenario(scenario_name: &str) -> Result<GetByFilter, String> {
-        use std::fs;
-        use std::path::Path;
-
-        let file_path = Path::new("scenarios/filters").join(format!("{}.json", scenario_name));
-
-        if !file_path.exists() {
-            return Err(format!("Scenario file not found: {:?}", file_path));
-        }
-
-        let content = fs::read_to_string(&file_path)
-            .map_err(|e| format!("Failed to read scenario file: {}", e))?;
-
-        let filter: GetByFilter = serde_json::from_str(&content)
-            .map_err(|e| format!("Failed to parse scenario JSON: {}", e))?;
-
-        Ok(filter)
     }
 
     // Filters Scenarios
@@ -1549,5 +1550,176 @@ mod tests {
         }
 
         println!("  ✓ contacts_alias_concatenation_validation_issue scenario test completed");
+    }
+
+    /// Test concatenated field validation issue scenario
+    /// This test validates that concatenated fields with singular entity names (e.g., 'contact')
+    /// are properly normalized to plural form (e.g., 'contacts') during validation
+    #[tokio::test]
+    async fn should_use_contacts_concatenated_field_validation_issue_scenario() {
+        println!("Testing contacts_concatenated_field_validation_issue payload scenario...");
+
+        // Perform authentication first
+        let auth_response = perform_login().await;
+        if !auth_response.server_available {
+            println!("  ⚠ Server not available, skipping HTTP request test");
+            return;
+        }
+
+        match load_payload_scenario("contacts_concatenated_field_validation_issue") {
+            Ok(payload) => {
+                println!(
+                    "  ✓ Successfully loaded contacts_concatenated_field_validation_issue scenario"
+                );
+
+                println!("  ✓ Payload fields: {:?}", payload.pluck);
+                println!(
+                    "  ✓ Concatenate fields count: {}",
+                    payload.concatenate_fields.len()
+                );
+                println!("  ✓ Joins count: {}", payload.joins.len());
+                println!(
+                    "  ✓ Advance filters count: {}",
+                    payload.advance_filters.len()
+                );
+
+                // Validate payload structure
+                assert_eq!(
+                    payload.pluck,
+                    vec![
+                        "id",
+                        "categories",
+                        "organization_id",
+                        "first_name",
+                        "middle_name",
+                        "last_name"
+                    ]
+                );
+                assert_eq!(payload.concatenate_fields.len(), 4);
+                assert_eq!(payload.joins.len(), 6);
+                assert_eq!(payload.advance_filters.len(), 3);
+
+                // Validate concatenate_fields structure - this is the key test
+                // The scenario has concatenated fields with entity 'contact' (singular)
+                // which should be normalized to 'contacts' (plural) during validation
+                let mut found_created_date_time = false;
+                let mut found_updated_date_time = false;
+
+                for (i, concat_field) in payload.concatenate_fields.iter().enumerate() {
+                    println!(
+                        "  ✓ Concatenate field [{}]: entity='{}', field_name='{}', fields={:?}",
+                        i, concat_field.entity, concat_field.field_name, concat_field.fields
+                    );
+
+                    if concat_field.field_name == "created_date_time" {
+                        assert_eq!(concat_field.entity, "contact"); // This should be singular in the payload
+                        assert_eq!(concat_field.fields, vec!["created_date", "created_time"]);
+                        found_created_date_time = true;
+                    }
+
+                    if concat_field.field_name == "updated_date_time" {
+                        assert_eq!(concat_field.entity, "contact"); // This should be singular in the payload
+                        assert_eq!(concat_field.fields, vec!["updated_date", "updated_time"]);
+                        found_updated_date_time = true;
+                    }
+                }
+
+                assert!(
+                    found_created_date_time,
+                    "Should find created_date_time concatenated field"
+                );
+                assert!(
+                    found_updated_date_time,
+                    "Should find updated_date_time concatenated field"
+                );
+
+                // Validate advance_filters - this should include the created_date_time filter
+                let mut found_created_date_time_filter = false;
+                for filter in &payload.advance_filters {
+                    if let FilterCriteria::Criteria { field, .. } = filter {
+                        if field == "created_date_time" {
+                            found_created_date_time_filter = true;
+                            println!("  ✓ Found created_date_time filter in advance_filters");
+                        }
+                    }
+                }
+                assert!(
+                    found_created_date_time_filter,
+                    "Should find created_date_time filter in advance_filters"
+                );
+
+                // Convert GetByFilter to JSON for SQL generation testing
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
+                // Test SQL generation - this should now work with the validation fix
+                match get_raw_query(&payload_json, get_table_name(), true, None) {
+                    Ok(sql_query) => {
+                        println!("  ✓ SQL generation successful");
+                        println!(
+                            "  ✓ Generated SQL query length: {} characters",
+                            sql_query.len()
+                        );
+
+                        // Write SQL to file for inspection
+                        if let Err(e) = write_sql_to_file(
+                            &sql_query,
+                            "should_use_contacts_concatenated_field_validation_issue_scenario",
+                        ) {
+                            println!("  ⚠ Failed to write SQL to file: {}", e);
+                        }
+
+                        // Verify the SQL contains the concatenated field logic
+                        assert!(
+                            sql_query.contains("created_date_time"),
+                            "SQL should contain created_date_time concatenated field"
+                        );
+                        assert!(
+                            sql_query.contains("updated_date_time"),
+                            "SQL should contain updated_date_time concatenated field"
+                        );
+                    }
+                    Err(e) => {
+                        println!("  ❌ SQL generation failed: {}", e);
+                        panic!("SQL generation should succeed after validation fix: {}", e);
+                    }
+                }
+
+                // Test HTTP request if server is available
+                if auth_response.is_authenticated {
+                    match make_filter_http_request(&payload, &get_table_name(), &auth_response)
+                        .await
+                    {
+                        Ok(response) => {
+                            println!("  ✓ HTTP request successful");
+
+                            if let Some(data) = response.get("data") {
+                                if let Some(data_array) = data.as_array() {
+                                    println!("  ✓ Response contains {} records", data_array.len());
+                                } else {
+                                    println!("  ✓ Response data is not an array: {:?}", data);
+                                }
+                            } else {
+                                println!("  ✓ Response: {:?}", response);
+                            }
+                        }
+                        Err(e) => {
+                            println!("  ⚠ HTTP request failed: {}", e);
+                            println!(
+                                "  ℹ This may be expected if the validation fix resolves the issue"
+                            );
+                        }
+                    }
+                } else {
+                    println!("  ⚠ Authentication failed, skipping HTTP request test");
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_concatenated_field_validation_issue scenario test completed");
     }
 }

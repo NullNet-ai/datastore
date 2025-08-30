@@ -213,20 +213,20 @@ impl<'a, 'b> Validation<'a, 'b> {
             }
 
             // Check if the entity exists in joins (handle aliases and original entity names)
-            let entity_exists_in_joins = self.request_body.joins.iter().any(|join| {
-                let to_endpoint = &join.field_relation.to;
-                // Check if entity matches the "to" entity
-                if to_endpoint.entity == concatenate_field.entity {
-                    return true;
-                }
-                // Check if entity matches the "to" alias
-                if let Some(alias) = &to_endpoint.alias {
-                    if alias == &concatenate_field.entity {
-                        return true;
-                    }
-                }
-                false
-            });
+            // let entity_exists_in_joins = self.request_body.joins.iter().any(|join| {
+            //     let to_endpoint = &join.field_relation.to;
+            //     // Check if entity matches the "to" entity
+            //     if to_endpoint.entity == concatenate_field.entity {
+            //         return true;
+            //     }
+            //     // Check if entity matches the "to" alias
+            //     if let Some(alias) = &to_endpoint.alias {
+            //         if alias == &concatenate_field.entity {
+            //             return true;
+            //         }
+            //     }
+            //     false
+            // });
 
             // Validate that all fields exist in the specified entity
             for (field_index, field) in concatenate_field.fields.iter().enumerate() {
@@ -853,9 +853,13 @@ impl<'a, 'b> Validation<'a, 'b> {
                             .concatenate_fields
                             .iter()
                             .any(|concat_field| {
+                                let normalized_concat_entity = self.normalize_entity_name(&concat_field.entity);
+                                let normalized_aliased_entity = concat_field.aliased_entity.as_ref()
+                                    .map(|alias| self.normalize_entity_name(alias));
+                                
                                 concat_field.field_name == *field
-                                    && (concat_field.entity == normalized_entity
-                                        || concat_field.aliased_entity.as_ref()
+                                    && (normalized_concat_entity == normalized_entity
+                                        || normalized_aliased_entity.as_ref()
                                             == Some(&normalized_entity))
                             });
 
