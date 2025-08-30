@@ -432,7 +432,7 @@ mod tests {
         }
     }
 
-     /// Tests the organization authentication endpoint with database dependency handling:
+    /// Tests the organization authentication endpoint with database dependency handling:
     /// - Attempts POST request to /api/organizations/auth with valid account credentials
     /// - Gracefully handles database unavailability scenarios
     /// - Validates response structure when database is available
@@ -500,69 +500,76 @@ mod tests {
         );
     }
 
-
     /// Load payload scenario from JSON file in scenarios/filters directory
     /// Returns the GetByFilter struct parsed from the JSON file
     fn load_payload_scenario(scenario_name: &str) -> Result<GetByFilter, String> {
         use std::fs;
         use std::path::Path;
-        
+
         let file_path = Path::new("scenarios/filters").join(format!("{}.json", scenario_name));
-        
+
         if !file_path.exists() {
             return Err(format!("Scenario file not found: {:?}", file_path));
         }
-        
+
         let content = fs::read_to_string(&file_path)
             .map_err(|e| format!("Failed to read scenario file: {}", e))?;
-            
+
         let filter: GetByFilter = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse scenario JSON: {}", e))?;
-            
+
         Ok(filter)
     }
 
     // Filters Scenarios
-    
+
     /// Test using contacts_basic_fields payload scenario
     /// Tests SQL generation and execution with basic field selection
     #[tokio::test]
     async fn should_use_contacts_basic_fields_scenario() {
         println!("Testing contacts_basic_fields payload scenario...");
-        
+
         match load_payload_scenario("contacts_basic_fields") {
             Ok(payload) => {
                 println!("  ✓ Successfully loaded contacts_basic_fields scenario");
-                
+
                 // Convert GetByFilter to JSON for testing
-                let payload_json = serde_json::to_value(&payload)
-                    .expect("Failed to serialize payload to JSON");
-                
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 assert_eq!(payload.pluck, vec!["id", "first_name", "last_name"]);
                 assert_eq!(payload.limit, 25);
                 assert_eq!(payload.offset, 0);
                 assert!(payload.advance_filters.is_empty());
-                
+
                 // Test SQL generation
                 match generate_and_execute_query(
                     &payload_json,
                     get_table_name(),
                     true,
                     None,
-                    "contacts_basic_fields_scenario"
-                ).await {
+                    "contacts_basic_fields_scenario",
+                )
+                .await
+                {
                     Ok(results) => {
-                        println!("  ✓ Query executed successfully with {} results", results.len());
+                        println!(
+                            "  ✓ Query executed successfully with {} results",
+                            results.len()
+                        );
                         if !results.is_empty() {
                             let formatted_table = format_response_as_table(
-                                &serde_json::json!({"data": results}).to_string()
+                                &serde_json::json!({"data": results}).to_string(),
                             );
                             println!("{}", formatted_table);
                         }
                     }
                     Err(e) => {
-                        println!("  ⚠ Query execution failed (acceptable for offline testing): {}", e);
+                        println!(
+                            "  ⚠ Query execution failed (acceptable for offline testing): {}",
+                            e
+                        );
                     }
                 }
             }
@@ -571,7 +578,7 @@ mod tests {
                 println!("  ℹ This may be expected if scenario files haven't been created yet");
             }
         }
-        
+
         println!("  ✓ contacts_basic_fields scenario test completed");
     }
 
@@ -580,53 +587,66 @@ mod tests {
     #[tokio::test]
     async fn should_use_contacts_active_status_scenario() {
         println!("Testing contacts_active_status payload scenario...");
-        
+
         match load_payload_scenario("contacts_active_status") {
             Ok(payload) => {
                 println!("  ✓ Successfully loaded contacts_active_status scenario");
-                
+
                 // Convert GetByFilter to JSON for testing
-                let payload_json = serde_json::to_value(&payload)
-                    .expect("Failed to serialize payload to JSON");
-                
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 println!("  ✓ Filter count: {}", payload.advance_filters.len());
-                
-                assert_eq!(payload.pluck, vec!["id", "status", "first_name", "last_name"]);
+
+                assert_eq!(
+                    payload.pluck,
+                    vec!["id", "status", "first_name", "last_name"]
+                );
                 assert_eq!(payload.limit, 25);
                 assert_eq!(payload.offset, 0);
                 assert_eq!(payload.advance_filters.len(), 1);
-                
+
                 // Verify the filter criteria
                 if let Some(filter) = payload.advance_filters.first() {
                     match filter {
-                        crate::structs::core::FilterCriteria::Criteria { field, values, .. } => {
+                        crate::structs::core::FilterCriteria::Criteria {
+                            field, values, ..
+                        } => {
                             println!("  ✓ Filter field: {}", field);
                             println!("  ✓ Filter values: {:?}", values);
                         }
                         _ => println!("  ✓ Filter is not a criteria type"),
                     }
                 }
-                
+
                 // Test SQL generation
                 match generate_and_execute_query(
                     &payload_json,
                     get_table_name(),
                     true,
                     None,
-                    "contacts_active_status_scenario"
-                ).await {
+                    "contacts_active_status_scenario",
+                )
+                .await
+                {
                     Ok(results) => {
-                        println!("  ✓ Query executed successfully with {} results", results.len());
+                        println!(
+                            "  ✓ Query executed successfully with {} results",
+                            results.len()
+                        );
                         if !results.is_empty() {
                             let formatted_table = format_response_as_table(
-                                &serde_json::json!({"data": results}).to_string()
+                                &serde_json::json!({"data": results}).to_string(),
                             );
                             println!("{}", formatted_table);
                         }
                     }
                     Err(e) => {
-                        println!("  ⚠ Query execution failed (acceptable for offline testing): {}", e);
+                        println!(
+                            "  ⚠ Query execution failed (acceptable for offline testing): {}",
+                            e
+                        );
                     }
                 }
             }
@@ -635,8 +655,7 @@ mod tests {
                 println!("  ℹ This may be expected if scenario files haven't been created yet");
             }
         }
-        
+
         println!("  ✓ contacts_active_status scenario test completed");
     }
-
-   }
+}

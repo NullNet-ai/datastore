@@ -22,6 +22,7 @@ pub enum PayloadFilterScenarioError {
 
 /// Represents a scenario with its associated GetByFilter configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Scenario {
     pub name: String,
     pub description: Option<String>,
@@ -70,6 +71,7 @@ impl Scenario {
 
 /// Main struct for managing payload filters and scenarios
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct PayloadFilterScenarios {
     main_table: String,
     default_payload: GetByFilter,
