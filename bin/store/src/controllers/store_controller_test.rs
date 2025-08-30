@@ -895,4 +895,85 @@ mod tests {
 
         println!("  ✓ contacts_complex_with_joins_and_concatenation scenario test completed");
     }
+
+    /// Test using contacts_alias_concatenation_validation_issue payload scenario
+    /// Tests concatenate_fields validation with aliased entities to reproduce the validation error
+    #[tokio::test]
+    async fn should_use_contacts_alias_concatenation_validation_issue_scenario() {
+        println!("Testing contacts_alias_concatenation_validation_issue payload scenario...");
+
+        match load_payload_scenario("contacts_alias_concatenation_validation_issue") {
+            Ok(payload) => {
+                println!("  ✓ Successfully loaded contacts_alias_concatenation_validation_issue scenario");
+
+                // Convert GetByFilter to JSON for testing
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
+                println!("  ✓ Payload fields: {:?}", payload.pluck);
+                println!("  ✓ Concatenate fields count: {}", payload.concatenate_fields.len());
+                println!("  ✓ Joins count: {}", payload.joins.len());
+
+                // Validate payload structure
+                assert_eq!(payload.pluck, vec!["id", "first_name", "last_name", "status"]);
+                assert_eq!(payload.concatenate_fields.len(), 2);
+                assert_eq!(payload.joins.len(), 4);
+
+                // Validate concatenate_fields structure
+                for (i, concat_field) in payload.concatenate_fields.iter().enumerate() {
+                    println!("  ✓ Concatenate field [{}]: entity='{}', aliased_entity='{:?}', fields={:?}", 
+                        i, concat_field.entity, concat_field.aliased_entity, concat_field.fields);
+                    assert_eq!(concat_field.fields, vec!["first_name", "last_name"]);
+                    assert!(concat_field.entity == "created_by" || concat_field.entity == "updated_by");
+                }
+
+                // Validate pluck_object contains aliased entities
+                assert!(payload.pluck_object.contains_key("created_by"), "pluck_object should contain 'created_by' entity");
+                assert!(payload.pluck_object.contains_key("updated_by"), "pluck_object should contain 'updated_by' entity");
+                println!("  ✓ pluck_object contains required aliased entities");
+
+                // Test SQL generation - this should trigger the validation error we want to fix
+                match get_raw_query(&payload_json, get_table_name(), true, None) {
+                    Ok(sql) => {
+                        println!("  ✓ SQL generated successfully (validation issue may be fixed)");
+                        println!("  ✓ Generated SQL length: {} characters", sql.len());
+                        
+                        // Write SQL to file for inspection
+                        if let Err(e) = write_sql_to_file(&sql, "contacts_alias_concatenation_validation_issue_scenario") {
+                            println!("  ⚠ Failed to write SQL to file: {}", e);
+                        } else {
+                            println!("  ✓ SQL written to file for inspection");
+                        }
+
+                        // Try to execute the query
+                        match execute_raw_sql_query(&sql).await {
+                            Ok(results) => {
+                                println!("  ✓ Query executed successfully with {} results", results.len());
+                            }
+                            Err(e) => {
+                                println!("  ⚠ Query execution failed (may be expected): {}", e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("  ✗ SQL generation failed with validation error: {}", e);
+                        
+                        // Check if this is the expected concatenate_fields validation error
+                        if e.contains("concatenate_fields") && e.contains("Field") && e.contains("does not exist in entity") {
+                            println!("  ✓ Reproduced the expected concatenate_fields validation error");
+                            println!("  ℹ This error confirms the issue that needs to be fixed in validations.rs");
+                        } else {
+                            println!("  ⚠ Unexpected error type: {}", e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_alias_concatenation_validation_issue scenario test completed");
+    }
 }
