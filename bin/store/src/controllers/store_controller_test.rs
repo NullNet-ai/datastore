@@ -1684,7 +1684,10 @@ mod tests {
             Ok(payload) => {
                 println!("  ✓ Scenario loaded successfully");
                 println!("  ℹ Payload contains {} joins", payload.joins.len());
-                println!("  ℹ Group by has_count: {:?}", payload.group_by.as_ref().map(|gb| gb.has_count));
+                println!(
+                    "  ℹ Group by has_count: {:?}",
+                    payload.group_by.as_ref().map(|gb| gb.has_count)
+                );
 
                 // Convert payload to JSON for SQL generation
                 let payload_json = match serde_json::to_value(&payload) {
@@ -1712,7 +1715,10 @@ mod tests {
                         // Validate SQL structure
                         assert!(sql_query.contains("SELECT"), "SQL should contain SELECT");
                         assert!(sql_query.contains("FROM"), "SQL should contain FROM");
-                        assert!(sql_query.contains("contacts"), "SQL should query contacts table");
+                        assert!(
+                            sql_query.contains("contacts"),
+                            "SQL should query contacts table"
+                        );
                         assert!(
                             sql_query.contains("GROUP BY") || sql_query.contains("group by"),
                             "SQL should contain GROUP BY clause when has_count is true"
@@ -1725,7 +1731,7 @@ mod tests {
                         // Check for proper alias handling in GROUP BY
                         if sql_query.contains("GROUP BY") {
                             println!("  ✓ SQL contains GROUP BY clause");
-                            
+
                             // Verify that aliases are properly referenced
                             if sql_query.contains("updated_by") {
                                 println!("  ✓ SQL references updated_by alias");
@@ -1748,11 +1754,15 @@ mod tests {
                             }
                             Err(e) => {
                                 println!("  ❌ SQL execution failed: {}", e);
-                                
+
                                 // Check if this is the specific error we're trying to reproduce
                                 if e.contains("missing FROM-clause entry") {
-                                    println!("  ⚠ Reproduced the 'missing FROM-clause entry' error");
-                                    println!("  ℹ This confirms the issue exists and needs to be fixed");
+                                    println!(
+                                        "  ⚠ Reproduced the 'missing FROM-clause entry' error"
+                                    );
+                                    println!(
+                                        "  ℹ This confirms the issue exists and needs to be fixed"
+                                    );
                                 } else {
                                     println!("  ℹ Different error occurred: {}", e);
                                 }
@@ -1761,13 +1771,13 @@ mod tests {
                     }
                     Err(e) => {
                         println!("  ❌ SQL generation failed: {}", e);
-                        
+
                         // Check if this is related to the alias issue
                         if e.contains("alias") || e.contains("FROM-clause") {
                             println!("  ⚠ SQL generation failed due to alias handling issue");
                             println!("  ℹ This confirms the issue exists in SQL construction");
                         }
-                        
+
                         // Don't panic here as we expect this to fail initially
                         println!("  ℹ SQL generation failure is expected before fix is applied");
                     }
@@ -1794,10 +1804,12 @@ mod tests {
                         }
                         Err(e) => {
                             println!("  ⚠ HTTP request failed: {}", e);
-                            
+
                             // Check if this is the specific error we're testing
                             if e.contains("missing FROM-clause entry") {
-                                println!("  ⚠ Reproduced the 'missing FROM-clause entry' error via HTTP");
+                                println!(
+                                    "  ⚠ Reproduced the 'missing FROM-clause entry' error via HTTP"
+                                );
                                 println!("  ℹ This confirms the issue exists in the API endpoint");
                             }
                         }

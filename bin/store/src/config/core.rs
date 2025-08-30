@@ -92,7 +92,7 @@ pub struct EnvConfig {
     pub merkle_save_interval: u64,
     pub max_concurrent_flushes: u32,
     pub bucket_capacity: u32,
-    
+
     // Test
     pub strict_validation: bool,
 }
