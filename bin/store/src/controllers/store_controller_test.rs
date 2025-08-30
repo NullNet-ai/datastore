@@ -617,9 +617,7 @@ mod tests {
                         println!("  ✓ SQL generated successfully");
 
                         // Write SQL to file for inspection
-                        if let Err(e) =
-                            write_sql_to_file(&sql, "contacts_basic_fields_scenario")
-                        {
+                        if let Err(e) = write_sql_to_file(&sql, "contacts_basic_fields_scenario") {
                             println!("  ⚠ Failed to write SQL to file: {}", e);
                         }
 
@@ -628,7 +626,9 @@ mod tests {
                         assert!(sql.contains("FROM"), "SQL should contain FROM");
                         assert!(sql.contains("contacts"), "SQL should query contacts table");
                         assert!(
-                            sql.contains("id") && sql.contains("first_name") && sql.contains("last_name"),
+                            sql.contains("id")
+                                && sql.contains("first_name")
+                                && sql.contains("last_name"),
                             "SQL should select id, first_name, and last_name fields"
                         );
                         assert!(
@@ -663,8 +663,6 @@ mod tests {
                         panic!("SQL generation should not fail for valid payload");
                     }
                 }
-
-
 
                 // Test HTTP request to /filter endpoint
                 match make_filter_http_request(&payload, &get_table_name(), &auth_response).await {
@@ -838,7 +836,7 @@ mod tests {
                                 operator,
                                 crate::structs::core::FilterOperator::Like
                             ));
-                            assert_eq!(values, &vec![serde_json::Value::String("J".to_string())]);
+                            assert_eq!(values, &vec![serde_json::Value::String("J%".to_string())]);
                         }
                         _ => println!("  ✓ Filter is not a criteria type"),
                     }

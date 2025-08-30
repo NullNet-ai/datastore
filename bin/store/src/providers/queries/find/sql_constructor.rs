@@ -1890,6 +1890,105 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     group_fields.push("timestamp".to_string());
                 }
                 return format!(" GROUP BY {}", group_fields.join(", "));
+            } else if group_by.has_count {
+                // When has_count is true but no specific fields are provided,
+                // we need to group by all non-aggregated columns to satisfy PostgreSQL requirements
+                let mut group_fields: Vec<String> = Vec::new();
+                
+                // Add main table ID field
+                group_fields.push(format!("{}.id", self.table));
+                
+                // Add pluck fields from main table
+                for field in self.request_body.get_pluck() {
+                    if field != "id" { // Avoid duplicating id
+                        group_fields.push(Self::get_field(
+                            &self.table,
+                            field,
+                            self.request_body.get_date_format(),
+                            self.table.as_str(),
+                            self.timezone.as_deref(),
+                            false,
+                        ));
+                    }
+                }
+                
+                // Add pluck_object fields
+                for (entity, fields) in self.request_body.get_pluck_object() {
+                    let normalized_entity = self.normalize_entity_name(entity);
+                    for field in fields {
+                        if field != "id" || entity != &self.table { // Avoid duplicating main table id
+                            group_fields.push(Self::get_field(
+                                &normalized_entity,
+                                field,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                false,
+                            ));
+                        }
+                    }
+                }
+                
+                // Add pluck_group_object fields
+                for (entity, fields) in self.request_body.get_pluck_group_object() {
+                    let normalized_entity = self.normalize_entity_name(entity);
+                    for field in fields {
+                        if field != "id" || entity != &self.table { // Avoid duplicating main table id
+                            group_fields.push(Self::get_field(
+                                &normalized_entity,
+                                field,
+                                self.request_body.get_date_format(),
+                                self.table.as_str(),
+                                self.timezone.as_deref(),
+                                false,
+                            ));
+                        }
+                    }
+                }
+                
+                // Add concatenated fields - these are computed fields that appear in SELECT
+                // and need to be included in GROUP BY when using aggregates
+                for concat_field in self.request_body.get_concatenate_fields() {
+                    let entity_name = if let Some(aliased_entity) = &concat_field.aliased_entity {
+                        // For alias entities, use the original alias name without normalization
+                        aliased_entity.clone()
+                    } else {
+                        // Check if this entity has a corresponding JOIN with an alias
+                        let join_alias = self.request_body.get_joins()
+                            .iter()
+                            .find(|join| {
+                                // Match by entity name or normalized entity name
+                                join.field_relation.to.entity == concat_field.entity ||
+                                self.normalize_entity_name(&join.field_relation.to.entity) == concat_field.entity ||
+                                // Also match by alias if it exists
+                                join.field_relation.to.alias.as_ref().map_or(false, |alias| alias == &concat_field.entity)
+                            })
+                            .and_then(|join| join.field_relation.to.alias.as_ref())
+                            .cloned();
+                        
+                        join_alias.unwrap_or_else(|| self.normalize_entity_name(&concat_field.entity))
+                    };
+                    
+                    // Add the individual fields that make up the concatenated field
+                    for field in &concat_field.fields {
+                        group_fields.push(Self::get_field(
+                            &entity_name,
+                            field,
+                            self.request_body.get_date_format(),
+                            self.table.as_str(),
+                            self.timezone.as_deref(),
+                            false,
+                        ));
+                    }
+                }
+                
+                if is_hypertable(self.table.as_str()) {
+                    group_fields.push("timestamp".to_string());
+                }
+                
+                if !group_fields.is_empty() {
+                    return format!(" GROUP BY {}", group_fields.join(", "));
+                }
             }
         }
         String::from("")

@@ -54,18 +54,15 @@
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         },
         "from": {
           "entity": "contacts",
           "field": "created_by",
-          "alias": null,
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         }
       },
       "nested": false
@@ -80,18 +77,15 @@
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         },
         "from": {
           "entity": "created_by_account_organizations",
           "field": "contact_id",
-          "alias": null,
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         }
       },
       "nested": false
@@ -106,18 +100,15 @@
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         },
         "from": {
           "entity": "contacts",
           "field": "updated_by",
-          "alias": null,
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         }
       },
       "nested": false
@@ -132,18 +123,15 @@
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         },
         "from": {
           "entity": "updated_by_account_organizations",
           "field": "contact_id",
-          "alias": null,
           "order_direction": null,
           "order_by": null,
           "limit": null,
-          "offset": null,
-          "filters": []
+          "offset": null
         }
       },
       "nested": false

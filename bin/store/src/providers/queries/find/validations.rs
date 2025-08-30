@@ -236,22 +236,28 @@ impl<'a, 'b> Validation<'a, 'b> {
                 let field_exists_in_schema = field_exists_in_table(&normalized_entity, field)
                     || field_exists_in_table(&concatenate_field.entity, field);
 
-                // Check if field exists in joins
+                // Check if field exists in joins - for concatenated fields, we need to check
+                // if the field exists in the target entity that the alias points to
                 let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
                     let to_endpoint = &join.field_relation.to;
-                    // Check if field matches the "to" field and entity matches
-                    if to_endpoint.field == *field {
-                        // Check if entity matches the "to" entity
-                        if to_endpoint.entity == concatenate_field.entity {
-                            return true;
-                        }
-                        // Check if entity matches the "to" alias
-                        if let Some(alias) = &to_endpoint.alias {
-                            if alias == &concatenate_field.entity {
-                                return true;
-                            }
+                    
+                    // Check if the concatenate_field.entity matches the alias
+                    if let Some(alias) = &to_endpoint.alias {
+                        if alias == &concatenate_field.entity {
+                            // Check if the field exists in the target entity's schema
+                            let target_entity_normalized = self.normalize_entity_name(&to_endpoint.entity);
+                            return field_exists_in_table(&target_entity_normalized, field)
+                                || field_exists_in_table(&to_endpoint.entity, field);
                         }
                     }
+                    
+                    // Also check direct entity matches
+                    if to_endpoint.entity == concatenate_field.entity {
+                        let target_entity_normalized = self.normalize_entity_name(&to_endpoint.entity);
+                        return field_exists_in_table(&target_entity_normalized, field)
+                            || field_exists_in_table(&to_endpoint.entity, field);
+                    }
+                    
                     false
                 });
 
@@ -853,10 +859,13 @@ impl<'a, 'b> Validation<'a, 'b> {
                             .concatenate_fields
                             .iter()
                             .any(|concat_field| {
-                                let normalized_concat_entity = self.normalize_entity_name(&concat_field.entity);
-                                let normalized_aliased_entity = concat_field.aliased_entity.as_ref()
+                                let normalized_concat_entity =
+                                    self.normalize_entity_name(&concat_field.entity);
+                                let normalized_aliased_entity = concat_field
+                                    .aliased_entity
+                                    .as_ref()
                                     .map(|alias| self.normalize_entity_name(alias));
-                                
+
                                 concat_field.field_name == *field
                                     && (normalized_concat_entity == normalized_entity
                                         || normalized_aliased_entity.as_ref()

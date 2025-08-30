@@ -21,18 +21,6 @@
       "id",
       "contact_id"
     ],
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
     "contacts": [
       "id",
       "code",
@@ -49,6 +37,18 @@
       "created_by",
       "updated_by",
       "previous_status"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
+    ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
     ]
   },
   "pluck_group_object": {
@@ -68,7 +68,12 @@
       "operator": "like",
       "values": [
         "08/20/2025 14"
-      ]
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
     },
     {
       "type": "operator",
@@ -82,106 +87,157 @@
       "values": [
         "Active",
         "Draft"
-      ]
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
     }
   ],
-  "offset": 0,
-  "limit": 100,
+  "group_advance_filters": [],
   "joins": [
     {
       "type": "left",
       "field_relation": {
         "to": {
           "entity": "contact_emails",
-          "field": "contact_id"
+          "field": "contact_id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         },
         "from": {
           "entity": "contacts",
-          "field": "id"
+          "field": "id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         }
-      }
+      },
+      "nested": false
     },
     {
       "type": "left",
       "field_relation": {
         "to": {
           "entity": "contact_phone_numbers",
-          "field": "contact_id"
+          "field": "contact_id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         },
         "from": {
           "entity": "contacts",
-          "field": "id"
+          "field": "id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         }
-      }
+      },
+      "nested": false
     },
     {
       "type": "left",
       "field_relation": {
         "to": {
-          "alias": "created_by_account_organizations",
           "entity": "account_organizations",
-          "field": "id"
+          "field": "id",
+          "alias": "created_by_account_organizations",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         },
         "from": {
           "entity": "contacts",
-          "field": "created_by"
+          "field": "created_by",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         }
-      }
+      },
+      "nested": false
     },
     {
       "type": "left",
-      "nested": true,
       "field_relation": {
         "to": {
-          "alias": "created_by",
           "entity": "contacts",
-          "field": "id"
+          "field": "id",
+          "alias": "created_by",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         },
         "from": {
           "entity": "created_by_account_organizations",
-          "field": "contact_id"
+          "field": "contact_id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         }
-      }
+      },
+      "nested": true
     },
     {
       "type": "left",
       "field_relation": {
         "to": {
-          "alias": "updated_by_account_organizations",
           "entity": "account_organizations",
-          "field": "id"
+          "field": "id",
+          "alias": "updated_by_account_organizations",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         },
         "from": {
           "entity": "contacts",
-          "field": "updated_by"
+          "field": "updated_by",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         }
-      }
+      },
+      "nested": false
     },
     {
       "type": "left",
-      "nested": true,
       "field_relation": {
         "to": {
-          "alias": "updated_by",
           "entity": "contacts",
-          "field": "id"
+          "field": "id",
+          "alias": "updated_by",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         },
         "from": {
           "entity": "updated_by_account_organizations",
-          "field": "contact_id"
+          "field": "contact_id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
         }
-      }
+      },
+      "nested": true
     }
   ],
-  "is_case_sensitive_sorting": false,
-  "multiple_sort": [
-    {
-      "by_field": "status",
-      "by_direction": "asc",
-      "is_case_sensitive_sorting": false
-    }
-  ],
-  "date_format": "mm/dd/YYYY",
+  "group_by": {
+    "fields": [],
+    "has_count": true
+  },
   "concatenate_fields": [
     {
       "fields": [
@@ -210,7 +266,8 @@
       ],
       "field_name": "created_date_time",
       "separator": " ",
-      "entity": "contact"
+      "entity": "contact",
+      "aliased_entity": null
     },
     {
       "fields": [
@@ -219,13 +276,23 @@
       ],
       "field_name": "updated_date_time",
       "separator": " ",
-      "entity": "contact"
+      "entity": "contact",
+      "aliased_entity": null
     }
   ],
-  "group_advance_filters": [],
+  "multiple_sort": [
+    {
+      "by_field": "status",
+      "by_direction": "asc",
+      "is_case_sensitive_sorting": false
+    }
+  ],
+  "date_format": "mm/dd/YYYY",
+  "order_by": "id",
+  "order_direction": "asc",
+  "is_case_sensitive_sorting": false,
+  "offset": 0,
+  "limit": 100,
   "distinct_by": "",
-  "group_by": {
-    "fields": [],
-    "has_count": true
-  }
+  "timezone": null
 }
