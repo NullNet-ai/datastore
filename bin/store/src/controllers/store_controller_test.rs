@@ -902,7 +902,9 @@ mod tests {
     async fn should_use_contacts_filter_concatenated_fields_with_default_status_filter_scenario() {
         println!("Testing contacts_filter_concatenated_fields_with_default_status_filter payload scenario...");
 
-        match load_payload_scenario("contacts_filter_concatenated_fields_with_default_status_filter") {
+        match load_payload_scenario(
+            "contacts_filter_concatenated_fields_with_default_status_filter",
+        ) {
             Ok(payload) => {
                 println!("  ✓ Successfully loaded contacts_filter_concatenated_fields_with_default_status_filter scenario");
 
@@ -912,13 +914,23 @@ mod tests {
 
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 println!("  ✓ Filter count: {}", payload.advance_filters.len());
-                println!("  ✓ Concatenate fields count: {}", payload.concatenate_fields.len());
+                println!(
+                    "  ✓ Concatenate fields count: {}",
+                    payload.concatenate_fields.len()
+                );
                 println!("  ✓ Joins count: {}", payload.joins.len());
 
                 // Validate payload structure
                 assert_eq!(
                     payload.pluck,
-                    vec!["id", "categories", "organization_id", "first_name", "middle_name", "last_name"]
+                    vec![
+                        "id",
+                        "categories",
+                        "organization_id",
+                        "first_name",
+                        "middle_name",
+                        "last_name"
+                    ]
                 );
                 assert_eq!(payload.limit, 100);
                 assert_eq!(payload.offset, 0);
@@ -927,7 +939,8 @@ mod tests {
                 assert_eq!(payload.joins.len(), 6);
 
                 // Verify concatenate fields
-                let concat_field_names: Vec<String> = payload.concatenate_fields
+                let concat_field_names: Vec<String> = payload
+                    .concatenate_fields
                     .iter()
                     .map(|f| f.field_name.clone())
                     .collect();
@@ -938,14 +951,19 @@ mod tests {
                 // Verify advance filters
                 let mut has_created_date_time_filter = false;
                 let mut has_status_filter = false;
-                
+
                 for filter in &payload.advance_filters {
                     match filter {
-                        crate::structs::core::FilterCriteria::Criteria { field, values, .. } => {
+                        crate::structs::core::FilterCriteria::Criteria {
+                            field, values, ..
+                        } => {
                             if field == "created_date_time" {
                                 has_created_date_time_filter = true;
                                 assert_eq!(values.len(), 1);
-                                println!("  ✓ Found created_date_time filter with value: {:?}", values[0]);
+                                println!(
+                                    "  ✓ Found created_date_time filter with value: {:?}",
+                                    values[0]
+                                );
                             }
                             if field == "status" {
                                 has_status_filter = true;
@@ -958,20 +976,18 @@ mod tests {
                         }
                     }
                 }
-                
-                assert!(has_created_date_time_filter, "Should have created_date_time filter");
+
+                assert!(
+                    has_created_date_time_filter,
+                    "Should have created_date_time filter"
+                );
                 assert!(has_status_filter, "Should have status filter");
 
                 // Test SQL generation
-                match get_raw_query(
-                    &payload_json,
-                    get_table_name(),
-                    true,
-                    None,
-                ) {
+                match get_raw_query(&payload_json, get_table_name(), true, None) {
                     Ok(sql) => {
                         println!("  ✓ SQL generated successfully");
-                        
+
                         // Write SQL to file for inspection
                         if let Err(e) = write_sql_to_file(&sql, "contacts_filter_concatenated_fields_with_default_status_filter_scenario") {
                             println!("  ⚠ Failed to write SQL to file: {}", e);
@@ -981,37 +997,88 @@ mod tests {
                         assert!(sql.contains("SELECT"), "SQL should contain SELECT");
                         assert!(sql.contains("FROM"), "SQL should contain FROM");
                         assert!(sql.contains("contacts"), "SQL should query contacts table");
-                        
+
                         // Validate joins
-                        assert!(sql.contains("LEFT JOIN") || sql.contains("left join"), "SQL should contain LEFT JOIN");
-                        assert!(sql.contains("contact_emails"), "SQL should join contact_emails");
-                        assert!(sql.contains("contact_phone_numbers"), "SQL should join contact_phone_numbers");
-                        assert!(sql.contains("account_organizations"), "SQL should join account_organizations");
+                        assert!(
+                            sql.contains("LEFT JOIN") || sql.contains("left join"),
+                            "SQL should contain LEFT JOIN"
+                        );
+                        assert!(
+                            sql.contains("contact_emails"),
+                            "SQL should join contact_emails"
+                        );
+                        assert!(
+                            sql.contains("contact_phone_numbers"),
+                            "SQL should join contact_phone_numbers"
+                        );
+                        assert!(
+                            sql.contains("account_organizations"),
+                            "SQL should join account_organizations"
+                        );
 
                         // Validate concatenated fields in SQL
-                        assert!(sql.contains("COALESCE"), "SQL should contain COALESCE for concatenation");
-                        assert!(sql.contains("created_date_time"), "SQL should contain created_date_time concatenation");
-                        assert!(sql.contains("updated_date_time"), "SQL should contain updated_date_time concatenation");
-                        assert!(sql.contains("full_name"), "SQL should contain full_name concatenation");
+                        assert!(
+                            sql.contains("COALESCE"),
+                            "SQL should contain COALESCE for concatenation"
+                        );
+                        assert!(
+                            sql.contains("created_date_time"),
+                            "SQL should contain created_date_time concatenation"
+                        );
+                        assert!(
+                            sql.contains("updated_date_time"),
+                            "SQL should contain updated_date_time concatenation"
+                        );
+                        assert!(
+                            sql.contains("full_name"),
+                            "SQL should contain full_name concatenation"
+                        );
 
                         // Validate filters in WHERE clause
-                        assert!(sql.contains("WHERE") || sql.contains("where"), "SQL should contain WHERE clause");
-                        assert!(sql.contains("08/20/2025 14") || sql.contains("created_date_time"), "SQL should filter by created_date_time");
-                        assert!(sql.contains("Active") && sql.contains("Draft"), "SQL should filter by Active and Draft status");
-                        
+                        assert!(
+                            sql.contains("WHERE") || sql.contains("where"),
+                            "SQL should contain WHERE clause"
+                        );
+                        assert!(
+                            sql.contains("08/20/2025 14") || sql.contains("created_date_time"),
+                            "SQL should filter by created_date_time"
+                        );
+                        assert!(
+                            sql.contains("Active") && sql.contains("Draft"),
+                            "SQL should filter by Active and Draft status"
+                        );
+
                         // Validate pluck fields
                         assert!(sql.contains("id"), "SQL should select id field");
-                        assert!(sql.contains("categories"), "SQL should select categories field");
-                        assert!(sql.contains("organization_id"), "SQL should select organization_id field");
-                        assert!(sql.contains("first_name"), "SQL should select first_name field");
-                        assert!(sql.contains("middle_name"), "SQL should select middle_name field");
-                        assert!(sql.contains("last_name"), "SQL should select last_name field");
+                        assert!(
+                            sql.contains("categories"),
+                            "SQL should select categories field"
+                        );
+                        assert!(
+                            sql.contains("organization_id"),
+                            "SQL should select organization_id field"
+                        );
+                        assert!(
+                            sql.contains("first_name"),
+                            "SQL should select first_name field"
+                        );
+                        assert!(
+                            sql.contains("middle_name"),
+                            "SQL should select middle_name field"
+                        );
+                        assert!(
+                            sql.contains("last_name"),
+                            "SQL should select last_name field"
+                        );
 
                         // Validate limit and offset
-                        assert!(sql.contains("LIMIT 100") || sql.contains("limit 100"), "SQL should have LIMIT 100");
+                        assert!(
+                            sql.contains("LIMIT 100") || sql.contains("limit 100"),
+                            "SQL should have LIMIT 100"
+                        );
 
                         println!("  ✓ All SQL validation checks passed");
-                        
+
                         // Test query execution (optional, may fail in offline mode)
                         match generate_and_execute_query(
                             &payload_json,
@@ -1064,11 +1131,17 @@ mod tests {
                     serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
 
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
-                println!("  ✓ Concatenate fields count: {}", payload.concatenate_fields.len());
+                println!(
+                    "  ✓ Concatenate fields count: {}",
+                    payload.concatenate_fields.len()
+                );
                 println!("  ✓ Joins count: {}", payload.joins.len());
 
                 // Validate payload structure
-                assert_eq!(payload.pluck, vec!["id", "first_name", "last_name", "status"]);
+                assert_eq!(
+                    payload.pluck,
+                    vec!["id", "first_name", "last_name", "status"]
+                );
                 assert_eq!(payload.concatenate_fields.len(), 2);
                 assert_eq!(payload.joins.len(), 4);
 
@@ -1077,12 +1150,20 @@ mod tests {
                     println!("  ✓ Concatenate field [{}]: entity='{}', aliased_entity='{:?}', fields={:?}", 
                         i, concat_field.entity, concat_field.aliased_entity, concat_field.fields);
                     assert_eq!(concat_field.fields, vec!["first_name", "last_name"]);
-                    assert!(concat_field.entity == "created_by" || concat_field.entity == "updated_by");
+                    assert!(
+                        concat_field.entity == "created_by" || concat_field.entity == "updated_by"
+                    );
                 }
 
                 // Validate pluck_object contains aliased entities
-                assert!(payload.pluck_object.contains_key("created_by"), "pluck_object should contain 'created_by' entity");
-                assert!(payload.pluck_object.contains_key("updated_by"), "pluck_object should contain 'updated_by' entity");
+                assert!(
+                    payload.pluck_object.contains_key("created_by"),
+                    "pluck_object should contain 'created_by' entity"
+                );
+                assert!(
+                    payload.pluck_object.contains_key("updated_by"),
+                    "pluck_object should contain 'updated_by' entity"
+                );
                 println!("  ✓ pluck_object contains required aliased entities");
 
                 // Test SQL generation - this should trigger the validation error we want to fix
@@ -1090,9 +1171,12 @@ mod tests {
                     Ok(sql) => {
                         println!("  ✓ SQL generated successfully (validation issue may be fixed)");
                         println!("  ✓ Generated SQL length: {} characters", sql.len());
-                        
+
                         // Write SQL to file for inspection
-                        if let Err(e) = write_sql_to_file(&sql, "contacts_alias_concatenation_validation_issue_scenario") {
+                        if let Err(e) = write_sql_to_file(
+                            &sql,
+                            "contacts_alias_concatenation_validation_issue_scenario",
+                        ) {
                             println!("  ⚠ Failed to write SQL to file: {}", e);
                         } else {
                             println!("  ✓ SQL written to file for inspection");
@@ -1101,7 +1185,10 @@ mod tests {
                         // Try to execute the query
                         match execute_raw_sql_query(&sql).await {
                             Ok(results) => {
-                                println!("  ✓ Query executed successfully with {} results", results.len());
+                                println!(
+                                    "  ✓ Query executed successfully with {} results",
+                                    results.len()
+                                );
                             }
                             Err(e) => {
                                 println!("  ⚠ Query execution failed (may be expected): {}", e);
@@ -1110,10 +1197,15 @@ mod tests {
                     }
                     Err(e) => {
                         println!("  ✗ SQL generation failed with validation error: {}", e);
-                        
+
                         // Check if this is the expected concatenate_fields validation error
-                        if e.contains("concatenate_fields") && e.contains("Field") && e.contains("does not exist in entity") {
-                            println!("  ✓ Reproduced the expected concatenate_fields validation error");
+                        if e.contains("concatenate_fields")
+                            && e.contains("Field")
+                            && e.contains("does not exist in entity")
+                        {
+                            println!(
+                                "  ✓ Reproduced the expected concatenate_fields validation error"
+                            );
                             println!("  ℹ This error confirms the issue that needs to be fixed in validations.rs");
                         } else {
                             println!("  ⚠ Unexpected error type: {}", e);

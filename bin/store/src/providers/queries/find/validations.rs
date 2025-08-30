@@ -231,11 +231,11 @@ impl<'a, 'b> Validation<'a, 'b> {
             // Validate that all fields exist in the specified entity
             for (field_index, field) in concatenate_field.fields.iter().enumerate() {
                 let normalized_entity = self.normalize_entity_name(&concatenate_field.entity);
-                
+
                 // Check if field exists in schema tables (try both original and normalized entity names)
                 let field_exists_in_schema = field_exists_in_table(&normalized_entity, field)
                     || field_exists_in_table(&concatenate_field.entity, field);
-                
+
                 // Check if field exists in joins
                 let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
                     let to_endpoint = &join.field_relation.to;
@@ -254,7 +254,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                     }
                     false
                 });
-                
+
                 // Field must exist either in schema or in joins
                 if !field_exists_in_schema && !field_exists_in_joins {
                     return ApiResponse {

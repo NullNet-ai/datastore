@@ -277,7 +277,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     } else {
                         &normalized_entity
                     };
-                    
+
                     // Generate concatenated expression
                     let concatenated_expression = concat_field
                         .fields
@@ -586,7 +586,10 @@ impl<T: QueryFilter> SQLConstructor<T> {
 
                 if matches_main_table {
                     // Priority: aliased_entity takes precedence over entity (normalized)
-                    let table_name = field.aliased_entity.as_deref().unwrap_or(&normalized_entity);
+                    let table_name = field
+                        .aliased_entity
+                        .as_deref()
+                        .unwrap_or(&normalized_entity);
 
                     let concatenated_expression = field
                         .fields
