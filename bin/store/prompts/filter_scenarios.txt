@@ -1,6 +1,8 @@
 create a new scenarios in /scenarios/filters for filters where:
 
-1. <Your Scenario>.
+<start_scenario>
+
+<end_scenario>
 
 If the scenarios are existing, skip it.
 
