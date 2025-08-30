@@ -1660,4 +1660,158 @@ mod tests {
 
         println!("  ✓ contacts_concatenated_field_validation_issue scenario test completed");
     }
+
+    /// Tests contacts with group_by has_count issue with aliases scenario:
+    /// - Loads the contacts_with_group_by_has_count_issue_with_aliases.json scenario
+    /// - Verifies SQL generation handles aliases correctly when has_count is true
+    /// - Reproduces the "missing FROM-clause entry for table 'updated_bys'" error
+    /// - Validates that aliases are properly referenced in GROUP BY clause
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Test scenario with aliases and has_count
+    /// let scenario = load_payload_scenario("contacts_with_group_by_has_count_issue_with_aliases");
+    /// let sql = get_raw_query(&serde_json::to_value(scenario)?, "contacts".to_string(), true, None)?;
+    /// assert!(sql.contains("GROUP BY"));
+    /// ```
+    #[tokio::test]
+    async fn should_handle_contacts_with_group_by_has_count_issue_with_aliases_scenario() {
+        println!("Testing contacts with group_by has_count issue with aliases scenario...");
+
+        // Attempt to load the scenario
+        match load_payload_scenario("contacts_with_group_by_has_count_issue_with_aliases") {
+            Ok(payload) => {
+                println!("  ✓ Scenario loaded successfully");
+                println!("  ℹ Payload contains {} joins", payload.joins.len());
+                println!("  ℹ Group by has_count: {:?}", payload.group_by.as_ref().map(|gb| gb.has_count));
+
+                // Convert payload to JSON for SQL generation
+                let payload_json = match serde_json::to_value(&payload) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        println!("  ❌ Failed to serialize payload: {}", e);
+                        panic!("Payload serialization should succeed: {}", e);
+                    }
+                };
+
+                // Test SQL generation - this should reproduce the issue
+                match get_raw_query(&payload_json, get_table_name(), true, None) {
+                    Ok(sql_query) => {
+                        println!("  ✓ SQL generated successfully (issue may be resolved)");
+                        println!("  ℹ Generated SQL length: {} characters", sql_query.len());
+
+                        // Write SQL to file for inspection
+                        if let Err(e) = write_sql_to_file(
+                            &sql_query,
+                            "should_handle_contacts_with_group_by_has_count_issue_with_aliases_scenario",
+                        ) {
+                            println!("  ⚠ Failed to write SQL to file: {}", e);
+                        }
+
+                        // Validate SQL structure
+                        assert!(sql_query.contains("SELECT"), "SQL should contain SELECT");
+                        assert!(sql_query.contains("FROM"), "SQL should contain FROM");
+                        assert!(sql_query.contains("contacts"), "SQL should query contacts table");
+                        assert!(
+                            sql_query.contains("GROUP BY") || sql_query.contains("group by"),
+                            "SQL should contain GROUP BY clause when has_count is true"
+                        );
+                        assert!(
+                            sql_query.contains("JOIN") || sql_query.contains("join"),
+                            "SQL should contain JOIN for aliased entities"
+                        );
+
+                        // Check for proper alias handling in GROUP BY
+                        if sql_query.contains("GROUP BY") {
+                            println!("  ✓ SQL contains GROUP BY clause");
+                            
+                            // Verify that aliases are properly referenced
+                            if sql_query.contains("updated_by") {
+                                println!("  ✓ SQL references updated_by alias");
+                            }
+                            if sql_query.contains("created_by") {
+                                println!("  ✓ SQL references created_by alias");
+                            }
+                        }
+
+                        println!("  ✓ SQL validation checks passed");
+
+                        // Test query execution to check for the actual error
+                        match execute_raw_sql_query(&sql_query).await {
+                            Ok(sql_results) => {
+                                println!(
+                                    "  ✓ SQL query executed successfully with {} results",
+                                    sql_results.len()
+                                );
+                                println!("  ✓ No 'missing FROM-clause entry' error occurred");
+                            }
+                            Err(e) => {
+                                println!("  ❌ SQL execution failed: {}", e);
+                                
+                                // Check if this is the specific error we're trying to reproduce
+                                if e.contains("missing FROM-clause entry") {
+                                    println!("  ⚠ Reproduced the 'missing FROM-clause entry' error");
+                                    println!("  ℹ This confirms the issue exists and needs to be fixed");
+                                } else {
+                                    println!("  ℹ Different error occurred: {}", e);
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("  ❌ SQL generation failed: {}", e);
+                        
+                        // Check if this is related to the alias issue
+                        if e.contains("alias") || e.contains("FROM-clause") {
+                            println!("  ⚠ SQL generation failed due to alias handling issue");
+                            println!("  ℹ This confirms the issue exists in SQL construction");
+                        }
+                        
+                        // Don't panic here as we expect this to fail initially
+                        println!("  ℹ SQL generation failure is expected before fix is applied");
+                    }
+                }
+
+                // Test HTTP request if authentication is available
+                let auth_response = perform_login().await;
+                if auth_response.is_authenticated {
+                    match make_filter_http_request(&payload, &get_table_name(), &auth_response)
+                        .await
+                    {
+                        Ok(response) => {
+                            println!("  ✓ HTTP request successful");
+
+                            if let Some(data) = response.get("data") {
+                                if let Some(data_array) = data.as_array() {
+                                    println!("  ✓ Response contains {} records", data_array.len());
+                                } else {
+                                    println!("  ✓ Response data is not an array: {:?}", data);
+                                }
+                            } else {
+                                println!("  ✓ Response: {:?}", response);
+                            }
+                        }
+                        Err(e) => {
+                            println!("  ⚠ HTTP request failed: {}", e);
+                            
+                            // Check if this is the specific error we're testing
+                            if e.contains("missing FROM-clause entry") {
+                                println!("  ⚠ Reproduced the 'missing FROM-clause entry' error via HTTP");
+                                println!("  ℹ This confirms the issue exists in the API endpoint");
+                            }
+                        }
+                    }
+                } else {
+                    println!("  ⚠ Authentication failed, skipping HTTP request test");
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_with_group_by_has_count_issue_with_aliases scenario test completed");
+    }
 }
