@@ -511,34 +511,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
     }
 
     pub fn construct_joins(&self) -> String {
-        if self.request_body.get_joins().is_empty() {
-            String::from("")
-        } else {
-            let mut join_clauses = Vec::new();
-
-            for join in self.request_body.get_joins() {
-                match join.r#type.as_str() {
-                    "left" => {
-                        let join_clause = self.build_left_join_lateral(join);
-                        join_clauses.push(join_clause);
-                    }
-                    "self" => {
-                        let join_clause = self.build_self_join_lateral(join);
-                        join_clauses.push(join_clause);
-                    }
-                    _ => {
-                        // Unsupported join type, skip or log warning
-                        log::warn!("Unsupported join type: {}", join.r#type);
-                    }
-                }
-            }
-
-            if join_clauses.is_empty() {
-                String::from("")
-            } else {
-                format!(" {}", join_clauses.join(" "))
-            }
-        }
+        JoinsConstructor::construct_joins(
+            &self.request_body,
+            &self.table,
+            |table_alias| self.build_system_where_clause(table_alias),
+            |filters| self.build_infix_expression(filters),
+        )
     }
     /// Constructs the standard WHERE clause pattern used across queries
     pub fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
@@ -560,28 +538,18 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
     }
 
     pub fn construct_where_clauses(&self) -> Result<String, String> {
-        // Use the reusable standard WHERE clause pattern
-        let mut base_where = format!(" WHERE {}", self.build_system_where_clause(&self.table)?);
-
-        // Prioritize advance_filters over group_advance_filters
-        if !self.request_body.get_advance_filters().is_empty() {
-            let expression =
-                self.build_infix_expression(self.request_body.get_advance_filters())?;
-            if !expression.is_empty() {
-                base_where.push_str(" AND ");
-                base_where.push_str(&expression);
-            }
-        } else if !self.request_body.get_group_advance_filters().is_empty() {
-            let group_expression = self.build_group_advance_filters_expression(
-                self.request_body.get_group_advance_filters(),
-            )?;
-            if !group_expression.is_empty() {
-                base_where.push_str(" AND ");
-                base_where.push_str(&group_expression);
-            }
-        }
-
-        Ok(base_where)
+        let where_constructor = WhereConstructor::new(
+            &self.table,
+            self.organization_id.as_deref(),
+            self.is_root,
+            self.timezone.as_deref(),
+        );
+        where_constructor.construct_where_clauses(
+            self.request_body.get_advance_filters(),
+            self.request_body.get_group_advance_filters(),
+            self.request_body.get_concatenate_fields(),
+            self.request_body.get_date_format(),
+        )
     }
 
     /// Builds an infix expression with proper order of operations using infix notation
@@ -735,118 +703,6 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
 
         // Must end with a condition (even number of tokens)
         tokens.len() % 2 == 1
-    }
-
-    fn build_left_join_lateral(&self, join: &Join) -> String {
-        self.build_join_lateral(join, false)
-    }
-
-    fn build_self_join_lateral(&self, join: &Join) -> String {
-        self.build_join_lateral(join, true)
-    }
-
-    fn build_join_lateral(&self, join: &Join, is_self_join: bool) -> String {
-        let to_entity = if is_self_join {
-            &self.table
-        } else {
-            &join.field_relation.to.entity
-        };
-
-        let to_alias = if is_self_join {
-            join.field_relation
-                .to
-                .alias
-                .as_deref()
-                .unwrap_or(&self.table)
-        } else {
-            join.field_relation.to.alias.as_deref().unwrap_or(to_entity)
-        };
-
-        let to_field = &join.field_relation.to.field;
-        let from_entity = if is_self_join {
-            &self.table
-        } else {
-            &join.field_relation.from.entity
-        };
-        let from_field = &join.field_relation.from.field;
-        let is_nested = join.nested;
-
-        // Build the lateral subquery alias
-        let lateral_alias = format!("joined_{}", to_alias);
-
-        // Build dynamic field selection based on pluck_object
-        let selected_fields =
-            if let Some(fields) = self.request_body.get_pluck_object().get(to_alias) {
-                fields
-                    .iter()
-                    .map(|field| format!("\"{}\".\"{}\"", lateral_alias, field))
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            } else {
-                // Default fallback fields if no pluck_object configuration found
-                format!("\"{}\".\"id\"", lateral_alias)
-            };
-
-        let mut where_conditions = vec![self
-            .build_system_where_clause(&lateral_alias)
-            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))];
-
-        // Add filters from the 'to' RelationEndpoint if they exist
-        if !join.field_relation.to.filters.is_empty() {
-            match self.build_infix_expression(&join.field_relation.to.filters) {
-                Ok(filter_expression) if !filter_expression.is_empty() => {
-                    where_conditions.push(filter_expression);
-                }
-                Err(_) => {
-                    // Log error or handle gracefully - for now, continue without the filter
-                }
-                _ => {}
-            }
-        }
-
-        let combined_where = where_conditions.join(" AND ");
-
-        if is_nested {
-            return format!(
-                "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
-                selected_fields,
-                to_entity, lateral_alias,
-                combined_where,
-                lateral_alias, to_field, from_entity, from_field,
-                to_alias
-            );
-        }
-
-        // Determine the correct from table reference for the join condition
-        let from_table_ref = if let Some(alias) = &join.field_relation.from.alias {
-            alias.as_str()
-        } else {
-            // Check if from_entity matches any alias from previous joins
-            let joins = self.request_body.get_joins();
-            let mut found_alias = None;
-            for j in joins {
-                if let Some(to_alias) = &j.field_relation.to.alias {
-                    if to_alias == from_entity {
-                        found_alias = Some(to_alias.as_str());
-                        break;
-                    }
-                }
-            }
-            found_alias.unwrap_or(if is_self_join {
-                &self.table
-            } else {
-                from_entity
-            })
-        };
-
-        format!(
-            "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
-            selected_fields,
-            to_entity, lateral_alias,
-            combined_where,
-            lateral_alias, to_field, from_table_ref, from_field,
-            to_alias
-        )
     }
     fn build_expression_with_precedence(&self, tokens: &[Token]) -> String {
         if tokens.is_empty() {
@@ -1212,17 +1068,11 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         Ok(self.build_expression_with_precedence(&tokens))
     }
     pub fn construct_offset(&self) -> String {
-        if self.request_body.get_offset() > 0 {
-            format!(" OFFSET {}", self.request_body.get_offset())
-        } else {
-            String::from("")
-        }
+        let offset_constructor = OffsetConstructor::new(self.request_body.clone());
+        offset_constructor.construct_offset()
     }
     pub fn construct_limit(&self) -> String {
-        if self.request_body.get_limit() > 0 {
-            format!(" LIMIT {}", self.request_body.get_limit())
-        } else {
-            String::from("LIMIT 10")
-        }
+        let limit_constructor = LimitConstructor::new(self.request_body.clone());
+        limit_constructor.construct_limit()
     }
 }
