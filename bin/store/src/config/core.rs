@@ -92,6 +92,9 @@ pub struct EnvConfig {
     pub merkle_save_interval: u64,
     pub max_concurrent_flushes: u32,
     pub bucket_capacity: u32,
+    
+    // Test
+    pub strict_validation: bool,
 }
 
 impl Default for EnvConfig {
@@ -293,6 +296,12 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "1000".to_string())
                 .parse()
                 .unwrap_or(1000),
+
+            // Test
+            strict_validation: std::env::var("STRICT_VALIDATION")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
         }
     }
 }
