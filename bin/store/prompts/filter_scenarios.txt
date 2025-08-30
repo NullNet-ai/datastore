@@ -1,15 +1,15 @@
 create a new scenarios in /scenarios/filters for filters where:
 
-1. able to get records with id, first_name status from contacts table and get only first_name starts with "J".
+1. <Your Scenario>.
 
 If the scenarios are existing, skip it.
 
-Verify the payload by checking the /providers/sql_constructor.rs struct to ensure the correct payload to create
+Verify the payload by checking the /providers/queries/find/sql_constructor.rs struct to ensure the correct payload to create
 
 after creating the filter scenarios, create a unit tests and load the scenarios in /controllers/store_controller_test.rs
 
 Run make store
 
-after creating the unit tests from /controllers/store_controller_test.rs fix the issues in /providers/sql_constructor.rs
+after creating the unit tests from /controllers/store_controller_test.rs fix the issues in /providers/queries/find/sql_constructor.rs
 
-and if the issue is fix re-run the store
+and if the issue is fix re-run the store, if still persist check /providers/queries/find files
