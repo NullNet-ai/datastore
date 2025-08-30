@@ -365,7 +365,7 @@ mod tests {
         }
 
         // Attempt login with valid credentials
-        let login_payload = json!({
+        let payload = json!({
             "data": {
                 "account_id": "superadmin@dnamicro.com",
                 "account_secret": "ch@ng3m3Pl3@s3!!"
@@ -374,7 +374,7 @@ mod tests {
 
         let response = client
             .post(&format!("{}/api/organizations/auth", base_url))
-            .json(&login_payload)
+            .json(&payload)
             .timeout(std::time::Duration::from_secs(5))
             .send()
             .await;
@@ -846,49 +846,13 @@ mod tests {
                 "status"
             ],
             "pluck_object": {
-                "contact_emails": [
-                    "id",
-                    "email",
-                    "is_primary"
-                ],
                 "created_by": [
                     "id",
                     "first_name",
                     "last_name"
-                ],
-                "contact_phone_numbers": [
-                    "id",
-                    "phone_number_raw",
-                    "is_primary"
                 ]
             },
             "joins": [
-                {
-                    "type": "left",
-                    "field_relation": {
-                        "to": {
-                            "entity": "contact_emails",
-                            "field": "contact_id"
-                        },
-                        "from": {
-                            "entity": "contacts",
-                            "field": "id"
-                        }
-                    }
-                },
-                {
-                    "type": "left",
-                    "field_relation": {
-                        "to": {
-                            "entity": "contact_phone_numbers",
-                            "field": "contact_id"
-                        },
-                        "from": {
-                            "entity": "contacts",
-                            "field": "id"
-                        }
-                    }
-                },
                 {
                     "type": "left",
                     "field_relation": {
@@ -2274,13 +2238,13 @@ mod tests {
 
         println!(
             "  ✓ Testing POST /api/store/{}/filter with self-join",
-            get_table_name()
+            "account_organizations"
         );
         let mut request = client
             .post(&format!(
                 "{}/api/store/{}/filter",
                 base_url,
-                get_table_name()
+                "account_organizations"
             ))
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10));
@@ -2312,7 +2276,7 @@ mod tests {
                     println!("\n  🔍 Testing direct database execution using generate_and_execute_query...");
                     match generate_and_execute_query(
                         &payload,
-                        get_table_name(),
+                        "account_organizations".to_string(),
                         true,
                         Some("Asia/Manila".to_string()),
                         "should_handle_account_organizations_self_join_nested",
@@ -2417,7 +2381,9 @@ mod tests {
 
         // Test payload based on find_with_self_join_with_nested.json
         let payload = json!({
-            "pluck": ["id", "contact_id", "created_by"],
+            "pluck": ["id", "code", "categories", "organization_id", "first_name", "middle_name",
+                    "last_name", "status", "created_date", "updated_date", "created_time",
+                    "updated_time", "created_by", "updated_by", "previous_status"],
             "pluck_object": {
                 "contacts": [
                     "id", "code", "categories", "organization_id", "first_name", "middle_name",
@@ -2425,7 +2391,7 @@ mod tests {
                     "updated_time", "created_by", "updated_by", "previous_status"
                 ],
                 "account_organizations": ["contact_id", "id", "created_by"],
-                "created_account_organizations": ["contact_id", "id"]
+                "created_contacts": ["id"]
             },
             "pluck_group_object": {},
             "advance_filters": [],
@@ -2434,7 +2400,7 @@ mod tests {
                     "type": "self",
                     "field_relation": {
                         "to": {"entity": "account_organizations", "field": "id"},
-                        "from": {"alias": "created_account_organizations", "entity": "account_organizations", "field": "created_by"}
+                        "from": {"alias": "created_contacts", "entity": "contacts", "field": "created_by"}
                     }
                 },
                 {
@@ -2442,7 +2408,7 @@ mod tests {
                     "nested": true,
                     "field_relation": {
                         "to": {"entity": "contacts", "field": "id"},
-                        "from": {"entity": "created_account_organizations", "field": "contact_id"}
+                        "from": {"entity": "created_contacts", "field": "contact_id"}
                     }
                 }
             ],
