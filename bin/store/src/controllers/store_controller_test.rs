@@ -228,7 +228,7 @@ mod tests {
     /// // Test should pass but log appropriate warnings
     /// ```
     #[tokio::test]
-    
+
     async fn should_able_to_login() {
         println!(
             "Testing organization authentication endpoint with database dependency handling..."
@@ -281,7 +281,7 @@ mod tests {
     /// - Validates basic field selection (pluck)
     /// - Tests simple contact data retrieval without complex joins or filters
     #[tokio::test]
-    
+
     async fn should_handle_basic_filter() {
         println!("Testing basic contacts filter with simple pluck fields...");
 
@@ -413,7 +413,7 @@ mod tests {
     /// - Handles advance_filters with OR/AND operators
     /// - Tests multiple_sort with case sensitivity options
     #[tokio::test]
-    
+
     async fn should_handle_complex_filter_with_concatenated_fields() {
         println!("Testing contacts filter endpoint with concatenated fields and complex joins...");
 
@@ -807,7 +807,7 @@ mod tests {
     /// - Tests complex advance_filters with multiple OR conditions
     /// - Handles nested joins for related entities
     #[tokio::test]
-    
+
     async fn should_handle_search_suggestions_with_multiple_criteria() {
         println!("Testing search suggestions endpoint with multiple search criteria...");
 
@@ -1024,7 +1024,7 @@ mod tests {
                             }
                         }
                     }
-                
+
                     // Check for error status codes and handle them gracefully
                     match resp.status() {
                         reqwest::StatusCode::INTERNAL_SERVER_ERROR => {
@@ -1066,7 +1066,7 @@ mod tests {
     /// - Tests pluck_group_object for grouped data
     /// - Handles self-joins and nested relationships
     #[tokio::test]
-    
+
     async fn should_handle_sorting_non_text_fields() {
         println!("Testing contacts filter with sorting on non-text fields...");
 
@@ -1255,7 +1255,7 @@ mod tests {
                             }
                         }
                     }
-                    
+
                     // Check for error status codes and handle them gracefully
                     match resp.status() {
                         reqwest::StatusCode::INTERNAL_SERVER_ERROR => {
@@ -1294,7 +1294,7 @@ mod tests {
     /// - Tests pluck_object for self-referenced entities
     /// - Handles alias usage in complex joins
     #[tokio::test]
-    
+
     async fn should_handle_self_join_with_nested_relationships() {
         println!("Testing account_organizations filter with self-join and nested relationships...");
 
@@ -1448,7 +1448,7 @@ mod tests {
                             }
                         }
                     }
-                    
+
                     // Check for error status codes and handle them gracefully
                     match resp.status() {
                         reqwest::StatusCode::INTERNAL_SERVER_ERROR => {
@@ -1487,9 +1487,11 @@ mod tests {
     /// - Tests pluck_object for multiple entity relationships including aliased entities
     /// - Handles complex entity aliasing scenarios with nested relationships
     #[tokio::test]
-    
+
     async fn should_handle_self_join_nested() {
-        println!("Testing self join filter endpoint with self-join and nested contact relationships...");
+        println!(
+            "Testing self join filter endpoint with self-join and nested contact relationships..."
+        );
 
         let client = reqwest::Client::new();
         let config = EnvConfig::default();
@@ -1598,7 +1600,7 @@ mod tests {
     /// - Tests group_by functionality with aggregations
     /// - Handles complex filtering with aggregation results
     #[tokio::test]
-    
+
     async fn should_handle_aggregation_filter_operations() {
         println!("Testing aggregation filter endpoint with various aggregation operations...");
 
