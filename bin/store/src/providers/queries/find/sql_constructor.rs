@@ -1894,13 +1894,14 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 // When has_count is true but no specific fields are provided,
                 // we need to group by all non-aggregated columns to satisfy PostgreSQL requirements
                 let mut group_fields: Vec<String> = Vec::new();
-                
+
                 // Add main table ID field
                 group_fields.push(format!("{}.id", self.table));
-                
+
                 // Add pluck fields from main table
                 for field in self.request_body.get_pluck() {
-                    if field != "id" { // Avoid duplicating id
+                    if field != "id" {
+                        // Avoid duplicating id
                         group_fields.push(Self::get_field(
                             &self.table,
                             field,
@@ -1911,12 +1912,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         ));
                     }
                 }
-                
+
                 // Add pluck_object fields
                 for (entity, fields) in self.request_body.get_pluck_object() {
                     let normalized_entity = self.normalize_entity_name(entity);
                     for field in fields {
-                        if field != "id" || entity != &self.table { // Avoid duplicating main table id
+                        if field != "id" || entity != &self.table {
+                            // Avoid duplicating main table id
                             group_fields.push(Self::get_field(
                                 &normalized_entity,
                                 field,
@@ -1928,12 +1930,13 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         }
                     }
                 }
-                
+
                 // Add pluck_group_object fields
                 for (entity, fields) in self.request_body.get_pluck_group_object() {
                     let normalized_entity = self.normalize_entity_name(entity);
                     for field in fields {
-                        if field != "id" || entity != &self.table { // Avoid duplicating main table id
+                        if field != "id" || entity != &self.table {
+                            // Avoid duplicating main table id
                             group_fields.push(Self::get_field(
                                 &normalized_entity,
                                 field,
@@ -1945,7 +1948,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         }
                     }
                 }
-                
+
                 // Add concatenated fields - these are computed fields that appear in SELECT
                 // and need to be included in GROUP BY when using aggregates
                 for concat_field in self.request_body.get_concatenate_fields() {
@@ -1965,10 +1968,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                             })
                             .and_then(|join| join.field_relation.to.alias.as_ref())
                             .cloned();
-                        
-                        join_alias.unwrap_or_else(|| self.normalize_entity_name(&concat_field.entity))
+
+                        join_alias
+                            .unwrap_or_else(|| self.normalize_entity_name(&concat_field.entity))
                     };
-                    
+
                     // Add the individual fields that make up the concatenated field
                     for field in &concat_field.fields {
                         group_fields.push(Self::get_field(
@@ -1981,11 +1985,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                         ));
                     }
                 }
-                
+
                 if is_hypertable(self.table.as_str()) {
                     group_fields.push("timestamp".to_string());
                 }
-                
+
                 if !group_fields.is_empty() {
                     return format!(" GROUP BY {}", group_fields.join(", "));
                 }

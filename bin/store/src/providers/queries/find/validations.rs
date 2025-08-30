@@ -240,24 +240,26 @@ impl<'a, 'b> Validation<'a, 'b> {
                 // if the field exists in the target entity that the alias points to
                 let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
                     let to_endpoint = &join.field_relation.to;
-                    
+
                     // Check if the concatenate_field.entity matches the alias
                     if let Some(alias) = &to_endpoint.alias {
                         if alias == &concatenate_field.entity {
                             // Check if the field exists in the target entity's schema
-                            let target_entity_normalized = self.normalize_entity_name(&to_endpoint.entity);
+                            let target_entity_normalized =
+                                self.normalize_entity_name(&to_endpoint.entity);
                             return field_exists_in_table(&target_entity_normalized, field)
                                 || field_exists_in_table(&to_endpoint.entity, field);
                         }
                     }
-                    
+
                     // Also check direct entity matches
                     if to_endpoint.entity == concatenate_field.entity {
-                        let target_entity_normalized = self.normalize_entity_name(&to_endpoint.entity);
+                        let target_entity_normalized =
+                            self.normalize_entity_name(&to_endpoint.entity);
                         return field_exists_in_table(&target_entity_normalized, field)
                             || field_exists_in_table(&to_endpoint.entity, field);
                     }
-                    
+
                     false
                 });
 
