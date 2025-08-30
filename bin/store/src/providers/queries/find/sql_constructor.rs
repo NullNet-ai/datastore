@@ -1,9 +1,10 @@
 use crate::{
     providers::queries::find::constructors::{
-        group_by_constructor::GroupByConstructor, joins_constructor::JoinsConstructor,
-        limit_constructor::{LimitConstructor, LimitQueryFilter}, 
+        group_by_constructor::GroupByConstructor,
+        joins_constructor::JoinsConstructor,
+        limit_constructor::{LimitConstructor, LimitQueryFilter},
         offset_constructor::{OffsetConstructor, OffsetQueryFilter},
-        order_by_constructor::{OrderByConstructor, OrderByQueryFilter}, 
+        order_by_constructor::{OrderByConstructor, OrderByQueryFilter},
         selections_constructor::SelectionsConstructor,
         where_constructor::WhereConstructor,
     },
@@ -87,27 +88,27 @@ impl<T: QueryFilter> OrderByQueryFilter for T {
     fn get_multiple_sort(&self) -> &[SortOption] {
         QueryFilter::get_multiple_sort(self)
     }
-    
+
     fn get_order_by(&self) -> &str {
         QueryFilter::get_order_by(self)
     }
-    
+
     fn get_order_direction(&self) -> &str {
         QueryFilter::get_order_direction(self)
     }
-    
+
     fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
         QueryFilter::get_is_case_sensitive_sorting(self)
     }
-    
+
     fn get_group_by(&self) -> Option<&GroupBy> {
         QueryFilter::get_group_by(self)
     }
-    
+
     fn get_distinct_by(&self) -> Option<&str> {
         QueryFilter::get_distinct_by(self)
     }
-    
+
     fn get_date_format(&self) -> &str {
         QueryFilter::get_date_format(self)
     }
@@ -235,7 +236,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         self.timezone = Some(timezone);
 
         let mut sql = String::from("SELECT ");
-        
+
         // Use the new constructor modules with proper parameters
         sql.push_str(&SelectionsConstructor::construct_selections(
             &self.request_body,
@@ -246,22 +247,24 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 Self::get_field(table, field, format_str, main_table, timezone, with_alias)
             },
             |table, field, format_str, parse_as, main_table, timezone, with_alias| {
-                Self::get_field_with_parse_as(table, field, format_str, parse_as, main_table, timezone, with_alias)
+                Self::get_field_with_parse_as(
+                    table, field, format_str, parse_as, main_table, timezone, with_alias,
+                )
             },
             |table_alias| self.build_system_where_clause(table_alias),
             |filters| self.build_infix_expression(filters),
         ));
-        
+
         sql.push_str(" FROM ");
         sql.push_str(&self.table);
-        
+
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
             &self.table,
             |table_alias| self.build_system_where_clause(table_alias),
             |filters| self.build_infix_expression(filters),
         ));
-        
+
         let where_constructor = WhereConstructor::new(
             &self.table,
             self.organization_id.as_deref(),
@@ -274,7 +277,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             self.request_body.get_concatenate_fields(),
             self.request_body.get_date_format(),
         )?);
-        
+
         let group_by_constructor = GroupByConstructor::new(
             &self.table,
             self.timezone.as_deref(),
@@ -288,17 +291,17 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             self.request_body.get_concatenate_fields(),
             self.request_body.get_joins(),
         ));
-        
+
         let order_by_constructor = OrderByConstructor::new(
             self.request_body.clone(),
             self.table.clone(),
             self.timezone.clone(),
         );
         sql.push_str(&order_by_constructor.construct_order_by());
-        
+
         let offset_constructor = OffsetConstructor::new(self.request_body.clone());
         sql.push_str(&offset_constructor.construct_offset());
-        
+
         let limit_constructor = LimitConstructor::new(self.request_body.clone());
         sql.push_str(&limit_constructor.construct_limit());
         Ok(sql)
