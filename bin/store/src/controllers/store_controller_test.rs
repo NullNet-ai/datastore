@@ -760,11 +760,27 @@ mod tests {
 
                 println!("  ✓ Payload fields: {:?}", payload.pluck);
                 println!("  ✓ Joins count: {}", payload.joins.len());
-                println!("  ✓ Concatenate fields count: {}", payload.concatenate_fields.len());
-                println!("  ✓ Advance filters count: {}", payload.advance_filters.len());
-                
+                println!(
+                    "  ✓ Concatenate fields count: {}",
+                    payload.concatenate_fields.len()
+                );
+                println!(
+                    "  ✓ Advance filters count: {}",
+                    payload.advance_filters.len()
+                );
+
                 // Validate the complex scenario structure
-                assert_eq!(payload.pluck, vec!["id", "categories", "organization_id", "first_name", "middle_name", "last_name"]);
+                assert_eq!(
+                    payload.pluck,
+                    vec![
+                        "id",
+                        "categories",
+                        "organization_id",
+                        "first_name",
+                        "middle_name",
+                        "last_name"
+                    ]
+                );
                 assert_eq!(payload.limit, 100);
                 assert_eq!(payload.offset, 0);
                 assert_eq!(payload.date_format, "mm/dd/YYYY");
@@ -772,18 +788,24 @@ mod tests {
                 assert_eq!(payload.concatenate_fields.len(), 4); // 4 concatenated fields
                 assert_eq!(payload.advance_filters.len(), 3); // 2 criteria + 1 operator
                 assert_eq!(payload.multiple_sort.len(), 1); // 1 sort option
-                
+
                 // Validate pluck_object structure
                 assert!(payload.pluck_object.contains_key("contacts"));
-                assert!(payload.pluck_object.contains_key("created_by_account_organizations"));
+                assert!(payload
+                    .pluck_object
+                    .contains_key("created_by_account_organizations"));
                 assert!(payload.pluck_object.contains_key("created_by"));
-                assert!(payload.pluck_object.contains_key("updated_by_account_organizations"));
+                assert!(payload
+                    .pluck_object
+                    .contains_key("updated_by_account_organizations"));
                 assert!(payload.pluck_object.contains_key("updated_by"));
                 assert!(payload.pluck_object.contains_key("contact_emails"));
                 assert!(payload.pluck_object.contains_key("contact_phone_numbers"));
-                
+
                 // Validate concatenate fields
-                let concat_field_names: Vec<String> = payload.concatenate_fields.iter()
+                let concat_field_names: Vec<String> = payload
+                    .concatenate_fields
+                    .iter()
                     .map(|f| f.field_name.clone())
                     .collect();
                 assert!(concat_field_names.contains(&"full_name".to_string()));
@@ -822,21 +844,39 @@ mod tests {
                             Ok(sql) => {
                                 println!("  ✓ SQL generation successful");
                                 println!("  ℹ Generated SQL contains expected elements:");
-                                
+
                                 // Validate SQL contains expected joins
                                 assert!(sql.contains("LEFT JOIN"), "SQL should contain LEFT JOIN");
-                                assert!(sql.contains("contact_emails"), "SQL should join contact_emails");
-                                assert!(sql.contains("contact_phone_numbers"), "SQL should join contact_phone_numbers");
-                                assert!(sql.contains("account_organizations"), "SQL should join account_organizations");
-                                
+                                assert!(
+                                    sql.contains("contact_emails"),
+                                    "SQL should join contact_emails"
+                                );
+                                assert!(
+                                    sql.contains("contact_phone_numbers"),
+                                    "SQL should join contact_phone_numbers"
+                                );
+                                assert!(
+                                    sql.contains("account_organizations"),
+                                    "SQL should join account_organizations"
+                                );
+
                                 // Validate SQL contains concatenated fields
-                                assert!(sql.contains("COALESCE"), "SQL should contain COALESCE for concatenation");
-                                
+                                assert!(
+                                    sql.contains("COALESCE"),
+                                    "SQL should contain COALESCE for concatenation"
+                                );
+
                                 // Validate SQL contains filters
-                                assert!(sql.contains("created_date_time"), "SQL should filter by created_date_time");
+                                assert!(
+                                    sql.contains("created_date_time"),
+                                    "SQL should filter by created_date_time"
+                                );
                                 assert!(sql.contains("status"), "SQL should filter by status");
-                                assert!(sql.contains("Active") || sql.contains("Draft"), "SQL should filter by Active or Draft status");
-                                
+                                assert!(
+                                    sql.contains("Active") || sql.contains("Draft"),
+                                    "SQL should filter by Active or Draft status"
+                                );
+
                                 println!("  ✓ All SQL validation checks passed");
                             }
                             Err(sql_err) => {

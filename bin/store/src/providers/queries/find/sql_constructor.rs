@@ -1077,7 +1077,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 );
             }
         }
-        
+
         // Determine the correct from table reference
         // If the from entity has an alias, use it; otherwise check if it matches an existing alias from previous joins
         let from_table_ref = if let Some(from_alias) = &join.field_relation.from.alias {
@@ -1085,18 +1085,17 @@ impl<T: QueryFilter> SQLConstructor<T> {
         } else {
             // Check if the from entity matches any previous join's alias
             let from_entity = &join.field_relation.from.entity;
-            
+
             // Look for a previous join that created this alias
-            let matching_alias = self.request_body.get_joins().iter()
-                .find_map(|j| {
-                    if let Some(alias) = &j.field_relation.to.alias {
-                        if alias == from_entity {
-                            return Some(alias.as_str());
-                        }
+            let matching_alias = self.request_body.get_joins().iter().find_map(|j| {
+                if let Some(alias) = &j.field_relation.to.alias {
+                    if alias == from_entity {
+                        return Some(alias.as_str());
                     }
-                    None
-                });
-            
+                }
+                None
+            });
+
             matching_alias.unwrap_or_else(|| {
                 // If no alias found and from_entity equals main table, use main table
                 if from_entity == &self.table {
@@ -1107,7 +1106,7 @@ impl<T: QueryFilter> SQLConstructor<T> {
                 }
             })
         };
-        
+
         format!(
             "\"{}\".\"{}\" = \"{}\".\"{}\"",
             from_table_ref, from_field, alias, to_field
@@ -1436,7 +1435,11 @@ impl<T: QueryFilter> SQLConstructor<T> {
                     }
                 }
             }
-            found_alias.unwrap_or(if is_self_join { &self.table } else { from_entity })
+            found_alias.unwrap_or(if is_self_join {
+                &self.table
+            } else {
+                from_entity
+            })
         };
 
         format!(
