@@ -1,0 +1,13 @@
+create a new scenarios for filters where:
+
+1. able to get records with id, first_name status from contacts table and get only first_name starts with "J"
+
+If the scenarios are existing, skip it.
+
+after creating the filter scenarios, create a unit tests and load the scenarios in 
+
+Run make store
+
+after creating the unit tests from  fix the issues in 
+
+and if the issue is fix re-run the store
