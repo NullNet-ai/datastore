@@ -6,8 +6,6 @@ use crate::{
 /// Selections constructor module for SQL query building
 pub struct SelectionsConstructor;
 impl SelectionsConstructor {
-    // TODO - remove this after testing
-    #[allow(warnings)]
     /// Constructs the SELECT clause for SQL queries
     pub fn construct_selections<T: QueryFilter>(
         request_body: &T,
@@ -29,6 +27,38 @@ impl SelectionsConstructor {
     ) -> String {
         let mut selections = Vec::new();
 
+        // Handle group_by scenario
+        // This is tested from the following:
+        // should_construct_group_by
+        if let Some(group_by) = request_body.get_group_by() {
+            if !group_by.fields.is_empty() {
+                let group_by_selections = Self::construct_group_by_selections(
+                    request_body,
+                    table,
+                    timezone,
+                    &mut selections,
+                    &normalize_entity_name,
+                    &get_field,
+                );
+                return group_by_selections;
+            }
+        }
+
+        // Handle distinct_by scenario
+        if let Some(distinct_field) = request_body.get_distinct_by() {
+            if !distinct_field.is_empty() {
+                let field_selection = get_field(
+                    table,
+                    distinct_field,
+                    request_body.get_date_format(),
+                    table,
+                    timezone,
+                    true,
+                );
+                return format!("DISTINCT {}", field_selection);
+            }
+        }
+
         // This is tested from the following:
         // should_construct_selections_with_pluck_fields_pluck_object
         // should_construct_selections_with_pluck_fields_pluck_object_joins
@@ -43,118 +73,32 @@ impl SelectionsConstructor {
                 &build_infix_expression,
             );
             selections.extend(join_selections);
+
+            // Handle pluck_group_object scenario
+            if !request_body.get_pluck_group_object().is_empty() {
+                return Self::construct_pluck_group_object(
+                    request_body,
+                    table,
+                    timezone,
+                    &normalize_entity_name,
+                    &get_field,
+                );
+            }
         }
         // This is tested from from the following:
         // should_construct_default_selections
         else if !request_body.get_pluck().is_empty() {
-            selections.extend(request_body.get_pluck().iter().map(|field| {
-                get_field(
-                    table,
-                    field,
-                    request_body.get_date_format(),
-                    table,
-                    timezone,
-                    true,
-                )
-            }));
+            return Self::construct_pluck(
+                request_body,
+                table,
+                timezone,
+                &get_field,
+                &get_field_with_parse_as,
+            );
         }
 
         selections.join(", ")
     }
-
-    //   /// Constructs the SELECT clause for SQL queries
-    // pub fn construct_selections<T: QueryFilter>(
-    //     request_body: &T,
-    //     table: &str,
-    //     timezone: Option<&str>,
-    //     normalize_entity_name: impl Fn(&str) -> String,
-    //     get_field: impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
-    //     get_field_with_parse_as: impl Fn(
-    //         &str,
-    //         &str,
-    //         &str,
-    //         Option<&str>,
-    //         &str,
-    //         Option<&str>,
-    //         bool,
-    //     ) -> String,
-    //     build_system_where_clause: impl Fn(&str) -> Result<String, String>,
-    //     build_infix_expression: impl Fn(&[FilterCriteria]) -> Result<String, String>,
-    // ) -> String {
-    //     let mut selections = Vec::new();
-
-    //     // Handle group_by scenario
-    //     if let Some(_group_by) = request_body.get_group_by() {
-    //         let group_by_selections = Self::construct_group_by_selections(
-    //             request_body,
-    //             table,
-    //             timezone,
-    //             &mut selections,
-    //             &normalize_entity_name,
-    //             &get_field,
-    //         );
-    //         return group_by_selections;
-    //     }
-
-    //     // Handle distinct_by scenario
-    //     if let Some(distinct_field) = request_body.get_distinct_by() {
-    //         if !distinct_field.is_empty() {
-    //             let field_selection = get_field(
-    //                 table,
-    //                 distinct_field,
-    //                 request_body.get_date_format(),
-    //                 table,
-    //                 timezone,
-    //                 true,
-    //             );
-    //             return format!("DISTINCT {}", field_selection);
-    //         }
-    //     }
-
-    //     // Handle pluck scenario
-    //     if !request_body.get_pluck().is_empty() {
-    //     dbg!("test@@@@");
-
-    //         return Self::construct_pluck(
-    //             request_body,
-    //             table,
-    //             timezone,
-    //             &get_field,
-    //             &get_field_with_parse_as,
-    //         );
-    //     }
-
-    //     // Handle pluck_object scenario
-    //     if !request_body.get_pluck_object().is_empty() {
-    //         let join_selections = Self::construct_join_selections(
-    //             request_body,
-    //             table,
-    //             timezone,
-    //             &normalize_entity_name,
-    //             &get_field,
-    //             &build_system_where_clause,
-    //             &build_infix_expression,
-    //         );
-    //         selections.extend(join_selections);
-    //     }
-
-    //     // Handle pluck_group_object scenario
-    //     if !request_body.get_pluck_group_object().is_empty() {
-    //         return Self::construct_pluck_group_object(
-    //             request_body,
-    //             table,
-    //             timezone,
-    //             &normalize_entity_name,
-    //             &get_field,
-    //         );
-    //     }
-
-    //     if selections.is_empty() {
-    //         "*".to_string()
-    //     } else {
-    //         selections.join(", ")
-    //     }
-    // }
 
     /// Constructs GROUP BY selections with COUNT(*) and grouped fields
     fn construct_group_by_selections<T: QueryFilter>(
@@ -374,6 +318,7 @@ impl SelectionsConstructor {
             }
         }
 
+        // TODO - revisit this if it is realted to concatenated fields
         // // Handle main table fields if present in pluck_object
         // if let Some(fields) = request_body.get_pluck_object().get(table) {
         //     // Get concatenated field names to filter out

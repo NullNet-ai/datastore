@@ -256,55 +256,56 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             |filters| self.build_infix_expression(filters),
         ));
 
-        // sql.push_str(" FROM ");
-        // sql.push_str(&self.table);
+        sql.push_str(" FROM ");
+        sql.push_str(&self.table);
 
-        // sql.push_str(&JoinsConstructor::construct_joins(
-        //     &self.request_body,
-        //     &self.table,
-        //     |table_alias| self.build_system_where_clause(table_alias),
-        //     |filters| self.build_infix_expression(filters),
-        // ));
+        sql.push_str(&JoinsConstructor::construct_joins(
+            &self.request_body,
+            &self.table,
+            |table_alias| self.build_system_where_clause(table_alias),
+            |filters| self.build_infix_expression(filters),
+        ));
 
-        // let where_constructor = WhereConstructor::new(
-        //     &self.table,
-        //     self.organization_id.as_deref(),
-        //     self.is_root,
-        //     self.timezone.as_deref(),
-        // );
-        // sql.push_str(&where_constructor.construct_where_clauses(
-        //     self.request_body.get_advance_filters(),
-        //     self.request_body.get_group_advance_filters(),
-        //     self.request_body.get_concatenate_fields(),
-        //     self.request_body.get_date_format(),
-        // )?);
+        let where_constructor = WhereConstructor::new(
+            &self.table,
+            self.organization_id.as_deref(),
+            self.is_root,
+            self.timezone.as_deref(),
+        );
+        sql.push_str(&where_constructor.construct_where_clauses(
+            self.request_body.get_advance_filters(),
+            self.request_body.get_group_advance_filters(),
+            self.request_body.get_concatenate_fields(),
+            self.request_body.get_date_format(),
+        )?);
 
-        // let group_by_constructor = GroupByConstructor::new(
-        //     &self.table,
-        //     self.timezone.as_deref(),
-        //     self.request_body.get_date_format(),
-        // );
-        // sql.push_str(&group_by_constructor.construct_group_by(
-        //     self.request_body.get_group_by(),
-        //     self.request_body.get_pluck(),
-        //     self.request_body.get_pluck_object(),
-        //     self.request_body.get_pluck_group_object(),
-        //     self.request_body.get_concatenate_fields(),
-        //     self.request_body.get_joins(),
-        // ));
+        let group_by_constructor = GroupByConstructor::new(
+            &self.table,
+            self.timezone.as_deref(),
+            self.request_body.get_date_format(),
+        );
 
-        // let order_by_constructor = OrderByConstructor::new(
-        //     self.request_body.clone(),
-        //     self.table.clone(),
-        //     self.timezone.clone(),
-        // );
-        // sql.push_str(&order_by_constructor.construct_order_by());
+        sql.push_str(&group_by_constructor.construct_group_by(
+            self.request_body.get_group_by(),
+            self.request_body.get_pluck(),
+            self.request_body.get_pluck_object(),
+            self.request_body.get_pluck_group_object(),
+            self.request_body.get_concatenate_fields(),
+            self.request_body.get_joins(),
+        ));
 
-        // let offset_constructor = OffsetConstructor::new(self.request_body.clone());
-        // sql.push_str(&offset_constructor.construct_offset());
+        let order_by_constructor = OrderByConstructor::new(
+            self.request_body.clone(),
+            self.table.clone(),
+            self.timezone.clone(),
+        );
+        sql.push_str(&order_by_constructor.construct_order_by());
 
-        // let limit_constructor = LimitConstructor::new(self.request_body.clone());
-        // sql.push_str(&limit_constructor.construct_limit());
+        let offset_constructor = OffsetConstructor::new(self.request_body.clone());
+        sql.push_str(&offset_constructor.construct_offset());
+
+        let limit_constructor = LimitConstructor::new(self.request_body.clone());
+        sql.push_str(&limit_constructor.construct_limit());
         Ok(sql)
     }
 
