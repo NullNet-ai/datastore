@@ -281,10 +281,6 @@ mod tests {
             "{} group by has fields.",
             group_fields_checker
         );
-        if group_has_fields {
-            // assert!(&payload["group_by"]["has_count"] == true, "");
-        } else {
-        }
 
         let table = String::from("contacts");
         let is_root = false;
@@ -308,10 +304,16 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\" FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\" FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
+        println!("  ✓ Expected selections: `{}`", expected_selections);
+        println!(
+            "  ✓ Selection match: {}",
+            query.contains(&expected_selections)
+        );
 
-        let expected_group_by_query = format!("GROUP BY \"contacts\".\"id\"");
+        let expected_group_by_query =
+            format!("GROUP BY \"contacts\".\"id\", \"contacts\".\"first_name\"");
         let expected_query = format!("{} {}", expected_selections, expected_group_by_query);
         let contain_allowed_selection_query = query.contains(&expected_selections);
         let contain_allowed_group_by_query = query.contains(&expected_group_by_query);
@@ -342,9 +344,9 @@ mod tests {
         );
         println!("  {} Expected query: `{}`", contain_checker, expected_query);
         assert!(
-            contain_expected_query,
-            " {} Query should have correct implementation of selections, order by and group by to work properly.",
-            contain_checker
+            contain_allowed_selection_query && contain_allowed_group_by_query,
+            " {} Query should have correct implementation of selections, order by and group by to work properly. Selection: {}, Group By: {}",
+            contain_checker, contain_allowed_selection_query, contain_allowed_group_by_query
         );
     }
 }

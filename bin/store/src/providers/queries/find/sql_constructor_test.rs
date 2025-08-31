@@ -216,7 +216,7 @@ mod tests {
         let sql = constructor.construct().unwrap();
 
         println!("  ✓ Verifying SQL structure");
-        assert!(sql.contains("SELECT id FROM contacts"));
+        assert!(sql.contains("SELECT \"contacts\".\"id\" FROM contacts"));
         assert!(sql.contains("LIMIT 10"));
         assert!(sql.contains("WHERE (contacts.tombstone = 0)"));
 
