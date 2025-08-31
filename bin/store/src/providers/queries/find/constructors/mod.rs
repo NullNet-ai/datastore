@@ -5,3 +5,5 @@ pub mod offset_constructor;
 pub mod order_by_constructor;
 pub mod selections_constructor;
 pub mod where_constructor;
+
+pub mod selections_constructor_test;
