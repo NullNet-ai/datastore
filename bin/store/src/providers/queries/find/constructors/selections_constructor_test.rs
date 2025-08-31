@@ -224,10 +224,10 @@ mod tests {
 
     /// Test constructing group by
     #[test]
-    fn should_construct_group_by() {
+    fn should_construct_group_by_without_count() {
         let env_config = EnvConfig::default();
         let expected_group_by = serde_json::json!({
-            "fields": ["id"],
+            "fields": ["id", "first_name"],
             "has_count": false
         });
         let expected_joins = serde_json::json!([

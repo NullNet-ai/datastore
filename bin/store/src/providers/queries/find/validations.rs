@@ -289,26 +289,112 @@ impl<'a, 'b> Validation<'a, 'b> {
     pub fn validate_group_by(&self) -> ApiResponse {
         // If group_by is None, validation passes
         if let Some(group_by) = &self.request_body.group_by {
-            // Validate that all fields in group_by exist in the main table
+            // Validate that all fields in group_by exist in the appropriate tables
             for (field_index, field) in group_by.fields.iter().enumerate() {
                 let parts: Vec<&str> = field.split('.').collect();
-                let (entity, field_name) = match (parts.get(0), parts.get(1)) {
-                    (Some(&e), Some(&f)) => (e, f),
-                    _ => ("", ""), // Handle invalid format gracefully
-                };
-                let normalized_entity = self.normalize_entity_name(entity);
-                if !field_exists_in_table(&normalized_entity, field_name)
-                    && !field_exists_in_table(entity, field_name)
-                {
-                    return ApiResponse {
-                        success: false,
-                        message: format!(
-                            "group_by > fields[{}] > Field '{}' does not exist in entity '{}' or '{}'",
-                            field_index, field_name, entity, normalized_entity
-                        ),
-                        count: 0,
-                        data: vec![],
-                    };
+                
+                match parts.len() {
+                    1 => {
+                        // Field without table prefix (e.g., "id") - defaults to main table
+                        let field_name = parts[0];
+                        if !field_exists_in_table(self.table, field_name) {
+                            return ApiResponse {
+                                success: false,
+                                message: format!(
+                                    "group_by > fields[{}] > Field '{}' does not exist in main table '{}'",
+                                    field_index, field_name, self.table
+                                ),
+                                count: 0,
+                                data: vec![],
+                            };
+                        }
+                    }
+                    2 => {
+                        // Field with table prefix (e.g., "table.id") - must reference existing join or main table
+                        let entity = parts[0];
+                        let field_name = parts[1];
+                        let normalized_entity = self.normalize_entity_name(entity);
+                        
+                        // Check if entity is the main table
+                        if entity == self.table || normalized_entity == *self.table {
+                            if !field_exists_in_table(self.table, field_name) {
+                                return ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "group_by > fields[{}] > Field '{}' does not exist in main table '{}'",
+                                        field_index, field_name, self.table
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                };
+                            }
+                        } else {
+                            // Check if entity exists in joins
+                            let entity_exists_in_joins = self.request_body.joins.iter().any(|join| {
+                                let to_entity = &join.field_relation.to.entity;
+                                let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
+                                
+                                entity == to_entity || entity == to_alias ||
+                                normalized_entity == *to_entity || normalized_entity == to_alias
+                            });
+                            
+                            if !entity_exists_in_joins {
+                                return ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "group_by > fields[{}] > Entity '{}' does not exist in joins. Available entities: main table '{}' and joined entities from joins",
+                                        field_index, entity, self.table
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                };
+                            }
+                            
+                            // Find the actual target entity for this alias
+                            let target_entity = self.request_body.joins.iter()
+                                .find_map(|join| {
+                                    let to_entity = &join.field_relation.to.entity;
+                                    let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
+                                    
+                                    if entity == to_alias {
+                                        Some(to_entity.clone())
+                                    } else if entity == to_entity {
+                                        Some(to_entity.clone())
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .unwrap_or_else(|| entity.to_string());
+                            
+                            let normalized_target_entity = self.normalize_entity_name(&target_entity);
+                            
+                            // Validate field exists in the target entity (not the alias)
+                            if !field_exists_in_table(&normalized_target_entity, field_name) &&
+                               !field_exists_in_table(&target_entity, field_name) {
+                                return ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "group_by > fields[{}] > Field '{}' does not exist in entity '{}' (target: '{}')",
+                                        field_index, field_name, entity, target_entity
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                };
+                            }
+                        }
+                    }
+                    _ => {
+                        // Invalid field format
+                        return ApiResponse {
+                            success: false,
+                            message: format!(
+                                "group_by > fields[{}] > Invalid field format '{}'. Expected 'field' or 'table.field'",
+                                field_index, field
+                            ),
+                            count: 0,
+                            data: vec![],
+                        };
+                    }
                 }
             }
         }

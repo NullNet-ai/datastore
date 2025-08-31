@@ -29,7 +29,7 @@ impl SelectionsConstructor {
 
         // Handle group_by scenario
         // This is tested from the following:
-        // should_construct_group_by
+        // should_construct_group_by_without_count
         if let Some(group_by) = request_body.get_group_by() {
             if !group_by.fields.is_empty() {
                 let group_by_selections = Self::construct_group_by_selections(

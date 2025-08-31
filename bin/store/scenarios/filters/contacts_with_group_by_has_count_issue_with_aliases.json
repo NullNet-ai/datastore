@@ -8,6 +8,10 @@
     "last_name"
   ],
   "pluck_object": {
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
     "contacts": [
       "id",
       "code",
@@ -25,9 +29,8 @@
       "updated_by",
       "previous_status"
     ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
+    "contact_phone_numbers": [
+      "phone_number_raw"
     ],
     "created_by": [
       "id",
@@ -42,9 +45,6 @@
     "contact_emails": [
       "email",
       "is_primary"
-    ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
     ],
     "updated_by_account_organizations": [
       "id",
