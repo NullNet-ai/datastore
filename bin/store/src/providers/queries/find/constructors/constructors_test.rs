@@ -589,7 +589,7 @@ mod tests {
                 "field_name": "full_name",
                 "separator": " ",
                 "entity": "contacts",
-                "aliased_entity": "created_by"
+                // "aliased_entity": "created_by"
             }
         ]);
 
