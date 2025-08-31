@@ -29,10 +29,18 @@ mod tests {
         let table = String::from("contacts");
         let is_root = false; // Set to true to avoid organization_id requirement
         let timezone = None;
-        let organization_id = env_config.default_organization_id;
 
-        let query =
-            get_raw_query(&payload, &table, is_root, timezone, Some(organization_id)).unwrap();
+        println!("  ✓ Generating SQL query from payload");
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id),
+        );
+        
+        assert!(query_result.is_ok(), "  ✗ Failed to generate query: {:?}", query_result.err());
+        let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
         // The query should contain the plucked fields
@@ -62,10 +70,18 @@ mod tests {
         let table = String::from("contacts");
         let is_root = false; // Set to true to avoid organization_id requirement
         let timezone = None;
-        let organization_id = env_config.default_organization_id;
 
-        let query =
-            get_raw_query(&payload, &table, is_root, timezone, Some(organization_id)).unwrap();
+        println!("  ✓ Generating SQL query from payload");
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id),
+        );
+        
+        assert!(query_result.is_ok(), "  ✗ Failed to generate query: {:?}", query_result.err());
+        let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
         let expected_query = format!(
@@ -82,7 +98,9 @@ mod tests {
             &table
         );
 
-        let pluck_object_main_table_fields = payload["pluck_object"][&table].as_array().unwrap();
+        let pluck_object_main_table_fields = payload["pluck_object"][&table]
+            .as_array()
+            .expect("Pluck object main table fields should be a valid JSON array");
 
         for field in expected_fields.iter() {
             assert!(
@@ -120,16 +138,15 @@ mod tests {
                 "type": "left",
                 "field_relation": {
                     "to": {
-                        "entity": "contact_emailss",
+                        "entity": "contact_emails",
                         "field": "contact_id",
-                        // "alias": "created_by_account_organizations",
                         "order_direction": null,
                         "order_by": null,
                         "limit": null,
                         "offset": null
                     },
                     "from": {
-                        "entity": "contactss",
+                        "entity": "contacts",
                         "field": "id",
                         "order_direction": null,
                         "order_by": null,
@@ -141,45 +158,53 @@ mod tests {
             }
         ]);
         let payload = serde_json::json!({
-            "pluck": ["id", "first_name"],
             "pluck_object": {
-                "contact_emails": []
+                "contact_emails": ["id", "email"]
             },
             "joins": expected_joins
         });
-        let table = String::from("contacts");
-        let is_root = false; // Set to true to avoid organization_id requirement
-        let timezone = None;
-        let organization_id = env_config.default_organization_id;
 
-        let query =
-            get_raw_query(&payload, &table, is_root, timezone, Some(organization_id)).unwrap();
+        println!("--- Checking available joins.");
+        let joins_array = expected_joins.as_array().expect("Expected joins should be a valid JSON array");
+        let join_has_len = joins_array.len() > 0;
+        let join_checker = if join_has_len { "✓" } else { "✗" };
+        assert!(join_has_len, "  {} Joins must exist", join_checker);
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        println!("  ✓ Generating SQL query from payload");
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+        
+        assert!(query_result.is_ok(), "  ✗ Failed to generate query: {:?}", query_result.err());
+        let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_query = format!("SELECT {}", "");
+        let expected_query = format!(
+            "SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
+            &env_config.default_organization_id
+        );
 
         let contain_expected_query = query.contains(&expected_query);
-        let checker = if contain_expected_query { "✓" } else { "✗" };
+        let contain_checker = if contain_expected_query { "✓" } else { "✗" };
 
         println!("--- If pluck object does exist and has related tables specified then joins are required.");
         println!(
             "--- Checking if all {} fields are available in pluck object.",
             &table
         );
-
-        // TODO: has joins
-        // TODO: able to normalize entity or alias whether it is in singular or plural form
-        // TODO: Query must match the expected query
-        // #2
-        // TODO: can sort within
-        // TODO:  can filter with in using advance filters
-        // #3
-        // TODO:
-        println!("  {} Expected query: `{}`", checker, expected_query);
+        println!("  {} Expected query: `{}`", contain_checker, expected_query);
         assert!(
             contain_expected_query,
             " {} Query should have contain the pluck object fields from {}.",
-            checker, &table
+            contain_checker, &table
         );
     }
 }

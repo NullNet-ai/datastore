@@ -360,16 +360,18 @@ impl SelectionsConstructor {
     ) -> Vec<String> {
         let mut join_selections = Vec::new();
         if request_body.get_joins().is_empty() {
-            join_selections.extend(request_body.get_pluck_object()[table].iter().map(|field| {
-                get_field(
-                    table,
-                    field,
-                    request_body.get_date_format(),
-                    table,
-                    timezone,
-                    true,
-                )
-            }));
+            if let Some(fields) = request_body.get_pluck_object().get(table) {
+                join_selections.extend(fields.iter().map(|field| {
+                    get_field(
+                        table,
+                        field,
+                        request_body.get_date_format(),
+                        table,
+                        timezone,
+                        true,
+                    )
+                }));
+            }
         }
 
         // // Handle main table fields if present in pluck_object
@@ -402,11 +404,6 @@ impl SelectionsConstructor {
         // if request_body.get_joins().is_empty() {
         //     return join_selections;
         // }
-        dbg!(format!(
-            "Pluck object: {:?}",
-            request_body.get_pluck_object()
-        ));
-        dbg!(format!("Joins: {:?}", request_body.get_joins()));
 
         // return if all pluck object properties are empty
         // this ensures that only with pluck object fields are processed when creating joins
