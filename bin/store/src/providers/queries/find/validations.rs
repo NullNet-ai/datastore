@@ -292,7 +292,7 @@ impl<'a, 'b> Validation<'a, 'b> {
             // Validate that all fields in group_by exist in the appropriate tables
             for (field_index, field) in group_by.fields.iter().enumerate() {
                 let parts: Vec<&str> = field.split('.').collect();
-                
+
                 match parts.len() {
                     1 => {
                         // Field without table prefix (e.g., "id") - defaults to main table
@@ -314,7 +314,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                         let entity = parts[0];
                         let field_name = parts[1];
                         let normalized_entity = self.normalize_entity_name(entity);
-                        
+
                         // Check if entity is the main table
                         if entity == self.table || normalized_entity == *self.table {
                             if !field_exists_in_table(self.table, field_name) {
@@ -330,14 +330,22 @@ impl<'a, 'b> Validation<'a, 'b> {
                             }
                         } else {
                             // Check if entity exists in joins
-                            let entity_exists_in_joins = self.request_body.joins.iter().any(|join| {
-                                let to_entity = &join.field_relation.to.entity;
-                                let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
-                                
-                                entity == to_entity || entity == to_alias ||
-                                normalized_entity == *to_entity || normalized_entity == to_alias
-                            });
-                            
+                            let entity_exists_in_joins =
+                                self.request_body.joins.iter().any(|join| {
+                                    let to_entity = &join.field_relation.to.entity;
+                                    let to_alias = join
+                                        .field_relation
+                                        .to
+                                        .alias
+                                        .as_deref()
+                                        .unwrap_or(to_entity);
+
+                                    entity == to_entity
+                                        || entity == to_alias
+                                        || normalized_entity == *to_entity
+                                        || normalized_entity == to_alias
+                                });
+
                             if !entity_exists_in_joins {
                                 return ApiResponse {
                                     success: false,
@@ -349,13 +357,21 @@ impl<'a, 'b> Validation<'a, 'b> {
                                     data: vec![],
                                 };
                             }
-                            
+
                             // Find the actual target entity for this alias
-                            let target_entity = self.request_body.joins.iter()
+                            let target_entity = self
+                                .request_body
+                                .joins
+                                .iter()
                                 .find_map(|join| {
                                     let to_entity = &join.field_relation.to.entity;
-                                    let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
-                                    
+                                    let to_alias = join
+                                        .field_relation
+                                        .to
+                                        .alias
+                                        .as_deref()
+                                        .unwrap_or(to_entity);
+
                                     if entity == to_alias {
                                         Some(to_entity.clone())
                                     } else if entity == to_entity {
@@ -365,12 +381,14 @@ impl<'a, 'b> Validation<'a, 'b> {
                                     }
                                 })
                                 .unwrap_or_else(|| entity.to_string());
-                            
-                            let normalized_target_entity = self.normalize_entity_name(&target_entity);
-                            
+
+                            let normalized_target_entity =
+                                self.normalize_entity_name(&target_entity);
+
                             // Validate field exists in the target entity (not the alias)
-                            if !field_exists_in_table(&normalized_target_entity, field_name) &&
-                               !field_exists_in_table(&target_entity, field_name) {
+                            if !field_exists_in_table(&normalized_target_entity, field_name)
+                                && !field_exists_in_table(&target_entity, field_name)
+                            {
                                 return ApiResponse {
                                     success: false,
                                     message: format!(

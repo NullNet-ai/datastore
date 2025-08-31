@@ -2,7 +2,8 @@
 mod tests {
     use super::super::validations::Validation;
     use crate::structs::core::{
-        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy, LogicalOperator, MatchPattern, Join, FieldRelation, RelationEndpoint
+        ConcatenateField, FieldRelation, FilterCriteria, FilterOperator, GetByFilter,
+        GroupAdvanceFilter, GroupBy, Join, LogicalOperator, MatchPattern, RelationEndpoint,
     };
     use std::collections::HashMap;
 
@@ -150,7 +151,10 @@ mod tests {
             "Successfully validated conflicting properties"
         );
 
-        println!("  {} Conflicting filters validation success test passed", checker);
+        println!(
+            "  {} Conflicting filters validation success test passed",
+            checker
+        );
     }
 
     /// Tests that conflicting filters validation fails when both filter types are present
@@ -207,7 +211,10 @@ mod tests {
             "Both advance_filters and group_advance_filters cannot be provided at the same time"
         );
 
-        println!("  {} Conflicting filters validation failure test passed", checker);
+        println!(
+            "  {} Conflicting filters validation failure test passed",
+            checker
+        );
     }
 
     /// Tests that concatenated fields validation succeeds with valid configuration
@@ -230,7 +237,10 @@ mod tests {
         let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
 
-        println!("  {} Concatenated fields validation success test passed", checker);
+        println!(
+            "  {} Concatenated fields validation success test passed",
+            checker
+        );
     }
 
     /// Tests that concatenated fields validation fails with empty fields array
@@ -264,7 +274,10 @@ mod tests {
         assert!(!result.success);
         assert!(result.message.contains("Fields array cannot be empty"));
 
-        println!("  {} Empty concatenated fields validation test passed", checker);
+        println!(
+            "  {} Empty concatenated fields validation test passed",
+            checker
+        );
     }
 
     /// Tests that concatenated fields validation fails with empty field name
@@ -552,7 +565,10 @@ mod tests {
             "Both advance_filters and group_advance_filters cannot be provided at the same time"
         );
 
-        println!("  {} Conflicting filters validation pipeline test passed", checker);
+        println!(
+            "  {} Conflicting filters validation pipeline test passed",
+            checker
+        );
     }
 
     /// Tests that validation fails with conflicting group by
@@ -581,7 +597,12 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
         let checker = if result.success { "✓" } else { "✗" };
-        assert!(result.success, "  {} Failed validation: {}", checker, result.message.to_string());
+        assert!(
+            result.success,
+            "  {} Failed validation: {}",
+            checker,
+            result.message.to_string()
+        );
     }
 
     /// Tests group_by validation with field without table prefix (defaults to main table)
@@ -597,7 +618,10 @@ mod tests {
         });
         let table = "contacts".to_string();
 
-        println!("Creating validation for table: {} with group_by field: id", table);
+        println!(
+            "Creating validation for table: {} with group_by field: id",
+            table
+        );
         let validation = Validation::new(&request_body, &table);
 
         let result = validation.validate_group_by();
@@ -606,7 +630,10 @@ mod tests {
         println!("Validation message: {}", result.message);
 
         let checker = if result.success { "✓" } else { "✗" };
-        println!("{} Test completed: should_validate_group_by_field_without_prefix_successfully", checker);
+        println!(
+            "{} Test completed: should_validate_group_by_field_without_prefix_successfully",
+            checker
+        );
         assert!(result.success);
     }
 
@@ -623,7 +650,10 @@ mod tests {
         });
         let table = "contacts".to_string();
 
-        println!("Creating validation for table: {} with invalid group_by field: nonexistent_field", table);
+        println!(
+            "Creating validation for table: {} with invalid group_by field: nonexistent_field",
+            table
+        );
         let validation = Validation::new(&request_body, &table);
 
         let result = validation.validate_group_by();
@@ -650,7 +680,10 @@ mod tests {
         });
         let table = "contacts".to_string();
 
-        println!("Creating validation for table: {} with group_by field: contacts.id", table);
+        println!(
+            "Creating validation for table: {} with group_by field: contacts.id",
+            table
+        );
         let validation = Validation::new(&request_body, &table);
 
         let result = validation.validate_group_by();
@@ -659,7 +692,10 @@ mod tests {
         println!("Validation message: {}", result.message);
 
         let checker = if result.success { "✓" } else { "✗" };
-        println!("{} Test completed: should_validate_group_by_field_with_main_table_prefix_successfully", checker);
+        println!(
+            "{} Test completed: should_validate_group_by_field_with_main_table_prefix_successfully",
+            checker
+        );
         assert!(result.success);
     }
 
@@ -671,31 +707,31 @@ mod tests {
 
         let mut request_body = create_default_get_by_filter();
         request_body.joins = vec![Join {
-             r#type: "LEFT".to_string(),
-             field_relation: FieldRelation {
-                 from: RelationEndpoint {
-                     entity: "contacts".to_string(),
-                     field: "user_id".to_string(),
-                     alias: None,
-                     order_direction: None,
-                     order_by: None,
-                     limit: None,
-                     offset: None,
-                     filters: vec![],
-                 },
-                 to: RelationEndpoint {
-                     entity: "contacts".to_string(),
-                     field: "id".to_string(),
-                     alias: Some("c".to_string()),
-                     order_direction: None,
-                     order_by: None,
-                     limit: None,
-                     offset: None,
-                     filters: vec![],
-                 },
-             },
-             nested: false,
-         }];
+            r#type: "LEFT".to_string(),
+            field_relation: FieldRelation {
+                from: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "user_id".to_string(),
+                    alias: None,
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                to: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "id".to_string(),
+                    alias: Some("c".to_string()),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        }];
         request_body.group_by = Some(GroupBy {
             fields: vec!["c.first_name".to_string()],
             has_count: false,
@@ -711,7 +747,10 @@ mod tests {
         println!("Validation message: {}", result.message);
 
         let checker = if result.success { "✓" } else { "✗" };
-        println!("{} Test completed: should_validate_group_by_field_with_joined_table_successfully", checker);
+        println!(
+            "{} Test completed: should_validate_group_by_field_with_joined_table_successfully",
+            checker
+        );
         assert!(result.success);
     }
 
@@ -728,7 +767,10 @@ mod tests {
         });
         let table = "contacts".to_string();
 
-        println!("Creating validation for table: {} with invalid group_by field: nonexistent_table.id", table);
+        println!(
+            "Creating validation for table: {} with invalid group_by field: nonexistent_table.id",
+            table
+        );
         let validation = Validation::new(&request_body, &table);
 
         let result = validation.validate_group_by();
@@ -737,7 +779,10 @@ mod tests {
         println!("Validation message: {}", result.message);
 
         let checker = if !result.success { "✓" } else { "✗" };
-        println!("{} Test completed: should_fail_group_by_validation_with_nonexistent_joined_table", checker);
+        println!(
+            "{} Test completed: should_fail_group_by_validation_with_nonexistent_joined_table",
+            checker
+        );
         assert!(!result.success);
         assert!(result.message.contains("does not exist in joins"));
     }
@@ -764,7 +809,10 @@ mod tests {
         println!("Validation message: {}", result.message);
 
         let checker = if !result.success { "✓" } else { "✗" };
-        println!("{} Test completed: should_fail_group_by_validation_with_invalid_field_format", checker);
+        println!(
+            "{} Test completed: should_fail_group_by_validation_with_invalid_field_format",
+            checker
+        );
         assert!(!result.success);
         assert!(result.message.contains("Invalid field format"));
     }
@@ -777,33 +825,37 @@ mod tests {
 
         let mut request_body = create_default_get_by_filter();
         request_body.joins = vec![Join {
-             r#type: "LEFT".to_string(),
-             field_relation: FieldRelation {
-                 from: RelationEndpoint {
-                     entity: "contacts".to_string(),
-                     field: "user_id".to_string(),
-                     alias: None,
-                     order_direction: None,
-                     order_by: None,
-                     limit: None,
-                     offset: None,
-                     filters: vec![],
-                 },
-                 to: RelationEndpoint {
-                     entity: "contacts".to_string(),
-                     field: "id".to_string(),
-                     alias: Some("c".to_string()),
-                     order_direction: None,
-                     order_by: None,
-                     limit: None,
-                     offset: None,
-                     filters: vec![],
-                 },
-             },
-             nested: false,
-         }];
+            r#type: "LEFT".to_string(),
+            field_relation: FieldRelation {
+                from: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "user_id".to_string(),
+                    alias: None,
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                to: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "id".to_string(),
+                    alias: Some("c".to_string()),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        }];
         request_body.group_by = Some(GroupBy {
-            fields: vec!["id".to_string(), "contacts.first_name".to_string(), "c.last_name".to_string()],
+            fields: vec![
+                "id".to_string(),
+                "contacts.first_name".to_string(),
+                "c.last_name".to_string(),
+            ],
             has_count: false,
         });
         let table = "contacts".to_string();
@@ -817,8 +869,10 @@ mod tests {
         println!("Validation message: {}", result.message);
 
         let checker = if result.success { "✓" } else { "✗" };
-        println!("{} Test completed: should_validate_group_by_with_mixed_field_types_successfully", checker);
+        println!(
+            "{} Test completed: should_validate_group_by_with_mixed_field_types_successfully",
+            checker
+        );
         assert!(result.success);
     }
-
 }
