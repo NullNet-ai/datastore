@@ -6,4 +6,4 @@ pub mod order_by_constructor;
 pub mod selections_constructor;
 pub mod where_constructor;
 
-pub mod selections_constructor_test;
+pub mod constructors_test;

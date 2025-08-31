@@ -170,7 +170,6 @@ impl SelectionsConstructor {
     ) -> String {
         println!("Pluck fields: {:?}", request_body.get_pluck());
         let mut pluck_selections = Vec::new();
-
         // Handle regular pluck fields
         for field in request_body.get_pluck() {
             let field_selection = get_field(
@@ -211,7 +210,6 @@ impl SelectionsConstructor {
                 concatenated_expression, concat_field.field_name
             ));
         }
-
         pluck_selections.join(", ")
     }
 

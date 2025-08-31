@@ -8,28 +8,7 @@
     "last_name"
   ],
   "pluck_object": {
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ],
+    "contact_emails": ["email", "is_primary"],
     "contacts": [
       "id",
       "code",
@@ -47,18 +26,15 @@
       "updated_by",
       "previous_status"
     ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ]
+    "contact_phone_numbers": ["phone_number_raw"],
+    "updated_by_account_organizations": ["id", "contact_id"],
+    "created_by": ["id", "first_name", "last_name"],
+    "updated_by": ["id", "first_name", "last_name"],
+    "created_by_account_organizations": ["id", "contact_id"]
   },
   "pluck_group_object": {
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ]
+    "contact_phone_numbers": ["phone_number_raw"],
+    "contact_emails": ["email", "is_primary"]
   },
   "advance_filters": [
     {
@@ -66,9 +42,7 @@
       "field": "created_date_time",
       "entity": "contacts",
       "operator": "like",
-      "values": [
-        "08/20/2025 14"
-      ],
+      "values": ["08/20/2025 14"],
       "case_sensitive": false,
       "parse_as": "",
       "match_pattern": null,
@@ -84,10 +58,7 @@
       "field": "status",
       "entity": "contacts",
       "operator": "equal",
-      "values": [
-        "Active",
-        "Draft"
-      ],
+      "values": ["Active", "Draft"],
       "case_sensitive": false,
       "parse_as": "",
       "match_pattern": null,
@@ -240,40 +211,28 @@
   },
   "concatenate_fields": [
     {
-      "fields": [
-        "first_name",
-        "last_name"
-      ],
+      "fields": ["first_name", "last_name"],
       "field_name": "full_name",
       "separator": " ",
       "entity": "contacts",
       "aliased_entity": "created_by"
     },
     {
-      "fields": [
-        "first_name",
-        "last_name"
-      ],
+      "fields": ["first_name", "last_name"],
       "field_name": "full_name",
       "separator": " ",
       "entity": "contacts",
       "aliased_entity": "updated_by"
     },
     {
-      "fields": [
-        "created_date",
-        "created_time"
-      ],
+      "fields": ["created_date", "created_time"],
       "field_name": "created_date_time",
       "separator": " ",
       "entity": "contact",
       "aliased_entity": null
     },
     {
-      "fields": [
-        "updated_date",
-        "updated_time"
-      ],
+      "fields": ["updated_date", "updated_time"],
       "field_name": "updated_date_time",
       "separator": " ",
       "entity": "contact",

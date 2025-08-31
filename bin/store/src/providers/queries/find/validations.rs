@@ -200,6 +200,22 @@ impl<'a, 'b> Validation<'a, 'b> {
                 };
             }
 
+            if field_exists_in_table(
+                &self.normalize_entity_name(&concatenate_field.entity),
+                &concatenate_field.field_name,
+            ) {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "concatenate_fields[{}] > field_name conflicts with existing fields from {}",
+                        concat_index,
+                        &self.normalize_entity_name(&concatenate_field.entity)
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+
             if concatenate_field.entity.is_empty() {
                 return ApiResponse {
                     success: false,
@@ -211,22 +227,6 @@ impl<'a, 'b> Validation<'a, 'b> {
                     data: vec![],
                 };
             }
-
-            // Check if the entity exists in joins (handle aliases and original entity names)
-            // let entity_exists_in_joins = self.request_body.joins.iter().any(|join| {
-            //     let to_endpoint = &join.field_relation.to;
-            //     // Check if entity matches the "to" entity
-            //     if to_endpoint.entity == concatenate_field.entity {
-            //         return true;
-            //     }
-            //     // Check if entity matches the "to" alias
-            //     if let Some(alias) = &to_endpoint.alias {
-            //         if alias == &concatenate_field.entity {
-            //             return true;
-            //         }
-            //     }
-            //     false
-            // });
 
             // Validate that all fields exist in the specified entity
             for (field_index, field) in concatenate_field.fields.iter().enumerate() {
