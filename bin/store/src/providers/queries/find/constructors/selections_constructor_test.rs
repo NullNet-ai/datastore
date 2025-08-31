@@ -174,7 +174,7 @@ mod tests {
         // TODO: can sort within
         // TODO:  can filter with in using advance filters
         // #3
-        // TODO: 
+        // TODO:
         println!("  {} Expected query: `{}`", checker, expected_query);
         assert!(
             contain_expected_query,

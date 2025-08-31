@@ -372,7 +372,6 @@ impl SelectionsConstructor {
             }));
         }
 
-     
         // // Handle main table fields if present in pluck_object
         // if let Some(fields) = request_body.get_pluck_object().get(table) {
         //     // Get concatenated field names to filter out
@@ -403,12 +402,19 @@ impl SelectionsConstructor {
         // if request_body.get_joins().is_empty() {
         //     return join_selections;
         // }
-        dbg!(format!("Pluck object: {:?}", request_body.get_pluck_object()));
+        dbg!(format!(
+            "Pluck object: {:?}",
+            request_body.get_pluck_object()
+        ));
         dbg!(format!("Joins: {:?}", request_body.get_joins()));
 
         // return if all pluck object properties are empty
         // this ensures that only with pluck object fields are processed when creating joins
-        if request_body.get_pluck_object().iter().all(|(_, fields)| fields.is_empty()) {
+        if request_body
+            .get_pluck_object()
+            .iter()
+            .all(|(_, fields)| fields.is_empty())
+        {
             return join_selections;
         }
 
