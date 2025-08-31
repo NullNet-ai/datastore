@@ -551,4 +551,120 @@ mod tests {
             contain_checker, contain_allowed_selection_query
         );
     }
+
+    /// Test constructing concatenated fields for pluck_object join selections with aliased entity
+    #[test]
+    fn should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity() {
+        let env_config = EnvConfig::default();
+        let expected_joins = serde_json::json!([
+            {
+                "type": "left",
+                "field_relation": {
+                    "to": {
+                        "entity": "contact_emails",
+                        "field": "contact_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "contacts",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            }
+        ]);
+        let expected_concatenated_fields = serde_json::json!([
+            {
+                "fields": [
+                    "first_name",
+                    "last_name"
+                ],
+                "field_name": "full_name",
+                "separator": " ",
+                "entity": "contacts",
+                "aliased_entity": "created_by"
+            }
+        ]);
+
+        let payload = serde_json::json!({
+            "pluck": ["id"],
+            "pluck_object": {
+               "contacts": ["id", "first_name", "last_name"],
+               "contact_emails": ["id", "email"]
+            },
+            "joins": expected_joins,
+            "concatenate_fields": expected_concatenated_fields
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        println!("--- Checking available joins.");
+        let joins_array = expected_joins
+            .as_array()
+            .expect("Expected joins should be a valid JSON array");
+        let join_has_len = joins_array.len() > 0;
+        let join_checker = if join_has_len { "✓" } else { "✗" };
+        assert!(join_has_len, "  {} Joins must exist", join_checker);
+        println!("  ✓ Generating SQL query from payload");
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "  ✗ Failed to generate query: {:?}",
+            query_result.err()
+        );
+
+        let query = query_result.unwrap();
+        println!("  ✓ Generated query: `{}`", query);
+
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails FROM {}",
+            &env_config.default_organization_id, &table);
+        println!("  ✓ Expected selections: `{}`", expected_selections);
+        println!(
+            "  ✓ Selection match: {}",
+            query.contains(&expected_selections)
+        );
+        let expected_joins = format!("LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE", &env_config.default_organization_id);
+
+        let expected_default_where_clauses = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') ORDER BY LOWER(contacts.id) ASC LIMIT 10", &env_config.default_organization_id);
+
+        let expected_query = format!(
+            "{} {} {}",
+            expected_selections, expected_joins, expected_default_where_clauses
+        );
+        let contain_allowed_selection_query = query.contains(&expected_selections);
+        let contain_expected_query = query.contains(&expected_query);
+        let selection_checker = if contain_allowed_selection_query {
+            "✓"
+        } else {
+            "✗"
+        };
+
+        let contain_checker = if contain_expected_query { "✓" } else { "✗" };
+        println!(
+            "  {} Expected selection query: `{}`",
+            selection_checker, expected_selections
+        );
+        println!("  {} Expected query: `{}`", contain_checker, expected_query);
+        assert!(
+            contain_allowed_selection_query,
+            " {} Query should have correct implementation of concatenated fields to work properly. Selection: {}",
+            contain_checker, contain_allowed_selection_query
+        );
+    }
 }

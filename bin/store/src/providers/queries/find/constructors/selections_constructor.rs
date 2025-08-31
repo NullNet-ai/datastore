@@ -62,6 +62,7 @@ impl SelectionsConstructor {
         // This is tested from the following:
         // should_construct_selections_with_pluck_fields_pluck_object
         // should_construct_selections_with_pluck_fields_pluck_object_joins
+        // should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity
         if !request_body.get_pluck_object().is_empty() {
             let join_selections = Self::construct_join_selections(
                 request_body,
@@ -71,6 +72,7 @@ impl SelectionsConstructor {
                 &get_field,
                 &build_system_where_clause,
                 &build_infix_expression,
+                &get_field_with_parse_as,
             );
             selections.extend(join_selections);
 
@@ -301,63 +303,53 @@ impl SelectionsConstructor {
         get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
         build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
         build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
+        get_field_with_parse_as: &impl Fn(
+            &str,
+            &str,
+            &str,
+            Option<&str>,
+            &str,
+            Option<&str>,
+            bool,
+        ) -> String,
     ) -> Vec<String> {
         let mut join_selections = Vec::new();
         if request_body.get_joins().is_empty() {
-            if let Some(fields) = request_body.get_pluck_object().get(table) {
-                join_selections.extend(fields.iter().map(|field| {
-                    get_field(
-                        table,
-                        field,
-                        request_body.get_date_format(),
-                        table,
-                        timezone,
-                        true,
-                    )
-                }));
-            }
+            join_selections.push(Self::construct_pluck(
+                request_body,
+                table,
+                timezone,
+                &get_field,
+                &get_field_with_parse_as,
+            ));
+
+            return join_selections;
         }
 
-        // TODO - revisit this if it is realted to concatenated fields
-        // // Handle main table fields if present in pluck_object
-        // if let Some(fields) = request_body.get_pluck_object().get(table) {
-        //     // Get concatenated field names to filter out
-        //     let concatenated_field_names: Vec<String> = request_body
-        //         .get_concatenate_fields()
-        //         .iter()
-        //         .map(|f| f.field_name.clone())
-        //         .collect();
+        // Handle main table fields if present in pluck_object
+        if let Some(fields) = request_body.get_pluck_object().get(table) {
+            // Get concatenated field names to filter out
+            let concatenated_field_names: Vec<String> = request_body
+                .get_concatenate_fields()
+                .iter()
+                .map(|f| f.field_name.clone())
+                .collect();
 
-        //     join_selections.extend(
-        //         fields
-        //             .iter()
-        //             .filter(|field| *field != "id" && !concatenated_field_names.contains(field))
-        //             .map(|field| {
-        //                 get_field(
-        //                     table,
-        //                     field,
-        //                     request_body.get_date_format(),
-        //                     table,
-        //                     timezone,
-        //                     true,
-        //                 )
-        //             }),
-        //     );
-        // }
-
-        // // Return early if no joins present
-        // if request_body.get_joins().is_empty() {
-        //     return join_selections;
-        // }
-
-        // return if all pluck object properties are empty
-        // this ensures that only with pluck object fields are processed when creating joins
-        if request_body
-            .get_pluck_object()
-            .iter()
-            .all(|(_, fields)| fields.is_empty())
-        {
-            return join_selections;
+            join_selections.extend(
+                fields
+                    .iter()
+                    .filter(|field| !concatenated_field_names.contains(field))
+                    .map(|field| {
+                        get_field(
+                            table,
+                            field,
+                            request_body.get_date_format(),
+                            table,
+                            timezone,
+                            true,
+                        )
+                    }),
+            );
         }
 
         // Process each join
