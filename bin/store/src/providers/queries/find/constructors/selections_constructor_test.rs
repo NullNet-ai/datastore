@@ -227,7 +227,7 @@ mod tests {
     fn should_construct_group_by() {
         let env_config = EnvConfig::default();
         let expected_group_by = serde_json::json!({
-            "fields": [],
+            "fields": ["id"],
             "has_count": false
         });
         let expected_joins = serde_json::json!([
@@ -308,13 +308,11 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT(\'id\', \"contact_emails\".\"id\", \'email\', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = \'{}\') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), \'[]\' ) AS contact_emails FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = \'01JBHKXHYSKPP247HZZWHA3JCT\') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = \'01JBHKXHYSKPP247HZZWHA3JCT\')", 
-            &env_config.default_organization_id);
+        let expected_selections = format!("SELECT \"contacts\".\"id\" FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+            &env_config.default_organization_id, &env_config.default_organization_id);
 
-        let expected_group_by_query = format!("GROUP BY contacts.id, \"contacts\".\"first_name\"::text, \"contacts\".\"last_name\"::text, \"contact_emails\".\"id\"::text, \"contact_emails\".\"email\"::text");
-
+        let expected_group_by_query = format!("GROUP BY \"contacts\".\"id\"");
         let expected_query = format!("{} {}", expected_selections, expected_group_by_query);
-
         let contain_allowed_selection_query = query.contains(&expected_selections);
         let contain_allowed_group_by_query = query.contains(&expected_group_by_query);
         let contain_expected_query = query.contains(&expected_query);

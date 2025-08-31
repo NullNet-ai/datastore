@@ -110,39 +110,41 @@ impl SelectionsConstructor {
         get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
     ) -> String {
         if let Some(group_by) = request_body.get_group_by() {
-            if group_by.has_count {
-                acc_selections.push("COUNT(*) AS count".to_string());
-            }
+            if !group_by.fields.is_empty() {
+                if group_by.has_count {
+                    acc_selections.push("COUNT(*) AS count".to_string());
+                }
 
-            // Add group_by fields to selections
-            for field in &group_by.fields {
-                let field_parts: Vec<&str> = field.trim().split('.').collect();
-                if field_parts.len() > 1 {
-                    // Handle entity.field format
-                    let entity_name = field_parts[0];
-                    let field_name = field_parts[1];
-                    let normalized_entity = normalize_entity_name(entity_name);
+                // Add group_by fields to selections
+                for field in &group_by.fields {
+                    let field_parts: Vec<&str> = field.trim().split('.').collect();
+                    if field_parts.len() > 1 {
+                        // Handle entity.field format
+                        let entity_name = field_parts[0];
+                        let field_name = field_parts[1];
+                        let normalized_entity = normalize_entity_name(entity_name);
 
-                    let field_selection = get_field(
-                        &normalized_entity,
-                        field_name,
-                        request_body.get_date_format(),
-                        table,
-                        timezone,
-                        true,
-                    );
-                    acc_selections.push(field_selection);
-                } else {
-                    // Handle single field format
-                    let field_selection = get_field(
-                        table,
-                        field,
-                        request_body.get_date_format(),
-                        table,
-                        timezone,
-                        true,
-                    );
-                    acc_selections.push(field_selection);
+                        let field_selection = get_field(
+                            &normalized_entity,
+                            field_name,
+                            request_body.get_date_format(),
+                            table,
+                            timezone,
+                            true,
+                        );
+                        acc_selections.push(field_selection);
+                    } else {
+                        // Handle single field format
+                        let field_selection = get_field(
+                            table,
+                            field,
+                            request_body.get_date_format(),
+                            table,
+                            timezone,
+                            true,
+                        );
+                        acc_selections.push(field_selection);
+                    }
                 }
             }
         }

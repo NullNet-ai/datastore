@@ -226,7 +226,7 @@ impl<'a> GroupByConstructor<'a> {
                 }
             }
             _ => {
-                let field_expr = format!("\"{}\".\"{}\"::text", table, field);
+                let field_expr = format!("\"{}\".\"{}\"", table, field);
                 if with_alias {
                     format!("{} AS {}", field_expr, field)
                 } else {
