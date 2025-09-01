@@ -91,10 +91,10 @@ mod tests {
         );
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
-
+        let expected_default_queries = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '01JBHKXHYSKPP247HZZWHA3JCT') ORDER BY LOWER(contacts.id) ASC LIMIT 10");
         let expected_query = format!(
-            "SELECT {}",
-            "\"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\""
+            "SELECT \"contacts\".\"id\", \"contacts\".\"first_name\" FROM {} {}",
+            &table, expected_default_queries
         );
 
         let contain_expected_query = query.contains(&expected_query);
@@ -139,7 +139,7 @@ mod tests {
 
     /// Test constructing selections with pluck fields, pluck_object and joins
     #[test]
-    fn should_construct_selections_with_pluck_fields_pluck_object_joins() {
+    fn should_construct_selections_with_pluck_fields_joins_pluck_object() {
         let env_config = EnvConfig::default();
         let expected_joins = serde_json::json!([
             {

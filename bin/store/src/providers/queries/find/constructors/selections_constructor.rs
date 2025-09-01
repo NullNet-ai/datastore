@@ -61,7 +61,7 @@ impl SelectionsConstructor {
 
         // This is tested from the following:
         // should_construct_selections_with_pluck_fields_pluck_object
-        // should_construct_selections_with_pluck_fields_pluck_object_joins
+        // should_construct_selections_with_pluck_fields_joins_pluck_object
         // should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity
         if !request_body.get_pluck_object().is_empty() {
             let join_selections = Self::construct_join_selections(
@@ -401,6 +401,16 @@ impl SelectionsConstructor {
             return join_selections;
         }
 
+        if !request_body.get_pluck_object().get(table).is_none() {
+            println!("@@@@@@@testing");
+            // join_selections.push(Self::construct_pluck(
+            //     request_body,
+            //     table,
+            //     timezone,
+            //     &get_field,
+            //     &get_field_with_parse_as,
+            // ));
+        }
         // Handle main table fields if present in pluck_object
         join_selections.push(Self::construct_pluck_with_object(
             request_body,

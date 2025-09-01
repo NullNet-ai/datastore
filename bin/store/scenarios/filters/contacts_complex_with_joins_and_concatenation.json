@@ -8,17 +8,25 @@
     "last_name"
   ],
   "pluck_object": {
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
+    ],
     "created_by": [
       "id",
       "first_name",
       "last_name"
     ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
     "created_by_account_organizations": [
       "id",
       "contact_id"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
     ],
     "updated_by": [
       "id",
@@ -38,14 +46,6 @@
       "created_time",
       "updated_date",
       "updated_time"
-    ],
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary"
     ]
   },
   "pluck_group_object": {},
