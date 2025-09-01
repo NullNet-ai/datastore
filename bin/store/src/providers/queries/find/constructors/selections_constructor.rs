@@ -215,6 +215,81 @@ impl SelectionsConstructor {
         pluck_selections.join(", ")
     }
 
+    /// Constructs PLUCK selections with pluck_object support for main table
+    fn construct_pluck_with_object<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+        get_field_with_parse_as: &impl Fn(
+            &str,
+            &str,
+            &str,
+            Option<&str>,
+            &str,
+            Option<&str>,
+            bool,
+        ) -> String,
+    ) -> String {
+        let mut pluck_selections = Vec::new();
+
+        // Check if main table has fields in pluck_object, otherwise use regular pluck
+        let fields_to_use =
+            if let Some(main_table_fields) = request_body.get_pluck_object().get(table) {
+                println!(
+                    "Using pluck_object fields for table {}: {:?}",
+                    table, main_table_fields
+                );
+                main_table_fields
+            } else {
+                println!("Using regular pluck fields: {:?}", request_body.get_pluck());
+                request_body.get_pluck()
+            };
+
+        // Handle the selected fields
+        for field in fields_to_use {
+            let field_selection = get_field(
+                table,
+                field,
+                request_body.get_date_format(),
+                table,
+                timezone,
+                true,
+            );
+            pluck_selections.push(field_selection);
+        }
+
+        // Handle concatenated fields
+        for concat_field in request_body.get_concatenate_fields() {
+            let concatenated_expression = concat_field
+                .fields
+                .iter()
+                .map(|f| {
+                    format!(
+                        "COALESCE({}, '')",
+                        get_field_with_parse_as(
+                            table,
+                            f,
+                            request_body.get_date_format(),
+                            None,
+                            table,
+                            timezone,
+                            false,
+                        )
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(&format!(" || '{}' || ", concat_field.separator));
+
+            pluck_selections.push(format!(
+                "({}) AS {}",
+                concatenated_expression, concat_field.field_name
+            ));
+        }
+
+        pluck_selections.join(", ")
+    }
+
     /// Constructs PLUCK GROUP OBJECT selections with JSONB_AGG
     fn construct_pluck_group_object<T: QueryFilter>(
         request_body: &T,
@@ -327,30 +402,13 @@ impl SelectionsConstructor {
         }
 
         // Handle main table fields if present in pluck_object
-        if let Some(fields) = request_body.get_pluck_object().get(table) {
-            // Get concatenated field names to filter out
-            let concatenated_field_names: Vec<String> = request_body
-                .get_concatenate_fields()
-                .iter()
-                .map(|f| f.field_name.clone())
-                .collect();
-
-            join_selections.extend(
-                fields
-                    .iter()
-                    .filter(|field| !concatenated_field_names.contains(field))
-                    .map(|field| {
-                        get_field(
-                            table,
-                            field,
-                            request_body.get_date_format(),
-                            table,
-                            timezone,
-                            true,
-                        )
-                    }),
-            );
-        }
+        join_selections.push(Self::construct_pluck_with_object(
+            request_body,
+            table,
+            timezone,
+            &get_field,
+            &get_field_with_parse_as,
+        ));
 
         // Process each join
         for join in request_body.get_joins() {

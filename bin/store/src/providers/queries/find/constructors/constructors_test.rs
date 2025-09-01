@@ -632,7 +632,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails FROM {}",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name, COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails FROM {}",
             &env_config.default_organization_id, &table);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
