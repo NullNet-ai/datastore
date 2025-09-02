@@ -362,6 +362,8 @@ mod tests {
             serde_json::to_string_pretty(&response)
                 .unwrap_or_else(|_| "Failed to format response".to_string())
         );
+
+        assert!(response.success == false, error_message);
     }
 
     /// Reusable login helper function that can be used across all tests
