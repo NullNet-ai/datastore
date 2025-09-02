@@ -8,7 +8,7 @@
     "last_name"
   ],
   "pluck_object": {
-    "updated_by_account_organizations": [
+    "created_by_account_organizations": [
       "id",
       "contact_id"
     ],
@@ -16,9 +16,10 @@
       "email",
       "is_primary"
     ],
-    "created_by_account_organizations": [
+    "updated_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "last_name"
     ],
     "created_by": [
       "id",
@@ -39,10 +40,9 @@
       "updated_date",
       "updated_time"
     ],
-    "updated_by": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name"
+      "contact_id"
     ]
   },
   "pluck_group_object": {},

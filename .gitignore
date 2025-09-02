@@ -47,4 +47,4 @@ Thumbs.db
 /bin/store/tests/*
 
 # Test Invalid SQL
-/bin/store/raw_queries
+/bin/store/raw_queries/*

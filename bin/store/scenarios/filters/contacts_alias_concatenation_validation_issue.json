@@ -11,6 +11,11 @@
       "first_name",
       "last_name"
     ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
     "contacts": [
       "id",
       "first_name",
@@ -18,11 +23,6 @@
       "status",
       "created_by",
       "updated_by"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
     ]
   },
   "pluck_group_object": {},
