@@ -2,7 +2,6 @@
 // use serde_json::Value;
 use crate::database::schema::verify::field_exists_in_table;
 use crate::structs::core::{ApiResponse, FilterCriteria, GetByFilter};
-use pluralizer::pluralize;
 
 // #[derive(Serialize, Deserialize)]
 pub struct Validation<'a, 'b> {
@@ -19,14 +18,8 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
 
     /// Internal helper function to convert entity names from singular to plural form
-    /// If the entity is already plural, adds 's' to it
-    pub fn normalize_entity_name(&self, entity: &str) -> String {
-        let plural_form = pluralize(entity, 2, false);
-        if plural_form == entity {
-            plural_form.to_string()
-        } else {
-            format!("{}s", entity)
-        }
+    fn normalize_entity_name(&self, entity: &str) -> String {
+        entity.to_string()
     }
 
     pub fn exec(&self) -> ApiResponse {

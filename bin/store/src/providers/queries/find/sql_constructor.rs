@@ -13,7 +13,7 @@ use crate::{
         Join, LogicalOperator, MatchPattern, SortOption,
     },
 };
-use pluralizer::pluralize;
+
 use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
@@ -214,12 +214,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
     /// Helper function to convert entity names from singular to plural form
     /// If the entity is already plural, adds 's' to it
     fn normalize_entity_name(&self, entity: &str) -> String {
-        let plural_form = pluralize(entity, 2, false);
-        if plural_form == entity {
-            plural_form.to_string()
-        } else {
-            format!("{}s", entity)
-        }
+        entity.to_string()
     }
 
     pub fn with_organization_id(mut self, organization_id: String) -> Self {

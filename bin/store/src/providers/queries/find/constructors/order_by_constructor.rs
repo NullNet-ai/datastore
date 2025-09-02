@@ -145,11 +145,7 @@ where
 
     /// Normalizes entity name by converting to lowercase and pluralizing
     fn normalize_entity_name(&self, entity: &str) -> String {
-        if entity.to_lowercase() == self.table.to_lowercase() {
-            self.table.clone()
-        } else {
-            pluralizer::pluralize(entity, 2, false).to_lowercase()
-        }
+        entity.to_string()
     }
 
     /// Gets field with proper formatting and date/time handling
