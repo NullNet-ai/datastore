@@ -75,17 +75,6 @@ impl SelectionsConstructor {
                 &get_field_with_parse_as,
             );
             selections.extend(join_selections);
-
-            // Handle pluck_group_object scenario
-            if !request_body.get_pluck_group_object().is_empty() {
-                return Self::construct_pluck_group_object(
-                    request_body,
-                    table,
-                    timezone,
-                    &normalize_entity_name,
-                    &get_field,
-                );
-            }
         }
         // This is tested from from the following:
         // should_construct_default_selections
@@ -290,85 +279,6 @@ impl SelectionsConstructor {
         pluck_selections.join(", ")
     }
 
-    /// Constructs PLUCK GROUP OBJECT selections with JSONB_AGG
-    fn construct_pluck_group_object<T: QueryFilter>(
-        request_body: &T,
-        table: &str,
-        timezone: Option<&str>,
-        normalize_entity_name: &impl Fn(&str) -> String,
-        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
-    ) -> String {
-        let mut group_object_selections = Vec::new();
-
-        for (entity, fields) in request_body.get_pluck_group_object() {
-            let normalized_entity = normalize_entity_name(entity);
-
-            let mut field_pairs = Vec::new();
-            for field in fields {
-                let field_query = get_field(
-                    &normalized_entity,
-                    field,
-                    request_body.get_date_format(),
-                    table,
-                    timezone,
-                    false,
-                );
-                let parts: Vec<String> = field_query
-                    .split(" AS ")
-                    .map(|part| part.to_string())
-                    .collect::<Vec<String>>();
-                let formatted_field = parts.first().unwrap().clone();
-                field_pairs.push(format!("'{}', {}", field, formatted_field));
-            }
-
-            // Add concatenated fields if any match this entity
-            for concat_field in request_body.get_concatenate_fields() {
-                let concat_normalized_entity = normalize_entity_name(&concat_field.entity);
-                if concat_field.aliased_entity.as_deref() == Some(entity)
-                    || concat_field.entity == *entity
-                    || concat_normalized_entity == *entity
-                {
-                    let table_name = concat_field
-                        .aliased_entity
-                        .as_deref()
-                        .unwrap_or(&concat_normalized_entity);
-                    let concatenated_expression = concat_field
-                        .fields
-                        .iter()
-                        .map(|f| {
-                            format!(
-                                "COALESCE({}, '')",
-                                get_field(
-                                    table_name,
-                                    f,
-                                    request_body.get_date_format(),
-                                    table,
-                                    timezone,
-                                    false,
-                                )
-                            )
-                        })
-                        .collect::<Vec<_>>()
-                        .join(&format!(" || '{}' || ", concat_field.separator));
-
-                    field_pairs.push(format!(
-                        "'{}', ({})",
-                        concat_field.field_name, concatenated_expression
-                    ));
-                }
-            }
-
-            let jsonb_agg = format!(
-                "JSONB_AGG(JSONB_BUILD_OBJECT({})) AS {}",
-                field_pairs.join(", "),
-                entity
-            );
-            group_object_selections.push(jsonb_agg);
-        }
-
-        group_object_selections.join(", ")
-    }
-
     /// Constructs JOIN selections for related entities
     fn construct_join_selections<T: QueryFilter>(
         request_body: &T,
@@ -401,27 +311,14 @@ impl SelectionsConstructor {
             return join_selections;
         }
 
-        if !request_body.get_pluck_object().get(table).is_none() {
-            println!("@@@@@@@testing");
-            // join_selections.push(Self::construct_pluck(
-            //     request_body,
-            //     table,
-            //     timezone,
-            //     &get_field,
-            //     &get_field_with_parse_as,
-            // ));
-        }
-        // Handle main table fields if present in pluck_object
-        // join_selections.push(Self::construct_pluck_with_object(
-        //     request_body,
-        //     table,
-        //     timezone,
-        //     &get_field,
-        //     &get_field_with_parse_as,
-        // ));
-
         // Process each join
         for join in request_body.get_joins() {
+            let from_alias = join
+                .field_relation
+                .from
+                .alias
+                .as_deref()
+                .unwrap_or(&join.field_relation.from.entity);
             let to_alias = join
                 .field_relation
                 .to
@@ -429,7 +326,18 @@ impl SelectionsConstructor {
                 .as_deref()
                 .unwrap_or(&join.field_relation.to.entity);
 
-            // Handle fields for this join
+            // Handle fields for this join tables from "from"
+            if request_body.get_pluck_object().contains_key(from_alias) {
+                join_selections.push(Self::construct_pluck_with_object(
+                    request_body,
+                    from_alias,
+                    timezone,
+                    &get_field,
+                    &get_field_with_parse_as,
+                ));
+            }
+
+            // Handle fields for this join tables from "to"
             if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
                 let target_table = &join.field_relation.to.entity;
 
@@ -493,9 +401,6 @@ impl SelectionsConstructor {
                 );
 
                 join_selections.push(selection);
-            } else {
-                // Default to ID if no fields specified
-                join_selections.push(format!("\"{}\".\"id\"", to_alias));
             }
         }
 

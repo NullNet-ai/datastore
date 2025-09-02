@@ -222,6 +222,91 @@ mod tests {
         );
     }
 
+    #[test]
+    fn should_construct_selections_with_pluck_fields_joins_pluck_object_with_main() {
+        let env_config = EnvConfig::default();
+        let expected_joins = serde_json::json!([
+            {
+                "type": "left",
+                "field_relation": {
+                    "to": {
+                        "entity": "contact_emails",
+                        "field": "contact_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "contacts",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            }
+        ]);
+        let payload = serde_json::json!({
+            "pluck_object": {
+                "contacts": ["first_name"],
+                "contact_emails": ["id", "email"]
+            },
+            "joins": expected_joins
+        });
+
+        println!("--- Checking available joins.");
+        let joins_array = expected_joins
+            .as_array()
+            .expect("Expected joins should be a valid JSON array");
+        let join_has_len = joins_array.len() > 0;
+        let join_checker = if join_has_len { "✓" } else { "✗" };
+        assert!(join_has_len, "  {} Joins must exist", join_checker);
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        println!("  ✓ Generating SQL query from payload");
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "  ✗ Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+        println!("  ✓ Generated query: `{}`", query);
+
+        let expected_query = format!(
+            "SELECT \"contacts\".\"first_name\", COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
+            &env_config.default_organization_id
+        );
+
+        let contain_expected_query = query.contains(&expected_query);
+        let contain_checker = if contain_expected_query { "✓" } else { "✗" };
+
+        println!("--- If pluck object does exist and has related tables specified then joins are required.");
+        println!(
+            "--- Checking if all {} fields are available in pluck object.",
+            &table
+        );
+        println!("  {} Expected query: `{}`", contain_checker, expected_query);
+        assert!(
+            contain_expected_query,
+            " {} Query should have contain the pluck object fields from {} with joins.",
+            contain_checker, &table
+        );
+    }
+
     /// Test constructing group by without count
     #[test]
     fn should_construct_group_by_without_count() {
