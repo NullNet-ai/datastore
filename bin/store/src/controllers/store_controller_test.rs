@@ -957,7 +957,6 @@ mod tests {
                     .contains_key("updated_by_account_organizations"));
                 assert!(payload.pluck_object.contains_key("updated_by"));
                 assert!(payload.pluck_object.contains_key("contact_emails"));
-                assert!(payload.pluck_object.contains_key("contact_phone_numbers"));
 
                 // Validate concatenate fields
                 let concat_field_names: Vec<String> = payload

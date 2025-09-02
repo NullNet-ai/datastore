@@ -8,23 +8,22 @@
     "last_name"
   ],
   "pluck_object": {
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
     "contact_emails": [
       "email",
       "is_primary"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
     ],
     "updated_by": [
       "id",
       "first_name",
       "last_name"
     ],
-    "created_by": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name"
+      "contact_id"
     ],
     "contacts": [
       "id",
@@ -40,9 +39,10 @@
       "updated_date",
       "updated_time"
     ],
-    "updated_by_account_organizations": [
+    "created_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "last_name"
     ]
   },
   "pluck_group_object": {},

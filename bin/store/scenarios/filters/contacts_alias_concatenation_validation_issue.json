@@ -6,6 +6,14 @@
     "status"
   ],
   "pluck_object": {
+    "contacts": [
+      "id",
+      "first_name",
+      "last_name",
+      "status",
+      "created_by",
+      "updated_by"
+    ],
     "updated_by": [
       "id",
       "first_name",
@@ -15,14 +23,6 @@
       "id",
       "first_name",
       "last_name"
-    ],
-    "contacts": [
-      "id",
-      "first_name",
-      "last_name",
-      "status",
-      "created_by",
-      "updated_by"
     ]
   },
   "pluck_group_object": {},
