@@ -1,1 +1,0 @@
-SELECT "contacts"."id", "contacts"."first_name", "contacts"."last_name" FROM contacts WHERE (contacts.tombstone = 0) ORDER BY LOWER(contacts.id) ASC LIMIT 25

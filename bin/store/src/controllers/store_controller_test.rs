@@ -1074,10 +1074,16 @@ mod tests {
                 );
                 assert_eq!(payload.limit, 100);
                 assert_eq!(payload.offset, 0);
-                assert!(payload.advance_filters.len() > 0, "Should have an advance_filters parameter."); // 2 criteria + 1 operator
+                assert!(
+                    payload.advance_filters.len() > 0,
+                    "Should have an advance_filters parameter."
+                ); // 2 criteria + 1 operator
                 assert_eq!(payload.joins.len(), 6);
-                
-                assert!(payload.concatenate_fields.len() > 0, "Should have a concatenate_fields parameter.");
+
+                assert!(
+                    payload.concatenate_fields.len() > 0,
+                    "Should have a concatenate_fields parameter."
+                );
                 // Verify concatenate fields
                 let concat_field_names: Vec<String> = payload
                     .concatenate_fields
@@ -1085,7 +1091,10 @@ mod tests {
                     .map(|f| f.field_name.clone())
                     .collect();
 
-                assert!(concat_field_names.len() > 0, "Should have fields to concatenate, .");
+                assert!(
+                    concat_field_names.len() > 0,
+                    "Should have fields to concatenate, ."
+                );
 
                 // Verify advance filters
                 // let mut has_created_date_time_filter = false;
@@ -1094,24 +1103,28 @@ mod tests {
                 for filter in &payload.advance_filters {
                     match filter {
                         crate::structs::core::FilterCriteria::Criteria {
-                            field, 
-                            // values, 
+                            field,
+                            // values,
                             entity,
                             ..
                         } => {
-
                             let is_field_in_pluck = payload.pluck.contains(field);
-                            let is_field_in_pluck_object = payload.pluck_object[entity.as_deref().unwrap_or("contacts")].contains(field);
+                            let is_field_in_pluck_object = payload.pluck_object
+                                [entity.as_deref().unwrap_or("contacts")]
+                            .contains(field);
                             let is_field_concat = concat_field_names.contains(field);
 
-                            assert!(is_field_in_pluck || is_field_in_pluck_object || is_field_concat, "Field {} should be in pluck, pluck_object, or concatenate_fields", field);   
+                            assert!(
+                                is_field_in_pluck || is_field_in_pluck_object || is_field_concat,
+                                "Field {} should be in pluck, pluck_object, or concatenate_fields",
+                                field
+                            );
                         }
                         crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
                             println!("  ✓ Found logical operator: {:?}", operator);
                         }
                     }
                 }
-
 
                 // Convert GetByFilter to JSON for SQL generation testing
                 let payload_json =

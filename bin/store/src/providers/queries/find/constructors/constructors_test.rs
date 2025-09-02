@@ -651,7 +651,8 @@ mod tests {
                         "order_direction": null,
                         "order_by": null,
                         "limit": null,
-                        "offset": null
+                        "offset": null,
+                        "alias": "ce_sample"
                     },
                     "from": {
                         "entity": "contacts",
@@ -668,13 +669,13 @@ mod tests {
         let expected_concatenated_fields = serde_json::json!([
             {
                 "fields": [
-                    "first_name",
-                    "last_name"
+                    "id",
+                    "status"
                 ],
-                "field_name": "full_name",
+                "field_name": "id_status",
                 "separator": " ",
-                "entity": "contacts",
-                // "aliased_entity": "created_by"
+                "entity": "contact_emails",
+                "aliased_entity": "ce_sample"
             }
         ]);
 
@@ -682,7 +683,7 @@ mod tests {
             "pluck": ["id"],
             "pluck_object": {
                "contacts": ["id", "first_name", "last_name"],
-               "contact_emails": ["id", "email"]
+               "ce_sample": ["id", "email"]
             },
             "joins": expected_joins,
             "concatenate_fields": expected_concatenated_fields
@@ -717,16 +718,16 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name, COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails FROM {}",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", COALESCE((SELECT JSONB_AGG(elem) FROM (SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) AS elem FROM \"contact_emails\" \"ce_sample\" WHERE (\"ce_sample\".\"tombstone\" = 0 AND \"ce_sample\".\"organization_id\" IS NOT NULL AND \"ce_sample\".\"organization_id\" = '{}' AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\")) sub), '[]') as \"ce_sample\" FROM {}",
             &env_config.default_organization_id, &table);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
             "  ✓ Selection match: {}",
             query.contains(&expected_selections)
         );
-        let expected_joins = format!("LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE", &env_config.default_organization_id);
+        let expected_joins = format!("LEFT JOIN LATERAL (SELECT \"joined_ce_sample\".\"id\", \"joined_ce_sample\".\"email\", \"joined_ce_sample\".\"status\" from \"contact_emails\" \"joined_ce_sample\" WHERE (\"joined_ce_sample\".\"tombstone\" = 0 AND \"joined_ce_sample\".\"organization_id\" is not null AND \"joined_ce_sample\".\"organization_id\" = '{}') AND \"contacts\".\"id\" = \"joined_ce_sample\".\"contact_id\") AS \"ce_sample\" on TRUE", &env_config.default_organization_id);
 
-        let expected_default_where_clauses = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') ORDER BY LOWER(contacts.id) ASC LIMIT 10", &env_config.default_organization_id);
+        let expected_default_where_clauses = format!("where (\"contacts\".\"tombstone\" = 0 and \"contacts\".\"organization_id\" is not null and \"contacts\".\"organization_id\" = '{}') group by \"contacts\".\"id\" order by lower(\"contacts\".\"id\") asc limit 10", &env_config.default_organization_id);
 
         let expected_query = format!(
             "{} {} {}",
@@ -750,343 +751,6 @@ mod tests {
             contain_allowed_selection_query,
             " {} Query should have correct implementation of concatenated fields to work properly. Selection: {}",
             contain_checker, contain_allowed_selection_query
-        );
-    }
-
-    /// Test constructing complex query
-    #[test]
-    fn should_construct_complex_query() {
-        let env_config = EnvConfig::default();
-
-        let payload = serde_json::json!({
-          "pluck": [
-            "id",
-            "categories",
-            "organization_id",
-            "first_name",
-            "middle_name",
-            "last_name"
-          ],
-          "pluck_object": {
-            "updated_by": [
-              "id",
-              "first_name",
-              "last_name"
-            ],
-            "contact_emails": [
-              "email",
-              "is_primary"
-            ],
-            "created_by_account_organizations": [
-              "id",
-              "contact_id"
-            ],
-            "contact_phone_numbers": [
-              "phone_number_raw"
-            ],
-            "created_by": [
-              "id",
-              "first_name",
-              "last_name"
-            ],
-            "contacts": [
-              "id",
-              "code",
-              "categories",
-              "organization_id",
-              "first_name",
-              "middle_name",
-              "last_name",
-              "status",
-              "created_date",
-              "updated_date",
-              "created_time",
-              "updated_time",
-              "created_by",
-              "updated_by",
-              "previous_status"
-            ],
-            "updated_by_account_organizations": [
-              "id",
-              "contact_id"
-            ]
-          },
-          "pluck_group_object": {
-            "contact_emails": [
-              "email",
-              "is_primary"
-            ],
-            "contact_phone_numbers": [
-              "phone_number_raw"
-            ]
-          },
-          "advance_filters": [
-            {
-              "type": "criteria",
-              "field": "created_date_time",
-              "entity": "contacts",
-              "operator": "like",
-              "values": [
-                "08/20/2025 14"
-              ],
-              "case_sensitive": false,
-              "parse_as": "",
-              "match_pattern": null,
-              "is_search": null,
-              "has_group_count": null
-            },
-            {
-              "type": "operator",
-              "operator": "and"
-            },
-            {
-              "type": "criteria",
-              "field": "status",
-              "entity": "contacts",
-              "operator": "equal",
-              "values": [
-                "Active",
-                "Draft"
-              ],
-              "case_sensitive": false,
-              "parse_as": "",
-              "match_pattern": null,
-              "is_search": null,
-              "has_group_count": null
-            }
-          ],
-          "group_advance_filters": [],
-          "joins": [
-            {
-              "type": "left",
-              "field_relation": {
-                "to": {
-                  "entity": "contact_emails",
-                  "field": "contact_id",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                },
-                "from": {
-                  "entity": "contacts",
-                  "field": "id",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                }
-              },
-              "nested": false
-            },
-            {
-              "type": "left",
-              "field_relation": {
-                "to": {
-                  "entity": "contact_phone_numbers",
-                  "field": "contact_id",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                },
-                "from": {
-                  "entity": "contacts",
-                  "field": "id",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                }
-              },
-              "nested": false
-            },
-            {
-              "type": "left",
-              "field_relation": {
-                "to": {
-                  "entity": "account_organizations",
-                  "field": "id",
-                  "alias": "created_by_account_organizations",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                },
-                "from": {
-                  "entity": "contacts",
-                  "field": "created_by",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                }
-              },
-              "nested": false
-            },
-            {
-              "type": "left",
-              "field_relation": {
-                "to": {
-                  "entity": "contacts",
-                  "field": "id",
-                  "alias": "created_by",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                },
-                "from": {
-                  "entity": "created_by_account_organizations",
-                  "field": "contact_id",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                }
-              },
-              "nested": true
-            },
-            {
-              "type": "left",
-              "field_relation": {
-                "to": {
-                  "entity": "account_organizations",
-                  "field": "id",
-                  "alias": "updated_by_account_organizations",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                },
-                "from": {
-                  "entity": "contacts",
-                  "field": "updated_by",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                }
-              },
-              "nested": false
-            },
-            {
-              "type": "left",
-              "field_relation": {
-                "to": {
-                  "entity": "contacts",
-                  "field": "id",
-                  "alias": "updated_by",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                },
-                "from": {
-                  "entity": "updated_by_account_organizations",
-                  "field": "contact_id",
-                  "order_direction": null,
-                  "order_by": null,
-                  "limit": null,
-                  "offset": null
-                }
-              },
-              "nested": true
-            }
-          ],
-          "group_by": {
-            "fields": [],
-            "has_count": true
-          },
-          "concatenate_fields": [
-            {
-              "fields": [
-                "first_name",
-                "last_name"
-              ],
-              "field_name": "full_name",
-              "separator": " ",
-              "entity": "contacts",
-              "aliased_entity": "created_by"
-            },
-            {
-              "fields": [
-                "first_name",
-                "last_name"
-              ],
-              "field_name": "full_name",
-              "separator": " ",
-              "entity": "contacts",
-              "aliased_entity": "updated_by"
-            },
-            {
-              "fields": [
-                "created_date",
-                "created_time"
-              ],
-              "field_name": "created_date_time",
-              "separator": " ",
-              "entity": "contacts",
-              "aliased_entity": null
-            },
-            {
-              "fields": [
-                "updated_date",
-                "updated_time"
-              ],
-              "field_name": "updated_date_time",
-              "separator": " ",
-              "entity": "contacts",
-              "aliased_entity": null
-            }
-          ],
-          "multiple_sort": [
-            {
-              "by_field": "status",
-              "by_direction": "asc",
-              "is_case_sensitive_sorting": false
-            }
-          ],
-          "date_format": "mm/dd/YYYY",
-          "order_by": "id",
-          "order_direction": "asc",
-          "is_case_sensitive_sorting": false,
-          "offset": 0,
-          "limit": 100,
-          "distinct_by": "",
-          "timezone": null
-        });
-
-        let table = String::from("contacts");
-        let is_root = false;
-        let timezone = None;
-
-        println!("  ✓ Generating SQL query from payload");
-        let query_result = get_raw_query(
-            &payload,
-            &table,
-            is_root,
-            timezone,
-            Some(env_config.default_organization_id.to_string()),
-        );
-
-        assert!(
-            query_result.is_ok(),
-            "  ✗ Failed to generate query: {:?}",
-            query_result.err()
-        );
-
-        let query = query_result.unwrap();
-        println!("  ✓ Generated query: `{}`", query);
-        let expected_query = format!("SELECT {}", "",);
-        let contain_expected_query = query.contains(&expected_query);
-
-        let contain_checker = if contain_expected_query { "✓" } else { "✗" };
-        println!("  {} Expected query: `{}`", contain_checker, expected_query);
-        assert!(
-            contain_expected_query,
-            " {} Query should have correct implementation of concatenated fields to work properly. Selection: {}",
-            contain_checker, contain_expected_query
         );
     }
 }

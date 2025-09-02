@@ -1,1 +1,0 @@
-SELECT "contacts"."id", "contacts"."status", "contacts"."first_name", "contacts"."last_name" FROM contacts WHERE (contacts.tombstone = 0) AND contacts.status::text = 'Active' ORDER BY LOWER("contacts"."id") ASC LIMIT 25
