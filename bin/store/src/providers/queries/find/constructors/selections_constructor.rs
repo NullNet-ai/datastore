@@ -412,13 +412,13 @@ impl SelectionsConstructor {
             // ));
         }
         // Handle main table fields if present in pluck_object
-        join_selections.push(Self::construct_pluck_with_object(
-            request_body,
-            table,
-            timezone,
-            &get_field,
-            &get_field_with_parse_as,
-        ));
+        // join_selections.push(Self::construct_pluck_with_object(
+        //     request_body,
+        //     table,
+        //     timezone,
+        //     &get_field,
+        //     &get_field_with_parse_as,
+        // ));
 
         // Process each join
         for join in request_body.get_joins() {
