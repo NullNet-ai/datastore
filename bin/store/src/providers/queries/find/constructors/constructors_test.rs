@@ -718,16 +718,16 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", COALESCE((SELECT JSONB_AGG(elem) FROM (SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) AS elem FROM \"contact_emails\" \"ce_sample\" WHERE (\"ce_sample\".\"tombstone\" = 0 AND \"ce_sample\".\"organization_id\" IS NOT NULL AND \"ce_sample\".\"organization_id\" = '{}' AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\")) sub), '[]') as \"ce_sample\" FROM {}",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) AS elem FROM contact_emails ce_sample WHERE (ce_sample.tombstone = 0 AND ce_sample.organization_id IS NOT NULL AND ce_sample.organization_id = '{}') AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\") sub ), '[]' ) AS ce_sample FROM {}",
             &env_config.default_organization_id, &table);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
             "  ✓ Selection match: {}",
             query.contains(&expected_selections)
         );
-        let expected_joins = format!("LEFT JOIN LATERAL (SELECT \"joined_ce_sample\".\"id\", \"joined_ce_sample\".\"email\", \"joined_ce_sample\".\"status\" from \"contact_emails\" \"joined_ce_sample\" WHERE (\"joined_ce_sample\".\"tombstone\" = 0 AND \"joined_ce_sample\".\"organization_id\" is not null AND \"joined_ce_sample\".\"organization_id\" = '{}') AND \"contacts\".\"id\" = \"joined_ce_sample\".\"contact_id\") AS \"ce_sample\" on TRUE", &env_config.default_organization_id);
+        let expected_joins = format!("LEFT JOIN LATERAL (SELECT \"joined_ce_sample\".\"id\", \"joined_ce_sample\".\"email\" FROM \"contact_emails\" \"joined_ce_sample\" WHERE (joined_ce_sample.tombstone = 0 AND joined_ce_sample.organization_id IS NOT NULL AND joined_ce_sample.organization_id = '{}') AND \"joined_ce_sample\".\"contact_id\" = \"contacts\".\"id\" ) AS \"ce_sample\" ON TRUE", &env_config.default_organization_id);
 
-        let expected_default_where_clauses = format!("where (\"contacts\".\"tombstone\" = 0 and \"contacts\".\"organization_id\" is not null and \"contacts\".\"organization_id\" = '{}') group by \"contacts\".\"id\" order by lower(\"contacts\".\"id\") asc limit 10", &env_config.default_organization_id);
+        let expected_default_where_clauses = format!("WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}') ORDER BY LOWER(\"contacts\".\"id\") ASC LIMIT 10", &env_config.default_organization_id);
 
         let expected_query = format!(
             "{} {} {}",

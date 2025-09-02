@@ -205,7 +205,7 @@ impl SelectionsConstructor {
     }
 
     /// Constructs PLUCK selections with pluck_object support for main table
-    fn construct_pluck_with_object<T: QueryFilter>(
+    fn construct_pluck_with_object_for_main<T: QueryFilter>(
         request_body: &T,
         table: &str,
         timezone: Option<&str>,
@@ -250,6 +250,9 @@ impl SelectionsConstructor {
 
         // Handle concatenated fields
         for concat_field in request_body.get_concatenate_fields() {
+            if concat_field.entity != table {
+                continue;
+            }
             let concatenated_expression = concat_field
                 .fields
                 .iter()
@@ -328,7 +331,7 @@ impl SelectionsConstructor {
 
             // Handle fields for this join tables from "from"
             if request_body.get_pluck_object().contains_key(from_alias) {
-                join_selections.push(Self::construct_pluck_with_object(
+                join_selections.push(Self::construct_pluck_with_object_for_main(
                     request_body,
                     from_alias,
                     timezone,
