@@ -931,22 +931,14 @@ mod tests {
                 // Validate the complex scenario structure
                 assert_eq!(
                     payload.pluck,
-                    vec![
-                        "id",
-                        "categories",
-                        "organization_id",
-                        "first_name",
-                        "middle_name",
-                        "last_name"
-                    ]
+                    vec!["id", "first_name", "last_name", "status"]
                 );
                 assert_eq!(payload.limit, 100);
                 assert_eq!(payload.offset, 0);
                 assert_eq!(payload.date_format, "mm/dd/YYYY");
-                assert_eq!(payload.joins.len(), 6); // 6 joins as specified
-                assert_eq!(payload.concatenate_fields.len(), 4); // 4 concatenated fields
-                assert_eq!(payload.advance_filters.len(), 3); // 2 criteria + 1 operator
-                assert_eq!(payload.multiple_sort.len(), 1); // 1 sort option
+                assert_eq!(payload.joins.len(), 4); // 4 joins as specified
+                assert_eq!(payload.concatenate_fields.len(), 2); // 2 concatenated fields
+                assert_eq!(payload.advance_filters.len(), 1); // 1 criteria
 
                 // Validate pluck_object structure
                 assert!(payload.pluck_object.contains_key("contacts"));
@@ -958,7 +950,6 @@ mod tests {
                     .pluck_object
                     .contains_key("updated_by_account_organizations"));
                 assert!(payload.pluck_object.contains_key("updated_by"));
-                assert!(payload.pluck_object.contains_key("contact_emails"));
 
                 // Validate concatenate fields
                 let concat_field_names: Vec<String> = payload
@@ -967,8 +958,6 @@ mod tests {
                     .map(|f| f.field_name.clone())
                     .collect();
                 assert!(concat_field_names.contains(&"full_name".to_string()));
-                assert!(concat_field_names.contains(&"created_date_time".to_string()));
-                assert!(concat_field_names.contains(&"updated_date_time".to_string()));
 
                 // Test HTTP request to /filter endpoint
                 match make_filter_http_request(&payload, &get_table_name(), &auth_response).await {

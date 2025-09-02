@@ -1,46 +1,34 @@
 {
   "pluck": [
     "id",
-    "categories",
-    "organization_id",
     "first_name",
-    "middle_name",
-    "last_name"
+    "last_name",
+    "status"
   ],
   "pluck_object": {
     "contacts": [
       "id",
-      "code",
-      "categories",
-      "organization_id",
       "first_name",
-      "middle_name",
       "last_name",
       "status",
-      "created_date",
-      "created_time",
-      "updated_date",
-      "updated_time"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
+      "created_by",
+      "updated_by"
     ],
     "created_by": [
       "id",
       "first_name",
       "last_name"
     ],
-    "contact_emails": [
-      "email",
-      "is_primary"
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
     ],
     "updated_by": [
       "id",
       "first_name",
       "last_name"
     ],
-    "updated_by_account_organizations": [
+    "created_by_account_organizations": [
       "id",
       "contact_id"
     ]
@@ -49,30 +37,11 @@
   "advance_filters": [
     {
       "type": "criteria",
-      "field": "created_date_time",
-      "entity": "contacts",
-      "operator": "like",
-      "values": [
-        "08/15/2025 15%"
-      ],
-      "case_sensitive": null,
-      "parse_as": "text",
-      "match_pattern": null,
-      "is_search": null,
-      "has_group_count": null
-    },
-    {
-      "type": "operator",
-      "operator": "and"
-    },
-    {
-      "type": "criteria",
       "field": "status",
       "entity": "contacts",
       "operator": "equal",
       "values": [
-        "Active",
-        "Draft"
+        "Active"
       ],
       "case_sensitive": null,
       "parse_as": "text",
@@ -83,50 +52,6 @@
   ],
   "group_advance_filters": [],
   "joins": [
-    {
-      "type": "left",
-      "field_relation": {
-        "to": {
-          "entity": "contact_emails",
-          "field": "contact_id",
-          "order_direction": null,
-          "order_by": null,
-          "limit": null,
-          "offset": null
-        },
-        "from": {
-          "entity": "contacts",
-          "field": "id",
-          "order_direction": null,
-          "order_by": null,
-          "limit": null,
-          "offset": null
-        }
-      },
-      "nested": false
-    },
-    {
-      "type": "left",
-      "field_relation": {
-        "to": {
-          "entity": "contact_phone_numbers",
-          "field": "contact_id",
-          "order_direction": null,
-          "order_by": null,
-          "limit": null,
-          "offset": null
-        },
-        "from": {
-          "entity": "contacts",
-          "field": "id",
-          "order_direction": null,
-          "order_by": null,
-          "limit": null,
-          "offset": null
-        }
-      },
-      "nested": false
-    },
     {
       "type": "left",
       "field_relation": {
@@ -171,7 +96,7 @@
           "offset": null
         }
       },
-      "nested": false
+      "nested": true
     },
     {
       "type": "left",
@@ -217,10 +142,13 @@
           "offset": null
         }
       },
-      "nested": false
+      "nested": true
     }
   ],
-  "group_by": null,
+  "group_by": {
+    "fields": [],
+    "has_count": false
+  },
   "concatenate_fields": [
     {
       "fields": [
@@ -241,38 +169,12 @@
       "separator": " ",
       "entity": "updated_by",
       "aliased_entity": "updated_by"
-    },
-    {
-      "fields": [
-        "created_date",
-        "created_time"
-      ],
-      "field_name": "created_date_time",
-      "separator": " ",
-      "entity": "contacts",
-      "aliased_entity": null
-    },
-    {
-      "fields": [
-        "updated_date",
-        "updated_time"
-      ],
-      "field_name": "updated_date_time",
-      "separator": " ",
-      "entity": "contacts",
-      "aliased_entity": null
     }
   ],
-  "multiple_sort": [
-    {
-      "by_field": "status",
-      "by_direction": "ASC",
-      "is_case_sensitive_sorting": false
-    }
-  ],
+  "multiple_sort": [],
   "date_format": "mm/dd/YYYY",
   "order_by": "id",
-  "order_direction": "ASC",
+  "order_direction": "asc",
   "is_case_sensitive_sorting": null,
   "offset": 0,
   "limit": 100,

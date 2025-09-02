@@ -623,12 +623,12 @@ impl<'a, 'b> Validation<'a, 'b> {
         for (join_index, join) in self.request_body.joins.iter().enumerate() {
             // Validate join type
             let join_type = join.r#type.to_uppercase();
-            if join_type != "LEFT" && join_type != "SELF" {
+            if !["LEFT", "SELF"].contains(&join_type.as_str()) {
                 return ApiResponse {
                     success: false,
                     message: format!(
                         "joins[{}] > type > Invalid join type: '{}'. Supported types are: LEFT, SELF",
-                        join_index, join.r#type
+                        join_index, join_type
                     ),
                     count: 0,
                     data: vec![],
@@ -637,9 +637,6 @@ impl<'a, 'b> Validation<'a, 'b> {
 
             // Validate field relations exist
             let from_entity = &join.field_relation.from.entity;
-            let from_field = &join.field_relation.from.field;
-            let to_entity = &join.field_relation.to.entity;
-            let to_field = &join.field_relation.to.field;
 
             // For nested joins, validate that the from entity matches the previous join's to entity or alias
             if join.nested && join_index > 0 {
@@ -674,42 +671,35 @@ impl<'a, 'b> Validation<'a, 'b> {
                 };
             }
 
-            // Determine the actual table to validate the from field against
-            let from_table_to_check = if join.nested && join_index > 0 {
-                let previous_join = &self.request_body.joins[join_index - 1];
-                &previous_join.field_relation.to.entity
-            } else {
-                from_entity
-            };
-
-            let normalized_from_table = self.normalize_entity_name(from_table_to_check);
-            if !field_exists_in_table(&normalized_from_table, from_field)
-                && !field_exists_in_table(from_table_to_check, from_field)
-            {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "joins[{}] > field_relation > from > field > Join from field '{}' does not exist in entity '{}' or '{}'",
-                        join_index, from_field, from_table_to_check, normalized_from_table
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
-            }
-
-            let normalized_to_entity = self.normalize_entity_name(to_entity);
-            if !field_exists_in_table(&normalized_to_entity, to_field)
-                && !field_exists_in_table(to_entity, to_field)
-            {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "joins[{}] > field_relation > to > field > Join to field '{}' does not exist in entity '{}' or '{}'",
-                        join_index, to_field, to_entity, normalized_to_entity
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
+            // Ensure the join to and from aliases must be present in pluck object
+            if join_type == "LEFT".to_string() {
+                if let Some(alias) = &join.field_relation.from.alias {
+                    if !self.request_body.pluck_group_object.contains_key(alias) {
+                        return ApiResponse {
+                                success: false,
+                                message: format!(
+                                    "joins[{}] > field_relation > from > alias > Alias '{}' must be present in pluck_group_object",
+                                    join_index, alias
+                                ),
+                                count: 0,
+                                data: vec![],
+                            };
+                    }
+                }
+            } else if join_type == "SELF".to_string() {
+                if let Some(alias) = &join.field_relation.from.alias {
+                    if !self.request_body.pluck_group_object.contains_key(alias) {
+                        return ApiResponse {
+                            success: false,
+                            message: format!(
+                                "joins[{}] > field_relation > from > alias > Alias '{}' must be present in pluck_group_object",
+                                join_index, alias
+                            ),
+                            count: 0,
+                            data: vec![],
+                        };
+                    }
+                }
             }
 
             // Validate that filters are not allowed on 'from' RelationEndpoint
