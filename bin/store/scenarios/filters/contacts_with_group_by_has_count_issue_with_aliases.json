@@ -16,19 +16,11 @@
       "id",
       "contact_id"
     ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
     "updated_by_account_organizations": [
       "id",
       "contact_id"
     ],
-    "updated_by": [
+    "created_by": [
       "id",
       "first_name",
       "last_name"
@@ -49,6 +41,14 @@
       "created_by",
       "updated_by",
       "previous_status"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
+    ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
     ]
   },
   "pluck_group_object": {},
