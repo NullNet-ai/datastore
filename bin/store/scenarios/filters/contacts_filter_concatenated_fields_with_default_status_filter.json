@@ -8,7 +8,11 @@
     "last_name"
   ],
   "pluck_object": {
-    "updated_by": [
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "created_by": [
       "id",
       "first_name",
       "last_name"
@@ -17,17 +21,8 @@
       "email",
       "is_primary"
     ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
     "contact_phone_numbers": [
       "phone_number_raw"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
     ],
     "contacts": [
       "id",
@@ -46,6 +41,11 @@
       "updated_by",
       "previous_status"
     ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
     "updated_by_account_organizations": [
       "id",
       "contact_id"
@@ -63,11 +63,11 @@
   "advance_filters": [
     {
       "type": "criteria",
-      "field": "created_date_time",
-      "entity": "contacts",
+      "field": "full_name",
+      "entity": "created_by",
       "operator": "like",
       "values": [
-        "08/20/2025 14"
+        "Super Ad"
       ],
       "case_sensitive": false,
       "parse_as": "",
@@ -236,7 +236,7 @@
   ],
   "group_by": {
     "fields": [],
-    "has_count": true
+    "has_count": false
   },
   "concatenate_fields": [
     {
