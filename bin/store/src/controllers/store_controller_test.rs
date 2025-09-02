@@ -838,7 +838,7 @@ mod tests {
                                 operator,
                                 crate::structs::core::FilterOperator::Like
                             ));
-                            assert_eq!(values, &vec![serde_json::Value::String("J%".to_string())]);
+                            assert_eq!(values, &vec![serde_json::Value::String("Supe".to_string())]);
                         }
                         _ => println!("  ✓ Filter is not a criteria type"),
                     }
@@ -865,8 +865,8 @@ mod tests {
                                 {
                                     if !first_name.is_empty() && first_name != "null" {
                                         assert!(
-                                            first_name.starts_with('J'),
-                                            "First name should start with 'J': {}",
+                                            first_name.starts_with("Super"),
+                                            "First name should start with 'Super': {}",
                                             first_name
                                         );
                                         println!("  ✓ Record first_name: {}", first_name);

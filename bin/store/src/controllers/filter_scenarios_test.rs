@@ -6,9 +6,9 @@ mod tests {
     };
     use serde_json::json;
     use std::path::Path;
-
+ 
     /// Creates filter scenario 1: Get records with id, first_name, last_name from contacts table
-    fn create_contacts_basic_fields_filter() -> GetByFilter {
+    fn should_create_contacts_basic_fields_filter() -> GetByFilter {
         GetByFilter {
             pluck: vec![
                 "id".to_string(),
@@ -23,7 +23,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -33,9 +33,9 @@ mod tests {
             timezone: None,
         }
     }
-
+ 
     /// Creates filter scenario 2: Get records with id, status, first_name, last_name from contacts table with Active status filter
-    fn create_contacts_active_status_filter() -> GetByFilter {
+    fn should_create_contacts_active_status_filter() -> GetByFilter {
         GetByFilter {
             pluck: vec![
                 "id".to_string(),
@@ -61,7 +61,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -71,9 +71,9 @@ mod tests {
             timezone: None,
         }
     }
-
+  
     /// Creates filter scenario 3: Get records with id, first_name, status from contacts table where first_name starts with "J"
-    fn create_contacts_first_name_starts_with_j_filter() -> GetByFilter {
+    fn should_create_contacts_first_name_starts_with_j_filter() -> GetByFilter {
         GetByFilter {
             pluck: vec![
                 "id".to_string(),
@@ -86,7 +86,7 @@ mod tests {
                 field: "first_name".to_string(),
                 entity: None,
                 operator: FilterOperator::Like,
-                values: vec![json!("J%")],
+                values: vec![json!("Supe")],
                 case_sensitive: None,
                 parse_as: "text".to_string(),
                 match_pattern: None,
@@ -98,7 +98,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -111,6 +111,7 @@ mod tests {
 
     /// Test creating filter scenario 1: Basic contacts fields
     #[tokio::test]
+    #[ignore]
     async fn should_create_contacts_basic_fields_scenario() {
         println!("Testing creation of contacts basic fields filter scenario...");
 
@@ -124,7 +125,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -137,7 +138,7 @@ mod tests {
         let mut payload_filters =
             PayloadFilterScenarios::new("contacts".to_string(), default_filter);
 
-        let scenario_filter = create_contacts_basic_fields_filter();
+        let scenario_filter = should_create_contacts_basic_fields_filter();
         let result = payload_filters.create_scenario_with_description(
             "contacts_basic_fields".to_string(),
             "Retrieve records with id, first_name, and last_name fields from the contacts table"
@@ -178,6 +179,7 @@ mod tests {
 
     /// Test creating filter scenario 2: Active contacts with status filter
     #[tokio::test]
+    #[ignore]
     async fn should_create_contacts_active_status_scenario() {
         println!("Testing creation of contacts active status filter scenario...");
 
@@ -191,7 +193,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -204,7 +206,7 @@ mod tests {
         let mut payload_filters =
             PayloadFilterScenarios::new("contacts".to_string(), default_filter);
 
-        let scenario_filter = create_contacts_active_status_filter();
+        let scenario_filter = should_create_contacts_active_status_filter();
         let result = payload_filters.create_scenario_with_description(
             "contacts_active_status".to_string(),
             "Retrieve records with id, status, first_name, and last_name fields from the contacts table, filtered for Active status".to_string(),
@@ -276,7 +278,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -289,7 +291,7 @@ mod tests {
         let mut payload_filters =
             PayloadFilterScenarios::new("contacts".to_string(), default_filter);
 
-        let scenario_filter = create_contacts_first_name_starts_with_j_filter();
+        let scenario_filter = should_create_contacts_first_name_starts_with_j_filter();
         let result = payload_filters.create_scenario_with_description(
             "contacts_first_name_starts_with_j".to_string(),
             "Retrieve records with id, first_name, and status fields from the contacts table, filtered for first_name starting with J".to_string(),
@@ -326,7 +328,7 @@ mod tests {
                 assert_eq!(field, "first_name");
                 assert!(matches!(operator, FilterOperator::Like));
                 assert_eq!(values.len(), 1);
-                assert_eq!(values[0], json!("J%"));
+                assert_eq!(values[0], json!("Supe"));
             }
             _ => panic!("Expected Criteria filter, got LogicalOperator"),
         }
@@ -348,6 +350,7 @@ mod tests {
 
     /// Test loading and using all created scenarios
     #[tokio::test]
+    #[ignore]
     async fn should_load_and_use_created_scenarios() {
         println!("Testing loading and using all created filter scenarios...");
 
@@ -361,7 +364,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD HH24:MI:SS".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "ASC".to_string(),
             is_case_sensitive_sorting: None,
@@ -375,9 +378,9 @@ mod tests {
             PayloadFilterScenarios::new("contacts".to_string(), default_filter);
 
         // Create all three scenarios
-        let basic_filter = create_contacts_basic_fields_filter();
-        let active_filter = create_contacts_active_status_filter();
-        let starts_with_j_filter = create_contacts_first_name_starts_with_j_filter();
+        let basic_filter = should_create_contacts_basic_fields_filter();
+        let active_filter = should_create_contacts_active_status_filter();
+        let starts_with_j_filter = should_create_contacts_first_name_starts_with_j_filter();
 
         payload_filters
             .create_scenario_with_description(

@@ -1,5 +1,9 @@
 {
-  "pluck": ["id", "first_name", "last_name"],
+  "pluck": [
+    "id",
+    "first_name",
+    "last_name"
+  ],
   "pluck_object": {},
   "pluck_group_object": {},
   "advance_filters": [],
