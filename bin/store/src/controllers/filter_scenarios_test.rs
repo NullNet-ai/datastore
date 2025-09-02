@@ -6,7 +6,7 @@ mod tests {
     };
     use serde_json::json;
     use std::path::Path;
- 
+
     /// Creates filter scenario 1: Get records with id, first_name, last_name from contacts table
     fn should_create_contacts_basic_fields_filter() -> GetByFilter {
         GetByFilter {
@@ -33,7 +33,7 @@ mod tests {
             timezone: None,
         }
     }
- 
+
     /// Creates filter scenario 2: Get records with id, status, first_name, last_name from contacts table with Active status filter
     fn should_create_contacts_active_status_filter() -> GetByFilter {
         GetByFilter {
@@ -71,7 +71,7 @@ mod tests {
             timezone: None,
         }
     }
-  
+
     /// Creates filter scenario 3: Get records with id, first_name, status from contacts table where first_name starts with "J"
     fn should_create_contacts_first_name_starts_with_j_filter() -> GetByFilter {
         GetByFilter {

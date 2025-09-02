@@ -838,7 +838,10 @@ mod tests {
                                 operator,
                                 crate::structs::core::FilterOperator::Like
                             ));
-                            assert_eq!(values, &vec![serde_json::Value::String("Supe".to_string())]);
+                            assert_eq!(
+                                values,
+                                &vec![serde_json::Value::String("Supe".to_string())]
+                            );
                         }
                         _ => println!("  ✓ Filter is not a criteria type"),
                     }
