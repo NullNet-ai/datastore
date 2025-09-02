@@ -200,6 +200,22 @@ impl<'a, 'b> Validation<'a, 'b> {
                 };
             }
 
+            if field_exists_in_table(
+                &self.normalize_entity_name(&concatenate_field.entity),
+                &concatenate_field.field_name,
+            ) {
+                return ApiResponse {
+                    success: false,
+                    message: format!(
+                        "concatenate_fields[{}] > field_name conflicts with existing fields from {}",
+                        concat_index,
+                        &self.normalize_entity_name(&concatenate_field.entity)
+                    ),
+                    count: 0,
+                    data: vec![],
+                };
+            }
+
             if concatenate_field.entity.is_empty() {
                 return ApiResponse {
                     success: false,
@@ -215,13 +231,44 @@ impl<'a, 'b> Validation<'a, 'b> {
             // Validate that all fields exist in the specified entity
             for (field_index, field) in concatenate_field.fields.iter().enumerate() {
                 let normalized_entity = self.normalize_entity_name(&concatenate_field.entity);
-                if !field_exists_in_table(&normalized_entity, field)
-                    && !field_exists_in_table(&concatenate_field.entity, field)
-                {
+
+                // Check if field exists in schema tables (try both original and normalized entity names)
+                let field_exists_in_schema = field_exists_in_table(&normalized_entity, field)
+                    || field_exists_in_table(&concatenate_field.entity, field);
+
+                // Check if field exists in joins - for concatenated fields, we need to check
+                // if the field exists in the target entity that the alias points to
+                let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
+                    let to_endpoint = &join.field_relation.to;
+
+                    // Check if the concatenate_field.entity matches the alias
+                    if let Some(alias) = &to_endpoint.alias {
+                        if alias == &concatenate_field.entity {
+                            // Check if the field exists in the target entity's schema
+                            let target_entity_normalized =
+                                self.normalize_entity_name(&to_endpoint.entity);
+                            return field_exists_in_table(&target_entity_normalized, field)
+                                || field_exists_in_table(&to_endpoint.entity, field);
+                        }
+                    }
+
+                    // Also check direct entity matches
+                    if to_endpoint.entity == concatenate_field.entity {
+                        let target_entity_normalized =
+                            self.normalize_entity_name(&to_endpoint.entity);
+                        return field_exists_in_table(&target_entity_normalized, field)
+                            || field_exists_in_table(&to_endpoint.entity, field);
+                    }
+
+                    false
+                });
+
+                // Field must exist either in schema or in joins
+                if !field_exists_in_schema && !field_exists_in_joins {
                     return ApiResponse {
                         success: false,
                         message: format!(
-                            "concatenate_fields[{}] > fields[{}] > Field '{}' does not exist in entity '{}' or '{}'",
+                            "concatenate_fields[{}] > fields[{}] > Field '{}' does not exist in entity '{}' (normalized: '{}') or in JOIN 'to' fields. Please ensure the field exists in the schema table or is defined in a JOIN.",
                             concat_index, field_index, field, concatenate_field.entity, normalized_entity
                         ),
                         count: 0,
@@ -242,26 +289,130 @@ impl<'a, 'b> Validation<'a, 'b> {
     pub fn validate_group_by(&self) -> ApiResponse {
         // If group_by is None, validation passes
         if let Some(group_by) = &self.request_body.group_by {
-            // Validate that all fields in group_by exist in the main table
+            // Validate that all fields in group_by exist in the appropriate tables
             for (field_index, field) in group_by.fields.iter().enumerate() {
                 let parts: Vec<&str> = field.split('.').collect();
-                let (entity, field_name) = match (parts.get(0), parts.get(1)) {
-                    (Some(&e), Some(&f)) => (e, f),
-                    _ => ("", ""), // Handle invalid format gracefully
-                };
-                let normalized_entity = self.normalize_entity_name(entity);
-                if !field_exists_in_table(&normalized_entity, field_name)
-                    && !field_exists_in_table(entity, field_name)
-                {
-                    return ApiResponse {
-                        success: false,
-                        message: format!(
-                            "group_by > fields[{}] > Field '{}' does not exist in entity '{}' or '{}'",
-                            field_index, field_name, entity, normalized_entity
-                        ),
-                        count: 0,
-                        data: vec![],
-                    };
+
+                match parts.len() {
+                    1 => {
+                        // Field without table prefix (e.g., "id") - defaults to main table
+                        let field_name = parts[0];
+                        if !field_exists_in_table(self.table, field_name) {
+                            return ApiResponse {
+                                success: false,
+                                message: format!(
+                                    "group_by > fields[{}] > Field '{}' does not exist in main table '{}'",
+                                    field_index, field_name, self.table
+                                ),
+                                count: 0,
+                                data: vec![],
+                            };
+                        }
+                    }
+                    2 => {
+                        // Field with table prefix (e.g., "table.id") - must reference existing join or main table
+                        let entity = parts[0];
+                        let field_name = parts[1];
+                        let normalized_entity = self.normalize_entity_name(entity);
+
+                        // Check if entity is the main table
+                        if entity == self.table || normalized_entity == *self.table {
+                            if !field_exists_in_table(self.table, field_name) {
+                                return ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "group_by > fields[{}] > Field '{}' does not exist in main table '{}'",
+                                        field_index, field_name, self.table
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                };
+                            }
+                        } else {
+                            // Check if entity exists in joins
+                            let entity_exists_in_joins =
+                                self.request_body.joins.iter().any(|join| {
+                                    let to_entity = &join.field_relation.to.entity;
+                                    let to_alias = join
+                                        .field_relation
+                                        .to
+                                        .alias
+                                        .as_deref()
+                                        .unwrap_or(to_entity);
+
+                                    entity == to_entity
+                                        || entity == to_alias
+                                        || normalized_entity == *to_entity
+                                        || normalized_entity == to_alias
+                                });
+
+                            if !entity_exists_in_joins {
+                                return ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "group_by > fields[{}] > Entity '{}' does not exist in joins. Available entities: main table '{}' and joined entities from joins",
+                                        field_index, entity, self.table
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                };
+                            }
+
+                            // Find the actual target entity for this alias
+                            let target_entity = self
+                                .request_body
+                                .joins
+                                .iter()
+                                .find_map(|join| {
+                                    let to_entity = &join.field_relation.to.entity;
+                                    let to_alias = join
+                                        .field_relation
+                                        .to
+                                        .alias
+                                        .as_deref()
+                                        .unwrap_or(to_entity);
+
+                                    if entity == to_alias {
+                                        Some(to_entity.clone())
+                                    } else if entity == to_entity {
+                                        Some(to_entity.clone())
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .unwrap_or_else(|| entity.to_string());
+
+                            let normalized_target_entity =
+                                self.normalize_entity_name(&target_entity);
+
+                            // Validate field exists in the target entity (not the alias)
+                            if !field_exists_in_table(&normalized_target_entity, field_name)
+                                && !field_exists_in_table(&target_entity, field_name)
+                            {
+                                return ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "group_by > fields[{}] > Field '{}' does not exist in entity '{}' (target: '{}')",
+                                        field_index, field_name, entity, target_entity
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                };
+                            }
+                        }
+                    }
+                    _ => {
+                        // Invalid field format
+                        return ApiResponse {
+                            success: false,
+                            message: format!(
+                                "group_by > fields[{}] > Invalid field format '{}'. Expected 'field' or 'table.field'",
+                                field_index, field
+                            ),
+                            count: 0,
+                            data: vec![],
+                        };
+                    }
                 }
             }
         }
@@ -472,12 +623,12 @@ impl<'a, 'b> Validation<'a, 'b> {
         for (join_index, join) in self.request_body.joins.iter().enumerate() {
             // Validate join type
             let join_type = join.r#type.to_uppercase();
-            if join_type != "LEFT" && join_type != "SELF" {
+            if !["LEFT", "SELF"].contains(&join_type.as_str()) {
                 return ApiResponse {
                     success: false,
                     message: format!(
                         "joins[{}] > type > Invalid join type: '{}'. Supported types are: LEFT, SELF",
-                        join_index, join.r#type
+                        join_index, join_type
                     ),
                     count: 0,
                     data: vec![],
@@ -486,9 +637,6 @@ impl<'a, 'b> Validation<'a, 'b> {
 
             // Validate field relations exist
             let from_entity = &join.field_relation.from.entity;
-            let from_field = &join.field_relation.from.field;
-            let to_entity = &join.field_relation.to.entity;
-            let to_field = &join.field_relation.to.field;
 
             // For nested joins, validate that the from entity matches the previous join's to entity or alias
             if join.nested && join_index > 0 {
@@ -523,42 +671,35 @@ impl<'a, 'b> Validation<'a, 'b> {
                 };
             }
 
-            // Determine the actual table to validate the from field against
-            let from_table_to_check = if join.nested && join_index > 0 {
-                let previous_join = &self.request_body.joins[join_index - 1];
-                &previous_join.field_relation.to.entity
-            } else {
-                from_entity
-            };
-
-            let normalized_from_table = self.normalize_entity_name(from_table_to_check);
-            if !field_exists_in_table(&normalized_from_table, from_field)
-                && !field_exists_in_table(from_table_to_check, from_field)
-            {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "joins[{}] > field_relation > from > field > Join from field '{}' does not exist in entity '{}' or '{}'",
-                        join_index, from_field, from_table_to_check, normalized_from_table
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
-            }
-
-            let normalized_to_entity = self.normalize_entity_name(to_entity);
-            if !field_exists_in_table(&normalized_to_entity, to_field)
-                && !field_exists_in_table(to_entity, to_field)
-            {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "joins[{}] > field_relation > to > field > Join to field '{}' does not exist in entity '{}' or '{}'",
-                        join_index, to_field, to_entity, normalized_to_entity
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
+            // Ensure the join to and from aliases must be present in pluck object
+            if join_type == "LEFT".to_string() {
+                if let Some(alias) = &join.field_relation.from.alias {
+                    if !self.request_body.pluck_group_object.contains_key(alias) {
+                        return ApiResponse {
+                                success: false,
+                                message: format!(
+                                    "joins[{}] > field_relation > from > alias > Alias '{}' must be present in pluck_group_object",
+                                    join_index, alias
+                                ),
+                                count: 0,
+                                data: vec![],
+                            };
+                    }
+                }
+            } else if join_type == "SELF".to_string() {
+                if let Some(alias) = &join.field_relation.from.alias {
+                    if !self.request_body.pluck_group_object.contains_key(alias) {
+                        return ApiResponse {
+                            success: false,
+                            message: format!(
+                                "joins[{}] > field_relation > from > alias > Alias '{}' must be present in pluck_group_object",
+                                join_index, alias
+                            ),
+                            count: 0,
+                            data: vec![],
+                        };
+                    }
+                }
             }
 
             // Validate that filters are not allowed on 'from' RelationEndpoint
@@ -814,9 +955,16 @@ impl<'a, 'b> Validation<'a, 'b> {
                             .concatenate_fields
                             .iter()
                             .any(|concat_field| {
+                                let normalized_concat_entity =
+                                    self.normalize_entity_name(&concat_field.entity);
+                                let normalized_aliased_entity = concat_field
+                                    .aliased_entity
+                                    .as_ref()
+                                    .map(|alias| self.normalize_entity_name(alias));
+
                                 concat_field.field_name == *field
-                                    && (concat_field.entity == normalized_entity
-                                        || concat_field.aliased_entity.as_ref()
+                                    && (normalized_concat_entity == normalized_entity
+                                        || normalized_aliased_entity.as_ref()
                                             == Some(&normalized_entity))
                             });
 

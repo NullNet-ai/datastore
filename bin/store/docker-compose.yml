@@ -5,7 +5,7 @@ networks:
 
 services:
   timescaledb:
-    image: timescale/timescaledb:latest-pg14
+    image: timescale/timescaledb:latest-pg15
     container_name: timescaledb
     ports:
       - "5432:5432"
@@ -34,10 +34,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Rust/Application Config
-      - RUST_LOG=info
-      - DATABASE_URL=postgresql://postgres:admin@timescaledb:5432/store
-      - REDIS_URL=redis://redis:6379
+      - REDIS_CACHE_PORT=6379
       
       # Application Environment
       - DEBUG=true
@@ -45,7 +42,7 @@ services:
       - OPERATION_TIMEOUT=1000
       
       # Store Service
-      - STORE_URL=http://store:5000
+      - STORE_URL=http://localhost:5000
       
       # Google Places API
       - GOOGLE_PLACES_API_KEY=AIzaSyCNDmLeX_vZYnZolZSRMRZJSSuKLG3s2C8
@@ -71,9 +68,6 @@ services:
       - SOCKET_URL=http://pubsub.events.dnamicro.net
       - SOCKET_USERNAME=admin@dnamicro.com
       - SOCKET_PASSWORD=ch@ng3m3Pl3@s3!!
-    depends_on:
-      - timescaledb
-      - redis
     networks:
       - internal
     volumes:

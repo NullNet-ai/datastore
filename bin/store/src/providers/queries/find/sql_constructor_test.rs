@@ -36,7 +36,7 @@ mod tests {
                 joins: vec![],
                 limit: 10,
                 date_format: "mm/dd/YYYY".to_string(),
-                pluck: vec![],
+                pluck: vec!["id".to_string()],
                 pluck_object: HashMap::new(),
                 pluck_group_object: HashMap::new(),
                 group_advance_filters: vec![],
@@ -216,7 +216,7 @@ mod tests {
         let sql = constructor.construct().unwrap();
 
         println!("  ✓ Verifying SQL structure");
-        assert!(sql.contains("SELECT id FROM contacts"));
+        assert!(sql.contains("SELECT \"contacts\".\"id\" FROM contacts"));
         assert!(sql.contains("LIMIT 10"));
         assert!(sql.contains("WHERE (contacts.tombstone = 0)"));
 

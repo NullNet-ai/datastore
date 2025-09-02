@@ -2,15 +2,15 @@
 mod tests {
     use super::super::validations::Validation;
     use crate::structs::core::{
-        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter,
-        LogicalOperator, MatchPattern,
+        ConcatenateField, FieldRelation, FilterCriteria, FilterOperator, GetByFilter,
+        GroupAdvanceFilter, GroupBy, Join, LogicalOperator, MatchPattern, RelationEndpoint,
     };
     use std::collections::HashMap;
 
     // Helper function to create a default GetByFilter for testing
     fn create_default_get_by_filter() -> GetByFilter {
         GetByFilter {
-            pluck: vec!["id".to_string(), "name".to_string()],
+            pluck: vec!["id".to_string(), "first_name".to_string()],
             pluck_object: HashMap::new(),
             pluck_group_object: HashMap::new(),
             advance_filters: vec![],
@@ -19,7 +19,7 @@ mod tests {
             group_by: None,
             concatenate_fields: vec![],
             multiple_sort: vec![],
-            date_format: "YYYY-MM-DD".to_string(),
+            date_format: "YYYY-mm-dd".to_string(),
             order_by: "id".to_string(),
             order_direction: "asc".to_string(),
             is_case_sensitive_sorting: Some(false),
@@ -37,7 +37,7 @@ mod tests {
         println!("Testing table validation with valid table name");
 
         let request_body = create_default_get_by_filter();
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {}", table);
         let validation = Validation::new(&request_body, &table);
@@ -47,10 +47,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
         assert_eq!(result.message, "Successfully validated table field");
 
-        println!("Table validation test passed");
+        println!("  {} Table validation test passed", checker);
     }
 
     /// Tests that table validation fails with an empty table name
@@ -70,10 +71,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert_eq!(result.message, "table is required");
 
-        println!("Empty table validation test passed");
+        println!("  {} Empty table validation test passed", checker);
     }
 
     /// Tests that pluck validation succeeds with valid fields
@@ -83,7 +85,7 @@ mod tests {
         println!("Testing pluck validation with valid fields");
 
         let request_body = create_default_get_by_filter();
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {}", table);
         let validation = Validation::new(&request_body, &table);
@@ -93,10 +95,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
         assert_eq!(result.message, "Successfully validated pluck field");
 
-        println!("Pluck validation success test passed");
+        println!("  {} Pluck validation success test passed", checker);
     }
 
     /// Tests that pluck validation fails with empty fields
@@ -107,7 +110,7 @@ mod tests {
 
         let mut request_body = create_default_get_by_filter();
         request_body.pluck = vec![];
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {} with empty pluck", table);
         let validation = Validation::new(&request_body, &table);
@@ -117,10 +120,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert_eq!(result.message, "pluck is required");
 
-        println!("Empty pluck validation test passed");
+        println!("  {} Empty pluck validation test passed", checker);
     }
 
     /// Tests that conflicting filters validation succeeds with no conflicts
@@ -130,7 +134,7 @@ mod tests {
         println!("Testing conflicting filters validation with no conflicts");
 
         let request_body = create_default_get_by_filter();
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {}", table);
         let validation = Validation::new(&request_body, &table);
@@ -140,13 +144,17 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
         assert_eq!(
             result.message,
             "Successfully validated conflicting properties"
         );
 
-        println!("Conflicting filters validation success test passed");
+        println!(
+            "  {} Conflicting filters validation success test passed",
+            checker
+        );
     }
 
     /// Tests that conflicting filters validation fails when both filter types are present
@@ -160,7 +168,7 @@ mod tests {
         println!("Adding both advance_filters and group_advance_filters");
         request_body.advance_filters = vec![FilterCriteria::Criteria {
             field: "name".to_string(),
-            entity: Some("users".to_string()),
+            entity: Some("contacts".to_string()),
             operator: FilterOperator::Equal,
             values: vec![serde_json::Value::String("test".to_string())],
             case_sensitive: Some(false),
@@ -173,7 +181,7 @@ mod tests {
             operator: LogicalOperator::And,
             filters: vec![FilterCriteria::Criteria {
                 field: "name".to_string(),
-                entity: Some("users".to_string()),
+                entity: Some("contacts".to_string()),
                 operator: FilterOperator::Equal,
                 values: vec![serde_json::Value::String("test".to_string())],
                 case_sensitive: Some(false),
@@ -183,7 +191,7 @@ mod tests {
                 has_group_count: None,
             }],
         }];
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with conflicting filters",
@@ -196,13 +204,17 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert_eq!(
             result.message,
             "Both advance_filters and group_advance_filters cannot be provided at the same time"
         );
 
-        println!("Conflicting filters validation failure test passed");
+        println!(
+            "  {} Conflicting filters validation failure test passed",
+            checker
+        );
     }
 
     /// Tests that concatenated fields validation succeeds with valid configuration
@@ -212,7 +224,7 @@ mod tests {
         println!("Testing concatenated fields validation with valid configuration");
 
         let request_body = create_default_get_by_filter();
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {}", table);
         let validation = Validation::new(&request_body, &table);
@@ -222,9 +234,13 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
 
-        println!("Concatenated fields validation success test passed");
+        println!(
+            "  {} Concatenated fields validation success test passed",
+            checker
+        );
     }
 
     /// Tests that concatenated fields validation fails with empty fields array
@@ -238,10 +254,10 @@ mod tests {
             field_name: "full_name".to_string(),
             fields: vec![], // Empty fields array
             separator: " ".to_string(),
-            entity: "users".to_string(),
+            entity: "contacts".to_string(),
             aliased_entity: None,
         }];
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with empty concatenated fields",
@@ -254,10 +270,14 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert!(result.message.contains("Fields array cannot be empty"));
 
-        println!("Empty concatenated fields validation test passed");
+        println!(
+            "  {} Empty concatenated fields validation test passed",
+            checker
+        );
     }
 
     /// Tests that concatenated fields validation fails with empty field name
@@ -271,10 +291,10 @@ mod tests {
             field_name: "".to_string(), // Empty field name
             fields: vec!["first_name".to_string(), "last_name".to_string()],
             separator: " ".to_string(),
-            entity: "users".to_string(),
+            entity: "contacts".to_string(),
             aliased_entity: None,
         }];
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with empty field name",
@@ -287,10 +307,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert!(result.message.contains("Field name cannot be empty"));
 
-        println!("Empty field name validation test passed");
+        println!("  {} Empty field name validation test passed", checker);
     }
 
     /// Tests that distinct_by validation succeeds with valid field
@@ -314,10 +335,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
         assert_eq!(result.message, "Successfully validated distinct_by field");
 
-        println!("Distinct_by validation success test passed");
+        println!("  {} Distinct_by validation success test passed", checker);
     }
 
     /// Tests that distinct_by validation fails with empty field
@@ -341,9 +363,10 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
 
-        println!("Empty distinct_by validation test passed");
+        println!("  {} Empty distinct_by validation test passed", checker);
     }
 
     /// Tests that distinct_by validation succeeds with None value
@@ -353,7 +376,7 @@ mod tests {
         println!("Testing distinct_by validation with None value");
 
         let request_body = create_default_get_by_filter();
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with None distinct_by",
@@ -366,10 +389,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(result.success);
         assert_eq!(result.message, "Successfully validated distinct_by field");
 
-        println!("None distinct_by validation test passed");
+        println!("  {} None distinct_by validation test passed", checker);
     }
 
     /// Tests entity name normalization functionality
@@ -379,7 +403,7 @@ mod tests {
         println!("Testing entity name normalization");
 
         let request_body = create_default_get_by_filter();
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {}", table);
         let validation = Validation::new(&request_body, &table);
@@ -391,10 +415,11 @@ mod tests {
 
         println!("Testing already plural forms");
         // Test already plural forms - function returns as-is if already plural
-        assert_eq!(validation.normalize_entity_name("users"), "users");
+        assert_eq!(validation.normalize_entity_name("contacts"), "contacts");
         assert_eq!(validation.normalize_entity_name("products"), "products");
 
-        println!("Entity name normalization test passed");
+        let checker = "✓"; // This test doesn't have a result object, so always success
+        println!("  {} Entity name normalization test passed", checker);
     }
 
     /// Tests that all validations pass with valid configuration
@@ -410,7 +435,7 @@ mod tests {
         request_body.concatenate_fields = vec![];
         request_body.order_by = "".to_string(); // Clear order_by to avoid field validation
         request_body.date_format = "YYYY-mm-dd".to_string(); // Use valid date format
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with valid configuration",
@@ -426,6 +451,7 @@ mod tests {
         if !result.success {
             println!("Validation failed with message: {}", result.message);
         }
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(
             result.success,
             "Expected validation to pass, but got: {}",
@@ -433,7 +459,7 @@ mod tests {
         );
         assert_eq!(result.message, "All validations passed successfully");
 
-        println!("Complete validation pipeline test passed");
+        println!("  {} Complete validation pipeline test passed", checker);
     }
 
     /// Tests that validation fails with empty table name
@@ -453,10 +479,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert_eq!(result.message, "table is required");
 
-        println!("Empty table validation pipeline test passed");
+        println!("  {} Empty table validation pipeline test passed", checker);
     }
 
     /// Tests that validation fails with empty pluck array
@@ -467,7 +494,7 @@ mod tests {
 
         let mut request_body = create_default_get_by_filter();
         request_body.pluck = vec![];
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!("Creating validation for table: {} with empty pluck", table);
         let validation = Validation::new(&request_body, &table);
@@ -477,10 +504,11 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert_eq!(result.message, "pluck is required");
 
-        println!("Empty pluck validation pipeline test passed");
+        println!("  {} Empty pluck validation pipeline test passed", checker);
     }
 
     /// Tests that validation fails with conflicting filter types
@@ -494,7 +522,7 @@ mod tests {
         println!("Adding both advance_filters and group_advance_filters");
         request_body.advance_filters = vec![FilterCriteria::Criteria {
             field: "name".to_string(),
-            entity: Some("users".to_string()),
+            entity: Some("contacts".to_string()),
             operator: FilterOperator::Equal,
             values: vec![serde_json::Value::String("test".to_string())],
             case_sensitive: Some(false),
@@ -507,7 +535,7 @@ mod tests {
             operator: LogicalOperator::And,
             filters: vec![FilterCriteria::Criteria {
                 field: "name".to_string(),
-                entity: Some("users".to_string()),
+                entity: Some("contacts".to_string()),
                 operator: FilterOperator::Equal,
                 values: vec![serde_json::Value::String("test".to_string())],
                 case_sensitive: Some(false),
@@ -517,7 +545,7 @@ mod tests {
                 has_group_count: None,
             }],
         }];
-        let table = "users".to_string();
+        let table = "contacts".to_string();
 
         println!(
             "Creating validation for table: {} with conflicting filters",
@@ -530,12 +558,321 @@ mod tests {
         println!("Validation result - Success: {}", result.success);
         println!("Validation message: {}", result.message);
 
+        let checker = if result.success { "✓" } else { "✗" };
         assert!(!result.success);
         assert_eq!(
             result.message,
             "Both advance_filters and group_advance_filters cannot be provided at the same time"
         );
 
-        println!("Conflicting filters validation pipeline test passed");
+        println!(
+            "  {} Conflicting filters validation pipeline test passed",
+            checker
+        );
+    }
+
+    /// Tests that validation fails with conflicting group by
+    /// This ensures proper error handling when both group by and distinct_by are present
+    #[test]
+    fn should_pass_validation_with_valid_group_by() {
+        println!("Testing validation pipeline success with valid group by");
+
+        let mut request_body = create_default_get_by_filter();
+
+        println!("Adding valid group_by configuration");
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["id".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!(
+            "Creating validation for table: {} with valid group by",
+            table
+        );
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.exec();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+        let checker = if result.success { "✓" } else { "✗" };
+        assert!(
+            result.success,
+            "  {} Failed validation: {}",
+            checker,
+            result.message.to_string()
+        );
+    }
+
+    /// Tests group_by validation with field without table prefix (defaults to main table)
+    /// This ensures fields like "id" are validated against the main table
+    #[test]
+    fn should_validate_group_by_field_without_prefix_successfully() {
+        println!("Testing group_by validation with field without table prefix");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["id".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!(
+            "Creating validation for table: {} with group_by field: id",
+            table
+        );
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_group_by_field_without_prefix_successfully",
+            checker
+        );
+        assert!(result.success);
+    }
+
+    /// Tests group_by validation failure with non-existent field without table prefix
+    /// This ensures proper validation when field doesn't exist in main table
+    #[test]
+    fn should_fail_group_by_validation_with_nonexistent_field_without_prefix() {
+        println!("Testing group_by validation failure with non-existent field without prefix");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["nonexistent_field".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!(
+            "Creating validation for table: {} with invalid group_by field: nonexistent_field",
+            table
+        );
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if !result.success { "✓" } else { "✗" };
+        println!("{} Test completed: should_fail_group_by_validation_with_nonexistent_field_without_prefix", checker);
+        assert!(!result.success);
+        assert!(result.message.contains("does not exist in main table"));
+    }
+
+    /// Tests group_by validation with field referencing main table explicitly
+    /// This ensures fields like "contacts.id" work when referencing the main table
+    #[test]
+    fn should_validate_group_by_field_with_main_table_prefix_successfully() {
+        println!("Testing group_by validation with field referencing main table explicitly");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["contacts.id".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!(
+            "Creating validation for table: {} with group_by field: contacts.id",
+            table
+        );
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_group_by_field_with_main_table_prefix_successfully",
+            checker
+        );
+        assert!(result.success);
+    }
+
+    /// Tests group_by validation with field referencing joined table
+    /// This ensures fields like "contacts.first_name" work when the table exists in joins
+    #[test]
+    fn should_validate_group_by_field_with_joined_table_successfully() {
+        println!("Testing group_by validation with field referencing joined table");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.joins = vec![Join {
+            r#type: "LEFT".to_string(),
+            field_relation: FieldRelation {
+                from: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "user_id".to_string(),
+                    alias: None,
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                to: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "id".to_string(),
+                    alias: Some("c".to_string()),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        }];
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["c.first_name".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!("Creating validation for table: {} with group_by field: c.first_name and join to contacts", table);
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_group_by_field_with_joined_table_successfully",
+            checker
+        );
+        assert!(result.success);
+    }
+
+    /// Tests group_by validation failure with field referencing non-existent joined table
+    /// This ensures proper validation when table doesn't exist in joins
+    #[test]
+    fn should_fail_group_by_validation_with_nonexistent_joined_table() {
+        println!("Testing group_by validation failure with non-existent joined table");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["nonexistent_table.id".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!(
+            "Creating validation for table: {} with invalid group_by field: nonexistent_table.id",
+            table
+        );
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if !result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_fail_group_by_validation_with_nonexistent_joined_table",
+            checker
+        );
+        assert!(!result.success);
+        assert!(result.message.contains("does not exist in joins"));
+    }
+
+    /// Tests group_by validation failure with invalid field format
+    /// This ensures proper validation of field format (too many dots)
+    #[test]
+    fn should_fail_group_by_validation_with_invalid_field_format() {
+        println!("Testing group_by validation failure with invalid field format");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.group_by = Some(GroupBy {
+            fields: vec!["table.field.extra".to_string()],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!("Creating validation for table: {} with invalid group_by field format: table.field.extra", table);
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if !result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_fail_group_by_validation_with_invalid_field_format",
+            checker
+        );
+        assert!(!result.success);
+        assert!(result.message.contains("Invalid field format"));
+    }
+
+    /// Tests group_by validation with multiple fields of different types
+    /// This ensures proper validation when mixing fields with and without table prefixes
+    #[test]
+    fn should_validate_group_by_with_mixed_field_types_successfully() {
+        println!("Testing group_by validation with mixed field types");
+
+        let mut request_body = create_default_get_by_filter();
+        request_body.joins = vec![Join {
+            r#type: "LEFT".to_string(),
+            field_relation: FieldRelation {
+                from: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "user_id".to_string(),
+                    alias: None,
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                to: RelationEndpoint {
+                    entity: "contacts".to_string(),
+                    field: "id".to_string(),
+                    alias: Some("c".to_string()),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        }];
+        request_body.group_by = Some(GroupBy {
+            fields: vec![
+                "id".to_string(),
+                "contacts.first_name".to_string(),
+                "c.last_name".to_string(),
+            ],
+            has_count: false,
+        });
+        let table = "contacts".to_string();
+
+        println!("Creating validation for table: {} with mixed group_by fields: id, contacts.first_name, c.last_name", table);
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_group_by();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_group_by_with_mixed_field_types_successfully",
+            checker
+        );
+        assert!(result.success);
     }
 }

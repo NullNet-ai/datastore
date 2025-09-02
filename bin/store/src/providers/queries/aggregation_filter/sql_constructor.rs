@@ -36,13 +36,13 @@ pub trait AggregationQueryFilter {
     }
 }
 
-pub struct AggregationSQLConstructor<T: QueryFilter> {
+pub struct AggregationSQLConstructor<T: QueryFilter + Clone> {
     sql_constructor: SQLConstructor<T>,
 }
 
 impl<T> AggregationSQLConstructor<T>
 where
-    T: AggregationQueryFilter + QueryFilter,
+    T: AggregationQueryFilter + QueryFilter + Clone,
 {
     pub fn new(request_body: T, table: String, is_root: bool, timezone: Option<String>) -> Self {
         Self {
@@ -227,6 +227,7 @@ impl AggregationQueryFilter for AggregationFilter {
     }
 }
 
+#[derive(Clone)]
 pub struct AggregationFilterWrapper {
     pub request: crate::generated::store::AggregationFilterRequest,
     pub converted_filters: Vec<FilterCriteria>,
