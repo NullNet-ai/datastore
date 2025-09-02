@@ -8,16 +8,10 @@
     "last_name"
   ],
   "pluck_object": {
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
-    "created_by_account_organizations": [
+    "created_by": [
       "id",
-      "contact_id"
-    ],
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
+      "first_name",
+      "last_name"
     ],
     "contacts": [
       "id",
@@ -36,12 +30,14 @@
       "updated_by",
       "previous_status"
     ],
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
+    "contact_phone_numbers": [
+      "phone_number_raw"
     ],
-    "created_by": [
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "updated_by": [
       "id",
       "first_name",
       "last_name"
@@ -49,6 +45,10 @@
     "contact_emails": [
       "email",
       "is_primary"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
     ]
   },
   "pluck_group_object": {
@@ -266,7 +266,7 @@
       ],
       "field_name": "created_date_time",
       "separator": " ",
-      "entity": "contact",
+      "entity": "contacts",
       "aliased_entity": null
     },
     {
@@ -276,7 +276,7 @@
       ],
       "field_name": "updated_date_time",
       "separator": " ",
-      "entity": "contact",
+      "entity": "contacts",
       "aliased_entity": null
     }
   ],

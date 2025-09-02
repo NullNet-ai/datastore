@@ -1550,13 +1550,13 @@ mod tests {
                     );
 
                     if concat_field.field_name == "created_date_time" {
-                        assert_eq!(concat_field.entity, "contact"); // This should be singular in the payload
+                        assert_eq!(concat_field.entity, "contacts"); // This should be singular in the payload
                         assert_eq!(concat_field.fields, vec!["created_date", "created_time"]);
                         found_created_date_time = true;
                     }
 
                     if concat_field.field_name == "updated_date_time" {
-                        assert_eq!(concat_field.entity, "contact"); // This should be singular in the payload
+                        assert_eq!(concat_field.entity, "contacts"); // This should be singular in the payload
                         assert_eq!(concat_field.fields, vec!["updated_date", "updated_time"]);
                         found_updated_date_time = true;
                     }
