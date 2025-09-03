@@ -8,27 +8,11 @@
     "last_name"
   ],
   "pluck_object": {
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
     "contact_emails": [
       "email",
       "is_primary"
     ],
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
     "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "updated_by": [
       "id",
       "first_name",
       "last_name"
@@ -49,13 +33,25 @@
       "created_by",
       "updated_by",
       "previous_status"
+    ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
     ]
   },
   "pluck_group_object": {
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ],
     "contact_phone_numbers": [
       "phone_number_raw"
     ]
@@ -70,10 +66,7 @@
         "Super Ad"
       ],
       "case_sensitive": false,
-      "parse_as": "",
-      "match_pattern": null,
-      "is_search": null,
-      "has_group_count": null
+      "parse_as": ""
     },
     {
       "type": "operator",
@@ -89,10 +82,7 @@
         "Draft"
       ],
       "case_sensitive": false,
-      "parse_as": "",
-      "match_pattern": null,
-      "is_search": null,
-      "has_group_count": null
+      "parse_as": ""
     }
   ],
   "group_advance_filters": [],
@@ -251,16 +241,6 @@
     },
     {
       "fields": [
-        "first_name",
-        "last_name"
-      ],
-      "field_name": "full_name",
-      "separator": " ",
-      "entity": "contacts",
-      "aliased_entity": "updated_by"
-    },
-    {
-      "fields": [
         "created_date",
         "created_time"
       ],
@@ -278,6 +258,15 @@
       "separator": " ",
       "entity": "contacts",
       "aliased_entity": null
+    },
+    {
+      "fields": [
+        "email",
+        "status"
+      ],
+      "field_name": "updated_date_time",
+      "separator": " ",
+      "entity": "contact_emails"
     }
   ],
   "multiple_sort": [

@@ -6,6 +6,10 @@
     "status"
   ],
   "pluck_object": {
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
     "created_by": [
       "id",
       "first_name",
@@ -16,21 +20,27 @@
       "first_name",
       "last_name"
     ],
-    "contacts": [
-      "id",
-      "first_name",
-      "last_name",
-      "status",
-      "created_by",
-      "updated_by"
-    ],
     "updated_by_account_organizations": [
       "id",
       "contact_id"
     ],
-    "created_by_account_organizations": [
+    "contact_emails": [
+      "email",
+      "is_primary"
+    ],
+    "contacts": [
       "id",
-      "contact_id"
+      "code",
+      "categories",
+      "organization_id",
+      "first_name",
+      "middle_name",
+      "last_name",
+      "status",
+      "created_date",
+      "created_time",
+      "updated_date",
+      "updated_time"
     ]
   },
   "pluck_group_object": {},
