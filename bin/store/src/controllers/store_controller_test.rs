@@ -1092,10 +1092,7 @@ mod tests {
                 let mut has_concat_filter = false;
                 for filter in &payload.advance_filters {
                     match filter {
-                        crate::structs::core::FilterCriteria::Criteria {
-                            field,
-                            ..
-                        } => {
+                        crate::structs::core::FilterCriteria::Criteria { field, .. } => {
                             if concat_field_names.contains(field) {
                                 has_concat_filter = true;
                                 break;
@@ -1105,7 +1102,10 @@ mod tests {
                     }
                 }
 
-                assert!(has_concat_filter, "Should have a concatenated field filter.");
+                assert!(
+                    has_concat_filter,
+                    "Should have a concatenated field filter."
+                );
 
                 // Verify advance filters
                 // let mut has_created_date_time_filter = false;
@@ -1155,6 +1155,15 @@ mod tests {
                             "Aliased entity {} should be a joined entity",
                             aliased_entity
                         );
+                        let all_fields_in_pluck_object = concat_field.fields.iter().all(|field| {
+                            payload.pluck_object[aliased_entity.as_str()].contains(field)
+                        });
+                        assert!(
+                                all_fields_in_pluck_object,
+                                "All concatenated fields should exist in pluck object of entity {}: {:?}",
+                                aliased_entity,
+                                concat_field.fields
+                            );
                         entities_with_concat.push(aliased_entity.clone());
                     } else {
                         let is_joined = joined_entities
@@ -1166,6 +1175,44 @@ mod tests {
                                 is_joined,
                                 "Entity {} should be a joined entity",
                                 concat_field.entity
+                            );
+                            // Check if all fields in concat_field.fields exist in pluck
+                            let all_fields_in_pluck_object =
+                                concat_field.fields.iter().all(|field| {
+                                    payload.pluck_object[&concat_field.entity].contains(field)
+                                });
+                            assert!(
+                                all_fields_in_pluck_object,
+                                "All concatenated fields should exist in pluck object of entity {}: {:?}",
+                                concat_field.entity,
+                                concat_field.fields
+                            );
+                        } else {
+                            let has_joins = joined_entities.len() > 0;
+                            let all_fields_in_pluck = if has_joins {
+                                // Combine payload.pluck with payload.pluck_object for the specific entity
+                                let mut combined_fields = payload.pluck.clone();
+                                if let Some(entity_fields) =
+                                    payload.pluck_object.get(&concat_field.entity)
+                                {
+                                    combined_fields.extend(entity_fields.clone());
+                                }
+                                concat_field
+                                    .fields
+                                    .iter()
+                                    .all(|field| combined_fields.contains(field))
+                            } else {
+                                concat_field
+                                    .fields
+                                    .iter()
+                                    .all(|field| payload.pluck.contains(field))
+                            };
+
+                            assert!(
+                                all_fields_in_pluck,
+                                "All concatenated fields should exist in pluck{}: {:?}",
+                                if has_joins { " or pluck_object" } else { "" },
+                                concat_field.fields
                             );
                         }
                         entities_with_concat.push(concat_field.entity.clone());
@@ -1194,10 +1241,12 @@ mod tests {
 
                             if let Some(entity) = entity {
                                 if is_field_concat {
-                                    let is_valid_concat = payload
-                                        .concatenate_fields
-                                        .iter()
-                                        .any(|f| (f.aliased_entity.as_ref().unwrap_or(&f.entity) == entity) && f.field_name == *field);
+                                    let is_valid_concat =
+                                        payload.concatenate_fields.iter().any(|f| {
+                                            (f.aliased_entity.as_ref().unwrap_or(&f.entity)
+                                                == entity)
+                                                && f.field_name == *field
+                                        });
 
                                     assert!(
                                         is_valid_concat,
@@ -1915,5 +1964,320 @@ mod tests {
         }
 
         println!("  ✓ contacts_with_group_by_has_count_issue_with_aliases scenario test completed");
+    }
+
+    /// Tests HTTP request to /filter endpoint with concatenated fields without joins
+    /// This scenario tests concatenation of fields from the main table only (no joins required)
+    #[tokio::test]
+    async fn should_use_contacts_filter_concatenated_fields_without_join_scenario() {
+        println!("Testing contacts_filter_concatenated_fields_without_join payload scenario with HTTP request...");
+
+        // First perform login to get authentication
+        let auth_response = perform_login().await;
+        if !auth_response.server_available {
+            println!("  ⚠ Server not available, skipping HTTP test");
+            return;
+        }
+
+        match load_payload_scenario("contacts_filter_concatenated_fields_without_join") {
+            Ok(payload) => {
+                println!("  ✓ Successfully loaded contacts_filter_concatenated_fields_without_join scenario");
+
+                println!("  ✓ Payload fields: {:?}", payload.pluck);
+                println!("  ✓ Filter count: {}", payload.advance_filters.len());
+                println!(
+                    "  ✓ Concatenate fields count: {}",
+                    payload.concatenate_fields.len()
+                );
+                println!("  ✓ Joins count: {}", payload.joins.len());
+
+                let main_table = "contacts";
+                // Validate payload structure
+                assert_eq!(
+                    payload.pluck,
+                    vec![
+                        "id",
+                        "categories",
+                        "organization_id",
+                        "first_name",
+                        "middle_name",
+                        "last_name",
+                        "created_date",
+                        "created_time"
+                    ]
+                );
+                assert_eq!(payload.limit, 100);
+                assert_eq!(payload.offset, 0);
+                assert!(
+                    payload.advance_filters.len() > 0,
+                    "Should have an advance_filters parameter."
+                );
+
+                assert!(
+                    payload.concatenate_fields.len() > 0,
+                    "Should have a concatenate_fields parameter."
+                );
+
+                // Verify that this scenario has no joins (testing concatenation without joins)
+                assert_eq!(
+                    payload.joins.len(),
+                    0,
+                    "This scenario should not have any joins"
+                );
+
+                // Verify concatenate fields
+                let concat_field_names: Vec<String> = payload
+                    .concatenate_fields
+                    .iter()
+                    .map(|f| f.field_name.clone())
+                    .collect();
+
+                assert!(
+                    concat_field_names.len() > 0,
+                    "Should have fields to concatenate."
+                );
+
+                // Verify that concatenated fields are used in filters
+                let mut has_concat_filter = false;
+                for filter in &payload.advance_filters {
+                    match filter {
+                        crate::structs::core::FilterCriteria::Criteria { field, .. } => {
+                            if concat_field_names.contains(field) {
+                                has_concat_filter = true;
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                assert!(
+                    has_concat_filter,
+                    "Should have a concatenated field filter."
+                );
+
+                // Since there are no joins, all concatenated fields should be from the main table
+                for concat_field in &payload.concatenate_fields {
+                    assert!(
+                        !concat_field.field_name.trim().is_empty(),
+                        "Concatenating fields should have a name."
+                    );
+                    assert!(
+                        concat_field.fields.len() > 1,
+                        "Should have two or more fields to concatenate."
+                    );
+                    assert!(
+                        !concat_field.separator.is_empty(),
+                        "Concatenating fields should have a separator."
+                    );
+
+                    assert!(
+                        concat_field.aliased_entity.is_none(),
+                        "Concatenating fields on main table doesn't need aliased_entity input."
+                    );
+                    // Verify that all concatenated fields are from the main table (no joins)
+                    assert_eq!(
+                        concat_field.entity, main_table,
+                        "All concatenated fields should be from the main table '{}', found '{}'",
+                        main_table, concat_field.entity
+                    );
+
+                    // Check if all fields in concat_field.fields exist in pluck
+                    let all_fields_in_pluck = concat_field
+                        .fields
+                        .iter()
+                        .all(|field| payload.pluck.contains(field));
+                    assert!(
+                        all_fields_in_pluck,
+                        "All concatenated fields should exist in pluck: {:?}",
+                        concat_field.fields
+                    );
+                }
+
+                // Validate filters reference concatenated fields correctly
+                for filter in &payload.advance_filters {
+                    match filter {
+                        crate::structs::core::FilterCriteria::Criteria {
+                            field, entity, ..
+                        } => {
+                            let is_field_in_pluck = payload.pluck.contains(field);
+                            let is_field_concat = concat_field_names.contains(field);
+
+                            assert!(
+                                is_field_in_pluck || is_field_concat,
+                                "Field {} should be in pluck or concatenate_fields",
+                                field
+                            );
+
+                            if let Some(entity) = entity {
+                                if is_field_concat {
+                                    let is_valid_concat = payload
+                                        .concatenate_fields
+                                        .iter()
+                                        .any(|f| f.entity == *entity && f.field_name == *field);
+
+                                    assert!(
+                                        is_valid_concat,
+                                        "Field {} should be concatenated for entity {}",
+                                        field, entity
+                                    );
+                                }
+                            }
+                        }
+                        crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                            println!("  ✓ Found logical operator: {:?}", operator);
+                        }
+                    }
+                }
+
+                // Convert GetByFilter to JSON for SQL generation testing
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
+                // Test SQL generation first
+                match get_raw_query(&payload_json, get_table_name(), true, None) {
+                    Ok(sql) => {
+                        println!("  ✓ SQL generated successfully");
+
+                        // Write SQL to file for inspection
+                        if let Err(e) = write_sql_to_file(
+                            &sql,
+                            "contacts_filter_concatenated_fields_without_join_scenario",
+                        ) {
+                            println!("  ⚠ Failed to write SQL to file: {}", e);
+                        }
+
+                        // Validate SQL structure for concatenated fields without joins
+                        assert!(sql.contains("SELECT"), "SQL should contain SELECT");
+                        assert!(sql.contains("FROM"), "SQL should contain FROM");
+                        assert!(sql.contains("contacts"), "SQL should query contacts table");
+                        assert!(
+                            sql.contains("WHERE") || sql.contains("where"),
+                            "SQL should contain WHERE clause"
+                        );
+                        // This scenario should NOT contain JOINs
+                        assert!(
+                            !sql.contains("JOIN") && !sql.contains("join"),
+                            "SQL should NOT contain JOIN for this scenario"
+                        );
+                        assert!(
+                            sql.contains("CONCAT") || sql.contains("concat") || sql.contains("||"),
+                            "SQL should contain concatenation"
+                        );
+                        assert!(
+                            sql.contains("full_name"),
+                            "SQL should include full_name concatenated field"
+                        );
+                        assert!(
+                            sql.contains("created_date_time"),
+                            "SQL should include created_date_time concatenated field"
+                        );
+                        assert!(
+                            sql.contains("LIMIT") || sql.contains("limit"),
+                            "SQL should contain LIMIT clause"
+                        );
+
+                        println!("  ✓ SQL validation checks passed for concatenated fields without joins query");
+
+                        // Test query execution (optional, may fail in offline mode)
+                        match execute_raw_sql_query(&sql).await {
+                            Ok(sql_results) => {
+                                println!(
+                                    "  ✓ SQL query executed successfully with {} results",
+                                    sql_results.len()
+                                );
+                                if !sql_results.is_empty() {
+                                    let formatted_table = format_response_as_table(
+                                        &serde_json::json!({"data": sql_results}).to_string(),
+                                    );
+                                    println!("SQL Results:");
+                                    println!("{}", formatted_table);
+                                }
+                            }
+                            Err(e) => {
+                                println!("  ⚠ SQL query execution failed (acceptable for offline testing): {}", e);
+                            }
+                        }
+                    }
+                    Err(sql_err) => {
+                        println!("  ✗ SQL generation failed: {}", sql_err);
+                        panic!("SQL generation should not fail for valid payload");
+                    }
+                }
+
+                // Test HTTP request to /filter endpoint
+                match make_filter_http_request(&payload, &get_table_name(), &auth_response).await {
+                    Ok(response) => {
+                        println!("  ✓ HTTP request successful");
+
+                        // Validate response structure
+                        if let Some(success) = response.get("success").and_then(|v| v.as_bool()) {
+                            assert!(success, "Response should indicate success");
+                            println!("  ✓ Response indicates success");
+                        }
+
+                        if let Some(data) = response.get("data").and_then(|v| v.as_array()) {
+                            println!("  ✓ Received {} records", data.len());
+
+                            // Validate that returned records contain expected fields
+                            if !data.is_empty() {
+                                let first_record = &data[0];
+
+                                // Check for basic contact fields
+                                if first_record.get("id").is_some() {
+                                    println!("  ✓ Record contains id field");
+                                }
+                                if first_record.get("first_name").is_some() {
+                                    println!("  ✓ Record contains first_name field");
+                                }
+                                if first_record.get("last_name").is_some() {
+                                    println!("  ✓ Record contains last_name field");
+                                }
+                                if first_record.get("categories").is_some() {
+                                    println!("  ✓ Record contains categories field");
+                                }
+                                if first_record.get("organization_id").is_some() {
+                                    println!("  ✓ Record contains organization_id field");
+                                }
+                                if first_record.get("created_date").is_some() {
+                                    println!("  ✓ Record contains created_date field");
+                                }
+                                if first_record.get("created_time").is_some() {
+                                    println!("  ✓ Record contains created_time field");
+                                }
+
+                                // Check for concatenated fields
+                                if first_record.get("full_name").is_some() {
+                                    println!("  ✓ Record contains concatenated full_name field");
+                                }
+                                if first_record.get("created_date_time").is_some() {
+                                    println!(
+                                        "  ✓ Record contains concatenated created_date_time field"
+                                    );
+                                }
+
+                                let formatted_table =
+                                    format_response_as_table(&response.to_string());
+                                println!("{}", formatted_table);
+                            }
+                        }
+
+                        if let Some(message) = response.get("message").and_then(|v| v.as_str()) {
+                            println!("  ✓ Response message: {}", message);
+                        }
+                    }
+                    Err(e) => {
+                        display_error_response(&e);
+                        println!("  ⚠ HTTP request failed: {}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_filter_concatenated_fields_without_join scenario test completed");
     }
 }

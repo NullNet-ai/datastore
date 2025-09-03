@@ -8,14 +8,12 @@
     "last_name"
   ],
   "pluck_object": {
-    "contact_emails": [
-      "email",
-      "is_primary"
+    "contact_phone_numbers": [
+      "phone_number_raw"
     ],
-    "created_by": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name"
+      "contact_id"
     ],
     "contacts": [
       "id",
@@ -39,16 +37,19 @@
       "first_name",
       "last_name"
     ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
     "created_by_account_organizations": [
       "id",
       "contact_id"
     ],
-    "updated_by_account_organizations": [
+    "contact_emails": [
+      "email",
+      "is_primary",
+      "status"
+    ],
+    "created_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "last_name"
     ]
   },
   "pluck_group_object": {
@@ -66,7 +67,10 @@
         "Super Ad"
       ],
       "case_sensitive": false,
-      "parse_as": ""
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
     },
     {
       "type": "operator",
@@ -82,7 +86,10 @@
         "Draft"
       ],
       "case_sensitive": false,
-      "parse_as": ""
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
     }
   ],
   "group_advance_filters": [],
@@ -266,7 +273,8 @@
       ],
       "field_name": "updated_date_time",
       "separator": " ",
-      "entity": "contact_emails"
+      "entity": "contact_emails",
+      "aliased_entity": null
     }
   ],
   "multiple_sort": [
