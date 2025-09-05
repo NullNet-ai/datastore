@@ -130,6 +130,7 @@ impl StartupManager {
                 "Phase 5: Message and queue services",
             )
             .await;
+        
         self.setup_messaging_services().await?;
 
         let elapsed = self.start_time.unwrap().elapsed();
