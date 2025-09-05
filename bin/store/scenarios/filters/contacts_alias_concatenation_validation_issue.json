@@ -10,16 +10,16 @@
       "id",
       "contact_id"
     ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
     "updated_by_account_organizations": [
       "id",
       "contact_id"
     ],
     "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "updated_by": [
       "id",
       "first_name",
       "last_name"
