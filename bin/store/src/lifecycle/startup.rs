@@ -119,6 +119,7 @@ impl StartupManager {
                 "Phase 4: Background services initialization",
             )
             .await;
+
         self.initialize_background_services().await?;
 
         // Phase 5: Message and queue services
@@ -130,7 +131,7 @@ impl StartupManager {
                 "Phase 5: Message and queue services",
             )
             .await;
-        
+
         self.setup_messaging_services().await?;
 
         let elapsed = self.start_time.unwrap().elapsed();

@@ -5,6 +5,8 @@ use super::shutdown::ShutdownManager;
 use super::startup::StartupManager;
 use super::state::{ComponentStatus, LifecyclePhase, StateManager};
 use crate::config::core::EnvConfig;
+use crate::database::db;
+use crate::utils::helpers::parse_command_args;
 use log::info;
 use std::sync::Arc;
 
@@ -128,6 +130,9 @@ impl LifecycleManager {
         // Setup shutdown callback before starting runtime
         self.setup_shutdown_callback();
 
+        // Handle database operations
+        db::handle_database_operations(&parse_command_args()).await;
+
         match self.execute_runtime().await {
             Ok(_) => {
                 self.logger
@@ -203,6 +208,7 @@ impl LifecycleManager {
             .await;
 
         info!("[LIFECYCLE] Application lifecycle completed");
+
         Ok(())
     }
 

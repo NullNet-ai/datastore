@@ -70,3 +70,9 @@ pub struct LoginResponse {
     pub account_organization_id: Option<String>,
     pub session_id: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VerifyPasswordParams {
+    pub account_id: String,
+    pub password: String,
+}

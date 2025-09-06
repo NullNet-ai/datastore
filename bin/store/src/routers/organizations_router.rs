@@ -27,6 +27,10 @@ pub fn configure_token_routes(cfg: &mut ServiceConfig) {
             .route(
                 "/verify",
                 web::post().to(OrganizationsController::verify_token),
-            ),
+            )
+            .service(web::scope("/api/password").wrap(SessionMiddleware).route(
+                "/verify",
+                web::post().to(OrganizationsController::verify_password),
+            )),
     );
 }
