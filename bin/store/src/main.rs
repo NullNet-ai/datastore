@@ -57,6 +57,7 @@ async fn main() -> std::io::Result<()> {
     let _args: Vec<String> = env::args().collect();
     if _args.contains(&"--init-db".to_string()) {
         old_main::bootstrap().await?;
+        return Ok(());
     } else {
         // Initialize basic logging first
         initialize_logging_and_cache(&parse_env_config());
