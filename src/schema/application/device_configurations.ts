@@ -30,6 +30,8 @@ export const table = pgTable(
     raw_content: text('raw_content'),
     // timestamp: timestamp('timestamp', { withTimezone: true }),
     config_version: integer('config_version'),
+    tables: text('tables').array(),
+    chains: text('chains').array(),
   },
   config,
 );
