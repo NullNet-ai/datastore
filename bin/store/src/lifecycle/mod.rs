@@ -12,4 +12,4 @@ pub mod shutdown_callback_test;
 pub mod shutdown_integration_test;
 
 // old bootstrap
-pub mod old_main;
+pub mod bootstrap;

@@ -14,7 +14,6 @@ pub async fn initialize(
 ) -> Result<(), ApiError> {
     cache.get("test");
 
-    println!("@@@@@@@@@{:?}", initializer_type);
     match initializer_type {
         EInitializer::SYSTEM_CODE_CONFIG => {
             // Initialize code prefix

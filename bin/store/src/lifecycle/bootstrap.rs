@@ -82,7 +82,7 @@ fn run_build_script() -> std::io::Result<()> {
     Ok(())
 }
 
-pub async fn bootstrap() -> std::io::Result<()> {
+pub async fn exec() -> std::io::Result<()> {
     dotenv().ok();
 
     let (s3_client, bucket_name) = match providers::storage::initialize().await {
