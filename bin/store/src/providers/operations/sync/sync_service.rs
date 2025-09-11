@@ -25,7 +25,7 @@ use super::transport::transport_driver::PostOpts;
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
-    
+
     let mut conn = db::get_async_connection().await;
 
     let messages: Vec<CrdtMessageModel> = conn
@@ -40,7 +40,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
                             Box::new(format!("Failed to create messages: {}", e)),
                         )
                     })?;
-                
+
                 if messages.is_empty() {
                     log::warn!("create_messages returned empty vector");
                 }

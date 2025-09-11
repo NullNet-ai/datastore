@@ -21,7 +21,7 @@ impl GlobalOrganizationInitializer {
         let default_organization_admin_password =
             std::env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD")
                 .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
-       
+
         // Create default account setup
         let default_account_setup = Register {
             account_type: Some(AccountType::Contact),
