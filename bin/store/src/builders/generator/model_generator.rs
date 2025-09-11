@@ -167,6 +167,7 @@ impl ModelGenerator {
 
         // Handle serde_json types
         if rust_type.contains("Value") || rust_type.contains("serde_json::") {
+            dependencies.push("#[allow(unused_imports)]".to_string());
             dependencies.push("use serde_json::Value;".to_string());
         }
 
