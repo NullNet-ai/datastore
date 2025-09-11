@@ -14,7 +14,7 @@ mod routers;
 mod structs;
 mod utils;
 use crate::builders::generator::generator_service;
-use crate::lifecycle::old_main;
+use crate::lifecycle::old_bootstrap;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import
 use crate::database::db;
@@ -53,10 +53,9 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     // Parse configuration
     let args = parse_command_args();
-    // TODO: Old bootstrap must be depracated after fixing the issues in initializers with lifecycle
     let _args: Vec<String> = env::args().collect();
     if _args.contains(&"--init-db".to_string()) {
-        old_main::bootstrap().await?;
+        old_bootstrap::bootstrap().await?;
         return Ok(());
     } else {
         // Initialize basic logging first
@@ -65,8 +64,6 @@ async fn main() -> std::io::Result<()> {
         // Handle code generation (exits if any generation flags are set)
         generator_service::handle_code_generation(&args).await;
 
-        // Handle database operations
-        // db::handle_database_operations(&args).await;
         bootstrap().await?;
     }
     Ok(())

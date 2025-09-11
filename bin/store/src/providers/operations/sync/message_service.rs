@@ -14,9 +14,6 @@ pub async fn create_messages(
     dataset: &String,
     operation: String,
 ) -> Result<Vec<CrdtMessageModel>, DieselError> {
-    println!("@@@record: {:?}", record);
-    println!("@@operation: {:?}", operation);
-    println!("@@dataset: {}", dataset);
     let object = record.as_object().expect("Expected a JSON object");
 
     let row = object
