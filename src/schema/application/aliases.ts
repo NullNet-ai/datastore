@@ -16,6 +16,9 @@ const fields = {
   description: text('description'),
   // timestamp: timestamp('timestamp', { withTimezone: true }),
   alias_status: text('alias_status'),
+
+  table: text('table'),
+  family: text('family'),
 };
 
 const config = (table) => ({

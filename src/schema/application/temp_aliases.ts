@@ -1,9 +1,4 @@
-import {
-  AnyPgColumn,
-  pgTable,
-  text,
-  primaryKey,
-} from 'drizzle-orm/pg-core';
+import { AnyPgColumn, pgTable, text, primaryKey } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -28,6 +23,9 @@ export const table = pgTable(
     name: text('name').unique(),
     description: text('description'),
     alias_status: text('alias_status'),
+
+    table: text('table'),
+    family: text('family'),
   },
   config,
 );
