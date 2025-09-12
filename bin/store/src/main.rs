@@ -79,6 +79,7 @@ async fn bootstrap_with_lifecycle() -> std::io::Result<()> {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    
     dotenv().ok();
     // Parse configuration
     let args = parse_command_args();
