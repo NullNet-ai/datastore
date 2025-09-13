@@ -1,0 +1,89 @@
+{
+  "pluck": [
+    "id",
+    "categories",
+    "organization_id",
+    "first_name",
+    "middle_name",
+    "last_name",
+    "created_date",
+    "created_time"
+  ],
+  "pluck_object": {},
+  "pluck_group_object": {},
+  "advance_filters": [
+    {
+      "type": "criteria",
+      "field": "full_name",
+      "operator": "like",
+      "values": [
+        "Jean2"
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
+    },
+    {
+      "type": "operator",
+      "operator": "and"
+    },
+    {
+      "type": "criteria",
+      "field": "created_date_time",
+      "operator": "like",
+      "values": [
+        "08/26/2025"
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
+    }
+  ],
+  "group_advance_filters": [],
+  "joins": [],
+  "group_by": {
+    "fields": [],
+    "has_count": false
+  },
+  "concatenate_fields": [
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
+    },
+    {
+      "fields": [
+        "created_date",
+        "created_time"
+      ],
+      "field_name": "created_date_time",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
+    }
+  ],
+  "multiple_sort": [
+    {
+      "by_field": "status",
+      "by_direction": "asc",
+      "is_case_sensitive_sorting": false
+    }
+  ],
+  "date_format": "mm/dd/YYYY",
+  "order_by": "id",
+  "order_direction": "asc",
+  "is_case_sensitive_sorting": false,
+  "offset": 0,
+  "limit": 100,
+  "distinct_by": "",
+  "timezone": null
+}

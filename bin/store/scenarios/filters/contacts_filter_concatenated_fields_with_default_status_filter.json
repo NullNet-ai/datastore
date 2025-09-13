@@ -8,26 +8,12 @@
     "last_name"
   ],
   "pluck_object": {
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
     "contact_phone_numbers": [
       "phone_number_raw"
     ],
-    "updated_by": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name"
+      "contact_id"
     ],
     "contacts": [
       "id",
@@ -46,9 +32,24 @@
       "updated_by",
       "previous_status"
     ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
     "contact_emails": [
       "email",
-      "is_primary"
+      "is_primary",
+      "status"
+    ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name"
     ]
   },
   "pluck_group_object": {
@@ -251,16 +252,6 @@
     },
     {
       "fields": [
-        "first_name",
-        "last_name"
-      ],
-      "field_name": "full_name",
-      "separator": " ",
-      "entity": "contacts",
-      "aliased_entity": "updated_by"
-    },
-    {
-      "fields": [
         "created_date",
         "created_time"
       ],
@@ -277,6 +268,16 @@
       "field_name": "updated_date_time",
       "separator": " ",
       "entity": "contacts",
+      "aliased_entity": null
+    },
+    {
+      "fields": [
+        "email",
+        "status"
+      ],
+      "field_name": "updated_date_time",
+      "separator": " ",
+      "entity": "contact_emails",
       "aliased_entity": null
     }
   ],
