@@ -18,7 +18,7 @@ impl<'a, 'b> Validation<'a, 'b> {
     }
 
     /// Internal helper function to convert entity names from singular to plural form
-    fn normalize_entity_name(&self, entity: &str) -> String {
+    pub fn normalize_entity_name(&self, entity: &str) -> String {
         entity.to_string()
     }
 
