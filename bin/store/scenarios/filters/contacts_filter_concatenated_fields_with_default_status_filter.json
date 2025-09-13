@@ -55,6 +55,10 @@
   "pluck_group_object": {
     "contact_phone_numbers": [
       "phone_number_raw"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
     ]
   },
   "advance_filters": [

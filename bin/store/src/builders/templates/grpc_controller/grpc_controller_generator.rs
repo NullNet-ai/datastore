@@ -110,7 +110,7 @@ pub fn generate_grpc_controller(proto_path: &str, output_path: &str) -> io::Resu
         "use crate::providers::operations::sync::sync_service::update;"
     )?;
     writeln!(file, "use crate::generated::table_enum::Table;")?;
-    writeln!(file, "use crate::utils::utils::table_exists;")?;
+    writeln!(file, "use crate::utils::helpers::table_exists;")?;
     writeln!(file, "use serde_json::Value;")?;
     writeln!(file, "use std::net::SocketAddr;")?;
     writeln!(file, "use std::pin::Pin;")?;

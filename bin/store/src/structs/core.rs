@@ -10,6 +10,7 @@ use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
 use ulid::Ulid;
 use uuid::Uuid;
+#[derive(Debug)]
 /// Configuration structure for command-line arguments
 pub struct CommandArgs {
     pub cleanup: bool,

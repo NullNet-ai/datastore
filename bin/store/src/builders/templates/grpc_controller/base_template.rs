@@ -19,7 +19,7 @@ use log::info;
 use crate::providers::operations::sync::sync_service::update;
 use crate::structs::core::RequestBody;
 use crate::table_enum::Table;
-use crate::utils::utils::table_exists;
+use crate::utils::helpers::table_exists;
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::pin::Pin;
