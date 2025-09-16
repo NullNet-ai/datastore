@@ -8,27 +8,6 @@
     "last_name"
   ],
   "pluck_object": {
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
-    ],
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
     "contacts": [
       "id",
       "code",
@@ -46,18 +25,39 @@
       "updated_by",
       "previous_status"
     ],
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ]
-  },
-  "pluck_group_object": {
-    "contact_phone_numbers": [
-      "phone_number_raw"
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
     ],
     "contact_emails": [
       "email",
       "is_primary"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
+    ]
+  },
+  "pluck_group_object": {
+    "contact_emails": [
+      "email",
+      "is_primary"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
     ]
   },
   "advance_filters": [
@@ -294,5 +294,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": "",
-  "timezone": null
+  "timezone": null,
+  "time_format": "HH24:MI"
 }

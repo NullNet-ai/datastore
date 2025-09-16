@@ -13,18 +13,6 @@
       "first_name",
       "last_name"
     ],
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
     "contact_phone_numbers": [
       "phone_number_raw"
     ],
@@ -32,6 +20,18 @@
       "id",
       "first_name",
       "last_name"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
     ],
     "contacts": [
       "id",
@@ -205,5 +205,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": "",
-  "timezone": null
+  "timezone": null,
+  "time_format": "HH24:MI"
 }

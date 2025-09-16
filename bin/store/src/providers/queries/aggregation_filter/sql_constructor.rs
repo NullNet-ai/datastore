@@ -34,6 +34,10 @@ pub trait AggregationQueryFilter {
     fn get_order_direction(&self) -> &str {
         "asc"
     }
+    #[allow(dead_code)]
+    fn get_time_format(&self) -> &str {
+        "HH24:MI"
+    }
 }
 
 pub struct AggregationSQLConstructor<T: QueryFilter + Clone> {
@@ -172,6 +176,10 @@ impl QueryFilter for AggregationFilter {
             .map(|o| o.order_direction.as_str())
             .unwrap_or("asc")
     }
+
+    fn get_time_format(&self) -> &str {
+        &self.time_format
+    }
 }
 
 // Implement AggregationQueryFilter for AggregationFilter
@@ -224,6 +232,10 @@ impl AggregationQueryFilter for AggregationFilter {
             .as_ref()
             .map(|o| o.order_direction.as_str())
             .unwrap_or("asc")
+    }
+    
+    fn get_time_format(&self) -> &str {
+        &self.time_format
     }
 }
 
@@ -335,6 +347,10 @@ impl AggregationQueryFilter for AggregationFilterWrapper {
             .map(|o| o.order_direction.as_str())
             .unwrap_or("asc")
     }
+
+    fn get_time_format(&self) -> &str {
+        "HH24:MI"
+    }
 }
 
 impl QueryFilter for AggregationFilterWrapper {
@@ -374,5 +390,9 @@ impl QueryFilter for AggregationFilterWrapper {
             .and_then(|b| b.order.as_ref())
             .map(|o| o.order_direction.as_str())
             .unwrap_or("asc")
+    }
+
+    fn get_time_format(&self) -> &str {
+        "HH24:MI"
     }
 }

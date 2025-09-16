@@ -3,6 +3,7 @@ use crate::config::core::EnvConfig;
 use crate::controllers::store_controller::ApiError;
 use crate::database::db;
 use crate::database::schema::system_tables::is_system_table;
+use crate::database::schema::verify::field_type_in_table;
 use crate::generated::models::counter_model::CounterModel;
 use crate::generated::schema::counters;
 use crate::generated::table_enum::Table as TableEnum;
@@ -302,4 +303,175 @@ pub fn parse_command_args() -> CommandArgs {
 /// Parse environment configuration
 pub fn parse_env_config() -> EnvConfig {
     EnvConfig::default()
+}
+
+pub fn date_format_wrapper(
+    table: &str,
+    field: &str,
+    format_str: Option<&str>,
+    timezone: Option<&str>,
+    with_alias: bool,
+) -> String {
+    let format = format_str.unwrap_or("mm/dd/YYYY");
+
+    if !field.ends_with("_date") {
+        let alias = if with_alias {
+            format!(" AS \"{}\"", field)
+        } else {
+            "".to_string()
+        };
+        log::warn!("Parsing field {} as date", field);
+        return format!(
+            "COALESCE(TO_CHAR(\"{}\".\"{}\"::DATE, '{}'), ''){}",
+            table, field, format, alias
+        );
+    }
+    let field_prefix = field.strip_suffix("_date").unwrap_or(field);
+    let time_field = format!("{}_time", field_prefix);
+
+    let field_type_exists = field_type_in_table(table, field);
+
+    let timestamp_cast = if let Some(field_type_info) = field_type_exists {
+        let field_type_str = &field_type_info.field_type;
+        log::info!("====Field type: {:?}", field_type_str);
+        if field_type_str.to_lowercase().contains("timestamp") {
+            ""
+        } else {
+            "::TIMESTAMP"
+        }
+    } else {
+        "::TIMESTAMP"
+    };
+
+    let server_timezone = std::env::var("TZ").unwrap_or_else(|_| "UTC".to_string());
+    let timezone_query = if let Some(target_timezone) = timezone {
+        format!(
+            "AT TIME ZONE '{}' AT TIME ZONE '{}'",
+            server_timezone, target_timezone
+        )
+    } else {
+        "".to_string()
+    };
+
+    // Format the field with conditional timestamp cast
+    let formatted_field = if timezone_query.is_empty() {
+        format!("\"{}\".\"{}\"{}", table, field, timestamp_cast)
+    } else {
+        format!(
+            "\"{}\".\"{}\"{} + \"{}\".\"{}\"::INTERVAL",
+            table, field, timestamp_cast, table, time_field
+        )
+    };
+
+    let field_with_timezone = if timezone_query.is_empty() {
+        format!("({})", formatted_field)
+    } else {
+        format!("(({}) {})", formatted_field, timezone_query)
+    };
+    let alias = if with_alias {
+        format!(" AS \"{}\"", field)
+    } else {
+        "".to_string()
+    };
+
+    format!(
+        "COALESCE(TO_CHAR({}::DATE, '{}'), ''){}",
+        field_with_timezone, format, alias
+    )
+}
+
+pub fn time_format_wrapper(
+    table: &str,
+    field: &str,
+    timezone: Option<&str>,
+    main_table: &str,
+    with_alias: bool,
+    time_format: &str,
+) -> String {
+    let field_parts: Vec<&str> = field.split('.').collect();
+    let (table_name, partial_field_name, field_with_table) = if field_parts.len() > 1 {
+        (
+            field_parts[0].replace("\"", ""),
+            field_parts[1].replace("\"", ""),
+            field.to_string(),
+        )
+    } else {
+        (
+            table.to_string(),
+            field_parts[0].replace("\"", ""),
+            format!("\"{}\".\"{}\"", table, field),
+        )
+    };
+    let cloned_partial_field_name = partial_field_name.clone();
+    let field_name = if field_parts.len() == 2 {
+        if table_name != main_table {
+            format!("{}_{}", table_name, partial_field_name)
+        } else {
+            partial_field_name
+        }
+    } else {
+        field.to_string()
+    };
+    if !cloned_partial_field_name.ends_with("_time") {
+        let alias = if with_alias {
+            format!(" AS {}", field_name)
+        } else {
+            "".to_string()
+        };
+        log::warn!("Parsing field {} as time", field);
+        return format!(
+            "TO_CHAR(({})::time, '{}')::text{}",
+            field, time_format, alias
+        );
+    }
+    let field_prefix = cloned_partial_field_name
+        .strip_suffix("_time")
+        .unwrap_or(field);
+
+    let date_field = format!("\"{}\".\"{}_date\"", table_name, field_prefix);
+    let field_type_exists = field_type_in_table(&table_name, field);
+
+    let timestamp_cast = if let Some(field_type_info) = field_type_exists {
+        let field_type_str = &field_type_info.field_type;
+        if field_type_str.to_lowercase().contains("timestamp") {
+            ""
+        } else {
+            "::TIMESTAMP"
+        }
+    } else {
+        "::TIMESTAMP"
+    };
+
+    let server_timezone = std::env::var("TZ").unwrap_or_else(|_| "UTC".to_string());
+    let timezone_query = if let Some(target_timezone) = timezone {
+        format!(
+            "AT TIME ZONE '{}' AT TIME ZONE '{}'",
+            server_timezone, target_timezone
+        )
+    } else {
+        "".to_string()
+    };
+    let formatted_field = if timezone_query.is_empty() {
+        format!("{}::INTERVAL", field_with_table)
+    } else {
+        format!(
+            "{}{} + {}::INTERVAL",
+            date_field, timestamp_cast, field_with_table
+        )
+    };
+
+    let field_with_timezone = if timezone_query.is_empty() {
+        format!("({})", formatted_field)
+    } else {
+        format!("(({}) {})", formatted_field, timezone_query)
+    };
+    let alias = if with_alias {
+        format!(" AS {}", field_name)
+    } else {
+        "".to_string()
+    };
+    format!(
+        "TO_CHAR(({})::time, '{}')::text{}",
+        field_with_timezone, time_format, alias
+    )
 }

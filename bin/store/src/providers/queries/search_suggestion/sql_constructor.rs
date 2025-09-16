@@ -53,6 +53,10 @@ impl QueryFilter for SearchSuggestionParams {
     fn get_timezone(&self) -> Option<&str> {
         self.timezone.as_deref()
     }
+
+    fn get_time_format(&self) -> &str {
+        &self.time_format
+    }
 }
 
 pub struct SQLConstructor<T: QuerySearchSuggestion + QueryFilter + Clone> {
@@ -671,6 +675,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 &self.sql_constructor.table.as_str(),
                 self.sql_constructor.request_body.get_timezone(),
                 true,
+                self.sql_constructor.request_body.get_time_format(),
             );
             format!(" GROUP BY {}", field)
         } else {

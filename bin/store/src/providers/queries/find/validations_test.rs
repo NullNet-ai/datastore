@@ -27,6 +27,7 @@ mod tests {
             limit: 10,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         }
     }
 
