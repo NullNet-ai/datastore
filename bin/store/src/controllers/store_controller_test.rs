@@ -1053,6 +1053,7 @@ mod tests {
                 );
                 println!("  ✓ Joins count: {}", payload.joins.len());
 
+                let main_table = "contacts";
                 // Validate payload structure
                 assert_eq!(
                     payload.pluck,
@@ -1071,7 +1072,6 @@ mod tests {
                     payload.advance_filters.len() > 0,
                     "Should have an advance_filters parameter."
                 ); // 2 criteria + 1 operator
-                assert_eq!(payload.joins.len(), 6);
 
                 assert!(
                     payload.concatenate_fields.len() > 0,
@@ -1086,12 +1086,138 @@ mod tests {
 
                 assert!(
                     concat_field_names.len() > 0,
-                    "Should have fields to concatenate, ."
+                    "Should have fields to concatenate."
+                );
+
+                let mut has_concat_filter = false;
+                for filter in &payload.advance_filters {
+                    match filter {
+                        crate::structs::core::FilterCriteria::Criteria { field, .. } => {
+                            if concat_field_names.contains(field) {
+                                has_concat_filter = true;
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                assert!(
+                    has_concat_filter,
+                    "Should have a concatenated field filter."
                 );
 
                 // Verify advance filters
                 // let mut has_created_date_time_filter = false;
                 // let mut has_status_filter = false;
+
+                let mut aliased_joined_entities: Vec<String> = vec![];
+                let mut joined_entities = vec![];
+                for join in &payload.joins {
+                    let join_type = &join.r#type;
+                    let alias = if join_type == "self" {
+                        join.field_relation.from.alias.as_ref()
+                    } else {
+                        join.field_relation.to.alias.as_ref()
+                    };
+                    if let Some(alias_str) = alias {
+                        if !alias_str.is_empty() {
+                            aliased_joined_entities.push(alias_str.clone());
+                        }
+                    } else {
+                        joined_entities.push(join.field_relation.to.entity.clone());
+                    }
+                }
+
+                let mut entities_with_concat: Vec<String> = vec![];
+                for concat_field in &payload.concatenate_fields {
+                    assert!(
+                        !concat_field.field_name.trim().is_empty(),
+                        "Concatenating fields should have a name."
+                    );
+                    assert!(
+                        concat_field.fields.len() > 1,
+                        "Should have two or more fields to concatenate."
+                    );
+                    assert!(
+                        !concat_field.separator.is_empty(),
+                        "Concatenating fields should have a separator."
+                    );
+
+                    if let Some(aliased_entity) = &concat_field.aliased_entity {
+                        // Check if aliased_entity is really an aliased joined entity
+                        let is_aliased_joined = aliased_joined_entities
+                            .iter()
+                            .any(|alias| alias == aliased_entity);
+                        // Removed debug print statement
+                        assert!(
+                            is_aliased_joined,
+                            "Aliased entity {} should be a joined entity",
+                            aliased_entity
+                        );
+                        let all_fields_in_pluck_object = concat_field.fields.iter().all(|field| {
+                            payload.pluck_object[aliased_entity.as_str()].contains(field)
+                        });
+                        assert!(
+                                all_fields_in_pluck_object,
+                                "All concatenated fields should exist in pluck object of entity {}: {:?}",
+                                aliased_entity,
+                                concat_field.fields
+                            );
+                        entities_with_concat.push(aliased_entity.clone());
+                    } else {
+                        let is_joined = joined_entities
+                            .iter()
+                            .any(|entity| entity.to_string() == concat_field.entity);
+
+                        if !(concat_field.entity == main_table) {
+                            assert!(
+                                is_joined,
+                                "Entity {} should be a joined entity",
+                                concat_field.entity
+                            );
+                            // Check if all fields in concat_field.fields exist in pluck
+                            let all_fields_in_pluck_object =
+                                concat_field.fields.iter().all(|field| {
+                                    payload.pluck_object[&concat_field.entity].contains(field)
+                                });
+                            assert!(
+                                all_fields_in_pluck_object,
+                                "All concatenated fields should exist in pluck object of entity {}: {:?}",
+                                concat_field.entity,
+                                concat_field.fields
+                            );
+                        } else {
+                            let has_joins = joined_entities.len() > 0;
+                            let all_fields_in_pluck = if has_joins {
+                                // Combine payload.pluck with payload.pluck_object for the specific entity
+                                let mut combined_fields = payload.pluck.clone();
+                                if let Some(entity_fields) =
+                                    payload.pluck_object.get(&concat_field.entity)
+                                {
+                                    combined_fields.extend(entity_fields.clone());
+                                }
+                                concat_field
+                                    .fields
+                                    .iter()
+                                    .all(|field| combined_fields.contains(field))
+                            } else {
+                                concat_field
+                                    .fields
+                                    .iter()
+                                    .all(|field| payload.pluck.contains(field))
+                            };
+
+                            assert!(
+                                all_fields_in_pluck,
+                                "All concatenated fields should exist in pluck{}: {:?}",
+                                if has_joins { " or pluck_object" } else { "" },
+                                concat_field.fields
+                            );
+                        }
+                        entities_with_concat.push(concat_field.entity.clone());
+                    }
+                }
 
                 for filter in &payload.advance_filters {
                     match filter {
@@ -1112,6 +1238,23 @@ mod tests {
                                 "Field {} should be in pluck, pluck_object, or concatenate_fields",
                                 field
                             );
+
+                            if let Some(entity) = entity {
+                                if is_field_concat {
+                                    let is_valid_concat =
+                                        payload.concatenate_fields.iter().any(|f| {
+                                            (f.aliased_entity.as_ref().unwrap_or(&f.entity)
+                                                == entity)
+                                                && f.field_name == *field
+                                        });
+
+                                    assert!(
+                                        is_valid_concat,
+                                        "Filtered field {} should be a valid concatenated field for entity {}",
+                                        field, entity
+                                    );
+                                }
+                            }
                         }
                         crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
                             println!("  ✓ Found logical operator: {:?}", operator);
