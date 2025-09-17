@@ -233,7 +233,7 @@ impl AggregationQueryFilter for AggregationFilter {
             .map(|o| o.order_direction.as_str())
             .unwrap_or("asc")
     }
-    
+
     fn get_time_format(&self) -> &str {
         &self.time_format
     }

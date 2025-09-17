@@ -6,6 +6,10 @@
     "status"
   ],
   "pluck_object": {
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
     "contacts": [
       "id",
       "first_name",
@@ -13,10 +17,6 @@
       "status",
       "created_by",
       "updated_by"
-    ],
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
     ],
     "created_by_account_organizations": [
       "id",

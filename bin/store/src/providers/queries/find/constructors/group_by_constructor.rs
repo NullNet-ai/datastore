@@ -238,9 +238,14 @@ impl<'a> GroupByConstructor<'a> {
             Some("date") => {
                 Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
             }
-            Some("time") => {
-                Self::time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
-            }
+            Some("time") => Self::time_format_wrapper(
+                table,
+                field,
+                timezone,
+                main_table,
+                with_alias,
+                time_format,
+            ),
             Some("text") => {
                 let field_expr = format!("\"{}\".\"{}\"::text", table, field);
                 if with_alias {

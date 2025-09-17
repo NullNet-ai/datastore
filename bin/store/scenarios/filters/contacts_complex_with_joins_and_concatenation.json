@@ -10,13 +10,10 @@
       "id",
       "contact_id"
     ],
-    "contacts": [
+    "updated_by": [
       "id",
       "first_name",
-      "last_name",
-      "status",
-      "created_by",
-      "updated_by"
+      "last_name"
     ],
     "created_by": [
       "id",
@@ -27,10 +24,13 @@
       "id",
       "contact_id"
     ],
-    "updated_by": [
+    "contacts": [
       "id",
       "first_name",
-      "last_name"
+      "last_name",
+      "status",
+      "created_by",
+      "updated_by"
     ]
   },
   "pluck_group_object": {},

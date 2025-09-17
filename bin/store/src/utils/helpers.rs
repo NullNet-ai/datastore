@@ -333,7 +333,6 @@ pub fn date_format_wrapper(
 
     let timestamp_cast = if let Some(field_type_info) = field_type_exists {
         let field_type_str = &field_type_info.field_type;
-        log::info!("====Field type: {:?}", field_type_str);
         if field_type_str.to_lowercase().contains("timestamp") {
             ""
         } else {
