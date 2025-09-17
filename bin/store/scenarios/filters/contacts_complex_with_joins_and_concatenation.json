@@ -6,34 +6,30 @@
     "status"
   ],
   "pluck_object": {
-    "updated_by_account_organizations": [
+    "updated_by": [
       "id",
-      "code",
-      "categories",
-      "organization_id",
       "first_name",
-      "middle_name",
-      "last_name",
-      "status",
-      "created_date",
-      "created_time",
-      "updated_date",
-      "updated_time"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
+      "last_name"
     ],
     "contact_emails": [
       "email",
       "is_primary"
     ],
-    "created_by": [
+    "contacts": [
       "id",
       "first_name",
-      "last_name"
+      "last_name",
+      "status"
     ],
-    "updated_by": [
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "created_by": [
       "id",
       "first_name",
       "last_name"
@@ -58,6 +54,28 @@
   ],
   "group_advance_filters": [],
   "joins": [
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "entity": "contact_emails",
+          "field": "contact_id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
+        },
+        "from": {
+          "entity": "contacts",
+          "field": "id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
+        }
+      },
+      "nested": false
+    },
     {
       "type": "left",
       "field_relation": {
