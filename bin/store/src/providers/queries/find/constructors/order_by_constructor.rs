@@ -1,19 +1,28 @@
 use crate::structs::core::{GroupBy, SortOption};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+
 pub struct OrderByConstructor<T> {
     pub request_body: T,
     pub table: String,
     pub timezone: Option<String>,
+    pub time_format: String,
 }
 
 impl<T> OrderByConstructor<T>
 where
     T: OrderByQueryFilter,
 {
-    pub fn new(request_body: T, table: String, timezone: Option<String>) -> Self {
+    pub fn new(
+        request_body: T,
+        table: String,
+        timezone: Option<String>,
+        time_format: String,
+    ) -> Self {
         Self {
             request_body,
             table,
             timezone,
+            time_format,
         }
     }
 
@@ -62,6 +71,7 @@ where
                         &self.table,
                         self.timezone.as_deref(),
                         false,
+                        self.time_format.as_str(),
                     );
 
                     // Handle case sensitivity
@@ -120,6 +130,7 @@ where
                 self.table.as_str(),
                 self.timezone.as_deref(),
                 false,
+                self.time_format.as_str(),
             );
 
             // Handle case sensitivity
@@ -156,9 +167,17 @@ where
         main_table: &str,
         timezone: Option<&str>,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
         Self::get_field_with_parse_as(
-            table, field, format_str, None, main_table, timezone, with_alias,
+            table,
+            field,
+            format_str,
+            None,
+            main_table,
+            timezone,
+            with_alias,
+            time_format,
         )
     }
 
@@ -171,6 +190,7 @@ where
         main_table: &str,
         timezone: Option<&str>,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
         let base_field = format!("{}.{}", table, field);
 
@@ -183,7 +203,7 @@ where
             || format_str.contains("%i")
             || format_str.contains("%s")
         {
-            Self::time_format_wrapper(field, timezone, main_table, with_alias)
+            Self::time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
         } else {
             if with_alias {
                 format!("{} AS {}", base_field, field)
@@ -203,7 +223,6 @@ where
         }
     }
 
-    /// Wraps field with date formatting functions
     fn date_format_wrapper(
         table: &str,
         field: &str,
@@ -211,51 +230,18 @@ where
         timezone: Option<&str>,
         with_alias: bool,
     ) -> String {
-        let base_field = format!("{}.{}", table, field);
-
-        let formatted_field = if let Some(fmt) = format_str {
-            if let Some(tz) = timezone {
-                format!(
-                    "DATE_FORMAT(CONVERT_TZ({}, 'UTC', '{}'), '{}')",
-                    base_field, tz, fmt
-                )
-            } else {
-                format!("DATE_FORMAT({}, '{}')", base_field, fmt)
-            }
-        } else {
-            base_field.clone()
-        };
-
-        if with_alias {
-            format!("{} AS {}", formatted_field, field)
-        } else {
-            formatted_field
-        }
+        date_format_wrapper(table, field, format_str, timezone, with_alias)
     }
 
-    /// Wraps field with time formatting functions
     fn time_format_wrapper(
+        table: &str,
         field: &str,
         timezone: Option<&str>,
         main_table: &str,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
-        let base_field = format!("{}.{}", main_table, field);
-
-        let formatted_field = if let Some(tz) = timezone {
-            format!(
-                "TIME_FORMAT(CONVERT_TZ({}, 'UTC', '{}'), '%H:%i:%s')",
-                base_field, tz
-            )
-        } else {
-            format!("TIME_FORMAT({}, '%H:%i:%s')", base_field)
-        };
-
-        if with_alias {
-            format!("{} AS {}", formatted_field, field)
-        } else {
-            formatted_field
-        }
+        time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
     }
 }
 

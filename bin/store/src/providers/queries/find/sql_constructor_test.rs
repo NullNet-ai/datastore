@@ -27,6 +27,7 @@ mod tests {
         distinct_by: Option<String>,
         is_case_sensitive_sorting: Option<bool>,
         timezone: Option<String>,
+        time_format: String,
     }
 
     impl Default for MockQueryFilter {
@@ -49,6 +50,7 @@ mod tests {
                 distinct_by: None,
                 is_case_sensitive_sorting: None,
                 timezone: Some("Asia/Manila".to_string()),
+                time_format: "HH24:MI".to_string(),
             }
         }
     }
@@ -120,6 +122,10 @@ mod tests {
 
         fn get_timezone(&self) -> Option<&str> {
             self.timezone.as_deref()
+        }
+
+        fn get_time_format(&self) -> &str {
+            &self.time_format
         }
     }
 
@@ -322,6 +328,7 @@ mod tests {
             "contacts",
             None,
             true,
+            "HH24:MI",
         );
         assert_eq!(basic_field, "\"contacts\".\"name\"");
 
@@ -333,6 +340,7 @@ mod tests {
             "contacts",
             Some("UTC"),
             true,
+            "HH24:MI",
         );
         assert!(date_field.contains("TO_CHAR"));
         assert!(date_field.contains("AT TIME ZONE"));
@@ -345,8 +353,9 @@ mod tests {
             "contacts",
             Some("UTC"),
             true,
+            "HH24:MI",
         );
-        assert!(time_field.contains("::time::text"));
+        assert!(time_field.contains("::time"));
 
         println!("Field formatting tests completed successfully!");
     }
@@ -477,6 +486,9 @@ mod tests {
             fn get_date_format(&self) -> &str {
                 "mm/dd/YYYY"
             }
+            fn get_time_format(&self) -> &str {
+                "HH24:MI"
+            }
         }
 
         let filter = MinimalFilter;
@@ -544,6 +556,7 @@ mod tests {
             distinct_by: Some("id".to_string()),
             is_case_sensitive_sorting: Some(true),
             timezone: Some("UTC".to_string()),
+            time_format: "HH24:MI".to_string(),
         };
 
         println!("  ✓ Testing limit access");

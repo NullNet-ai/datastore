@@ -1,6 +1,8 @@
+// use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{
     FilterCriteria, FilterOperator, GroupAdvanceFilter, LogicalOperator, MatchPattern,
 };
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -37,14 +39,19 @@ impl<'a> WhereConstructor<'a> {
         group_advance_filters: &[GroupAdvanceFilter],
         concatenate_fields: &[crate::structs::core::ConcatenateField],
         date_format: &str,
+        time_format: &str,
     ) -> Result<String, String> {
         // Use the reusable standard WHERE clause pattern
         let mut base_where = format!(" WHERE {}", self.build_system_where_clause(self.table)?);
 
         // Prioritize advance_filters over group_advance_filters
         if !advance_filters.is_empty() {
-            let expression =
-                self.build_infix_expression(advance_filters, concatenate_fields, date_format)?;
+            let expression = self.build_infix_expression(
+                advance_filters,
+                concatenate_fields,
+                date_format,
+                time_format,
+            )?;
             if !expression.is_empty() {
                 base_where.push_str(" AND ");
                 base_where.push_str(&expression);
@@ -54,6 +61,7 @@ impl<'a> WhereConstructor<'a> {
                 group_advance_filters,
                 concatenate_fields,
                 date_format,
+                time_format,
             )?;
             if !group_expression.is_empty() {
                 base_where.push_str(" AND ");
@@ -103,6 +111,7 @@ impl<'a> WhereConstructor<'a> {
         filters: &[FilterCriteria],
         concatenate_fields: &[crate::structs::core::ConcatenateField],
         date_format: &str,
+        time_format: &str,
     ) -> Result<String, String> {
         if filters.is_empty() {
             return Ok(String::new());
@@ -141,6 +150,7 @@ impl<'a> WhereConstructor<'a> {
                     self.timezone,
                     false,
                     concatenate_fields,
+                    time_format,
                 );
                 let final_statement = self.format_condition_with_case_sensitivity_and_pattern(
                     &field_name,
@@ -155,7 +165,8 @@ impl<'a> WhereConstructor<'a> {
         }
 
         // Parse the filter array into tokens
-        let tokens = self.parse_filter_tokens(filters, concatenate_fields, date_format)?;
+        let tokens =
+            self.parse_filter_tokens(filters, concatenate_fields, date_format, time_format)?;
         if tokens.is_empty() {
             return Err("Failed to parse filter tokens: invalid filter sequence".to_string());
         }
@@ -169,6 +180,7 @@ impl<'a> WhereConstructor<'a> {
         filters: &[FilterCriteria],
         concatenate_fields: &[crate::structs::core::ConcatenateField],
         date_format: &str,
+        time_format: &str,
     ) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
         let mut i = 0;
@@ -197,6 +209,7 @@ impl<'a> WhereConstructor<'a> {
                         self.timezone,
                         false,
                         concatenate_fields,
+                        time_format,
                     );
                     let condition = self.format_condition_with_case_sensitivity_and_pattern(
                         &field_name,
@@ -340,6 +353,7 @@ impl<'a> WhereConstructor<'a> {
         timezone: Option<&str>,
         with_alias: bool,
         concatenate_fields: &[crate::structs::core::ConcatenateField],
+        time_format: &str,
     ) -> String {
         // Check if this field is a concatenated field
         if let Some(concat_field) = concatenate_fields.iter().find(|cf| cf.field_name == field) {
@@ -369,7 +383,14 @@ impl<'a> WhereConstructor<'a> {
         } else {
             // Regular field handling
             Self::get_field_with_parse_as(
-                table, field, format_str, parse_as, self.table, timezone, with_alias,
+                table,
+                field,
+                format_str,
+                parse_as,
+                self.table,
+                timezone,
+                with_alias,
+                time_format,
             )
         }
     }
@@ -382,12 +403,20 @@ impl<'a> WhereConstructor<'a> {
         main_table: &str,
         timezone: Option<&str>,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
         match parse_as {
             Some("date") => {
                 Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
             }
-            Some("time") => Self::time_format_wrapper(field, timezone, main_table, with_alias),
+            Some("time") => Self::time_format_wrapper(
+                table,
+                field,
+                timezone,
+                main_table,
+                with_alias,
+                time_format,
+            ),
             Some("text") => {
                 let field_expr = format!("\"{}\".\"{}\"::text", table, field);
                 if with_alias {
@@ -414,50 +443,18 @@ impl<'a> WhereConstructor<'a> {
         timezone: Option<&str>,
         with_alias: bool,
     ) -> String {
-        let format_pattern = format_str.unwrap_or("%Y-%m-%d %H:%M:%S");
-
-        let field_expr = if let Some(tz) = timezone {
-            format!(
-                "TO_CHAR((\"{}\".\"{}\" AT TIME ZONE '{}'), '{}')",
-                table, field, tz, format_pattern
-            )
-        } else {
-            format!(
-                "TO_CHAR(\"{}\".\"{}\"::timestamp, '{}')",
-                table, field, format_pattern
-            )
-        };
-
-        if with_alias {
-            format!("{} AS {}", field_expr, field)
-        } else {
-            field_expr
-        }
+        date_format_wrapper(table, field, format_str, timezone, with_alias)
     }
 
     fn time_format_wrapper(
+        table: &str,
         field: &str,
         timezone: Option<&str>,
         main_table: &str,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
-        let field_expr = if let Some(tz) = timezone {
-            format!(
-                "TO_CHAR((\"{}\".\"{}\" AT TIME ZONE '{}'), 'HH24:MI:SS')",
-                main_table, field, tz
-            )
-        } else {
-            format!(
-                "TO_CHAR(\"{}\".\"{}\"::time, 'HH24:MI:SS')",
-                main_table, field
-            )
-        };
-
-        if with_alias {
-            format!("{} AS {}", field_expr, field)
-        } else {
-            field_expr
-        }
+        time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
     }
 
     fn format_condition_with_case_sensitivity_and_pattern(
@@ -469,38 +466,38 @@ impl<'a> WhereConstructor<'a> {
         match_pattern: Option<&MatchPattern>,
     ) -> String {
         let (_table_name, field_name, field_with_table) =
-            // Check if field_name contains complex expressions (like COALESCE)
-            if field_name.contains("COALESCE") || field_name.contains("(") {
-                // This is already a complex expression, use it as-is
-                let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
-                    // Extract alias if present (e.g., "COALESCE(...) AS full_name" -> "full_name")
-                    field_name[start + 3..].trim().replace("\"", "")
-                } else {
-                    // Try to extract a meaningful name from the expression
-                    field_name.replace("\"", "")
-                };
-                (String::new(), extracted_field_name, field_name.to_string())
-            } else {
-                // Handle simple field names with or without table prefix
-                let mut parts = field_name.split(".");
-                if let Some(first_part) = parts.next() {
-                    if let Some(second_part) = parts.next() {
-                        // Two parts: table.field
-                        let table_name = first_part.replace("\"", "");
-                        let field_name = second_part.replace("\"", "");
-                        let field_with_table = format!("{}.{}", table_name, field_name);
-                        (table_name, field_name, field_with_table)
+                // Check if field_name contains complex expressions (like COALESCE)
+                if field_name.contains("COALESCE") || field_name.contains("(") {
+                    // This is already a complex expression, use it as-is
+                    let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
+                        // Extract alias if present (e.g., "COALESCE(...) AS full_name" -> "full_name")
+                        field_name[start + 3..].trim().replace("\"", "")
                     } else {
-                        // One part: just field_name
-                        let field_name = first_part.replace("\"", "");
-                        let field_with_table = format!("{}.{}", self.table, field_name);
-                        (self.table.to_string(), field_name, field_with_table)
-                    }
+                        // Try to extract a meaningful name from the expression
+                        field_name.replace("\"", "")
+                    };
+                    (String::new(), extracted_field_name, field_name.to_string())
                 } else {
-                    // No parts (shouldn't happen, but handle gracefully)
-                    (String::new(), String::new(), String::new())
-                }
-            };
+                    // Handle simple field names with or without table prefix
+                    let mut parts = field_name.split(".");
+                    if let Some(first_part) = parts.next() {
+                        if let Some(second_part) = parts.next() {
+                            // Two parts: table.field
+                            let table_name = first_part.replace("\"", "");
+                            let field_name = second_part.replace("\"", "");
+                            let field_with_table = format!("{}.{}", table_name, field_name);
+                            (table_name, field_name, field_with_table)
+                        } else {
+                            // One part: just field_name
+                            let field_name = first_part.replace("\"", "");
+                            let field_with_table = format!("{}.{}", self.table, field_name);
+                            (self.table.to_string(), field_name, field_with_table)
+                        }
+                    } else {
+                        // No parts (shouldn't happen, but handle gracefully)
+                        (String::new(), String::new(), String::new())
+                    }
+                };
 
         let plural_form = pluralizer::pluralize(&field_name, 2, false);
         let is_plural = plural_form == field_name;
@@ -686,6 +683,7 @@ impl<'a> WhereConstructor<'a> {
         group_filters: &[GroupAdvanceFilter],
         concatenate_fields: &[crate::structs::core::ConcatenateField],
         date_format: &str,
+        time_format: &str,
     ) -> Result<String, String> {
         if group_filters.is_empty() {
             return Ok(String::new());
@@ -696,8 +694,12 @@ impl<'a> WhereConstructor<'a> {
             let group_filter = &group_filters[0];
             let filters = self.get_group_filters(group_filter);
             if !filters.is_empty() {
-                let group_expression =
-                    self.build_infix_expression(filters, concatenate_fields, date_format)?;
+                let group_expression = self.build_infix_expression(
+                    filters,
+                    concatenate_fields,
+                    date_format,
+                    time_format,
+                )?;
                 if !group_expression.is_empty() {
                     return Ok(format!("({})", group_expression));
                 }
@@ -714,8 +716,12 @@ impl<'a> WhereConstructor<'a> {
 
             // Process the filters within this group (skip if empty for operator type)
             if !filters.is_empty() {
-                let group_expression =
-                    self.build_infix_expression(filters, concatenate_fields, date_format)?;
+                let group_expression = self.build_infix_expression(
+                    filters,
+                    concatenate_fields,
+                    date_format,
+                    time_format,
+                )?;
                 if !group_expression.is_empty() {
                     // Wrap each group in parentheses for proper precedence
                     tokens.push(Token::Condition(format!("({})", group_expression)));
