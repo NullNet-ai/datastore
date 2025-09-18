@@ -1,4 +1,11 @@
-import { AnyPgColumn, pgTable, text, primaryKey, timestamp } from 'drizzle-orm/pg-core';
+import {
+  AnyPgColumn,
+  pgTable,
+  text,
+  primaryKey,
+  timestamp,
+  integer,
+} from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
   fileRegex,
@@ -29,6 +36,10 @@ export const table = pgTable(
     instance_id: text('instance_id'),
     // ?????
     remote_access_category: text('remote_access_category'),
+
+    remote_access_local_addr: text('remote_access_local_addr'),
+    remote_access_local_port: integer('remote_access_local_port'),
+    remote_access_local_protocol: text('remote_access_local_protocol'),
 
     timestamp: timestamp('timestamp', {
       withTimezone: true,
