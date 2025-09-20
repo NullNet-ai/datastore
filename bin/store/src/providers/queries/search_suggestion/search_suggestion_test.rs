@@ -424,7 +424,12 @@ mod tests {
         let concatenate_fields = vec![concatenate_field];
 
         println!("Generating concatenated expressions with date format: YYYY-MM-DD");
-        let result = generate_concatenated_expressions(concatenate_fields, Some("YYYY-MM-DD"));
+        let result = generate_concatenated_expressions(
+            concatenate_fields,
+            Some("YYYY-MM-DD"),
+            None,
+            "HH24:MI",
+        );
 
         println!("Verifying result contains users entity");
         assert!(result.contains_key("users"));
@@ -450,7 +455,7 @@ mod tests {
         let concatenate_fields = vec![];
 
         println!("Generating concatenated expressions with empty fields list");
-        let result = generate_concatenated_expressions(concatenate_fields, None);
+        let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
         println!("Verifying result is empty");
         assert!(result.is_empty());
@@ -469,7 +474,7 @@ mod tests {
         let concatenate_fields = vec![concatenate_field];
 
         println!("Generating concatenated expressions with custom separator: ' - '");
-        let result = generate_concatenated_expressions(concatenate_fields, None);
+        let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
         let users_map = result.get("users").unwrap();
         let field_expr = users_map.get("full_name").unwrap();
@@ -790,7 +795,7 @@ mod tests {
         };
 
         let concatenate_fields = vec![concatenate_field1, concatenate_field2];
-        let result = generate_concatenated_expressions(concatenate_fields, None);
+        let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
         assert!(result.contains_key("users"));
         let users_map = result.get("users").unwrap();
@@ -832,7 +837,7 @@ mod tests {
         };
 
         let concatenate_fields = vec![concatenate_field1, concatenate_field2];
-        let result = generate_concatenated_expressions(concatenate_fields, None);
+        let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
         assert!(result.contains_key("users"));
         assert!(result.contains_key("profiles"));

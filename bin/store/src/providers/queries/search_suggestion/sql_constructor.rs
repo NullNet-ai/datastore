@@ -10,6 +10,8 @@ use crate::providers::queries::search_suggestion::{
 use crate::structs::core::{
     ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
 };
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+
 pub trait QuerySearchSuggestion {
     fn get_pluck_object(&self) -> &BTreeMap<String, Vec<String>> {
         use std::collections::BTreeMap;
@@ -95,6 +97,30 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
     ) -> Result<String, String> {
         let mut sql = String::new();
 
+        // Extract all values needed from immutable borrows before any mutable borrow
+        let date_format_str = self
+            .sql_constructor
+            .request_body
+            .get_date_format()
+            .to_string();
+        let time_format_str = self
+            .sql_constructor
+            .request_body
+            .get_time_format()
+            .to_string();
+
+        // Handle timezone calculation
+        let timezone_option = {
+            let body_timezone = self.sql_constructor.request_body.get_timezone();
+            let header_timezone = self.sql_constructor.timezone.as_deref();
+
+            match (header_timezone, body_timezone) {
+                (Some(tz), _) => Some(tz.to_string()),
+                (None, Some(tz)) => Some(tz.to_string()),
+                (None, None) => None,
+            }
+        };
+
         // construct per field (value and group) query
         let result = self.construct_field_query(
             filtered_fields,
@@ -102,6 +128,9 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             group_advance_filters,
             search_term,
             concatenated_expressions,
+            Some(&date_format_str),
+            time_format_str.as_str(),
+            timezone_option.as_deref(),
         )?;
         let (field_query, field_query_names) = result;
         sql.push_str(&field_query);
@@ -128,6 +157,9 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         group_advance_filters: &Vec<Value>,
         search_term: &str,
         concatenated_expressions: &ConcatenatedExpressions,
+        date_format: Option<&str>,
+        time_format: &str,
+        timezone: Option<&str>,
     ) -> Result<(String, Vec<String>), String> {
         let mut sql = String::new();
         let mut field_query_names: Vec<String> = Vec::new();
@@ -145,13 +177,6 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                         .map(|field| {
                             let mut per_field_query = String::new();
                             let mut entity_field = format!("{}.{}", entity, field);
-
-                            if let Some(field_expr) = concatenated_expressions
-                                .get(entity)
-                                .and_then(|fields| fields.get(field))
-                            {
-                                entity_field = format!("{}", field_expr.expression)
-                            }
 
                             let mut field_filter = None::<FilterCriteria>;
                             let mut all_field_filters: Vec<FilterCriteria> = Vec::new();
@@ -214,6 +239,36 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                 _ => (Vec::new(), String::new(), None),
                             };
 
+                            if let Some(field_expr) = concatenated_expressions
+                                .get(entity)
+                                .and_then(|fields| fields.get(field))
+                            {
+                                entity_field = format!("{}", field_expr.expression)
+                            } else if field.ends_with("_date") {
+                                entity_field = format!(
+                                    "{}",
+                                    date_format_wrapper(
+                                        entity.as_str(),
+                                        field,
+                                        date_format,
+                                        timezone,
+                                        false
+                                    )
+                                );
+                            } else if field.ends_with("_time") {
+                                entity_field = format!(
+                                    "{}",
+                                    time_format_wrapper(
+                                        entity.as_str(),
+                                        field,
+                                        timezone,
+                                        entity.as_str(),
+                                        false,
+                                        time_format
+                                    )
+                                );
+                            }
+
                             let values_flat = values
                                 .iter()
                                 .map(|v| v.to_string())
@@ -234,6 +289,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                     &all_field_filters,
                                     &all_field_group_filters,
                                     concatenated_expressions,
+                                    parse_as.as_str(),
                                 );
                                 per_field_query.push_str(&format!(
                                     "{} AS ({}), ",
@@ -254,6 +310,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                 &all_field_filters,
                                 &all_field_group_filters,
                                 concatenated_expressions,
+                                parse_as.as_str(),
                             );
                             per_field_query
                                 .push_str(&format!("{} AS ({})", query_field_name, field_query));
@@ -382,6 +439,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         all_field_filters: &Vec<FilterCriteria>,
         all_field_group_filters: &Vec<Value>,
         concatenated_expressions: &ConcatenatedExpressions,
+        parse_as: &str,
     ) -> String {
         let mut field_query = if is_group_count {
             self.construct_field_group_selections(entity, field)
@@ -410,7 +468,8 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             return field_query;
         } else {
             // Construct group by
-            let group_by = self.construct_group_by(&entity, &field, concatenated_expressions);
+            let group_by =
+                self.construct_group_by(&entity, &field, concatenated_expressions, Some(parse_as));
             field_query.push_str(&group_by);
             // Construct offset
             let offset = self.sql_constructor.construct_offset();
@@ -661,6 +720,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         entity: &str,
         field: &str,
         concatenated_expressions: &ConcatenatedExpressions,
+        parse_as: Option<&str>,
     ) -> String {
         if let Some(field_expr) = concatenated_expressions
             .get(entity)
@@ -676,6 +736,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 self.sql_constructor.request_body.get_timezone(),
                 false,
                 self.sql_constructor.request_body.get_time_format(),
+                parse_as,
             );
             format!(" GROUP BY {}", field)
         } else {

@@ -16,9 +16,17 @@
       "id",
       "contact_id"
     ],
-    "updated_by_account_organizations": [
+    "created_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "last_name",
+      "created_date",
+      "created_time",
+      "updated_date"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
     ],
     "updated_by": [
       "id",
@@ -45,17 +53,9 @@
       "updated_by",
       "previous_status"
     ],
-    "created_by": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name",
-      "created_date",
-      "created_time",
-      "updated_date"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary"
+      "contact_id"
     ]
   },
   "pluck_group_object": {

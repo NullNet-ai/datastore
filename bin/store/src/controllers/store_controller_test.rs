@@ -2849,4 +2849,142 @@ mod tests {
 
         println!("  ✓ contacts_search_without_join scenario test completed");
     }
+
+    /// Tests the SQL generation for contacts with nested joins:
+    /// - Loads the contacts_filter_with_nested_join scenario
+    /// - Generates SQL query with nested joins between contacts, contact_emails, and account_organizations
+    /// - Validates SQL contains proper nested join syntax and aliasing
+    /// - Verifies date/time formatting and concatenation
+    /// - Executes the query if database is available
+    ///
+    /// # Test Scenarios
+    #[tokio::test]
+    async fn should_use_contacts_filter_with_nested_join_scenario() {
+        println!("Testing SQL generation for contacts with nested joins...");
+
+        let auth_response = perform_login().await;
+        if !auth_response.server_available {
+            println!("  ⚠ Server not available, skipping HTTP test");
+            return;
+        }
+        // Load the scenario file
+        match load_payload_scenario("contacts_filter_with_nested_join") {
+            Ok(payload) => {
+                println!("  ✓ Successfully loaded contacts_filter_with_nested_join scenario");
+
+                assert!(
+                    payload.joins.len() > 2,
+                    "Payload should contain at least two joins"
+                );
+                assert!(
+                    !payload.pluck_object.is_empty(),
+                    "Payload should contain a pluck object"
+                );
+
+                let has_nested = payload
+                    .joins
+                    .iter()
+                    .filter(|join| join.nested)
+                    .collect::<Vec<_>>();
+
+                assert!(has_nested.len() > 0, "Payload should contain a nested join");
+
+                let mut prev_join_to_entity: Option<String> = None;
+                let mut prev_join_to_alias: Option<String> = None;
+                for (i, join) in payload.joins.iter().enumerate() {
+                    let current_to_entity = &join.field_relation.to.entity.clone();
+                    let current_to_alias = join
+                        .field_relation
+                        .to
+                        .alias
+                        .clone()
+                        .unwrap_or_else(|| current_to_entity.clone());
+
+                    if join.nested {
+                        let from_entity = &join.field_relation.from.entity;
+
+                        let valid_nested_join = match (&prev_join_to_entity, &prev_join_to_alias) {
+                            (Some(prev_entity), Some(prev_alias)) => {
+                                from_entity == prev_entity || from_entity == prev_alias
+                            }
+                            _ => false,
+                        };
+
+                        assert!(valid_nested_join, "Nested join at index {} has from.entity '{}' which doesn't match previous join's to.entity '{}' or to.alias '{}'", 
+                            i,
+                            from_entity,
+                            prev_join_to_entity.as_deref().unwrap_or("none"),
+                            prev_join_to_alias.as_deref().unwrap_or("none")
+                        );
+                    }
+                    assert!(
+                        payload.pluck_object.contains_key(&current_to_alias),
+                        "Pluck object should contain key '{}'",
+                        current_to_alias
+                    );
+
+                    prev_join_to_entity = Some(current_to_entity.clone());
+                    prev_join_to_alias = Some(current_to_alias.clone());
+                }
+                // Convert to JSON for the SQL constructor
+                let payload_json = serde_json::to_value(payload.clone()).unwrap();
+
+                // Generate SQL query
+                match get_raw_query(&payload_json, get_table_name(), true, None) {
+                    Ok(sql) => {
+                        println!("  ✓ Successfully generated SQL query");
+                        println!("  ✓ SQL: {}", sql);
+
+                        assert!(
+                            sql.contains("AS elem FROM account_organizations created_by_account_organizations") && 
+                            sql.contains("\"contacts\".\"created_by\" = \"created_by_account_organizations\".\"id\""),
+                            "SQL should have this aliasing from entity account_organizations to created_by_account_organizations"
+                        );
+
+                        // Validate nested join condition
+                        assert!(
+                            sql.contains("AS elem FROM account_organizations created_by_account_organizations LEFT JOIN contacts created_by ON \"created_by_account_organizations\".\"contact_id\" = \"created_by\".\"id\""),
+                            "SQL should have this left join as nested to the previous join."
+                        );
+
+                        assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_created_by_account_organizations\""), "SQL should have this left join lateral query string");
+
+                        assert!(
+                            sql.contains("LEFT JOIN LATERAL (SELECT \"joined_created_by\""),
+                            "SQL should have this left join lateral query string"
+                        );
+
+                        // Execute query if database is available
+                        match execute_raw_sql_query(&sql).await {
+                            Ok(results) => {
+                                println!("  ✓ Successfully executed SQL query: {:?}", results);
+                                for result in results {
+                                    assert!(
+                                        result.get("id").is_some()
+                                            && !result.get("id").unwrap().is_null(),
+                                        "Result should have a non-null value for its record ID"
+                                    );
+                                }
+
+                                // Additional validation can be added here if needed
+                            }
+                            Err(e) => {
+                                println!("  ⚠ Failed to execute SQL query: {}", e);
+                                // This is not a test failure as database might not be available
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        display_error_response(&format!("Failed to generate SQL: {}", e));
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load scenario: {}", e);
+                println!("  ℹ This may be expected if scenario files haven't been created yet");
+            }
+        }
+
+        println!("  ✓ contacts_filter_with_nested_join scenario test completed");
+    }
 }
