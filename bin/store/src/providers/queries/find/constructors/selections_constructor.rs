@@ -316,6 +316,7 @@ impl SelectionsConstructor {
             return join_selections;
         }
 
+        let mut added_entity_selection = std::collections::HashSet::new();
         // Process each join
         for join in request_body.get_joins() {
             let from_alias = join
@@ -332,7 +333,10 @@ impl SelectionsConstructor {
                 .unwrap_or(&join.field_relation.to.entity);
 
             // Handle fields for this join tables from "from"
-            if request_body.get_pluck_object().contains_key(from_alias) && !join.nested {
+            if request_body.get_pluck_object().contains_key(from_alias)
+                && !join.nested
+                && !added_entity_selection.contains(from_alias)
+            {
                 join_selections.push(Self::construct_pluck_with_object_for_main(
                     request_body,
                     from_alias,
@@ -340,6 +344,7 @@ impl SelectionsConstructor {
                     &get_field,
                     &get_field_with_parse_as,
                 ));
+                added_entity_selection.insert(from_alias.to_string());
             }
 
             // Handle fields for this join tables from "to"
