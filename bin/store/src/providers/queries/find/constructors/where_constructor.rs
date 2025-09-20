@@ -358,7 +358,7 @@ impl<'a> WhereConstructor<'a> {
         // Check if this field is a concatenated field
         if let Some(concat_field) = concatenate_fields.iter().find(|cf| cf.field_name == field) {
             // Build concatenated field expression
-            let concat_parts: Vec<String> = concat_field
+            let concatenated_expr: String = concat_field
                 .fields
                 .iter()
                 .map(|f| {
@@ -367,19 +367,25 @@ impl<'a> WhereConstructor<'a> {
                         f.clone()
                     } else {
                         // This is a field reference
-                        format!("\"{}\".\"{}\"::text", table, f)
+                        format!(
+                            "COALESCE({}, '')",
+                            Self::get_field_with_parse_as(
+                                table,
+                                f,
+                                format_str,
+                                parse_as,
+                                table,
+                                timezone,
+                                with_alias,
+                                time_format,
+                            )
+                        )
                     };
                     field_expr
                 })
-                .collect();
-
-            let concatenated_expr = format!("COALESCE({})", concat_parts.join(" || "));
-
-            if with_alias {
-                format!("{} AS {}", concatenated_expr, field)
-            } else {
-                concatenated_expr
-            }
+                .collect::<Vec<_>>()
+                .join(&format!(" || '{}' || ", concat_field.separator));
+            concatenated_expr
         } else {
             // Regular field handling
             Self::get_field_with_parse_as(
@@ -426,12 +432,26 @@ impl<'a> WhereConstructor<'a> {
                 }
             }
             _ => {
-                let field_expr = format!("\"{}\".\"{}\"::text", table, field);
-                if with_alias {
-                    format!("{} AS {}", field_expr, field)
+                let field_expr = if field.ends_with("_date") {
+                    Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
+                } else if field.ends_with("_time") {
+                    Self::time_format_wrapper(
+                        table,
+                        field,
+                        timezone,
+                        main_table,
+                        with_alias,
+                        time_format,
+                    )
                 } else {
-                    field_expr
-                }
+                    let table_field = format!("\"{}\".\"{}\"", table, field);
+                    if with_alias {
+                        format!("{} AS {}", table_field, field)
+                    } else {
+                        table_field
+                    }
+                };
+                field_expr
             }
         }
     }

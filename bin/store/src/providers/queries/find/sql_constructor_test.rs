@@ -329,6 +329,7 @@ mod tests {
             None,
             true,
             "HH24:MI",
+            None,
         );
         assert_eq!(basic_field, "\"contacts\".\"name\"");
 
@@ -341,6 +342,7 @@ mod tests {
             Some("UTC"),
             true,
             "HH24:MI",
+            Some("date"),
         );
         assert!(date_field.contains("TO_CHAR"));
         assert!(date_field.contains("AT TIME ZONE"));
@@ -354,6 +356,7 @@ mod tests {
             Some("UTC"),
             true,
             "HH24:MI",
+            Some("time"),
         );
         assert!(time_field.contains("::time"));
 

@@ -255,12 +255,26 @@ impl<'a> GroupByConstructor<'a> {
                 }
             }
             _ => {
-                let field_expr = format!("\"{}\".\"{}\"", table, field);
-                if with_alias {
-                    format!("{} AS {}", field_expr, field)
+                let field_expr = if field.ends_with("_date") {
+                    Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
+                } else if field.ends_with("_time") {
+                    Self::time_format_wrapper(
+                        table,
+                        field,
+                        timezone,
+                        main_table,
+                        with_alias,
+                        time_format,
+                    )
                 } else {
-                    field_expr
-                }
+                    let table_field = format!("\"{}\".\"{}\"", table, field);
+                    if with_alias {
+                        format!("{} AS {}", table_field, field)
+                    } else {
+                        table_field
+                    }
+                };
+                field_expr
             }
         }
     }

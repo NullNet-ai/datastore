@@ -256,6 +256,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     timezone,
                     with_alias,
                     time_format,
+                    None,
                 )
             },
             |table, field, format_str, parse_as, main_table, timezone, with_alias| {
@@ -338,12 +339,13 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         timezone: Option<&str>,
         with_alias: bool,
         time_format: &str,
+        parse_as: Option<&str>,
     ) -> String {
         Self::get_field_with_parse_as(
             table,
             field,
             format_str,
-            None,
+            parse_as,
             main_table,
             timezone,
             with_alias,
@@ -361,30 +363,48 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         with_alias: bool,
         time_format: &str,
     ) -> String {
-        // TODO: apply permissions
-        let base_field = if field.ends_with("_date") {
-            Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
-        } else if field.ends_with("_time") {
-            Self::time_format_wrapper(
+        match parse_as {
+            Some("date") => {
+                Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
+            }
+            Some("time") => Self::time_format_wrapper(
                 table,
                 &format!("\"{}\".\"{}\"", table, field),
                 timezone,
                 main_table,
                 with_alias,
                 time_format,
-            )
-        } else {
-            format!("\"{}\".\"{}\"", table, field)
-        };
-        // Apply parse_as type casting if provided and not empty
-        if let Some(cast_type) = parse_as {
-            if !cast_type.is_empty() {
-                format!("{}::{}", base_field, cast_type)
-            } else {
-                base_field
+            ),
+            Some("text") => {
+                let field_expr = format!("\"{}\".\"{}\"::text", table, field);
+                if with_alias {
+                    format!("{} AS {}", field_expr, field)
+                } else {
+                    field_expr
+                }
             }
-        } else {
-            base_field
+            _ => {
+                let field_expr = if field.ends_with("_date") {
+                    Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
+                } else if field.ends_with("_time") {
+                    Self::time_format_wrapper(
+                        table,
+                        field,
+                        timezone,
+                        main_table,
+                        with_alias,
+                        time_format,
+                    )
+                } else {
+                    let table_field = format!("\"{}\".\"{}\"", table, field);
+                    if with_alias {
+                        format!("{} AS {}", table_field, field)
+                    } else {
+                        table_field
+                    }
+                };
+                field_expr
+            }
         }
     }
 

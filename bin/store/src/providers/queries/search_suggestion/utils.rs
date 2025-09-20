@@ -3,6 +3,7 @@ use crate::providers::queries::search_suggestion::structs::{
     FormatFilterResponse,
 };
 use crate::structs::core::{ConcatenateField, FilterCriteria, MatchPattern};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
 use pluralizer::pluralize;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -188,45 +189,93 @@ pub fn get_field_filters(
 pub fn generate_concatenated_expressions(
     concatenate_fields: Vec<ConcatenateField>,
     date_format: Option<&str>,
+    timezone: Option<&str>,
+    time_format: &str,
 ) -> ConcatenatedExpressions {
     let default_date_format = "mm/dd/YYYY";
     let date_fmt = date_format.unwrap_or(default_date_format);
 
     concatenate_fields
         .into_iter()
-        .fold(HashMap::new(), |mut acc, field| {
-            let entity = field
+        .fold(HashMap::new(), |mut acc, concat_field| {
+            let entity = concat_field
                 .aliased_entity
-                .unwrap_or_else(|| pluralize(&field.entity, 2, false));
+                .unwrap_or_else(|| pluralize(&concat_field.entity, 2, false));
 
             let concatenated_expression = format!(
                 "({})",
-                field
+                concat_field
                     .fields
                     .iter()
                     .map(|f| {
-                        if f.ends_with("_date") {
-                            format!(
-                                "COALESCE(to_char(\"{}\".\"{}\"::date, '{}'), '')",
-                                entity, f, date_fmt
+                        format!(
+                            "COALESCE({}, '')",
+                            get_field_with_parse_as(
+                                &entity.as_str(),
+                                f,
+                                date_fmt,
+                                None,
+                                entity.as_str(),
+                                timezone,
+                                false,
+                                time_format,
                             )
-                        } else {
-                            format!("COALESCE(\"{}\".\"{}\" , '')", entity, f)
-                        }
+                        )
                     })
                     .collect::<Vec<_>>()
-                    .join(&format!(" || '{}' || ", field.separator))
+                    .join(&format!(" || '{}' || ", concat_field.separator))
             );
 
             let field_expr = FieldExpression {
                 expression: concatenated_expression,
-                fields: field.fields.clone(),
+                fields: concat_field.fields.clone(),
             };
 
             acc.entry(entity)
                 .or_insert_with(HashMap::new)
-                .insert(field.field_name, field_expr);
+                .insert(concat_field.field_name, field_expr);
 
             acc
         })
+}
+
+fn get_field_with_parse_as(
+    table: &str,
+    field: &str,
+    format_str: &str,
+    parse_as: Option<&str>,
+    main_table: &str,
+    timezone: Option<&str>,
+    with_alias: bool,
+    time_format: &str,
+) -> String {
+    match parse_as {
+        Some("date") => date_format_wrapper(table, field, Some(format_str), timezone, with_alias),
+        Some("time") => {
+            time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
+        }
+        Some("text") => {
+            let field_expr = format!("\"{}\".\"{}\"::text", table, field);
+            if with_alias {
+                format!("{} AS {}", field_expr, field)
+            } else {
+                field_expr
+            }
+        }
+        _ => {
+            let field_expr = if field.ends_with("_date") {
+                date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
+            } else if field.ends_with("_time") {
+                time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
+            } else {
+                let table_field = format!("\"{}\".\"{}\"", table, field);
+                if with_alias {
+                    format!("{} AS {}", table_field, field)
+                } else {
+                    table_field
+                }
+            };
+            field_expr
+        }
+    }
 }
