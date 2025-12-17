@@ -1,9 +1,11 @@
-import { bigint, integer, pgTable, text, doublePrecision } from 'drizzle-orm/pg-core';
+import { bigint, integer, pgTable, text, doublePrecision, AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { primaryKey } from 'drizzle-orm/pg-core';
+import { table as devices } from './devices';
+
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('temp_system_resources', table),
@@ -34,6 +36,9 @@ export const table = pgTable(
 
     // Temperature
     temperatures: text('temperatures'), // JSON string
+
+    // Device ID
+    device_id: text('device_id').references(() => devices.id as AnyPgColumn),
   },
   config,
 );
