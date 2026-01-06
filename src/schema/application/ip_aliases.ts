@@ -21,9 +21,8 @@ const fields = {
   alias_id: text('alias_id').references(
     () => aliases.id as AnyPgColumn,
   ),
-  ip: inet('ip').unique(),
-  prefix: integer('prefix').default(32).unique(),
-  // timestamp: timestamp('timestamp', { withTimezone: true }),
+  ip: inet('ip').default("0.0.0.0"),
+  prefix: integer('prefix').default(32),
 }
 
 export const table = pgTable(

@@ -21,12 +21,11 @@ export const table = pgTable(
   {
     ...system_fields,
     id: text('id'),
-    // timestamp: timestamp('timestamp', { withTimezone: true }),
     alias_id: text('alias_id').references(
       () => aliases.id as AnyPgColumn,
     ),
-    ip: inet('ip').unique(),
-    prefix: integer('prefix').default(32).unique(),
+    ip: inet('ip').default("0.0.0.0"),
+    prefix: integer('prefix').default(32),
   },
   config,
 );

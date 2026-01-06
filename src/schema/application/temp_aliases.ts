@@ -20,7 +20,7 @@ export const table = pgTable(
       () => device_configurations.id as AnyPgColumn,
     ),
     type: text('type'),
-    name: text('name').unique(),
+    name: text('name'),
     description: text('description'),
     alias_status: text('alias_status'),
 
