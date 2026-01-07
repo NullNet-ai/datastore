@@ -10,6 +10,7 @@ import {
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { table as devices } from './devices';
+import { sql } from 'drizzle-orm';
 
 const table_name = 'installation_codes';
 
@@ -32,7 +33,10 @@ export const table = pgTable(
   {
     ...system_fields,
     ...fields,
-    id: text('id')
+    id: text('id'),
+    token: text("token")
+      .default(sql`substring(md5(random()::text) FROM 1 FOR 8)`)
+      .unique(),
   },
   config,
 );
