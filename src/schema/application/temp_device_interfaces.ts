@@ -3,7 +3,7 @@ import {
   pgTable,
   text,
   primaryKey,
-  inet,
+  index,
 } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
@@ -11,24 +11,34 @@ import {
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 import { table as device_configurations } from './device_configurations';
 
+const table_name = 'temp_device_interfaces';
+
+const fields = {
+  device_configuration_id: text('device_configuration_id').references(
+    () => device_configurations.id as AnyPgColumn,
+  ),
+  name: text('name'),
+  device: text('device'),
+}
+
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
-  ...getConfigDefaults.defaultIndexes('temp_device_interfaces', table),
+  ...getConfigDefaults.defaultIndexes(table_name, table),
+  ...Object.keys(fields).reduce((acc, field) => {
+    const index_name = `${table_name}_${field}_idx`;
+    return {
+      ...acc,
+      [index_name]: index(index_name).on(table[field]),
+    };
+  }, {}),
 });
 
 export const table = pgTable(
-  'temp_device_interfaces',
+  table_name,
   {
     ...system_fields,
+    ...fields,
     id: text('id'),
-    device_configuration_id: text('device_configuration_id').references(
-      () => device_configurations.id as AnyPgColumn,
-    ),
-    name: text('name'),
-    // timestamp: timestamp('timestamp', { withTimezone: true }),
-    device: text('device'),
-    address: inet('address'), // unused
-
   },
   config,
 );
