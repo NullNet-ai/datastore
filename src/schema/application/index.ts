@@ -48,8 +48,8 @@ export { table as device_interface_addresses } from '../application/device_inter
 export { table as temp_device_interface_addresses } from '../application/temp_device_interface_addresses';
 export { table as device_remote_access_sessions } from '../application/device_remote_access_sessions';
 export { table as temp_device_remote_access_sessions } from '../application/temp_device_remote_access_sessions';
-// export { table as device_interface_addresses } from "../application/device_interface_addresses";
-// export { table as temp_device_interface_addresses } from "../application/temp_device_interface_addresses";
+export { table as device_services } from "../application/device_services";
+export { table as temp_device_services } from "../application/temp_device_services";
 export { table as tcp_connections } from '../application/tcp_connections';
 export { table as ip_infos } from './ip_infos';
 export { table as app_firewalls } from './app_firewalls';
