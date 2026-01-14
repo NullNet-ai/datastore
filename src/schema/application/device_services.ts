@@ -28,7 +28,8 @@ export const table = pgTable(
     device_id: text('device_id').references(() => devices.id as AnyPgColumn),
     address: inet('address'),
     port: integer('port'),
-    protocol: text('protocol')
+    protocol: text('protocol'),
+    program: text('program'),
   },
   config,
 );
