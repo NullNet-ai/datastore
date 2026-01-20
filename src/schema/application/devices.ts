@@ -24,6 +24,7 @@ export const table = pgTable(
     device_category: text("device_category").default(""),
     device_type: text("device_type").default(""),
     device_os: text("device_os").default(""),
+    device_version: text("device_version").default(""),
 
     is_device_online: boolean("is_device_online").default(false),
   },
