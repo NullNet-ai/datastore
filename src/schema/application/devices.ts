@@ -6,6 +6,7 @@ import {
   system_fields,
 } from '@dna-platform/crdt-lww-postgres/build/schema/system';
 // import { table as addresses } from './addresses';
+import { addresses } from '..';
 
 const filename = path.basename(__filename).replace(fileRegex, '');
 const config = getConfigDefaults.byIndex(filename);
@@ -27,6 +28,8 @@ export const table = pgTable(
     device_version: text("device_version").default(""),
 
     is_device_online: boolean("is_device_online").default(false),
+
+    address_id: text('address_id').references(() => (addresses as any).id),
   },
   config,
 );
