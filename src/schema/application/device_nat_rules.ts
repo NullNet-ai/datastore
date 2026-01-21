@@ -39,6 +39,8 @@ const fields = {
   destination_ip_version: integer('destination_ip_version'),
   destination_type: text('destination_type'),
 
+  device_rule_status: text('device_rule_status').default('Applied'),
+
   description: text('description'),
   interface: text('interface'),
 
