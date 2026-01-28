@@ -65,4 +65,6 @@ export { table as temp_system_resources } from './temp_system_resources';
 export { table as setup_instructions } from "./setup_instructions";
 export { table as installation_codes } from "./installation_codes";
 export { table as device_instances } from "./device_instances"; 
+export { table as device_tunnels } from "./device_tunnels"; 
+export { table as device_ssh_sessions } from "./device_ssh_sessions"; 
 // export { table as data_permissions } from '../application/data_permissions';
