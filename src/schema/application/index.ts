@@ -68,3 +68,4 @@ export { table as device_instances } from "./device_instances";
 export { table as device_tunnels } from "./device_tunnels"; 
 export { table as device_ssh_sessions } from "./device_ssh_sessions"; 
 // export { table as data_permissions } from '../application/data_permissions';
+export { table as version } from './version';
