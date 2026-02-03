@@ -54,6 +54,8 @@ const fields = {
   table: text('table'),
   chain: text('chain'),
   family: text('family'),
+
+  floating: boolean('floating'),
 };
 
 const config = (table) => ({
