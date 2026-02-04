@@ -24,6 +24,10 @@ impl QueryFilter for BatchUpdateFilterWrapper {
     fn get_date_format(&self) -> &str {
         "YYYY-MM-DD" // Default date format
     }
+
+    fn get_time_format(&self) -> &str {
+        "HH24:MI"
+    }
 }
 
 // Main SQL constructor for batch updates that can use either approach

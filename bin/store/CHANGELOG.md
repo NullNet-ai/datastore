@@ -5,6 +5,37 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.4
+### Author
+Jean
+### Updates
+  - ***SQL Selection Constructor***:
+    - Added condition that once an alias entity is added to the selection, it will not be constructed and added again, this is to fixed duplicate field selections of an entity if used multiple times in joins.
+    
+    
+## 0.2.3
+### Author
+Jean
+### Updates
+  - ***SQL Constructors***:
+    - Parsing and formatting of Date and Time fields.
+  - ***Test scenarios***:               
+    - Added test scenarios and tokio test assertions
+
+
+## 0.2.2
+### Author
+Jean
+### Added
+  - ***Time formatting***:
+    - Added time_format on the filter query to support formatting of time fields in the response
+  - ***Date and Time formatter wrappers***:
+    - Move wrappers for date and time formatting to utility helpers for a reusable function.
+    - Adjusted other services to use these new formatters.
+  - ***Test scenarios***:               
+    - Added test scenarios and tokio test assertions
+
+
 ## 0.2.1
 ### Author
 Bert

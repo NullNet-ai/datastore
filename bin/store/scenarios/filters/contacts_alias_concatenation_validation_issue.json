@@ -6,11 +6,6 @@
     "status"
   ],
   "pluck_object": {
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
     "contacts": [
       "id",
       "first_name",
@@ -24,6 +19,11 @@
       "contact_id"
     ],
     "created_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "updated_by": [
       "id",
       "first_name",
       "last_name"
@@ -179,5 +179,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": null,
-  "timezone": null
+  "timezone": null,
+  "time_format": "HH24:MI"
 }

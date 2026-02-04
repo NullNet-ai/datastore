@@ -8,17 +8,14 @@
   "pluck_object": {
     "contacts": [
       "id",
-      "code",
-      "categories",
-      "organization_id",
       "first_name",
-      "middle_name",
       "last_name",
-      "status",
-      "created_date",
-      "created_time",
-      "updated_date",
-      "updated_time"
+      "status"
+    ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name"
     ],
     "created_by_account_organizations": [
       "id",
@@ -28,19 +25,14 @@
       "email",
       "is_primary"
     ],
-    "created_by": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name"
+      "contact_id"
     ],
     "updated_by": [
       "id",
       "first_name",
       "last_name"
-    ],
-    "updated_by_account_organizations": [
-      "id",
-      "contact_id"
     ]
   },
   "pluck_group_object": {},
@@ -62,6 +54,28 @@
   ],
   "group_advance_filters": [],
   "joins": [
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "entity": "contact_emails",
+          "field": "contact_id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
+        },
+        "from": {
+          "entity": "contacts",
+          "field": "id",
+          "order_direction": null,
+          "order_by": null,
+          "limit": null,
+          "offset": null
+        }
+      },
+      "nested": false
+    },
     {
       "type": "left",
       "field_relation": {
@@ -189,5 +203,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": null,
-  "timezone": null
+  "timezone": null,
+  "time_format": "HH24:MI"
 }

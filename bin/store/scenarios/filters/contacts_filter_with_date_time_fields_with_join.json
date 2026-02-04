@@ -5,12 +5,33 @@
     "organization_id",
     "first_name",
     "middle_name",
-    "last_name"
+    "last_name",
+    "created_date",
+    "created_time",
+    "updated_date",
+    "updated_time"
   ],
   "pluck_object": {
     "created_by_account_organizations": [
       "id",
       "contact_id"
+    ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name",
+      "created_date",
+      "created_time",
+      "updated_date"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
+    ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
     ],
     "contact_phone_numbers": [
       "phone_number_raw"
@@ -32,27 +53,35 @@
       "updated_by",
       "previous_status"
     ],
-    "contact_emails": [
-      "email",
-      "is_primary"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
     "updated_by_account_organizations": [
       "id",
       "contact_id"
     ]
   },
-  "pluck_group_object": {},
-  "advance_filters": [],
+  "pluck_group_object": {
+    "contact_phone_numbers": [
+      "phone_number_raw"
+    ],
+    "contact_emails": [
+      "email",
+      "is_primary"
+    ]
+  },
+  "advance_filters": [
+    {
+      "type": "criteria",
+      "field": "created_date",
+      "operator": "like",
+      "values": [
+        "08/15"
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": null,
+      "is_search": null,
+      "has_group_count": null
+    }
+  ],
   "group_advance_filters": [],
   "joins": [
     {
@@ -194,10 +223,57 @@
   ],
   "group_by": {
     "fields": [],
-    "has_count": true
+    "has_count": false
   },
-  "concatenate_fields": [],
-  "multiple_sort": [],
+  "concatenate_fields": [
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "created_by"
+    },
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "updated_by"
+    },
+    {
+      "fields": [
+        "created_date",
+        "created_time"
+      ],
+      "field_name": "created_date_time",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
+    },
+    {
+      "fields": [
+        "updated_date",
+        "updated_time"
+      ],
+      "field_name": "updated_date_time",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
+    }
+  ],
+  "multiple_sort": [
+    {
+      "by_field": "created_date",
+      "by_direction": "desc",
+      "is_case_sensitive_sorting": false
+    }
+  ],
   "date_format": "mm/dd/YYYY",
   "order_by": "id",
   "order_direction": "asc",
@@ -205,6 +281,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": "",
-  "timezone": null,
+  "timezone": "America/Los_Angeles",
   "time_format": "HH24:MI"
 }

@@ -7,34 +7,19 @@
     "middle_name",
     "last_name",
     "created_date",
-    "created_time"
+    "created_time",
+    "updated_date",
+    "updated_time"
   ],
   "pluck_object": {},
   "pluck_group_object": {},
   "advance_filters": [
     {
       "type": "criteria",
-      "field": "full_name",
+      "field": "created_date",
       "operator": "like",
       "values": [
-        "Jean2"
-      ],
-      "case_sensitive": false,
-      "parse_as": "",
-      "match_pattern": null,
-      "is_search": null,
-      "has_group_count": null
-    },
-    {
-      "type": "operator",
-      "operator": "and"
-    },
-    {
-      "type": "criteria",
-      "field": "created_date_time",
-      "operator": "like",
-      "values": [
-        "08/26/2025"
+        "09/05"
       ],
       "case_sensitive": false,
       "parse_as": "",
@@ -52,16 +37,6 @@
   "concatenate_fields": [
     {
       "fields": [
-        "first_name",
-        "last_name"
-      ],
-      "field_name": "full_name",
-      "separator": " ",
-      "entity": "contacts",
-      "aliased_entity": null
-    },
-    {
-      "fields": [
         "created_date",
         "created_time"
       ],
@@ -69,12 +44,22 @@
       "separator": " ",
       "entity": "contacts",
       "aliased_entity": null
+    },
+    {
+      "fields": [
+        "updated_date",
+        "updated_time"
+      ],
+      "field_name": "updated_date_time",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
     }
   ],
   "multiple_sort": [
     {
-      "by_field": "status",
-      "by_direction": "asc",
+      "by_field": "created_date",
+      "by_direction": "desc",
       "is_case_sensitive_sorting": false
     }
   ],
@@ -85,6 +70,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": "",
-  "timezone": null,
+  "timezone": "America/Los_Angeles",
   "time_format": "HH24:MI"
 }

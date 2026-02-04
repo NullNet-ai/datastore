@@ -1289,6 +1289,7 @@ pub async fn get_by_filter(
     let mut conn = db::get_async_connection().await;
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
+    log::info!("Final query: {:?}", final_query);
     let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
         .await
@@ -2212,6 +2213,11 @@ pub async fn search_suggestions(
         .get::<Auth>()
         .map_or(false, |auth_data| auth_data.is_root_account);
 
+    let headers = auth.headers();
+    let header_timezone = headers
+        .get("timezone")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -2249,6 +2255,8 @@ pub async fn search_suggestions(
         joins,
         concatenate_fields,
         date_format,
+        time_format,
+        timezone: body_timezone,
         ..
     } = &parameters;
 
@@ -2394,15 +2402,24 @@ pub async fn search_suggestions(
         formatted_advance_filters = _formatted_advance_filters;
     }
 
+    let timezone = match (header_timezone.clone(), body_timezone) {
+        (Some(tz), _) => Some(tz.to_string()),
+        (None, Some(tz)) => Some(tz.to_string()),
+        (None, None) => None,
+    };
     // generate concatenated fields
-    let concatenated_expressions =
-        generate_concatenated_expressions(concatenate_fields.clone(), Some(date_format.as_str()));
+    let concatenated_expressions = generate_concatenated_expressions(
+        concatenate_fields.clone(),
+        Some(date_format.as_str()),
+        timezone.as_deref(),
+        time_format,
+    );
 
     // get connection to Diesel
     let mut conn = db::get_async_connection().await;
     // generate json build object query
     let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> =
-        SearchSQLContructor::new(parameters, table.clone(), is_root, None);
+        SearchSQLContructor::new(parameters, table.clone(), is_root, header_timezone);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
@@ -2426,6 +2443,7 @@ pub async fn search_suggestions(
     };
 
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    log::info!("Search Suggestion Query:     {}", final_query);
     log::debug!("Search Suggestion Query: {}", final_query);
 
     // execute query
