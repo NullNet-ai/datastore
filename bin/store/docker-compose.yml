@@ -8,7 +8,7 @@ services:
     image: timescale/timescaledb:latest-pg15
     container_name: timescaledb
     ports:
-      - "5432:5432"
+      - "5440:5432"
     networks:
       - internal
     environment:
@@ -21,7 +21,7 @@ services:
     image: redis:7
     container_name: redis
     ports:
-      - "6379:6379" # Host:Container mapping
+      - "6390:6379" # Host:Container mapping
     networks:
       - internal
     restart: unless-stopped
