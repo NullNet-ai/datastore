@@ -1,19 +1,27 @@
 use crate::database::schema::hypertables::is_hypertable;
 use crate::structs::core::{ConcatenateField, GroupBy, Join};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
 use std::collections::HashMap;
 
 pub struct GroupByConstructor<'a> {
     pub table: &'a str,
     pub timezone: Option<&'a str>,
     pub date_format: &'a str,
+    pub time_format: &'a str,
 }
 
 impl<'a> GroupByConstructor<'a> {
-    pub fn new(table: &'a str, timezone: Option<&'a str>, date_format: &'a str) -> Self {
+    pub fn new(
+        table: &'a str,
+        timezone: Option<&'a str>,
+        date_format: &'a str,
+        time_format: &'a str,
+    ) -> Self {
         Self {
             table,
             timezone,
             date_format,
+            time_format,
         }
     }
 
@@ -48,6 +56,7 @@ impl<'a> GroupByConstructor<'a> {
                                 self.table,
                                 self.timezone,
                                 false, // GROUP BY cannot have aliases
+                                self.time_format,
                             )
                         } else {
                             // Handle single field without entity prefix
@@ -58,6 +67,7 @@ impl<'a> GroupByConstructor<'a> {
                                 self.table,
                                 self.timezone,
                                 false, // GROUP BY cannot have aliases
+                                self.time_format,
                             )
                         }
                     })
@@ -86,6 +96,7 @@ impl<'a> GroupByConstructor<'a> {
                             self.table,
                             self.timezone,
                             false,
+                            self.time_format,
                         ));
                     }
                 }
@@ -103,6 +114,7 @@ impl<'a> GroupByConstructor<'a> {
                                 self.table,
                                 self.timezone,
                                 false,
+                                self.time_format,
                             ));
                         }
                     }
@@ -121,6 +133,7 @@ impl<'a> GroupByConstructor<'a> {
                                 self.table,
                                 self.timezone,
                                 false,
+                                self.time_format,
                             ));
                         }
                     }
@@ -165,6 +178,7 @@ impl<'a> GroupByConstructor<'a> {
                             self.table,
                             self.timezone,
                             false,
+                            self.time_format,
                         ));
                     }
                 }
@@ -196,10 +210,17 @@ impl<'a> GroupByConstructor<'a> {
         main_table: &str,
         timezone: Option<&str>,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
         Self::get_field_with_parse_as(
-            table, field, format_str, None, // No parse_as for GROUP BY fields
-            main_table, timezone, with_alias,
+            table,
+            field,
+            format_str,
+            None, // No parse_as for GROUP BY fields
+            main_table,
+            timezone,
+            with_alias,
+            time_format,
         )
     }
 
@@ -211,12 +232,20 @@ impl<'a> GroupByConstructor<'a> {
         main_table: &str,
         timezone: Option<&str>,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
         match parse_as {
             Some("date") => {
                 Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
             }
-            Some("time") => Self::time_format_wrapper(field, timezone, main_table, with_alias),
+            Some("time") => Self::time_format_wrapper(
+                table,
+                field,
+                timezone,
+                main_table,
+                with_alias,
+                time_format,
+            ),
             Some("text") => {
                 let field_expr = format!("\"{}\".\"{}\"::text", table, field);
                 if with_alias {
@@ -226,12 +255,26 @@ impl<'a> GroupByConstructor<'a> {
                 }
             }
             _ => {
-                let field_expr = format!("\"{}\".\"{}\"", table, field);
-                if with_alias {
-                    format!("{} AS {}", field_expr, field)
+                let field_expr = if field.ends_with("_date") {
+                    Self::date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
+                } else if field.ends_with("_time") {
+                    Self::time_format_wrapper(
+                        table,
+                        field,
+                        timezone,
+                        main_table,
+                        with_alias,
+                        time_format,
+                    )
                 } else {
-                    field_expr
-                }
+                    let table_field = format!("\"{}\".\"{}\"", table, field);
+                    if with_alias {
+                        format!("{} AS {}", table_field, field)
+                    } else {
+                        table_field
+                    }
+                };
+                field_expr
             }
         }
     }
@@ -243,49 +286,17 @@ impl<'a> GroupByConstructor<'a> {
         timezone: Option<&str>,
         with_alias: bool,
     ) -> String {
-        let format_pattern = format_str.unwrap_or("%Y-%m-%d %H:%M:%S");
-
-        let field_expr = if let Some(tz) = timezone {
-            format!(
-                "TO_CHAR((\"{}\".\"{}\" AT TIME ZONE '{}'), '{}')",
-                table, field, tz, format_pattern
-            )
-        } else {
-            format!(
-                "TO_CHAR(\"{}\".\"{}\"::timestamp, '{}')",
-                table, field, format_pattern
-            )
-        };
-
-        if with_alias {
-            format!("{} AS {}", field_expr, field)
-        } else {
-            field_expr
-        }
+        date_format_wrapper(table, field, format_str, timezone, with_alias)
     }
 
     fn time_format_wrapper(
+        table: &str,
         field: &str,
         timezone: Option<&str>,
         main_table: &str,
         with_alias: bool,
+        time_format: &str,
     ) -> String {
-        let field_expr = if let Some(tz) = timezone {
-            format!(
-                "TO_CHAR((\"{}\".\"{}\" AT TIME ZONE '{}'), 'HH24:MI:SS')",
-                main_table, field, tz
-            )
-        } else {
-            format!(
-                "TO_CHAR(\"{}\".\"{}\"::time, 'HH24:MI:SS')",
-                main_table, field
-            )
-        };
-
-        if with_alias {
-            format!("{} AS {}", field_expr, field)
-        } else {
-            field_expr
-        }
+        time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
     }
 }

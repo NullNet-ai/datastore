@@ -21,6 +21,7 @@ mod tests {
             bucket_size: Some("1 hour".to_string()),
             timezone: Some("UTC".to_string()),
             order: None,
+            time_format: "HH24:MI".to_string(),
         }
     }
 

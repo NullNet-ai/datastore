@@ -163,13 +163,14 @@ impl SelectionsConstructor {
         let mut pluck_selections = Vec::new();
         // Handle regular pluck fields
         for field in request_body.get_pluck() {
+            let with_alias = field.ends_with("_date") || field.ends_with("_time");
             let field_selection = get_field(
                 table,
                 field,
                 request_body.get_date_format(),
                 table,
                 timezone,
-                true,
+                with_alias,
             );
             pluck_selections.push(field_selection);
         }
@@ -237,13 +238,14 @@ impl SelectionsConstructor {
 
         // Handle the selected fields
         for field in fields_to_use {
+            let with_alias = field.ends_with("_date") || field.ends_with("_time");
             let field_selection = get_field(
                 table,
                 field,
                 request_body.get_date_format(),
                 table,
                 timezone,
-                true,
+                with_alias,
             );
             pluck_selections.push(field_selection);
         }
@@ -314,6 +316,7 @@ impl SelectionsConstructor {
             return join_selections;
         }
 
+        let mut added_entity_selection = std::collections::HashSet::new();
         // Process each join
         for join in request_body.get_joins() {
             let from_alias = join
@@ -330,7 +333,10 @@ impl SelectionsConstructor {
                 .unwrap_or(&join.field_relation.to.entity);
 
             // Handle fields for this join tables from "from"
-            if request_body.get_pluck_object().contains_key(from_alias) {
+            if request_body.get_pluck_object().contains_key(from_alias)
+                && !join.nested
+                && !added_entity_selection.contains(from_alias)
+            {
                 join_selections.push(Self::construct_pluck_with_object_for_main(
                     request_body,
                     from_alias,
@@ -338,6 +344,7 @@ impl SelectionsConstructor {
                     &get_field,
                     &get_field_with_parse_as,
                 ));
+                added_entity_selection.insert(from_alias.to_string());
             }
 
             // Handle fields for this join tables from "to"

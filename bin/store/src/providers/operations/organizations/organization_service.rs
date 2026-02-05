@@ -18,6 +18,7 @@ use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::AccountType;
 use crate::providers::operations::organizations::structs::Register;
 use crate::providers::operations::sync::sync_service;
+use crate::structs::organizations_structs::VerifyPasswordParams;
 use crate::utils::helpers;
 use actix_web::http::StatusCode;
 use diesel::prelude::*;
@@ -48,7 +49,6 @@ pub fn get_defaults() -> (
     let debug = config.debug;
     let super_admin_id = config.super_admin_id;
     let system_device_ulid = config.system_device_ulid;
-
     (
         default_organization_id,
         default_organization_name,
@@ -836,4 +836,45 @@ pub async fn initialize_device() -> Result<(), ApiError> {
     .await?;
 
     Ok(())
+}
+
+pub async fn verify_password(
+    params: VerifyPasswordParams,
+) -> Result<VerifyPasswordParams, ApiError> {
+    let mut conn = db::get_async_connection().await;
+    let account_id = params.account_id;
+    let password = params.password;
+    let account = accounts::table
+        .filter(accounts::id.eq(account_id).and(accounts::tombstone.eq(0)))
+        .first::<AccountModel>(&mut conn)
+        .await
+        .optional()
+        .map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Database error: {}", e),
+            )
+        })?;
+
+    match account {
+        Some(account_model) => {
+            let account_secret = account_model.account_secret.as_deref().unwrap_or_default();
+            let is_valid = auth_service::password_verify(account_secret, &password).await?;
+            if is_valid {
+                Ok(VerifyPasswordParams {
+                    account_id: account_model.id.unwrap_or_default(),
+                    password,
+                })
+            } else {
+                Err(ApiError::new(
+                    StatusCode::UNAUTHORIZED,
+                    "Invalid password".to_string(),
+                ))
+            }
+        }
+        None => Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            "Account not found".to_string(),
+        )),
+    }
 }

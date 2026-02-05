@@ -2,6 +2,7 @@ use crate::{
     config::core::EnvConfig,
     lifecycle::logging::{LogCategory, LogLevel},
     providers::operations::sync::sync_service::bg_sync_with_shutdown_check,
+    utils::helpers::parse_command_args,
 };
 use log::{debug, error, info, warn};
 use std::sync::Arc;
@@ -144,6 +145,11 @@ impl RuntimeManager {
 
         // Start background services
         self.start_background_services().await?;
+
+        let args = parse_command_args();
+        println!("args: {:?}", &args);
+        // // Handle database operations
+        // db::handle_database_operations(&args).await;
 
         // Start HTTP server and run main loop
         info!("[RUNTIME] About to call run_main_loop_with_server");

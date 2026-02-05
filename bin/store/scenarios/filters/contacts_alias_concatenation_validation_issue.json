@@ -6,11 +6,15 @@
     "status"
   ],
   "pluck_object": {
-    "created_by_account_organizations": [
+    "contacts": [
       "id",
-      "contact_id"
+      "first_name",
+      "last_name",
+      "status",
+      "created_by",
+      "updated_by"
     ],
-    "updated_by_account_organizations": [
+    "created_by_account_organizations": [
       "id",
       "contact_id"
     ],
@@ -24,13 +28,9 @@
       "first_name",
       "last_name"
     ],
-    "contacts": [
+    "updated_by_account_organizations": [
       "id",
-      "first_name",
-      "last_name",
-      "status",
-      "created_by",
-      "updated_by"
+      "contact_id"
     ]
   },
   "pluck_group_object": {},
@@ -179,5 +179,6 @@
   "offset": 0,
   "limit": 100,
   "distinct_by": null,
-  "timezone": null
+  "timezone": null,
+  "time_format": "HH24:MI"
 }

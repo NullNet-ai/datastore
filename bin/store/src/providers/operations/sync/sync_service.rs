@@ -25,6 +25,7 @@ use super::transport::transport_driver::PostOpts;
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
+
     let mut conn = db::get_async_connection().await;
 
     let messages: Vec<CrdtMessageModel> = conn

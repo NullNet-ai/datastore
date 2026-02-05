@@ -14,6 +14,7 @@ mod routers;
 mod structs;
 mod utils;
 use crate::builders::generator::generator_service;
+use crate::lifecycle::bootstrap;
 use crate::providers::storage::cache::{cache, CacheConfig};
 // Add the cache function import
 use crate::database::db;
@@ -25,7 +26,7 @@ use crate::utils::helpers::{parse_command_args, parse_env_config};
 use config::core::EnvConfig;
 use env_logger::Env;
 use log::{error, info};
-
+use std::env;
 /// Initialize logging and cache configuration
 fn initialize_logging_and_cache(env_config: &EnvConfig) {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
@@ -47,29 +48,8 @@ fn initialize_logging_and_cache(env_config: &EnvConfig) {
     let _ = cache.cache_type();
 }
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-    bootstrap().await?;
-    Ok(())
-}
-
 // Bootstrap
-async fn bootstrap() -> std::io::Result<()> {
-    dotenv().ok();
-
-    // Parse configuration
-    let args = parse_command_args();
-    let env_config = parse_env_config();
-
-    // Initialize basic logging first
-    initialize_logging_and_cache(&env_config);
-
-    // Handle code generation (exits if any generation flags are set)
-    generator_service::handle_code_generation(&args).await;
-
-    // Handle database operations
-    db::handle_database_operations(&args).await;
-
+async fn bootstrap_with_lifecycle() -> std::io::Result<()> {
     // Create lifecycle configuration
     let log_config = LogConfig {
         level: LogLevel::Info,
@@ -82,7 +62,7 @@ async fn bootstrap() -> std::io::Result<()> {
 
     // Initialize lifecycle manager
     let mut lifecycle_manager =
-        LifecycleManager::with_config(log_config, std::sync::Arc::new(env_config));
+        LifecycleManager::with_config(log_config, std::sync::Arc::new(parse_env_config()));
 
     // Execute the application lifecycle
     if let Err(e) = lifecycle_manager.execute().await {
@@ -94,5 +74,27 @@ async fn bootstrap() -> std::io::Result<()> {
     }
 
     info!("Application shutdown completed successfully");
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    
+    dotenv().ok();
+    // Parse configuration
+    let args = parse_command_args();
+    let _args: Vec<String> = env::args().collect();
+    if _args.contains(&"--init-db".to_string()) {
+        bootstrap::exec().await?;
+        return Ok(());
+    } else {
+        // Initialize basic logging first
+        initialize_logging_and_cache(&parse_env_config());
+
+        // Handle code generation (exits if any generation flags are set)
+        generator_service::handle_code_generation(&args).await;
+
+        bootstrap_with_lifecycle().await?;
+    }
     Ok(())
 }

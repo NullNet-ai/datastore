@@ -23,6 +23,7 @@ static ASYNC_POOL: Lazy<AsyncDbPool> = Lazy::new(|| establish_async_pool());
 pub fn establish_async_pool() -> AsyncDbPool {
     dotenv().ok();
     let config_env = EnvConfig::default();
+    println!("######{}", config_env.database_url);
     let config =
         AsyncDieselConnectionManager::<AsyncPgConnection>::new(config_env.database_url.clone());
     PoolAsync::builder(config)

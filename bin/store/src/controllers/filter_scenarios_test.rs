@@ -31,6 +31,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         }
     }
 
@@ -69,6 +70,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         }
     }
 
@@ -106,6 +108,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         }
     }
 
@@ -133,6 +136,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         };
 
         let mut payload_filters =
@@ -201,6 +205,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         };
 
         let mut payload_filters =
@@ -286,6 +291,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         };
 
         let mut payload_filters =
@@ -372,6 +378,7 @@ mod tests {
             offset: 0,
             distinct_by: None,
             timezone: None,
+            time_format: "HH24:MI".to_string(),
         };
 
         let mut payload_filters =

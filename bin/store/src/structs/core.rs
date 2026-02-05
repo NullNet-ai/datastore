@@ -10,6 +10,7 @@ use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
 use ulid::Ulid;
 use uuid::Uuid;
+#[derive(Debug)]
 /// Configuration structure for command-line arguments
 pub struct CommandArgs {
     pub cleanup: bool,
@@ -370,6 +371,9 @@ pub struct GetByFilter {
     pub distinct_by: Option<String>,
 
     pub timezone: Option<String>,
+
+    #[serde(default = "default_time_format")]
+    pub time_format: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -392,6 +396,9 @@ pub struct AggregationFilter {
     pub timezone: Option<String>,
 
     pub order: Option<AggregationOrder>,
+
+    #[serde(default = "default_time_format")]
+    pub time_format: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -591,6 +598,45 @@ fn default_parse_as() -> String {
     String::new()
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ETimeFormats {
+    #[serde(rename = "HH24:MI:SS")]
+    HH24MISS,
+    #[serde(rename = "HH24:MI")]
+    HH24MI,
+    #[serde(rename = "HH12:MI")]
+    HH12MI,
+    #[serde(rename = "HH12:MI AM")]
+    HH12MIAM,
+    #[serde(rename = "HH12:MI:SS AM")]
+    HH12MISSAM,
+    #[serde(rename = "HH12:MI:SS")]
+    HH12MISS,
+}
+
+impl ToString for ETimeFormats {
+    fn to_string(&self) -> String {
+        match self {
+            ETimeFormats::HH24MISS => "HH24:MI:SS".to_string(),
+            ETimeFormats::HH24MI => "HH24:MI".to_string(),
+            ETimeFormats::HH12MI => "HH12:MI".to_string(),
+            ETimeFormats::HH12MIAM => "HH12:MI AM".to_string(),
+            ETimeFormats::HH12MISSAM => "HH12:MI:SS AM".to_string(),
+            ETimeFormats::HH12MISS => "HH12:MI:SS".to_string(),
+        }
+    }
+}
+
+impl Default for ETimeFormats {
+    fn default() -> Self {
+        ETimeFormats::HH24MI
+    }
+}
+
+fn default_time_format() -> String {
+    ETimeFormats::default().to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Join {
     pub r#type: String, // use r#type because `type` is a Rust keyword
@@ -749,4 +795,7 @@ pub struct SearchSuggestionParams {
     pub pluck_object: BTreeMap<String, Vec<String>>,
 
     pub timezone: Option<String>,
+
+    #[serde(default = "default_time_format")]
+    pub time_format: String,
 }

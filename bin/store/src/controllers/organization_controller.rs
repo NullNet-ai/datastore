@@ -3,10 +3,13 @@ use crate::middlewares::auth_middleware::extract_token;
 use crate::middlewares::session_core::session_to_signed_in_activity;
 use crate::providers::operations::auth::auth_service::verify;
 use crate::providers::operations::organizations::auth_service::{auth, root_auth};
-use crate::providers::operations::organizations::organization_service::register;
+use crate::providers::operations::organizations::organization_service::{
+    register, verify_password,
+};
 use crate::providers::operations::organizations::structs::Register;
 use crate::providers::operations::sync::sync_service;
 use crate::structs::core::ApiResponse;
+use crate::structs::organizations_structs::VerifyPasswordParams;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
@@ -88,7 +91,7 @@ impl OrganizationsController {
         let session = match &session_option {
             Some(session) => session,
             None => {
-                return HttpResponse::Unauthorized().json(crate::structs::core::ApiResponse {
+                return HttpResponse::Unauthorized().json(ApiResponse {
                     success: false,
                     message: "Session doesn't exist in the login request".to_string(),
                     count: 0,
@@ -101,7 +104,7 @@ impl OrganizationsController {
         let session_id = match &session.id {
             Some(id) => id.clone(),
             None => {
-                return HttpResponse::BadRequest().json(crate::structs::core::ApiResponse {
+                return HttpResponse::BadRequest().json(ApiResponse {
                     success: false,
                     message: "Session ID doesn't exist in the organization_controller".to_string(),
                     count: 0,
@@ -351,6 +354,30 @@ impl OrganizationsController {
                 let error_response = ApiResponse {
                     success: false,
                     message: "Token Verification Failed: Missing token".to_string(),
+                    count: 0,
+                    data: vec![],
+                };
+                HttpResponse::BadRequest().json(error_response)
+            }
+        }
+    }
+
+    pub async fn verify_password(params: web::Json<VerifyPasswordParams>) -> impl Responder {
+        let verify_request = params.0.clone();
+        match verify_password(verify_request).await {
+            Ok(result) => {
+                let success_response = ApiResponse {
+                    success: true,
+                    message: "Password Verified".to_string(),
+                    count: 1,
+                    data: vec![serde_json::to_value(result).unwrap_or_default()],
+                };
+                HttpResponse::Ok().json(success_response)
+            }
+            Err(e) => {
+                let error_response = ApiResponse {
+                    success: false,
+                    message: format!("Password Verification Failed: {:?}", e),
                     count: 0,
                     data: vec![],
                 };
