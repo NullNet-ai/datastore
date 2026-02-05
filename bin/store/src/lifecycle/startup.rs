@@ -443,10 +443,9 @@ impl StartupManager {
         // Validate JWT secret
         if !self.config.jwt_secret.is_empty() {
             if self.config.jwt_secret.len() < 32 {
-                validation.errors.push(
+                validation.warnings.push(
                     "JWT_SECRET must be at least 32 characters long for security".to_string(),
                 );
-                validation.is_valid = false;
             }
 
             // Check for common weak secrets
