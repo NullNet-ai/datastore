@@ -408,7 +408,10 @@ impl SessionManager {
     }
 
     pub fn should_skip_session(&self, path: &str) -> bool {
-        path.contains("logout") || !path.contains("/api/")
+        path.contains("logout") || 
+        path.contains("/auth") || 
+        path.contains("/register") ||
+        !path.contains("/api/")
     }
 
     /// Get session header name

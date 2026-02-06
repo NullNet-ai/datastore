@@ -378,7 +378,7 @@ POSTGRES_USER: Database username (default: admin)
 POSTGRES_PASSWORD: Database password (default: admin)
 POSTGRES_DB: Database name (default: nullnet)
 POSTGRES_HOST: Database host (default: localhost)
-POSTGRES_PORT: Database port (default: 5433)
+POSTGRES_PORT: Database port (default: 5432)
 ```
 
 ### System Defaults
