@@ -19,10 +19,33 @@ impl JoinsConstructor {
         } else {
             let mut join_clauses = Vec::new();
 
-            for join in request_body.get_joins() {
+            let joins = request_body.get_joins();
+            for (index, join) in joins.iter().enumerate() {
                 match join.r#type.as_str() {
                     "left" => {
                         let join_clause = Self::build_left_join_lateral(
+                            request_body,
+                            table,
+                            join,
+                            &build_system_where_clause,
+                            &build_infix_expression,
+                        );
+                        join_clauses.push(join_clause);
+                    }
+                    "right" => {
+                        let join_clause = Self::build_right_join_lateral(
+                            request_body,
+                            table,
+                            join,
+                            index,
+                            joins,
+                            &build_system_where_clause,
+                            &build_infix_expression,
+                        );
+                        join_clauses.push(join_clause);
+                    }
+                    "inner" => {
+                        let join_clause = Self::build_inner_join_lateral(
                             request_body,
                             table,
                             join,
@@ -69,8 +92,144 @@ impl JoinsConstructor {
             table,
             join,
             false,
+            "LEFT",
             build_system_where_clause,
             build_infix_expression,
+        )
+    }
+
+    /// Builds an INNER JOIN LATERAL clause (same structure as LEFT: WHERE in subquery, ON TRUE)
+    fn build_inner_join_lateral<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        join: &Join,
+        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
+        build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
+    ) -> String {
+        Self::build_join_lateral(
+            request_body,
+            table,
+            join,
+            false,
+            "INNER",
+            build_system_where_clause,
+            build_infix_expression,
+        )
+    }
+
+    /// Builds a RIGHT JOIN LATERAL clause.
+    /// Same structure as build_join_lateral (LEFT); only difference: no WHERE in subquery, conditions go in ON.
+    fn build_right_join_lateral<T: QueryFilter>(
+        request_body: &T,
+        _table: &str,
+        join: &Join,
+        join_index: usize,
+        joins: &[Join],
+        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
+        build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
+    ) -> String {
+        let to_entity = &join.field_relation.to.entity;
+        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
+        let to_field = &join.field_relation.to.field;
+        let from_entity = &join.field_relation.from.entity;
+        let from_field = &join.field_relation.from.field;
+        let is_nested = join.nested;
+
+        // Same as LEFT: lateral alias used inside subquery (for RIGHT, result is also exposed as to_alias so ON can reference it)
+        let lateral_alias = to_alias;
+
+        // Build dynamic field selection based on pluck_object (same as LEFT)
+        // For RIGHT we must include tombstone and organization_id so the ON clause can reference them
+        let mut selected_field_names: Vec<&str> =
+            if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
+                fields.iter().map(|s| s.as_str()).collect()
+            } else {
+                vec!["id"]
+            };
+        if !selected_field_names.iter().any(|&f| f == "tombstone") {
+            selected_field_names.push("tombstone");
+        }
+        if !selected_field_names.iter().any(|&f| f == "organization_id") {
+            selected_field_names.push("organization_id");
+        }
+        let selected_fields = selected_field_names
+            .iter()
+            .map(|field| format!("\"{}\".\"{}\"", lateral_alias, field))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        // Same as LEFT: build where conditions (used in ON for RIGHT instead of WHERE)
+        let mut where_conditions = vec![build_system_where_clause(lateral_alias)
+            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))];
+
+        if !join.field_relation.to.filters.is_empty() {
+            match build_infix_expression(&join.field_relation.to.filters) {
+                Ok(filter_expression) if !filter_expression.is_empty() => {
+                    where_conditions.push(filter_expression);
+                }
+                Err(_) => {}
+                _ => {}
+            }
+        }
+
+        let combined_where = where_conditions.join(" AND ");
+
+        // Same as LEFT: determine the correct from table reference for the join condition
+        let from_table_ref = if let Some(alias) = &join.field_relation.from.alias {
+            alias.as_str()
+        } else if is_nested && join_index > 0 {
+            let prev_join = &joins[join_index - 1];
+            prev_join
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(prev_join.field_relation.to.entity.as_str())
+        } else {
+            let mut found_alias = None;
+            for j in joins {
+                if let Some(a) = &j.field_relation.to.alias {
+                    if a == from_entity {
+                        found_alias = Some(a.as_str());
+                        break;
+                    }
+                }
+            }
+            found_alias.unwrap_or(from_entity.as_str())
+        };
+
+        let join_condition = format!(
+            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+            lateral_alias, to_field, from_table_ref, from_field
+        );
+
+        // RIGHT: no WHERE in subquery; put combined_where + join_condition in ON
+        if is_nested {
+            let prev_join = &joins[join_index - 1];
+            let prev_join_to_alias = prev_join
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(prev_join.field_relation.to.entity.as_str());
+            let nested_cond = format!(
+                "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                lateral_alias, to_field, prev_join_to_alias, prev_join.field_relation.from.field
+            );
+            return format!(
+                "RIGHT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\") AS \"{}\" ON ({} AND {})",
+                selected_fields,
+                to_entity,
+                lateral_alias,
+                to_alias,
+                combined_where,
+                format!("{} AND {}", join_condition, nested_cond)
+            );
+        }
+
+        format!(
+            "RIGHT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\") AS \"{}\" ON ({} AND {})",
+            selected_fields, to_entity, lateral_alias, to_alias, combined_where, join_condition
         )
     }
 
@@ -87,17 +246,19 @@ impl JoinsConstructor {
             table,
             join,
             true,
+            "LEFT",
             build_system_where_clause,
             build_infix_expression,
         )
     }
 
-    /// Builds a JOIN LATERAL clause (generic implementation)
+    /// Builds a JOIN LATERAL clause (generic implementation). join_kind is "LEFT" or "INNER".
     fn build_join_lateral<T: QueryFilter>(
         request_body: &T,
         table: &str,
         join: &Join,
         is_self_join: bool,
+        join_kind: &str,
         build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
         build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
     ) -> String {
@@ -157,7 +318,8 @@ impl JoinsConstructor {
 
         if is_nested {
             return format!(
-                "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                join_kind,
                 selected_fields,
                 to_entity, lateral_alias,
                 combined_where,
@@ -185,7 +347,8 @@ impl JoinsConstructor {
         };
 
         format!(
-            "LEFT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+            "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+            join_kind,
             selected_fields,
             to_entity, lateral_alias,
             combined_where,

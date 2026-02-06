@@ -25,14 +25,40 @@ impl<'a> GroupByConstructor<'a> {
         }
     }
 
+    /// Resolve a concatenated field to its GROUP BY expression if it exists.
+    fn get_concatenated_group_by_expression(
+        concatenate_fields: &[ConcatenateField],
+        entity: &str,
+        field_name: &str,
+        main_table: &str,
+    ) -> Option<String> {
+        let normalized_entity = if entity == "self" {
+            main_table.to_string()
+        } else {
+            entity.to_string()
+        };
+        concatenate_fields
+            .iter()
+            .find(|cf| {
+                cf.field_name == field_name
+                    && (cf.entity == entity
+                        || cf.entity == normalized_entity
+                        || cf
+                            .aliased_entity
+                            .as_deref()
+                            .map_or(false, |a| a == entity || a == normalized_entity))
+            })
+            .map(|cf| cf.to_group_by_expression(&normalized_entity))
+    }
+
     pub fn construct_group_by(
         &self,
         group_by: Option<&GroupBy>,
-        pluck: &[String],
-        pluck_object: &HashMap<String, Vec<String>>,
-        pluck_group_object: &HashMap<String, Vec<String>>,
+        _pluck: &[String],
+        _pluck_object: &HashMap<String, Vec<String>>,
+        _pluck_group_object: &HashMap<String, Vec<String>>,
         concatenate_fields: &[ConcatenateField],
-        joins: &[Join],
+        _joins: &[Join],
     ) -> String {
         if let Some(group_by) = group_by {
             if !group_by.fields.is_empty() {
@@ -43,30 +69,46 @@ impl<'a> GroupByConstructor<'a> {
                     .map(|field| {
                         let parts: Vec<&str> = field.trim().split('.').collect();
                         if parts.len() == 2 {
-                            // Handle entity.field pattern like "contacts.code"
-                            let entity = parts[0]; // index 0 is the entity
-                            let field_name = parts[1]; // index 1 is the actual field
+                            // Handle entity.field pattern (e.g. "contacts.code" or "samples.full_name" concatenated)
+                            let entity = parts[0];
+                            let field_name = parts[1];
                             let normalized_entity = self.normalize_entity_name(entity);
 
-                            // Use the normalized entity as the table reference
+                            if let Some(expr) = Self::get_concatenated_group_by_expression(
+                                concatenate_fields,
+                                entity,
+                                field_name,
+                                self.table,
+                            ) {
+                                return expr;
+                            }
                             Self::get_field(
                                 &normalized_entity,
                                 field_name,
                                 self.date_format,
                                 self.table,
                                 self.timezone,
-                                false, // GROUP BY cannot have aliases
+                                false,
                                 self.time_format,
                             )
                         } else {
-                            // Handle single field without entity prefix
+                            // Handle single field without entity prefix (defaults to main table)
+                            let field_name = parts[0];
+                            if let Some(expr) = Self::get_concatenated_group_by_expression(
+                                concatenate_fields,
+                                self.table,
+                                field_name,
+                                self.table,
+                            ) {
+                                return expr;
+                            }
                             Self::get_field(
                                 self.table,
                                 field,
                                 self.date_format,
                                 self.table,
                                 self.timezone,
-                                false, // GROUP BY cannot have aliases
+                                false,
                                 self.time_format,
                             )
                         }
@@ -79,120 +121,20 @@ impl<'a> GroupByConstructor<'a> {
                 return format!(" GROUP BY {}", group_fields.join(", "));
             } else if group_by.has_count {
                 // When has_count is true but no specific fields are provided,
-                // we need to group by all non-aggregated columns to satisfy PostgreSQL requirements
-                let mut group_fields: Vec<String> = Vec::new();
-
-                // Add main table ID field
-                group_fields.push(format!("{}.id", self.table));
-
-                // Add pluck fields from main table
-                for field in pluck {
-                    if field != "id" {
-                        // Avoid duplicating id
-                        group_fields.push(Self::get_field(
-                            self.table,
-                            field,
-                            self.date_format,
-                            self.table,
-                            self.timezone,
-                            false,
-                            self.time_format,
-                        ));
-                    }
-                }
-
-                // Add pluck_object fields
-                for (entity, fields) in pluck_object {
-                    let normalized_entity = self.normalize_entity_name(entity);
-                    for field in fields {
-                        if field != "id" || entity != self.table {
-                            // Avoid duplicating main table id
-                            group_fields.push(Self::get_field(
-                                &normalized_entity,
-                                field,
-                                self.date_format,
-                                self.table,
-                                self.timezone,
-                                false,
-                                self.time_format,
-                            ));
-                        }
-                    }
-                }
-
-                // Add pluck_group_object fields
-                for (entity, fields) in pluck_group_object {
-                    let normalized_entity = self.normalize_entity_name(entity);
-                    for field in fields {
-                        if field != "id" || entity != self.table {
-                            // Avoid duplicating main table id
-                            group_fields.push(Self::get_field(
-                                &normalized_entity,
-                                field,
-                                self.date_format,
-                                self.table,
-                                self.timezone,
-                                false,
-                                self.time_format,
-                            ));
-                        }
-                    }
-                }
-
-                // Add concatenated fields - these are computed fields that appear in SELECT
-                // and need to be included in GROUP BY when using aggregates
-                for concat_field in concatenate_fields {
-                    let entity_name = if let Some(aliased_entity) = &concat_field.aliased_entity {
-                        // For alias entities, use the original alias name without normalization
-                        aliased_entity.clone()
-                    } else {
-                        // Check if this entity has a corresponding JOIN with an alias
-                        let join_alias = joins
-                            .iter()
-                            .find(|join| {
-                                // Match by entity name or normalized entity name
-                                join.field_relation.to.entity == concat_field.entity
-                                    || self.normalize_entity_name(&join.field_relation.to.entity)
-                                        == concat_field.entity
-                                    // Also match by alias if it exists
-                                    || join
-                                        .field_relation
-                                        .to
-                                        .alias
-                                        .as_ref()
-                                        .map_or(false, |alias| alias == &concat_field.entity)
-                            })
-                            .and_then(|join| join.field_relation.to.alias.as_ref())
-                            .cloned();
-
-                        join_alias
-                            .unwrap_or_else(|| self.normalize_entity_name(&concat_field.entity))
-                    };
-
-                    // Add the individual fields that make up the concatenated field
-                    for field in &concat_field.fields {
-                        group_fields.push(Self::get_field(
-                            &entity_name,
-                            field,
-                            self.date_format,
-                            self.table,
-                            self.timezone,
-                            false,
-                            self.time_format,
-                        ));
-                    }
-                }
-
+                // default to grouping by main table id only (e.g. GROUP BY "samples"."id").
+                let mut group_fields: Vec<String> = vec![format!("\"{}\".\"id\"", self.table)];
                 if is_hypertable(self.table) {
                     group_fields.push("timestamp".to_string());
                 }
-
-                if !group_fields.is_empty() {
-                    return format!(" GROUP BY {}", group_fields.join(", "));
-                }
+                return format!(" GROUP BY {}", group_fields.join(", "));
             }
         }
-        String::from("")
+        // When group_by is entirely missing, default to GROUP BY main table id
+        let mut group_fields: Vec<String> = vec![format!("\"{}\".\"id\"", self.table)];
+        if is_hypertable(self.table) {
+            group_fields.push("timestamp".to_string());
+        }
+        format!(" GROUP BY {}", group_fields.join(", "))
     }
 
     fn normalize_entity_name(&self, entity: &str) -> String {

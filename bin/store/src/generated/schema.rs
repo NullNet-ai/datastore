@@ -78,7 +78,6 @@ table! {
 
 table! {
     user_roles(id) {
-        id -> Nullable<Text>,
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -92,16 +91,17 @@ table! {
         updated_by -> Nullable<Text>,
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
-        role -> Nullable<Text>,
-        entity -> Nullable<Text>,
+        id -> Nullable<Text>,
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-    }
+        role -> Nullable<Text>,
+        entity -> Nullable<Text>,
+}
 }
 
 table! {
@@ -987,3 +987,5 @@ table! {
         signature -> Nullable<Text>,
     }
 }
+
+

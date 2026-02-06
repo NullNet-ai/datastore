@@ -296,6 +296,13 @@ This command will check:
 🚀 **Start the store in development mode:**
 
 ```bash
+# clean up all the tables, and records in the timescale db
+make store-clean-setup
+
+# to migrate the sql files to the timescale db
+make db-migrate-up
+
+# run the store
 make store
 ```
 
