@@ -1591,16 +1591,11 @@ pub async fn download_file_by_id(
     // Get bucket name with organization context
     let base_bucket_name =
         std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| app_state.bucket_name.clone());
-    let bucket_name = get_valid_bucket_name(&base_bucket_name, organization_id);
+    let bucket_name = base_bucket_name.clone();
 
-    // Extract just the filename from download_path (remove bucket name if present)
-    let s3_key = if download_path.contains('/') {
-        // If download_path contains '/', take the part after the last '/'
-        download_path.split('/').last().unwrap_or(&file_id)
-    } else {
-        // If no '/', use the download_path as is (it's just the filename)
-        download_path
-    };
+    // Use the download_path as-is since it should already contain the organization name
+    // The new path structure is: organization_name/file_id.extension
+    let s3_key = download_path;
 
     // Stream file from S3
     let s3_client = &app_state.s3_client;
@@ -1674,7 +1669,7 @@ pub async fn download_file_by_id(
 }
 
 pub async fn upload_file(
-    req: HttpRequest,
+    auth: HttpRequest,
     app_state: web::Data<providers::storage::AppState>,
     mut multipart: Multipart,
 ) -> impl Responder {
@@ -1684,6 +1679,8 @@ pub async fn upload_file(
 
         // Generate mock file metadata for disabled storage
         let mock_id = Ulid::new().to_string();
+        let organization_name =
+            std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
         let mock_metadata = serde_json::json!({
             "id": mock_id,
             "status": "mock_uploaded",
@@ -1698,20 +1695,20 @@ pub async fn upload_file(
             "deleted_by": "",
             "requested_by": "",
             "tags": [],
-            "image_url": format!("mock-bucket/{}.png", mock_id),
+            "image_url": format!("mock-bucket/{}/{}.png", organization_name, mock_id),
             "fieldname": "files",
             "originalname": "mock-file.png",
             "encoding": "7bit",
             "mimetype": "image/png",
             "destination": "mock-bucket",
             "filename": format!("{}.png", mock_id),
-            "path": format!("mock-bucket/{}.png", mock_id),
+            "path": format!("mock-bucket/{}/{}.png", organization_name, mock_id),
             "size": 1024,
             "uploaded_by": "",
             "downloaded_by": "",
             "etag": "mock-etag",
             "version_id": "",
-            "download_path": format!("mock-bucket/{}.png", mock_id),
+            "download_path": format!("{}.png", mock_id),
             "presigned_url": "",
             "presigned_url_expire": 0
         });
@@ -1725,8 +1722,8 @@ pub async fn upload_file(
     }
 
     // Check for Auth data early and abort if missing
-    let extensions = req.extensions();
-    let _auth_data = match extensions.get::<Auth>() {
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
             log::error!("Auth data not found in request extensions - aborting upload process");
@@ -1739,7 +1736,7 @@ pub async fn upload_file(
         }
     };
 
-    if let Some(content_type_header) = req.headers().get(actix_web::http::header::CONTENT_TYPE) {
+    if let Some(content_type_header) = auth.headers().get(actix_web::http::header::CONTENT_TYPE) {
         log::info!("Incoming Content-Type header: {:?}", content_type_header);
     }
     let name = "files";
@@ -1805,7 +1802,24 @@ pub async fn upload_file(
 
             // Generate a new ID for potential upload
             let new_id = Ulid::new().to_string();
-            let new_unique_filename = format!("{}.{}", new_id, extension);
+            // Use organization ID from auth data, fallback to DEFAULT_ORGANIZATION_ID env var
+            let org_id = if !auth_data.organization_id.is_empty() {
+                auth_data.organization_id.clone()
+            } else {
+                std::env::var("DEFAULT_ORGANIZATION_ID").unwrap_or_else(|_| String::new())
+            };
+            // Get organization name for path structure
+            let organization_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                .unwrap_or_else(|_| "default".to_string());
+
+            // Create the new path structure: STORAGE_BUCKET_NAME/organization_name/file_id.extension
+            let valid_bucket_name =
+                get_valid_bucket_name(&organization_name, Some(org_id.as_str()));
+            let new_unique_filename = format!(
+                "{}/{}",
+                valid_bucket_name,
+                format!("{}.{}", new_id, extension)
+            );
 
             // First, try to find if this file already exists by listing all files with same extension
             let list_result = client
@@ -1846,7 +1860,7 @@ pub async fn upload_file(
                                     == file_data.len() as i64
                                 {
                                     // If sizes match, this might be the same file
-                                    // Extract ID from filename (format: "ID.extension")
+                                    // Extract ID from filename (format: "organization_name/ID.extension")
                                     if let Some(filename) = key.split('/').last() {
                                         if let Some(id_part) = filename.split('.').next() {
                                             existing_file_key = Some(key.to_string());
@@ -1939,7 +1953,7 @@ pub async fn upload_file(
                         // "downloaded_by": "",
                         "etag": get_output.e_tag().unwrap_or("Unknown"),
                         "version_id": get_output.version_id().unwrap_or(""),
-                        "download_path": format!("{}/{}", bucket_name, actual_filename),
+                        "download_path": actual_filename.clone(),
                         "presigned_url": "", // TODO: Generate presigned URL if needed
                         "presigned_url_expire": 0, // TODO: Set expiration timestamp
                         // "last_modified": get_output.last_modified()
@@ -1947,7 +1961,6 @@ pub async fn upload_file(
                         //     .unwrap_or_else(|| "Unknown".to_string())
                     });
                     // For existing files, try to save to database (will handle duplicates gracefully)
-                    let auth_data = _auth_data;
 
                     // Use create_record function to save metadata
                     let req = test::TestRequest::default()
@@ -2033,7 +2046,7 @@ pub async fn upload_file(
                         "downloaded_by": "",
                         "etag": put_output.e_tag().unwrap_or("Unknown"),
                         "version_id": put_output.version_id().unwrap_or(""),
-                        "download_path": format!("{}/{}", bucket_name, final_filename),
+                        "download_path": final_filename.clone(),
                         "presigned_url": "", // TODO: Generate presigned URL if needed
                         "presigned_url_expire": 0 // TODO: Set expiration timestamp
                     });
@@ -2042,7 +2055,6 @@ pub async fn upload_file(
                         metadata
                     ));
                     // Save file metadata to the database using process_and_insert_record
-                    let auth_data = _auth_data;
 
                     // Use create_record function to save metadata
                     let req = test::TestRequest::default()

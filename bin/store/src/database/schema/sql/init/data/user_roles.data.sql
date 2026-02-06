@@ -4,8 +4,8 @@ DECLARE
     record_id TEXT;
     encryption_key_id TEXT;
     organization_id TEXT := '01JBHKXHYSKPP247HZZWHA3JCT';
-    record_email TEXT := 'superadmin@dnamicro.com';
-    record_emails TEXT[] := ARRAY['superadmin@dnamicro.com', 'dbadmin@dnamicro.com', 'admin@dnamicro.com', 'member@dnamicro.com'];
+    record_email TEXT := 'admin@dnamicro.com';
+    record_emails TEXT[] := ARRAY['admin@dnamicro.com', 'dbadmin@dnamicro.com', 'admin@dnamicro.com', 'member@dnamicro.com'];
     pgp_sym_key TEXT := 'dummy_secret_key';
     roles TEXT[] := ARRAY['root','Super Admin', 'DB Admin', 'Guest', 'Admin', 'Member'];
     record_limit INT := array_length(roles, 1);

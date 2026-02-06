@@ -38,7 +38,7 @@ mod tests {
         std::env::set_var("POSTGRES_PASSWORD", "admin");
         std::env::set_var("POSTGRES_DB", "test");
         std::env::set_var("POSTGRES_HOST", "localhost");
-        std::env::set_var("POSTGRES_PORT", "5433");
+        std::env::set_var("POSTGRES_PORT", "5432");
 
         // Test the health check function
         println!("  ✓ Executing database health check");
@@ -57,7 +57,7 @@ mod tests {
             Err(e) => {
                 println!("  ⚠️  Database health check failed: {}", e);
                 println!(
-                    "  ℹ️  This may be expected if PostgreSQL is not running on localhost:5433"
+                    "  ℹ️  This may be expected if PostgreSQL is not running on localhost:5432"
                 );
                 // Verify that we get a proper error message
                 let error_msg = e.to_string();
@@ -251,9 +251,9 @@ mod tests {
         println!("  ✓ Configuring unreachable database connection");
         std::env::set_var("POSTGRES_USER", "admin");
         std::env::set_var("POSTGRES_PASSWORD", "admin");
-        std::env::set_var("POSTGRES_DB", "test");
-        std::env::set_var("POSTGRES_HOST", "192.0.2.1"); // RFC 5737 test address
-        std::env::set_var("POSTGRES_PORT", "5433");
+        std::env::set_var("POSTGRES_DB", "datastore");
+        std::env::set_var("POSTGRES_HOST", "192.3.0.1"); // RFC 5737 test address
+        std::env::set_var("POSTGRES_PORT", "5432");
 
         // Measure execution time
         println!("  ✓ Starting timeout measurement");

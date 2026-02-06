@@ -320,8 +320,8 @@ mod tests {
     fn should_format_fields_correctly_with_get_field() {
         println!("Testing get_field static method...");
 
-        println!("  ✓ Testing basic field formatting");
-        let basic_field = SQLConstructor::<MockQueryFilter>::get_field(
+        println!("  ✓ Testing basic field formatting with alias");
+        let basic_field_with_alias = SQLConstructor::<MockQueryFilter>::get_field(
             "contacts",
             "name",
             "mm/dd/YYYY",
@@ -331,10 +331,23 @@ mod tests {
             "HH24:MI",
             None,
         );
-        assert_eq!(basic_field, "\"contacts\".\"name\"");
+        assert_eq!(basic_field_with_alias, "\"contacts\".\"name\" AS name");
 
-        println!("  ✓ Testing date field formatting");
-        let date_field = SQLConstructor::<MockQueryFilter>::get_field(
+        println!("  ✓ Testing basic field formatting without alias");
+        let basic_field_without_alias = SQLConstructor::<MockQueryFilter>::get_field(
+            "contacts",
+            "name",
+            "mm/dd/YYYY",
+            "contacts",
+            None,
+            false,
+            "HH24:MI",
+            None,
+        );
+        assert_eq!(basic_field_without_alias, "\"contacts\".\"name\"");
+
+        println!("  ✓ Testing date field formatting with alias");
+        let date_field_with_alias = SQLConstructor::<MockQueryFilter>::get_field(
             "contacts",
             "created_date",
             "mm/dd/YYYY",
@@ -344,11 +357,28 @@ mod tests {
             "HH24:MI",
             Some("date"),
         );
-        assert!(date_field.contains("TO_CHAR"));
-        assert!(date_field.contains("AT TIME ZONE"));
+        assert!(date_field_with_alias.contains("TO_CHAR"));
+        assert!(date_field_with_alias.contains("AT TIME ZONE"));
+        // Note: Date formatting may handle alias differently, so we just check it contains the field name
+        assert!(date_field_with_alias.contains("created_date"));
 
-        println!("  ✓ Testing time field formatting");
-        let time_field = SQLConstructor::<MockQueryFilter>::get_field(
+        println!("  ✓ Testing date field formatting without alias");
+        let date_field_without_alias = SQLConstructor::<MockQueryFilter>::get_field(
+            "contacts",
+            "created_date",
+            "mm/dd/YYYY",
+            "contacts",
+            Some("UTC"),
+            false,
+            "HH24:MI",
+            Some("date"),
+        );
+        assert!(date_field_without_alias.contains("TO_CHAR"));
+        assert!(date_field_without_alias.contains("AT TIME ZONE"));
+        assert!(date_field_without_alias.contains("created_date"));
+
+        println!("  ✓ Testing time field formatting with alias");
+        let time_field_with_alias = SQLConstructor::<MockQueryFilter>::get_field(
             "contacts",
             "created_time",
             "mm/dd/YYYY",
@@ -358,7 +388,22 @@ mod tests {
             "HH24:MI",
             Some("time"),
         );
-        assert!(time_field.contains("::time"));
+        assert!(time_field_with_alias.contains("::time"));
+        assert!(time_field_with_alias.contains("AS created_time"));
+
+        println!("  ✓ Testing time field formatting without alias");
+        let time_field_without_alias = SQLConstructor::<MockQueryFilter>::get_field(
+            "contacts",
+            "created_time",
+            "mm/dd/YYYY",
+            "contacts",
+            Some("UTC"),
+            false,
+            "HH24:MI",
+            Some("time"),
+        );
+        assert!(time_field_without_alias.contains("::time"));
+        assert!(!time_field_without_alias.contains("AS created_time"));
 
         println!("Field formatting tests completed successfully!");
     }

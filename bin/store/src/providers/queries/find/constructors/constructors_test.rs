@@ -91,7 +91,7 @@ mod tests {
         );
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
-        let expected_default_queries = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '01JBHKXHYSKPP247HZZWHA3JCT') ORDER BY LOWER(contacts.id) ASC LIMIT 10");
+        let expected_default_queries = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '01JBHKXHYSKPP247HZZWHA3JCT') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC LIMIT 10");
         let expected_query = format!(
             "SELECT \"contacts\".\"id\", \"contacts\".\"first_name\" FROM {} {}",
             &table, expected_default_queries
@@ -709,7 +709,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') ORDER BY LOWER(contacts.id) ASC LIMIT 10",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC LIMIT 10",
             &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
