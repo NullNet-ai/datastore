@@ -27,7 +27,7 @@ impl GlobalOrganizationInitializer {
             account_type: Some(AccountType::Contact),
             organization_id: Some(default_organization_id.clone()),
             organization_name: Some(default_organization_name.clone()),
-            account_id: "superadmin@dnamicro.com".to_string(),
+            account_id: "admin@dnamicro.com".to_string(),
             account_secret: default_organization_admin_password,
             first_name: "Super".to_string(),
             last_name: "Admin".to_string(),
