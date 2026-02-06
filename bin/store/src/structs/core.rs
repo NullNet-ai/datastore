@@ -347,7 +347,10 @@ pub struct GetByFilter {
     #[serde(default)]
     pub joins: Vec<Join>,
 
-    #[serde(default = "default_group_by", deserialize_with = "deserialize_group_by_option")]
+    #[serde(
+        default = "default_group_by",
+        deserialize_with = "deserialize_group_by_option"
+    )]
     pub group_by: Option<GroupBy>,
 
     #[serde(default)]

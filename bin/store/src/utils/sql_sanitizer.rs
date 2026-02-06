@@ -1,8 +1,8 @@
 /// SQL Sanitization Module
-/// 
+///
 /// Provides comprehensive protection against SQL injection attacks by sanitizing
 /// user-supplied values in filter queries.
-/// 
+///
 /// Protects against:
 /// - Quote injection (e.g., ' OR '1'='1)
 /// - Comment injection (e.g., ' --)
@@ -11,7 +11,6 @@
 /// - LIKE wildcard injection (%, _)
 /// - Backslash escaping
 /// - Control character injection
-
 use serde_json::Value;
 
 /// Maximum allowed length for string values to prevent DoS
@@ -33,7 +32,11 @@ impl std::fmt::Display for SanitizationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SanitizationError::ValueTooLong => {
-                write!(f, "Value exceeds maximum length of {} characters", MAX_STRING_LENGTH)
+                write!(
+                    f,
+                    "Value exceeds maximum length of {} characters",
+                    MAX_STRING_LENGTH
+                )
             }
             SanitizationError::NullByteDetected => {
                 write!(f, "NULL bytes are not allowed in values")
@@ -51,7 +54,7 @@ impl std::fmt::Display for SanitizationError {
 impl std::error::Error for SanitizationError {}
 
 /// Validates a string value for potential SQL injection attacks
-/// 
+///
 /// Checks for:
 /// - NULL bytes (\0)
 /// - Excessive control characters
@@ -59,7 +62,11 @@ impl std::error::Error for SanitizationError {}
 fn validate_string_value(s: &str) -> Result<(), SanitizationError> {
     // Check length
     if s.len() > MAX_STRING_LENGTH {
-        log::warn!("String value exceeds maximum length: {} > {}", s.len(), MAX_STRING_LENGTH);
+        log::warn!(
+            "String value exceeds maximum length: {} > {}",
+            s.len(),
+            MAX_STRING_LENGTH
+        );
         return Err(SanitizationError::ValueTooLong);
     }
 
@@ -70,7 +77,10 @@ fn validate_string_value(s: &str) -> Result<(), SanitizationError> {
     }
 
     // Check for excessive control characters (potential obfuscation attack)
-    let control_count = s.chars().filter(|c| c.is_control() && *c != '\n' && *c != '\t' && *c != '\r').count();
+    let control_count = s
+        .chars()
+        .filter(|c| c.is_control() && *c != '\n' && *c != '\t' && *c != '\r')
+        .count();
     if control_count > MAX_CONTROL_CHARS {
         log::warn!("Too many control characters detected: {}", control_count);
         return Err(SanitizationError::TooManyControlCharacters);
@@ -80,12 +90,12 @@ fn validate_string_value(s: &str) -> Result<(), SanitizationError> {
 }
 
 /// Escapes a string value for safe use in SQL queries
-/// 
+///
 /// This function protects against SQL injection by:
 /// 1. Escaping backslashes (\\)
 /// 2. Escaping single quotes (')
 /// 3. Wrapping the value in single quotes
-/// 
+///
 /// Example:
 /// ```
 /// let input = "O'Reilly";
@@ -96,18 +106,18 @@ fn escape_string_value(s: &str) -> String {
     // Escape backslashes first (important: must be done before quotes)
     // This prevents attacks like: test\' OR '1'='1
     let escaped = s
-        .replace("\\", "\\\\")  // \ -> \\
-        .replace("'", "''");    // ' -> ''
-    
+        .replace("\\", "\\\\") // \ -> \\
+        .replace("'", "''"); // ' -> ''
+
     format!("'{}'", escaped)
 }
 
 /// Escapes a string value for use in LIKE patterns
-/// 
+///
 /// In addition to regular SQL escaping, this also escapes LIKE wildcards:
 /// - % (matches any sequence of characters)
 /// - _ (matches any single character)
-/// 
+///
 /// Example:
 /// ```
 /// let input = "50%";
@@ -117,34 +127,34 @@ fn escape_string_value(s: &str) -> String {
 fn escape_like_pattern(s: &str) -> String {
     // Escape backslashes, LIKE wildcards, and quotes
     let escaped = s
-        .replace("\\", "\\\\")  // \ -> \\
-        .replace("%", "\\%")    // % -> \%
-        .replace("_", "\\_")    // _ -> \_
-        .replace("'", "''");    // ' -> ''
-    
+        .replace("\\", "\\\\") // \ -> \\
+        .replace("%", "\\%") // % -> \%
+        .replace("_", "\\_") // _ -> \_
+        .replace("'", "''"); // ' -> ''
+
     format!("'{}'", escaped)
 }
 
 /// Sanitizes and escapes a JSON value for use in SQL WHERE clauses
-/// 
+///
 /// This is the main entry point for value sanitization. It handles different
 /// JSON value types and applies appropriate escaping.
-/// 
+///
 /// # Arguments
 /// * `value` - The JSON value to sanitize
 /// * `is_like_pattern` - Whether this value will be used in a LIKE clause
-/// 
+///
 /// # Returns
 /// * `Ok(String)` - The sanitized and escaped SQL value
 /// * `Err(SanitizationError)` - If validation fails
-/// 
+///
 /// # Examples
 /// ```
 /// // Regular value
 /// let value = serde_json::Value::String("test' OR '1'='1".to_string());
 /// let result = sanitize_value(&value, false)?;
 /// // Result: 'test'' OR ''1''=''1'
-/// 
+///
 /// // LIKE pattern
 /// let value = serde_json::Value::String("50%".to_string());
 /// let result = sanitize_value(&value, true)?;
@@ -155,7 +165,7 @@ pub fn sanitize_value(value: &Value, is_like_pattern: bool) -> Result<String, Sa
         Value::String(s) => {
             // Validate the string first
             validate_string_value(s)?;
-            
+
             // Escape based on context
             if is_like_pattern {
                 Ok(escape_like_pattern(s))
@@ -184,16 +194,19 @@ pub fn sanitize_value(value: &Value, is_like_pattern: bool) -> Result<String, Sa
 }
 
 /// Sanitizes multiple values (for use with IN clauses)
-/// 
+///
 /// # Arguments
 /// * `values` - Slice of JSON values to sanitize
 /// * `is_like_pattern` - Whether these values will be used in LIKE clauses
-/// 
+///
 /// # Returns
 /// * `Ok(Vec<String>)` - Vector of sanitized SQL values
 /// * `Err(SanitizationError)` - If any validation fails
 #[allow(dead_code)]
-pub fn sanitize_values(values: &[Value], is_like_pattern: bool) -> Result<Vec<String>, SanitizationError> {
+pub fn sanitize_values(
+    values: &[Value],
+    is_like_pattern: bool,
+) -> Result<Vec<String>, SanitizationError> {
     values
         .iter()
         .map(|v| sanitize_value(v, is_like_pattern))
@@ -245,7 +258,10 @@ mod tests {
         let value = json!("test\x00malicious");
         let result = sanitize_value(&value, false);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), SanitizationError::NullByteDetected));
+        assert!(matches!(
+            result.unwrap_err(),
+            SanitizationError::NullByteDetected
+        ));
     }
 
     #[test]
@@ -289,16 +305,15 @@ mod tests {
         let value = json!(long_string);
         let result = sanitize_value(&value, false);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), SanitizationError::ValueTooLong));
+        assert!(matches!(
+            result.unwrap_err(),
+            SanitizationError::ValueTooLong
+        ));
     }
 
     #[test]
     fn test_multiple_values() {
-        let values = vec![
-            json!("test1"),
-            json!("test2' OR '1'='1"),
-            json!(123),
-        ];
+        let values = vec![json!("test1"), json!("test2' OR '1'='1"), json!(123)];
         let results = sanitize_values(&values, false).unwrap();
         assert_eq!(results, vec!["'test1'", "'test2'' OR ''1''=''1'", "123"]);
     }

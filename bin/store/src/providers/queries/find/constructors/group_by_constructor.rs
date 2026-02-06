@@ -43,7 +43,8 @@ impl<'a> GroupByConstructor<'a> {
                 cf.field_name == field_name
                     && (cf.entity == entity
                         || cf.entity == normalized_entity
-                        || cf.aliased_entity
+                        || cf
+                            .aliased_entity
                             .as_deref()
                             .map_or(false, |a| a == entity || a == normalized_entity))
             })

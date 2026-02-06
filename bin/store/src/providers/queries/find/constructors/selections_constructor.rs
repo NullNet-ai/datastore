@@ -110,11 +110,18 @@ impl SelectionsConstructor {
                 cf.field_name == field_name
                     && (cf.entity == entity
                         || cf.entity == normalized_entity
-                        || cf.aliased_entity
+                        || cf
+                            .aliased_entity
                             .as_deref()
                             .map_or(false, |a| a == entity || a == normalized_entity))
             })
-            .map(|cf| format!("{} AS \"{}\"", cf.to_group_by_expression(&normalized_entity), cf.field_name))
+            .map(|cf| {
+                format!(
+                    "{} AS \"{}\"",
+                    cf.to_group_by_expression(&normalized_entity),
+                    cf.field_name
+                )
+            })
     }
 
     /// Constructs GROUP BY selections with COUNT(*) and grouped fields

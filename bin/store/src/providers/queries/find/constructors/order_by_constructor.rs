@@ -86,7 +86,8 @@ where
                     let field_in_group_by = group_by.map_or(false, |g| {
                         !g.fields.is_empty()
                             && g.fields.iter().any(|group_field| {
-                                let group_parts: Vec<&str> = group_field.trim().split('.').collect();
+                                let group_parts: Vec<&str> =
+                                    group_field.trim().split('.').collect();
                                 let group_table_name = self.normalize_entity_name(group_parts[0]);
                                 if group_parts.len() > 1 {
                                     group_parts[1] == field_name
@@ -99,7 +100,11 @@ where
                     });
 
                     if field_in_group_by {
-                        format!("{} {}", final_field, sort_option.by_direction.to_uppercase())
+                        format!(
+                            "{} {}",
+                            final_field,
+                            sort_option.by_direction.to_uppercase()
+                        )
                     } else if group_by.map_or(false, |g| !g.fields.is_empty()) {
                         let agg = if sort_option.by_direction.eq_ignore_ascii_case("ASC") {
                             "MIN"
@@ -158,7 +163,11 @@ where
             // When GROUP BY is present, ORDER BY columns must be in GROUP BY or wrapped in an aggregate
             let order_clause = if self.order_by_field_in_group_by(order_by) {
                 format!("{} {}", final_field, order_direction.to_uppercase())
-            } else if self.request_body.get_group_by().map_or(false, |g| !g.fields.is_empty()) {
+            } else if self
+                .request_body
+                .get_group_by()
+                .map_or(false, |g| !g.fields.is_empty())
+            {
                 let agg = if order_direction.eq_ignore_ascii_case("ASC") {
                     "MIN"
                 } else {

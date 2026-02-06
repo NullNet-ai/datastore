@@ -129,12 +129,7 @@ impl JoinsConstructor {
         build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
     ) -> String {
         let to_entity = &join.field_relation.to.entity;
-        let to_alias = join
-            .field_relation
-            .to
-            .alias
-            .as_deref()
-            .unwrap_or(to_entity);
+        let to_alias = join.field_relation.to.alias.as_deref().unwrap_or(to_entity);
         let to_field = &join.field_relation.to.field;
         let from_entity = &join.field_relation.from.entity;
         let from_field = &join.field_relation.from.field;
@@ -145,11 +140,12 @@ impl JoinsConstructor {
 
         // Build dynamic field selection based on pluck_object (same as LEFT)
         // For RIGHT we must include tombstone and organization_id so the ON clause can reference them
-        let mut selected_field_names: Vec<&str> = if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
-            fields.iter().map(|s| s.as_str()).collect()
-        } else {
-            vec!["id"]
-        };
+        let mut selected_field_names: Vec<&str> =
+            if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
+                fields.iter().map(|s| s.as_str()).collect()
+            } else {
+                vec!["id"]
+            };
         if !selected_field_names.iter().any(|&f| f == "tombstone") {
             selected_field_names.push("tombstone");
         }
@@ -233,12 +229,7 @@ impl JoinsConstructor {
 
         format!(
             "RIGHT JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\") AS \"{}\" ON ({} AND {})",
-            selected_fields,
-            to_entity,
-            lateral_alias,
-            to_alias,
-            combined_where,
-            join_condition
+            selected_fields, to_entity, lateral_alias, to_alias, combined_where, join_condition
         )
     }
 

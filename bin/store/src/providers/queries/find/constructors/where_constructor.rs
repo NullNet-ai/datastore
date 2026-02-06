@@ -522,13 +522,13 @@ impl<'a> WhereConstructor<'a> {
 
         let plural_form = pluralizer::pluralize(&field_name, 2, false);
         let is_plural = plural_form == field_name;
-        
+
         // Determine if this operator uses LIKE patterns (needs wildcard escaping)
         let is_like_operator = matches!(
             operator,
             FilterOperator::Contains | FilterOperator::NotContains | FilterOperator::Like
         );
-        
+
         // Sanitize values using the SQL sanitizer module
         // This protects against:
         // - SQL injection (quote/comment/union attacks)
@@ -542,7 +542,7 @@ impl<'a> WhereConstructor<'a> {
                     .map_err(|e| format!("Value sanitization failed: {}", e))
             })
             .collect();
-        
+
         let values_str = match values_str {
             Ok(vals) => vals,
             Err(e) => {
