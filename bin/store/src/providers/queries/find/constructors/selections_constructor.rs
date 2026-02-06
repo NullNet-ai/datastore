@@ -1,6 +1,6 @@
 use crate::{
     providers::queries::find::sql_constructor::QueryFilter,
-    structs::core::{FilterCriteria, Join},
+    structs::core::{ConcatenateField, FilterCriteria, Join},
 };
 
 /// Selections constructor module for SQL query building
@@ -91,6 +91,32 @@ impl SelectionsConstructor {
         selections.join(", ")
     }
 
+    /// Resolve a concatenated field to its SELECT expression (expr AS "field_name") if it exists.
+    fn get_concatenated_selection_expression(
+        concatenate_fields: &[ConcatenateField],
+        entity: &str,
+        field_name: &str,
+        main_table: &str,
+        normalize_entity_name: &impl Fn(&str) -> String,
+    ) -> Option<String> {
+        let normalized_entity = if entity == "self" {
+            main_table.to_string()
+        } else {
+            normalize_entity_name(entity)
+        };
+        concatenate_fields
+            .iter()
+            .find(|cf| {
+                cf.field_name == field_name
+                    && (cf.entity == entity
+                        || cf.entity == normalized_entity
+                        || cf.aliased_entity
+                            .as_deref()
+                            .map_or(false, |a| a == entity || a == normalized_entity))
+            })
+            .map(|cf| format!("{} AS \"{}\"", cf.to_group_by_expression(&normalized_entity), cf.field_name))
+    }
+
     /// Constructs GROUP BY selections with COUNT(*) and grouped fields
     fn construct_group_by_selections<T: QueryFilter>(
         request_body: &T,
@@ -106,6 +132,8 @@ impl SelectionsConstructor {
                     acc_selections.push("COUNT(*) AS count".to_string());
                 }
 
+                let concatenate_fields = request_body.get_concatenate_fields();
+
                 // Add group_by fields to selections
                 for field in &group_by.fields {
                     let field_parts: Vec<&str> = field.trim().split('.').collect();
@@ -115,26 +143,47 @@ impl SelectionsConstructor {
                         let field_name = field_parts[1];
                         let normalized_entity = normalize_entity_name(entity_name);
 
-                        let field_selection = get_field(
-                            &normalized_entity,
+                        if let Some(expr) = Self::get_concatenated_selection_expression(
+                            concatenate_fields,
+                            entity_name,
                             field_name,
-                            request_body.get_date_format(),
                             table,
-                            timezone,
-                            true,
-                        );
-                        acc_selections.push(field_selection);
+                            normalize_entity_name,
+                        ) {
+                            acc_selections.push(expr);
+                        } else {
+                            let field_selection = get_field(
+                                &normalized_entity,
+                                field_name,
+                                request_body.get_date_format(),
+                                table,
+                                timezone,
+                                true,
+                            );
+                            acc_selections.push(field_selection);
+                        }
                     } else {
-                        // Handle single field format
-                        let field_selection = get_field(
+                        // Handle single field format (defaults to main table)
+                        let field_name = field.as_str();
+                        if let Some(expr) = Self::get_concatenated_selection_expression(
+                            concatenate_fields,
                             table,
-                            field,
-                            request_body.get_date_format(),
+                            field_name,
                             table,
-                            timezone,
-                            true,
-                        );
-                        acc_selections.push(field_selection);
+                            normalize_entity_name,
+                        ) {
+                            acc_selections.push(expr);
+                        } else {
+                            let field_selection = get_field(
+                                table,
+                                field,
+                                request_body.get_date_format(),
+                                table,
+                                timezone,
+                                true,
+                            );
+                            acc_selections.push(field_selection);
+                        }
                     }
                 }
             }

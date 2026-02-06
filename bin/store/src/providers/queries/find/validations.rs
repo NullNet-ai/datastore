@@ -279,18 +279,33 @@ impl<'a, 'b> Validation<'a, 'b> {
         };
     }
 
+    /// Returns true if the given entity and field_name refer to a concatenated field.
+    fn is_concatenated_field(&self, entity: &str, field_name: &str) -> bool {
+        let normalized_entity = self.normalize_entity_name(entity);
+        self.request_body.concatenate_fields.iter().any(|cf| {
+            cf.field_name == field_name
+                && (cf.entity == entity
+                    || cf.entity == normalized_entity
+                    || cf.aliased_entity
+                        .as_deref()
+                        .map_or(false, |a| a == entity || a == normalized_entity))
+        })
+    }
+
     pub fn validate_group_by(&self) -> ApiResponse {
         // If group_by is None, validation passes
         if let Some(group_by) = &self.request_body.group_by {
-            // Validate that all fields in group_by exist in the appropriate tables
+            // Validate that all fields in group_by exist in the appropriate tables or are concatenated fields
             for (field_index, field) in group_by.fields.iter().enumerate() {
                 let parts: Vec<&str> = field.split('.').collect();
 
                 match parts.len() {
                     1 => {
-                        // Field without table prefix (e.g., "id") - defaults to main table
+                        // Field without table prefix (e.g., "id" or "full_name") - defaults to main table
                         let field_name = parts[0];
-                        if !field_exists_in_table(self.table, field_name) {
+                        if !field_exists_in_table(self.table, field_name)
+                            && !self.is_concatenated_field(self.table, field_name)
+                        {
                             return ApiResponse {
                                 success: false,
                                 message: format!(
@@ -303,14 +318,16 @@ impl<'a, 'b> Validation<'a, 'b> {
                         }
                     }
                     2 => {
-                        // Field with table prefix (e.g., "table.id") - must reference existing join or main table
+                        // Field with table prefix (e.g., "table.id" or "samples.full_name") - must reference existing join or main table
                         let entity = parts[0];
                         let field_name = parts[1];
                         let normalized_entity = self.normalize_entity_name(entity);
 
                         // Check if entity is the main table
                         if entity == self.table || normalized_entity == *self.table {
-                            if !field_exists_in_table(self.table, field_name) {
+                            if !field_exists_in_table(self.table, field_name)
+                                && !self.is_concatenated_field(self.table, field_name)
+                            {
                                 return ApiResponse {
                                     success: false,
                                     message: format!(
@@ -616,11 +633,11 @@ impl<'a, 'b> Validation<'a, 'b> {
         for (join_index, join) in self.request_body.joins.iter().enumerate() {
             // Validate join type
             let join_type = join.r#type.to_uppercase();
-            if !["LEFT", "SELF"].contains(&join_type.as_str()) {
+            if !["LEFT", "RIGHT", "INNER", "SELF"].contains(&join_type.as_str()) {
                 return ApiResponse {
                     success: false,
                     message: format!(
-                        "joins[{}] > type > Invalid join type: '{}'. Supported types are: LEFT, SELF",
+                        "joins[{}] > type > Invalid join type: '{}'. Supported types are: LEFT, RIGHT, INNER, SELF",
                         join_index, join_type
                     ),
                     count: 0,

@@ -3,6 +3,7 @@ use crate::structs::core::{
     FilterCriteria, FilterOperator, GroupAdvanceFilter, LogicalOperator, MatchPattern,
 };
 use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use crate::utils::sql_sanitizer;
 
 #[derive(Debug, Clone)]
 enum Token {
@@ -521,16 +522,34 @@ impl<'a> WhereConstructor<'a> {
 
         let plural_form = pluralizer::pluralize(&field_name, 2, false);
         let is_plural = plural_form == field_name;
-        let values_str = values
+        
+        // Determine if this operator uses LIKE patterns (needs wildcard escaping)
+        let is_like_operator = matches!(
+            operator,
+            FilterOperator::Contains | FilterOperator::NotContains | FilterOperator::Like
+        );
+        
+        // Sanitize values using the SQL sanitizer module
+        // This protects against:
+        // - SQL injection (quote/comment/union attacks)
+        // - NULL byte injection
+        // - LIKE wildcard injection (when is_like_operator = true)
+        // - Control character attacks
+        let values_str: Result<Vec<String>, String> = values
             .iter()
-            .map(|v| match v {
-                serde_json::Value::String(s) => format!("'{}'", s.replace("'", "''")), // Escape single quotes
-                serde_json::Value::Number(n) => n.to_string(),
-                serde_json::Value::Bool(b) => b.to_string(),
-                serde_json::Value::Null => "NULL".to_string(),
-                _ => format!("'{}'", v.to_string().trim().replace("'", "''")),
+            .map(|v| {
+                sql_sanitizer::sanitize_value(v, is_like_operator)
+                    .map_err(|e| format!("Value sanitization failed: {}", e))
             })
-            .collect::<Vec<_>>();
+            .collect();
+        
+        let values_str = match values_str {
+            Ok(vals) => vals,
+            Err(e) => {
+                log::error!("Failed to sanitize filter values: {}", e);
+                return format!("FALSE /* {} */", e); // Return FALSE condition on sanitization failure
+            }
+        };
 
         match operator {
             FilterOperator::Equal => {

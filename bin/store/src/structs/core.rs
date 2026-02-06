@@ -5,7 +5,8 @@ use chrono::Utc;
 use diesel::sql_types::Text;
 use diesel::AsExpression;
 use merkle::MerkleTree;
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
 use ulid::Ulid;
@@ -314,8 +315,13 @@ pub struct ParsedConcatenatedFields {
     pub expressions: HashMap<String, Vec<String>>,
 }
 
+fn default_group_by_fields() -> Vec<String> {
+    Vec::new()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GroupBy {
+    #[serde(default = "default_group_by_fields")]
     pub fields: Vec<String>,
     #[serde(default)]
     pub has_count: bool,
@@ -341,7 +347,7 @@ pub struct GetByFilter {
     #[serde(default)]
     pub joins: Vec<Join>,
 
-    #[serde(default = "default_group_by")]
+    #[serde(default = "default_group_by", deserialize_with = "deserialize_group_by_option")]
     pub group_by: Option<GroupBy>,
 
     #[serde(default)]
@@ -447,6 +453,17 @@ impl ConcatenateField {
             .collect::<Vec<_>>()
             .join(&format!(" || '{}' || ", self.separator));
         format!("({}) AS \"{}\"", joined_fields, self.field_name)
+    }
+
+    /// Generates the expression for GROUP BY (no AS alias), using the given table reference.
+    pub fn to_group_by_expression(&self, table_ref: &str) -> String {
+        let parts = self
+            .fields
+            .iter()
+            .map(|field| format!("COALESCE(\"{}\".\"{}\", '')", table_ref, field))
+            .collect::<Vec<_>>()
+            .join(&format!(" || '{}' || ", self.separator));
+        format!("({})", parts)
     }
 
     pub fn parse_main_concatenations(
@@ -560,6 +577,23 @@ fn default_group_by() -> Option<GroupBy> {
         fields: Vec::new(),
         has_count: false,
     })
+}
+
+/// Deserialize Option<GroupBy> so that null or empty object `{}` becomes Some(GroupBy::default()).
+fn deserialize_group_by_option<'de, D>(deserializer: D) -> Result<Option<GroupBy>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::<Value>::deserialize(deserializer)?;
+    match opt {
+        None => Ok(default_group_by()),
+        Some(Value::Object(ref map)) if map.is_empty() => Ok(default_group_by()),
+        Some(Value::Object(ref map)) if map.get("fields").is_none() => Ok(default_group_by()),
+        Some(v) => {
+            let g: GroupBy = serde_json::from_value(v).map_err(D::Error::custom)?;
+            Ok(Some(g))
+        }
+    }
 }
 
 fn default_date_format() -> String {

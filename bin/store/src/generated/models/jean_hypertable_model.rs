@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::user_roles)]
+#[diesel(table_name = crate::generated::schema::jean_hypertable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct UserRoleModel {
+pub struct JeanHypertableModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -21,7 +21,7 @@ pub struct UserRoleModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
@@ -29,6 +29,10 @@ pub struct UserRoleModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub role: Option<String>,
-    pub entity: Option<String>,
+    pub hypertable_timestamp: Option<String>,
+    pub first_name: Option<String>,
+    pub is_hungry: Option<bool>,
+    pub is_sleepy: Option<bool>,
+    pub eats_candies: Option<bool>,
+    pub age: Option<i32>,
 }

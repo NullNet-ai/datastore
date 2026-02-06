@@ -563,6 +563,94 @@ mod tests {
         );
     }
 
+    /// Test that when group_by is entirely missing, we default to GROUP BY main_table.id
+    #[test]
+    fn should_construct_group_by_default_to_main_table_id_when_group_by_missing() {
+        let env_config = EnvConfig::default();
+        let payload = serde_json::json!({
+            "pluck": ["id", "first_name"],
+            "limit": 10
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+
+        let expected_group_by_query = format!("GROUP BY \"{}\".\"id\"", table);
+        assert!(
+            query.contains(&expected_group_by_query),
+            "When group_by is missing, query should contain default GROUP BY main table id. Expected: '{}'. Query: {}",
+            expected_group_by_query,
+            query
+        );
+    }
+
+    /// Test that when group_by.fields is empty and has_count is true, we default to GROUP BY main_table.id
+    #[test]
+    fn should_construct_group_by_default_to_main_table_id_when_fields_empty_and_has_count() {
+        let env_config = EnvConfig::default();
+        let expected_group_by = serde_json::json!({
+            "fields": [],
+            "has_count": true
+        });
+        let payload = serde_json::json!({
+            "pluck": ["id", "first_name"],
+            "group_by": expected_group_by,
+            "limit": 10
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+
+        // When fields is empty and has_count is true, expect only main table id in GROUP BY
+        let expected_group_by_query = format!("GROUP BY \"{}\".\"id\"", table);
+        assert!(
+            query.contains(&expected_group_by_query),
+            "Query should contain default GROUP BY main table id. Expected to find: '{}'. Query: {}",
+            expected_group_by_query,
+            query
+        );
+
+        // Should not group by other columns (e.g. first_name) when fields is empty
+        let unexpected_group_by = "GROUP BY \"contacts\".\"id\", \"contacts\".\"first_name\"";
+        assert!(
+            !query.contains(unexpected_group_by),
+            "Query should not group by pluck fields when group_by.fields is empty. Query: {}",
+            query
+        );
+    }
+
     /// Test constructing concatenated fields for pluck selections without aliased entity
     #[test]
     fn should_construct_concatenated_fields_for_pluck_selections_without_aliased_entity() {
@@ -751,6 +839,185 @@ mod tests {
             contain_allowed_selection_query,
             " {} Query should have correct implementation of concatenated fields to work properly. Selection: {}",
             contain_checker, contain_allowed_selection_query
+        );
+    }
+
+    /// Test constructing RIGHT JOIN LATERAL (same pattern as LEFT join tests)
+    #[test]
+    fn should_construct_right_join_lateral() {
+        let env_config = EnvConfig::default();
+        let expected_joins = serde_json::json!([
+            {
+                "type": "right",
+                "field_relation": {
+                    "to": {
+                        "alias": "org_owner",
+                        "entity": "organizations",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "samples",
+                        "field": "organization_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            }
+        ]);
+        let payload = serde_json::json!({
+            "pluck": ["id", "code", "organization_id"],
+            "pluck_object": {
+                "samples": ["id", "name", "code", "organization_id", "status"],
+                "org_owner": ["id", "name"]
+            },
+            "joins": expected_joins,
+            "limit": 100
+        });
+
+        println!("--- Checking available joins (right).");
+        let joins_array = expected_joins
+            .as_array()
+            .expect("Expected joins should be a valid JSON array");
+        assert!(!joins_array.is_empty(), "Joins must exist");
+
+        let table = String::from("samples");
+        let is_root = false;
+        let timezone = None;
+
+        println!("  ✓ Generating SQL query from payload with RIGHT join");
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "  ✗ Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+        println!("  ✓ Generated query: `{}`", query);
+
+        // Must contain RIGHT JOIN LATERAL
+        assert!(
+            query.contains("RIGHT JOIN LATERAL"),
+            "Query should contain RIGHT JOIN LATERAL, got: {}",
+            query
+        );
+
+        // Subquery: SELECT from pluck_object (id, name) + tombstone, organization_id FROM organizations org_owner
+        let expected_subquery_select = "SELECT \"org_owner\".\"id\", \"org_owner\".\"name\", \"org_owner\".\"tombstone\", \"org_owner\".\"organization_id\" FROM \"organizations\" \"org_owner\"";
+        assert!(
+            query.contains(expected_subquery_select),
+            "Query should contain RIGHT LATERAL subquery with selected fields and tombstone/organization_id, got: {}",
+            query
+        );
+
+        // ON clause must reference org_owner (tombstone, organization_id) and join condition
+        assert!(
+            query.contains("AS \"org_owner\" ON ("),
+            "Query should contain LATERAL alias and ON clause, got: {}",
+            query
+        );
+        // Join condition in ON: "org_owner"."id" = "samples"."organization_id"
+        assert!(
+            query.contains("\"org_owner\".\"id\" = \"samples\".\"organization_id\""),
+            "Query ON clause should contain join condition org_owner.id = samples.organization_id, got: {}",
+            query
+        );
+
+        println!("  ✓ RIGHT JOIN LATERAL test passed");
+    }
+
+    /// Test constructing INNER JOIN LATERAL (same structure as LEFT: WHERE in subquery, ON TRUE)
+    #[test]
+    fn should_construct_inner_join_lateral() {
+        let env_config = EnvConfig::default();
+        let expected_joins = serde_json::json!([
+            {
+                "type": "inner",
+                "field_relation": {
+                    "to": {
+                        "alias": "org_owner",
+                        "entity": "organizations",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "samples",
+                        "field": "organization_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            }
+        ]);
+        let payload = serde_json::json!({
+            "pluck": ["id", "code", "organization_id"],
+            "pluck_object": {
+                "samples": ["id", "name", "code", "organization_id", "status"],
+                "org_owner": ["id", "name"]
+            },
+            "joins": expected_joins,
+            "limit": 100
+        });
+
+        let table = String::from("samples");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+
+        assert!(
+            query.contains("INNER JOIN LATERAL"),
+            "Query should contain INNER JOIN LATERAL, got: {}",
+            query
+        );
+
+        // INNER uses same shape as LEFT: joined_<alias> in subquery, WHERE with system + join condition, ON TRUE
+        assert!(
+            query.contains("joined_org_owner"),
+            "Query should contain lateral subquery alias joined_org_owner, got: {}",
+            query
+        );
+        assert!(
+            query.contains("AS \"org_owner\" ON TRUE"),
+            "Query should end LATERAL with AS org_owner ON TRUE, got: {}",
+            query
+        );
+        assert!(
+            query.contains("\"joined_org_owner\".\"id\" = \"samples\".\"organization_id\""),
+            "Query WHERE should contain join condition, got: {}",
+            query
         );
     }
 }
