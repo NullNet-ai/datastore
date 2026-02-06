@@ -81,33 +81,49 @@ where
                         format!("LOWER({})", field_expression)
                     };
 
-                    // Check if field exists in group_by and use proper formatting
-                    if let Some(group_by) = &self.request_body.get_group_by() {
-                        let field_in_group_by = group_by.fields.iter().any(|group_field| {
-                            let group_parts: Vec<&str> = group_field.trim().split('.').collect();
-                            let group_table_name = self.normalize_entity_name(group_parts[0]);
+                    // When GROUP BY is present, ORDER BY must be in GROUP BY or wrapped in an aggregate
+                    let group_by = self.request_body.get_group_by();
+                    let field_in_group_by = group_by.map_or(false, |g| {
+                        !g.fields.is_empty()
+                            && g.fields.iter().any(|group_field| {
+                                let group_parts: Vec<&str> =
+                                    group_field.trim().split('.').collect();
+                                let group_table_name = self.normalize_entity_name(group_parts[0]);
+                                if group_parts.len() > 1 {
+                                    group_parts[1] == field_name
+                                        && (group_table_name == table_alias
+                                            || group_parts[0] == table_alias)
+                                } else {
+                                    group_parts[0] == field_name
+                                }
+                            })
+                    });
 
-                            if group_parts.len() > 1 {
-                                // Handle entity.field format in group_by
-                                group_parts[1] == field_name
-                                    && (group_table_name == table_alias
-                                        || group_parts[0] == table_alias)
-                            } else {
-                                // Handle single field format in group_by
-                                group_parts[0] == field_name
-                            }
-                        });
-                        // If field is in group_by, use the field expression without direction
-                        if field_in_group_by {
-                            return final_field;
-                        }
+                    if field_in_group_by {
+                        format!(
+                            "{} {}",
+                            final_field,
+                            sort_option.by_direction.to_uppercase()
+                        )
+                    } else if group_by.map_or(false, |g| !g.fields.is_empty()) {
+                        let agg = if sort_option.by_direction.eq_ignore_ascii_case("ASC") {
+                            "MIN"
+                        } else {
+                            "MAX"
+                        };
+                        format!(
+                            "{}({}) {} NULLS LAST",
+                            agg,
+                            final_field,
+                            sort_option.by_direction.to_uppercase()
+                        )
+                    } else {
+                        format!(
+                            "{} {}",
+                            final_field,
+                            sort_option.by_direction.to_uppercase()
+                        )
                     }
-
-                    format!(
-                        "{} {}",
-                        final_field,
-                        sort_option.by_direction.to_uppercase()
-                    )
                 })
                 .filter(|clause| !clause.is_empty()) // Filter out empty clauses
                 .collect();
@@ -144,14 +160,57 @@ where
                 format!("LOWER({})", field_expression)
             };
 
-            format!(
-                " ORDER BY {} {}",
-                final_field,
-                order_direction.to_uppercase()
-            )
+            // When GROUP BY is present, ORDER BY columns must be in GROUP BY or wrapped in an aggregate
+            let order_clause = if self.order_by_field_in_group_by(order_by) {
+                format!("{} {}", final_field, order_direction.to_uppercase())
+            } else if self
+                .request_body
+                .get_group_by()
+                .map_or(false, |g| !g.fields.is_empty())
+            {
+                let agg = if order_direction.eq_ignore_ascii_case("ASC") {
+                    "MIN"
+                } else {
+                    "MAX"
+                };
+                format!(
+                    "{}({}) {} NULLS LAST",
+                    agg,
+                    final_field,
+                    order_direction.to_uppercase()
+                )
+            } else {
+                format!("{} {}", final_field, order_direction.to_uppercase())
+            };
+
+            format!(" ORDER BY {}", order_clause)
         } else {
             String::from("")
         }
+    }
+
+    /// Returns true if the order_by field is in group_by.fields (so no aggregate needed in ORDER BY).
+    fn order_by_field_in_group_by(&self, order_by_field: &str) -> bool {
+        let group_by = match self.request_body.get_group_by() {
+            Some(g) if !g.fields.is_empty() => g,
+            _ => return false,
+        };
+        let order_parts: Vec<&str> = order_by_field.split('.').collect();
+        let (order_entity, order_field) = if order_parts.len() == 2 {
+            (order_parts[0], order_parts[1])
+        } else {
+            (self.table.as_str(), order_by_field)
+        };
+        group_by.fields.iter().any(|gf| {
+            let g_parts: Vec<&str> = gf.trim().split('.').collect();
+            if g_parts.len() == 2 {
+                let g_entity = self.normalize_entity_name(g_parts[0]);
+                g_parts[1] == order_field
+                    && (g_entity == order_entity || g_parts[0] == order_entity)
+            } else {
+                g_parts[0] == order_field
+            }
+        })
     }
 
     /// Normalizes entity name by converting to lowercase and pluralizing

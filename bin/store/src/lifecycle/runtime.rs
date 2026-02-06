@@ -543,16 +543,11 @@ impl RuntimeManager {
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
 
-        // Get server handle for shutdown integration
+        // Keep handle to stop server on Ctrl+C so the process exits and releases the port.
+        // We do not register HttpServerShutdown with the shutdown manager so we can stop
+        // and await the server here; otherwise the Server future would be dropped and the port stays bound.
         let server_handle = server.handle();
-
-        // Register HTTP server shutdown service with shutdown manager if available
-        if let Some(shutdown_manager_ptr) = self.shutdown_manager {
-            let shutdown_manager = unsafe { &mut *shutdown_manager_ptr };
-            let http_shutdown = crate::lifecycle::shutdown::HttpServerShutdown::new(server_handle);
-            shutdown_manager.register_service(Box::new(http_shutdown));
-            info!("[RUNTIME] HTTP server shutdown service registered");
-        }
+        let mut server_join = tokio::spawn(server);
 
         info!(
             "[RUNTIME] HTTP server successfully bound to {}",
@@ -564,19 +559,31 @@ impl RuntimeManager {
         self.call_post_startup_hooks().await;
         info!("[RUNTIME] Post-startup hooks call completed");
 
-        // Run server with shutdown handling
+        // Run server with shutdown handling. When Ctrl+C wins, stop the server and await
+        // its completion so the process exits and the port is released.
         tokio::select! {
-            result = server => {
+            result = &mut server_join => {
                 match result {
-                    Ok(_) => info!("[RUNTIME] HTTP server completed successfully"),
-                    Err(e) => {
+                    Ok(Ok(_)) => info!("[RUNTIME] HTTP server completed successfully"),
+                    Ok(Err(e)) => {
                         error!("[RUNTIME] HTTP server error: {}", e);
+                        return Err(Box::new(e));
+                    }
+                    Err(e) => {
+                        error!("[RUNTIME] HTTP server task join error: {}", e);
                         return Err(Box::new(e));
                     }
                 }
             },
             _ = self.wait_for_shutdown() => {
                 info!("[RUNTIME] Shutdown signal received, stopping HTTP server");
+                server_handle.stop(true).await;
+                if let Ok(join_result) = server_join.await {
+                    match join_result {
+                        Ok(_) => info!("[RUNTIME] HTTP server stopped, port released"),
+                        Err(e) => error!("[RUNTIME] HTTP server error during shutdown: {}", e),
+                    }
+                }
             }
         }
 

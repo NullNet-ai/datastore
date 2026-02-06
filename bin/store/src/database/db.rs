@@ -243,7 +243,9 @@ impl DatabaseTypeConverter {
         Ok(Value::Object(obj))
     }
 
-    /// Extract value from a specific column with comprehensive type handling
+    /// Extract value from a specific column with comprehensive type handling.
+    /// Converts PostgreSQL column value to `serde_json::Value`; returns `None` for SQL NULL.
+    /// Propagates type/read errors instead of silently returning `None`.
     fn extract_column_value(
         row: &tokio_postgres::Row,
         column_index: usize,
@@ -330,14 +332,18 @@ impl DatabaseTypeConverter {
 
             // JSON types
             &Type::JSON | &Type::JSONB => {
-                if let Ok(Some(json_str)) = row.try_get::<_, Option<String>>(column_index) {
-                    // Try to parse as JSON, fallback to string if parsing fails
-                    match serde_json::from_str::<Value>(&json_str) {
-                        Ok(parsed) => Some(parsed),
-                        Err(_) => Some(json!(json_str)),
+                let opt_str = row
+                    .try_get::<_, Option<String>>(column_index)
+                    .map_err(|e| e.to_string())?;
+                match opt_str {
+                    Some(json_str) => {
+                        // Try to parse as JSON, fallback to string if parsing fails
+                        match serde_json::from_str::<Value>(&json_str) {
+                            Ok(parsed) => Some(parsed),
+                            Err(_) => Some(json!(json_str)),
+                        }
                     }
-                } else {
-                    None
+                    None => None,
                 }
             }
 
@@ -348,57 +354,36 @@ impl DatabaseTypeConverter {
                 .map(|v| json!(v)),
 
             // Binary data
-            &Type::BYTEA => {
-                if let Ok(Some(bytes)) = row.try_get::<_, Option<Vec<u8>>>(column_index) {
-                    Some(json!(BASE64_STANDARD.encode(&bytes)))
-                } else {
-                    None
-                }
-            }
+            &Type::BYTEA => row
+                .try_get::<_, Option<Vec<u8>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|bytes| json!(BASE64_STANDARD.encode(&bytes))),
 
             // Array types
-            &Type::TEXT_ARRAY => {
-                if let Ok(Some(arr)) = row.try_get::<_, Option<Vec<String>>>(column_index) {
-                    Some(json!(arr))
-                } else {
-                    None
-                }
-            }
-            &Type::INT4_ARRAY => {
-                if let Ok(Some(arr)) = row.try_get::<_, Option<Vec<i32>>>(column_index) {
-                    Some(json!(arr))
-                } else {
-                    None
-                }
-            }
-            &Type::INT8_ARRAY => {
-                if let Ok(Some(arr)) = row.try_get::<_, Option<Vec<i64>>>(column_index) {
-                    Some(json!(arr))
-                } else {
-                    None
-                }
-            }
-            &Type::FLOAT4_ARRAY => {
-                if let Ok(Some(arr)) = row.try_get::<_, Option<Vec<f32>>>(column_index) {
-                    Some(json!(arr))
-                } else {
-                    None
-                }
-            }
-            &Type::FLOAT8_ARRAY => {
-                if let Ok(Some(arr)) = row.try_get::<_, Option<Vec<f64>>>(column_index) {
-                    Some(json!(arr))
-                } else {
-                    None
-                }
-            }
-            &Type::BOOL_ARRAY => {
-                if let Ok(Some(arr)) = row.try_get::<_, Option<Vec<bool>>>(column_index) {
-                    Some(json!(arr))
-                } else {
-                    None
-                }
-            }
+            &Type::TEXT_ARRAY => row
+                .try_get::<_, Option<Vec<String>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
+            &Type::INT4_ARRAY => row
+                .try_get::<_, Option<Vec<i32>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
+            &Type::INT8_ARRAY => row
+                .try_get::<_, Option<Vec<i64>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
+            &Type::FLOAT4_ARRAY => row
+                .try_get::<_, Option<Vec<f32>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
+            &Type::FLOAT8_ARRAY => row
+                .try_get::<_, Option<Vec<f64>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
+            &Type::BOOL_ARRAY => row
+                .try_get::<_, Option<Vec<bool>>>(column_index)
+                .map_err(|e| e.to_string())?
+                .map(|v| json!(v)),
 
             // Geometric types
             &Type::POINT
@@ -463,19 +448,18 @@ impl DatabaseTypeConverter {
 
             // HSTORE type
             _ if column_type.name() == "hstore" => {
-                if let Ok(Some(hstore)) =
-                    row.try_get::<_, Option<HashMap<String, Option<String>>>>(column_index)
-                {
+                let opt_hstore = row
+                    .try_get::<_, Option<HashMap<String, Option<String>>>>(column_index)
+                    .map_err(|e| e.to_string())?;
+                opt_hstore.map(|hstore| {
                     let mut obj = serde_json::Map::new();
                     for (key, value) in hstore {
                         if let Some(v) = value {
                             obj.insert(key, json!(v));
                         }
                     }
-                    Some(Value::Object(obj))
-                } else {
-                    None
-                }
+                    Value::Object(obj)
+                })
             }
 
             // Custom types (PostGIS, LTREE, etc.)

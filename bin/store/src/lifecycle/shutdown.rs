@@ -79,6 +79,7 @@ pub struct HttpServerShutdown {
 }
 
 impl HttpServerShutdown {
+    #[allow(dead_code)]
     pub fn new(server_handle: ServerHandle) -> Self {
         Self {
             server_handle: Some(server_handle),

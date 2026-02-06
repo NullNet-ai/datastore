@@ -5,6 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.5
+### Author
+Kashan
+### Added
+  - ***Joins***:
+    - **INNER JOIN LATERAL**: Support for `"type": "inner"` in joins (same structure as LEFT: WHERE in subquery, ON TRUE). Validation updated to allow INNER; unit test `should_construct_inner_join_lateral` added.
+    - **RIGHT JOIN LATERAL**: Support for `"type": "right"` in joins (subquery has no WHERE; conditions in ON). Unit test `should_construct_right_join_lateral` added.
+  - ***ORDER BY with GROUP BY***:
+    - When GROUP BY is present and the ORDER BY column is not in the GROUP BY list, the column is wrapped in an aggregate: **MAX(...)** for DESC and **MIN(...)** for ASC, with NULLS LAST. Applies to single-field and multiple_sort order by.
+  - ***GROUP BY defaults***:
+    - When `group_by.fields` is empty and `has_count` is true, or when `group_by` is entirely missing, the default is now **GROUP BY main_table.id** (e.g. `GROUP BY "samples"."id"`) instead of grouping by all pluck/pluck_object/concatenate fields. Reduces redundant GROUP BY lists and avoids "missing FROM-clause entry" errors for optional joins.
+
+### Changed
+  - ***GROUP BY***:
+    - Removed expansion of GROUP BY to all non-aggregated columns when `group_by.fields` is empty and `has_count` is true; use main table id only in that case.
+
 ## 0.2.4
 ### Author
 Jean
