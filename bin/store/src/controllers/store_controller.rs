@@ -1669,7 +1669,7 @@ pub async fn download_file_by_id(
 }
 
 pub async fn upload_file(
-    req: HttpRequest,
+    auth: HttpRequest,
     app_state: web::Data<providers::storage::AppState>,
     mut multipart: Multipart,
 ) -> impl Responder {
@@ -1679,8 +1679,8 @@ pub async fn upload_file(
 
         // Generate mock file metadata for disabled storage
         let mock_id = Ulid::new().to_string();
-        let organization_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
-            .unwrap_or_else(|_| "default".to_string());
+        let organization_name =
+            std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
         let mock_metadata = serde_json::json!({
             "id": mock_id,
             "status": "mock_uploaded",
@@ -1722,8 +1722,8 @@ pub async fn upload_file(
     }
 
     // Check for Auth data early and abort if missing
-    let extensions = req.extensions();
-    let _auth_data = match extensions.get::<Auth>() {
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
         None => {
             log::error!("Auth data not found in request extensions - aborting upload process");
@@ -1736,7 +1736,7 @@ pub async fn upload_file(
         }
     };
 
-    if let Some(content_type_header) = req.headers().get(actix_web::http::header::CONTENT_TYPE) {
+    if let Some(content_type_header) = auth.headers().get(actix_web::http::header::CONTENT_TYPE) {
         log::info!("Incoming Content-Type header: {:?}", content_type_header);
     }
     let name = "files";
@@ -1802,14 +1802,24 @@ pub async fn upload_file(
 
             // Generate a new ID for potential upload
             let new_id = Ulid::new().to_string();
-            let org_id = std::env::var("DEFAULT_ORGANIZATION_ID").unwrap_or_else(|_| String::new());
+            // Use organization ID from auth data, fallback to DEFAULT_ORGANIZATION_ID env var
+            let org_id = if !auth_data.organization_id.is_empty() {
+                auth_data.organization_id.clone()
+            } else {
+                std::env::var("DEFAULT_ORGANIZATION_ID").unwrap_or_else(|_| String::new())
+            };
             // Get organization name for path structure
             let organization_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
                 .unwrap_or_else(|_| "default".to_string());
-            
+
             // Create the new path structure: STORAGE_BUCKET_NAME/organization_name/file_id.extension
-            let valid_bucket_name = get_valid_bucket_name(&organization_name, Some(org_id.as_str()));
-            let new_unique_filename = format!("{}/{}", valid_bucket_name, format!("{}.{}", new_id, extension));
+            let valid_bucket_name =
+                get_valid_bucket_name(&organization_name, Some(org_id.as_str()));
+            let new_unique_filename = format!(
+                "{}/{}",
+                valid_bucket_name,
+                format!("{}.{}", new_id, extension)
+            );
 
             // First, try to find if this file already exists by listing all files with same extension
             let list_result = client
@@ -1951,7 +1961,6 @@ pub async fn upload_file(
                         //     .unwrap_or_else(|| "Unknown".to_string())
                     });
                     // For existing files, try to save to database (will handle duplicates gracefully)
-                    let auth_data = _auth_data;
 
                     // Use create_record function to save metadata
                     let req = test::TestRequest::default()
@@ -2046,7 +2055,6 @@ pub async fn upload_file(
                         metadata
                     ));
                     // Save file metadata to the database using process_and_insert_record
-                    let auth_data = _auth_data;
 
                     // Use create_record function to save metadata
                     let req = test::TestRequest::default()
