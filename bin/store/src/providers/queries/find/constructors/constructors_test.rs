@@ -438,8 +438,7 @@ mod tests {
         assert!(
             contain_allowed_group_by_query,
             "Query should contain expected GROUP BY. Expected: {} ... Actual query: {}",
-            expected_group_by_query,
-            query
+            expected_group_by_query, query
         );
     }
 
@@ -574,8 +573,7 @@ mod tests {
         assert!(
             contain_allowed_group_by_query,
             "Query should contain expected GROUP BY. Expected: {} ... Actual query: {}",
-            expected_group_by_query,
-            query
+            expected_group_by_query, query
         );
     }
 
