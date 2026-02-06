@@ -136,8 +136,7 @@ impl Default for EnvConfig {
             // Database Configuration
             database_url: std::env::var("DATABASE_URL")
                 .unwrap_or_else(|_| "postgres://admin:admin@localhost:5432/datastore".to_string()),
-            postgres_user: std::env::var("POSTGRES_USER")
-                .unwrap_or_else(|_| "admin".to_string()),
+            postgres_user: std::env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string()),
             postgres_password: std::env::var("POSTGRES_PASSWORD")
                 .unwrap_or_else(|_| "admin".to_string()),
             postgres_db: std::env::var("POSTGRES_DB").unwrap_or_else(|_| "store".to_string()),
