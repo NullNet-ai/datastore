@@ -252,7 +252,7 @@ mod tests {
         std::env::set_var("POSTGRES_USER", "admin");
         std::env::set_var("POSTGRES_PASSWORD", "admin");
         std::env::set_var("POSTGRES_DB", "datastore");
-        std::env::set_var("POSTGRES_HOST", "localhost"); // RFC 5737 test address
+        std::env::set_var("POSTGRES_HOST", "192.3.0.1"); // RFC 5737 test address
         std::env::set_var("POSTGRES_PORT", "5432");
 
         // Measure execution time
