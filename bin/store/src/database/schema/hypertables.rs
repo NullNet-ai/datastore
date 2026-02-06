@@ -1,7 +1,6 @@
 #[allow(warnings)]
 pub const HYPERTABLES: &[&str] = &[
     "test_hypertable",
-    "jean_hypertable",
     // Add more hypertable names as needed
 ];
 #[allow(warnings)]

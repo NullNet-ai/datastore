@@ -21,8 +21,6 @@ pub mod entity_model;
 pub mod external_contact_model;
 pub mod field_model;
 pub mod file_model;
-pub mod jean_hypertable_model;
-pub mod jean_model;
 pub mod organization_account_model;
 pub mod organization_contact_model;
 pub mod organization_domain_model;
