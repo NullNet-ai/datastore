@@ -1,8 +1,7 @@
 {
   "pluck": [
     "id",
-    "first_name",
-    "last_name"
+    "name"
   ],
   "pluck_object": {},
   "pluck_group_object": {},
@@ -15,13 +14,13 @@
   },
   "concatenate_fields": [],
   "multiple_sort": [],
-  "date_format": "YYYY-mm-dd",
-  "order_by": "id",
-  "order_direction": "ASC",
+  "date_format": "",
+  "order_by": "",
+  "order_direction": "",
   "is_case_sensitive_sorting": null,
   "offset": 0,
-  "limit": 25,
+  "limit": 10,
   "distinct_by": null,
   "timezone": null,
-  "time_format": "HH24:MI"
+  "time_format": ""
 }

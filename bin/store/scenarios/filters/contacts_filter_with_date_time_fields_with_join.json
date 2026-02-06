@@ -16,25 +16,9 @@
       "id",
       "contact_id"
     ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name",
-      "created_date",
-      "created_time",
-      "updated_date"
-    ],
     "contact_emails": [
       "email",
       "is_primary"
-    ],
-    "updated_by": [
-      "id",
-      "first_name",
-      "last_name"
-    ],
-    "contact_phone_numbers": [
-      "phone_number_raw"
     ],
     "contacts": [
       "id",
@@ -52,6 +36,22 @@
       "created_by",
       "updated_by",
       "previous_status"
+    ],
+    "contact_phone_numbers": [
+      "phone_number_raw"
+    ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name",
+      "created_date",
+      "created_time",
+      "updated_date"
     ],
     "updated_by_account_organizations": [
       "id",

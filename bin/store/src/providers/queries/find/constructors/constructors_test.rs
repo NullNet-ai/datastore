@@ -389,7 +389,8 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\" FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        // Group-by selections use aliases: "column" AS column
+        let expected_selections = format!("SELECT \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -429,9 +430,16 @@ mod tests {
         );
         println!("  {} Expected query: `{}`", contain_checker, expected_query);
         assert!(
-            contain_allowed_selection_query && contain_allowed_group_by_query,
-            " {} Query should have correct implementation of selections, order by and group by to work properly. Selection: {}, Group By: {}",
-            contain_checker, contain_allowed_selection_query, contain_allowed_group_by_query
+            contain_allowed_selection_query,
+            "Query should contain expected selections. Expected (substring): {} ... Actual query: {}",
+            expected_selections,
+            query
+        );
+        assert!(
+            contain_allowed_group_by_query,
+            "Query should contain expected GROUP BY. Expected: {} ... Actual query: {}",
+            expected_group_by_query,
+            query
         );
     }
 
@@ -517,7 +525,8 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT COUNT(*) AS count, \"contacts\".\"id\", \"contacts\".\"first_name\" FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        // Group-by selections use aliases: "column" AS column
+        let expected_selections = format!("SELECT COUNT(*) AS count, \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -557,9 +566,16 @@ mod tests {
         );
         println!("  {} Expected query: `{}`", contain_checker, expected_query);
         assert!(
-            contain_allowed_selection_query && contain_allowed_group_by_query,
-            " {} Query should have correct implementation of selections, order by and group by to work properly. Selection: {}, Group By: {}",
-            contain_checker, contain_allowed_selection_query, contain_allowed_group_by_query
+            contain_allowed_selection_query,
+            "Query should contain expected selections (with COUNT). Expected (substring): {} ... Actual query: {}",
+            expected_selections,
+            query
+        );
+        assert!(
+            contain_allowed_group_by_query,
+            "Query should contain expected GROUP BY. Expected: {} ... Actual query: {}",
+            expected_group_by_query,
+            query
         );
     }
 
