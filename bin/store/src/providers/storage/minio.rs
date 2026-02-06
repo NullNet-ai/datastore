@@ -148,15 +148,12 @@ pub async fn initialize() -> std::io::Result<(Client, String)> {
 
     println!("Reading bucket name from environment");
 
-    // Get organization ID from environment variables with fallback logic
-    let org_id = std::env::var("DEFAULT_ORGANIZATION_ID").unwrap_or_else(|_| String::new());
-
-    let base_bucket_name = std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| {
-        println!("DEFAULT_ORGANIZATION_NAME not set, using STORAGE_BUCKET_NAME");
-        std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| "store".to_string())
+    let base_bucket_name = std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| {
+        log::info!("STORAGE_BUCKET_NAME not set, using default: store");
+        "store".to_string()
     });
 
-    let bucket_name = get_valid_bucket_name(&base_bucket_name, Some(&org_id));
+    let bucket_name = base_bucket_name.clone();
 
     println!(
         "S3 client initialization complete with bucket: {}",
