@@ -6,10 +6,6 @@
     "status"
   ],
   "pluck_object": {
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
     "created_by": [
       "id",
       "first_name",
@@ -19,20 +15,24 @@
       "email",
       "is_primary"
     ],
-    "contacts": [
+    "updated_by": [
       "id",
       "first_name",
-      "last_name",
-      "status"
+      "last_name"
     ],
     "updated_by_account_organizations": [
       "id",
       "contact_id"
     ],
-    "updated_by": [
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "contacts": [
       "id",
       "first_name",
-      "last_name"
+      "last_name",
+      "status"
     ]
   },
   "pluck_group_object": {},

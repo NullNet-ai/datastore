@@ -397,7 +397,7 @@ mod tests {
         // Attempt login with valid credentials
         let payload = json!({
             "data": {
-                "account_id": "superadmin@dnamicro.com",
+                "account_id": "admin@dnamicro.com",
                 "account_secret": "ch@ng3m3Pl3@s3!!"
             }
         });
@@ -429,7 +429,7 @@ mod tests {
                             session_id,
                             is_authenticated,
                             server_available: true,
-                            username: "superadmin@dnamicro.com".to_string(),
+                            username: "admin@dnamicro.com".to_string(),
                             password: "ch@ng3m3Pl3@s3!!".to_string(),
                         }
                     }
@@ -487,7 +487,7 @@ mod tests {
     /// // When database is available - successful login
     /// let payload = json!({
     ///     "data": {
-    ///         "account_id": "superadmin@dnamicro.com",
+    ///         "account_id": "admin@dnamicro.com",
     ///         "account_secret": "ch@ng3m3Pl3@s3!!"
     ///     }
     /// });
@@ -3002,13 +3002,13 @@ mod tests {
             std::env::set_var("DEFAULT_ORGANIZATION_NAME", "test-org");
 
             // Test bucket name resolution
-            let bucket_name =
-                std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| "default-bucket".to_string());
+            let bucket_name = std::env::var("STORAGE_BUCKET_NAME")
+                .unwrap_or_else(|_| "default-bucket".to_string());
             assert_eq!(bucket_name, "test-bucket");
 
             // Test organization name resolution
-            let org_name =
-                std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
+            let org_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                .unwrap_or_else(|_| "default".to_string());
             assert_eq!(org_name, "test-org");
 
             // Clean up
@@ -3028,8 +3028,8 @@ mod tests {
 
             let file_id = "01KGRER1FH47DGESEH6XFPTZ0B";
             let extension = "png";
-            let organization_name =
-                std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
+            let organization_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                .unwrap_or_else(|_| "default".to_string());
 
             // Test the new path structure: organization_name/file_id.extension
             let upload_path = format!(
@@ -3055,8 +3055,8 @@ mod tests {
 
             let file_id = "01KGRER1FH47DGESEH6XFPTZ0B";
             let extension = "png";
-            let organization_name =
-                std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
+            let organization_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                .unwrap_or_else(|_| "default".to_string());
 
             // Test download path structure (should be the same as upload path)
             let download_path = format!(
@@ -3108,8 +3108,8 @@ mod tests {
             assert_eq!(bucket_name, "store");
 
             // Test fallback for DEFAULT_ORGANIZATION_NAME
-            let org_name =
-                std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
+            let org_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                .unwrap_or_else(|_| "default".to_string());
             assert_eq!(org_name, "default");
 
             // Clean up

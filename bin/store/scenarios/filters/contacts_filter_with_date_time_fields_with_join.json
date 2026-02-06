@@ -12,21 +12,17 @@
     "updated_time"
   ],
   "pluck_object": {
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "last_name",
-      "created_date",
-      "created_time",
-      "updated_date"
-    ],
     "contact_emails": [
       "email",
       "is_primary"
+    ],
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
     ],
     "updated_by": [
       "id",
@@ -53,9 +49,13 @@
       "updated_by",
       "previous_status"
     ],
-    "updated_by_account_organizations": [
+    "created_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "last_name",
+      "created_date",
+      "created_time",
+      "updated_date"
     ]
   },
   "pluck_group_object": {

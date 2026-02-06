@@ -2,8 +2,8 @@ DO $$
 DECLARE
     entity_record_id TEXT := uuid_generate_v4()::TEXT;
     organization_record_id TEXT := uuid_generate_v4()::TEXT;
-    record_email TEXT := 'superadmin@dnamicro.com';
-    record_emails TEXT[] := ARRAY['superadmin@dnamicro.com', 'dbadmin@dnamicro.com', 'admin@dnamicro.com', 'member@dnamicro.com'];
+    record_email TEXT := 'admin@dnamicro.com';
+    record_emails TEXT[] := ARRAY['admin@dnamicro.com', 'dbadmin@dnamicro.com', 'admin@dnamicro.com', 'member@dnamicro.com'];
     main_entity TEXT := 'data_permissions';
     fields field_type[] := ARRAY[
         -- system fields
