@@ -5,6 +5,26 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.6
+### Author
+Bert
+
+### Improvements
+  - ***Initialization of File Storage***:
+    - Added initialization of file storage to ensure the existence of the required directories.
+### Fixes
+  - ***Upload path***:
+    - Added support for custom upload paths in the file storage configuration.
+  - ***Download path***:
+    - Added support for custom download paths in the file storage configuration.
+  - ***Get File By ID***:
+    - Fixed issue where retrieving a file by ID would return an empty response.
+  - ***Unit Tests***
+    - Fixed issue where unit tests for some Query operations would fail when GROUP BY is implemented with default.
+### Added
+  - ***Unit Tests***:
+    - Added unit tests to cover the file storage operations.
+
 ## 0.2.5
 ### Author
 Kashan
