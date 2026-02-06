@@ -8,7 +8,10 @@
   "advance_filters": [],
   "group_advance_filters": [],
   "joins": [],
-  "group_by": null,
+  "group_by": {
+    "fields": [],
+    "has_count": false
+  },
   "concatenate_fields": [],
   "multiple_sort": [],
   "date_format": "",

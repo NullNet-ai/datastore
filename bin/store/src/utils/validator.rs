@@ -1,6 +1,7 @@
 use crate::structs::core::ApiResponse;
 use log::debug;
 
+#[allow(dead_code)]
 pub fn error_check_permission(account_id: &str, role: Option<&str>) -> Option<ApiResponse> {
     debug!(
         "Checking permissions for account_id: {}, role: {}",
