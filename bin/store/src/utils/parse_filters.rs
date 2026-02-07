@@ -6,7 +6,9 @@ pub struct SqlFilter {
     pub params: Vec<serde_json::Value>,
 }
 
-pub fn build_sql_filter(filters: &[FilterCriteria]) -> Result<SqlFilter, Box<dyn std::error::Error>> {
+pub fn build_sql_filter(
+    filters: &[FilterCriteria],
+) -> Result<SqlFilter, Box<dyn std::error::Error>> {
     let mut sql_parts = Vec::new();
     let mut params = Vec::new();
     let mut param_index = 1;
@@ -54,21 +56,19 @@ pub fn build_sql_filter(filters: &[FilterCriteria]) -> Result<SqlFilter, Box<dyn
                     field,
                     operator,
                     values,
-                } => {
-                    match criteria_to_sql(field, operator, values, param_index) {
-                        Ok((sql, mut vals, next_param_index)) => {
-                            sql_parts.push(sql);
-                            params.append(&mut vals);
-                            param_index = next_param_index;
-                            first_filter = false;
-                            last_logical = None;
-                        }
-                        Err(e) => {
-                            log::error!("Failed to build SQL for criteria: {}", e);
-                            return Err(e);
-                        }
+                } => match criteria_to_sql(field, operator, values, param_index) {
+                    Ok((sql, mut vals, next_param_index)) => {
+                        sql_parts.push(sql);
+                        params.append(&mut vals);
+                        param_index = next_param_index;
+                        first_filter = false;
+                        last_logical = None;
                     }
-                }
+                    Err(e) => {
+                        log::error!("Failed to build SQL for criteria: {}", e);
+                        return Err(e);
+                    }
+                },
                 FilterCriteria::LogicalOperator { .. } => {
                     // Already handled above
                     if first_filter {

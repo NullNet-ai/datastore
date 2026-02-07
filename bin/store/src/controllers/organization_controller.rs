@@ -81,7 +81,7 @@ impl OrganizationsController {
 
         // Try to get session from extensions
         let session_option = extensions.get::<SessionModel>().cloned();
-        
+
         // Print session information
         // Create signed_in_activity based on authentication result
 

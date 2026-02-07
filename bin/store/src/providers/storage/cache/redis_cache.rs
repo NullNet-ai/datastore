@@ -26,10 +26,10 @@ where
 pub enum RedisCacheError {
     #[error("Redis connection error: {0}")]
     ConnectionError(#[from] redis::RedisError),
-    
+
     #[error("Connection pool error: {0}")]
     PoolError(#[from] ConnectionPoolError),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
 }
@@ -45,7 +45,7 @@ where
         default_ttl: Option<Duration>,
     ) -> Result<Self, RedisCacheError> {
         use redis::Client;
-        
+
         let client = Arc::new(Client::open(connection_string)?);
         let pool_config = ConnectionPoolConfig::default();
         let connection_pool = Arc::new(ConnectionPool::new(client, pool_config)?);
@@ -74,19 +74,16 @@ where
     }
 
     /// Insert a value with a specific TTL
-    pub fn insert_with_ttl(
-        &self,
-        key: K,
-        value: V,
-        ttl: Duration,
-    ) -> Result<(), RedisCacheError> {
+    pub fn insert_with_ttl(&self, key: K, value: V, ttl: Duration) -> Result<(), RedisCacheError> {
         let mut pooled_conn = self.connection_pool.get_connection()?;
         let conn = pooled_conn.connection();
 
-        let key_str = serde_json::to_string(&key)
-            .map_err(|e| RedisCacheError::SerializationError(format!("Failed to serialize key: {}", e)))?;
-        let value_str = serde_json::to_string(&value)
-            .map_err(|e| RedisCacheError::SerializationError(format!("Failed to serialize value: {}", e)))?;
+        let key_str = serde_json::to_string(&key).map_err(|e| {
+            RedisCacheError::SerializationError(format!("Failed to serialize key: {}", e))
+        })?;
+        let value_str = serde_json::to_string(&value).map_err(|e| {
+            RedisCacheError::SerializationError(format!("Failed to serialize value: {}", e))
+        })?;
 
         conn.set_ex::<_, _, ()>(key_str, value_str, ttl.as_secs() as usize)?;
         Ok(())
@@ -115,17 +112,15 @@ where
                 return None;
             }
         };
-        
+
         match conn.get::<_, Option<String>>(key_str) {
-            Ok(Some(value_str)) => {
-                match serde_json::from_str(&value_str) {
-                    Ok(value) => Some(value),
-                    Err(e) => {
-                        log::error!("Failed to deserialize value: {}", e);
-                        None
-                    }
+            Ok(Some(value_str)) => match serde_json::from_str(&value_str) {
+                Ok(value) => Some(value),
+                Err(e) => {
+                    log::error!("Failed to deserialize value: {}", e);
+                    None
                 }
-            }
+            },
             Ok(None) => None,
             Err(e) => {
                 log::debug!("Redis GET failed: {}", e);
@@ -151,7 +146,7 @@ where
                 return;
             }
         };
-        
+
         let value_str = match serde_json::to_string(&value) {
             Ok(s) => s,
             Err(e) => {
@@ -188,7 +183,7 @@ where
                 return;
             }
         };
-        
+
         let value_str = match serde_json::to_string(&value) {
             Ok(s) => s,
             Err(e) => {
@@ -222,15 +217,13 @@ where
 
         // Get the value first in the same connection to ensure consistency
         let value = match conn.get::<_, Option<String>>(&key_str) {
-            Ok(Some(value_str)) => {
-                match serde_json::from_str(&value_str) {
-                    Ok(value) => Some(value),
-                    Err(e) => {
-                        log::error!("Failed to deserialize value during removal: {}", e);
-                        None
-                    }
+            Ok(Some(value_str)) => match serde_json::from_str(&value_str) {
+                Ok(value) => Some(value),
+                Err(e) => {
+                    log::error!("Failed to deserialize value during removal: {}", e);
+                    None
                 }
-            }
+            },
             Ok(None) => None,
             Err(e) => {
                 log::debug!("Redis GET during removal failed: {}", e);
@@ -244,7 +237,7 @@ where
                 log::error!("Failed to delete key from Redis: {}", e);
             }
         }
-        
+
         value
     }
 
@@ -257,7 +250,7 @@ where
             }
         };
         let conn = pooled_conn.connection();
-        
+
         // Use FLUSHDB with ASYNC option for better performance and reliability
         match redis::cmd("FLUSHDB").arg("ASYNC").query::<()>(conn) {
             Ok(_) => {
@@ -265,7 +258,7 @@ where
             }
             Err(e) => {
                 log::error!("Failed to clear Redis database: {}", e);
-                
+
                 // Fallback: try to clear synchronously
                 if let Err(e2) = redis::cmd("FLUSHDB").query::<()>(conn) {
                     log::error!("Fallback clear also failed: {}", e2);
@@ -291,7 +284,7 @@ where
                 return false;
             }
         };
-        
+
         match conn.exists::<_, bool>(key_str) {
             Ok(exists) => exists,
             Err(e) => {
@@ -310,7 +303,7 @@ where
             }
         };
         let conn = pooled_conn.connection();
-        
+
         match redis::cmd("DBSIZE").query::<usize>(conn) {
             Ok(size) => size,
             Err(e) => {

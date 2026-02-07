@@ -1,6 +1,6 @@
 use redis::{Client, Connection, RedisError};
-use std::sync::{Arc, Mutex, Condvar};
 use std::collections::VecDeque;
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 use thiserror::Error;
 
@@ -51,18 +51,18 @@ pub struct ConnectionPoolStats {
 pub enum ConnectionPoolError {
     #[error("Redis connection error: {0}")]
     ConnectionError(#[from] RedisError),
-    
+
     #[error("Connection pool is at maximum capacity")]
     #[allow(dead_code)]
     PoolAtCapacity,
-    
+
     #[error("Connection timeout after {0:?}")]
     ConnectionTimeout(Duration),
-    
+
     #[error("Connection is too old (lifetime exceeded)")]
     #[allow(dead_code)]
     ConnectionTooOld,
-    
+
     #[error("Connection is idle for too long")]
     #[allow(dead_code)]
     ConnectionIdleTooLong,
@@ -98,17 +98,17 @@ impl PooledConnection {
     #[allow(dead_code)]
     fn is_valid(&self, config: &ConnectionPoolConfig) -> bool {
         let now = Instant::now();
-        
+
         // Check if connection is too old
         if now.duration_since(self.created_at) > config.max_lifetime {
             return false;
         }
-        
+
         // Check if connection has been idle too long
         if now.duration_since(self.last_used) > config.idle_timeout {
             return false;
         }
-        
+
         true
     }
 }
@@ -132,7 +132,10 @@ pub struct ConnectionPool {
 
 impl ConnectionPool {
     /// Create a new connection pool
-    pub fn new(client: Arc<Client>, config: ConnectionPoolConfig) -> Result<Self, ConnectionPoolError> {
+    pub fn new(
+        client: Arc<Client>,
+        config: ConnectionPoolConfig,
+    ) -> Result<Self, ConnectionPoolError> {
         let pool = Self {
             client,
             config: config.clone(),
@@ -159,7 +162,7 @@ impl ConnectionPool {
     /// Get a connection from the pool
     pub fn get_connection(self: &Arc<Self>) -> Result<PooledConnection, ConnectionPoolError> {
         let start_time = Instant::now();
-        
+
         loop {
             // Try to get an idle connection
             {
@@ -191,27 +194,29 @@ impl ConnectionPool {
 
             // Check timeout
             if Instant::now().duration_since(start_time) > self.config.connection_timeout {
-                return Err(ConnectionPoolError::ConnectionTimeout(self.config.connection_timeout));
+                return Err(ConnectionPoolError::ConnectionTimeout(
+                    self.config.connection_timeout,
+                ));
             }
 
             // Wait for a connection to become available
             let active_count = self.active_count.lock().unwrap();
-            let (_guard, _timeout_result) = self.condition.wait_timeout(
-                active_count,
-                Duration::from_millis(100)
-            ).unwrap();
+            let (_guard, _timeout_result) = self
+                .condition
+                .wait_timeout(active_count, Duration::from_millis(100))
+                .unwrap();
         }
     }
 
     /// Return a connection to the pool
     fn return_connection(&self, mut connection: Connection) {
         *self.active_count.lock().unwrap() -= 1;
-        
+
         // Validate connection before returning to pool
         if self.validate_connection(&mut connection) {
             self.idle_connections.lock().unwrap().push_back(connection);
         }
-        
+
         // Notify waiting threads
         self.condition.notify_one();
     }
@@ -219,7 +224,7 @@ impl ConnectionPool {
     /// Create a new Redis connection
     fn create_connection(&self) -> Result<Connection, ConnectionPoolError> {
         let mut conn = self.client.get_connection()?;
-        
+
         // Test the connection with multiple retries
         let mut retries = 3;
         while retries > 0 {
@@ -227,17 +232,27 @@ impl ConnectionPool {
                 Ok(response) if response == "PONG" => {
                     log::trace!("New connection created and validated successfully");
                     return Ok(conn);
-                },
+                }
                 Ok(response) => {
-                    log::warn!("Connection test failed with unexpected response: '{}'", response);
+                    log::warn!(
+                        "Connection test failed with unexpected response: '{}'",
+                        response
+                    );
                     if retries == 1 {
                         return Err(ConnectionPoolError::ConnectionError(
-                            redis::RedisError::from((redis::ErrorKind::ResponseError, "Invalid PING response"))
+                            redis::RedisError::from((
+                                redis::ErrorKind::ResponseError,
+                                "Invalid PING response",
+                            )),
                         ));
                     }
-                },
+                }
                 Err(e) => {
-                    log::warn!("Connection test failed: {}, retries left: {}", e, retries - 1);
+                    log::warn!(
+                        "Connection test failed: {}, retries left: {}",
+                        e,
+                        retries - 1
+                    );
                     if retries == 1 {
                         return Err(e.into());
                     }
@@ -246,10 +261,13 @@ impl ConnectionPool {
             retries -= 1;
             std::thread::sleep(Duration::from_millis(100));
         }
-        
+
         // This should not be reached, but just in case
         Err(ConnectionPoolError::ConnectionError(
-            redis::RedisError::from((redis::ErrorKind::ResponseError, "Connection creation failed after retries"))
+            redis::RedisError::from((
+                redis::ErrorKind::ResponseError,
+                "Connection creation failed after retries",
+            )),
         ))
     }
 
@@ -260,11 +278,14 @@ impl ConnectionPool {
             Ok(response) if response == "PONG" => {
                 log::trace!("Connection validation successful");
                 true
-            },
+            }
             Ok(response) => {
-                log::warn!("Connection validation failed: unexpected response '{}'", response);
+                log::warn!(
+                    "Connection validation failed: unexpected response '{}'",
+                    response
+                );
                 false
-            },
+            }
             Err(e) => {
                 log::debug!("Connection validation failed: {}", e);
                 false
@@ -276,7 +297,7 @@ impl ConnectionPool {
     pub fn get_stats(&self) -> ConnectionPoolStats {
         let idle_conns = self.idle_connections.lock().unwrap();
         let active_count = *self.active_count.lock().unwrap();
-        
+
         ConnectionPoolStats {
             total_connections: idle_conns.len() + active_count,
             idle_connections: idle_conns.len(),

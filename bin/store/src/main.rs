@@ -15,16 +15,16 @@ mod structs;
 mod utils;
 
 // Re-export database module for use in other modules
-pub use database::db;
 use crate::builders::generator::generator_service;
 use crate::lifecycle::bootstrap;
-use crate::providers::storage::cache::CacheConfig;
 use crate::lifecycle::{
     logging::{LogConfig, LogLevel},
     manager::LifecycleManager,
 };
+use crate::providers::storage::cache::CacheConfig;
 use crate::utils::helpers::{parse_command_args, parse_env_config};
 use config::core::EnvConfig;
+pub use database::db;
 use env_logger::Env;
 use log::{error, info};
 use std::env;
