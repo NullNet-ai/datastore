@@ -167,10 +167,10 @@ async fn apply_messages(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
 
-    let sender = get_sender().cloned().unwrap_or_else(|| {
+    let sender = get_sender().cloned().ok_or_else(|| {
         log::error!("Failed to send message: sender not available");
-        panic!("Message sender not available")
-    });
+        std::io::Error::new(std::io::ErrorKind::Other, "sender not available")
+    })?;
 
     for (msg, existing_msg) in existing_messages {
         let should_apply = match &existing_msg {

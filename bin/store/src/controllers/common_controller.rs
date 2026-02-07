@@ -613,7 +613,8 @@ pub async fn perform_upsert(
         .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, e))?;
 
     // Build SQL filter
-    let SqlFilter { sql, params } = build_sql_filter(&filters.clone());
+    let SqlFilter { sql, params } = build_sql_filter(&filters.clone())
+        .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, e.to_string()))?;
     let converted_params = convert_params_to_sql_types(&params).map_err(|e| {
         ApiError::new(
             http::StatusCode::BAD_REQUEST,

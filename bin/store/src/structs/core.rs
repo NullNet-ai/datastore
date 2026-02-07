@@ -148,7 +148,7 @@ impl RequestBody {
 
         match operation {
             "create" => {
-                if !self.record.as_object().unwrap().contains_key("status") {
+                if !self.record.as_object().map_or(false, |obj| obj.contains_key("status")) {
                     self.record["status"] = json!("Active");
                 }
                 self.record["created_date"] = json!(date_str);
@@ -182,7 +182,7 @@ impl RequestBody {
                 self.record["updated_time"] = json!(time_str);
                 // Set status to "Archived" only if not provided in the request body
                 if self.record["status"].is_null()
-                    || !self.record.as_object().unwrap().contains_key("status")
+                    || !self.record.as_object().map_or(true, |obj| obj.contains_key("status"))
                 {
                     self.record["status"] = json!("Deleted");
                 }
