@@ -413,8 +413,12 @@ mod tests {
             Ok(resp) if resp.status().is_success() => {
                 match resp.json::<serde_json::Value>().await {
                     Ok(json_response) => {
-                        println!("    ℹ Auth response: {}", serde_json::to_string_pretty(&json_response).unwrap_or_else(|_| "Failed to serialize response".to_string()));
-                        
+                        println!(
+                            "    ℹ Auth response: {}",
+                            serde_json::to_string_pretty(&json_response)
+                                .unwrap_or_else(|_| "Failed to serialize response".to_string())
+                        );
+
                         let token = json_response
                             .get("token")
                             .and_then(|t| t.as_str())
@@ -445,13 +449,16 @@ mod tests {
                             username: "".to_string(),
                             password: "".to_string(),
                         }
-                    },
+                    }
                 }
             }
             Ok(resp) => {
                 println!("    ⚠ Auth request failed with status: {}", resp.status());
                 let status = resp.status();
-                let body_text = resp.text().await.unwrap_or_else(|_| "Failed to read body".to_string());
+                let body_text = resp
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Failed to read body".to_string());
                 println!("    ⚠ Auth response body: {}", body_text);
                 AuthResponse {
                     token: None,
@@ -546,14 +553,22 @@ mod tests {
                     assert!(token.len() > 10, "JWT token should have reasonable length");
                 }
             }
-            
+
             // Verify we have both token and session_id when authenticated
-            assert!(auth_response.token.is_some(), "Token should be present when authenticated");
-            assert!(auth_response.session_id.is_some(), "Session ID should be present when authenticated");
+            assert!(
+                auth_response.token.is_some(),
+                "Token should be present when authenticated"
+            );
+            assert!(
+                auth_response.session_id.is_some(),
+                "Session ID should be present when authenticated"
+            );
         } else {
             println!("    ⚠ Authentication failed but server is available - token: {:?}, session_id: {:?}", 
                      auth_response.token, auth_response.session_id);
-            println!("    ℹ This may be due to concurrent test execution overwhelming the auth server");
+            println!(
+                "    ℹ This may be due to concurrent test execution overwhelming the auth server"
+            );
             println!("    ℹ Test will pass gracefully as authentication is optional for this test");
         }
 
@@ -561,7 +576,10 @@ mod tests {
         println!("  ℹ Test designed to pass gracefully regardless of authentication state");
 
         // Test passes regardless of authentication result - it's testing the endpoint's availability and response handling
-        assert!(true, "Test completed successfully - endpoint responded appropriately");
+        assert!(
+            true,
+            "Test completed successfully - endpoint responded appropriately"
+        );
     }
 
     // Filters Scenarios
