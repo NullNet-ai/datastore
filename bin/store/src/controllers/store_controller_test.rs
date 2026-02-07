@@ -454,7 +454,6 @@ mod tests {
             }
             Ok(resp) => {
                 println!("    ⚠ Auth request failed with status: {}", resp.status());
-                let status = resp.status();
                 let body_text = resp
                     .text()
                     .await
