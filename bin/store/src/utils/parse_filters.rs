@@ -6,7 +6,9 @@ pub struct SqlFilter {
     pub params: Vec<serde_json::Value>,
 }
 
-pub fn build_sql_filter(filters: &[FilterCriteria]) -> SqlFilter {
+pub fn build_sql_filter(
+    filters: &[FilterCriteria],
+) -> Result<SqlFilter, Box<dyn std::error::Error>> {
     let mut sql_parts = Vec::new();
     let mut params = Vec::new();
     let mut param_index = 1;
@@ -54,15 +56,19 @@ pub fn build_sql_filter(filters: &[FilterCriteria]) -> SqlFilter {
                     field,
                     operator,
                     values,
-                } => {
-                    let (sql, mut vals, next_param_index) =
-                        criteria_to_sql(field, operator, values, param_index);
-                    sql_parts.push(sql);
-                    params.append(&mut vals);
-                    param_index = next_param_index;
-                    first_filter = false;
-                    last_logical = None;
-                }
+                } => match criteria_to_sql(field, operator, values, param_index) {
+                    Ok((sql, mut vals, next_param_index)) => {
+                        sql_parts.push(sql);
+                        params.append(&mut vals);
+                        param_index = next_param_index;
+                        first_filter = false;
+                        last_logical = None;
+                    }
+                    Err(e) => {
+                        log::error!("Failed to build SQL for criteria: {}", e);
+                        return Err(e);
+                    }
+                },
                 FilterCriteria::LogicalOperator { .. } => {
                     // Already handled above
                     if first_filter {
@@ -76,10 +82,10 @@ pub fn build_sql_filter(filters: &[FilterCriteria]) -> SqlFilter {
         sql_parts.push(")".to_string());
     }
 
-    SqlFilter {
+    Ok(SqlFilter {
         sql: sql_parts.join(" "),
         params,
-    }
+    })
 }
 
 fn criteria_to_sql(
@@ -87,7 +93,7 @@ fn criteria_to_sql(
     operator: &FilterOperator,
     values: &[serde_json::Value],
     param_index: usize,
-) -> (String, Vec<serde_json::Value>, usize) {
+) -> Result<(String, Vec<serde_json::Value>, usize), Box<dyn std::error::Error>> {
     use FilterOperator::*;
     let mut params = Vec::new();
     let sql = match operator {
@@ -152,8 +158,11 @@ fn criteria_to_sql(
             params.push(values[0].clone());
             format!("{} ILIKE ${}", field, param_index)
         }
-        _ => panic!("Unsupported operator in criteria_to_sql"),
+        _ => {
+            log::error!("Unsupported operator in criteria_to_sql: {:?}", operator);
+            return Err(format!("Unsupported operator: {:?}", operator).into());
+        }
     };
     let params_len = params.len();
-    (sql, params, param_index + params_len)
+    Ok((sql, params, param_index + params_len))
 }

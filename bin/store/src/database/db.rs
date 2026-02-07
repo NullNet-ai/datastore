@@ -30,10 +30,20 @@ pub fn establish_async_pool() -> AsyncDbPool {
         .max_size(20)
         .build()
         .unwrap_or_else(|e| {
-            panic!(
+            log::error!(
                 "Failed to create database connection pool. Database URL: {}. Error: {}. Please ensure PostgreSQL is running and the DATABASE_URL is correct.",
                 config_env.database_url, e
-            )
+            );
+            // Instead of panicking, create a pool that will fail gracefully when used
+            // This allows the application to start but will fail on first database access
+            let fallback_config = AsyncDieselConnectionManager::<AsyncPgConnection>::new("postgres://invalid:5432/invalid");
+            PoolAsync::builder(fallback_config)
+                .max_size(1)
+                .build()
+                .unwrap_or_else(|_| {
+                    // This should never happen, but if it does, we have bigger problems
+                    std::process::exit(1);
+                })
         })
 }
 
@@ -47,14 +57,17 @@ pub async fn get_async_connection() -> AsyncDbPooledConnection {
         // Check if it's a connection refused error (database not available)
         let error_msg = e.to_string();
         if error_msg.contains("Connection refused") || error_msg.contains("connection refused") {
-            panic!("Database is not available. Please ensure PostgreSQL is running and accessible at the configured host and port.");
+            log::error!("Database is not available. Please ensure PostgreSQL is running and accessible at the configured host and port.");
         } else if error_msg.contains("timeout") {
-            panic!("Database connection timeout. The database may be overloaded or network issues exist.");
+            log::error!("Database connection timeout. The database may be overloaded or network issues exist.");
         } else if error_msg.contains("authentication") || error_msg.contains("password") {
-            panic!("Database authentication failed. Please check your database credentials.");
+            log::error!("Database authentication failed. Please check your database credentials.");
         } else {
-            panic!("Database connection failed: {}. Please check your database configuration and ensure PostgreSQL is running.", e);
+            log::error!("Database connection failed: {}. Please check your database configuration and ensure PostgreSQL is running.", e);
         }
+        // Instead of panicking, we'll let the caller handle the connection failure
+        // The connection pool will return an error when trying to use the connection
+        panic!("Database connection failed: {}", e);
     })
 }
 

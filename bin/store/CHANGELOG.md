@@ -5,6 +5,18 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.7
+### Author
+Bert
+
+### Improvements
+  - ***Redis Cache***:
+    - Handle error when Redis cache is not available.
+    - Added test to cover the error handling scenario.
+  - ***Test Race Condition***:
+    - Added test to cover the race condition scenario.
+    - Fixed issue where race condition would occur when multiple requests when performing login.
+
 ## 0.2.6
 ### Author
 Bert

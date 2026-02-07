@@ -13,20 +13,22 @@ mod providers;
 mod routers;
 mod structs;
 mod utils;
+
+// Re-export database module for use in other modules
 use crate::builders::generator::generator_service;
 use crate::lifecycle::bootstrap;
-use crate::providers::storage::cache::{cache, CacheConfig};
-// Add the cache function import
-use crate::database::db;
 use crate::lifecycle::{
     logging::{LogConfig, LogLevel},
     manager::LifecycleManager,
 };
+use crate::providers::storage::cache::CacheConfig;
 use crate::utils::helpers::{parse_command_args, parse_env_config};
 use config::core::EnvConfig;
+pub use database::db;
 use env_logger::Env;
 use log::{error, info};
 use std::env;
+
 /// Initialize logging and cache configuration
 fn initialize_logging_and_cache(env_config: &EnvConfig) {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
@@ -45,7 +47,9 @@ fn initialize_logging_and_cache(env_config: &EnvConfig) {
         env_config.ttl
     );
 
-    let _ = cache.cache_type();
+    // Use the cache singleton to get cache type
+    use crate::providers::storage::cache::cache_singleton::Cache;
+    let _ = Cache::global().cache_type();
 }
 
 // Bootstrap
