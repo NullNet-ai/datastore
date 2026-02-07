@@ -95,7 +95,6 @@ where
 
         let path = req.path().to_string();
         let skip_session = session_manager.should_skip_session(&path);
-
         Box::pin(async move {
             if skip_session {
                 return service.call(req).await;
