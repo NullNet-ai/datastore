@@ -739,6 +739,127 @@ mod tests {
         );
     }
 
+    /// Test sorting by concatenated datetime field using order_by (single sort).
+    /// full_name = created_time || ' ' || timestamp; ORDER BY full_name should use the concatenated expression.
+    #[test]
+    fn should_sort_by_concatenated_datetime_field_with_order_by() {
+        let env_config = EnvConfig::default();
+        let payload = serde_json::json!({
+            "pluck": ["id", "code", "organization_id"],
+            "pluck_object": {
+                "samples": ["id", "code", "created_by", "organization_id", "status", "name", "created_time"]
+            },
+            "order_by": "full_name",
+            "order_direction": "desc",
+            "is_case_sensitive_sorting": true,
+            "multiple_sort": [],
+            "concatenate_fields": [{
+                "fields": ["created_time", "timestamp"],
+                "field_name": "full_name",
+                "separator": " ",
+                "entity": "samples"
+            }],
+            "date_format": "mm/dd/YYYY",
+            "time_format": "HH24:MI",
+            "limit": 100,
+            "offset": 0
+        });
+
+        let table = String::from("samples");
+        let is_root = false;
+        let timezone = Some("Europe/Berlin".to_string());
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "  ✗ Failed to generate query: {:?}",
+            query_result.err()
+        );
+
+        let query = query_result.unwrap();
+        println!("  ✓ Generated query: `{}`", query);
+
+        // ORDER BY should use the concatenated expression for full_name (created_time + timestamp)
+        let expected_order_by_expr = "COALESCE(\"samples\".\"created_time\"::text, '') || ' ' || COALESCE(\"samples\".\"timestamp\"::text, '')";
+        assert!(
+            query.contains(expected_order_by_expr),
+            "ORDER BY should contain concatenated expression for full_name. Got: {}",
+            query
+        );
+        assert!(
+            query.contains("ORDER BY") && query.contains("DESC"),
+            "Query should have ORDER BY ... DESC"
+        );
+    }
+
+    /// Test sorting by concatenated datetime field using multiple_sort.
+    /// full_name = created_time || ' ' || timestamp; multiple_sort with full_name should use the concatenated expression.
+    #[test]
+    fn should_sort_by_concatenated_datetime_field_with_multiple_sort() {
+        let env_config = EnvConfig::default();
+        let payload = serde_json::json!({
+            "pluck": ["id", "code", "organization_id"],
+            "pluck_object": {
+                "samples": ["id", "code", "created_by", "organization_id", "status", "name", "created_time"]
+            },
+            "order_by": "id",
+            "order_direction": "asc",
+            "multiple_sort": [
+                {"by_field": "full_name", "by_direction": "desc", "is_case_sensitive_sorting": true}
+            ],
+            "concatenate_fields": [{
+                "fields": ["created_time", "timestamp"],
+                "field_name": "full_name",
+                "separator": " ",
+                "entity": "samples"
+            }],
+            "date_format": "mm/dd/YYYY",
+            "time_format": "HH24:MI",
+            "limit": 100,
+            "offset": 0
+        });
+
+        let table = String::from("samples");
+        let is_root = false;
+        let timezone = Some("Europe/Berlin".to_string());
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "  ✗ Failed to generate query: {:?}",
+            query_result.err()
+        );
+
+        let query = query_result.unwrap();
+        println!("  ✓ Generated query: `{}`", query);
+
+        // multiple_sort takes precedence; ORDER BY should use concatenated expression for full_name
+        let expected_order_by_expr = "COALESCE(\"samples\".\"created_time\"::text, '') || ' ' || COALESCE(\"samples\".\"timestamp\"::text, '')";
+        assert!(
+            query.contains(expected_order_by_expr),
+            "ORDER BY with multiple_sort should contain concatenated expression for full_name. Got: {}",
+            query
+        );
+        assert!(
+            query.contains("ORDER BY") && query.contains("DESC"),
+            "Query should have ORDER BY ... DESC from multiple_sort"
+        );
+    }
+
     /// Test constructing concatenated fields for pluck_object join selections with aliased entity
     #[test]
     fn should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity() {
