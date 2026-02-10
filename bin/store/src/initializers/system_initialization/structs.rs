@@ -7,6 +7,7 @@ pub enum EInitializer {
     SYSTEM_DEVICE_CONFIG,
     BACKGROUND_SERVICES_CONFIG,
     INITIAL_ENTITY_DATA_CONFIG,
+    GENERATE_SCHEMA_CONFIG,
 }
 #[allow(warnings)]
 impl EInitializer {
@@ -18,6 +19,7 @@ impl EInitializer {
             EInitializer::SYSTEM_DEVICE_CONFIG => "system_device_config",
             EInitializer::BACKGROUND_SERVICES_CONFIG => "background_services_config",
             EInitializer::INITIAL_ENTITY_DATA_CONFIG => "initial_entity_data_config",
+            EInitializer::GENERATE_SCHEMA_CONFIG => "generate_schema_config",
         }
     }
 
@@ -29,6 +31,7 @@ impl EInitializer {
             "system_device_config" => Some(EInitializer::SYSTEM_DEVICE_CONFIG),
             "background_services_config" => Some(EInitializer::BACKGROUND_SERVICES_CONFIG),
             "initial_entity_data_config" => Some(EInitializer::INITIAL_ENTITY_DATA_CONFIG),
+            "generate_schema_config" => Some(EInitializer::GENERATE_SCHEMA_CONFIG),
             _ => None,
         }
     }
