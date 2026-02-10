@@ -17,6 +17,10 @@
       "created_time",
       "updated_time"
     ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
     "contacts": [
       "id",
       "code",
@@ -32,10 +36,6 @@
       "updated_time",
       "created_by",
       "updated_by"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
     ]
   },
   "pluck_group_object": {},
