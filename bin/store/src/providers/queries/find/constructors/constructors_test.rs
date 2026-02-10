@@ -860,6 +860,119 @@ mod tests {
         );
     }
 
+    /// Test that ASC ordering produces ASC NULLS FIRST (matches TypeScript behavior).
+    #[test]
+    fn should_use_nulls_first_for_asc_order() {
+        let env_config = EnvConfig::default();
+        let payload = serde_json::json!({
+            "pluck": ["id", "name"],
+            "order_by": "name",
+            "order_direction": "asc",
+            "multiple_sort": [],
+            "limit": 10,
+            "offset": 0
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(query_result.is_ok(), "Failed to generate query: {:?}", query_result.err());
+        let query = query_result.unwrap();
+
+        assert!(
+            query.contains("ASC NULLS FIRST"),
+            "Query should contain ASC NULLS FIRST for asc order. Got: {}",
+            query
+        );
+    }
+
+    /// Test that DESC ordering produces DESC NULLS LAST (matches TypeScript behavior).
+    #[test]
+    fn should_use_nulls_last_for_desc_order() {
+        let env_config = EnvConfig::default();
+        let payload = serde_json::json!({
+            "pluck": ["id", "name"],
+            "order_by": "name",
+            "order_direction": "desc",
+            "multiple_sort": [],
+            "limit": 10,
+            "offset": 0
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(query_result.is_ok(), "Failed to generate query: {:?}", query_result.err());
+        let query = query_result.unwrap();
+
+        assert!(
+            query.contains("DESC NULLS LAST"),
+            "Query should contain DESC NULLS LAST for desc order. Got: {}",
+            query
+        );
+    }
+
+    /// Test that multiple_sort with asc uses NULLS FIRST and with desc uses NULLS LAST.
+    #[test]
+    fn should_use_nulls_clauses_for_multiple_sort() {
+        let env_config = EnvConfig::default();
+        let payload = serde_json::json!({
+            "pluck": ["id", "first_name", "last_name"],
+            "order_by": "id",
+            "order_direction": "asc",
+            "multiple_sort": [
+                {"by_field": "first_name", "by_direction": "asc", "is_case_sensitive_sorting": false},
+                {"by_field": "last_name", "by_direction": "desc", "is_case_sensitive_sorting": false}
+            ],
+            "limit": 10,
+            "offset": 0
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(query_result.is_ok(), "Failed to generate query: {:?}", query_result.err());
+        let query = query_result.unwrap();
+
+        assert!(
+            query.contains("NULLS FIRST"),
+            "Query should contain NULLS FIRST for asc in multiple_sort. Got: {}",
+            query
+        );
+        assert!(
+            query.contains("NULLS LAST"),
+            "Query should contain NULLS LAST for desc in multiple_sort. Got: {}",
+            query
+        );
+    }
+
     /// Test constructing concatenated fields for pluck_object join selections with aliased entity
     #[test]
     fn should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity() {
