@@ -48,9 +48,7 @@ pub async fn initialize(
         }
         EInitializer::GENERATE_SCHEMA_CONFIG => {
             // Initialize generate schema
-            get_generate_schema_initializer()
-                .initialize(params)
-                .await
+            get_generate_schema_initializer().initialize(params).await
         }
     }
 }

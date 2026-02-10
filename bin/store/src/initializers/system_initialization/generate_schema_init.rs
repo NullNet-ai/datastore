@@ -1,5 +1,5 @@
 use crate::controllers::store_controller::ApiError;
-use crate::initializers::generate_schema::{GenerateSchemaService, GenerateSchemaOptions};
+use crate::initializers::generate_schema::{GenerateSchemaOptions, GenerateSchemaService};
 use actix_web::http::StatusCode;
 use redis::Client;
 use std::env;
@@ -13,12 +13,12 @@ impl GenerateSchemaInitializer {
     pub fn new() -> Self {
         // Default options for schema generation
         let mut options = GenerateSchemaOptions::default();
-        
+
         // Configure CRDT tables based on environment
         if env::var("INCLUDE_CRDT_TABLES")
             .unwrap_or_else(|_| "true".to_string())
             .to_lowercase()
-            == "true" 
+            == "true"
         {
             // Add common CRDT table names
             options.include_crdt_tables = vec![
@@ -32,7 +32,7 @@ impl GenerateSchemaInitializer {
         if env::var("EXCLUDE_FORMATTING_FIELDS")
             .unwrap_or_else(|_| "true".to_string())
             .to_lowercase()
-            == "true" 
+            == "true"
         {
             // Add common formatting field names to exclude
             options.exclude_formatting_fields = vec![
@@ -46,28 +46,33 @@ impl GenerateSchemaInitializer {
     }
 
     /// Generates the application schema and stores configuration
-    pub async fn initialize(&self, _params: Option<crate::initializers::system_initialization::structs::InitializerParams>) -> Result<(), ApiError> {
+    pub async fn initialize(
+        &self,
+        _params: Option<crate::initializers::system_initialization::structs::InitializerParams>,
+    ) -> Result<(), ApiError> {
         // Create Redis client for the service
-        let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-        let redis_client = Client::open(redis_url)
-            .map_err(|e| {
-                log::error!("Failed to create Redis client: {}", e);
-                ApiError::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to create Redis client"
-                )
-            })?;
+        let redis_url =
+            env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let redis_client = Client::open(redis_url).map_err(|e| {
+            log::error!("Failed to create Redis client: {}", e);
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to create Redis client",
+            )
+        })?;
 
         // Create the schema service
         let schema_service = GenerateSchemaService::new(redis_client);
 
         // Generate the schema
-        schema_service.generate_schema(self.options.clone()).await
+        schema_service
+            .generate_schema(self.options.clone())
+            .await
             .map_err(|e| {
                 log::error!("Failed to generate schema: {}", e);
                 ApiError::new(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to generate application schema"
+                    "Failed to generate application schema",
                 )
             })?;
 
