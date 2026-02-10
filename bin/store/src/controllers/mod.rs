@@ -9,4 +9,5 @@ pub mod sync_endpoints_controller;
 
 mod filter_scenarios_test;
 mod health_controller_test;
+mod organization_controller_test;
 mod store_controller_test;
