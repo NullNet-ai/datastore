@@ -365,9 +365,7 @@ impl<'a> WhereConstructor<'a> {
             operator,
             FilterOperator::HasNoValue | FilterOperator::IsNotEmpty
         );
-        let is_first_value_string = values
-            .first()
-            .map_or(false, |v| v.is_string());
+        let is_first_value_string = values.first().map_or(false, |v| v.is_string());
         if is_first_value_string || with_default_parse_op {
             Some("text".to_string())
         } else {

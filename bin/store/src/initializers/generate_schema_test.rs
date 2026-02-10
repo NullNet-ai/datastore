@@ -14,7 +14,7 @@ async fn test_generate_schema_service_creation() {
     };
 
     let _service = GenerateSchemaService::new(redis_client);
-    
+
     // Test that the service can be created without panicking
     assert!(true);
 }
