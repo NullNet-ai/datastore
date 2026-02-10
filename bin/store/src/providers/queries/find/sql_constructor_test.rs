@@ -634,4 +634,74 @@ mod tests {
 
         println!("GetByFilter QueryFilter implementation tests completed successfully!");
     }
+
+    /// Tests timezone handling in find/count: header timezone only.
+    /// When body has no timezone, header timezone should be applied to date/time fields.
+    #[test]
+    fn should_use_header_timezone_when_body_timezone_absent() {
+        let mut filter = MockQueryFilter::default();
+        filter.timezone = None; // No body timezone
+        filter.pluck = vec!["id".to_string(), "created_date".to_string()];
+
+        let mut constructor =
+            SQLConstructor::new(filter, "contacts".to_string(), true, Some("Europe/Berlin".to_string()));
+        let result = constructor.construct();
+
+        assert!(result.is_ok(), "SQL construction should succeed");
+        let sql = result.unwrap();
+        assert!(
+            sql.contains("AT TIME ZONE 'Europe/Berlin'"),
+            "SQL should use header timezone when body timezone is absent. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests timezone handling in find/count: body timezone only.
+    /// When header has no timezone, body timezone should be applied.
+    #[test]
+    fn should_use_body_timezone_when_header_timezone_absent() {
+        let mut filter = MockQueryFilter::default();
+        filter.timezone = Some("America/New_York".to_string()); // Body timezone
+        filter.pluck = vec!["id".to_string(), "created_date".to_string()];
+
+        let mut constructor = SQLConstructor::new(filter, "contacts".to_string(), true, None);
+        let result = constructor.construct();
+
+        assert!(result.is_ok(), "SQL construction should succeed");
+        let sql = result.unwrap();
+        assert!(
+            sql.contains("AT TIME ZONE 'America/New_York'"),
+            "SQL should use body timezone when header timezone is absent. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests timezone handling in find/count: body timezone overrides header.
+    /// When both header and body have timezone, body should take precedence.
+    #[test]
+    fn should_prefer_body_timezone_over_header_timezone() {
+        let mut filter = MockQueryFilter::default();
+        filter.timezone = Some("America/Los_Angeles".to_string()); // Body timezone
+        filter.pluck = vec!["id".to_string(), "created_date".to_string()];
+
+        let mut constructor = SQLConstructor::new(
+            filter,
+            "contacts".to_string(),
+            true,
+            Some("Europe/Berlin".to_string()), // Header timezone
+        );
+        let result = constructor.construct();
+
+        assert!(result.is_ok(), "SQL construction should succeed");
+        let sql = result.unwrap();
+        assert!(
+            sql.contains("AT TIME ZONE 'America/Los_Angeles'"),
+            "SQL should use body timezone (not header) when both are present. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("AT TIME ZONE 'Europe/Berlin'"),
+            "SQL should not use header timezone when body timezone overrides it"
+        );
+    }
 }
