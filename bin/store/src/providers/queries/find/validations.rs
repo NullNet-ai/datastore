@@ -758,8 +758,10 @@ impl<'a, 'b> Validation<'a, 'b> {
                 };
             };
 
-            // Validate field exists in schema
-            if !field_exists_in_table(sort_entity, sort_field) {
+            // Validate field exists in schema or is a concatenated (virtual) field
+            if !field_exists_in_table(sort_entity, sort_field)
+                && !self.is_concatenated_field(sort_entity, sort_field)
+            {
                 return ApiResponse {
                     success: false,
                     message: format!(

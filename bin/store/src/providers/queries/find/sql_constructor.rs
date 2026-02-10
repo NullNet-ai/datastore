@@ -115,6 +115,10 @@ impl<T: QueryFilter> OrderByQueryFilter for T {
     fn get_date_format(&self) -> &str {
         QueryFilter::get_date_format(self)
     }
+
+    fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+        QueryFilter::get_concatenate_fields(self)
+    }
 }
 
 impl QueryFilter for GetByFilter {
