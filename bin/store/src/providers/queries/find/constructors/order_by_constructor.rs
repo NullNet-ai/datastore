@@ -1,4 +1,4 @@
-use crate::structs::core::{GroupBy, SortOption};
+use crate::structs::core::{ConcatenateField, GroupBy, SortOption};
 use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 
 pub struct OrderByConstructor<T> {
@@ -64,14 +64,9 @@ where
                         (self.table.as_str(), sort_option.by_field.as_str())
                     };
 
-                    let field_expression = Self::get_field(
+                    let field_expression = self.get_field_expression_for_sort(
                         table_alias,
                         field_name,
-                        self.request_body.get_date_format(),
-                        &self.table,
-                        self.timezone.as_deref(),
-                        false,
-                        self.time_format.as_str(),
                     );
 
                     // Handle case sensitivity
@@ -138,16 +133,16 @@ where
         else if !self.request_body.get_order_by().is_empty() {
             let order_by = self.request_body.get_order_by();
             let order_direction = self.request_body.get_order_direction();
+            let (table_alias, field_name) = {
+                let parts: Vec<&str> = order_by.split('.').collect();
+                if parts.len() == 2 {
+                    (parts[0], parts[1])
+                } else {
+                    (self.table.as_str(), order_by)
+                }
+            };
 
-            let field_expression = Self::get_field(
-                _table,
-                order_by,
-                self.request_body.get_date_format(),
-                self.table.as_str(),
-                self.timezone.as_deref(),
-                false,
-                self.time_format.as_str(),
-            );
+            let field_expression = self.get_field_expression_for_sort(table_alias, field_name);
 
             // Handle case sensitivity
             let final_field = if self
@@ -216,6 +211,46 @@ where
     /// Normalizes entity name by converting to lowercase and pluralizing
     fn normalize_entity_name(&self, entity: &str) -> String {
         entity.to_string()
+    }
+
+    /// Resolves the sort field to a SQL expression, handling concatenated datetime fields.
+    /// For concatenated fields that combine *_date and *_time, uses expression::timestamp for proper sorting.
+    fn get_field_expression_for_sort(&self, table_alias: &str, field_name: &str) -> String {
+        let concatenate_fields = self.request_body.get_concatenate_fields();
+        let normalized_entity = if table_alias == "self" {
+            self.table.as_str()
+        } else {
+            table_alias
+        };
+
+        if let Some(concat_field) = concatenate_fields.iter().find(|cf| {
+            cf.field_name == field_name
+                && (cf.entity == table_alias
+                    || cf.entity == normalized_entity
+                    || cf.aliased_entity
+                        .as_deref()
+                        .map_or(false, |a| a == table_alias || a == normalized_entity))
+        }) {
+            let sort_expr = concat_field.to_group_by_expression(normalized_entity);
+            // If concatenated field combines _date and _time, cast to timestamp for proper datetime sorting
+            let is_concatenated_datetime = concat_field.fields.iter().any(|f| f.ends_with("_date"))
+                && concat_field.fields.iter().any(|f| f.ends_with("_time"));
+            if is_concatenated_datetime {
+                format!("({})::timestamp", sort_expr)
+            } else {
+                sort_expr
+            }
+        } else {
+            Self::get_field(
+                table_alias,
+                field_name,
+                self.request_body.get_date_format(),
+                &self.table,
+                self.timezone.as_deref(),
+                false,
+                self.time_format.as_str(),
+            )
+        }
     }
 
     /// Gets field with proper formatting and date/time handling
@@ -315,4 +350,10 @@ pub trait OrderByQueryFilter {
     fn get_group_by(&self) -> Option<&GroupBy>;
     fn get_distinct_by(&self) -> Option<&str>;
     fn get_date_format(&self) -> &str;
+
+    /// Returns concatenate_fields for resolving concatenated datetime sort fields.
+    /// Default returns empty; QueryFilter implementors override to provide the real value.
+    fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+        &[]
+    }
 }

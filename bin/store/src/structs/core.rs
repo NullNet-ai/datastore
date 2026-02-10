@@ -455,22 +455,26 @@ pub struct ConcatenateField {
 #[allow(warnings)]
 impl ConcatenateField {
     /// Generates the SQL expression for this concatenate field.
+    /// Casts each field to text before COALESCE to avoid "invalid input syntax for type X" when
+    /// null values are coalesced with '' (e.g. timestamptz/interval columns).
     pub fn to_sql_expression(&self) -> String {
         let joined_fields = self
             .fields
             .iter()
-            .map(|field| format!("COALESCE(\"joined_{}\".\"{}\", '')", self.entity, field))
+            .map(|field| format!("COALESCE(\"joined_{}\".\"{}\"::text, '')", self.entity, field))
             .collect::<Vec<_>>()
             .join(&format!(" || '{}' || ", self.separator));
         format!("({}) AS \"{}\"", joined_fields, self.field_name)
     }
 
     /// Generates the expression for GROUP BY (no AS alias), using the given table reference.
+    /// Casts each field to text before COALESCE to avoid "invalid input syntax for type X" when
+    /// null values are coalesced with '' (e.g. timestamptz/interval columns).
     pub fn to_group_by_expression(&self, table_ref: &str) -> String {
         let parts = self
             .fields
             .iter()
-            .map(|field| format!("COALESCE(\"{}\".\"{}\", '')", table_ref, field))
+            .map(|field| format!("COALESCE(\"{}\".\"{}\"::text, '')", table_ref, field))
             .collect::<Vec<_>>()
             .join(&format!(" || '{}' || ", self.separator));
         format!("({})", parts)
