@@ -482,7 +482,7 @@ impl OrganizationsController {
             Ok(claims) => {
                 // Extract account information from claims
                 let account_id = claims.account.account_id.clone();
-                
+
                 // Get account information using the existing auth service
                 let (account, account_organization_id) = match crate::providers::operations::organizations::auth_service::get_account_info(&account_id).await {
                     Ok(info) => info,
@@ -544,15 +544,20 @@ impl OrganizationsController {
                 });
 
                 // Generate new JWT token
-                let new_token = match crate::providers::operations::organizations::auth_service::sign(&token_value).await {
-                    Ok(t) => t,
-                    Err(e) => {
-                        log::error!("Failed to sign token: {}", e);
-                        return HttpResponse::InternalServerError().json(serde_json::json!({
-                            "message": "Failed to generate new token"
-                        }));
-                    }
-                };
+                let new_token =
+                    match crate::providers::operations::organizations::auth_service::sign(
+                        &token_value,
+                    )
+                    .await
+                    {
+                        Ok(t) => t,
+                        Err(e) => {
+                            log::error!("Failed to sign token: {}", e);
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "message": "Failed to generate new token"
+                            }));
+                        }
+                    };
 
                 // Update session with new token
                 let updated = SessionModel {
@@ -563,10 +568,12 @@ impl OrganizationsController {
                         .map(|v| v.to_str().unwrap_or_default().to_string()),
                     origin_host: Some(req.connection_info().host().to_string()),
                     origin_url: Some(req.path().to_string()),
-                    user_role_id: Some(signed_in_account["role_id"]
-                        .as_str()
-                        .unwrap_or_default()
-                        .to_string()),
+                    user_role_id: Some(
+                        signed_in_account["role_id"]
+                            .as_str()
+                            .unwrap_or_default()
+                            .to_string(),
+                    ),
                     user_is_root_user: Some(is_root),
                     user_account_id: Some(account_id.clone()),
                     account_organization_id: account_organization_id.clone(),
@@ -575,17 +582,22 @@ impl OrganizationsController {
                 req.extensions_mut().insert(updated.clone());
 
                 // Log the signed in activity
-                let signed_in_activity = crate::middlewares::session_core::session_to_signed_in_activity(
-                    &updated,
-                    Some("Success".to_string()),
-                    None,
-                ).await;
+                let signed_in_activity =
+                    crate::middlewares::session_core::session_to_signed_in_activity(
+                        &updated,
+                        Some("Success".to_string()),
+                        None,
+                    )
+                    .await;
 
                 // Convert to JSON and save to database using sync_service
                 match serde_json::to_value(&signed_in_activity) {
                     Ok(activity_json) => {
-                        if let Err(e) =
-                            crate::providers::operations::sync::sync_service::insert(&"signed_in_activities".to_string(), activity_json).await
+                        if let Err(e) = crate::providers::operations::sync::sync_service::insert(
+                            &"signed_in_activities".to_string(),
+                            activity_json,
+                        )
+                        .await
                         {
                             log::error!("Failed to save signed_in_activities: {}", e);
                         } else {
