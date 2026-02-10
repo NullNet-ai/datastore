@@ -91,7 +91,7 @@ mod tests {
         );
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
-        let expected_default_queries = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '01JBHKXHYSKPP247HZZWHA3JCT') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC LIMIT 10");
+        let expected_default_queries = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '01JBHKXHYSKPP247HZZWHA3JCT') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC NULLS FIRST LIMIT 10");
         let expected_query = format!(
             "SELECT \"contacts\".\"id\", \"contacts\".\"first_name\" FROM {} {}",
             &table, expected_default_queries
@@ -709,7 +709,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC LIMIT 10",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC NULLS FIRST LIMIT 10",
             &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -1075,7 +1075,7 @@ mod tests {
         );
         let expected_joins = format!("LEFT JOIN LATERAL (SELECT \"joined_ce_sample\".\"id\", \"joined_ce_sample\".\"email\" FROM \"contact_emails\" \"joined_ce_sample\" WHERE (joined_ce_sample.tombstone = 0 AND joined_ce_sample.organization_id IS NOT NULL AND joined_ce_sample.organization_id = '{}') AND \"joined_ce_sample\".\"contact_id\" = \"contacts\".\"id\" ) AS \"ce_sample\" ON TRUE", &env_config.default_organization_id);
 
-        let expected_default_where_clauses = format!("WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}') ORDER BY LOWER(\"contacts\".\"id\") ASC LIMIT 10", &env_config.default_organization_id);
+        let expected_default_where_clauses = format!("WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}') ORDER BY LOWER(\"contacts\".\"id\") ASC NULLS FIRST LIMIT 10", &env_config.default_organization_id);
 
         let expected_query = format!(
             "{} {} {}",

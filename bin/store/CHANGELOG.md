@@ -27,6 +27,7 @@ Kashan
   - ***ORDER BY NULLS clause***:
     - ORDER BY now includes `NULLS FIRST` for ASC and `NULLS LAST` for DESC to match TypeScript Trae behavior.
     - Applies to single `order_by` and `multiple_sort` (both grouped and non-grouped cases).
+  - Updated existing tests (`should_construct_selections_with_pluck_fields_pluck_object`, `should_construct_concatenated_fields_for_pluck_selections_without_aliased_entity`, and related) to expect `ASC NULLS FIRST` in ORDER BY assertions.
 
 ### Added
   - Unit tests for NULLS FIRST (ASC) and NULLS LAST (DESC) in `constructors_test.rs`.
