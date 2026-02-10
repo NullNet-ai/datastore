@@ -44,6 +44,7 @@ mod tests {
             account_secret: Some("test_secret".to_string()),
             email: Some("test@example.com".to_string()),
             password: Some("test_password".to_string()),
+            expiry_in_ms: None, // Default to None for backward compatibility
         }
     }
 
@@ -430,6 +431,7 @@ mod tests {
             account_secret: None,
             email: None,
             password: None,
+            expiry_in_ms: None, // Default to None for backward compatibility
         };
 
         println!("Created AuthData with all None values");

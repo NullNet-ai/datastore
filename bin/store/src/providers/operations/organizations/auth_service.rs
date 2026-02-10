@@ -965,6 +965,38 @@ pub async fn sign(token_value: &serde_json::Value) -> Result<String, Box<dyn std
 
     Ok(token)
 }
+
+/// Sign a token with custom expiry time in milliseconds
+pub async fn sign_with_expiry(
+    token_value: &serde_json::Value,
+    expiry_in_ms: u64,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let config = EnvConfig::default();
+    let jwt_secret = &config.jwt_secret;
+
+    // Set token expiration using custom expiry
+    let expiration = Utc::now() + Duration::milliseconds(expiry_in_ms as i64);
+    let now = Utc::now();
+
+    // Create a mutable clone of the token_value to add exp and iat
+    let mut payload = token_value.clone();
+
+    // Add exp and iat to the payload
+    if let Some(obj) = payload.as_object_mut() {
+        obj.insert("exp".to_string(), json!(expiration.timestamp() as usize));
+        obj.insert("iat".to_string(), json!(now.timestamp() as usize));
+    }
+
+    // Encode the token with the full payload
+    let token = encode(
+        &Header::new(Algorithm::HS256),
+        &payload,
+        &EncodingKey::from_secret(jwt_secret.as_bytes()),
+    )?;
+
+    Ok(token)
+}
+
 #[allow(warnings)]
 pub async fn invalidate_token(token: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Remove token from cache
