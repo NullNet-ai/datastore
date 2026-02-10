@@ -1,0 +1,13 @@
+{
+  "name": "test-runner-ui",
+  "version": "1.0.0",
+  "description": "UI for running and viewing Rust store tests",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

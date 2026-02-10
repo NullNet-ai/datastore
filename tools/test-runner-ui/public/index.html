@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Store Test Runner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1>Test Runner</h1>
+        <p class="subtitle">Rust Store Tests</p>
+      </div>
+      <div class="controls">
+        <button id="run-all" class="btn btn-primary">Run All Tests</button>
+        <button id="run-selected" class="btn btn-secondary">Run Selected</button>
+        <button id="refresh-list" class="btn btn-ghost">Refresh List</button>
+        <label class="filter-box">
+          <span>Filter</span>
+          <input type="text" id="filter" placeholder="Filter tests..." />
+        </label>
+      </div>
+      <div class="test-list-header">
+        <span class="count" id="test-count">0 tests</span>
+        <label class="checkbox-label">
+          <input type="checkbox" id="select-all" />
+          Select all
+        </label>
+      </div>
+      <ul id="test-list" class="test-list"></ul>
+    </aside>
+
+    <main class="main">
+      <div class="summary-bar" id="summary-bar">
+        <div class="summary-placeholder" id="summary-placeholder">Run tests to see results</div>
+        <div class="summary-content hidden" id="summary-content">
+          <div class="summary-stats">
+            <span class="stat stat-passed" id="stat-passed">0 passed</span>
+            <span class="stat stat-failed" id="stat-failed">0 failed</span>
+            <span class="stat stat-duration" id="stat-duration">—</span>
+          </div>
+          <div class="summary-criteria" id="summary-criteria"></div>
+        </div>
+      </div>
+
+      <div class="results-panel">
+        <div class="empty-state" id="empty-state">
+          <p>Select a test from the list and run it, or run all tests.</p>
+          <p class="hint">Double-click a test to run it individually.</p>
+        </div>
+
+        <div class="results-overview hidden" id="results-overview">
+          <div class="overview-header" id="overview-header">
+            <h2>Test Results</h2>
+          </div>
+          <div class="overview-summary">
+            <div class="summary-card summary-card-clickable" id="filter-passed" title="Show passed only">
+              <div class="summary-card-value passed" id="overview-passed">0</div>
+              <div class="summary-card-label">Passed</div>
+            </div>
+            <div class="summary-card summary-card-clickable" id="filter-failed" title="Show failed only">
+              <div class="summary-card-value failed" id="overview-failed">0</div>
+              <div class="summary-card-label">Failed</div>
+            </div>
+            <div class="summary-card summary-card-clickable" id="filter-all" title="Show all">
+              <div class="summary-card-value" id="overview-total">0</div>
+              <div class="summary-card-label">Total</div>
+            </div>
+          </div>
+          <div class="results-list" id="results-list"></div>
+        </div>
+
+        <div class="results-nav hidden" id="results-nav">
+          <button class="nav-back-btn" id="nav-back"><span>←</span><span>Back to Results</span></button>
+          <span class="nav-title" id="nav-title">Test Result</span>
+          <div class="nav-pagination">
+            <button class="nav-arrow-btn" id="nav-prev">←</button>
+            <span id="nav-position">1 / 1</span>
+            <button class="nav-arrow-btn" id="nav-next">→</button>
+          </div>
+        </div>
+
+        <div class="result-detail hidden" id="result-detail">
+          <div class="result-header">
+            <div class="result-title-row">
+              <h2 id="result-title">Test Name</h2>
+              <span class="badge" id="result-badge">—</span>
+            </div>
+            <div class="result-meta" id="result-meta">Duration: —</div>
+          </div>
+          <div class="result-sections">
+            <section class="result-section" id="section-input">
+              <h3>Input / Test Context</h3>
+              <pre id="result-input"></pre>
+            </section>
+            <section class="result-section" id="section-output">
+              <h3>Output (stdout)</h3>
+              <pre id="result-output"></pre>
+            </section>
+            <section class="result-section" id="section-criteria">
+              <h3>Criteria (pass/fail assertion)</h3>
+              <pre id="result-criteria"></pre>
+            </section>
+            <section class="result-section" id="section-failure">
+              <h3>Failure Reason (if failed)</h3>
+              <pre id="result-failure"></pre>
+            </section>
+            <section class="result-section" id="section-raw">
+              <h3>Raw Cargo Output</h3>
+              <pre id="result-raw"></pre>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
