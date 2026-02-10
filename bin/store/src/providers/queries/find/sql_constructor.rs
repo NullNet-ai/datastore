@@ -1,4 +1,5 @@
 use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use serde_json::Value;
 use crate::{
     providers::queries::find::constructors::{
         group_by_constructor::GroupByConstructor,
@@ -408,6 +409,29 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         }
     }
 
+    /// Resolves parse_as for filter context. When parse_as is "text", the schema field is only
+    /// cast to ::TEXT when values[0] is a string OR the operator is HasNoValue/IsNotEmpty
+    /// (operators that don't use values). Otherwise, parse_as "text" is not applied.
+    fn resolve_parse_as_for_filter(
+        parse_as: &str,
+        operator: &FilterOperator,
+        values: &[Value],
+    ) -> Option<String> {
+        if parse_as != "text" {
+            return Some(parse_as.to_string());
+        }
+        let with_default_parse_op = matches!(
+            operator,
+            FilterOperator::HasNoValue | FilterOperator::IsNotEmpty
+        );
+        let is_first_value_string = values.first().map_or(false, |v| v.is_string());
+        if is_first_value_string || with_default_parse_op {
+            Some("text".to_string())
+        } else {
+            None
+        }
+    }
+
     fn get_field_with_concatenation(
         &self,
         table: &str,
@@ -604,11 +628,13 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     .as_ref()
                     .map(|e| self.normalize_entity_name(e))
                     .unwrap_or_else(|| self.table.clone());
+                let effective_parse_as =
+                    Self::resolve_parse_as_for_filter(parse_as, operator, values);
                 let field_name = self.get_field_with_concatenation(
                     &normalized_entity,
                     field,
                     self.request_body.get_date_format(),
-                    Some(parse_as),
+                    effective_parse_as.as_deref(),
                     self.timezone.as_deref(),
                     false,
                     self.request_body.get_time_format(),
@@ -654,11 +680,13 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                         .as_ref()
                         .map(|e| self.normalize_entity_name(e))
                         .unwrap_or_else(|| self.table.clone());
+                    let effective_parse_as =
+                        Self::resolve_parse_as_for_filter(parse_as, operator, values);
                     let field_name = self.get_field_with_concatenation(
                         &normalized_entity,
                         field,
                         self.request_body.get_date_format(),
-                        Some(parse_as),
+                        effective_parse_as.as_deref(),
                         self.timezone.as_deref(),
                         false,
                         self.request_body.get_time_format(),
