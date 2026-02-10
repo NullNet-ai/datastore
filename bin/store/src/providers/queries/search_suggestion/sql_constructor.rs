@@ -10,7 +10,7 @@ use crate::providers::queries::search_suggestion::{
 use crate::structs::core::{
     ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
 };
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 
 pub trait QuerySearchSuggestion {
     fn get_pluck_object(&self) -> &BTreeMap<String, Vec<String>> {
@@ -265,6 +265,19 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                         entity.as_str(),
                                         false,
                                         time_format
+                                    )
+                                );
+                            } else if field.eq_ignore_ascii_case("timestamp") {
+                                let date_fmt = date_format.unwrap_or("YYYY-mm-dd");
+                                entity_field = format!(
+                                    "{}",
+                                    timestamp_format_wrapper(
+                                        entity.as_str(),
+                                        field,
+                                        date_fmt,
+                                        time_format,
+                                        timezone,
+                                        false,
                                     )
                                 );
                             }

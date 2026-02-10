@@ -1,4 +1,4 @@
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 use crate::{
     providers::queries::find::constructors::{
         group_by_constructor::GroupByConstructor,
@@ -231,9 +231,10 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
 
     pub fn construct(&mut self) -> Result<String, String> {
         let body_timezone = self.request_body.get_timezone();
+        // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
         let timezone = match (self.timezone.as_deref(), body_timezone) {
-            (Some(tz), _) => Some(tz.to_string()),
-            (None, Some(tz)) => Some(tz.to_string()),
+            (_, Some(tz)) => Some(tz.to_string()), // Body takes precedence
+            (Some(tz), None) => Some(tz.to_string()), // Header fallback
             (None, None) => None,
         };
 
@@ -395,6 +396,15 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                         main_table,
                         with_alias,
                         time_format,
+                    )
+                } else if field.eq_ignore_ascii_case("timestamp") {
+                    timestamp_format_wrapper(
+                        table,
+                        field,
+                        format_str,
+                        time_format,
+                        timezone,
+                        with_alias,
                     )
                 } else {
                     let table_field = format!("\"{}\".\"{}\"", table, field);

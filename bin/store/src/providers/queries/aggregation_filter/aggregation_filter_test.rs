@@ -248,4 +248,51 @@ mod tests {
         assert_eq!(filter.entity, cloned.entity);
         assert_eq!(filter.limit, cloned.limit);
     }
+
+    /// Tests timezone handling in aggregation filter: timezone passed from controller (header or body)
+    /// is applied to time_bucket for proper timezone-aware aggregation.
+    #[test]
+    fn test_aggregation_filter_uses_header_timezone() {
+        let filter = create_test_aggregation_filter();
+        let mut constructor = AggregationSQLConstructor::new(
+            filter,
+            "transactions".to_string(),
+            false,
+            Some("Europe/Berlin".to_string()), // Header timezone (controller passes merged tz)
+        )
+        .with_organization_id("test-org-123".to_string());
+
+        let result = constructor.construct_aggregation();
+        assert!(result.is_ok());
+        let sql = result.unwrap();
+        assert!(
+            sql.contains("AT TIME ZONE 'Europe/Berlin'"),
+            "Aggregation SQL should contain AT TIME ZONE. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests timezone handling in aggregation filter: body timezone is used when passed.
+    /// The controller merges header/body (body preferred) and passes to constructor.
+    #[test]
+    fn test_aggregation_filter_uses_body_timezone() {
+        let mut filter = create_test_aggregation_filter();
+        filter.timezone = Some("America/Los_Angeles".to_string()); // Body timezone
+        let mut constructor = AggregationSQLConstructor::new(
+            filter,
+            "transactions".to_string(),
+            false,
+            Some("America/Los_Angeles".to_string()), // Controller passes body tz when body wins
+        )
+        .with_organization_id("test-org-123".to_string());
+
+        let result = constructor.construct_aggregation();
+        assert!(result.is_ok());
+        let sql = result.unwrap();
+        assert!(
+            sql.contains("AT TIME ZONE 'America/Los_Angeles'"),
+            "Aggregation SQL should use body timezone. Got: {}",
+            sql
+        );
+    }
 }

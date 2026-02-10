@@ -23,6 +23,7 @@ pub trait AggregationQueryFilter {
     }
     fn get_aggregations(&self) -> &[Aggregation];
     fn get_bucket_size(&self) -> Option<&str>;
+    #[allow(dead_code)]
     fn get_timezone(&self) -> Option<&str>;
     fn get_aggregation_order(&self) -> Option<&AggregationOrder>;
     fn get_entity(&self) -> Option<&str>;
@@ -81,8 +82,8 @@ where
 
         let bucket_size = bucket_size.unwrap();
         let entity = entity.unwrap();
-        let timezone = AggregationQueryFilter::get_timezone(&self.sql_constructor.request_body)
-            .unwrap_or("UTC");
+        // Use resolved timezone (body preferred over header) passed from controller
+        let timezone = self.sql_constructor.timezone.as_deref().unwrap_or("UTC");
 
         // Generate the SELECT clause with time bucket and aggregations
         let mut sql = String::from("SELECT ");

@@ -815,6 +815,77 @@ mod tests {
         println!("Multiple concatenate fields test passed");
     }
 
+    /// Tests timezone handling in search suggestions: generate_concatenated_expressions
+    /// applies timezone to date/time fields when building concatenated expressions.
+    #[test]
+    fn should_apply_timezone_to_date_time_fields_in_concatenated_expressions() {
+        println!("Testing timezone in concatenated expressions for search suggestions");
+
+        let concatenate_field = ConcatenateField {
+            entity: "contacts".to_string(),
+            field_name: "created_date_time".to_string(),
+            fields: vec!["created_date".to_string(), "created_time".to_string()],
+            separator: " ".to_string(),
+            aliased_entity: None,
+        };
+
+        let result = generate_concatenated_expressions(
+            vec![concatenate_field],
+            Some("mm/dd/YYYY"),
+            Some("Europe/Berlin"),
+            "HH24:MI",
+        );
+
+        assert!(result.contains_key("contacts"));
+        let expr = result
+            .get("contacts")
+            .unwrap()
+            .get("created_date_time")
+            .unwrap();
+        assert!(
+            expr.expression.contains("AT TIME ZONE 'Europe/Berlin'"),
+            "Concatenated expression should contain AT TIME ZONE. Got: {}",
+            expr.expression
+        );
+
+        println!("Timezone in concatenated expressions test passed");
+    }
+
+    /// Tests timezone handling in search suggestions: when timezone is None,
+    /// date/time fields are still formatted but without AT TIME ZONE.
+    #[test]
+    fn should_handle_search_suggestions_without_timezone() {
+        println!("Testing search suggestion concatenated expressions without timezone");
+
+        let concatenate_field = ConcatenateField {
+            entity: "contacts".to_string(),
+            field_name: "created_date_time".to_string(),
+            fields: vec!["created_date".to_string(), "created_time".to_string()],
+            separator: " ".to_string(),
+            aliased_entity: None,
+        };
+
+        let result = generate_concatenated_expressions(
+            vec![concatenate_field],
+            Some("mm/dd/YYYY"),
+            None, // No timezone
+            "HH24:MI",
+        );
+
+        assert!(result.contains_key("contacts"));
+        let expr = result
+            .get("contacts")
+            .unwrap()
+            .get("created_date_time")
+            .unwrap();
+        assert!(
+            expr.expression.contains("TO_CHAR"),
+            "Expression should still contain TO_CHAR for date/time formatting"
+        );
+
+        println!("Search suggestion without timezone test passed");
+    }
+
     /// Tests that multiple entities with concatenated expressions work correctly
     /// This ensures proper handling of concatenated expressions across different entities
     #[test]

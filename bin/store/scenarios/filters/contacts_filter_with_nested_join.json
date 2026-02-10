@@ -3,9 +3,11 @@
     "id"
   ],
   "pluck_object": {
-    "created_by_account_organizations": [
+    "created_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "middle_name",
+      "last_name"
     ],
     "contact_emails": [
       "email",
@@ -14,12 +16,6 @@
       "updated_date",
       "created_time",
       "updated_time"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "middle_name",
-      "last_name"
     ],
     "contacts": [
       "id",
@@ -36,6 +32,10 @@
       "updated_time",
       "created_by",
       "updated_by"
+    ],
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
     ]
   },
   "pluck_group_object": {},
