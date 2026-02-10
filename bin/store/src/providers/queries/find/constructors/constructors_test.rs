@@ -885,7 +885,11 @@ mod tests {
             Some(env_config.default_organization_id.to_string()),
         );
 
-        assert!(query_result.is_ok(), "Failed to generate query: {:?}", query_result.err());
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
         let query = query_result.unwrap();
 
         assert!(
@@ -920,7 +924,11 @@ mod tests {
             Some(env_config.default_organization_id.to_string()),
         );
 
-        assert!(query_result.is_ok(), "Failed to generate query: {:?}", query_result.err());
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
         let query = query_result.unwrap();
 
         assert!(
@@ -958,7 +966,11 @@ mod tests {
             Some(env_config.default_organization_id.to_string()),
         );
 
-        assert!(query_result.is_ok(), "Failed to generate query: {:?}", query_result.err());
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
         let query = query_result.unwrap();
 
         assert!(

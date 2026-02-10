@@ -57,7 +57,6 @@ pub async fn initialize_all(params: Option<InitializerParams>) -> Result<(), Api
     // Initialize code prefix first
     initialize(EInitializer::SYSTEM_CODE_CONFIG, params.clone()).await?;
 
-    
     initialize(EInitializer::GENERATE_SCHEMA_CONFIG, params.clone()).await?;
 
     // Initialize global organization

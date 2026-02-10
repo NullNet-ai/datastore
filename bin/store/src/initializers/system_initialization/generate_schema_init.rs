@@ -51,12 +51,12 @@ impl GenerateSchemaInitializer {
         _params: Option<crate::initializers::system_initialization::structs::InitializerParams>,
     ) -> Result<(), ApiError> {
         log::info!("Starting application schema generation...");
-        
+
         // Create Redis client for the service
         let redis_url =
             env::var("REDIS_CONNECTION").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
         log::info!("Connecting to Redis at: {}", redis_url);
-        
+
         let redis_client = Client::open(redis_url).map_err(|e| {
             log::error!("Failed to create Redis client: {}", e);
             ApiError::new(
