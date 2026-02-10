@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.8
+### Author
+Bert
+
+### Added
+  - ***Login By Token***:
+    - Added login endpoint that accepts a token and returns a session.
+    - Added test to cover the login by token scenario.
+
 ## 0.2.7
 ### Author
 Bert

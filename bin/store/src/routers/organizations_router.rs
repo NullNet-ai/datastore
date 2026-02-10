@@ -16,6 +16,7 @@ pub fn configure_organizations_routes(cfg: &mut ServiceConfig) {
                 web::put().to(OrganizationsController::reregister_existing_account),
             )
             .route("/auth", web::post().to(OrganizationsController::auth))
+            .route("/auth/token", web::post().to(OrganizationsController::auth_by_token))
             .route("/logout", web::post().to(OrganizationsController::logout)),
     );
 }

@@ -133,7 +133,7 @@ impl OrganizationsController {
             .map(|(_, v)| v == "true")
             .unwrap_or(false);
 
-        let t = query_params
+        let _t = query_params
             .iter()
             .find(|(k, _)| k == "t")
             .map(|(_, v)| v.clone())
@@ -159,7 +159,7 @@ impl OrganizationsController {
                 &account_id,
                 &account_secret,
                 session_id.clone(),
-                if !t.is_empty() { Some(&t) } else { None },
+                if !_t.is_empty() { Some(&_t) } else { None },
             )
             .await
             .map_err(|err| {
@@ -382,6 +382,241 @@ impl OrganizationsController {
                     data: vec![],
                 };
                 HttpResponse::BadRequest().json(error_response)
+            }
+        }
+    }
+
+    pub async fn auth_by_token(req: HttpRequest) -> impl Responder {
+        let query_string = req.query_string();
+
+        // Get all extensions in a single borrow to avoid BorrowMutError
+        let extensions = req.extensions();
+
+        // Try to get session from extensions
+        let session_option = extensions.get::<SessionModel>().cloned();
+
+        // Drop the extensions borrow before continuing
+        drop(extensions);
+
+        let session = match &session_option {
+            Some(session) => session,
+            None => {
+                return HttpResponse::Unauthorized().json(ApiResponse {
+                    success: false,
+                    message: "Session doesn't exist in the login request".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+
+        // Extract session ID and handle error if it doesn't exist
+        let session_id = match &session.id {
+            Some(id) => id.clone(),
+            None => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Session ID doesn't exist in the organization_controller".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+
+        // Extract token from Authorization header or query parameter "t"
+        let auth_header = req
+            .headers()
+            .get("authorization")
+            .and_then(|h| h.to_str().ok());
+
+        let token_from_header = auth_header.map(|header| {
+            // Extract token from "Bearer <token>" format
+            header.strip_prefix("Bearer ").unwrap_or(header).to_string()
+        });
+
+        // Parse query parameters to get token from "t" parameter
+        let token_from_query = query_string
+            .split('&')
+            .filter(|s| !s.is_empty())
+            .find_map(|s| {
+                let parts: Vec<&str> = s.split('=').collect();
+                if parts.len() == 2 && parts[0] == "t" {
+                    Some(parts[1].to_string())
+                } else {
+                    None
+                }
+            });
+
+        // Use header token if available, otherwise fall back to query parameter
+        let token = match token_from_header.or(token_from_query) {
+            Some(token) => token,
+            None => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Missing authorization header or query parameter 't'".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+
+        // Parse query parameters for is_root
+        let is_root = query_string
+            .split('&')
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| {
+                let parts: Vec<&str> = s.split('=').collect();
+                if parts.len() == 2 && parts[0] == "is_root" {
+                    Some(parts[1] == "true")
+                } else {
+                    None
+                }
+            })
+            .next()
+            .unwrap_or(false);
+
+        // Verify the token
+        let verify_result = crate::providers::operations::auth::auth_service::verify(&token);
+
+        match verify_result {
+            Ok(claims) => {
+                // Extract account information from claims
+                let account_id = claims.account.account_id.clone();
+                
+                // Get account information using the existing auth service
+                let (account, account_organization_id) = match crate::providers::operations::organizations::auth_service::get_account_info(&account_id).await {
+                    Ok(info) => info,
+                    Err(e) => {
+                        log::error!("Failed to get account info: {}", e);
+                        return HttpResponse::Forbidden().json(serde_json::json!({
+                            "message": "Failed to retrieve account information"
+                        }));
+                    }
+                };
+
+                let account = match account {
+                    Some(acc) => acc,
+                    None => {
+                        return HttpResponse::Forbidden().json(serde_json::json!({
+                            "message": "Account not found"
+                        }));
+                    }
+                };
+
+                // Get the signed in account with all related data
+                let mut signed_in_account;
+
+                if let Some(ref account_organization_id) = account_organization_id {
+                    // Create your filters array based on your requirements
+                    let filters = vec!["ao.tombstone = 0", "ao.status = 'Active'"];
+
+                    // Call the function to get the account with profile and organization data
+                    signed_in_account =
+                        match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org(&account_organization_id, &filters).await {
+                            Ok(account) => account,
+                            Err(err) => {
+                                log::error!("Error fetching account with profile and org: {}", err);
+                                serde_json::json!({})
+                            }
+                        };
+                } else {
+                    // Call the function to get the account with profile and organization data by account_id
+                    signed_in_account =
+                        match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org_by_account_id(&account_id).await {
+                            Ok(account) => account,
+                            Err(err) => {
+                                log::error!("Error fetching account with profile and org by account_id: {}", err);
+                                serde_json::json!({})
+                            }
+                        };
+                }
+
+                // Insert session_id as sessionID in the signed_in_account
+                signed_in_account["sessionID"] = serde_json::json!(session_id);
+
+                // Create token value with the signed in account
+                let token_value = serde_json::json!({
+                    "account": signed_in_account,
+                    "sessionID": session_id,
+                    "sensitivity_level": account.sensitivity_level,
+                    "role_name": "".to_string(),
+                    "signed_in_account": signed_in_account
+                });
+
+                // Generate new JWT token
+                let new_token = match crate::providers::operations::organizations::auth_service::sign(&token_value).await {
+                    Ok(t) => t,
+                    Err(e) => {
+                        log::error!("Failed to sign token: {}", e);
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "message": "Failed to generate new token"
+                        }));
+                    }
+                };
+
+                // Update session with new token
+                let updated = SessionModel {
+                    token: Some(new_token.clone()),
+                    origin_user_agent: req
+                        .headers()
+                        .get("user-agent")
+                        .map(|v| v.to_str().unwrap_or_default().to_string()),
+                    origin_host: Some(req.connection_info().host().to_string()),
+                    origin_url: Some(req.path().to_string()),
+                    user_role_id: Some(signed_in_account["role_id"]
+                        .as_str()
+                        .unwrap_or_default()
+                        .to_string()),
+                    user_is_root_user: Some(is_root),
+                    user_account_id: Some(account_id.clone()),
+                    account_organization_id: account_organization_id.clone(),
+                    ..session.clone()
+                };
+                req.extensions_mut().insert(updated.clone());
+
+                // Log the signed in activity
+                let signed_in_activity = crate::middlewares::session_core::session_to_signed_in_activity(
+                    &updated,
+                    Some("Success".to_string()),
+                    None,
+                ).await;
+
+                // Convert to JSON and save to database using sync_service
+                match serde_json::to_value(&signed_in_activity) {
+                    Ok(activity_json) => {
+                        if let Err(e) =
+                            crate::providers::operations::sync::sync_service::insert(&"signed_in_activities".to_string(), activity_json).await
+                        {
+                            log::error!("Failed to save signed_in_activities: {}", e);
+                        } else {
+                            log::info!(
+                                "Successfully saved signed_in_activities for session: {:?}",
+                                session_id
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to serialize signed_in_activity: {}", e);
+                    }
+                }
+
+                // Return the new token and sessionID
+                HttpResponse::Ok()
+                    .cookie(
+                        actix_web::cookie::Cookie::build("token", new_token.clone())
+                            .path("/")
+                            .finish(),
+                    )
+                    .json(serde_json::json!({
+                        "token": new_token,
+                        "sessionID": session_id
+                    }))
+            }
+            Err(e) => {
+                log::error!("Token verification failed: {}", e);
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "message": "Invalid token"
+                }))
             }
         }
     }
