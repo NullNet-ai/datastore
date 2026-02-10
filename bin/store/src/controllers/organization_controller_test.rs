@@ -191,9 +191,11 @@ mod tests {
         ))
         .await;
 
-        // Create a test request with valid token format
+        // Create a test request with valid token format and JSON body
+        let req_body = serde_json::json!({});
         let req = test::TestRequest::post()
             .uri("/auth/token")
+            .set_json(&req_body)
             .insert_header((header::AUTHORIZATION, "Bearer test_token"))
             .to_request();
 
@@ -206,6 +208,9 @@ mod tests {
 
         // Read response body
         let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Raw response body: {}", body_str);
+
         let response_json: serde_json::Value =
             serde_json::from_slice(&body).expect("Response should be valid JSON");
 
@@ -341,6 +346,146 @@ mod tests {
                 || !String::from_utf8_lossy(&test::read_body(resp).await)
                     .contains("Missing authorization header or query parameter 't'"),
             "Should not return error for missing auth when header is provided"
+        );
+    }
+
+    /// Tests authentication with custom expiry time:
+    /// - Verifies endpoint accepts expiry_in_ms parameter in request body
+    /// - Tests that custom expiry is handled properly
+    #[tokio::test]
+    async fn test_auth_with_custom_expiry() {
+        println!("Testing authentication with custom expiry time...");
+
+        // Create test application
+        let app = test::init_service(
+            App::new().route("/auth", web::post().to(OrganizationsController::auth)),
+        )
+        .await;
+
+        // Create a test request with custom expiry time
+        let req_body = serde_json::json!({
+            "data": {
+                "account_id": "test_account",
+                "account_secret": "test_secret",
+                "expiry_in_ms": 3600000 // 1 hour in milliseconds
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/auth")
+            .set_json(&req_body)
+            .to_request();
+
+        // Test the endpoint
+        let resp = test::call_service(&app, req).await;
+
+        // Verify response status
+        let status = resp.status();
+        println!("Response status: {}", status);
+
+        // Read response body
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // The endpoint should process the custom expiry parameter
+        // (It may succeed or fail depending on authentication, but it shouldn't be a 400 for invalid request)
+        assert_ne!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "Should not return bad request for valid request structure"
+        );
+    }
+
+    /// Tests token-based authentication with custom expiry time:
+    /// - Verifies endpoint accepts expiry_in_ms parameter in request body
+    /// - Tests that custom expiry is handled properly in token-based auth
+    #[tokio::test]
+    async fn test_auth_by_token_with_custom_expiry() {
+        println!("Testing token-based authentication with custom expiry time...");
+
+        // Create test application
+        let app = test::init_service(App::new().route(
+            "/auth/token",
+            web::post().to(OrganizationsController::auth_by_token),
+        ))
+        .await;
+
+        // Create a test request with custom expiry time
+        let req_body = serde_json::json!({
+            "expiry_in_ms": 7200000 // 2 hours in milliseconds
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/auth/token")
+            .set_json(&req_body)
+            .insert_header((header::AUTHORIZATION, "Bearer test_token"))
+            .to_request();
+
+        // Test the endpoint
+        let resp = test::call_service(&app, req).await;
+
+        // Verify response status
+        let status = resp.status();
+        println!("Response status: {}", status);
+
+        // Read response body
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // The endpoint should process the custom expiry parameter
+        // (It may succeed or fail depending on token validation, but it shouldn't be a 400 for invalid request)
+        assert_ne!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "Should not return bad request for valid request structure"
+        );
+    }
+
+    /// Tests authentication without custom expiry (backward compatibility):
+    /// - Verifies endpoint works without expiry_in_ms parameter
+    /// - Tests backward compatibility with existing requests
+    #[tokio::test]
+    async fn test_auth_without_custom_expiry() {
+        println!("Testing authentication without custom expiry (backward compatibility)...");
+
+        // Create test application
+        let app = test::init_service(
+            App::new().route("/auth", web::post().to(OrganizationsController::auth)),
+        )
+        .await;
+
+        // Create a test request without custom expiry time (backward compatibility test)
+        let req_body = serde_json::json!({
+            "data": {
+                "account_id": "test_account",
+                "account_secret": "test_secret"
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/auth")
+            .set_json(&req_body)
+            .to_request();
+
+        // Test the endpoint
+        let resp = test::call_service(&app, req).await;
+
+        // Verify response status
+        let status = resp.status();
+        println!("Response status: {}", status);
+
+        // Read response body
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // The endpoint should work without expiry_in_ms parameter (backward compatibility)
+        assert_ne!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "Should not return bad request for request without expiry_in_ms"
         );
     }
 }

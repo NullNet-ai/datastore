@@ -24,6 +24,12 @@ pub struct AuthData {
     pub account_secret: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
+    pub expiry_in_ms: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthByTokenDto {
+    pub expiry_in_ms: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -386,7 +392,10 @@ impl OrganizationsController {
         }
     }
 
-    pub async fn auth_by_token(req: HttpRequest) -> impl Responder {
+    pub async fn auth_by_token(
+        data: web::Json<AuthByTokenDto>,
+        req: HttpRequest,
+    ) -> impl Responder {
         let query_string = req.query_string();
 
         // Get all extensions in a single borrow to avoid BorrowMutError
@@ -543,8 +552,23 @@ impl OrganizationsController {
                     "signed_in_account": signed_in_account
                 });
 
-                // Generate new JWT token
-                let new_token =
+                // Generate new JWT token with custom expiry if provided
+                let new_token = if let Some(custom_expiry_ms) = data.expiry_in_ms {
+                    match crate::providers::operations::organizations::auth_service::sign_with_expiry(
+                        &token_value,
+                        custom_expiry_ms,
+                    )
+                    .await
+                    {
+                        Ok(t) => t,
+                        Err(e) => {
+                            log::error!("Failed to sign token with custom expiry: {}", e);
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "message": "Failed to generate new token"
+                            }));
+                        }
+                    }
+                } else {
                     match crate::providers::operations::organizations::auth_service::sign(
                         &token_value,
                     )
@@ -557,7 +581,8 @@ impl OrganizationsController {
                                 "message": "Failed to generate new token"
                             }));
                         }
-                    };
+                    }
+                };
 
                 // Update session with new token
                 let updated = SessionModel {

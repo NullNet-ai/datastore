@@ -23,6 +23,12 @@
       "id",
       "contact_id"
     ],
+    "created_by": [
+      "id",
+      "first_name",
+      "middle_name",
+      "last_name"
+    ],
     "contact_emails": [
       "email",
       "is_primary",
@@ -30,12 +36,6 @@
       "updated_date",
       "created_time",
       "updated_time"
-    ],
-    "created_by": [
-      "id",
-      "first_name",
-      "middle_name",
-      "last_name"
     ]
   },
   "pluck_group_object": {},
