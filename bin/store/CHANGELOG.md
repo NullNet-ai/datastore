@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.12
+### Author
+Bert
+
+### Added
+  - ***Generate schema***:
+    - Added `generate_schema` initialization method to create database schema from JSON configuration.
+    - Supports both `CREATE` and `CREATE IF NOT EXISTS` options.
+    - Returns schema creation status and any errors encountered.
+### Fixed
+  - ***Redis Tests***:
+    - Fixed test suite to use a unique Redis database for each test to avoid conflicts.
+    - Added cleanup logic to delete test keys after each test run.
+  
 ## 0.2.11
 ### Author
 Kashan

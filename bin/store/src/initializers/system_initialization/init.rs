@@ -2,6 +2,7 @@ use crate::controllers::store_controller::ApiError;
 use crate::initializers::initial_entity_data::init::get_initial_entity_data_initializer;
 use crate::initializers::system_initialization::background_services_init::get_background_services_initializer;
 use crate::initializers::system_initialization::code_prefix_init::get_code_prefix_initializer;
+use crate::initializers::system_initialization::generate_schema_init::get_generate_schema_initializer;
 use crate::initializers::system_initialization::global_organization_init::get_global_organization_initializer;
 use crate::initializers::system_initialization::root_account_init::get_root_account_initializer;
 use crate::initializers::system_initialization::structs::{EInitializer, InitializerParams};
@@ -45,12 +46,18 @@ pub async fn initialize(
                 .initialize(params)
                 .await
         }
+        EInitializer::GENERATE_SCHEMA_CONFIG => {
+            // Initialize generate schema
+            get_generate_schema_initializer().initialize(params).await
+        }
     }
 }
 #[allow(warnings)]
 pub async fn initialize_all(params: Option<InitializerParams>) -> Result<(), ApiError> {
     // Initialize code prefix first
     initialize(EInitializer::SYSTEM_CODE_CONFIG, params.clone()).await?;
+
+    initialize(EInitializer::GENERATE_SCHEMA_CONFIG, params.clone()).await?;
 
     // Initialize global organization
     initialize(EInitializer::GLOBAL_ORGANIZATION_CONFIG, params.clone()).await?;
