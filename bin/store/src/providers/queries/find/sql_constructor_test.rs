@@ -643,8 +643,12 @@ mod tests {
         filter.timezone = None; // No body timezone
         filter.pluck = vec!["id".to_string(), "created_date".to_string()];
 
-        let mut constructor =
-            SQLConstructor::new(filter, "contacts".to_string(), true, Some("Europe/Berlin".to_string()));
+        let mut constructor = SQLConstructor::new(
+            filter,
+            "contacts".to_string(),
+            true,
+            Some("Europe/Berlin".to_string()),
+        );
         let result = constructor.construct();
 
         assert!(result.is_ok(), "SQL construction should succeed");
