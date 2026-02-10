@@ -92,11 +92,19 @@ where
                             })
                     });
 
+                    let nulls_clause = if sort_option.by_direction.eq_ignore_ascii_case("asc")
+                        || sort_option.by_direction.eq_ignore_ascii_case("ascending")
+                    {
+                        "NULLS FIRST"
+                    } else {
+                        "NULLS LAST"
+                    };
                     if field_in_group_by {
                         format!(
-                            "{} {}",
+                            "{} {} {}",
                             final_field,
-                            sort_option.by_direction.to_uppercase()
+                            sort_option.by_direction.to_uppercase(),
+                            nulls_clause
                         )
                     } else if group_by.map_or(false, |g| !g.fields.is_empty()) {
                         let agg = if sort_option.by_direction.eq_ignore_ascii_case("ASC") {
@@ -105,16 +113,18 @@ where
                             "MAX"
                         };
                         format!(
-                            "{}({}) {} NULLS LAST",
+                            "{}({}) {} {}",
                             agg,
                             final_field,
-                            sort_option.by_direction.to_uppercase()
+                            sort_option.by_direction.to_uppercase(),
+                            nulls_clause
                         )
                     } else {
                         format!(
-                            "{} {}",
+                            "{} {} {}",
                             final_field,
-                            sort_option.by_direction.to_uppercase()
+                            sort_option.by_direction.to_uppercase(),
+                            nulls_clause
                         )
                     }
                 })
@@ -154,8 +164,20 @@ where
             };
 
             // When GROUP BY is present, ORDER BY columns must be in GROUP BY or wrapped in an aggregate
+            let nulls_clause = if order_direction.eq_ignore_ascii_case("asc")
+                || order_direction.eq_ignore_ascii_case("ascending")
+            {
+                "NULLS FIRST"
+            } else {
+                "NULLS LAST"
+            };
             let order_clause = if self.order_by_field_in_group_by(order_by) {
-                format!("{} {}", final_field, order_direction.to_uppercase())
+                format!(
+                    "{} {} {}",
+                    final_field,
+                    order_direction.to_uppercase(),
+                    nulls_clause
+                )
             } else if self
                 .request_body
                 .get_group_by()
@@ -167,13 +189,19 @@ where
                     "MAX"
                 };
                 format!(
-                    "{}({}) {} NULLS LAST",
+                    "{}({}) {} {}",
                     agg,
                     final_field,
-                    order_direction.to_uppercase()
+                    order_direction.to_uppercase(),
+                    nulls_clause
                 )
             } else {
-                format!("{} {}", final_field, order_direction.to_uppercase())
+                format!(
+                    "{} {} {}",
+                    final_field,
+                    order_direction.to_uppercase(),
+                    nulls_clause
+                )
             };
 
             format!(" ORDER BY {}", order_clause)
