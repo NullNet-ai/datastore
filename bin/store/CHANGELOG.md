@@ -12,6 +12,7 @@ Bert
 ### Added
   - ***Expiry in MS***:
     - Added support for specifying the expiry time in milliseconds for login tokens.
+    - Added Test to cover the expiry in ms scenario.
 
 ## 0.2.8
 ### Author

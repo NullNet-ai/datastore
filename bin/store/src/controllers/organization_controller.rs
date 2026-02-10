@@ -32,7 +32,6 @@ pub struct AuthByTokenDto {
     pub expiry_in_ms: Option<u64>,
 }
 
- 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterDto {
     pub data: Register,
@@ -393,7 +392,10 @@ impl OrganizationsController {
         }
     }
 
-    pub async fn auth_by_token(data: web::Json<AuthByTokenDto>, req: HttpRequest) -> impl Responder {
+    pub async fn auth_by_token(
+        data: web::Json<AuthByTokenDto>,
+        req: HttpRequest,
+    ) -> impl Responder {
         let query_string = req.query_string();
 
         // Get all extensions in a single borrow to avoid BorrowMutError

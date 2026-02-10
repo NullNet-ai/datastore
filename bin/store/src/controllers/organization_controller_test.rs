@@ -210,7 +210,7 @@ mod tests {
         let body = test::read_body(resp).await;
         let body_str = String::from_utf8_lossy(&body);
         println!("Raw response body: {}", body_str);
-        
+
         let response_json: serde_json::Value =
             serde_json::from_slice(&body).expect("Response should be valid JSON");
 
@@ -357,10 +357,9 @@ mod tests {
         println!("Testing authentication with custom expiry time...");
 
         // Create test application
-        let app = test::init_service(App::new().route(
-            "/auth",
-            web::post().to(OrganizationsController::auth),
-        ))
+        let app = test::init_service(
+            App::new().route("/auth", web::post().to(OrganizationsController::auth)),
+        )
         .await;
 
         // Create a test request with custom expiry time
@@ -452,10 +451,9 @@ mod tests {
         println!("Testing authentication without custom expiry (backward compatibility)...");
 
         // Create test application
-        let app = test::init_service(App::new().route(
-            "/auth",
-            web::post().to(OrganizationsController::auth),
-        ))
+        let app = test::init_service(
+            App::new().route("/auth", web::post().to(OrganizationsController::auth)),
+        )
         .await;
 
         // Create a test request without custom expiry time (backward compatibility test)
