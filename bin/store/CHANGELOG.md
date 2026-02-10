@@ -5,6 +5,43 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.10
+### Author
+Kashan
+
+### Added
+  - ***Timestamp field support***:
+    - Added `timestamp_format_wrapper` for the `timestamp` column (e.g. hypertables) in find, count, and search suggestions.
+    - Timestamp field now uses ISO 8601 format (`YYYY-MM-DD HH24:MI:SS.US`) to stay consistent with stored values.
+    - Timestamp field alias fixed so response returns `"timestamp"` instead of `"coalesce"`.
+  - ***Concatenated datetime sort***:
+    - Added logic to detect and handle datetime fields when sorting concatenated entities.
+    - When sorting by a concatenated field that combines `*_date` and `*_time`, uses `expression::timestamp` for proper datetime ordering.
+    - Supports both single `order_by` and `multiple_sort`.
+  - ***Order by concatenated field validation***:
+    - Validation now accepts concatenated (virtual) fields for `order_by`; `full_name` and similar concatenated fields are valid sort targets.
+  - ***Unit tests***:
+    - Timezone handling: header-only, body-only, and body-over-header for find/count (`sql_constructor_test.rs`).
+    - Timezone handling: header and body for aggregation filter (`aggregation_filter_test.rs`).
+    - Timezone handling: concatenated expressions with date/time fields for search suggestions (`search_suggestion_test.rs`).
+    - Concatenated datetime sort: single `order_by` and `multiple_sort` (`constructors_test.rs`).
+
+### Changed
+  - ***parse_as text / HasNoValue / IsNotEmpty***:
+    - Updated parsing logic so that when `parse_as` is `"text"`, the schema field is cast to `::TEXT` only when `values[0]` is a string, or when the operator is `HasNoValue` or `IsNotEmpty`.
+    - Added string type checking for advance filter values when `parse_as` text is enabled.
+  - ***Timezone precedence***:
+    - Body timezone now takes precedence over header timezone for consistency across find, count, aggregation filter, and search suggestion implementations.
+  - ***ConcatenateField expressions***:
+    - `to_group_by_expression` and `to_sql_expression` now cast each field to `::text` before `COALESCE` to avoid "invalid input syntax for type timestamp with time zone" when null values are coalesced with `''`.
+
+### Fixed
+  - Fixed timestamp field appearing as `"coalesce"` in filter response; selections now correctly alias the formatted timestamp column.
+
+### Other
+  - Removed `cargo:warning` from proto build scripts to eliminate build warnings.
+  - Added `#[allow(dead_code)]` to `AggregationQueryFilter::get_timezone` (trait method kept for interface consistency).
+
 ## 0.2.9
 ### Author
 Bert
