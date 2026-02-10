@@ -19,6 +19,14 @@
       "created_by",
       "updated_by"
     ],
+    "contact_emails": [
+      "email",
+      "is_primary",
+      "created_date",
+      "updated_date",
+      "created_time",
+      "updated_time"
+    ],
     "created_by": [
       "id",
       "first_name",
@@ -28,14 +36,6 @@
     "created_by_account_organizations": [
       "id",
       "contact_id"
-    ],
-    "contact_emails": [
-      "email",
-      "is_primary",
-      "created_date",
-      "updated_date",
-      "created_time",
-      "updated_time"
     ]
   },
   "pluck_group_object": {},

@@ -728,7 +728,7 @@ mod redis_cache_tests {
 
     #[test]
     fn test_basic_cache_operations() {
-        let cache = match create_test_redis_cache_with_db(14) {
+        let cache = match create_test_redis_cache_with_db(0) {
             Some(cache) => cache,
             None => {
                 println!("Redis not available - skipping test");

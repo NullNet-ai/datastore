@@ -14,6 +14,10 @@ Bert
     - Added `generate_schema` initialization method to create database schema from JSON configuration.
     - Supports both `CREATE` and `CREATE IF NOT EXISTS` options.
     - Returns schema creation status and any errors encountered.
+### Fixed
+  - ***Redis Tests***:
+    - Fixed test suite to use a unique Redis database for each test to avoid conflicts.
+    - Added cleanup logic to delete test keys after each test run.
   
 ## 0.2.11
 ### Author
