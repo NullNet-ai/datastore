@@ -1,8 +1,6 @@
 use crate::database::schema::hypertables::is_hypertable;
 use crate::structs::core::{ConcatenateField, GroupBy, Join};
-use crate::utils::helpers::{
-    date_format_wrapper, time_format_wrapper, timestamp_format_wrapper,
-};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 use std::collections::HashMap;
 
 pub struct GroupByConstructor<'a> {

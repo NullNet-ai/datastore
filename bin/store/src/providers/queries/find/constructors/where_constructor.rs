@@ -2,9 +2,7 @@
 use crate::structs::core::{
     FilterCriteria, FilterOperator, GroupAdvanceFilter, LogicalOperator, MatchPattern,
 };
-use crate::utils::helpers::{
-    date_format_wrapper, time_format_wrapper, timestamp_format_wrapper,
-};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 use crate::utils::sql_sanitizer;
 use serde_json::Value;
 

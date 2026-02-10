@@ -1340,7 +1340,7 @@ pub async fn aggregation_filter(
         .map(|s| s.to_string());
     let body_timezone = parameters.timezone.clone();
     let timezone = match (header_timezone, body_timezone) {
-        (_, Some(tz)) => Some(tz),   // Body takes precedence
+        (_, Some(tz)) => Some(tz),    // Body takes precedence
         (Some(tz), None) => Some(tz), // Header fallback
         (None, None) => None,
     };
@@ -2430,7 +2430,7 @@ pub async fn search_suggestions(
 
     // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
     let timezone = match (header_timezone.clone(), body_timezone) {
-        (_, Some(tz)) => Some(tz.to_string()),   // Body takes precedence
+        (_, Some(tz)) => Some(tz.to_string()), // Body takes precedence
         (Some(tz), None) => Some(tz.to_string()), // Header fallback
         (None, None) => None,
     };

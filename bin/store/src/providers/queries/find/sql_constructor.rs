@@ -1,6 +1,4 @@
-use crate::utils::helpers::{
-    date_format_wrapper, time_format_wrapper, timestamp_format_wrapper,
-};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 use crate::{
     providers::queries::find::constructors::{
         group_by_constructor::GroupByConstructor,
@@ -235,7 +233,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         let body_timezone = self.request_body.get_timezone();
         // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
         let timezone = match (self.timezone.as_deref(), body_timezone) {
-            (_, Some(tz)) => Some(tz.to_string()),   // Body takes precedence
+            (_, Some(tz)) => Some(tz.to_string()), // Body takes precedence
             (Some(tz), None) => Some(tz.to_string()), // Header fallback
             (None, None) => None,
         };

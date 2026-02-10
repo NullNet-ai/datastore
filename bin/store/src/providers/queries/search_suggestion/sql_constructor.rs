@@ -10,9 +10,7 @@ use crate::providers::queries::search_suggestion::{
 use crate::structs::core::{
     ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
 };
-use crate::utils::helpers::{
-    date_format_wrapper, time_format_wrapper, timestamp_format_wrapper,
-};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 
 pub trait QuerySearchSuggestion {
     fn get_pluck_object(&self) -> &BTreeMap<String, Vec<String>> {

@@ -82,11 +82,7 @@ where
         let bucket_size = bucket_size.unwrap();
         let entity = entity.unwrap();
         // Use resolved timezone (body preferred over header) passed from controller
-        let timezone = self
-            .sql_constructor
-            .timezone
-            .as_deref()
-            .unwrap_or("UTC");
+        let timezone = self.sql_constructor.timezone.as_deref().unwrap_or("UTC");
 
         // Generate the SELECT clause with time bucket and aggregations
         let mut sql = String::from("SELECT ");
