@@ -1331,6 +1331,20 @@ pub async fn aggregation_filter(
         .extensions()
         .get::<Auth>()
         .map_or(false, |auth_data| auth_data.is_root_account);
+
+    // Extract timezone: prefer body over header for consistency with find, count, search suggestion
+    let header_timezone = auth
+        .headers()
+        .get("timezone")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+    let body_timezone = parameters.timezone.clone();
+    let timezone = match (header_timezone, body_timezone) {
+        (_, Some(tz)) => Some(tz),   // Body takes precedence
+        (Some(tz), None) => Some(tz), // Header fallback
+        (None, None) => None,
+    };
+
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -1343,7 +1357,7 @@ pub async fn aggregation_filter(
 
     // Create AggregationSQLConstructor with organization_id if available
     let mut sql_constructor =
-        AggregationSQLConstructor::new(parameters, table.clone(), is_root, None);
+        AggregationSQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }
@@ -2414,9 +2428,10 @@ pub async fn search_suggestions(
         formatted_advance_filters = _formatted_advance_filters;
     }
 
+    // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
     let timezone = match (header_timezone.clone(), body_timezone) {
-        (Some(tz), _) => Some(tz.to_string()),
-        (None, Some(tz)) => Some(tz.to_string()),
+        (_, Some(tz)) => Some(tz.to_string()),   // Body takes precedence
+        (Some(tz), None) => Some(tz.to_string()), // Header fallback
         (None, None) => None,
     };
     // generate concatenated fields
@@ -2429,9 +2444,9 @@ pub async fn search_suggestions(
 
     // get connection to Diesel
     let mut conn = db::get_async_connection().await;
-    // generate json build object query
+    // generate json build object query (use resolved timezone with body precedence)
     let mut sql_constructor: SearchSQLContructor<SearchSuggestionParams> =
-        SearchSQLContructor::new(parameters, table.clone(), is_root, header_timezone);
+        SearchSQLContructor::new(parameters, table.clone(), is_root, timezone.clone());
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
     }

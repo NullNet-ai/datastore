@@ -2,7 +2,9 @@
 use crate::structs::core::{
     FilterCriteria, FilterOperator, GroupAdvanceFilter, LogicalOperator, MatchPattern,
 };
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use crate::utils::helpers::{
+    date_format_wrapper, time_format_wrapper, timestamp_format_wrapper,
+};
 use crate::utils::sql_sanitizer;
 use serde_json::Value;
 
@@ -365,9 +367,7 @@ impl<'a> WhereConstructor<'a> {
             operator,
             FilterOperator::HasNoValue | FilterOperator::IsNotEmpty
         );
-        let is_first_value_string = values
-            .first()
-            .map_or(false, |v| v.is_string());
+        let is_first_value_string = values.first().map_or(false, |v| v.is_string());
         if is_first_value_string || with_default_parse_op {
             Some("text".to_string())
         } else {
@@ -454,6 +454,14 @@ impl<'a> WhereConstructor<'a> {
                 with_alias,
                 time_format,
             ),
+            Some("timestamp") => timestamp_format_wrapper(
+                table,
+                field,
+                format_str,
+                time_format,
+                timezone,
+                with_alias,
+            ),
             Some("text") => {
                 let field_expr = format!("\"{}\".\"{}\"::text", table, field);
                 if with_alias {
@@ -473,6 +481,15 @@ impl<'a> WhereConstructor<'a> {
                         main_table,
                         with_alias,
                         time_format,
+                    )
+                } else if field.eq_ignore_ascii_case("timestamp") {
+                    timestamp_format_wrapper(
+                        table,
+                        field,
+                        format_str,
+                        time_format,
+                        timezone,
+                        with_alias,
                     )
                 } else {
                     let table_field = format!("\"{}\".\"{}\"", table, field);

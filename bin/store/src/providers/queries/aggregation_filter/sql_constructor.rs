@@ -81,7 +81,11 @@ where
 
         let bucket_size = bucket_size.unwrap();
         let entity = entity.unwrap();
-        let timezone = AggregationQueryFilter::get_timezone(&self.sql_constructor.request_body)
+        // Use resolved timezone (body preferred over header) passed from controller
+        let timezone = self
+            .sql_constructor
+            .timezone
+            .as_deref()
             .unwrap_or("UTC");
 
         // Generate the SELECT clause with time bucket and aggregations

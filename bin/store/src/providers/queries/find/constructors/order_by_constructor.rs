@@ -1,5 +1,7 @@
 use crate::structs::core::{GroupBy, SortOption};
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use crate::utils::helpers::{
+    date_format_wrapper, time_format_wrapper, timestamp_format_wrapper,
+};
 
 pub struct OrderByConstructor<T> {
     pub request_body: T,
@@ -253,7 +255,16 @@ where
     ) -> String {
         let base_field = format!("{}.{}", table, field);
 
-        let formatted_field = if format_str.contains("%Y")
+        let formatted_field = if field.eq_ignore_ascii_case("timestamp") {
+            timestamp_format_wrapper(
+                table,
+                field,
+                format_str,
+                time_format,
+                timezone,
+                with_alias,
+            )
+        } else if format_str.contains("%Y")
             || format_str.contains("%m")
             || format_str.contains("%d")
         {
