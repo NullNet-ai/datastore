@@ -64,10 +64,8 @@ where
                         (self.table.as_str(), sort_option.by_field.as_str())
                     };
 
-                    let field_expression = self.get_field_expression_for_sort(
-                        table_alias,
-                        field_name,
-                    );
+                    let field_expression =
+                        self.get_field_expression_for_sort(table_alias, field_name);
 
                     // Handle case sensitivity
                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
@@ -227,7 +225,8 @@ where
             cf.field_name == field_name
                 && (cf.entity == table_alias
                     || cf.entity == normalized_entity
-                    || cf.aliased_entity
+                    || cf
+                        .aliased_entity
                         .as_deref()
                         .map_or(false, |a| a == table_alias || a == normalized_entity))
         }) {

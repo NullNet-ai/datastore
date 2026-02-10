@@ -461,7 +461,12 @@ impl ConcatenateField {
         let joined_fields = self
             .fields
             .iter()
-            .map(|field| format!("COALESCE(\"joined_{}\".\"{}\"::text, '')", self.entity, field))
+            .map(|field| {
+                format!(
+                    "COALESCE(\"joined_{}\".\"{}\"::text, '')",
+                    self.entity, field
+                )
+            })
             .collect::<Vec<_>>()
             .join(&format!(" || '{}' || ", self.separator));
         format!("({}) AS \"{}\"", joined_fields, self.field_name)
