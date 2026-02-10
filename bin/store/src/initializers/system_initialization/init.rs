@@ -57,15 +57,8 @@ pub async fn initialize_all(params: Option<InitializerParams>) -> Result<(), Api
     // Initialize code prefix first
     initialize(EInitializer::SYSTEM_CODE_CONFIG, params.clone()).await?;
 
-    // Initialize generate schema if needed
-    let initialize_schema = std::env::var("INITIALIZE_SCHEMA")
-        .unwrap_or_else(|_| "false".to_string())
-        .to_lowercase()
-        == "true";
-
-    if initialize_schema {
-        initialize(EInitializer::GENERATE_SCHEMA_CONFIG, params.clone()).await?;
-    }
+    
+    initialize(EInitializer::GENERATE_SCHEMA_CONFIG, params.clone()).await?;
 
     // Initialize global organization
     initialize(EInitializer::GLOBAL_ORGANIZATION_CONFIG, params.clone()).await?;

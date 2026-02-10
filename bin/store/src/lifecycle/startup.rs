@@ -110,6 +110,41 @@ impl StartupManager {
         self.s3_client = Some(s3_client);
         self.bucket_name = Some(bucket_name);
 
+        // Phase 3.5: Schema generation (if enabled)
+
+        self.logger
+            .log(
+                LogLevel::Info,
+                LogCategory::Startup,
+                "StartupManager",
+                "Phase 3.5: Generating application schema",
+            )
+            .await;
+
+        if let Err(e) = crate::initializers::system_initialization::init::initialize(
+                crate::initializers::system_initialization::structs::EInitializer::GENERATE_SCHEMA_CONFIG,
+                None,
+            ).await {
+                self.logger
+                    .log(
+                        LogLevel::Error,
+                        LogCategory::Startup,
+                        "StartupManager",
+                        &format!("Schema generation failed: {}", e),
+                    )
+                    .await;
+                return Err(e.into());
+            }
+
+        self.logger
+            .log(
+                LogLevel::Info,
+                LogCategory::Startup,
+                "StartupManager",
+                "Schema generation completed successfully",
+            )
+            .await;
+
         // Phase 4: Background services initialization
         self.logger
             .log(
