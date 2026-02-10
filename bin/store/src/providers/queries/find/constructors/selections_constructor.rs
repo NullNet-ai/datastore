@@ -219,7 +219,9 @@ impl SelectionsConstructor {
         let mut pluck_selections = Vec::new();
         // Handle regular pluck fields
         for field in request_body.get_pluck() {
-            let with_alias = field.ends_with("_date") || field.ends_with("_time");
+            let with_alias = field.ends_with("_date")
+                || field.ends_with("_time")
+                || field.eq_ignore_ascii_case("timestamp");
             let field_selection = get_field(
                 table,
                 field,
@@ -294,7 +296,9 @@ impl SelectionsConstructor {
 
         // Handle the selected fields
         for field in fields_to_use {
-            let with_alias = field.ends_with("_date") || field.ends_with("_time");
+            let with_alias = field.ends_with("_date")
+                || field.ends_with("_time")
+                || field.eq_ignore_ascii_case("timestamp");
             let field_selection = get_field(
                 table,
                 field,

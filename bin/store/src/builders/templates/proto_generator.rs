@@ -669,7 +669,6 @@ pub fn generate_build_file(proto_dir: &str) -> std::io::Result<()> {
     build_content.push_str("            &[\"src\"],\n");
     build_content.push_str("        )?;\n\n");
 
-    build_content.push_str("    println!(\"cargo:warning=Successfully compiled proto files\");\n");
     build_content.push_str("    Ok(())\n");
     build_content.push_str("}\n");
 

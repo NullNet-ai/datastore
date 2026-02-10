@@ -3,7 +3,7 @@ use crate::providers::queries::search_suggestion::structs::{
     FormatFilterResponse,
 };
 use crate::structs::core::{ConcatenateField, FilterCriteria, MatchPattern};
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper};
+use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 use pluralizer::pluralize;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -254,6 +254,9 @@ fn get_field_with_parse_as(
         Some("time") => {
             time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
         }
+        Some("timestamp") => {
+            timestamp_format_wrapper(table, field, format_str, time_format, timezone, with_alias)
+        }
         Some("text") => {
             let field_expr = format!("\"{}\".\"{}\"::text", table, field);
             if with_alias {
@@ -267,6 +270,15 @@ fn get_field_with_parse_as(
                 date_format_wrapper(table, field, Some(format_str), timezone, with_alias)
             } else if field.ends_with("_time") {
                 time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
+            } else if field.eq_ignore_ascii_case("timestamp") {
+                timestamp_format_wrapper(
+                    table,
+                    field,
+                    format_str,
+                    time_format,
+                    timezone,
+                    with_alias,
+                )
             } else {
                 let table_field = format!("\"{}\".\"{}\"", table, field);
                 if with_alias {

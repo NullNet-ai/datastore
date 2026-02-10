@@ -474,3 +474,33 @@ pub fn time_format_wrapper(
         field_with_timezone, time_format, alias
     )
 }
+
+/// Formats a timestamp/timestamptz field with optional timezone conversion.
+/// Uses ISO 8601 format (YYYY-MM-DD HH24:MI:SS.US) to stay consistent with the original stored value.
+/// Used for the `timestamp` column (e.g. hypertable timestamp) in find, count, and search suggestions.
+pub fn timestamp_format_wrapper(
+    table: &str,
+    field: &str,
+    _date_format: &str,
+    _time_format: &str,
+    timezone: Option<&str>,
+    with_alias: bool,
+) -> String {
+    // ISO format: YYYY-MM-DD HH24:MI:SS.US (matches e.g. 2025-08-21 01:18:18.604966+00)
+    let iso_format = "YYYY-MM-DD HH24:MI:SS.US";
+    let field_expr = format!("\"{}\".\"{}\"", table, field);
+    let timezone_expr = if let Some(tz) = timezone {
+        format!("({} AT TIME ZONE '{}')", field_expr, tz)
+    } else {
+        format!("({})", field_expr)
+    };
+    let alias = if with_alias {
+        format!(" AS \"{}\"", field)
+    } else {
+        String::new()
+    };
+    format!(
+        "COALESCE(TO_CHAR({}::TIMESTAMP, '{}'), ''){}",
+        timezone_expr, iso_format, alias
+    )
+}
