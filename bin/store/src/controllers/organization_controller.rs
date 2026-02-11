@@ -158,8 +158,23 @@ impl OrganizationsController {
             .clone()
             .unwrap_or_else(|| data.data.password.clone().unwrap_or_default());
 
+        // Enforce root authentication for root accounts
+        let should_use_root_auth = if account_id == "root" {
+            if !is_root {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Root account requires is_root=true parameter".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            true
+        } else {
+            is_root
+        };
+
         // Authenticate based on is_root parameter
-        let result = if is_root {
+        let result = if should_use_root_auth {
             // Root authentication
             root_auth(
                 &account_id,
