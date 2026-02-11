@@ -706,7 +706,9 @@ impl OrganizationsController {
                 };
 
                 // Get the signed in account with all related data
-                let signed_in_account = if let Some(ref account_organization_id) = account_organization_id {
+                let signed_in_account = if let Some(ref account_organization_id) =
+                    account_organization_id
+                {
                     // Create filters array
                     let filters = vec!["ao.tombstone = 0", "ao.status = 'Active'"];
 
@@ -738,15 +740,20 @@ impl OrganizationsController {
                 });
 
                 // Generate new JWT token
-                let new_token = match crate::providers::operations::organizations::auth_service::sign(&token_value).await {
-                    Ok(t) => t,
-                    Err(e) => {
-                        log::error!("Failed to sign token: {}", e);
-                        return HttpResponse::InternalServerError().json(serde_json::json!({
-                            "message": "Failed to generate new token"
-                        }));
-                    }
-                };
+                let new_token =
+                    match crate::providers::operations::organizations::auth_service::sign(
+                        &token_value,
+                    )
+                    .await
+                    {
+                        Ok(t) => t,
+                        Err(e) => {
+                            log::error!("Failed to sign token: {}", e);
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "message": "Failed to generate new token"
+                            }));
+                        }
+                    };
 
                 // Return the new token
                 HttpResponse::Ok()
