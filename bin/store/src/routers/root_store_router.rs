@@ -1,8 +1,8 @@
 use crate::controllers::root_controller::{
     root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
     root_batch_update_records, root_create_record, root_delete_record, root_get_by_filter,
-    root_get_by_id, root_search_suggestions, root_switch_account, root_update_record, root_upsert,
-    root_update_account_password,
+    root_get_by_id, root_search_suggestions, root_switch_account, root_update_account_password,
+    root_update_record, root_upsert,
 };
 use crate::middlewares::auth_middleware::Authentication;
 use crate::middlewares::session_middleware::SessionMiddleware;

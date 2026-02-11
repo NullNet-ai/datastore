@@ -67,7 +67,7 @@ mod tests {
                 if status.is_success() {
                     // Clone the response text first to avoid borrow checker issues
                     let resp_text = resp.text().await.unwrap_or_else(|_| "{}".to_string());
-                    
+
                     match serde_json::from_str::<serde_json::Value>(&resp_text) {
                         Ok(json_response) => {
                             println!(
@@ -75,20 +75,21 @@ mod tests {
                                 serde_json::to_string_pretty(&json_response).unwrap_or_default()
                             );
                             // Extract token from response
-                            let token_opt = json_response.get("token")
+                            let token_opt = json_response
+                                .get("token")
                                 .and_then(|t| t.as_str())
                                 .map(|s| s.to_string());
-                            
+
                             let is_authenticated = token_opt.is_some();
-                            
+
                             AuthResponse {
-                                 token: token_opt,
-                                 session_id: None,
-                                 is_authenticated,
-                                 server_available: true,
-                                 username: "admin@dnamicro.com".to_string(),
-                                 password: "ch@ng3m3Pl3@s3!!".to_string(),
-                             }
+                                token: token_opt,
+                                session_id: None,
+                                is_authenticated,
+                                server_available: true,
+                                username: "admin@dnamicro.com".to_string(),
+                                password: "ch@ng3m3Pl3@s3!!".to_string(),
+                            }
                         }
                         Err(e) => {
                             println!("    ⚠ Failed to parse JSON response: {}", e);
@@ -143,7 +144,7 @@ mod tests {
 
         // First, perform login to get authentication token
         let auth_response = perform_login().await;
-        
+
         if !auth_response.is_authenticated {
             println!("⚠ Skipping test: Unable to authenticate with server");
             return;
@@ -162,15 +163,21 @@ mod tests {
 
         // First, let's verify the account has root access by checking the auth response
         println!("  ℹ Checking if account has root access...");
-        
+
         // Try to decode the token to check if this is a root account
         let token_parts: Vec<&str> = auth_response.token.as_ref().unwrap().split('.').collect();
         if token_parts.len() == 3 {
             if let Ok(payload_json) = BASE64_STANDARD.decode(token_parts[1]) {
                 if let Ok(payload_str) = String::from_utf8(payload_json) {
                     if let Ok(payload) = serde_json::from_str::<serde_json::Value>(&payload_str) {
-                        println!("  ℹ Decoded JWT payload: {}", serde_json::to_string_pretty(&payload).unwrap_or_default());
-                        if let Some(is_root) = payload.get("account").and_then(|acc| acc.get("is_root_account")) {
+                        println!(
+                            "  ℹ Decoded JWT payload: {}",
+                            serde_json::to_string_pretty(&payload).unwrap_or_default()
+                        );
+                        if let Some(is_root) = payload
+                            .get("account")
+                            .and_then(|acc| acc.get("is_root_account"))
+                        {
                             println!("  ℹ Account root status: {}", is_root);
                             if !is_root.as_bool().unwrap_or(false) {
                                 println!("  ⚠ Warning: Account does not have root access. This test requires root privileges.");
@@ -192,7 +199,10 @@ mod tests {
 
         // Make the PUT request to update the password
         let update_response = client
-            .put(&format!("{}/api/store/root/accounts/password/{}", base_url, account_id))
+            .put(&format!(
+                "{}/api/store/root/accounts/password/{}",
+                base_url, account_id
+            ))
             .bearer_auth(auth_response.token.as_ref().unwrap())
             .json(&update_payload)
             .timeout(std::time::Duration::from_secs(10))
@@ -217,7 +227,7 @@ mod tests {
 
                     // Now test login with the new password
                     println!("  ℹ Testing login with new password...");
-                    
+
                     let login_payload = json!({
                         "data": {
                             "account_id": account_id,
@@ -239,24 +249,26 @@ mod tests {
 
                             if login_status.is_success() {
                                 println!("  ✅ Login with new password successful!");
-                                
+
                                 // Try to parse the login response
-                                if let Ok(login_json) = login_resp.json::<serde_json::Value>().await {
-                                    println!("  ℹ Login response: {}", 
-                                        serde_json::to_string_pretty(&login_json)
-                                            .unwrap_or_else(|_| "Failed to format response".to_string())
+                                if let Ok(login_json) = login_resp.json::<serde_json::Value>().await
+                                {
+                                    println!(
+                                        "  ℹ Login response: {}",
+                                        serde_json::to_string_pretty(&login_json).unwrap_or_else(
+                                            |_| "Failed to format response".to_string()
+                                        )
                                     );
-                                    
+
                                     // Verify we got a token
                                     let has_token = login_json.get("token").is_some();
                                     assert!(has_token, "Login response should contain a token");
                                     println!("  ✅ New password authentication verified!");
                                 }
                             } else {
-                                let login_body = login_resp
-                                    .text()
-                                    .await
-                                    .unwrap_or_else(|_| "Failed to read login response".to_string());
+                                let login_body = login_resp.text().await.unwrap_or_else(|_| {
+                                    "Failed to read login response".to_string()
+                                });
                                 println!("  ❌ Login with new password failed: {}", login_body);
                                 // Don't panic here - the password update might have worked but login failed for other reasons
                                 println!("  ⚠ Note: Password update may have succeeded, but login test failed");
@@ -275,7 +287,10 @@ mod tests {
                     });
 
                     let restore_response = client
-                        .put(&format!("{}/api/store/root/accounts/password/{}", base_url, account_id))
+                        .put(&format!(
+                            "{}/api/store/root/accounts/password/{}",
+                            base_url, account_id
+                        ))
                         .bearer_auth(auth_response.token.as_ref().unwrap())
                         .json(&restore_payload)
                         .timeout(std::time::Duration::from_secs(10))
@@ -294,21 +309,29 @@ mod tests {
                             println!("  ⚠ Warning: Could not restore original password: {}", e);
                         }
                     }
-
                 } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     println!("  ⚠ Authentication failed - account may not have root access");
-                    println!("  ℹ This is expected if the test account doesn't have root privileges");
+                    println!(
+                        "  ℹ This is expected if the test account doesn't have root privileges"
+                    );
                     println!("  ℹ Response: {}", body_text);
                     // Don't fail the test for authentication issues - this validates the endpoint structure
                     println!("  ✅ Endpoint structure validated (authentication layer working correctly)");
                 } else if status == reqwest::StatusCode::FORBIDDEN {
                     println!("  ⚠ Access denied - account lacks root permissions");
-                    println!("  ℹ This is expected if the test account doesn't have root privileges");
+                    println!(
+                        "  ℹ This is expected if the test account doesn't have root privileges"
+                    );
                     println!("  ℹ Response: {}", body_text);
                     // Don't fail the test for permission issues - this validates the endpoint structure
-                    println!("  ✅ Endpoint structure validated (permission layer working correctly)");
+                    println!(
+                        "  ✅ Endpoint structure validated (permission layer working correctly)"
+                    );
                 } else {
-                    println!("  ❌ Password update failed with unexpected status: {}", status);
+                    println!(
+                        "  ❌ Password update failed with unexpected status: {}",
+                        status
+                    );
                     println!("  ❌ Response: {}", body_text);
                     // Don't panic - this might be a configuration issue rather than a code issue
                     println!("  ⚠ Note: Endpoint responded but with unexpected error");
@@ -328,7 +351,7 @@ mod tests {
 
         // First, perform login to get authentication token
         let auth_response = perform_login().await;
-        
+
         if !auth_response.is_authenticated {
             println!("⚠ Skipping test: Unable to authenticate with server");
             return;
@@ -346,7 +369,10 @@ mod tests {
         });
 
         let response = client
-            .put(&format!("{}/api/store/root/accounts/password/{}", base_url, account_id))
+            .put(&format!(
+                "{}/api/store/root/accounts/password/{}",
+                base_url, account_id
+            ))
             .bearer_auth(auth_response.token.as_ref().unwrap())
             .json(&invalid_payload)
             .timeout(std::time::Duration::from_secs(10))
@@ -364,7 +390,7 @@ mod tests {
                     // This is acceptable as it shows the endpoint exists and authentication is working
                     return;
                 }
-                
+
                 // Should return 400 Bad Request for validation errors
                 assert!(
                     status == reqwest::StatusCode::BAD_REQUEST,
@@ -392,7 +418,7 @@ mod tests {
 
         // First, perform login to get authentication token
         let auth_response = perform_login().await;
-        
+
         if !auth_response.is_authenticated {
             println!("⚠ Skipping test: Unable to authenticate with server");
             return;
@@ -410,7 +436,10 @@ mod tests {
         });
 
         let response = client
-            .put(&format!("{}/api/store/root/accounts/password/{}", base_url, account_id))
+            .put(&format!(
+                "{}/api/store/root/accounts/password/{}",
+                base_url, account_id
+            ))
             .bearer_auth(auth_response.token.as_ref().unwrap())
             .json(&invalid_payload)
             .timeout(std::time::Duration::from_secs(10))
@@ -428,7 +457,7 @@ mod tests {
                     // This is acceptable as it shows the endpoint exists and authentication is working
                     return;
                 }
-                
+
                 // Should return 400 Bad Request for validation errors
                 assert!(
                     status == reqwest::StatusCode::BAD_REQUEST,
@@ -440,7 +469,10 @@ mod tests {
                     .text()
                     .await
                     .unwrap_or_else(|_| "Failed to read response body".to_string());
-                println!("  ✅ Invalid password type properly rejected: {}", body_text);
+                println!(
+                    "  ✅ Invalid password type properly rejected: {}",
+                    body_text
+                );
             }
             Err(e) => {
                 println!("  ❌ Request failed: {}", e);

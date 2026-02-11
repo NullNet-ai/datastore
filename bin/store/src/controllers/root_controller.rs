@@ -105,10 +105,10 @@ pub async fn root_update_account_password(
     request_body: actix_web::web::Json<serde_json::Value>,
 ) -> impl actix_web::Responder {
     let auth = extract_and_store_type(auth);
-    
+
     // Extract account_id from path parameters - we expect ("accounts", account_id)
     let (_table_name, account_id) = path_params.into_inner();
-    
+
     // Extract password from request body
     let password = match request_body.get("password") {
         Some(Value::String(pwd)) => pwd.clone(),
@@ -131,6 +131,12 @@ pub async fn root_update_account_password(
     let query = actix_web::web::Query(crate::structs::core::QueryParams {
         pluck: "id".to_string(),
     });
-    
-    crate::controllers::store_controller::update_record(auth, update_path_params, update_request, query).await
+
+    crate::controllers::store_controller::update_record(
+        auth,
+        update_path_params,
+        update_request,
+        query,
+    )
+    .await
 }
