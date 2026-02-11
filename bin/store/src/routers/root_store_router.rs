@@ -37,7 +37,6 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
             .route(
                 "/{table}/filter/suggestions",
                 web::post().to(root_search_suggestions),
-            )
-            ,
+            ),
     );
 }

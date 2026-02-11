@@ -202,7 +202,10 @@ pub async fn get_root_account_info(
 ) -> Result<(serde_json::Value, Option<String>, String), ApiError> {
     let mut conn = db::get_async_connection().await;
 
-    log::info!("get_root_account_info called with account_id: {}", account_id);
+    log::info!(
+        "get_root_account_info called with account_id: {}",
+        account_id
+    );
 
     // First, try to find the account in account_organizations with Root category
     let result = sql_query(
@@ -270,7 +273,10 @@ pub async fn get_root_account_info(
     // Process the result from account_organizations
     let account_organization = match result {
         Ok(json_result) => {
-            log::debug!("Found account in account_organizations: {}", json_result.json_result);
+            log::debug!(
+                "Found account in account_organizations: {}",
+                json_result.json_result
+            );
             // Parse the JSON string into a serde_json::Value
             let value: serde_json::Value =
                 serde_json::from_str(&json_result.json_result).map_err(|e| {
@@ -297,8 +303,10 @@ pub async fn get_root_account_info(
         }
         Err(diesel::result::Error::NotFound) => {
             // If not found in account_organizations, try direct accounts table
-            log::info!("Root account not found in account_organizations, trying direct accounts query");
-            
+            log::info!(
+                "Root account not found in account_organizations, trying direct accounts query"
+            );
+
             let direct_account_result = accounts::table
                 .filter(accounts::tombstone.eq(0))
                 .filter(accounts::status.eq("Active"))
@@ -308,7 +316,10 @@ pub async fn get_root_account_info(
 
             match direct_account_result {
                 Ok(account) => {
-                    log::debug!("Found root account in accounts table: {:?}", account.account_id);
+                    log::debug!(
+                        "Found root account in accounts table: {:?}",
+                        account.account_id
+                    );
                     // Create a basic root account structure for direct account
                     json!({
                         "is_root_account": true,
@@ -326,7 +337,7 @@ pub async fn get_root_account_info(
                     })
                 }
                 Err(diesel::result::Error::NotFound) => {
-                     log::error!("Root account not found in accounts table either");
+                    log::error!("Root account not found in accounts table either");
                     // Return an error instead of empty object
                     return Err(ApiError::new(
                         StatusCode::NOT_FOUND,
@@ -384,7 +395,11 @@ pub async fn get_root_account_info(
         }
     };
 
-    Ok((account_organization, account_organization_id, account_secret_from_db))
+    Ok((
+        account_organization,
+        account_organization_id,
+        account_secret_from_db,
+    ))
 }
 
 pub async fn root_auth(
@@ -394,7 +409,8 @@ pub async fn root_auth(
     previously_logged_in: Option<&str>,
 ) -> Result<LoginResponse, ApiError> {
     // Get root account information first
-    let (account_organization, account_organization_id, account_secret_from_db) = get_root_account_info(account_id).await?;
+    let (account_organization, account_organization_id, account_secret_from_db) =
+        get_root_account_info(account_id).await?;
 
     // Check if account exists
     let account_obj = match account_organization.as_object() {
@@ -437,11 +453,7 @@ pub async fn root_auth(
     }
 
     // Verify password
-    let verified = auth_service::password_verify(
-        &account_secret_from_db,
-        account_secret,
-    )
-    .await?;
+    let verified = auth_service::password_verify(&account_secret_from_db, account_secret).await?;
 
     if !verified {
         return Ok(LoginResponse {
@@ -1095,7 +1107,7 @@ mod tests {
         // This test ensures that the fix for the "Root Account not found" error
         // doesn't regress. The issue was that we were checking for "account" field
         // instead of "account_id" field in the account object.
-        
+
         // Create a mock account object that represents the structure returned by get_root_account_info
         let mock_account_data = serde_json::json!({
             "account_id": "root",
@@ -1108,11 +1120,17 @@ mod tests {
 
         // Verify the account object has the correct field structure
         let account_obj = mock_account_data.as_object().unwrap();
-        
+
         // This is the key check that was fixed - we should check for "account_id" not "account"
-        assert!(account_obj.get("account_id").is_some(), "Account object should have 'account_id' field");
-        assert!(account_obj.get("account").is_none(), "Account object should NOT have 'account' field");
-        
+        assert!(
+            account_obj.get("account_id").is_some(),
+            "Account object should have 'account_id' field"
+        );
+        assert!(
+            account_obj.get("account").is_none(),
+            "Account object should NOT have 'account' field"
+        );
+
         // Verify that our logic would work correctly with this structure
         if account_obj.get("account_id").is_none() {
             panic!("This should not happen with correct field name");
@@ -1126,7 +1144,7 @@ mod tests {
     async fn test_root_login_response_structure() {
         let session_id = "test_session_123".to_string();
         let account_organization_id = Some("test_org_123".to_string());
-        
+
         // Test the case where root account is not found (missing account_id field)
         let response = LoginResponse {
             message: "Root Account not found".to_string(),
@@ -1135,7 +1153,7 @@ mod tests {
             account_organization_id: account_organization_id.clone(),
             session_id: Some(session_id.clone()),
         };
-        
+
         assert_eq!(response.message, "Root Account not found");
         assert!(response.token.is_none());
         assert_eq!(response.role_id, "");
@@ -1150,7 +1168,7 @@ mod tests {
     async fn test_root_password_validation() {
         let session_id = "test_session_123".to_string();
         let account_organization_id = Some("test_org_123".to_string());
-        
+
         // Test empty password case
         let empty_password_response = LoginResponse {
             message: "Password is required".to_string(),
@@ -1159,7 +1177,7 @@ mod tests {
             account_organization_id: account_organization_id.clone(),
             session_id: Some(session_id.clone()),
         };
-        
+
         assert_eq!(empty_password_response.message, "Password is required");
         assert!(empty_password_response.token.is_none());
     }
@@ -1171,16 +1189,19 @@ mod tests {
     async fn test_get_root_account_info_signature() {
         // This test ensures that the get_root_account_info function
         // maintains the correct signature and return type
-        
+
         // The function should return: Result<(serde_json::Value, Option<String>, String), ApiError>
         // This is a compile-time test - if the function signature changes, this test will fail to compile
-        
+
         // We can't actually call the function in a unit test without a database connection,
         // but we can verify the function exists with the correct signature
         // The function signature is: pub async fn get_root_account_info(account_id: &str) -> Result<(serde_json::Value, Option<String>, String), ApiError>
-        
+
         // This test will fail to compile if the function signature changes
         // which is exactly what we want to prevent regression
-        assert!(true, "Function signature test - will fail to compile if signature changes");
+        assert!(
+            true,
+            "Function signature test - will fail to compile if signature changes"
+        );
     }
 }

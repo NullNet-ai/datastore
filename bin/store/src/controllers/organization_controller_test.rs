@@ -586,7 +586,7 @@ mod tests {
         // However, we can verify that our logic is working by checking that:
         // 1. The request is processed (not rejected at the routing level)
         // 2. The response doesn't contain our specific error message (which would indicate our logic was triggered)
-        
+
         // For now, we verify that the request is processed and doesn't contain our specific error
         // This indicates that our root validation logic is not being reached due to session issues,
         // not due to routing or other problems
@@ -639,7 +639,7 @@ mod tests {
         // However, we can verify that our logic is working by checking that:
         // 1. The request is processed (not rejected at the routing level)
         // 2. The response doesn't contain our specific error message (which would indicate our logic was triggered)
-        
+
         // For now, we verify that the request is processed and doesn't contain our specific error
         // This indicates that our root validation logic is not being reached due to session issues,
         // not due to routing or other problems

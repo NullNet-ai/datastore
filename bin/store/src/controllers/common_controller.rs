@@ -451,7 +451,11 @@ pub async fn process_and_update_record(
             format!("Unknown table: {}", table_name),
         )
     })?;
-    log::info!("@@@@ Processing update record for table: {}, id: {}", table_name, id);
+    log::info!(
+        "@@@@ Processing update record for table: {}, id: {}",
+        table_name,
+        id
+    );
     log::info!("@@@@ Record: {:?}", record);
     log::info!("@@@@ Operation: {}", operation);
     log::info!("@@@@ Auth: {:?}", auth);
