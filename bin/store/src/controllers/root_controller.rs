@@ -1,4 +1,5 @@
 use actix_web::{HttpMessage, HttpRequest};
+use serde_json::Value;
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
     // Since we're using /api/store/root, hardcode the type as 'root'
@@ -96,3 +97,40 @@ create_root_wrapper!(root_search_suggestions => search_suggestions,
     table: actix_web::web::Path<String>,
     request_body: actix_web::web::Json<crate::structs::core::SearchSuggestionParams>
 );
+
+// Password update function for accounts table - delegates to update_record
+pub async fn root_update_account_password(
+    auth: HttpRequest,
+    path_params: actix_web::web::Path<(String, String)>,
+    request_body: actix_web::web::Json<serde_json::Value>,
+) -> impl actix_web::Responder {
+    let auth = extract_and_store_type(auth);
+    
+    // Extract account_id from path parameters - we expect ("accounts", account_id)
+    let (_table_name, account_id) = path_params.into_inner();
+    
+    // Extract password from request body
+    let password = match request_body.get("password") {
+        Some(Value::String(pwd)) => pwd.clone(),
+        _ => {
+            // For invalid password format, we'll let the update_record handle the validation
+            // by passing an empty password which should fail validation downstream
+            String::new()
+        }
+    };
+
+    // Create update request for accounts table
+    let update_request = actix_web::web::Json(crate::structs::core::RequestBody {
+        record: serde_json::json!({
+            "account_secret": password
+        }),
+    });
+
+    // Use the existing update_record function with accounts table and account_id
+    let update_path_params = actix_web::web::Path::from(("accounts".to_string(), account_id));
+    let query = actix_web::web::Query(crate::structs::core::QueryParams {
+        pluck: "id".to_string(),
+    });
+    
+    crate::controllers::store_controller::update_record(auth, update_path_params, update_request, query).await
+}

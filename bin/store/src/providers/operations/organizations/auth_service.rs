@@ -207,23 +207,28 @@ pub async fn get_root_account_info(
         "
         SELECT json_build_object(
             'is_root_account', true,
-            'account', json_build_object(
-                'id', a.id,
-                'account_id', a.account_id,
-                'account_secret', a.account_secret,
-                'status', a.status
-            ),
             'profile', CASE WHEN ap.id IS NOT NULL THEN json_build_object(
-                'id', ap.id,
+                'id', a.id,
                 'first_name', ap.first_name,
                 'last_name', ap.last_name,
                 'email', ap.email,
-                'account_id', ap.account_id,
+                'account_id', a.account_id,
                 'categories', ap.categories,
                 'code', ap.code,
                 'status', ap.status,
                 'organization_id', ap.organization_id
-            ) ELSE NULL END,
+            ) ELSE json_build_object(
+                'id', a.id,
+                'first_name', null,
+                'last_name', null,
+                'email', ao.email,
+                'account_id', a.account_id,
+                'categories', '[]'::jsonb,
+                'code', null,
+                'status', 'Active',
+                'organization_id', ao.organization_id
+            ) END,
+
             'organization', CASE WHEN o.id IS NOT NULL THEN json_build_object(
                 'id', o.id,
                 'name', o.name,
@@ -240,7 +245,9 @@ pub async fn get_root_account_info(
             'account_status', ao.account_organization_status,
             'role_id', ao.role_id,
             'role_name', ur.role,
-            'sensitivity_level', ur.sensitivity_level
+            'sensitivity_level', ur.sensitivity_level,
+            'contact', json_build_object(),
+            'device', json_build_object()
         ) as json_result
         FROM account_organizations ao
         LEFT JOIN accounts a ON a.id = ao.account_id

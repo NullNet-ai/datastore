@@ -3,6 +3,10 @@
     "id"
   ],
   "pluck_object": {
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
     "contact_emails": [
       "email",
       "is_primary",
@@ -32,10 +36,6 @@
       "first_name",
       "middle_name",
       "last_name"
-    ],
-    "created_by_account_organizations": [
-      "id",
-      "contact_id"
     ]
   },
   "pluck_group_object": {},
