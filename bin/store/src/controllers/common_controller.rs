@@ -451,6 +451,12 @@ pub async fn process_and_update_record(
             format!("Unknown table: {}", table_name),
         )
     })?;
+    log::info!("@@@@ Processing update record for table: {}, id: {}", table_name, id);
+    log::info!("@@@@ Record: {:?}", record);
+    log::info!("@@@@ Operation: {}", operation);
+    log::info!("@@@@ Auth: {:?}", auth);
+    log::info!("@@@@ Is root account: {}", is_root_account);
+    log::info!("@@@@ Pluck fields: {:?}", pluck_fields);
 
     let processed_record = process_record_for_update(
         record,
