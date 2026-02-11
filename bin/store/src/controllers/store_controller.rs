@@ -116,6 +116,7 @@ pub async fn update_record(
     query: web::Query<QueryParams>,
 ) -> impl Responder {
     let (table_name, record_id) = path_params.into_inner();
+    log::info!("@@@@Update request for table: {}, id: {}", table_name, record_id);
     let extensions = auth.extensions();
     let auth_data = match extensions.get::<Auth>() {
         Some(data) => data,
@@ -129,7 +130,7 @@ pub async fn update_record(
             });
         }
     };
-
+    log::info!("@@@@Auth data: {:?}", auth_data);
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type

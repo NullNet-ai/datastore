@@ -16,6 +16,10 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
             .wrap(ShutdownGuard)
             .wrap(Authentication)
             .wrap(SessionMiddleware::default())
+            .route(
+                "/accounts/password/{account_id}",
+                web::patch().to(root_update_account_password),
+            )
             .route("/aggregate", web::post().to(root_aggregation_filter))
             .route("/{table}", web::post().to(root_create_record))
             .route("/upsert/{table}", web::post().to(root_upsert))
@@ -34,9 +38,6 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
                 "/{table}/filter/suggestions",
                 web::post().to(root_search_suggestions),
             )
-            .route(
-                "/accounts/password/{account_id}",
-                web::put().to(root_update_account_password),
-            ),
+            ,
     );
 }

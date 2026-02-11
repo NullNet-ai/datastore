@@ -1,4 +1,4 @@
-use actix_web::{HttpMessage, HttpRequest};
+use actix_web::{HttpMessage, HttpRequest, Responder};
 use serde_json::Value;
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
@@ -101,14 +101,13 @@ create_root_wrapper!(root_search_suggestions => search_suggestions,
 // Password update function for accounts table - delegates to update_record
 pub async fn root_update_account_password(
     auth: HttpRequest,
-    path_params: actix_web::web::Path<(String, String)>,
+    path_params: actix_web::web::Path<String>,
     request_body: actix_web::web::Json<serde_json::Value>,
-) -> impl actix_web::Responder {
+) -> impl Responder {
     let auth = extract_and_store_type(auth);
 
     // Extract account_id from path parameters - we expect ("accounts", account_id)
-    let (_table_name, account_id) = path_params.into_inner();
-
+    let account_id = path_params.into_inner();
     // Extract password from request body
     let password = match request_body.get("password") {
         Some(Value::String(pwd)) => pwd.clone(),
@@ -118,25 +117,20 @@ pub async fn root_update_account_password(
             String::new()
         }
     };
+    log::info!("Password for account  {}", password);
 
-    // Create update request for accounts table
+    // Create update request for accounts table with account_secret field
     let update_request = actix_web::web::Json(crate::structs::core::RequestBody {
         record: serde_json::json!({
             "account_secret": password
         }),
     });
 
-    // Use the existing update_record function with accounts table and account_id
+    // Use the existing root_update_record wrapper function
     let update_path_params = actix_web::web::Path::from(("accounts".to_string(), account_id));
     let query = actix_web::web::Query(crate::structs::core::QueryParams {
         pluck: "id".to_string(),
     });
 
-    crate::controllers::store_controller::update_record(
-        auth,
-        update_path_params,
-        update_request,
-        query,
-    )
-    .await
+    root_update_record(auth, update_path_params, update_request, query).await
 }

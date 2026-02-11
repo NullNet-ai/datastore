@@ -197,9 +197,9 @@ mod tests {
             "account_secret": new_password
         });
 
-        // Make the PUT request to update the password
+        // Make the PATCH request to update the password
         let update_response = client
-            .put(&format!(
+            .patch(&format!(
                 "{}/api/store/root/accounts/password/{}",
                 base_url, account_id
             ))
@@ -287,8 +287,8 @@ mod tests {
                     });
 
                     let restore_response = client
-                        .put(&format!(
-                            "{}/api/store/root/accounts/password/{}",
+                        .patch(&format!(
+                            "{}/api/store/root/accounts/{}",
                             base_url, account_id
                         ))
                         .bearer_auth(auth_response.token.as_ref().unwrap())
@@ -369,8 +369,8 @@ mod tests {
         });
 
         let response = client
-            .put(&format!(
-                "{}/api/store/root/accounts/password/{}",
+            .patch(&format!(
+                "{}/api/store/root/accounts/{}",
                 base_url, account_id
             ))
             .bearer_auth(auth_response.token.as_ref().unwrap())
@@ -436,8 +436,8 @@ mod tests {
         });
 
         let response = client
-            .put(&format!(
-                "{}/api/store/root/accounts/password/{}",
+            .patch(&format!(
+                "{}/api/store/root/accounts/{}",
                 base_url, account_id
             ))
             .bearer_auth(auth_response.token.as_ref().unwrap())
