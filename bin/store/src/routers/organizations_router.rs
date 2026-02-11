@@ -20,6 +20,10 @@ pub fn configure_organizations_routes(cfg: &mut ServiceConfig) {
                 "/auth/token",
                 web::post().to(OrganizationsController::auth_by_token),
             )
+            .route(
+                "/auth/refresh",
+                web::post().to(OrganizationsController::refresh_token),
+            )
             .route("/logout", web::post().to(OrganizationsController::logout)),
     );
 }

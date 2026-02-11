@@ -657,4 +657,115 @@ impl OrganizationsController {
             }
         }
     }
+
+    pub async fn refresh_token(req: HttpRequest) -> impl Responder {
+        // Extract token from Authorization header
+        let auth_header = req
+            .headers()
+            .get("authorization")
+            .and_then(|h| h.to_str().ok());
+
+        let token = match auth_header {
+            Some(header) => {
+                // Extract token from "Bearer <token>" format
+                header.strip_prefix("Bearer ").unwrap_or(header).to_string()
+            }
+            None => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "message": "Missing authorization header"
+                }));
+            }
+        };
+
+        // Verify the existing token
+        let verify_result = crate::providers::operations::auth::auth_service::verify(&token);
+
+        match verify_result {
+            Ok(claims) => {
+                // Extract account information from claims
+                let account_id = claims.account.account_id.clone();
+
+                // Get account information
+                let (account, account_organization_id) = match crate::providers::operations::organizations::auth_service::get_account_info(&account_id).await {
+                    Ok(info) => info,
+                    Err(e) => {
+                        log::error!("Failed to get account info: {}", e);
+                        return HttpResponse::Forbidden().json(serde_json::json!({
+                            "message": "Failed to retrieve account information"
+                        }));
+                    }
+                };
+
+                let account = match account {
+                    Some(acc) => acc,
+                    None => {
+                        return HttpResponse::Forbidden().json(serde_json::json!({
+                            "message": "Account not found"
+                        }));
+                    }
+                };
+
+                // Get the signed in account with all related data
+                let signed_in_account = if let Some(ref account_organization_id) = account_organization_id {
+                    // Create filters array
+                    let filters = vec!["ao.tombstone = 0", "ao.status = 'Active'"];
+
+                    // Call the function to get the account with profile and organization data
+                    match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org(&account_organization_id, &filters).await {
+                        Ok(account) => account,
+                        Err(err) => {
+                            log::error!("Error fetching account with profile and org: {}", err);
+                            serde_json::json!({})
+                        }
+                    }
+                } else {
+                    // Call the function to get the account with profile and organization data by account_id
+                    match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org_by_account_id(&account_id).await {
+                        Ok(account) => account,
+                        Err(err) => {
+                            log::error!("Error fetching account with profile and org by account_id: {}", err);
+                            serde_json::json!({})
+                        }
+                    }
+                };
+
+                // Create token value with the signed in account
+                let token_value = serde_json::json!({
+                    "account": signed_in_account,
+                    "sensitivity_level": account.sensitivity_level,
+                    "role_name": "",
+                    "signed_in_account": signed_in_account
+                });
+
+                // Generate new JWT token
+                let new_token = match crate::providers::operations::organizations::auth_service::sign(&token_value).await {
+                    Ok(t) => t,
+                    Err(e) => {
+                        log::error!("Failed to sign token: {}", e);
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "message": "Failed to generate new token"
+                        }));
+                    }
+                };
+
+                // Return the new token
+                HttpResponse::Ok()
+                    .cookie(
+                        actix_web::cookie::Cookie::build("token", new_token.clone())
+                            .path("/")
+                            .finish(),
+                    )
+                    .json(serde_json::json!({
+                        "token": new_token,
+                        "message": "Token refreshed successfully"
+                    }))
+            }
+            Err(e) => {
+                log::error!("Token verification failed: {}", e);
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "message": "Invalid token"
+                }))
+            }
+        }
+    }
 }
