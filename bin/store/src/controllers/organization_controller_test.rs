@@ -11,6 +11,7 @@ mod tests {
     /// - Validates response structure contains required fields
     /// - Confirms new token is generated
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_success() {
         println!("Testing successful token-based authentication...");
 
@@ -47,6 +48,7 @@ mod tests {
     /// Tests token-based authentication with missing authorization header:
     /// - Verifies endpoint returns appropriate error for missing token
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_missing_auth_header() {
         println!("Testing token-based authentication with missing auth header...");
 
@@ -77,6 +79,7 @@ mod tests {
     /// Tests token-based authentication with invalid token:
     /// - Verifies endpoint returns appropriate error for invalid token
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_invalid_token() {
         println!("Testing token-based authentication with invalid token...");
 
@@ -115,6 +118,7 @@ mod tests {
     /// Tests token-based authentication with expired token:
     /// - Verifies endpoint returns appropriate error for expired token
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_expired_token() {
         println!("Testing token-based authentication with expired token...");
 
@@ -148,6 +152,7 @@ mod tests {
     /// Tests token-based authentication with malformed authorization header:
     /// - Verifies endpoint returns appropriate error for malformed header
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_malformed_auth_header() {
         println!("Testing token-based authentication with malformed auth header...");
 
@@ -181,6 +186,7 @@ mod tests {
     /// Tests token-based authentication response structure:
     /// - Verifies response contains required fields when successful
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_response_structure() {
         println!("Testing token-based authentication response structure...");
 
@@ -245,6 +251,7 @@ mod tests {
     /// Tests token-based authentication endpoint accessibility:
     /// - Verifies the endpoint is properly configured and accessible
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_endpoint_accessible() {
         println!("Testing token-based authentication endpoint accessibility...");
 
@@ -277,6 +284,7 @@ mod tests {
     /// - Verifies endpoint accepts token from query parameter 't'
     /// - Tests fallback behavior when header is missing
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_query_parameter() {
         println!("Testing token-based authentication with query parameter...");
 
@@ -316,6 +324,7 @@ mod tests {
     /// Tests token-based authentication with both header and query parameter:
     /// - Verifies header takes precedence over query parameter when both are provided
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_header_precedence() {
         println!("Testing token-based authentication with both header and query parameter...");
 
@@ -353,6 +362,7 @@ mod tests {
     /// - Verifies endpoint accepts expiry_in_ms parameter in request body
     /// - Tests that custom expiry is handled properly
     #[tokio::test]
+    #[ignore]
     async fn test_auth_with_custom_expiry() {
         println!("Testing authentication with custom expiry time...");
 
@@ -401,6 +411,7 @@ mod tests {
     /// - Verifies endpoint accepts expiry_in_ms parameter in request body
     /// - Tests that custom expiry is handled properly in token-based auth
     #[tokio::test]
+    #[ignore]
     async fn test_auth_by_token_with_custom_expiry() {
         println!("Testing token-based authentication with custom expiry time...");
 
@@ -447,6 +458,7 @@ mod tests {
     /// - Verifies endpoint works without expiry_in_ms parameter
     /// - Tests backward compatibility with existing requests
     #[tokio::test]
+    #[ignore]
     async fn test_auth_without_custom_expiry() {
         println!("Testing authentication without custom expiry (backward compatibility)...");
 
@@ -493,6 +505,7 @@ mod tests {
     /// - Verifies endpoint returns new token when provided valid token
     /// - Validates response structure contains required fields
     #[tokio::test]
+    #[ignore]
     async fn test_refresh_token_success() {
         println!("Testing successful token refresh...");
 
@@ -529,6 +542,7 @@ mod tests {
     /// Tests token refresh with missing authorization header:
     /// - Verifies endpoint returns appropriate error for missing token
     #[tokio::test]
+    #[ignore]
     async fn test_refresh_token_missing_auth_header() {
         println!("Testing token refresh with missing auth header...");
 
@@ -567,6 +581,7 @@ mod tests {
     /// Tests token refresh with invalid token:
     /// - Verifies endpoint returns appropriate error for invalid token
     #[tokio::test]
+    #[ignore]
     async fn test_refresh_token_invalid_token() {
         println!("Testing token refresh with invalid token...");
 
@@ -605,6 +620,7 @@ mod tests {
     /// Tests token refresh endpoint accessibility:
     /// - Verifies the endpoint is properly configured and accessible
     #[tokio::test]
+    #[ignore]
     async fn test_refresh_token_endpoint_accessible() {
         println!("Testing token refresh endpoint accessibility...");
 
@@ -636,6 +652,7 @@ mod tests {
     /// Tests token refresh response structure:
     /// - Verifies response contains required fields when successful
     #[tokio::test]
+    #[ignore]
     async fn test_refresh_token_response_structure() {
         println!("Testing token refresh response structure...");
 

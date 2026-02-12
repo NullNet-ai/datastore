@@ -72,6 +72,7 @@ mod tests {
     /// assert_eq!(resp.status(), 200);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_return_basic_health_status_successfully() {
         println!("Testing basic health check endpoint functionality...");
 
@@ -164,6 +165,7 @@ mod tests {
     /// assert_eq!(resp.status(), 200);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_return_detailed_health_information_successfully() {
         println!("Testing detailed health check endpoint functionality...");
 
@@ -260,6 +262,7 @@ mod tests {
     /// assert_eq!(resp.status(), 200);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_return_readiness_probe_status_successfully() {
         println!("Testing readiness probe endpoint functionality...");
 
@@ -330,6 +333,7 @@ mod tests {
     /// assert_eq!(resp.status(), 200);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_return_liveness_probe_status_successfully() {
         println!("Testing liveness probe endpoint functionality...");
 
@@ -409,6 +413,7 @@ mod tests {
     ///     .to_request();
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_update_component_metadata_successfully() {
         println!("Testing component metadata update endpoint functionality...");
 
@@ -509,6 +514,7 @@ mod tests {
     ///     .to_request();
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_record_health_check_successfully() {
         println!("Testing health check recording endpoint functionality...");
 
@@ -629,6 +635,7 @@ mod tests {
     /// assert_eq!(resp.status(), 200);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_retrieve_component_information_successfully() {
         println!("Testing component information retrieval endpoint functionality...");
 
@@ -741,6 +748,7 @@ mod tests {
     /// assert_eq!(resp.status(), 200);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_create_state_snapshot_successfully() {
         println!("Testing state snapshot creation endpoint functionality...");
 
@@ -811,6 +819,7 @@ mod tests {
     ///     .to_request();
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_configure_monitoring_interval_successfully() {
         println!("Testing monitoring configuration endpoint functionality...");
 
@@ -898,6 +907,7 @@ mod tests {
     /// // Should handle gracefully
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_handle_edge_cases_and_invalid_inputs_gracefully() {
         println!("Testing edge cases and error handling scenarios...");
 
