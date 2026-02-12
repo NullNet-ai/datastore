@@ -158,29 +158,18 @@ impl OrganizationsController {
             .clone()
             .unwrap_or_else(|| data.data.password.clone().unwrap_or_default());
 
+        log::info!("is_root: {}, account_id: {}", is_root, account_id);
         // Check if this is a root account by trying to get root account info
-        let is_actual_root_account =
-            match crate::providers::operations::organizations::auth_service::get_root_account_info(
+        let root_account =
+            crate::providers::operations::organizations::auth_service::get_root_account_info(
                 &account_id,
             )
-            .await
-            {
-                Ok(_) => is_root,
-                Err(_) => false,
-            };
+            .await;
 
-        // Enforce root authentication only for actual root accounts
-        let should_use_root_auth = if is_actual_root_account {
-            if !is_root {
-                log::warn!("Root account requires is_root=true parameter");
-            }
-            true
-        } else {
-            false // Regular accounts should never use root authentication
-        };
+        log::info!("root_account: {:?}", root_account);
 
         // Authenticate based on is_root parameter
-        let result = if should_use_root_auth {
+        let result = if is_root {
             // Root authentication
             root_auth(
                 &account_id,

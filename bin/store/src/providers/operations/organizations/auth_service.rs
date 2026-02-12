@@ -262,7 +262,7 @@ pub async fn get_root_account_info(
         WHERE ao.tombstone = 0
         AND ao.email = $1
         AND ao.status = 'Active'
-        AND ao.categories @> ARRAY['Root']
+        AND a.categories @> ARRAY['Root']
         LIMIT 1
         ",
     )
@@ -726,10 +726,18 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
 
     // Query the database using raw SQL that returns JSON
     let result = sql_query(
-        "
-        SELECT json_build_object(
+        "SELECT json_build_object(
             'account_organization_id', ao.id,
-            'account', row_to_json(a.*)
+            'account', (
+                SELECT jsonb_set(
+                    row_to_json(a.*)::jsonb - 'timestamp',
+                    '{timestamp}',
+                    to_jsonb(to_char(a.timestamp::timestamp, 'YYYY-MM-DD\"T\"HH24:MI:SS.US')),
+                    true
+                )::json
+                FROM accounts a
+                WHERE a.id = ao.account_id
+            )
         ) as json_result
         FROM account_organizations ao
         LEFT JOIN accounts a ON a.id = ao.account_id
