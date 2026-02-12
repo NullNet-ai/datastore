@@ -223,7 +223,28 @@ impl ConnectionPool {
 
     /// Create a new Redis connection
     fn create_connection(&self) -> Result<Connection, ConnectionPoolError> {
-        let mut conn = self.client.get_connection()?;
+        // Create connection with timeout
+        let start_time = Instant::now();
+
+        // Try to connect with standard get_connection, then set timeouts
+        let mut conn = match self.client.get_connection() {
+            Ok(conn) => conn,
+            Err(e) => {
+                log::warn!("Connection failed after {:?}: {}", start_time.elapsed(), e);
+                return Err(e.into());
+            }
+        };
+
+        // Set read and write timeouts on the connection
+        if let Err(e) = conn.set_read_timeout(Some(self.config.connection_timeout)) {
+            log::warn!("Failed to set read timeout: {}", e);
+            return Err(e.into());
+        }
+
+        if let Err(e) = conn.set_write_timeout(Some(self.config.connection_timeout)) {
+            log::warn!("Failed to set write timeout: {}", e);
+            return Err(e.into());
+        }
 
         // Test the connection with multiple retries
         let mut retries = 3;

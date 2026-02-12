@@ -35,6 +35,7 @@ impl GlobalOrganizationInitializer {
             account_status: Some("Active".to_string()),
             contact_categories: Some(vec!["Contact".to_string(), "User".to_string()]),
             role_id: Some("super_admin".to_string()),
+            account_organization_categories: Some(vec!["Root".to_string()]), // Set Root category for root access
             // Initialize other fields with None/default values
             id: None,
             name: None,
@@ -46,7 +47,6 @@ impl GlobalOrganizationInitializer {
             categories: None,
             is_invited: None,
             account_organization_status: None,
-            account_organization_categories: None,
             account_organization_id: None,
             device_categories: None,
             responsible_account_organization_id: None,
