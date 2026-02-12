@@ -268,7 +268,6 @@ pub async fn get_root_account_info(
         ",
     )
     .bind::<Bool, _>(account_id == "root")
-
     .bind::<Text, _>(account_id)
     .get_result::<JsonResult>(&mut conn)
     .await;
