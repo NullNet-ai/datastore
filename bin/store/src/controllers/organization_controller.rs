@@ -164,12 +164,23 @@ impl OrganizationsController {
 
         log::info!("is_root: {}, account_id: {}", is_root, account_id);
         // Check if this is a root account by trying to get root account info
-        let root_account = get_root_account_info(&account_id).await;
+        let root_account_organization = get_root_account_info(&account_id)
+            .await;
 
-        log::info!("root_account: {:?}", root_account);
-
+        // Check if the account is a root account
+        let is_root_account = match &root_account_organization {
+            Ok((account_organization, _, _)) => {
+                // account_organization contains the JSON result; extract the "is_root_account" field
+                account_organization
+                    .get("is_root_account")
+                    .and_then(|f| f.as_bool())
+                    .unwrap_or(false)
+            }
+            Err(_) => false,
+        };
+        
         // Authenticate based on is_root parameter
-        let result = if is_root {
+        let result = if is_root_account {
             // Root authentication
             root_auth(
                 &account_id,

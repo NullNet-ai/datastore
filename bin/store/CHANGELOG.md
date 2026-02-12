@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# 0.2.16
+### Author
+Bert
+
+### Fixes
+  - ***Root account authentication***:
+    - Fixed issue where root account authentication failed due to incorrect flag parsing.
+    - Now correctly checks the "is_root_account" flag in account_organizations.
+
 ## 0.2.15
 ### Author
 Bert
