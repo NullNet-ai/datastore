@@ -165,7 +165,6 @@ mod tests {
     /// ```
     #[tokio::test]
     #[ignore]
-    #[ignore]
     async fn should_handle_cache_health_check_timeout_gracefully() {
         println!("Testing cache health check timeout behavior...");
 

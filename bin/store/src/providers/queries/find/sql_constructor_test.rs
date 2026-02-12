@@ -741,7 +741,7 @@ mod tests {
     /// Tests construct_count produces valid COUNT(DISTINCT id) SQL without filters.
     #[test]
     fn should_construct_count_basic_without_filters() {
-        let mut filter = create_count_test_filter();
+        let filter = create_count_test_filter();
         let mut constructor =
             SQLConstructor::new(filter.clone(), "samples".to_string(), true, None);
 

@@ -2,12 +2,16 @@ use crate::generated::models::session_model::SessionModel;
 use crate::middlewares::auth_middleware::extract_token;
 use crate::middlewares::session_core::session_to_signed_in_activity;
 use crate::providers::operations::auth::auth_service::verify;
-use crate::providers::operations::organizations::auth_service::{auth, root_auth};
+use crate::providers::operations::organizations::auth_service::{
+    auth, get_account_info, get_account_with_profile_and_org,
+    get_account_with_profile_and_org_by_account_id, get_root_account_info, root_auth, sign,
+    sign_with_expiry,
+};
 use crate::providers::operations::organizations::organization_service::{
     register, verify_password,
 };
 use crate::providers::operations::organizations::structs::Register;
-use crate::providers::operations::sync::sync_service;
+use crate::providers::operations::sync::sync_service::insert;
 use crate::structs::core::ApiResponse;
 use crate::structs::organizations_structs::VerifyPasswordParams;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
@@ -160,11 +164,7 @@ impl OrganizationsController {
 
         log::info!("is_root: {}, account_id: {}", is_root, account_id);
         // Check if this is a root account by trying to get root account info
-        let root_account =
-            crate::providers::operations::organizations::auth_service::get_root_account_info(
-                &account_id,
-            )
-            .await;
+        let root_account = get_root_account_info(&account_id).await;
 
         log::info!("root_account: {:?}", root_account);
 
@@ -273,8 +273,7 @@ impl OrganizationsController {
                 match serde_json::to_value(&signed_in_activity) {
                     Ok(activity_json) => {
                         if let Err(e) =
-                            sync_service::insert(&"signed_in_activities".to_string(), activity_json)
-                                .await
+                            insert(&"signed_in_activities".to_string(), activity_json).await
                         {
                             log::error!("Failed to save signed_in_activities: {}", e);
                         } else {
@@ -495,7 +494,7 @@ impl OrganizationsController {
             .unwrap_or(false);
 
         // Verify the token
-        let verify_result = crate::providers::operations::auth::auth_service::verify(&token);
+        let verify_result = verify(&token);
 
         match verify_result {
             Ok(claims) => {
@@ -503,7 +502,7 @@ impl OrganizationsController {
                 let account_id = claims.account.account_id.clone();
 
                 // Get account information using the existing auth service
-                let (account, account_organization_id) = match crate::providers::operations::organizations::auth_service::get_account_info(&account_id).await {
+                let (account, account_organization_id) = match get_account_info(&account_id).await {
                     Ok(info) => info,
                     Err(e) => {
                         log::error!("Failed to get account info: {}", e);
@@ -531,7 +530,9 @@ impl OrganizationsController {
 
                     // Call the function to get the account with profile and organization data
                     signed_in_account =
-                        match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org(&account_organization_id, &filters).await {
+                        match get_account_with_profile_and_org(&account_organization_id, &filters)
+                            .await
+                        {
                             Ok(account) => account,
                             Err(err) => {
                                 log::error!("Error fetching account with profile and org: {}", err);
@@ -541,10 +542,13 @@ impl OrganizationsController {
                 } else {
                     // Call the function to get the account with profile and organization data by account_id
                     signed_in_account =
-                        match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org_by_account_id(&account_id).await {
+                        match get_account_with_profile_and_org_by_account_id(&account_id).await {
                             Ok(account) => account,
                             Err(err) => {
-                                log::error!("Error fetching account with profile and org by account_id: {}", err);
+                                log::error!(
+                                    "Error fetching account with profile and org by account_id: {}",
+                                    err
+                                );
                                 serde_json::json!({})
                             }
                         };
@@ -564,12 +568,7 @@ impl OrganizationsController {
 
                 // Generate new JWT token with custom expiry if provided
                 let new_token = if let Some(custom_expiry_ms) = data.expiry_in_ms {
-                    match crate::providers::operations::organizations::auth_service::sign_with_expiry(
-                        &token_value,
-                        custom_expiry_ms,
-                    )
-                    .await
-                    {
+                    match sign_with_expiry(&token_value, custom_expiry_ms).await {
                         Ok(t) => t,
                         Err(e) => {
                             log::error!("Failed to sign token with custom expiry: {}", e);
@@ -579,11 +578,7 @@ impl OrganizationsController {
                         }
                     }
                 } else {
-                    match crate::providers::operations::organizations::auth_service::sign(
-                        &token_value,
-                    )
-                    .await
-                    {
+                    match sign(&token_value).await {
                         Ok(t) => t,
                         Err(e) => {
                             log::error!("Failed to sign token: {}", e);
@@ -618,21 +613,14 @@ impl OrganizationsController {
 
                 // Log the signed in activity
                 let signed_in_activity =
-                    crate::middlewares::session_core::session_to_signed_in_activity(
-                        &updated,
-                        Some("Success".to_string()),
-                        None,
-                    )
-                    .await;
+                    session_to_signed_in_activity(&updated, Some("Success".to_string()), None)
+                        .await;
 
                 // Convert to JSON and save to database using sync_service
                 match serde_json::to_value(&signed_in_activity) {
                     Ok(activity_json) => {
-                        if let Err(e) = crate::providers::operations::sync::sync_service::insert(
-                            &"signed_in_activities".to_string(),
-                            activity_json,
-                        )
-                        .await
+                        if let Err(e) =
+                            insert(&"signed_in_activities".to_string(), activity_json).await
                         {
                             log::error!("Failed to save signed_in_activities: {}", e);
                         } else {
@@ -688,7 +676,7 @@ impl OrganizationsController {
         };
 
         // Verify the existing token
-        let verify_result = crate::providers::operations::auth::auth_service::verify(&token);
+        let verify_result = verify(&token);
 
         match verify_result {
             Ok(claims) => {
@@ -696,7 +684,7 @@ impl OrganizationsController {
                 let account_id = claims.account.account_id.clone();
 
                 // Get account information
-                let (account, account_organization_id) = match crate::providers::operations::organizations::auth_service::get_account_info(&account_id).await {
+                let (account, account_organization_id) = match get_account_info(&account_id).await {
                     Ok(info) => info,
                     Err(e) => {
                         log::error!("Failed to get account info: {}", e);
@@ -723,7 +711,8 @@ impl OrganizationsController {
                     let filters = vec!["ao.tombstone = 0", "ao.status = 'Active'"];
 
                     // Call the function to get the account with profile and organization data
-                    match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org(&account_organization_id, &filters).await {
+                    match get_account_with_profile_and_org(&account_organization_id, &filters).await
+                    {
                         Ok(account) => account,
                         Err(err) => {
                             log::error!("Error fetching account with profile and org: {}", err);
@@ -732,10 +721,13 @@ impl OrganizationsController {
                     }
                 } else {
                     // Call the function to get the account with profile and organization data by account_id
-                    match crate::providers::operations::organizations::auth_service::get_account_with_profile_and_org_by_account_id(&account_id).await {
+                    match get_account_with_profile_and_org_by_account_id(&account_id).await {
                         Ok(account) => account,
                         Err(err) => {
-                            log::error!("Error fetching account with profile and org by account_id: {}", err);
+                            log::error!(
+                                "Error fetching account with profile and org by account_id: {}",
+                                err
+                            );
                             serde_json::json!({})
                         }
                     }
@@ -750,20 +742,15 @@ impl OrganizationsController {
                 });
 
                 // Generate new JWT token
-                let new_token =
-                    match crate::providers::operations::organizations::auth_service::sign(
-                        &token_value,
-                    )
-                    .await
-                    {
-                        Ok(t) => t,
-                        Err(e) => {
-                            log::error!("Failed to sign token: {}", e);
-                            return HttpResponse::InternalServerError().json(serde_json::json!({
-                                "message": "Failed to generate new token"
-                            }));
-                        }
-                    };
+                let new_token = match sign(&token_value).await {
+                    Ok(t) => t,
+                    Err(e) => {
+                        log::error!("Failed to sign token: {}", e);
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "message": "Failed to generate new token"
+                        }));
+                    }
+                };
 
                 // Return the new token
                 HttpResponse::Ok()
