@@ -337,6 +337,45 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         Ok(sql)
     }
 
+    /// Builds a COUNT(DISTINCT id) query using the same filter parsing as construct().
+    /// Reuses WhereConstructor and JoinsConstructor; no GROUP BY, ORDER BY, OFFSET, LIMIT.
+    pub fn construct_count(&mut self) -> Result<String, String> {
+        let body_timezone = self.request_body.get_timezone();
+        let timezone = match (self.timezone.as_deref(), body_timezone) {
+            (_, Some(tz)) => Some(tz.to_string()),
+            (Some(tz), None) => Some(tz.to_string()),
+            (None, None) => None,
+        };
+        self.timezone = timezone;
+
+        let id_expr = format!("\"{}\".\"id\"", self.table);
+        let mut sql = format!("SELECT COUNT(DISTINCT {}) FROM ", id_expr);
+        sql.push_str(&self.table);
+
+        sql.push_str(&JoinsConstructor::construct_joins(
+            &self.request_body,
+            &self.table,
+            |table_alias| self.build_system_where_clause(table_alias),
+            |filters| self.build_infix_expression(filters),
+        ));
+
+        let where_constructor = WhereConstructor::new(
+            &self.table,
+            self.organization_id.as_deref(),
+            self.is_root,
+            self.timezone.as_deref(),
+        );
+        sql.push_str(&where_constructor.construct_where_clauses(
+            self.request_body.get_advance_filters(),
+            self.request_body.get_group_advance_filters(),
+            self.request_body.get_concatenate_fields(),
+            self.request_body.get_date_format(),
+            self.request_body.get_time_format(),
+        )?);
+
+        Ok(sql)
+    }
+
     pub fn get_field(
         table: &str,
         field: &str,
