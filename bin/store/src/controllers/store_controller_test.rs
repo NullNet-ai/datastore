@@ -267,6 +267,21 @@ mod tests {
         sql_constructor.construct()
     }
 
+    /// Generate COUNT SQL from GetByFilter payload (for count route)
+    fn get_raw_count_query(
+        payload: &serde_json::Value,
+        table: String,
+        is_root: bool,
+        timezone: Option<String>,
+    ) -> Result<String, String> {
+        let filter: GetByFilter = serde_json::from_value(payload.clone())
+            .map_err(|e| format!("Failed to parse payload as GetByFilter: {}", e))?;
+
+        let mut sql_constructor = SQLConstructor::new(filter, table, is_root, timezone);
+
+        sql_constructor.construct_count()
+    }
+
     /// Write SQL query to a file in the raw_queries directory
     /// Uses naming convention: invalid_sql_<test_fn_name>.sql
     fn write_sql_to_file(sql_query: &str, test_fn_name: &str) -> Result<(), std::io::Error> {
@@ -598,6 +613,45 @@ mod tests {
         let mut request_builder = client.post(&filter_url).json(payload);
 
         // Add authentication headers if available
+        if let Some(token) = &auth_response.token {
+            request_builder = request_builder.header("Authorization", format!("Bearer {}", token));
+        }
+        if let Some(session_id) = &auth_response.session_id {
+            request_builder = request_builder.header("x-session-id", session_id);
+        }
+
+        let response = request_builder
+            .send()
+            .await
+            .map_err(|e| format!("HTTP request failed: {}", e))?;
+
+        let status = response.status();
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+        if !status.is_success() {
+            return Err(format!("HTTP {} - {}", status, response_text));
+        }
+
+        serde_json::from_str(&response_text)
+            .map_err(|e| format!("Failed to parse JSON response: {}", e))
+    }
+
+    /// Make HTTP request to /count endpoint
+    async fn make_count_http_request(
+        payload: &GetByFilter,
+        table: &str,
+        auth_response: &AuthResponse,
+    ) -> Result<serde_json::Value, String> {
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+        let count_url = format!("{}/api/store/{}/count", base_url, table);
+
+        let client = reqwest::Client::new();
+        let mut request_builder = client.post(&count_url).json(payload);
+
         if let Some(token) = &auth_response.token {
             request_builder = request_builder.header("Authorization", format!("Bearer {}", token));
         }
@@ -960,6 +1014,173 @@ mod tests {
         }
 
         println!("  ✓ contacts_first_name_starts_with_j scenario test completed");
+    }
+
+    /// Test count route SQL generation and HTTP for samples_count scenario.
+    /// Verifies COUNT(DISTINCT id) query structure and count endpoint response.
+    #[tokio::test]
+    async fn should_use_samples_count_scenario() {
+        println!("Testing samples_count payload scenario (count route)...");
+
+        match load_payload_scenario("samples_count") {
+            Ok(payload) => {
+                println!("  ✓ Successfully loaded samples_count scenario");
+                println!("  ✓ Payload pluck: {:?}", payload.pluck);
+                println!("  ✓ Pluck object keys: {:?}", payload.pluck_object.keys());
+                println!("  ✓ Advance filters count: {}", payload.advance_filters.len());
+
+                let payload_json =
+                    serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
+
+                // Test COUNT SQL generation
+                match get_raw_count_query(&payload_json, "samples".to_string(), true, None) {
+                    Ok(count_sql) => {
+                        println!("  ✓ Count SQL generated successfully");
+
+                        if let Err(e) = write_sql_to_file(&count_sql, "samples_count_scenario") {
+                            println!("  ⚠ Failed to write SQL to file: {}", e);
+                        }
+
+                        assert!(
+                            count_sql.contains("SELECT COUNT(DISTINCT \"samples\".\"id\")"),
+                            "Count SQL should contain COUNT(DISTINCT id). Got: {}",
+                            count_sql
+                        );
+                        assert!(
+                            count_sql.contains("FROM samples"),
+                            "Count SQL should have FROM samples. Got: {}",
+                            count_sql
+                        );
+                        assert!(
+                            count_sql.contains("WHERE") || count_sql.contains("where"),
+                            "Count SQL should have WHERE. Got: {}",
+                            count_sql
+                        );
+                        assert!(
+                            !count_sql.to_uppercase().contains("GROUP BY"),
+                            "Count SQL should not have GROUP BY. Got: {}",
+                            count_sql
+                        );
+                        assert!(
+                            !count_sql.to_uppercase().contains("ORDER BY"),
+                            "Count SQL should not have ORDER BY. Got: {}",
+                            count_sql
+                        );
+                        assert!(
+                            !count_sql.contains("LIMIT") && !count_sql.contains("OFFSET"),
+                            "Count SQL should not have LIMIT/OFFSET. Got: {}",
+                            count_sql
+                        );
+
+                        println!("  ✓ Count SQL validation passed");
+                    }
+                    Err(e) => panic!("Count SQL generation should not fail: {}", e),
+                }
+
+                // Test HTTP count request when server is available
+                let auth_response = perform_login().await;
+                if auth_response.server_available {
+                    match make_count_http_request(&payload, "samples", &auth_response).await {
+                        Ok(response) => {
+                            println!("  ✓ Count HTTP request successful");
+
+                            if let Some(success) = response.get("success").and_then(|v| v.as_bool())
+                            {
+                                assert!(success, "Count response should indicate success");
+                            }
+                            if let Some(count) = response.get("count").and_then(|v| v.as_i64()) {
+                                println!("  ✓ Count value: {}", count);
+                                assert!(count >= 0, "Count should be non-negative");
+                            }
+                            if let Some(data) = response.get("data").and_then(|v| v.as_array()) {
+                                assert_eq!(
+                                    data.len(),
+                                    1,
+                                    "Count response data should have exactly one object"
+                                );
+                                if let Some(count_obj) = data.first().and_then(|v| v.as_object()) {
+                                    assert!(
+                                        count_obj.contains_key("count"),
+                                        "Count data object should have 'count' key"
+                                    );
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            if e.contains("401 Unauthorized")
+                                || e.contains("Session ID is required")
+                            {
+                                println!("  ℹ Auth failed, skipping HTTP count validation");
+                            } else {
+                                println!("  ⚠ Count HTTP request failed: {}", e);
+                            }
+                        }
+                    }
+                } else {
+                    println!("  ⚠ Server not available, skipping HTTP count test");
+                }
+            }
+            Err(e) => {
+                println!("  ⚠ Failed to load samples_count scenario: {}", e);
+                println!("  ℹ Ensure scenarios/filters/samples_count.json exists");
+            }
+        }
+
+        println!("  ✓ samples_count scenario test completed");
+    }
+
+    /// Test count route with contacts_basic_fields - count should match filter data length.
+    #[tokio::test]
+    async fn should_count_match_filter_data_length_for_contacts_basic() {
+        println!("Testing count matches filter data length (contacts_basic_fields)...");
+
+        let auth_response = perform_login().await;
+        if !auth_response.server_available {
+            println!("  ⚠ Server not available, skipping");
+            return;
+        }
+
+        match load_payload_scenario("contacts_basic_fields") {
+            Ok(payload) => {
+                let filter_response =
+                    make_filter_http_request(&payload, "contacts", &auth_response).await;
+                let count_response = make_count_http_request(&payload, "contacts", &auth_response).await;
+
+                match (filter_response, count_response) {
+                    (Ok(filter_res), Ok(count_res)) => {
+                        let filter_data = filter_res.get("data").and_then(|v| v.as_array());
+                        let count_val = count_res.get("count").and_then(|v| v.as_i64());
+                        let count_data = count_res.get("data").and_then(|v| v.as_array());
+
+                        if let (Some(data), Some(count)) = (filter_data, count_val) {
+                            // Count is total distinct rows; filter returns up to limit rows
+                            assert!(
+                                count >= data.len() as i64,
+                                "Count should be >= filter data length. count={}, filter_len={}",
+                                count,
+                                data.len()
+                            );
+                            println!(
+                                "  ✓ Count {} >= filter data length {} (limit applies to filter)",
+                                count,
+                                data.len()
+                            );
+                        }
+                        if let Some(count_arr) = count_data {
+                            assert_eq!(
+                                count_arr.len(),
+                                1,
+                                "Count response data array should have one element"
+                            );
+                        }
+                    }
+                    _ => println!("  ℹ Skipping count/filter comparison (request failed)"),
+                }
+            }
+            Err(e) => println!("  ⚠ Failed to load scenario: {}", e),
+        }
+
+        println!("  ✓ count match test completed");
     }
 
     /// Test using contacts_complex_with_joins_and_concatenation payload scenario

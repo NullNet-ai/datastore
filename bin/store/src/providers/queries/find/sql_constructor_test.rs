@@ -2,9 +2,10 @@
 mod tests {
     use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
     use crate::structs::core::{
-        ConcatenateField, FilterCriteria, GetByFilter, GroupAdvanceFilter, GroupBy, Join,
-        SortOption,
+        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter,
+        GroupBy, Join, LogicalOperator, SortOption,
     };
+    use serde_json::json;
     use std::collections::HashMap;
 
     /// Mock implementation of QueryFilter for testing purposes
@@ -706,6 +707,263 @@ mod tests {
         assert!(
             !sql.contains("AT TIME ZONE 'Europe/Berlin'"),
             "SQL should not use header timezone when body timezone overrides it"
+        );
+    }
+
+    // =========================================================================
+    // construct_count tests - COUNT route SQL generation
+    // =========================================================================
+
+    /// Creates a minimal GetByFilter for count tests.
+    fn create_count_test_filter() -> GetByFilter {
+        GetByFilter {
+            pluck: vec!["id".to_string()],
+            pluck_object: HashMap::new(),
+            pluck_group_object: HashMap::new(),
+            advance_filters: vec![],
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "mm/dd/YYYY".to_string(),
+            order_by: "id".to_string(),
+            order_direction: "asc".to_string(),
+            is_case_sensitive_sorting: None,
+            offset: 0,
+            limit: 15,
+            distinct_by: None,
+            timezone: None,
+            time_format: "HH24:MI".to_string(),
+        }
+    }
+
+    /// Tests construct_count produces valid COUNT(DISTINCT id) SQL without filters.
+    #[test]
+    fn should_construct_count_basic_without_filters() {
+        let mut filter = create_count_test_filter();
+        let mut constructor =
+            SQLConstructor::new(filter.clone(), "samples".to_string(), true, None);
+
+        let sql = constructor.construct_count().expect("construct_count should succeed");
+
+        assert!(
+            sql.contains("SELECT COUNT(DISTINCT \"samples\".\"id\")"),
+            "SQL should contain COUNT(DISTINCT id). Got: {}",
+            sql
+        );
+        assert!(sql.contains("FROM samples"), "SQL should contain FROM samples. Got: {}", sql);
+        assert!(
+            sql.contains("WHERE") || sql.contains("where"),
+            "SQL should contain WHERE (system filters). Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("tombstone"),
+            "SQL should contain tombstone filter. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("GROUP BY"),
+            "Count query should not have GROUP BY. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("ORDER BY"),
+            "Count query should not have ORDER BY. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("LIMIT") && !sql.contains("OFFSET"),
+            "Count query should not have LIMIT/OFFSET. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests construct_count with advance_filters (equal, has_no_value, and operator).
+    #[test]
+    fn should_construct_count_with_advance_filters() {
+        let mut filter = create_count_test_filter();
+        filter.advance_filters = vec![
+            FilterCriteria::Criteria {
+                field: "name".to_string(),
+                entity: Some("samples".to_string()),
+                operator: FilterOperator::Equal,
+                values: vec![json!("kashan")],
+                case_sensitive: None,
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: Some(true),
+                has_group_count: None,
+            },
+            FilterCriteria::LogicalOperator {
+                operator: LogicalOperator::And,
+            },
+            FilterCriteria::Criteria {
+                field: "sample_text".to_string(),
+                entity: Some("samples".to_string()),
+                operator: FilterOperator::HasNoValue,
+                values: vec![],
+                case_sensitive: None,
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: None,
+                has_group_count: None,
+            },
+        ];
+        let mut constructor =
+            SQLConstructor::new(filter, "samples".to_string(), true, None);
+
+        let sql = constructor.construct_count().expect("construct_count should succeed");
+
+        assert!(
+            sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
+            "SQL should contain COUNT. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("samples") && sql.contains("name"),
+            "SQL should reference samples.name filter. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("sample_text") || sql.contains("IS NULL"),
+            "SQL should include has_no_value/sample_text logic. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests construct_count with pluck_object (joins).
+    #[test]
+    fn should_construct_count_with_pluck_object_joins() {
+        let mut filter = create_count_test_filter();
+        let mut pluck_object = HashMap::new();
+        pluck_object.insert(
+            "samples".to_string(),
+            vec![
+                "id".to_string(),
+                "code".to_string(),
+                "created_time".to_string(),
+                "sample_text".to_string(),
+                "name".to_string(),
+            ],
+        );
+        filter.pluck_object = pluck_object;
+
+        let mut constructor =
+            SQLConstructor::new(filter, "samples".to_string(), true, None);
+
+        let sql = constructor.construct_count().expect("construct_count should succeed");
+
+        assert!(
+            sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
+            "SQL should contain COUNT. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("FROM samples"),
+            "SQL should have main table. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests construct_count excludes GROUP BY, ORDER BY, LIMIT, OFFSET.
+    #[test]
+    fn should_construct_count_exclude_group_order_limit_offset() {
+        let mut filter = create_count_test_filter();
+        filter.limit = 100;
+        filter.offset = 50;
+        filter.order_by = "name".to_string();
+        filter.order_direction = "desc".to_string();
+        filter.group_by = Some(GroupBy {
+            fields: vec!["id".to_string()],
+            has_count: true,
+        });
+
+        let mut constructor =
+            SQLConstructor::new(filter, "samples".to_string(), true, None);
+
+        let sql = constructor.construct_count().expect("construct_count should succeed");
+
+        assert!(
+            !sql.to_uppercase().contains("GROUP BY"),
+            "Count query must not have GROUP BY. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.to_uppercase().contains("ORDER BY"),
+            "Count query must not have ORDER BY. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("LIMIT"),
+            "Count query must not have LIMIT. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("OFFSET"),
+            "Count query must not have OFFSET. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests construct_count with organization_id (non-root) adds org filter.
+    #[test]
+    fn should_construct_count_with_organization_id() {
+        let filter = create_count_test_filter();
+        let mut constructor =
+            SQLConstructor::new(filter, "samples".to_string(), false, None)
+                .with_organization_id("org-123".to_string());
+
+        let sql = constructor.construct_count().expect("construct_count should succeed");
+
+        assert!(
+            sql.contains("organization_id"),
+            "SQL should include organization_id filter for non-root. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
+            "SQL should contain COUNT. Got: {}",
+            sql
+        );
+    }
+
+    /// Tests construct_count with timezone (body and header).
+    #[test]
+    fn should_construct_count_with_timezone() {
+        let mut filter = create_count_test_filter();
+        filter.advance_filters = vec![FilterCriteria::Criteria {
+            field: "created_time".to_string(),
+            entity: Some("samples".to_string()),
+            operator: FilterOperator::Like,
+            values: vec![json!("14")],
+            case_sensitive: None,
+            parse_as: "time".to_string(),
+            match_pattern: None,
+            is_search: Some(true),
+            has_group_count: None,
+        }];
+        filter.timezone = Some("America/Los_Angeles".to_string());
+
+        let mut constructor = SQLConstructor::new(
+            filter,
+            "samples".to_string(),
+            true,
+            Some("UTC".to_string()),
+        );
+
+        let sql = constructor.construct_count().expect("construct_count should succeed");
+
+        assert!(
+            sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
+            "SQL should contain COUNT. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("created_time") || sql.contains("to_char"),
+            "SQL should reference created_time for time filter. Got: {}",
+            sql
         );
     }
 }
