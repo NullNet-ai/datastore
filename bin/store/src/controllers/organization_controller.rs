@@ -164,8 +164,7 @@ impl OrganizationsController {
 
         log::info!("is_root: {}, account_id: {}", is_root, account_id);
         // Check if this is a root account by trying to get root account info
-        let root_account_organization = get_root_account_info(&account_id)
-            .await;
+        let root_account_organization = get_root_account_info(&account_id).await;
 
         // Check if the account is a root account
         let is_root_account = match &root_account_organization {
@@ -178,7 +177,7 @@ impl OrganizationsController {
             }
             Err(_) => false,
         };
-        
+
         // Authenticate based on is_root parameter
         let result = if is_root_account {
             // Root authentication
