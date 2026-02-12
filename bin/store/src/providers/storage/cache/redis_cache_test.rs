@@ -19,21 +19,21 @@ mod redis_cache_tests {
     fn create_test_redis_cache_with_db(db: u16) -> Option<RedisCache<String, TestValue>> {
         // Get Redis connection URL from environment variable, fallback to localhost if not set
         let base_url = std::env::var("REDIS_CONNECTION")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string());
 
-        // Parse the base URL to extract host and port, then append the database number
-        let url = if base_url.contains('/') && base_url.split('/').count() > 3 {
-            // URL already has a database path, replace it
-            let parts: Vec<&str> = base_url.split('/').collect();
-            format!(
-                "{}/{}/{}",
-                parts[..3].join("/"),
-                parts[3].split('/').next().unwrap_or(""),
-                db
-            )
+        // Parse the base URL to extract everything before the database number
+        let url = if base_url.contains('/') {
+            let parts: Vec<&str> = base_url.rsplitn(2, '/').collect();
+            if parts.len() == 2 && parts[0].chars().all(|c| c.is_ascii_digit()) {
+                // URL ends with a database number, replace it
+                format!("{}/{}", parts[1], db)
+            } else {
+                // URL doesn't have a database number at the end, add it
+                format!("{}/{}", base_url.trim_end_matches('/'), db)
+            }
         } else {
-            // URL doesn't have a database path, add it
-            format!("{}/{}", base_url.trim_end_matches('/'), db)
+            // URL doesn't have any path, add database
+            format!("{}/{}", base_url, db)
         };
 
         create_test_redis_cache_with_url(url)
@@ -75,7 +75,7 @@ mod redis_cache_tests {
 
         // Get Redis connection URL from environment variable, fallback to localhost if not set
         let redis_url = std::env::var("REDIS_CONNECTION")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379/15".to_string());
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string());
 
         match RedisCache::<String, String>::new_with_config(redis_url, None, pool_config) {
             Ok(_) => {
@@ -100,7 +100,7 @@ mod redis_cache_tests {
 
         // Get Redis connection URL from environment variable, fallback to localhost if not set
         let redis_url = std::env::var("REDIS_CONNECTION")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string());
 
         let result = RedisCache::<String, String>::new_with_config(
             redis_url,
@@ -533,7 +533,7 @@ mod redis_cache_tests {
         // Scenario 1: Valid Redis connection (if available)
         // Get Redis connection URL from environment variable, fallback to localhost if not set
         let redis_url = std::env::var("REDIS_CONNECTION")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string());
 
         let valid_result =
             RedisCache::<String, String>::new_with_config(redis_url, None, pool_config.clone());
@@ -607,7 +607,7 @@ mod redis_cache_tests {
         assert!(result.is_err());
 
         // Test with Redis not available - gracefully handle the scenario
-        match create_test_redis_cache_with_db(12) {
+        match create_test_redis_cache_with_db(15) {
             Some(cache) => {
                 // Test with valid operations using TestValue type
                 let test_key = format!(
@@ -672,7 +672,8 @@ mod redis_cache_tests {
             pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
 
             let cache_result = RedisCache::<String, TestValue>::new_with_config(
-                "redis://127.0.0.1:6379".to_string(),
+                std::env::var("REDIS_CONNECTION")
+                    .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string()),
                 Some(Duration::from_secs(5)),
                 pool_config,
             );
@@ -771,7 +772,8 @@ mod redis_cache_tests {
     fn test_connection_recovery() {
         // Test that we can handle multiple connection attempts gracefully
         let urls_to_test = vec![
-            "redis://127.0.0.1:6379".to_string(),
+            std::env::var("REDIS_CONNECTION")
+                .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string()),
             "redis://localhost:6379".to_string(),
             "redis://0.0.0.0:6379".to_string(),
         ];
@@ -1043,7 +1045,8 @@ mod redis_cache_tests {
     #[ignore]
     fn test_default_ttl_management() {
         let result = RedisCache::<String, String>::new(
-            "redis://127.0.0.1:6379".to_string(),
+            std::env::var("REDIS_CONNECTION")
+                .unwrap_or_else(|_| "redis://127.0.0.1:6379/0".to_string()),
             Some(Duration::from_secs(30)),
         );
 
