@@ -58,6 +58,26 @@ where
         })
     }
 
+    /// Create a new Redis cache with custom connection pool configuration
+    /// This is useful for testing with shorter timeouts
+    pub fn new_with_config(
+        connection_string: String,
+        default_ttl: Option<Duration>,
+        pool_config: ConnectionPoolConfig,
+    ) -> Result<Self, RedisCacheError> {
+        use redis::Client;
+
+        let client = Arc::new(Client::open(connection_string)?);
+        let connection_pool = Arc::new(ConnectionPool::new(client, pool_config)?);
+
+        log::info!("Successfully created Redis connection pool with custom config");
+        Ok(Self {
+            connection_pool,
+            default_ttl,
+            _marker: PhantomData,
+        })
+    }
+
     /// Get connection pool statistics
     pub fn get_pool_stats(&self) -> super::connection_pool::ConnectionPoolStats {
         self.connection_pool.get_stats()

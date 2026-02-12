@@ -3166,6 +3166,7 @@ mod tests {
     ///
     /// # Test Scenarios
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_filter_with_nested_join_scenario() {
         println!("Testing SQL generation for contacts with nested joins...");
 

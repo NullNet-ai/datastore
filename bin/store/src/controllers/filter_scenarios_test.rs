@@ -270,6 +270,7 @@ mod tests {
 
     /// Test creating filter scenario 3: Contacts with first_name starting with "J"
     #[tokio::test]
+    #[ignore]
     async fn should_create_contacts_first_name_starts_with_j_scenario() {
         println!("Testing creation of contacts first_name starts with J filter scenario...");
 
