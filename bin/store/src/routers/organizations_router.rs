@@ -17,6 +17,10 @@ pub fn configure_organizations_routes(cfg: &mut ServiceConfig) {
             )
             .route("/auth", web::post().to(OrganizationsController::auth))
             .route(
+                "/auth/sso",
+                web::post().to(OrganizationsController::auth_sso),
+            )
+            .route(
                 "/auth/token",
                 web::post().to(OrganizationsController::auth_by_token),
             )

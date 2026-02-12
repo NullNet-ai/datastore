@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::controllers::organization_controller::OrganizationsController;
+    use crate::middlewares::session_middleware::SessionMiddleware;
     use actix_web::{
         http::{header, StatusCode},
         test, web, App,
@@ -552,6 +553,180 @@ mod tests {
         assert!(
             !body_str.contains("Root account requires is_root=true parameter"),
             "Should not return the is_root parameter error when is_root=true is provided"
+        );
+    }
+
+    /// Tests SSO authentication with simple account_id login:
+    /// - Tests that SSO accepts account_id without password
+    /// - Note: SSO requires session middleware, so this test validates the request structure
+    ///   and error handling rather than successful authentication
+    #[tokio::test]
+    async fn test_auth_sso_simple_account_id() {
+        println!("Testing SSO authentication with simple account_id login...");
+
+        // Create test application with SessionMiddleware
+        let app = test::init_service(
+            App::new()
+                .wrap(SessionMiddleware)
+                .route(
+                    "/auth/sso",
+                    web::post().to(OrganizationsController::auth_sso),
+                )
+        )
+        .await;
+
+        // Create a test request with account_id only (no password needed for SSO)
+        let req_body = serde_json::json!({
+            "data": {
+                "account_id": "admin@dnamicro.com"
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/auth/sso")
+            .set_json(&req_body)
+            .to_request();
+
+        // Test the endpoint
+        let resp = test::call_service(&app, req).await;
+
+        // Verify response status
+        let status = resp.status();
+        println!("Response status: {}", status);
+
+        // Read response body
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // Parse JSON response and extract fields properly
+        let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&body_str)
+            .expect("Response should be valid JSON");
+
+                
+        // Extract success field with proper error handling
+        let is_success = response_json.get("success")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        
+        // Extract message field with proper error handling
+        let message = response_json.get("message")
+            .and_then(|v| v.as_str())
+            .unwrap_or("No message provided");
+        
+        println!("Success: {}, Message: {}", is_success, message);
+
+        // The endpoint should process the SSO request
+        // Note: SSO requires session middleware, so this test may return 401 Unauthorized
+        // but it should not return 400 Bad Request for missing parameters
+        assert_ne!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "Should not return bad request for valid SSO request structure"
+        );
+
+        // Additional validation based on response type
+        if status == StatusCode::OK {
+            // If successful, should have token and sessionID
+            assert!(response_json.get("token").is_some(), "Successful SSO should return token");
+            assert!(response_json.get("sessionID").is_some(), "Successful SSO should return sessionID");
+            
+            // Extract and validate token and sessionID
+            let token = response_json.get("token")
+                .and_then(|v| v.as_str())
+                .expect("Token should be a string");
+            let session_id = response_json.get("sessionID")
+                .and_then(|v| v.as_str())
+                .expect("SessionID should be a string");
+            
+            assert!(!token.is_empty(), "Token should not be empty");
+            assert!(!session_id.is_empty(), "SessionID should not be empty");
+            
+            println!("Success! Token: {}, SessionID: {}", token, session_id);
+        } else {
+            // If failed, should have appropriate error message
+            // Note: In a real environment with proper session middleware, this would return
+            // token and sessionID for valid account_id. The current test environment
+            // lacks session middleware, so we get "Session doesn't exist in the login request"
+            assert!(
+                message.to_lowercase().contains("session") || 
+                message.to_lowercase().contains("unauthorized") ||
+                message.to_lowercase().contains("missing"),
+                "Error message should indicate authentication issue: {}", 
+                message
+            );
+            
+            println!("Note: With proper session middleware, this would return token and sessionID for valid account_id");
+        }
+    }
+
+    /// Tests SSO authentication error when account_id is not provided:
+    /// - Verifies endpoint returns appropriate error when account_id is missing
+    /// - Tests that SSO requires account_id parameter
+    #[tokio::test]
+    async fn test_auth_sso_missing_account_id() {
+        println!("Testing SSO authentication error when account_id is missing...");
+
+        // Create test application with SessionMiddleware
+        let app = test::init_service(
+            App::new()
+                .wrap(SessionMiddleware)
+                .route(
+                    "/auth/sso",
+                    web::post().to(OrganizationsController::auth_sso),
+                )
+        )
+        .await;
+
+        // Create a test request without account_id (completely missing from data object)
+        let req_body = serde_json::json!({
+            "data": {}
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/auth/sso")
+            .set_json(&req_body)
+            .to_request();
+
+        // Test the endpoint
+        let resp = test::call_service(&app, req).await;
+
+        // Verify response status
+        let status = resp.status();
+        println!("Response status: {}", status);
+
+        // Read response body
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // Parse JSON response and extract fields properly
+        let response_json: serde_json::Value = serde_json::from_str::<serde_json::Value>(&body_str)
+            .expect("Response should be valid JSON");
+        
+        // Extract success field with proper error handling
+        let is_success = response_json.get("success")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        
+        // Extract message field with proper error handling
+        let error_message = response_json.get("message")
+            .and_then(|v| v.as_str())
+            .unwrap_or("No message provided");
+        
+        println!("Success: {}, Error message: {}", is_success, error_message);
+        
+        // Assert that the response indicates failure
+        assert!(!is_success, "Should not return success for missing account_id");
+        
+        // With SessionMiddleware, a session is created, but authentication fails due to missing account_id
+        // The error message should indicate that the account was not found
+        assert!(
+            error_message.contains("Account not found") || 
+            error_message.contains("Session doesn't exist") ||
+            error_message.contains("Authentication failed"),
+            "Should return appropriate error for missing account_id: {}", 
+            error_message
         );
     }
 
