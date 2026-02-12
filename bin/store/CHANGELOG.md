@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.15
+### Author
+Bert
+
+### Added
+  - ***Refresh Token***:
+    - Added a route for refreshing the access token using a valid refresh token.
+    - Requires authentication with valid refresh token.
+    - Returns new access token upon successful refresh.
+    - Added unit tests for refresh token route.
+
 ## 0.2.14
 ### Author
 Bert
