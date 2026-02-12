@@ -820,9 +820,13 @@ impl<'a, 'b> Validation<'a, 'b> {
             "YYYY-dd-mm",
         ];
 
-        // Validate date_format if it's not empty
+        // Validate date_format if it's not empty (case-insensitive)
         if !self.request_body.date_format.is_empty() {
-            if !allowed_formats.contains(&self.request_body.date_format.as_str()) {
+            let normalized = self.request_body.date_format.to_lowercase();
+            let is_valid = allowed_formats
+                .iter()
+                .any(|f| f.to_lowercase() == normalized);
+            if !is_valid {
                 return ApiResponse {
                     success: false,
                     message: format!(

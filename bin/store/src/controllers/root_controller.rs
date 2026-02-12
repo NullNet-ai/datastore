@@ -73,6 +73,12 @@ create_root_wrapper!(root_get_by_filter => get_by_filter,
     request_body: actix_web::web::Json<crate::structs::core::GetByFilter>
 );
 
+create_root_wrapper!(root_count_by_filter => count_by_filter,
+    auth: HttpRequest,
+    table: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<crate::structs::core::GetByFilter>
+);
+
 create_root_wrapper!(root_upsert => upsert,
     auth: HttpRequest,
     table: actix_web::web::Path<String>,

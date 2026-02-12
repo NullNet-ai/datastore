@@ -18,7 +18,7 @@ use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
-use crate::utils::helpers::table_exists;
+use crate::utils::helpers::{normalize_date_format, table_exists};
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -1206,7 +1206,7 @@ pub async fn get_by_filter(
     path_params: web::Path<String>,
     request_body: web::Json<GetByFilter>,
 ) -> impl Responder {
-    let parameters = request_body.into_inner();
+    let mut parameters = request_body.into_inner();
     let table = path_params.into_inner();
     let is_root = auth
         .extensions()
@@ -1266,6 +1266,8 @@ pub async fn get_by_filter(
         });
     }
 
+    parameters.date_format = normalize_date_format(&parameters.date_format);
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
@@ -1315,6 +1317,106 @@ pub async fn get_by_filter(
         message: format!("Filter operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
+    })
+}
+
+/// Count route: POST /api/store/{table}/count
+/// Uses the same filter parsing as get_by_filter and aggregation_filter.
+/// Returns count of distinct rows matching the filters.
+pub async fn count_by_filter(
+    auth: HttpRequest,
+    path_params: web::Path<String>,
+    request_body: web::Json<GetByFilter>,
+) -> impl Responder {
+    let mut parameters = request_body.into_inner();
+    let table = path_params.into_inner();
+    let is_root = auth
+        .extensions()
+        .get::<Auth>()
+        .map_or(false, |auth_data| auth_data.is_root_account);
+
+    let headers = auth.headers();
+    let timezone = headers
+        .get("timezone")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    let extensions = auth.extensions();
+    let organization_id = match extensions.get::<Auth>() {
+        Some(auth_data) => Some(auth_data.organization_id.clone()),
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            None
+        }
+    };
+
+    let validation = Validation::new(&parameters, &table);
+    let ApiResponse {
+        success,
+        message,
+        count,
+        data,
+    } = validation.exec();
+    if !success {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success,
+            message,
+            count,
+            data,
+        });
+    }
+
+    parameters.date_format = normalize_date_format(&parameters.date_format);
+
+    let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
+    if let Some(org_id) = organization_id {
+        sql_constructor = sql_constructor.with_organization_id(org_id);
+    }
+
+    let query = match sql_constructor.construct_count() {
+        Ok(sql) => sql,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid filter configuration: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let mut conn = db::get_async_connection().await;
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+
+    log::info!("Count query: {:?}", final_query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            log::error!("Error executing count query for table '{}': {:?}", table, e);
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: format!("Count completed for table: {}", &table),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
     })
 }
 
