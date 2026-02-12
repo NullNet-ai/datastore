@@ -638,12 +638,23 @@ async fn get_account_with_org(account_id: &str) -> Result<serde_json::Value, Api
         json_result: serde_json::Value,
     }
 
-    // Query the database using raw SQL that returns JSON
+    // Query the database using raw SQL that returns JSON.
+    // Cast timestamp to timestamp without time zone so PostgreSQL outputs a format
+    // compatible with NaiveDateTime (no trailing Z or +00:00).
     let result = sql_query(
         "
         SELECT json_build_object(
             'account_organization_id', ao.id,
-            'account', row_to_json(a.*)
+            'account', (
+                SELECT jsonb_set(
+                    row_to_json(a.*)::jsonb - 'timestamp',
+                    '{timestamp}',
+                    to_jsonb(to_char(a.timestamp::timestamp, 'YYYY-MM-DD\"T\"HH24:MI:SS.US')),
+                    true
+                )::json
+                FROM accounts a
+                WHERE a.id = ao.account_id
+            )
         ) as json_result
         FROM account_organizations ao
         LEFT JOIN accounts a ON a.id = ao.account_id
