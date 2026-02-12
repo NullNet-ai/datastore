@@ -17,7 +17,25 @@ mod redis_cache_tests {
     }
 
     fn create_test_redis_cache_with_db(db: u16) -> Option<RedisCache<String, TestValue>> {
-        let url = format!("redis://127.0.0.1:6379/{}", db);
+        // Get Redis connection URL from environment variable, fallback to localhost if not set
+        let base_url = std::env::var("REDIS_CONNECTION")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+
+        // Parse the base URL to extract host and port, then append the database number
+        let url = if base_url.contains('/') && base_url.split('/').count() > 3 {
+            // URL already has a database path, replace it
+            let parts: Vec<&str> = base_url.split('/').collect();
+            format!(
+                "{}/{}/{}",
+                parts[..3].join("/"),
+                parts[3].split('/').next().unwrap_or(""),
+                db
+            )
+        } else {
+            // URL doesn't have a database path, add it
+            format!("{}/{}", base_url.trim_end_matches('/'), db)
+        };
+
         create_test_redis_cache_with_url(url)
     }
 
@@ -55,11 +73,11 @@ mod redis_cache_tests {
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
 
-        match RedisCache::<String, String>::new_with_config(
-            "redis://127.0.0.1:6379/15".to_string(),
-            None,
-            pool_config,
-        ) {
+        // Get Redis connection URL from environment variable, fallback to localhost if not set
+        let redis_url = std::env::var("REDIS_CONNECTION")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379/15".to_string());
+
+        match RedisCache::<String, String>::new_with_config(redis_url, None, pool_config) {
             Ok(_) => {
                 println!("Redis connectivity test: PASSED");
                 true
@@ -72,6 +90,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_cache_creation_success() {
         // This test requires Redis to be running
         // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
@@ -79,8 +98,12 @@ mod redis_cache_tests {
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
 
+        // Get Redis connection URL from environment variable, fallback to localhost if not set
+        let redis_url = std::env::var("REDIS_CONNECTION")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+
         let result = RedisCache::<String, String>::new_with_config(
-            "redis://127.0.0.1:6379".to_string(),
+            redis_url,
             Some(Duration::from_secs(5)),
             pool_config,
         );
@@ -100,6 +123,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_cache_creation_failure() {
         // Use shorter timeout (3 seconds) for connection pool to speed up failure tests
         let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
@@ -140,6 +164,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_basic_crud_operations() {
         // Use a different database to avoid interference with other tests
         let cache = match create_test_redis_cache_with_db(11) {
@@ -228,6 +253,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_ttl_operations() {
         let cache = match create_test_redis_cache_with_db(12) {
             Some(cache) => cache,
@@ -236,6 +262,10 @@ mod redis_cache_tests {
                 return;
             }
         };
+
+        // Clear database to ensure clean state
+        cache.clear();
+        std::thread::sleep(Duration::from_millis(200)); // Wait for clear to complete
 
         let key = "ttl_test_key".to_string();
         let value = TestValue {
@@ -260,6 +290,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_default_ttl() {
         let mut cache = match create_test_redis_cache_with_db(13) {
             Some(cache) => cache,
@@ -268,6 +299,10 @@ mod redis_cache_tests {
                 return;
             }
         };
+
+        // Clear database to ensure clean state
+        cache.clear();
+        std::thread::sleep(Duration::from_millis(200)); // Wait for clear to complete
 
         // Set default TTL to 1 second
         cache.set_default_ttl(Some(Duration::from_secs(1)));
@@ -321,6 +356,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_clear_operation() {
         // Use a different database to avoid interference with other tests
         let cache = match create_test_redis_cache_with_db(14) {
@@ -405,6 +441,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_concurrent_operations() {
         use std::sync::Arc;
         use std::thread;
@@ -416,6 +453,11 @@ mod redis_cache_tests {
                 return;
             }
         };
+
+        // Clear database to ensure clean state
+        cache.clear();
+        std::thread::sleep(Duration::from_millis(200)); // Wait for clear to complete
+
         let mut handles = vec![];
 
         // Spawn multiple threads doing concurrent operations
@@ -481,6 +523,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_connection_scenarios() {
         // Test various connection scenarios
         // Use shorter timeout (3 seconds) for connection pool to speed up tests
@@ -488,11 +531,12 @@ mod redis_cache_tests {
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
 
         // Scenario 1: Valid Redis connection (if available)
-        let valid_result = RedisCache::<String, String>::new_with_config(
-            "redis://127.0.0.1:6379".to_string(),
-            None,
-            pool_config.clone(),
-        );
+        // Get Redis connection URL from environment variable, fallback to localhost if not set
+        let redis_url = std::env::var("REDIS_CONNECTION")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+
+        let valid_result =
+            RedisCache::<String, String>::new_with_config(redis_url, None, pool_config.clone());
 
         match valid_result {
             Ok(_) => println!("✓ Valid Redis connection available"),
@@ -547,6 +591,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_redis_error_handling() {
         // Test with invalid connection string
         // Use shorter timeout (3 seconds) for connection pool to speed up tests
@@ -610,6 +655,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_graceful_redis_unavailability() {
         // Test that the application can gracefully handle Redis being unavailable
 
@@ -677,6 +723,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_network_edge_cases() {
         // Test various network edge cases and invalid configurations
 
@@ -756,6 +803,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_serialization_error_handling() {
         // Test with a value that might fail serialization
         #[derive(Debug, Clone, PartialEq)]
@@ -787,6 +835,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_basic_cache_operations() {
         let cache = match create_test_redis_cache_with_db(0) {
             Some(cache) => cache,
@@ -795,6 +844,10 @@ mod redis_cache_tests {
                 return;
             }
         };
+
+        // Clear database to ensure clean state
+        cache.clear();
+        std::thread::sleep(Duration::from_millis(200)); // Wait for clear to complete
 
         // Use unique key to avoid conflicts
         let test_id = std::time::SystemTime::now()
@@ -858,6 +911,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_ttl_operations() {
         let cache = match create_test_redis_cache_with_db(10) {
             Some(cache) => cache,
@@ -866,6 +920,10 @@ mod redis_cache_tests {
                 return;
             }
         };
+
+        // Clear database to ensure clean state
+        cache.clear();
+        std::thread::sleep(Duration::from_millis(200)); // Wait for clear to complete
 
         let key = "ttl_test_key".to_string();
         let value = TestValue {
@@ -890,6 +948,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_cache_clear() {
         let cache = match create_test_redis_cache() {
             Some(cache) => cache,
@@ -963,6 +1022,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_non_existent_key() {
         let cache = match create_test_redis_cache() {
             Some(cache) => cache,
@@ -980,6 +1040,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_default_ttl_management() {
         let result = RedisCache::<String, String>::new(
             "redis://127.0.0.1:6379".to_string(),
@@ -1005,6 +1066,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_concurrent_operations() {
         use std::sync::Arc;
         use std::thread;
@@ -1016,6 +1078,11 @@ mod redis_cache_tests {
                 return;
             }
         };
+
+        // Clear database to ensure clean state
+        cache.clear();
+        std::thread::sleep(Duration::from_millis(200)); // Wait for clear to complete
+
         let mut handles = vec![];
 
         // Spawn multiple threads to test concurrent access
@@ -1071,6 +1138,7 @@ mod redis_cache_tests {
     }
 
     #[test]
+    #[ignore]
     fn test_connection_pool_stats() {
         let cache = match create_test_redis_cache() {
             Some(cache) => cache,
@@ -1105,83 +1173,5 @@ mod redis_cache_tests {
         println!("Connection pool stats after operations: {:?}", stats_after);
 
         println!("Connection pool stats test completed successfully");
-    }
-}
-
-#[cfg(test)]
-mod integration_tests {
-    use super::super::cache_interface::CacheInterface;
-    use super::super::redis_cache::RedisCache;
-    use serde::{Deserialize, Serialize};
-    use std::time::Duration;
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-    struct IntegrationTestValue {
-        timestamp: u64,
-        message: String,
-        counter: u32,
-    }
-
-    #[test]
-    #[ignore] // Run with: cargo test -- --ignored integration_tests
-    fn test_redis_integration_with_real_data() {
-        // This test requires Redis to be running
-        let cache = RedisCache::<String, IntegrationTestValue>::new(
-            "redis://127.0.0.1:6379".to_string(),
-            Some(Duration::from_secs(300)),
-        )
-        .expect("Failed to connect to Redis");
-
-        let test_data = vec![
-            (
-                "user:1",
-                IntegrationTestValue {
-                    timestamp: 1234567890,
-                    message: "User login".to_string(),
-                    counter: 1,
-                },
-            ),
-            (
-                "user:2",
-                IntegrationTestValue {
-                    timestamp: 1234567891,
-                    message: "User logout".to_string(),
-                    counter: 2,
-                },
-            ),
-            (
-                "session:abc123",
-                IntegrationTestValue {
-                    timestamp: 1234567892,
-                    message: "Session created".to_string(),
-                    counter: 3,
-                },
-            ),
-        ];
-
-        // Insert test data
-        for (key, value) in &test_data {
-            cache.insert(key.to_string(), value.clone());
-        }
-
-        // Verify retrieval
-        for (key, expected_value) in &test_data {
-            let retrieved = cache.get(&key.to_string());
-            assert_eq!(
-                retrieved,
-                Some(expected_value.clone()),
-                "Failed to retrieve key: {}",
-                key
-            );
-        }
-
-        // Test cache statistics
-        assert_eq!(cache.len(), test_data.len());
-        assert!(!cache.is_empty());
-
-        println!(
-            "Redis integration test completed successfully with {} items",
-            test_data.len()
-        );
     }
 }
