@@ -305,6 +305,12 @@ pub fn parse_env_config() -> EnvConfig {
     EnvConfig::default()
 }
 
+/// Normalizes date format for PostgreSQL compatibility (e.g. yyyy -> YYYY).
+/// Validation accepts formats case-insensitively; this ensures correct casing for TO_CHAR.
+pub fn normalize_date_format(format: &str) -> String {
+    format.replace("yyyy", "YYYY").replace("yy", "YY")
+}
+
 pub fn date_format_wrapper(
     table: &str,
     field: &str,

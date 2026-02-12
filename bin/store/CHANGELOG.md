@@ -5,6 +5,25 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.13
+### Author
+Kashan
+
+### Added
+  - ***Count route***:
+    - Added `POST /api/store/{table}/count` that reuses the same filter parsing as getByFilter and aggregationFilter.
+    - Returns `count(distinct id)` for rows matching advance_filters, pluck, pluck_object, etc.
+    - Route available at `/api/store/{table}/count` and `/api/store/root/{table}/count`.
+  - ***Date format validation***:
+    - Made `date_format` validation case-insensitive (e.g. `mm/dd/yyyy` and `mm/dd/YYYY` both accepted).
+    - Added `normalize_date_format` helper to convert `yyyy` to `YYYY` for PostgreSQL `TO_CHAR` compatibility.
+
+### Changed
+  - ***Account model***:
+    - Changed `timestamp` field from `DateTime<Utc>` to `NaiveDateTime` for sync compatibility with the store driver.
+  - ***Auth service***:
+    - Modified `get_account_with_org` SQL to cast timestamp to NaiveDateTime-compatible format (ISO 8601 with T separator) via `to_char`, fixing account deserialization during login.
+
 ## 0.2.12
 ### Author
 Bert
