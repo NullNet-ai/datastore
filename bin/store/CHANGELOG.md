@@ -15,6 +15,9 @@ Bert
     - Requires authentication with valid token.
     - Returns success message upon successful password update.
     - Added unit tests for password update route.
+### Fixed
+  - Password hashing logic to match TypeScript Trae behavior.
+  - Revise account organization timestamp parsing
 
 ## 0.2.12
 ### Author

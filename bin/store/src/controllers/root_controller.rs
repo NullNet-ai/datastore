@@ -117,18 +117,19 @@ pub async fn root_update_account_password(
             String::new()
         }
     };
-    
+
     // Hash the password - if this fails, we'll still pass the error to update_record
     // which will handle it appropriately
-    let hashed_password = match crate::providers::operations::auth::auth_service::password_hash(&password).await {
-        Ok(hash) => hash,
-        Err(e) => {
-            log::error!("Failed to hash password: {}", e);
-            // Pass the error to the underlying function to handle
-            String::new()
-        }
-    };
-    
+    let hashed_password =
+        match crate::providers::operations::auth::auth_service::password_hash(&password).await {
+            Ok(hash) => hash,
+            Err(e) => {
+                log::error!("Failed to hash password: {}", e);
+                // Pass the error to the underlying function to handle
+                String::new()
+            }
+        };
+
     // Create update request for accounts table with account_secret field
     let update_request = actix_web::web::Json(crate::structs::core::RequestBody {
         record: serde_json::json!({

@@ -451,7 +451,7 @@ pub async fn process_and_update_record(
             format!("Unknown table: {}", table_name),
         )
     })?;
- 
+
     let processed_record = process_record_for_update(
         record,
         table_name,
