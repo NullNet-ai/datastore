@@ -25,12 +25,12 @@ mod redis_cache_tests {
         // Use a test Redis instance or mock
         // For unit tests, we'll create a cache that will fall back gracefully
         // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
-        
+
         // Create custom connection pool config with shorter timeouts for tests
         let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
-        
+
         match RedisCache::new_with_config(url, Some(Duration::from_secs(5)), pool_config) {
             Ok(cache) => {
                 println!("Redis cache created successfully with connection pool");
@@ -54,8 +54,12 @@ mod redis_cache_tests {
         let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
-        
-        match RedisCache::<String, String>::new_with_config("redis://127.0.0.1:6379/15".to_string(), None, pool_config) {
+
+        match RedisCache::<String, String>::new_with_config(
+            "redis://127.0.0.1:6379/15".to_string(),
+            None,
+            pool_config,
+        ) {
             Ok(_) => {
                 println!("Redis connectivity test: PASSED");
                 true
@@ -74,7 +78,7 @@ mod redis_cache_tests {
         let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
-        
+
         let result = RedisCache::<String, String>::new_with_config(
             "redis://127.0.0.1:6379".to_string(),
             Some(Duration::from_secs(5)),
@@ -101,10 +105,13 @@ mod redis_cache_tests {
         let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
-        
+
         // Test with malformed URL - this should definitely fail quickly
-        let malformed_result =
-            RedisCache::<String, String>::new_with_config("not-a-valid-url".to_string(), None, pool_config.clone());
+        let malformed_result = RedisCache::<String, String>::new_with_config(
+            "not-a-valid-url".to_string(),
+            None,
+            pool_config.clone(),
+        );
         assert!(malformed_result.is_err(), "Should fail with malformed URL");
         println!("✓ Malformed URL test passed");
 
@@ -481,8 +488,11 @@ mod redis_cache_tests {
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
 
         // Scenario 1: Valid Redis connection (if available)
-        let valid_result =
-            RedisCache::<String, String>::new_with_config("redis://127.0.0.1:6379".to_string(), None, pool_config.clone());
+        let valid_result = RedisCache::<String, String>::new_with_config(
+            "redis://127.0.0.1:6379".to_string(),
+            None,
+            pool_config.clone(),
+        );
 
         match valid_result {
             Ok(_) => println!("✓ Valid Redis connection available"),
@@ -513,8 +523,11 @@ mod redis_cache_tests {
         println!("✓ Invalid port test passed");
 
         // Scenario 4: Malformed URL - should definitely fail
-        let malformed_url_result =
-            RedisCache::<String, String>::new_with_config("this-is-not-a-url".to_string(), None, pool_config.clone());
+        let malformed_url_result = RedisCache::<String, String>::new_with_config(
+            "this-is-not-a-url".to_string(),
+            None,
+            pool_config.clone(),
+        );
         assert!(
             malformed_url_result.is_err(),
             "Should fail with malformed URL"
@@ -540,8 +553,12 @@ mod redis_cache_tests {
         let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
         pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
         pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
-        
-        let result = RedisCache::<String, String>::new_with_config("not-a-valid-url".to_string(), None, pool_config);
+
+        let result = RedisCache::<String, String>::new_with_config(
+            "not-a-valid-url".to_string(),
+            None,
+            pool_config,
+        );
         assert!(result.is_err());
 
         // Test with Redis not available - gracefully handle the scenario
@@ -603,16 +620,16 @@ mod redis_cache_tests {
             println!("Redis is not available - testing graceful degradation");
 
             // Test that we can handle operations gracefully when Redis is down
-        // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
-        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
-        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
-        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
-        
-        let cache_result = RedisCache::<String, TestValue>::new_with_config(
-            "redis://127.0.0.1:6379".to_string(),
-            Some(Duration::from_secs(5)),
-            pool_config,
-        );
+            // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
+            let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+            pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+            pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+
+            let cache_result = RedisCache::<String, TestValue>::new_with_config(
+                "redis://127.0.0.1:6379".to_string(),
+                Some(Duration::from_secs(5)),
+                pool_config,
+            );
 
             match cache_result {
                 Ok(_) => {
