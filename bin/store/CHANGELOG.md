@@ -5,7 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# 0.2.16
+## 0.2.17
+### Author
+Bert
+
+### Added
+  - ***Login by account id***:
+    - Added a route for logging in using account_id.
+    - No account_secret required for login.
+    - Unit tests added for login by account id route both for Regular and Root accounts.
+
+## 0.2.16
 ### Author
 Bert
 

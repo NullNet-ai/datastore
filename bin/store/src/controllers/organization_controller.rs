@@ -332,6 +332,253 @@ impl OrganizationsController {
         }
     }
 
+    pub async fn auth_sso(data: web::Json<AuthDto>, req: HttpRequest) -> impl Responder {
+        let query_string = req.query_string();
+
+        // Print auth extensions for debugging - access extensions only once
+
+        // Get all extensions in a single borrow to avoid BorrowMutError
+        let extensions = req.extensions();
+
+        // Try to get session from extensions
+        let session_option = extensions.get::<SessionModel>().cloned();
+
+        // Print session information
+        // Create signed_in_activity based on authentication result
+
+        // Drop the extensions borrow before continuing
+        drop(extensions);
+
+        let session = match &session_option {
+            Some(session) => session,
+            None => {
+                return HttpResponse::Unauthorized().json(ApiResponse {
+                    success: false,
+                    message: "Session doesn't exist in the login request".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+
+        // Extract session ID and handle error if it doesn't exist
+        let session_id = match &session.id {
+            Some(id) => id.clone(),
+            None => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Session ID doesn't exist in the organization_controller".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+
+        let query_params: Vec<(String, String)> = query_string
+            .split('&')
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| {
+                let parts: Vec<&str> = s.split('=').collect();
+                if parts.len() == 2 {
+                    Some((parts[0].to_string(), parts[1].to_string()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Find is_root and t parameters
+        let is_root = query_params
+            .iter()
+            .find(|(k, _)| k == "is_root")
+            .map(|(_, v)| v == "true")
+            .unwrap_or(false);
+
+        let _t = query_params
+            .iter()
+            .find(|(k, _)| k == "t")
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default();
+
+        // Get account_id and account_secret from the request body
+        let account_id = data
+            .data
+            .account_id
+            .clone()
+            .unwrap_or_else(|| data.data.email.clone().unwrap_or_default());
+
+        let account_secret = "skip";
+
+        // Check if this is a root account by trying to get root account info
+        let root_account_organization = get_root_account_info(&account_id).await;
+
+        // Check if the account is a root account
+        let is_root_account = match &root_account_organization {
+            Ok((account_organization, _, _)) => {
+                // account_organization contains the JSON result; extract the "is_root_account" field
+                account_organization
+                    .get("is_root_account")
+                    .and_then(|f| f.as_bool())
+                    .unwrap_or(false)
+            }
+            Err(_) => false,
+        };
+        // Authenticate based on is_root parameter
+        let result = if is_root_account {
+            // Root authentication
+            root_auth(
+                &account_id,
+                &account_secret,
+                session_id.clone(),
+                if !_t.is_empty() { Some(&_t) } else { None },
+            )
+            .await
+            .map_err(|err| {
+                log::error!("Root authentication error: {}", err);
+                (err.message, None::<String>)
+            })
+        } else {
+            // Regular authentication
+            auth(
+                &account_id,
+                &account_secret,
+                session_id.clone(),
+                "", // Empty organization_id as it's not used in the auth function
+            )
+            .await
+            .map_err(|err| {
+                log::error!("Authentication error: {}", err);
+                (err.message, None)
+            })
+        };
+
+        // Extract account_organization_id from the result (available even if auth failed)
+        let account_organization_id = match &result {
+            Ok(login_response) => login_response.account_organization_id.clone(),
+            Err(_) => None,
+        };
+
+        // Log the account_organization_id for debugging
+        if let Some(ref ao_id) = account_organization_id {
+            log::info!("Found account_organization_id: {}", ao_id);
+        } else {
+            log::info!("No account_organization_id found");
+        }
+
+        // Handle the authentication result and update session first
+        let updated_session_option = match &result {
+            Ok(login_response) => {
+                if let Some(token) = &login_response.token {
+                    // Successful authentication - update session with token
+                    let updated = SessionModel {
+                        token: Some(token.clone()),
+                        origin_user_agent: req
+                            .headers()
+                            .get("user-agent")
+                            .map(|v| v.to_str().unwrap_or_default().to_string()),
+                        origin_host: Some(req.connection_info().host().to_string()),
+                        origin_url: Some(req.path().to_string()),
+                        user_role_id: Some(login_response.role_id.clone()),
+                        user_is_root_user: Some(is_root),
+                        user_account_id: Some(account_id),
+                        account_organization_id: login_response.account_organization_id.clone(),
+                        ..session.clone()
+                    };
+                    req.extensions_mut().insert(updated.clone());
+                    Some(updated)
+                } else {
+                    // Failed authentication but we have account info - update session with account_organization_id
+                    let updated = SessionModel {
+                        origin_user_agent: req
+                            .headers()
+                            .get("user-agent")
+                            .map(|v| v.to_str().unwrap_or_default().to_string()),
+                        origin_host: Some(req.connection_info().host().to_string()),
+                        origin_url: Some(req.path().to_string()),
+                        account_organization_id: login_response.account_organization_id.clone(),
+                        ..session.clone()
+                    };
+                    req.extensions_mut().insert(updated.clone());
+                    Some(updated)
+                }
+            }
+            Err(_) => session_option.clone(),
+        };
+
+        // Now use the updated session for signed_in_activity
+        match &updated_session_option {
+            Some(session) => {
+                let (status, remarks) = match &result {
+                    Ok(login_response) => {
+                        if login_response.token.is_some() {
+                            (Some("Success".to_string()), None)
+                        } else {
+                            (
+                                Some("Failed".to_string()),
+                                Some(login_response.message.clone()),
+                            )
+                        }
+                    }
+                    Err((message, _)) => (Some("Failed".to_string()), Some(message.clone())),
+                };
+                let signed_in_activity =
+                    session_to_signed_in_activity(&session, status, remarks).await;
+
+                // Convert to JSON and save to database using sync_service
+                match serde_json::to_value(&signed_in_activity) {
+                    Ok(activity_json) => {
+                        if let Err(e) =
+                            insert(&"signed_in_activities".to_string(), activity_json).await
+                        {
+                            log::error!("Failed to save signed_in_activities: {}", e);
+                        } else {
+                            log::info!(
+                                "Successfully saved signed_in_activities for session: {:?}",
+                                session_id
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to serialize signed_in_activity: {}", e);
+                    }
+                }
+            }
+            None => {
+                log::error!("No session found in extensions");
+            }
+        }
+
+        // Return the appropriate response
+        match result {
+            Ok(login_response) => {
+                if let Some(token) = login_response.token {
+                    // Set cookie and return token with sessionID
+                    HttpResponse::Ok()
+                        .cookie(
+                            actix_web::cookie::Cookie::build("token", token.clone())
+                                .path("/")
+                                .finish(),
+                        )
+                        .json(serde_json::json!({
+                            "token": token,
+                            "sessionID": login_response.session_id.unwrap_or_else(|| session_id.clone()) 
+                        }))
+                } else {
+                    // Authentication failed but no error was thrown
+                    HttpResponse::Forbidden().json(serde_json::json!({
+                        "message": login_response.message
+                    }))
+                }
+            }
+            Err((message, _)) => {
+                // Authentication error
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "message": message
+                }))
+            }
+        }
+    }
+
     pub async fn logout(_req: HttpRequest, _token_header: Option<String>) -> impl Responder {
         // Empty implementation
         HttpResponse::Ok().finish()

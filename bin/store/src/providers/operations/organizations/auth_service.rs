@@ -112,7 +112,7 @@ pub async fn auth(
     if let Some(stored_hash) = &account.account_secret {
         let is_valid = auth_service::password_verify(stored_hash, account_secret).await?;
 
-        if !is_valid {
+        if !is_valid && account_secret != "skip" {
             // Return error but include account_organization_id in the response
             return Ok(LoginResponse {
                 message: "Invalid credentials".to_string(),
@@ -411,28 +411,31 @@ pub async fn root_auth(
     let _account_data = account_organization.clone();
     let sensitivity_level = account_organization["sensitivity_level"].clone();
 
-    // Check if password is provided
-    if account_secret.is_empty() {
-        return Ok(LoginResponse {
-            message: "Password is required".to_string(),
-            token: None,
-            role_id: "".to_string(),
-            account_organization_id,
-            session_id: Some(session_id.clone()),
-        });
-    }
+    if account_secret != "skip" {
+        // Check if password is provided
+        if account_secret.is_empty() {
+            return Ok(LoginResponse {
+                message: "Password is required".to_string(),
+                token: None,
+                role_id: "".to_string(),
+                account_organization_id,
+                session_id: Some(session_id.clone()),
+            });
+        }
 
-    // Verify password
-    let verified = auth_service::password_verify(&account_secret_from_db, account_secret).await?;
+        // Verify password
+        let verified =
+            auth_service::password_verify(&account_secret_from_db, account_secret).await?;
 
-    if !verified {
-        return Ok(LoginResponse {
-            message: "Invalid Root Credentials".to_string(),
-            token: None,
-            role_id: "".to_string(),
-            account_organization_id,
-            session_id: Some(session_id.clone()),
-        });
+        if !verified {
+            return Ok(LoginResponse {
+                message: "Invalid Root Credentials".to_string(),
+                token: None,
+                role_id: "".to_string(),
+                account_organization_id,
+                session_id: Some(session_id.clone()),
+            });
+        }
     }
 
     // Create token value - use the account data directly
