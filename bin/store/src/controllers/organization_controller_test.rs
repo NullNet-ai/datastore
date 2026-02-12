@@ -707,7 +707,9 @@ mod tests {
     /// - Tests that no JSON structure mismatch occurs
     #[tokio::test]
     async fn test_regular_account_with_is_root_true_no_deserialization_error() {
-        println!("Testing regular account with is_root=true should not cause deserialization errors...");
+        println!(
+            "Testing regular account with is_root=true should not cause deserialization errors..."
+        );
 
         // Create test application
         let app = test::init_service(
