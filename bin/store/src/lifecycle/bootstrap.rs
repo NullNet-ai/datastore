@@ -13,9 +13,9 @@ use crate::{
         },
         root_controller::{
             root_aggregation_filter, root_batch_delete_records, root_batch_insert_records,
-            root_batch_update_records, root_count_by_filter, root_create_record, root_delete_record,
-            root_get_by_filter, root_get_by_id, root_search_suggestions, root_switch_account,
-            root_update_record, root_upsert,
+            root_batch_update_records, root_count_by_filter, root_create_record,
+            root_delete_record, root_get_by_filter, root_get_by_id, root_search_suggestions,
+            root_switch_account, root_update_record, root_upsert,
         },
         store_controller::{
             aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,

@@ -214,7 +214,7 @@ impl RequestBody {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct QueryParams {
     #[serde(default = "default_pluck")]
     pub pluck: String,

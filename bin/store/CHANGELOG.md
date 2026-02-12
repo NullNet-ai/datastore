@@ -5,6 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.14
+### Author
+Bert
+
+### Added
+  - ***Update Password***:
+    - Added a route for updating the account secret (password).
+    - Requires authentication with valid token.
+    - Returns success message upon successful password update.
+    - Added unit tests for password update route.
+### Fixed
+  - Password hashing logic to match TypeScript Trae behavior.
+  - Revise account organization timestamp parsing
+  - Reducing redis timeout to 3 seconds for testing
+  - Improve Redis Connection Polling
+  
 ## 0.2.13
 ### Author
 Kashan

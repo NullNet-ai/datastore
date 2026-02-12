@@ -129,7 +129,6 @@ pub async fn update_record(
             });
         }
     };
-
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
