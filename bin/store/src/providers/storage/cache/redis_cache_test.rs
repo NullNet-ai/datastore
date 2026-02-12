@@ -24,7 +24,14 @@ mod redis_cache_tests {
     fn create_test_redis_cache_with_url(url: String) -> Option<RedisCache<String, TestValue>> {
         // Use a test Redis instance or mock
         // For unit tests, we'll create a cache that will fall back gracefully
-        match RedisCache::new(url, Some(Duration::from_secs(60))) {
+        // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
+        
+        // Create custom connection pool config with shorter timeouts for tests
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+        
+        match RedisCache::new_with_config(url, Some(Duration::from_secs(5)), pool_config) {
             Ok(cache) => {
                 println!("Redis cache created successfully with connection pool");
                 Some(cache)
@@ -43,7 +50,12 @@ mod redis_cache_tests {
 
     fn is_redis_available() -> bool {
         // Quick connectivity test to determine if Redis is available
-        match RedisCache::<String, String>::new("redis://127.0.0.1:6379/15".to_string(), None) {
+        // Use shorter timeout (3 seconds) for connectivity test
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+        
+        match RedisCache::<String, String>::new_with_config("redis://127.0.0.1:6379/15".to_string(), None, pool_config) {
             Ok(_) => {
                 println!("Redis connectivity test: PASSED");
                 true
@@ -58,14 +70,20 @@ mod redis_cache_tests {
     #[test]
     fn test_redis_cache_creation_success() {
         // This test requires Redis to be running
-        let result = RedisCache::<String, String>::new(
+        // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+        
+        let result = RedisCache::<String, String>::new_with_config(
             "redis://127.0.0.1:6379".to_string(),
-            Some(Duration::from_secs(60)),
+            Some(Duration::from_secs(5)),
+            pool_config,
         );
 
         match result {
             Ok(cache) => {
-                assert_eq!(cache.default_ttl(), Some(Duration::from_secs(60)));
+                assert_eq!(cache.default_ttl(), Some(Duration::from_secs(5)));
                 println!("Redis cache created successfully");
             }
             Err(e) => {
@@ -79,31 +97,39 @@ mod redis_cache_tests {
 
     #[test]
     fn test_redis_cache_creation_failure() {
-        let result = RedisCache::<String, String>::new(
-            "redis://invalid-host-that-does-not-exist:6379".to_string(),
-            None,
-        );
-
-        // Don't assert on invalid host - it might actually resolve in some DNS configurations
-        match result {
-            Ok(_) => println!("Invalid host test connection succeeded (DNS specific)"),
-            Err(e) => println!("Invalid host test failed as expected: {}", e),
-        }
-
-        // Test with malformed URL - this should definitely fail
+        // Use shorter timeout (3 seconds) for connection pool to speed up failure tests
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+        
+        // Test with malformed URL - this should definitely fail quickly
         let malformed_result =
-            RedisCache::<String, String>::new("not-a-valid-url".to_string(), None);
+            RedisCache::<String, String>::new_with_config("not-a-valid-url".to_string(), None, pool_config.clone());
         assert!(malformed_result.is_err(), "Should fail with malformed URL");
+        println!("✓ Malformed URL test passed");
 
-        // Test with invalid port (too high) - this should definitely fail
-        let invalid_port_result = RedisCache::<String, String>::new(
+        // Test with invalid port (too high) - this should definitely fail quickly
+        let invalid_port_result = RedisCache::<String, String>::new_with_config(
             "redis://127.0.0.1:99999".to_string(), // Port too high (max is 65535)
             None,
+            pool_config.clone(),
         );
         assert!(
             invalid_port_result.is_err(),
             "Should fail with invalid port"
         );
+        println!("✓ Invalid port test passed");
+
+        // Test with connection to localhost on a closed port (should fail quickly)
+        let connection_refused_result = RedisCache::<String, String>::new_with_config(
+            "redis://127.0.0.1:1".to_string(), // Port 1 is typically closed
+            None,
+            pool_config,
+        );
+        match connection_refused_result {
+            Ok(_) => println!("⚠ Connection refused test succeeded (port might be open)"),
+            Err(e) => println!("✓ Connection refused test failed as expected: {}", e),
+        }
     }
 
     #[test]
@@ -450,10 +476,13 @@ mod redis_cache_tests {
     #[test]
     fn test_redis_connection_scenarios() {
         // Test various connection scenarios
+        // Use shorter timeout (3 seconds) for connection pool to speed up tests
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
 
         // Scenario 1: Valid Redis connection (if available)
         let valid_result =
-            RedisCache::<String, String>::new("redis://127.0.0.1:6379".to_string(), None);
+            RedisCache::<String, String>::new_with_config("redis://127.0.0.1:6379".to_string(), None, pool_config.clone());
 
         match valid_result {
             Ok(_) => println!("✓ Valid Redis connection available"),
@@ -461,9 +490,10 @@ mod redis_cache_tests {
         }
 
         // Scenario 2: Invalid hostname - don't assert, might resolve in some DNS
-        let invalid_host_result = RedisCache::<String, String>::new(
+        let invalid_host_result = RedisCache::<String, String>::new_with_config(
             "redis://nonexistent-host-12345.invalid:6379".to_string(),
             None,
+            pool_config.clone(),
         );
         match invalid_host_result {
             Ok(_) => println!("⚠ Invalid hostname test connection succeeded (DNS specific)"),
@@ -471,9 +501,10 @@ mod redis_cache_tests {
         }
 
         // Scenario 3: Invalid port - should definitely fail
-        let invalid_port_result = RedisCache::<String, String>::new(
+        let invalid_port_result = RedisCache::<String, String>::new_with_config(
             "redis://127.0.0.1:99999".to_string(), // Port too high
             None,
+            pool_config.clone(),
         );
         assert!(
             invalid_port_result.is_err(),
@@ -483,7 +514,7 @@ mod redis_cache_tests {
 
         // Scenario 4: Malformed URL - should definitely fail
         let malformed_url_result =
-            RedisCache::<String, String>::new("this-is-not-a-url".to_string(), None);
+            RedisCache::<String, String>::new_with_config("this-is-not-a-url".to_string(), None, pool_config.clone());
         assert!(
             malformed_url_result.is_err(),
             "Should fail with malformed URL"
@@ -491,9 +522,10 @@ mod redis_cache_tests {
         println!("✓ Malformed URL test passed");
 
         // Scenario 5: Connection refused (closed port) - don't assert, behavior varies
-        let connection_refused_result = RedisCache::<String, String>::new(
+        let connection_refused_result = RedisCache::<String, String>::new_with_config(
             "redis://127.0.0.1:1".to_string(), // Port 1 is typically closed
             None,
+            pool_config,
         );
         match connection_refused_result {
             Ok(_) => println!("⚠ Connection refused test succeeded (port might be open)"),
@@ -504,7 +536,12 @@ mod redis_cache_tests {
     #[test]
     fn test_redis_error_handling() {
         // Test with invalid connection string
-        let result = RedisCache::<String, String>::new("not-a-valid-url".to_string(), None);
+        // Use shorter timeout (3 seconds) for connection pool to speed up tests
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+        
+        let result = RedisCache::<String, String>::new_with_config("not-a-valid-url".to_string(), None, pool_config);
         assert!(result.is_err());
 
         // Test with Redis not available - gracefully handle the scenario
@@ -566,10 +603,16 @@ mod redis_cache_tests {
             println!("Redis is not available - testing graceful degradation");
 
             // Test that we can handle operations gracefully when Redis is down
-            let cache_result = RedisCache::<String, TestValue>::new(
-                "redis://127.0.0.1:6379".to_string(),
-                Some(Duration::from_secs(60)),
-            );
+        // Use shorter timeout (5 seconds) for tests to avoid long waits when Redis is unavailable
+        let mut pool_config = super::super::connection_pool::ConnectionPoolConfig::default();
+        pool_config.connection_timeout = Duration::from_secs(3); // 3 seconds for connection timeout
+        pool_config.idle_timeout = Duration::from_secs(3); // 3 seconds for idle timeout
+        
+        let cache_result = RedisCache::<String, TestValue>::new_with_config(
+            "redis://127.0.0.1:6379".to_string(),
+            Some(Duration::from_secs(5)),
+            pool_config,
+        );
 
             match cache_result {
                 Ok(_) => {
@@ -937,8 +980,8 @@ mod redis_cache_tests {
         // Test default TTL getter/setter
         assert_eq!(cache.default_ttl(), Some(Duration::from_secs(30)));
 
-        cache.set_default_ttl(Some(Duration::from_secs(60)));
-        assert_eq!(cache.default_ttl(), Some(Duration::from_secs(60)));
+        cache.set_default_ttl(Some(Duration::from_secs(5)));
+        assert_eq!(cache.default_ttl(), Some(Duration::from_secs(5)));
 
         cache.set_default_ttl(None);
         assert_eq!(cache.default_ttl(), None);

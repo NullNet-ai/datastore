@@ -18,6 +18,7 @@ Bert
 ### Fixed
   - Password hashing logic to match TypeScript Trae behavior.
   - Revise account organization timestamp parsing
+  - Reducing redis timeout to 3 seconds for testing
 
 ## 0.2.12
 ### Author
