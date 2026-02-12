@@ -106,7 +106,7 @@ pub async fn root_update_account_password(
 ) -> impl Responder {
     let auth = extract_and_store_type(auth);
 
-    // Extract account_id from path parameters - we expect ("accounts", account_id)
+    // Extract account_id from path parameters - we expect just the account_id from /accounts/password/{account_id}
     let account_id = path_params.into_inner();
     // Extract password from request body
     let password = match request_body.get("password") {
@@ -117,16 +117,27 @@ pub async fn root_update_account_password(
             String::new()
         }
     };
-    log::info!("Password for account  {}", password);
-
+    
+    // Hash the password - if this fails, we'll still pass the error to update_record
+    // which will handle it appropriately
+    let hashed_password = match crate::providers::operations::auth::auth_service::password_hash(&password).await {
+        Ok(hash) => hash,
+        Err(e) => {
+            log::error!("Failed to hash password: {}", e);
+            // Pass the error to the underlying function to handle
+            String::new()
+        }
+    };
+    
     // Create update request for accounts table with account_secret field
     let update_request = actix_web::web::Json(crate::structs::core::RequestBody {
         record: serde_json::json!({
-            "account_secret": password
+            "account_secret": hashed_password
         }),
     });
 
     // Use the existing root_update_record wrapper function
+    // The path params should be (table_name, record_id) for the update_record function
     let update_path_params = actix_web::web::Path::from(("accounts".to_string(), account_id));
     let query = actix_web::web::Query(crate::structs::core::QueryParams {
         pluck: "id".to_string(),
