@@ -1031,7 +1031,10 @@ mod tests {
                 println!("  ✓ Successfully loaded samples_count scenario");
                 println!("  ✓ Payload pluck: {:?}", payload.pluck);
                 println!("  ✓ Pluck object keys: {:?}", payload.pluck_object.keys());
-                println!("  ✓ Advance filters count: {}", payload.advance_filters.len());
+                println!(
+                    "  ✓ Advance filters count: {}",
+                    payload.advance_filters.len()
+                );
 
                 let payload_json =
                     serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
@@ -1148,7 +1151,8 @@ mod tests {
             Ok(payload) => {
                 let filter_response =
                     make_filter_http_request(&payload, "contacts", &auth_response).await;
-                let count_response = make_count_http_request(&payload, "contacts", &auth_response).await;
+                let count_response =
+                    make_count_http_request(&payload, "contacts", &auth_response).await;
 
                 match (filter_response, count_response) {
                     (Ok(filter_res), Ok(count_res)) => {

@@ -2,8 +2,8 @@
 mod tests {
     use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
     use crate::structs::core::{
-        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter,
-        GroupBy, Join, LogicalOperator, SortOption,
+        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
+        Join, LogicalOperator, SortOption,
     };
     use serde_json::json;
     use std::collections::HashMap;
@@ -745,14 +745,20 @@ mod tests {
         let mut constructor =
             SQLConstructor::new(filter.clone(), "samples".to_string(), true, None);
 
-        let sql = constructor.construct_count().expect("construct_count should succeed");
+        let sql = constructor
+            .construct_count()
+            .expect("construct_count should succeed");
 
         assert!(
             sql.contains("SELECT COUNT(DISTINCT \"samples\".\"id\")"),
             "SQL should contain COUNT(DISTINCT id). Got: {}",
             sql
         );
-        assert!(sql.contains("FROM samples"), "SQL should contain FROM samples. Got: {}", sql);
+        assert!(
+            sql.contains("FROM samples"),
+            "SQL should contain FROM samples. Got: {}",
+            sql
+        );
         assert!(
             sql.contains("WHERE") || sql.contains("where"),
             "SQL should contain WHERE (system filters). Got: {}",
@@ -811,10 +817,11 @@ mod tests {
                 has_group_count: None,
             },
         ];
-        let mut constructor =
-            SQLConstructor::new(filter, "samples".to_string(), true, None);
+        let mut constructor = SQLConstructor::new(filter, "samples".to_string(), true, None);
 
-        let sql = constructor.construct_count().expect("construct_count should succeed");
+        let sql = constructor
+            .construct_count()
+            .expect("construct_count should succeed");
 
         assert!(
             sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
@@ -850,10 +857,11 @@ mod tests {
         );
         filter.pluck_object = pluck_object;
 
-        let mut constructor =
-            SQLConstructor::new(filter, "samples".to_string(), true, None);
+        let mut constructor = SQLConstructor::new(filter, "samples".to_string(), true, None);
 
-        let sql = constructor.construct_count().expect("construct_count should succeed");
+        let sql = constructor
+            .construct_count()
+            .expect("construct_count should succeed");
 
         assert!(
             sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
@@ -880,10 +888,11 @@ mod tests {
             has_count: true,
         });
 
-        let mut constructor =
-            SQLConstructor::new(filter, "samples".to_string(), true, None);
+        let mut constructor = SQLConstructor::new(filter, "samples".to_string(), true, None);
 
-        let sql = constructor.construct_count().expect("construct_count should succeed");
+        let sql = constructor
+            .construct_count()
+            .expect("construct_count should succeed");
 
         assert!(
             !sql.to_uppercase().contains("GROUP BY"),
@@ -911,11 +920,12 @@ mod tests {
     #[test]
     fn should_construct_count_with_organization_id() {
         let filter = create_count_test_filter();
-        let mut constructor =
-            SQLConstructor::new(filter, "samples".to_string(), false, None)
-                .with_organization_id("org-123".to_string());
+        let mut constructor = SQLConstructor::new(filter, "samples".to_string(), false, None)
+            .with_organization_id("org-123".to_string());
 
-        let sql = constructor.construct_count().expect("construct_count should succeed");
+        let sql = constructor
+            .construct_count()
+            .expect("construct_count should succeed");
 
         assert!(
             sql.contains("organization_id"),
@@ -946,14 +956,12 @@ mod tests {
         }];
         filter.timezone = Some("America/Los_Angeles".to_string());
 
-        let mut constructor = SQLConstructor::new(
-            filter,
-            "samples".to_string(),
-            true,
-            Some("UTC".to_string()),
-        );
+        let mut constructor =
+            SQLConstructor::new(filter, "samples".to_string(), true, Some("UTC".to_string()));
 
-        let sql = constructor.construct_count().expect("construct_count should succeed");
+        let sql = constructor
+            .construct_count()
+            .expect("construct_count should succeed");
 
         assert!(
             sql.contains("COUNT(DISTINCT \"samples\".\"id\")"),
