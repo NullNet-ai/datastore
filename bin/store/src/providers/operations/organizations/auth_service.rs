@@ -10,6 +10,7 @@ use actix_web::http::StatusCode;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use diesel::sql_query;
+use diesel::sql_types::Bool;
 use diesel::sql_types::Text;
 use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
@@ -211,7 +212,7 @@ pub async fn get_root_account_info(
     let result = sql_query(
         "
         SELECT json_build_object(
-            'is_root_account', true,
+            'is_root_account', $1,
             'profile', CASE WHEN ap.id IS NOT NULL THEN json_build_object(
                 'id', a.id,
                 'first_name', ap.first_name,
@@ -260,16 +261,16 @@ pub async fn get_root_account_info(
         LEFT JOIN organizations o ON o.id = ao.organization_id
         LEFT JOIN user_roles ur ON ur.id = ao.role_id
         WHERE ao.tombstone = 0
-        AND ao.email = $1
+        AND ao.email = $2
         AND ao.status = 'Active'
         AND a.categories @> ARRAY['Root']
         LIMIT 1
         ",
     )
+    .bind::<Bool, _>(account_id == "root")
     .bind::<Text, _>(account_id)
     .get_result::<JsonResult>(&mut conn)
     .await;
-
     // Process the result from account_organizations
     let account_organization = match result {
         Ok(json_result) => {
@@ -306,51 +307,20 @@ pub async fn get_root_account_info(
             log::info!(
                 "Root account not found in account_organizations, trying direct accounts query"
             );
-
-            let direct_account_result = accounts::table
-                .filter(accounts::tombstone.eq(0))
-                .filter(accounts::status.eq("Active"))
-                .filter(accounts::account_id.eq(account_id))
-                .first::<AccountModel>(&mut conn)
-                .await;
-
-            match direct_account_result {
-                Ok(account) => {
-                    log::debug!(
-                        "Found root account in accounts table: {:?}",
-                        account.account_id
-                    );
-                    // Create a basic root account structure for direct account
-                    json!({
-                        "is_root_account": true,
-                        "account": {
-                            "id": account.id,
-                            "account_id": account.account_id,
-                            "account_secret": account.account_secret,
-                            "status": account.status,
-                            "sensitivity_level": account.sensitivity_level
-                        },
-                        "profile": null,
-                        "organization": null,
-                        "contact": {},
-                        "device": {}
-                    })
-                }
-                Err(diesel::result::Error::NotFound) => {
-                    log::error!("Root account not found in accounts table either");
-                    // Return an error instead of empty object
-                    return Err(ApiError::new(
-                        StatusCode::NOT_FOUND,
-                        "Root Account not found".to_string(),
-                    ));
-                }
-                Err(e) => {
-                    return Err(ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Database query error: {}", e),
-                    ));
-                }
-            }
+            json!({
+                "is_root_account": false,
+                "account": {
+                    "id": null,
+                    "account_id":  null,
+                    "account_secret":  null,
+                    "status":  null,
+                    "sensitivity_level":  null,
+                },
+                "profile": null,
+                "organization": null,
+                "contact": {},
+                "device": {}
+            })
         }
         Err(e) => {
             let config = EnvConfig::default();
