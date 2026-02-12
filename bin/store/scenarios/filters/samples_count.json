@@ -1,7 +1,17 @@
 {
-  "pluck": ["id", "timestamp", "created_by"],
+  "pluck": [
+    "id",
+    "timestamp",
+    "created_by"
+  ],
   "pluck_object": {
-    "samples": ["id", "code", "created_time", "sample_text", "name"]
+    "samples": [
+      "id",
+      "code",
+      "created_time",
+      "sample_text",
+      "name"
+    ]
   },
   "pluck_group_object": {},
   "advance_filters": [
@@ -10,7 +20,9 @@
       "field": "name",
       "entity": "samples",
       "operator": "equal",
-      "values": ["kashan"],
+      "values": [
+        "kashan"
+      ],
       "case_sensitive": false,
       "parse_as": "text",
       "match_pattern": null,
@@ -36,7 +48,10 @@
   ],
   "group_advance_filters": [],
   "joins": [],
-  "group_by": {"fields": [], "has_count": false},
+  "group_by": {
+    "fields": [],
+    "has_count": false
+  },
   "concatenate_fields": [],
   "multiple_sort": [],
   "date_format": "mm/dd/YYYY",

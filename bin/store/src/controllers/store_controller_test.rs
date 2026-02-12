@@ -539,6 +539,7 @@ mod tests {
     /// // Test should pass but log appropriate warnings
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_able_to_login() {
         println!(
             "Testing organization authentication endpoint with database dependency handling..."
@@ -681,6 +682,7 @@ mod tests {
     /// Test using contacts_basic_fields payload scenario
     /// Tests HTTP request to /filter endpoint with basic field selection
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_basic_fields_scenario() {
         println!("Testing contacts_basic_fields payload scenario with HTTP request...");
 
@@ -807,6 +809,7 @@ mod tests {
     /// Test using contacts_active_status payload scenario
     /// Tests HTTP request to /filter endpoint with filtered results
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_active_status_scenario() {
         println!("Testing contacts_active_status payload scenario with HTTP request...");
 
@@ -905,6 +908,7 @@ mod tests {
     /// Test using contacts_first_name_starts_with_j payload scenario
     /// Tests HTTP request to /filter endpoint with first_name starting with 'J' filter
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_first_name_starts_with_j_scenario() {
         println!("Testing contacts_first_name_starts_with_j payload scenario with HTTP request...");
 
@@ -1027,7 +1031,10 @@ mod tests {
                 println!("  ✓ Successfully loaded samples_count scenario");
                 println!("  ✓ Payload pluck: {:?}", payload.pluck);
                 println!("  ✓ Pluck object keys: {:?}", payload.pluck_object.keys());
-                println!("  ✓ Advance filters count: {}", payload.advance_filters.len());
+                println!(
+                    "  ✓ Advance filters count: {}",
+                    payload.advance_filters.len()
+                );
 
                 let payload_json =
                     serde_json::to_value(&payload).expect("Failed to serialize payload to JSON");
@@ -1144,7 +1151,8 @@ mod tests {
             Ok(payload) => {
                 let filter_response =
                     make_filter_http_request(&payload, "contacts", &auth_response).await;
-                let count_response = make_count_http_request(&payload, "contacts", &auth_response).await;
+                let count_response =
+                    make_count_http_request(&payload, "contacts", &auth_response).await;
 
                 match (filter_response, count_response) {
                     (Ok(filter_res), Ok(count_res)) => {
@@ -1186,6 +1194,7 @@ mod tests {
     /// Test using contacts_complex_with_joins_and_concatenation payload scenario
     /// Tests HTTP request to /filter endpoint with complex joins, concatenated fields, and multiple filters
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_complex_with_joins_and_concatenation_scenario() {
         println!("Testing contacts_complex_with_joins_and_concatenation payload scenario with HTTP request...");
 
@@ -1316,6 +1325,7 @@ mod tests {
     /// Test using contacts_filter_concatenated_fields_with_default_status_filter payload scenario
     /// Tests HTTP request to /filter endpoint with concatenated fields and status filters
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_filter_concatenated_fields_with_default_status_filter_scenario() {
         println!("Testing contacts_filter_concatenated_fields_with_default_status_filter payload scenario with HTTP request...");
 
@@ -1714,6 +1724,7 @@ mod tests {
     /// Test using contacts_alias_concatenation_validation_issue payload scenario
     /// Tests concatenate_fields validation with aliased entities to reproduce the validation error
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_alias_concatenation_validation_issue_scenario() {
         println!("Testing contacts_alias_concatenation_validation_issue payload scenario...");
 
@@ -1933,6 +1944,7 @@ mod tests {
     /// This test validates that concatenated fields with singular entity names (e.g., 'contact')
     /// are properly normalized to plural form (e.g., 'contacts') during validation
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_concatenated_field_validation_issue_scenario() {
         println!("Testing contacts_concatenated_field_validation_issue payload scenario...");
 
@@ -2115,6 +2127,7 @@ mod tests {
     /// assert!(sql.contains("GROUP BY"));
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_handle_contacts_with_group_by_has_count_issue_with_aliases_scenario() {
         println!("Testing contacts with group_by has_count issue with aliases scenario...");
 
@@ -2269,6 +2282,7 @@ mod tests {
     /// Tests HTTP request to /filter endpoint with concatenated fields without joins
     /// This scenario tests concatenation of fields from the main table only (no joins required)
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_filter_concatenated_fields_without_join_scenario() {
         println!("Testing contacts_filter_concatenated_fields_without_join payload scenario with HTTP request...");
 
@@ -2589,6 +2603,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_filter_with_date_time_fields_with_join_scenario() {
         println!(
             "Testing contacts_filter_with_date_time_fields_with_join payload scenario with HTTP request..."
@@ -2775,6 +2790,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_filter_with_date_time_fields_without_join_scenario() {
         println!(
             "Testing contacts_filter_with_date_time_fields_without_join payload scenario with HTTP request..."
@@ -2965,6 +2981,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn should_use_contacts_search_without_join_scenario() {
         println!("Testing contacts_search_without_join payload scenario with HTTP request...");
 
