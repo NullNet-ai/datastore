@@ -10,7 +10,7 @@ pub struct TestHypertableTable;
 define_table_schema! {
     hypertable: true,
     fields: {
-        // System fields - common across all tables
+        // System fields - common across all tables ( REQUIRED )
         system_fields!(),
 
         timestamp: nullable(timestamptz()), primary_key: true,
@@ -24,7 +24,7 @@ define_table_schema! {
         location: nullable(text()),
     },
     indexes: {
-        // System field indexes
+        // System field indexes ( REQUIRED )
         system_indexes!("test_hypertable"),
 
         // Custom table-specific indexes

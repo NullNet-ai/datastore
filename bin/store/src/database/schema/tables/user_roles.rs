@@ -8,7 +8,7 @@ pub struct UserRolesTable;
 define_table_schema! {
     hypertable: false,
     fields: {
-        // System fields - common across all tables
+        // System fields - common across all tables ( REQUIRED )
         system_fields!(),
 
         // User roles specific fields
@@ -16,11 +16,11 @@ define_table_schema! {
         entity: nullable(text()),
     },
     indexes: {
-        // System field indexes
+        // System field indexes ( REQUIRED )
         system_indexes!("user_roles"),
     },
     foreign_keys: {
-        // System field foreign keys
+        // System field foreign keys ( REQUIRED )
         system_foreign_keys!("user_roles"),
 
 
