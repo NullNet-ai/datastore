@@ -52,7 +52,7 @@ pub enum Table {
     ContactPhoneNumbers,
     ContactEmails,
     Files,
-    TestHypertable,
+    TestHypertables,
     AccountPhoneNumbers,
     AccountSignatures,
     // Add other tables here
@@ -79,7 +79,7 @@ impl Table {
             "contact_phone_numbers" => Some(Table::ContactPhoneNumbers),
             "contact_emails" => Some(Table::ContactEmails),
             "files" => Some(Table::Files),
-            "test_hypertable" => Some(Table::TestHypertable),
+            "test_hypertables" => Some(Table::TestHypertables),
             "account_phone_numbers" => Some(Table::AccountPhoneNumbers),
             "account_signatures" => Some(Table::AccountSignatures),
             // Add other tables here
@@ -112,7 +112,7 @@ impl Table {
         conn: &mut AsyncPgConnection,
         id: &str,
     ) -> Result<Option<String>, DieselError> {
-        generate_hypertable_timestamp_match!(self, conn, id, SignedInActivities, TestHypertable)
+        generate_hypertable_timestamp_match!(self, conn, id, SignedInActivities, TestHypertables)
     }
 
     #[allow(dead_code)]
@@ -129,7 +129,7 @@ impl Table {
             conn,
             record,
             request,
-            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
+            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertables, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 
@@ -146,7 +146,7 @@ impl Table {
             id,
             is_root_account,
             organization_id,
-            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
+            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertables, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 
@@ -159,7 +159,7 @@ impl Table {
             self,
             conn,
             record,
-            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
+            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertables, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 
@@ -172,7 +172,7 @@ impl Table {
             self,
             conn,
             record,
-            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertable, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
+            UserRoles, UserRoleModel, Sessions, SessionModel, SignedInActivities, SignedInActivityModel, ExternalContacts, ExternalContactModel, Organizations, OrganizationModel, OrganizationContacts, OrganizationContactModel, OrganizationAccounts, OrganizationAccountModel, AccountOrganizations, AccountOrganizationModel, AccountProfiles, AccountProfileModel, Accounts, AccountModel, Addresses, AddressModel, Samples, SampleModel, Devices, DeviceModel, PostgresChannels, PostgresChannelModel, Contacts, ContactModel, ContactPhoneNumbers, ContactPhoneNumberModel, ContactEmails, ContactEmailModel, Files, FileModel, TestHypertables, TestHypertableModel, AccountPhoneNumbers, AccountPhoneNumberModel, AccountSignatures, AccountSignatureModel // Add other tables and their models here as needed
         )
     }
 }

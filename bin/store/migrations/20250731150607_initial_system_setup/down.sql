@@ -27,9 +27,6 @@ DROP TABLE IF EXISTS stream_queue_items;
 ALTER TABLE "user_roles" DROP COLUMN "sync_status";
 ALTER TABLE "user_roles" DROP COLUMN "is_batch";
 
-ALTER TABLE "external_contacts" DROP COLUMN "sync_status";
-ALTER TABLE "external_contacts" DROP COLUMN "is_batch";
-
 ALTER TABLE "organizations" DROP COLUMN "sync_status";
 ALTER TABLE "organizations" DROP COLUMN "is_batch";
 

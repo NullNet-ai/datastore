@@ -415,21 +415,31 @@ table! {
         updated_by -> Nullable<Text>,
         deleted_by -> Nullable<Text>,
         requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
         tags -> Nullable<Array<Text>>,
         categories -> Nullable<Array<Text>>,
         code -> Nullable<Text>,
         id -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-
-        parent_organization_id -> Nullable<Text>,
         name -> Nullable<Text>,
+        skyll_id -> Nullable<Text>,
+        department_id -> Nullable<Text>,
+        district_id -> Nullable<Text>,
+        parent_organization_id -> Nullable<Text>,
+        school_id -> Nullable<Text>,
+        city -> Nullable<Text>,
+        county -> Nullable<Text>,
+        state -> Nullable<Text>,
+        school_identifier -> Nullable<Text>,
+        district_identifier -> Nullable<Text>,
         organization_level -> Nullable<Int4>,
         root_organization_id -> Nullable<Text>,
-        path_level -> Nullable<Array<Text>>,
-    }
+        path_level -> Nullable<Jsonb>,
+        superintendent_id -> Nullable<Text>,
+        principal_id -> Nullable<Text>,
+}
 }
 
 table! {
@@ -897,7 +907,7 @@ table! {
 }
 
 table! {
-    test_hypertable(timestamp) {
+    test_hypertables(timestamp) {
         tombstone -> Nullable<Int4>,
         status -> Nullable<Text>,
         previous_status -> Nullable<Text>,
@@ -989,3 +999,162 @@ table! {
 }
 
 
+
+table! {
+    organization_contact_user_roles(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        organization_contact_id -> Nullable<Text>,
+        user_role_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    grid_filters(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        name -> Nullable<Text>,
+        grid_id -> Nullable<Text>,
+        link -> Nullable<Text>,
+        is_current -> Nullable<Bool>,
+        is_default -> Nullable<Bool>,
+        contact_id -> Nullable<Text>,
+        account_organization_id -> Nullable<Text>,
+        entity -> Nullable<Text>,
+        #[sql_name = "columns"]
+        columns_data -> Nullable<Jsonb>,
+        groups -> Nullable<Jsonb>,
+        sorts -> Nullable<Jsonb>,
+        default_sorts -> Nullable<Jsonb>,
+        advance_filters -> Nullable<Jsonb>,
+        group_advance_filters -> Nullable<Jsonb>,
+        filter_groups -> Nullable<Jsonb>,
+    }
+}
+
+table! {
+    locations(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        location_name -> Nullable<Text>,
+        address_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    communication_templates(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        name -> Nullable<Text>,
+        communication_template_status -> Nullable<Text>,
+        event -> Nullable<Text>,
+        content -> Nullable<Text>,
+        subject -> Nullable<Text>,
+    }
+}
+
+table! {
+    invitations(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        account_id -> Nullable<Text>,
+        expiration_date -> Nullable<Text>,
+        expiration_time -> Nullable<Text>,
+        account_organization_id -> Nullable<Text>,
+    }
+}

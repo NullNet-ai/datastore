@@ -1,15 +1,13 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::organizations)]
+#[diesel(table_name = crate::generated::schema::communication_templates)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationModel {
+pub struct CommunicationTemplateModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -32,19 +30,8 @@ pub struct OrganizationModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub name: Option<String>,
-    pub skyll_id: Option<String>,
-    pub department_id: Option<String>,
-    pub district_id: Option<String>,
-    pub parent_organization_id: Option<String>,
-    pub school_id: Option<String>,
-    pub city: Option<String>,
-    pub county: Option<String>,
-    pub state: Option<String>,
-    pub school_identifier: Option<String>,
-    pub district_identifier: Option<String>,
-    pub organization_level: Option<i32>,
-    pub root_organization_id: Option<String>,
-    pub path_level: Option<serde_json::Value>,
-    pub superintendent_id: Option<String>,
-    pub principal_id: Option<String>,
+    pub communication_template_status: Option<String>,
+    pub event: Option<String>,
+    pub content: Option<String>,
+    pub subject: Option<String>,
 }

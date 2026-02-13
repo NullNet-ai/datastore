@@ -6,10 +6,10 @@ use serde_json::Value;
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::organizations)]
+#[diesel(table_name = crate::generated::schema::grid_filters)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct OrganizationModel {
+pub struct GridFilterModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -32,19 +32,19 @@ pub struct OrganizationModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub name: Option<String>,
-    pub skyll_id: Option<String>,
-    pub department_id: Option<String>,
-    pub district_id: Option<String>,
-    pub parent_organization_id: Option<String>,
-    pub school_id: Option<String>,
-    pub city: Option<String>,
-    pub county: Option<String>,
-    pub state: Option<String>,
-    pub school_identifier: Option<String>,
-    pub district_identifier: Option<String>,
-    pub organization_level: Option<i32>,
-    pub root_organization_id: Option<String>,
-    pub path_level: Option<serde_json::Value>,
-    pub superintendent_id: Option<String>,
-    pub principal_id: Option<String>,
+    pub grid_id: Option<String>,
+    pub link: Option<String>,
+    pub is_current: Option<bool>,
+    pub is_default: Option<bool>,
+    pub contact_id: Option<String>,
+    pub account_organization_id: Option<String>,
+    pub entity: Option<String>,
+    #[serde(rename = "columns")]
+    pub columns_data: Option<serde_json::Value>,
+    pub groups: Option<serde_json::Value>,
+    pub sorts: Option<serde_json::Value>,
+    pub default_sorts: Option<serde_json::Value>,
+    pub advance_filters: Option<serde_json::Value>,
+    pub group_advance_filters: Option<serde_json::Value>,
+    pub filter_groups: Option<serde_json::Value>,
 }

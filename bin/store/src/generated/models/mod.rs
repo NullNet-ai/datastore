@@ -5,6 +5,7 @@ pub mod account_profile_model;
 pub mod account_signature_model;
 pub mod address_model;
 
+pub mod communication_template_model;
 pub mod contact_email_model;
 pub mod contact_model;
 pub mod contact_phone_number_model;
@@ -21,8 +22,12 @@ pub mod entity_model;
 pub mod external_contact_model;
 pub mod field_model;
 pub mod file_model;
+pub mod grid_filter_model;
+pub mod invitation_model;
+pub mod location_model;
 pub mod organization_account_model;
 pub mod organization_contact_model;
+pub mod organization_contact_user_role_model;
 pub mod organization_domain_model;
 pub mod organization_model;
 

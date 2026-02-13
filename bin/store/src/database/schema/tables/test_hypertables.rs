@@ -9,7 +9,7 @@ use crate::{system_fields, system_foreign_keys, system_indexes};
  */
 
 /// Test hypertable for time-series data
-pub struct TestHypertableTable;
+pub struct TestHypertablesTable;
 
 define_table_schema! {
     hypertable: true,
@@ -29,15 +29,15 @@ define_table_schema! {
     },
     indexes: {
         // System field indexes ( REQUIRED )
-        system_indexes!("test_hypertable"),
+        system_indexes!("test_hypertables"),
 
         // Custom table-specific indexes
-        idx_test_hypertable_sensor: {
+        idx_test_hypertables_sensor: {
             columns: ["sensor_id"],
             unique: false,
             type: "btree"
         },
-        idx_test_hypertable_location: {
+        idx_test_hypertables_location: {
             columns: ["location"],
             unique: false,
             type: "btree"
@@ -46,7 +46,7 @@ define_table_schema! {
     foreign_keys: {}
 }
 
-impl DieselTableDefinition for TestHypertableTable {
+impl DieselTableDefinition for TestHypertablesTable {
     fn is_hypertable() -> bool {
         true
     }

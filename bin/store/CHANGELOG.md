@@ -5,6 +5,14 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.20
+### Author
+Kashan
+
+### Changed
+  - ***Migration generator***:
+    - Index column names in CREATE INDEX statements are now wrapped in double quotes (e.g. `"order"`, `"created_at"`) to properly handle reserved SQL keywords.
+
 ## 0.2.19
 ### Author
 Kashan

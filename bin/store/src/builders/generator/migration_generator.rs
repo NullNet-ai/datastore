@@ -470,9 +470,19 @@ impl MigrationGenerator {
             String::new()
         };
 
+        let quoted_columns = column_names
+            .split(',')
+            .map(|c| {
+                let t = c.trim();
+                let s = t.trim_matches('"');
+                format!("\"{}\"", s)
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+
         Ok(format!(
             "CREATE INDEX \"{}\" ON \"{}\"{}({});",
-            index_name, table_name, using_clause, column_names
+            index_name, table_name, using_clause, quoted_columns
         ))
     }
 
@@ -584,5 +594,34 @@ impl MigrationGenerator {
             "SELECT create_hypertable('{}', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);",
             table_name
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MigrationGenerator;
+
+    #[test]
+    fn test_index_sql_quotes_single_column_btree() {
+        let sql = MigrationGenerator::generate_create_index_sql(
+            "episodes",
+            "idx_order",
+            "order",
+            Some("btree"),
+        )
+        .unwrap();
+        assert_eq!(sql, "CREATE INDEX \"idx_order\" ON \"episodes\" USING btree(\"order\");");
+    }
+
+    #[test]
+    fn test_index_sql_quotes_multiple_columns() {
+        let sql = MigrationGenerator::generate_create_index_sql(
+            "episodes",
+            "idx_order_created",
+            "order, created_at",
+            None,
+        )
+        .unwrap();
+        assert_eq!(sql, "CREATE INDEX \"idx_order_created\" ON \"episodes\"(\"order\", \"created_at\");");
     }
 }
