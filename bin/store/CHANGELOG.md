@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.18
+### Author
+Kashan
+
+### Changed
+  - ***Migration generator***:
+    - Migration timestamps now use Diesel format (YYYYMMDDHHMMSS, 14 digits, no separators) instead of dashed format.
+    - Fixed `migration_exists()` to correctly handle migration names with underscores using `splitn(2, '_')`.
+
 ## 0.2.17
 ### Author
 Bert
