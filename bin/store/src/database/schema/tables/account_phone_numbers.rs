@@ -10,7 +10,7 @@ pub struct AccountPhoneNumbersTable;
 define_table_schema! {
     hypertable: false,
     fields: {
-        // System fields - common across all tables
+        // System fields - common across all tables ( REQUIRED )
         system_fields!(),
 
         // Account phone numbers specific fields
@@ -21,11 +21,11 @@ define_table_schema! {
         country_code: nullable(text()),
     },
     indexes: {
-        // System field indexes
+        // System field indexes ( REQUIRED )
         system_indexes!("account_phone_numbers"),
     },
     foreign_keys: {
-        // System foreign keys
+        // System foreign keys ( REQUIRED )
         system_foreign_keys!("account_phone_numbers"),
 
         // Custom foreign keys

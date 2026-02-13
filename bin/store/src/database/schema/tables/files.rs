@@ -10,7 +10,7 @@ pub struct FilesTable;
 define_table_schema! {
     hypertable: false,
     fields: {
-        // System fields - common across all tables
+        // System fields - common across all tables ( REQUIRED )
         system_fields!(),
 
         // File-specific fields
@@ -34,7 +34,7 @@ define_table_schema! {
 
     },
     indexes: {
-        // System field indexes
+        // System field indexes ( REQUIRED )
         system_indexes!("files"),
 
         // Custom table-specific indexes
@@ -60,7 +60,7 @@ define_table_schema! {
         }
     },
     foreign_keys: {
-        // System field foreign keys
+        // System field foreign keys ( REQUIRED )
         system_foreign_keys!("files"),
 
 

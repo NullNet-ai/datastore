@@ -10,7 +10,7 @@ pub struct AccountSignaturesTable;
 define_table_schema! {
     hypertable: false,
     fields: {
-        // System fields - common across all tables
+        // System fields - common across all tables ( REQUIRED )
         system_fields!(),
 
         // Account signatures specific fields
@@ -20,11 +20,11 @@ define_table_schema! {
 
     },
     indexes: {
-        // System field indexes
+        // System field indexes ( REQUIRED )
         system_indexes!("account_signatures"),
     },
     foreign_keys: {
-        // System foreign keys
+        // System foreign keys ( REQUIRED )
         system_foreign_keys!("account_signatures"),
 
         // Custom foreign keys
