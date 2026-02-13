@@ -197,7 +197,7 @@ impl OrganizationsController {
                 &account_id,
                 &account_secret,
                 session_id.clone(),
-                "", // Empty organization_id as it's not used in the auth function
+                "",    // Empty organization_id as it's not used in the auth function
                 false, // is_sso
             )
             .await
@@ -446,7 +446,7 @@ impl OrganizationsController {
                 &account_id,
                 &account_secret,
                 session_id.clone(),
-                "", // Empty organization_id as it's not used in the auth function
+                "",   // Empty organization_id as it's not used in the auth function
                 true, // is_sso
             )
             .await
