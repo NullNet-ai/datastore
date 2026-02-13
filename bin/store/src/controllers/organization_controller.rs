@@ -184,6 +184,7 @@ impl OrganizationsController {
                 &account_secret,
                 session_id.clone(),
                 if !_t.is_empty() { Some(&_t) } else { None },
+                false, // is_sso
             )
             .await
             .map_err(|err| {
@@ -197,6 +198,7 @@ impl OrganizationsController {
                 &account_secret,
                 session_id.clone(),
                 "", // Empty organization_id as it's not used in the auth function
+                false, // is_sso
             )
             .await
             .map_err(|err| {
@@ -407,7 +409,7 @@ impl OrganizationsController {
             .clone()
             .unwrap_or_else(|| data.data.email.clone().unwrap_or_default());
 
-        let account_secret = "skip";
+        let account_secret = "";
 
         // Check if this is a root account by trying to get root account info
         let root_account_organization = get_root_account_info(&account_id).await;
@@ -431,6 +433,7 @@ impl OrganizationsController {
                 &account_secret,
                 session_id.clone(),
                 if !_t.is_empty() { Some(&_t) } else { None },
+                true, // is_sso
             )
             .await
             .map_err(|err| {
@@ -444,6 +447,7 @@ impl OrganizationsController {
                 &account_secret,
                 session_id.clone(),
                 "", // Empty organization_id as it's not used in the auth function
+                true, // is_sso
             )
             .await
             .map_err(|err| {

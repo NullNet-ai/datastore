@@ -100,6 +100,7 @@ pub async fn auth(
     account_secret: &str,
     session_id: String,
     _organization_id: &str,
+    is_sso: bool,
 ) -> Result<LoginResponse, ApiError> {
     // Get account information first
     let (account, account_organization_id) = get_account_info(account_id).await?;
@@ -112,7 +113,7 @@ pub async fn auth(
     if let Some(stored_hash) = &account.account_secret {
         let is_valid = auth_service::password_verify(stored_hash, account_secret).await?;
 
-        if !is_valid && account_secret != "skip" {
+        if !is_valid && !is_sso {
             // Return error but include account_organization_id in the response
             return Ok(LoginResponse {
                 message: "Invalid credentials".to_string(),
@@ -377,6 +378,7 @@ pub async fn root_auth(
     account_secret: &str,
     session_id: String,
     previously_logged_in: Option<&str>,
+    is_sso: bool,
 ) -> Result<LoginResponse, ApiError> {
     // Get root account information first
     let (account_organization, account_organization_id, account_secret_from_db) =
@@ -411,7 +413,7 @@ pub async fn root_auth(
     let _account_data = account_organization.clone();
     let sensitivity_level = account_organization["sensitivity_level"].clone();
 
-    if account_secret != "skip" {
+    if !is_sso {
         // Check if password is provided
         if account_secret.is_empty() {
             return Ok(LoginResponse {
