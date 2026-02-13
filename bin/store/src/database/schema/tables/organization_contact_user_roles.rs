@@ -32,7 +32,7 @@ define_table_schema! {
             unique: false,
             type: "btree"
         },
-       
+
     },
     foreign_keys: {
         // System field foreign keys ( REQUIRED )
