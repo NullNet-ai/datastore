@@ -4,6 +4,9 @@ use crate::generated::schema::generator::diesel_schema_definition::{
 };
 use crate::{system_fields, system_foreign_keys, system_indexes};
 
+/**
+ * For defining proper diesel types check it here: bin/store/src/builders/generator/README.md
+ */
 /// Account phone numbers table for storing phone number information
 pub struct AccountPhoneNumbersTable;
 
