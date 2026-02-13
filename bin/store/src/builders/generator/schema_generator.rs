@@ -61,7 +61,9 @@ impl SchemaGenerator {
             if uses_system_fields && Self::should_force_system_fields_update() {
                 // Only add system fields that don't already exist in the table
                 for field in &table_def.fields {
-                    if Self::is_system_field(&field.name) && !existing_fields.contains(&field.name)
+                    if Self::is_system_field(&field.name)
+                        && !existing_fields.contains(&field.name)
+                        && !Self::field_added_in_migration(&table_def.name, &field.name)
                     {
                         changes.push(SchemaChange {
                             table_name: table_def.name.clone(),
@@ -89,6 +91,10 @@ impl SchemaGenerator {
                         continue;
                     }
 
+                    if Self::field_added_in_migration(&table_def.name, &field.name) {
+                        continue;
+                    }
+                    
                     changes.push(SchemaChange {
                         table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::NewField,
@@ -732,5 +738,32 @@ impl SchemaGenerator {
         definition.push_str("    }\n}");
 
         Ok(definition)
+    }
+
+    /// Check if a column was already added to a table in any migration file.
+    /// Prevents duplicate ALTER TABLE ADD COLUMN when schema.rs is out of sync.
+    fn field_added_in_migration(table_name: &str, field_name: &str) -> bool {
+        let migrations_dir = paths::database::MIGRATIONS_DIR;
+
+        if let Ok(entries) = std::fs::read_dir(migrations_dir) {
+            for entry in entries.flatten() {
+                if let Ok(up_sql) =
+                    std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE))
+                {
+                    // Pattern: ALTER TABLE "table_name" ADD COLUMN "field_name"
+                    let add_column_pattern = format!(
+                        r#"ALTER\s+TABLE\s+["']?{}["']?\s+ADD\s+COLUMN\s+["']?{}["']?"#,
+                        regex::escape(table_name),
+                        regex::escape(field_name)
+                    );
+                    if let Ok(regex) = Regex::new(&add_column_pattern) {
+                        if regex.is_match(&up_sql) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        false
     }
 }
