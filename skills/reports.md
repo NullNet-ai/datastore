@@ -1,5 +1,7 @@
 table name: reports
-fields:
+fields: ( wrap the fields like this nullable(text()) )  
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 user_id: text('user_id').default(''),
   report_status: text('report_status').default(''), // unsubmitted, pending, open

@@ -16,11 +16,11 @@ define_table_schema! {
         system_fields!(),
 
         // Communication template fields
-        name: text(),
-        communication_template_status: text(),
-        event: text(),
-        content: text(),
-        subject: text(),
+        name: nullable(text()),
+        communication_template_status: nullable(text()),
+        event: nullable(text()),
+        content: nullable(text()),
+        subject: nullable(text()),
     },
     indexes: {
         // System field indexes ( REQUIRED )

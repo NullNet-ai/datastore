@@ -1,5 +1,7 @@
 table name: <name>
-fields:
+fields: ( wrap the fields like this nullable(text()) )
+required:
+* Always follow this /bin/store/src/builders/generator/README.md to generate the table schema
 ----
 
 ----

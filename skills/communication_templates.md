@@ -1,5 +1,7 @@
 table name: communication_templates
-fields:
+fields: ( wrap the fields like this nullable(text()) )
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 name: text('name'),
   communication_template_status: text('communication_template_status'),

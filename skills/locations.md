@@ -1,5 +1,7 @@
 table name: locations
-fields:
+fields: ( wrap the fields like this nullable(text()) )
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 location_name : text(),
   address_id : text().references(

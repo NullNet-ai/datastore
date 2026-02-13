@@ -1,5 +1,7 @@
 table name: classrooms    
-fields:
+fields: ( wrap the fields like this nullable(text()) )
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 name: text('name'),
   description: text('description'),

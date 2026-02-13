@@ -1,5 +1,7 @@
 table name: report_child_victims
-fields:
+fields: ( wrap the fields like this nullable(text()) )  
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 report_id: text('report_id').references(
     () => (reports as Record<string, any>).id,

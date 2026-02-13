@@ -1,5 +1,7 @@
 table name: classroom_course_stories_episodes
-fields:
+fields: ( wrap the fields like this nullable(text()) )
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 classroom_id: text('classroom_id').references(
     () => (classrooms as Record<string, any>).id,

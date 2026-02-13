@@ -1,5 +1,7 @@
 table name: teacher_students
-fields:
+fields: ( wrap the fields like this nullable(text()) )  
+required:
+* if data type is integer, default value is 0 as a number not "0"
 ----
 name: text('name'),
   teacher_id: text('teacher_id').references(() => (teachers as any).id),

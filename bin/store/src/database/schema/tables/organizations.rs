@@ -14,7 +14,7 @@ define_table_schema! {
         system_fields!(),
 
         // Organizations specific fields
-        name: nullable(text()), default: "",
+        name: nullable(text()), default: "''",
         skyll_id: nullable(text()),
         department_id: nullable(text()),
         district_id: nullable(text()),
@@ -22,7 +22,7 @@ define_table_schema! {
         school_id: nullable(text()),
         city: nullable(text()),
         county: nullable(text()),
-        state: nullable(text()), default: "",
+        state: nullable(text()), default: "''",
         school_identifier: nullable(text()),
         district_identifier: nullable(text()),
         organization_level: nullable(integer()), default: "0",
