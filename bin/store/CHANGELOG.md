@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.19
+### Author
+Kashan
+
+### Added
+  - ***Reserved keywords support***:
+    - Added `reserved_keywords.rs` in schema folder with configurable `RESERVED_KEYWORDS` array.
+    - Column names in this array (e.g. `columns`) use `{name}_data` as Rust identifier to avoid clashes with Diesel/SQL.
+    - Schema generator: outputs `#[sql_name = "original"]` and `{name}_data` for reserved columns.
+    - Model generator: uses `{name}_data` with `#[serde(rename = "original")]` so API requests accept original key.
+    - Verify module: handles reserved keyword mapping in `get_table_fields` and `field_type_in_table`.
+  - ***Duplicate migration prevention***:
+    - Added `field_added_in_migration()` check so columns already added in migrations are not added again when schema.rs is out of sync.
+
 ## 0.2.18
 ### Author
 Kashan
