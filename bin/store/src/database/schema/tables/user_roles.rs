@@ -2,6 +2,10 @@ use crate::define_table_schema;
 use crate::schema::generator::diesel_schema_definition::{types::*, DieselTableDefinition};
 use crate::{system_fields, system_foreign_keys, system_indexes};
 
+/**
+ * For defining proper diesel types check it here: bin/store/src/builders/generator/README.md
+ */
+
 /// User roles table for role-based access control
 pub struct UserRolesTable;
 

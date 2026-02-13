@@ -474,6 +474,7 @@ impl SchemaGenerator {
             "uuid" => "Uuid",
             "bytea" => "Bytea",
             "numeric" | "decimal" => "Numeric",
+            "varchar" => "Varchar", // varchar without length
             // Handle VARCHAR with length constraints - preserve for migrations
             t if t.starts_with("varchar(") => {
                 // Extract length and format as Varchar<length>
@@ -485,7 +486,6 @@ impl SchemaGenerator {
                 }
                 "Varchar" // fallback if parsing fails
             }
-            "varchar" => "Varchar",           // varchar without length
             _ => &field_type_info.field_type, // fallback to original
         };
 
