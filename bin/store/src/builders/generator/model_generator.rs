@@ -1,6 +1,7 @@
 use crate::builders::generator::field_definition::{ParsedField, TableDefinition};
 use crate::builders::generator::utils::{FieldTypeParser, StringUtils};
 use crate::constants::paths;
+use crate::database::schema::reserved_keywords;
 use crate::utils::helpers::to_singular;
 use std::fs;
 
@@ -71,11 +72,19 @@ impl ModelGenerator {
         content.push_str(&format!("#[serde(default)]\n"));
         content.push_str(&format!("pub struct {} {{\n", struct_name));
 
-        // Add fields
+        // Add fields (use rust_identifier for reserved keywords to match schema)
         for field in fields {
             let rust_type = FieldTypeParser::diesel_to_rust_type(&field.field_type)
                 .unwrap_or_else(|_| "String".to_string());
-            content.push_str(&format!("    pub {}: {},\n", field.name, rust_type));
+            let rust_field_name = if reserved_keywords::is_reserved(&field.name) {
+                reserved_keywords::rust_identifier(&field.name)
+            } else {
+                field.name.clone()
+            };
+            if reserved_keywords::is_reserved(&field.name) {
+                content.push_str(&format!("    #[serde(rename = \"{}\")]\n", field.name));
+            }
+            content.push_str(&format!("    pub {}: {},\n", rust_field_name, rust_type));
         }
 
         content.push_str("}\n");

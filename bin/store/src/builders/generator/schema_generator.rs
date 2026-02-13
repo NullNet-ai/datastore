@@ -1,5 +1,6 @@
 use crate::builders::generator::field_definition::TableDefinition;
 use crate::constants::paths;
+use crate::database::schema::reserved_keywords;
 use crate::database::schema::verify::{
     field_exists_in_table, field_type_in_table, get_table_fields, FieldTypeInfo,
 };
@@ -346,6 +347,19 @@ impl SchemaGenerator {
         false
     }
 
+    /// For reserved keywords, use a different Rust identifier and #[sql_name] to avoid clashes.
+    fn format_schema_column(field_name: &str, field_type: &str) -> String {
+        if reserved_keywords::is_reserved(field_name) {
+            let rust_id = reserved_keywords::rust_identifier(field_name);
+            format!(
+                "        #[sql_name = \"{}\"]\n        {} -> {},",
+                field_name, rust_id, field_type
+            )
+        } else {
+            format!("        {} -> {},", field_name, field_type)
+        }
+    }
+
     /// Extract field name from index name for both naming formats
     fn extract_field_from_index_name(table_name: &str, index_name: &str) -> Option<String> {
         // Handle new format: idx_{table_name}_{field}
@@ -637,16 +651,11 @@ impl SchemaGenerator {
             // Pass empty existing_fields to ensure only table_def fields are used
             let ordered_fields = Self::order_fields_properly(&[], &parsed_fields)?;
 
-            // Detect existing indentation from the original table body
-            let field_indentation = "        "; // Standard 8-space indentation
-
             // Generate the new table body with properly ordered fields
             let mut new_table_body = String::new();
             for field in &ordered_fields {
-                new_table_body.push_str(&format!(
-                    "{}{}{}-> {},\n",
-                    field_indentation, field.name, " ", field.field_type
-                ));
+                new_table_body.push_str(&Self::format_schema_column(&field.name, &field.field_type));
+                new_table_body.push('\n');
             }
 
             // Ensure proper formatting: add newline after opening brace if not present
@@ -723,10 +732,8 @@ impl SchemaGenerator {
 
         // Add all fields in proper order
         for field in &ordered_fields {
-            definition.push_str(&format!(
-                "        {} -> {},\n",
-                field.name, field.field_type
-            ));
+            definition.push_str(&Self::format_schema_column(&field.name, &field.field_type));
+            definition.push('\n');
         }
 
         definition.push_str("    }\n}");

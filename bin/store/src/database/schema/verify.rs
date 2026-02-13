@@ -1,4 +1,5 @@
 use crate::constants::paths;
+use crate::database::schema::reserved_keywords;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -6,61 +7,9 @@ use std::path::Path;
 const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
-    // Path to schema.rs file
-    let possible_paths = vec![
-        Path::new(paths::database::SCHEMA_FILE),
-        Path::new(paths::LEGACY_SCHEMA_FILE),
-    ];
-    // Read the schema file
-    let mut schema_content = String::new();
-    for path in possible_paths {
-        if let Ok(content) = fs::read_to_string(&path) {
-            schema_content = content;
-            break;
-        }
-    }
-
-    if schema_content.is_empty() {
-        log::error!("Could not find schema file");
-        schema_content = SCHEMA_CONTENT.to_string();
-    }
-    // Create a regex pattern to find the table definition
-    // This pattern is more flexible to match the actual format in schema.rs
-    let table_pattern = format!(
-        r"(?s)table!\s*\{{\s*{}\s*\([^)]*\)\s*\{{(.*?)\}}\s*\}}",
-        regex::escape(table_name)
-    );
-    let table_regex = match Regex::new(&table_pattern) {
-        Ok(re) => re,
-        Err(e) => {
-            log::error!("Failed to create table regex: {}", e);
-            return false; // Return false if regex creation fails
-        }
-    };
-    // Find the table definition
-    if let Some(captures) = table_regex.captures(&schema_content) {
-        if let Some(table_body) = captures.get(1) {
-            // Get the table body content
-            let table_content = table_body.as_str();
-
-            // Create a regex pattern to find the field
-            // This pattern matches field definitions more accurately
-            let field_pattern = format!(r"(?m)^\s*{}\s*->\s*[^,]*", field_name);
-            let field_regex = match Regex::new(&field_pattern) {
-                Ok(re) => re,
-                Err(e) => {
-                    log::error!("Failed to create field regex: {}", e);
-                    return false; // Return false if regex creation fails
-                }
-            };
-
-            // Check if the field exists in the table
-            let result = field_regex.is_match(table_content);
-            return result;
-        }
-    }
-
-    false // Return false if table not found
+    // Use get_table_fields which handles #[sql_name] mapping (e.g. columns_data -> columns)
+    get_table_fields(table_name)
+        .map_or(false, |fields| fields.contains(&field_name.to_string()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -110,18 +59,26 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
             // Get the table body content
             let table_content = table_body.as_str();
 
-            // Create a regex pattern to find the field and capture its type
-            let field_pattern = format!(r"(?m)^\s*{}\s*->\s*([^,\s]+)", field_name);
-            let field_regex = match Regex::new(&field_pattern) {
-                Ok(re) => re,
-                Err(e) => {
-                    log::error!("Failed to create field regex: {}", e);
-                    return None;
-                }
+            // Try field_name first; for reserved keywords also try rust_identifier (schema renames it)
+            let rust_identifiers: Vec<String> = if reserved_keywords::is_reserved(field_name) {
+                vec![
+                    field_name.to_string(),
+                    reserved_keywords::rust_identifier(field_name),
+                ]
+            } else {
+                vec![field_name.to_string()]
             };
 
-            // Extract the field type if found
-            if let Some(field_captures) = field_regex.captures(table_content) {
+            for rust_id in &rust_identifiers {
+                let field_pattern =
+                    format!(r"(?m)^\s*{}\s*->\s*([^,\s]+)", regex::escape(rust_id));
+                let field_regex = match Regex::new(&field_pattern) {
+                    Ok(re) => re,
+                    Err(_) => continue,
+                };
+
+                // Extract the field type if found
+                if let Some(field_captures) = field_regex.captures(table_content) {
                 if let Some(field_type) = field_captures.get(1) {
                     let type_str = field_type.as_str().to_string();
 
@@ -182,6 +139,7 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                         is_json,
                     });
                 }
+                }
             }
         }
     }
@@ -238,8 +196,9 @@ pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
             // Get the table body content
             let table_content = table_body.as_str();
 
-            // Create a regex pattern to find all field definitions
-            let field_pattern = r"(?m)^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*->\s*[^,]*";
+            // Match field definitions, including #[sql_name = "X"] for reserved names like "columns"
+            let field_pattern =
+                r#"(?ms)(?:#\[sql_name\s*=\s*"([^"]+)"\]\s*\n)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*->\s*[^,]*"#;
             let field_regex = match Regex::new(field_pattern) {
                 Ok(re) => re,
                 Err(e) => {
@@ -248,12 +207,17 @@ pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
                 }
             };
 
-            // Extract all field names
+            // Extract all field names (use sql_name when present, else Rust identifier)
             let mut fields = Vec::new();
             for captures in field_regex.captures_iter(table_content) {
-                if let Some(field_name) = captures.get(1) {
-                    fields.push(field_name.as_str().to_string());
-                }
+                let field_name = if let Some(sql_name) = captures.get(1) {
+                    sql_name.as_str().to_string()
+                } else if let Some(rust_name) = captures.get(2) {
+                    rust_name.as_str().to_string()
+                } else {
+                    continue;
+                };
+                fields.push(field_name);
             }
 
             if !fields.is_empty() {
