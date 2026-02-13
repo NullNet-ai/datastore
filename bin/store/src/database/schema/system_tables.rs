@@ -1,13 +1,15 @@
 // Define an array of system table names
 // These tables are considered system tables and may have special handling
-
+// Use this to restrict access to mutate data for developers
 pub const SYSTEM_TABLES: &[&str] = &[
+    // CRDT related tables
     "crdt_messages",
     "crdt_merkles",
     "sync_endpoints",
     "queues",
     "queue_items",
     "transactions",
+    // User Define System Tables
     "counters",
     "entities",
     "fields",
