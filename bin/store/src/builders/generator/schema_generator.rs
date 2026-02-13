@@ -94,7 +94,7 @@ impl SchemaGenerator {
                     if Self::field_added_in_migration(&table_def.name, &field.name) {
                         continue;
                     }
-                    
+
                     changes.push(SchemaChange {
                         table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::NewField,
