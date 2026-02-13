@@ -125,8 +125,8 @@ impl MigrationGenerator {
             let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
             let dir_name = entry.file_name().to_string_lossy().to_string();
 
-            // Migration directory format: YYYY-MM-DD-HHMMSS_name
-            if let Some(migration_name_part) = dir_name.split('_').nth(1) {
+            // Migration directory format: YYYYMMDDHHMMSS_name (Diesel format)
+            if let Some(migration_name_part) = dir_name.splitn(2, '_').nth(1) {
                 if migration_name_part == name {
                     return Ok(true);
                 }
@@ -136,10 +136,10 @@ impl MigrationGenerator {
         Ok(false)
     }
 
-    /// Generate timestamp for migration
+    /// Generate timestamp for migration (Diesel format: YYYYMMDDHHMMSS, 14 digits, no separators)
     fn generate_timestamp() -> String {
         let now: DateTime<Utc> = Utc::now();
-        now.format("%Y-%m-%d-%H%M%S").to_string()
+        now.format("%Y%m%d%H%M%S").to_string()
     }
 
     /// Generate the up.sql content
