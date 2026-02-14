@@ -104,7 +104,17 @@ println!("Store dir: {}", config.store_dir());
 
 ## Publishing
 
-To publish to crates.io:
+### To dnamicro registry
+
+1. Ensure `~/.cargo/config.toml` or `.cargo/config.toml` includes the dnamicro registry (see project root).
+2. From the store-generator directory:
+   ```bash
+   cd bin/store-generator
+   cargo publish
+   ```
+
+### To crates.io
 
 1. Uncomment and set `repository` in `Cargo.toml`
-2. Run `cargo publish` from the store-generator directory
+2. Remove or change `publish = ["dnamicro"]` to allow crates.io
+3. Run `cargo publish` from the store-generator directory

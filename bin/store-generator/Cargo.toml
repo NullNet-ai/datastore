@@ -1,6 +1,6 @@
 [package]
 name = "store-generator"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Kashan Ali Khalid <kashankhalid@dnamicro.com>"]
 edition = "2021"
 description = "Standalone code generator for store schema, models, migrations, proto, table_enum, and grpc_controller"

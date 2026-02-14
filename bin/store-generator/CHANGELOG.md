@@ -5,6 +5,22 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.7
+### Author
+Kashan
+
+### Fixed
+- **Index/foreign key extraction – format-agnostic parsing**:
+  - Single-line index format `type: "btree" }` no longer captures ` }` in the type value; generates valid SQL.
+  - Added `extract_quoted_value_after()` and `extract_bracketed_quoted_values()` helpers for content-based parsing.
+  - Index and foreign key extraction now works regardless of formatting (single-line, multi-line, extra spacing, trailing commas).
+- Foreign key column parsing when both `columns:` and `foreign_columns:` appear on the same line.
+
+### Added
+- Tests for indexes: single-line, multi-line, multiple formats, extra spacing.
+- Tests for foreign keys: single-line, multi-line, multiple formats.
+- `test_postgres_channels_index_sql_no_invalid_chars` migration regression test.
+
 ## 0.1.6
 ### Author
 Kashan

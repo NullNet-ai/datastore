@@ -850,8 +850,44 @@ impl GeneratorService {
         Ok(fields)
     }
 
+    /// Extract first quoted string value after key. Format-agnostic - works for
+    /// "key: \"value\"" or "key: \"value\" }" or "key: \"value\","
+    fn extract_quoted_value_after(key: &str, line: &str) -> Option<String> {
+        line.split(key)
+            .nth(1)
+            .and_then(|s| s.trim().strip_prefix('"'))
+            .and_then(|s| s.split('"').next())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    }
+
+    /// Extract values from bracketed list like ["a","b"]. Format-agnostic.
+    /// If key is provided, search for the bracket pair after that key (for multiple lists per line).
+    fn extract_bracketed_quoted_values(line: &str, after_key: Option<&str>) -> Vec<String> {
+        let search_start = match after_key {
+            Some(key) => line.find(key).map(|i| i + key.len()).unwrap_or(0),
+            None => 0,
+        };
+        let rest = &line[search_start..];
+        if let (Some(start), Some(end)) = (rest.find('['), rest.find(']')) {
+            let inner = &rest[start + 1..end];
+            inner
+                .split(',')
+                .filter_map(|s| {
+                    let t = s.trim();
+                    t.strip_prefix('"')
+                        .and_then(|x| x.split('"').next())
+                        .map(|x| x.trim().to_string())
+                        .filter(|x| !x.is_empty())
+                })
+                .collect()
+        } else {
+            Vec::new()
+        }
+    }
+
     /// Extract indexes from macro definition
-    fn extract_indexes_from_macro(
+    pub(crate) fn extract_indexes_from_macro(
         content: &str,
     ) -> Result<Vec<(String, Vec<String>, bool, Option<String>)>, String> {
         let mut indexes = Vec::new();
@@ -915,74 +951,41 @@ impl GeneratorService {
 
                         // Extract columns/unique/type from same line if present (single-line format)
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            if let Some(bracket_start) = line.find('[') {
-                                if let Some(bracket_end) = line.find(']') {
-                                    let columns_str = &line[bracket_start + 1..bracket_end];
-                                    columns = columns_str
-                                        .split(',')
-                                        .map(|s| s.trim().trim_matches('"').to_string())
-                                        .collect();
-                                }
-                            }
+                            columns = Self::extract_bracketed_quoted_values(line, Some("columns:"));
                         }
                         if line.contains("unique:") {
                             let unique_val = line
                                 .split("unique:")
                                 .nth(1)
-                                .and_then(|s| s.split(',').next())
+                                .and_then(|s| s.split(|c| c == ',' || c == '}').next())
                                 .map(|s| s.trim())
                                 .unwrap_or("");
                             is_unique = unique_val == "true";
                         }
-                        if line.contains("type:") {
-                            if let Some(type_start) = line.find("type:") {
-                                let after = &line[type_start + 5..];
-                                let type_val = after
-                                    .trim()
-                                    .trim_matches('"')
-                                    .split(',')
-                                    .next()
-                                    .unwrap_or("")
-                                    .trim()
-                                    .trim_matches('"')
-                                    .to_string();
-                                if !type_val.is_empty() {
-                                    idx_type = Some(type_val);
-                                }
-                            }
+                        if let Some(type_val) = Self::extract_quoted_value_after("type:", line) {
+                            idx_type = Some(type_val);
                         }
 
                         current_index = Some((index_name, columns, is_unique, idx_type));
                         in_index_def = true;
                     } else if in_index_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            // Extract columns
-                            if let Some(bracket_start) = line.find('[') {
-                                if let Some(bracket_end) = line.find(']') {
-                                    let columns_str = &line[bracket_start + 1..bracket_end];
-                                    let columns: Vec<String> = columns_str
-                                        .split(',')
-                                        .map(|s| s.trim().trim_matches('"').to_string())
-                                        .collect();
-                                    if let Some(ref mut index) = current_index {
-                                        index.1 = columns;
-                                    }
-                                }
+                            let columns = Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            if let Some(ref mut index) = current_index {
+                                index.1 = columns;
                             }
                         } else if line.contains("unique:") {
-                            let unique_val = line.split(':').nth(1).unwrap().trim();
+                            let unique_val = line
+                                .split("unique:")
+                                .nth(1)
+                                .and_then(|s| s.split(|c| c == ',' || c == '}').next())
+                                .map(|s| s.trim())
+                                .unwrap_or("");
                             let is_unique = unique_val == "true";
                             if let Some(ref mut index) = current_index {
                                 index.2 = is_unique;
                             }
-                        } else if line.contains("type:") {
-                            let type_val = line
-                                .split(':')
-                                .nth(1)
-                                .unwrap()
-                                .trim()
-                                .trim_matches('"')
-                                .to_string();
+                        } else if let Some(type_val) = Self::extract_quoted_value_after("type:", line) {
                             if let Some(ref mut index) = current_index {
                                 index.3 = Some(type_val);
                             }
@@ -1052,16 +1055,8 @@ impl GeneratorService {
                         in_fk_def = true;
                     } else if in_fk_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            if let Some(bracket_start) = line.find('[') {
-                                if let Some(bracket_end) = line.find(']') {
-                                    let columns_str = &line[bracket_start + 1..bracket_end];
-                                    let cols: Vec<&str> = columns_str
-                                        .split(',')
-                                        .map(|s| s.trim().trim_matches('"'))
-                                        .collect();
-                                    current_column = cols.join("_");
-                                }
-                            }
+                            let cols = Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            current_column = cols.join("_");
                         } else if line == "}" {
                             if !current_name.is_empty() && !current_column.is_empty() {
                                 result.push((current_name.clone(), current_column.clone()));
@@ -1076,7 +1071,9 @@ impl GeneratorService {
     }
 
     /// Extract foreign keys from macro definition
-    fn extract_foreign_keys_from_macro(content: &str) -> Result<Vec<ForeignKeyDefinition>, String> {
+    pub(crate) fn extract_foreign_keys_from_macro(
+        content: &str,
+    ) -> Result<Vec<ForeignKeyDefinition>, String> {
         use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
 
         let mut foreign_keys = Vec::new();
@@ -1134,83 +1131,71 @@ impl GeneratorService {
                             foreign_keys.push(fk);
                         }
 
-                        current_fk = Some(ForeignKeyDefinition {
+                        let mut fk = ForeignKeyDefinition {
                             column: String::new(),
                             references_table: String::new(),
                             references_column: String::new(),
                             on_delete: None,
                             on_update: None,
-                        });
+                        };
+
+                        // Parse from same line if present (single-line format)
+                        if line.contains("columns:") {
+                            if let Some(col) =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"))
+                                    .first()
+                            {
+                                fk.column = col.clone();
+                            }
+                        }
+                        if let Some(v) = Self::extract_quoted_value_after("foreign_table:", line) {
+                            fk.references_table = v;
+                        }
+                        if line.contains("foreign_columns:") {
+                            if let Some(col) = Self::extract_bracketed_quoted_values(line, Some("foreign_columns:")).first() {
+                                fk.references_column = col.clone();
+                            }
+                        }
+                        if let Some(v) = Self::extract_quoted_value_after("on_delete:", line) {
+                            fk.on_delete = Some(v);
+                        }
+                        if let Some(v) = Self::extract_quoted_value_after("on_update:", line) {
+                            fk.on_update = Some(v);
+                        }
+
+                        current_fk = Some(fk);
                         in_fk_def = true;
                     } else if in_fk_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            // Extract columns - this is the local table column
-                            if let Some(bracket_start) = line.find('[') {
-                                if let Some(bracket_end) = line.find(']') {
-                                    let columns_str = &line[bracket_start + 1..bracket_end];
-                                    let column = columns_str
-                                        .trim()
-                                        .trim_matches('"')
-                                        .replace(",", "")
-                                        .replace("\"", "")
-                                        .to_string();
-
-                                    if let Some(ref mut fk) = current_fk {
-                                        fk.column = column;
-                                    }
-                                }
+                            let cols = Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            if let (Some(ref mut fk), Some(col)) = (current_fk.as_mut(), cols.first()) {
+                                fk.column = col.clone();
                             }
                         } else if line.contains("foreign_table:") {
-                            let table_val = line
-                                .split(':')
-                                .nth(1)
-                                .unwrap()
-                                .trim()
-                                .trim_matches('"')
-                                .replace(",", "")
-                                .replace("\"", "")
-                                .to_string();
-                            if let Some(ref mut fk) = current_fk {
-                                fk.references_table = table_val.replace(",", "").replace("\"", "");
+                            if let (Some(ref mut fk), Some(table_val)) = (
+                                current_fk.as_mut(),
+                                Self::extract_quoted_value_after("foreign_table:", line),
+                            ) {
+                                fk.references_table = table_val;
                             }
                         } else if line.contains("foreign_columns:") {
-                            // Extract foreign_columns - this is the referenced table column
-                            if let Some(bracket_start) = line.find('[') {
-                                if let Some(bracket_end) = line.find(']') {
-                                    let columns_str = &line[bracket_start + 1..bracket_end];
-                                    let column = columns_str
-                                        .trim()
-                                        .trim_matches('"')
-                                        .replace(",", "")
-                                        .replace("\"", "")
-                                        .to_string();
-
-                                    if let Some(ref mut fk) = current_fk {
-                                        fk.references_column = column;
-                                    }
-                                }
+                            let cols = Self::extract_bracketed_quoted_values(line, Some("foreign_columns:"));
+                            if let (Some(ref mut fk), Some(col)) = (current_fk.as_mut(), cols.first()) {
+                                fk.references_column = col.clone();
                             }
                         } else if line.contains("on_delete:") {
-                            let delete_val = line
-                                .split(':')
-                                .nth(1)
-                                .unwrap()
-                                .trim()
-                                .trim_matches('"')
-                                .to_string();
-                            if let Some(ref mut fk) = current_fk {
-                                fk.on_delete = Some(delete_val);
+                            if let (Some(ref mut fk), Some(val)) = (
+                                current_fk.as_mut(),
+                                Self::extract_quoted_value_after("on_delete:", line),
+                            ) {
+                                fk.on_delete = Some(val);
                             }
                         } else if line.contains("on_update:") {
-                            let update_val = line
-                                .split(':')
-                                .nth(1)
-                                .unwrap()
-                                .trim()
-                                .trim_matches('"')
-                                .to_string();
-                            if let Some(ref mut fk) = current_fk {
-                                fk.on_update = Some(update_val);
+                            if let (Some(ref mut fk), Some(val)) = (
+                                current_fk.as_mut(),
+                                Self::extract_quoted_value_after("on_update:", line),
+                            ) {
+                                fk.on_update = Some(val);
                             }
                         } else if line == "}" {
                             in_fk_def = false;
@@ -1628,5 +1613,187 @@ impl GeneratorService {
         }
 
         Ok(filtered_lines.join("\n        "))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::GeneratorService;
+
+    #[test]
+    fn test_extract_indexes_single_line_format_postgres_channels() {
+        // Regression: single-line index format type: "btree" } used to capture " } in type value
+        let content = r#"
+define_table_schema! {
+    fields: { id: primary_key(text()), channel_name: nullable(text()), channel_timestamp: nullable(timestamptz()), function: nullable(text()) },
+    indexes: {
+        idx_postgres_channels_channel_name: { columns: ["channel_name"], unique: false, type: "btree" },
+        idx_postgres_channels_channel_timestamp: { columns: ["channel_timestamp"], unique: false, type: "btree" },
+        idx_postgres_channels_function: { columns: ["function"], unique: false, type: "btree" }
+    },
+    foreign_keys: {}
+}
+"#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 3);
+
+        for (name, columns, _unique, idx_type) in &indexes {
+            assert_eq!(columns.len(), 1, "Each index should have one column");
+            let ty = idx_type.as_ref().expect("index type should be present");
+            assert!(
+                !ty.contains('}'),
+                "Type must not contain '}}' - got '{}' for index {}",
+                ty,
+                name
+            );
+            assert_eq!(ty, "btree", "Type should be 'btree' for index {}", name);
+        }
+
+        let (name1, cols1, _, ty1) = &indexes[0];
+        assert_eq!(name1, "idx_postgres_channels_channel_name");
+        assert_eq!(cols1, &["channel_name"]);
+        assert_eq!(ty1.as_deref(), Some("btree"));
+
+        let (name2, cols2, _, ty2) = &indexes[1];
+        assert_eq!(name2, "idx_postgres_channels_channel_timestamp");
+        assert_eq!(cols2, &["channel_timestamp"]);
+        assert_eq!(ty2.as_deref(), Some("btree"));
+
+        let (name3, cols3, _, ty3) = &indexes[2];
+        assert_eq!(name3, "idx_postgres_channels_function");
+        assert_eq!(cols3, &["function"]);
+        assert_eq!(ty3.as_deref(), Some("btree"));
+    }
+
+    #[test]
+    fn test_extract_foreign_keys_single_line_format() {
+        let content = r#"
+define_table_schema! {
+    fields: { id: primary_key(text()), organization_id: nullable(text()) },
+    indexes: {},
+    foreign_keys: {
+        fk_foo_organization_id: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "no action", on_update: "no action" }
+    }
+}
+"#;
+        let fks = GeneratorService::extract_foreign_keys_from_macro(content).unwrap();
+        assert_eq!(fks.len(), 1);
+        let fk = &fks[0];
+        assert_eq!(fk.column, "organization_id");
+        assert_eq!(fk.references_table, "organizations");
+        assert_eq!(fk.references_column, "id");
+        assert_eq!(fk.on_delete.as_deref(), Some("no action"));
+        assert_eq!(fk.on_update.as_deref(), Some("no action"));
+    }
+
+    #[test]
+    fn test_extract_foreign_keys_multi_line_format() {
+        let content = r#"
+foreign_keys: {
+    fk_demo_items_org: {
+        columns: ["organization_id"],
+        foreign_table: "organizations",
+        foreign_columns: ["id"],
+        on_delete: "no action",
+        on_update: "no action"
+    }
+}
+"#;
+        let fks = GeneratorService::extract_foreign_keys_from_macro(content).unwrap();
+        assert_eq!(fks.len(), 1);
+        let fk = &fks[0];
+        assert_eq!(fk.column, "organization_id");
+        assert_eq!(fk.references_table, "organizations");
+        assert_eq!(fk.references_column, "id");
+    }
+
+    #[test]
+    fn test_extract_indexes_multiple_formats() {
+        // Format 1: Single-line with trailing brace (regression case)
+        let content1 = r#"indexes: { idx_foo_bar: { columns: ["bar"], unique: false, type: "btree" } }"#;
+        let idx1 = GeneratorService::extract_indexes_from_macro(content1).unwrap();
+        assert_eq!(idx1.len(), 1);
+        assert_eq!(idx1[0].0, "idx_foo_bar");
+        assert_eq!(idx1[0].1, vec!["bar"]);
+        assert_eq!(idx1[0].3.as_deref(), Some("btree"));
+
+        // Format 2: Multi-line
+        let content2 = r#"
+indexes: {
+    idx_foo_baz: {
+        columns: ["baz"],
+        unique: true,
+        type: "btree"
+    }
+}
+"#;
+        let idx2 = GeneratorService::extract_indexes_from_macro(content2).unwrap();
+        assert_eq!(idx2.len(), 1);
+        assert_eq!(idx2[0].0, "idx_foo_baz");
+        assert!(idx2[0].2); // unique
+        assert_eq!(idx2[0].3.as_deref(), Some("btree"));
+
+        // Format 3: Multiple indexes, mixed single-line
+        let content3 = r#"
+indexes: {
+    idx_t1_a: { columns: ["a"], unique: false, type: "btree" },
+    idx_t1_b: { columns: ["b"], unique: false, type: "hash" }
+}
+"#;
+        let idx3 = GeneratorService::extract_indexes_from_macro(content3).unwrap();
+        assert_eq!(idx3.len(), 2);
+        assert_eq!(idx3[0].1, vec!["a"]);
+        assert_eq!(idx3[0].3.as_deref(), Some("btree"));
+        assert_eq!(idx3[1].1, vec!["b"]);
+        assert_eq!(idx3[1].3.as_deref(), Some("hash"));
+
+        // Format 4: Extra spacing, trailing comma
+        let content4 = r#"indexes: { idx_x_y: { columns: [ "y" ], unique: false , type: "btree" , } }"#;
+        let idx4 = GeneratorService::extract_indexes_from_macro(content4).unwrap();
+        assert_eq!(idx4.len(), 1);
+        assert_eq!(idx4[0].1, vec!["y"]);
+        assert_eq!(idx4[0].3.as_deref(), Some("btree"));
+    }
+
+    #[test]
+    fn test_extract_foreign_keys_multiple_formats() {
+        // Format 1: Compact single-line with trailing brace
+        let content1 = r#"foreign_keys: { fk_t1_org: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "no action", on_update: "no action" } }"#;
+        let fks1 = GeneratorService::extract_foreign_keys_from_macro(content1).unwrap();
+        assert_eq!(fks1.len(), 1);
+        assert_eq!(fks1[0].column, "organization_id");
+        assert_eq!(fks1[0].references_table, "organizations");
+        assert_eq!(fks1[0].references_column, "id");
+
+        // Format 2: Multiple FKs, mixed formats
+        let content2 = r#"
+foreign_keys: {
+    fk_t2_org: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "cascade", on_update: "cascade" },
+    fk_t2_owner: {
+        columns: ["owner_id"],
+        foreign_table: "accounts",
+        foreign_columns: ["id"],
+        on_delete: "set null",
+        on_update: "no action"
+    }
+}
+"#;
+        let fks2 = GeneratorService::extract_foreign_keys_from_macro(content2).unwrap();
+        assert_eq!(fks2.len(), 2);
+        assert_eq!(fks2[0].column, "organization_id");
+        assert_eq!(fks2[0].references_table, "organizations");
+        assert_eq!(fks2[0].on_delete.as_deref(), Some("cascade"));
+        assert_eq!(fks2[1].column, "owner_id");
+        assert_eq!(fks2[1].references_table, "accounts");
+        assert_eq!(fks2[1].references_column, "id");
+        assert_eq!(fks2[1].on_delete.as_deref(), Some("set null"));
+
+        // Format 3: Extra spacing, trailing comma
+        let content3 = r#"foreign_keys: { fk_t3_col: { columns: [ "ref_id" ] , foreign_table: "refs" , foreign_columns: [ "id" ] , on_delete: "no action" , on_update: "no action" , } }"#;
+        let fks3 = GeneratorService::extract_foreign_keys_from_macro(content3).unwrap();
+        assert_eq!(fks3.len(), 1);
+        assert_eq!(fks3[0].column, "ref_id");
+        assert_eq!(fks3[0].references_table, "refs");
+        assert_eq!(fks3[0].references_column, "id");
     }
 }

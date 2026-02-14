@@ -635,4 +635,35 @@ mod tests {
             "CREATE INDEX \"idx_order_created\" ON \"episodes\"(\"order\", \"created_at\");"
         );
     }
+
+    #[test]
+    fn test_postgres_channels_index_sql_no_invalid_chars() {
+        // Regression: single-line index format used to produce btree" }("column") due to
+        // type extraction capturing closing brace. All indexes must be valid SQL.
+        for (col, index_name) in [
+            ("channel_name", "idx_postgres_channels_channel_name"),
+            ("channel_timestamp", "idx_postgres_channels_channel_timestamp"),
+            ("function", "idx_postgres_channels_function"),
+        ] {
+            let sql = MigrationGenerator::generate_create_index_sql(
+                "postgres_channels",
+                index_name,
+                col,
+                Some("btree"),
+            )
+            .unwrap();
+            assert!(
+                !sql.contains("\" }"),
+                "Generated SQL must not contain invalid '\" }}' - got: {}",
+                sql
+            );
+            assert_eq!(
+                sql,
+                format!(
+                    "CREATE INDEX \"{}\" ON \"postgres_channels\" USING btree(\"{}\");",
+                    index_name, col
+                )
+            );
+        }
+    }
 }
