@@ -29,8 +29,7 @@ pub struct Config {
 impl Config {
     /// Load config from the given path.
     pub fn load_from_path(path: &Path) -> Result<Self, ConfigError> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ConfigError::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(|e| ConfigError::Io(e))?;
         toml::from_str(&content).map_err(ConfigError::Parse)
     }
 

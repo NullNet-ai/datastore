@@ -11,18 +11,12 @@ use std::process;
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    let create_schema = env::var("CREATE_SCHEMA")
-        .unwrap_or_default()
-        .to_lowercase()
-        == "true";
+    let create_schema = env::var("CREATE_SCHEMA").unwrap_or_default().to_lowercase() == "true";
     let generate_proto = env::var("GENERATE_PROTO")
         .unwrap_or_default()
         .to_lowercase()
         == "true";
-    let generate_grpc = env::var("GENERATE_GRPC")
-        .unwrap_or_default()
-        .to_lowercase()
-        == "true";
+    let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_default().to_lowercase() == "true";
     let generate_table_enum = env::var("GENERATE_TABLE_ENUM")
         .unwrap_or_default()
         .to_lowercase()

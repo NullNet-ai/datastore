@@ -1,5 +1,5 @@
 use crate::builders::templates::proto_generator::{Case, CaseConvert};
-use crate::constants::paths::database::{SCHEMA_FILE, GRPC_CONTROLLER_FILE};
+use crate::constants::paths::database::{GRPC_CONTROLLER_FILE, SCHEMA_FILE};
 use crate::constants::paths::proto::SOURCE_FILE;
 use crate::utils::helpers::{parse_tables, to_singular};
 use log::{error, info, warn};

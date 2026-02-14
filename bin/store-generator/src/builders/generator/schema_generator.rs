@@ -453,7 +453,11 @@ impl SchemaGenerator {
 
     /// Check if a table uses system fields by reading its definition file
     fn table_uses_system_fields(table_name: &str) -> bool {
-        let table_file_path = format!("{}/{}.rs", paths::database::SCHEMA_TABLES_DIR.as_str(), table_name);
+        let table_file_path = format!(
+            "{}/{}.rs",
+            paths::database::SCHEMA_TABLES_DIR.as_str(),
+            table_name
+        );
         if let Ok(content) = std::fs::read_to_string(&table_file_path) {
             content.contains("system_fields!()")
         } else {
