@@ -1,5 +1,6 @@
 use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
 use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, TableDefinition};
+use crate::builders::generator::table_validator;
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
@@ -467,7 +468,25 @@ impl GeneratorService {
         // Look for table definition patterns in the file
         if Self::contains_table_definition(&content) {
             // Parse the table definition
-            Self::parse_table_definition_content(&content, file_stem)
+            let table_def = Self::parse_table_definition_content(&content, file_stem)?;
+            if let Some(ref def) = table_def {
+                // Run validation (plural, file name match, index/FK naming)
+                let indexes = Self::extract_indexes_from_macro(&content).unwrap_or_default();
+                let fk_names = Self::extract_foreign_key_names_and_columns(&content)?;
+                if let Err(e) = table_validator::validate_table_file(
+                    file_stem,
+                    &content,
+                    &def.name,
+                    &indexes,
+                    &fk_names,
+                ) {
+                    return Err(format!(
+                        "Table validation failed for {}:\n{}\n\nAborting.",
+                        def.name, e
+                    ));
+                }
+            }
+            Ok(table_def)
         } else {
             Ok(None)
         }
@@ -894,7 +913,48 @@ impl GeneratorService {
                         }
 
                         let index_name = line.split(':').next().unwrap().trim().to_string();
-                        current_index = Some((index_name, Vec::new(), false, None));
+                        let mut columns = Vec::new();
+                        let mut is_unique = false;
+                        let mut idx_type: Option<String> = None;
+
+                        // Extract columns/unique/type from same line if present (single-line format)
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            if let Some(bracket_start) = line.find('[') {
+                                if let Some(bracket_end) = line.find(']') {
+                                    let columns_str = &line[bracket_start + 1..bracket_end];
+                                    columns = columns_str
+                                        .split(',')
+                                        .map(|s| s.trim().trim_matches('"').to_string())
+                                        .collect();
+                                }
+                            }
+                        }
+                        if line.contains("unique:") {
+                            let unique_val = line.split("unique:").nth(1)
+                                .and_then(|s| s.split(',').next())
+                                .map(|s| s.trim())
+                                .unwrap_or("");
+                            is_unique = unique_val == "true";
+                        }
+                        if line.contains("type:") {
+                            if let Some(type_start) = line.find("type:") {
+                                let after = &line[type_start + 5..];
+                                let type_val = after
+                                    .trim()
+                                    .trim_matches('"')
+                                    .split(',')
+                                    .next()
+                                    .unwrap_or("")
+                                    .trim()
+                                    .trim_matches('"')
+                                    .to_string();
+                                if !type_val.is_empty() {
+                                    idx_type = Some(type_val);
+                                }
+                            }
+                        }
+
+                        current_index = Some((index_name, columns, is_unique, idx_type));
                         in_index_def = true;
                     } else if in_index_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
@@ -942,6 +1002,79 @@ impl GeneratorService {
         }
 
         Ok(indexes)
+    }
+
+    /// Extract (constraint_name, column) for validation - used by table_validator.
+    fn extract_foreign_key_names_and_columns(
+        content: &str,
+    ) -> Result<Vec<(String, String)>, String> {
+        let mut result = Vec::new();
+        if let Some(fk_start) = content.find("foreign_keys: {") {
+            let after_fk = &content[fk_start + 15..];
+            let mut brace_count = 1;
+            let mut fk_end = 0;
+            let chars: Vec<char> = after_fk.chars().collect();
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            fk_end = i;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if fk_end > 0 {
+                let mut fk_content = after_fk[..fk_end].to_string();
+                if let Some(table_name) =
+                    Self::extract_table_name_from_system_foreign_keys(&fk_content)
+                {
+                    let system_foreign_keys_expansion =
+                        Self::get_system_foreign_keys_expansion(&table_name)?;
+                    let pattern = format!("system_foreign_keys!(\"{}\")", table_name);
+                    fk_content = fk_content.replace(&pattern, &system_foreign_keys_expansion);
+                }
+                let mut current_name = String::new();
+                let mut current_column = String::new();
+                let mut in_fk_def = false;
+                for line in fk_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+                    if line.contains(": {") {
+                        if in_fk_def && !current_name.is_empty() && !current_column.is_empty() {
+                            result.push((current_name.clone(), current_column.clone()));
+                        }
+                        current_name = line.split(':').next().unwrap_or("").trim().to_string();
+                        current_column = String::new();
+                        in_fk_def = true;
+                    } else if in_fk_def {
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            if let Some(bracket_start) = line.find('[') {
+                                if let Some(bracket_end) = line.find(']') {
+                                    let columns_str = &line[bracket_start + 1..bracket_end];
+                                    let cols: Vec<&str> = columns_str
+                                        .split(',')
+                                        .map(|s| s.trim().trim_matches('"'))
+                                        .collect();
+                                    current_column = cols.join("_");
+                                }
+                            }
+                        } else if line == "}" {
+                            if !current_name.is_empty() && !current_column.is_empty() {
+                                result.push((current_name.clone(), current_column.clone()));
+                            }
+                            in_fk_def = false;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(result)
     }
 
     /// Extract foreign keys from macro definition
@@ -1458,13 +1591,11 @@ impl GeneratorService {
 
     /// Get system foreign keys expansion for a given table name
     fn get_system_foreign_keys_expansion(table_name: &str) -> Result<String, String> {
-        // Use the system_foreign_keys macro to generate the foreign key definitions
-        // This ensures consistency with the macro definition in system_fields.rs
-        // Clean the table name to avoid issues with quotes or commas
+        // Constraint name format: fk_{table_name}_{column_name}
         let clean_table_name = table_name.replace(",", "").replace("\"", "");
 
         let result = format!(
-            "{}_organization_id_organizations_id_fk: {{\n            columns: [\"organization_id\"],\n            foreign_table: \"organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_created_by_account_organizations_id_fk: {{\n            columns: [\"created_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_updated_by_account_organizations_id_fk: {{\n            columns: [\"updated_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_deleted_by_account_organizations_id_fk: {{\n            columns: [\"deleted_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        {}_requested_by_account_organizations_id_fk: {{\n            columns: [\"requested_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }}",
+            "fk_{}_organization_id: {{\n            columns: [\"organization_id\"],\n            foreign_table: \"organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_created_by: {{\n            columns: [\"created_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_updated_by: {{\n            columns: [\"updated_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_deleted_by: {{\n            columns: [\"deleted_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_requested_by: {{\n            columns: [\"requested_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }}",
             clean_table_name,
             clean_table_name,
             clean_table_name,

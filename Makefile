@@ -502,8 +502,7 @@ store-generate-proto:
 	@cd bin/store && GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true cargo run
 
 # Standalone store-generator (no store build dependency - use for fresh clone bootstrap)
-# Uses installed binary if available (cargo install store-generator), else cargo run -p store-generator
-STORE_GEN = $(shell command -v store-generator 2>/dev/null || echo "cargo run -p store-generator --")
+STORE_GEN = store-generator
 store-generator-schema:
 	@echo "📋 Generating store schema (standalone generator)..."
 	@STORE_DIR=bin/store CREATE_SCHEMA=true $(STORE_GEN)

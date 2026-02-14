@@ -183,20 +183,25 @@ impl SchemaGenerator {
 
         // Add foreign key changes - only if they don't already exist
         for foreign_key in foreign_keys {
-            // Generate constraint name to match system_foreign_keys macro format: tablename_columnname_foreigntable_foreigncolumn_fk
-            let constraint_name = format!(
-                "{}_{}_{}_{}_{}",
+            // Constraint name format: fk_{table_name}_{column_name}
+            let constraint_name = format!("fk_{}_{}", table_def.name, foreign_key.column)
+                .replace(",", "")
+                .replace("\"", "");
+            // Old format (backward compat): {table}_{column}_{ref_table}_{ref_column}_fk
+            let old_constraint_name = format!(
+                "{}_{}_{}_{}_fk",
                 table_def.name,
                 foreign_key.column,
                 foreign_key.references_table,
-                foreign_key.references_column,
-                "fk"
+                foreign_key.references_column
             )
             .replace(",", "")
             .replace("\"", "");
 
-            // Check if foreign key already exists
-            if !Self::foreign_key_exists_in_schema(&table_def.name, &constraint_name) {
+            // Check if foreign key already exists (new or old format)
+            let exists = Self::foreign_key_exists_in_schema(&table_def.name, &constraint_name)
+                || Self::foreign_key_exists_in_schema(&table_def.name, &old_constraint_name);
+            if !exists {
                 // Clean up any potential quotes or commas in the referenced table and column
                 let clean_column = foreign_key.column.replace(",", "").replace("\"", "");
                 let clean_references_table = foreign_key

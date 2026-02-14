@@ -388,8 +388,11 @@ The project includes a comprehensive Makefile with the following commands:
 
 ### Store Generators
 
-- `make store-generate-schema` - Generate store schema
-- `make store-generate-proto` - Generate store proto files
+Code generation is handled by the standalone `store-generator` crate. Use these Makefile targets:
+
+- `make store-generator-schema` - Generate schema, migrations, and models
+- `make store-generator-proto` - Generate proto, gRPC controller, and table enum
+- `make store-generator-all` - Generate all of the above in one run
 
 ### Initializer
 
@@ -563,7 +566,13 @@ make help
 3. Run command for schema generation.
 
    ```bash
-   make store-generate-schema
+   make store-generator-schema
+   ```
+
+   Or to generate everything (schema, migrations, models, proto, gRPC, table enum) in one run:
+
+   ```bash
+   make store-generator-all
    ```
 
    Note:
@@ -596,10 +605,10 @@ make help
    - **Debugging**: Help identify when and where issues were introduced in the schema
    - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
 
-7. Run command for store proto file generation.
+7. Run command for store proto file generation (skip if you used `store-generator-all` in step 3).
 
    ```bash
-   make store-generate-proto
+   make store-generator-proto
    ```
 
 8. Verify generated files:
@@ -656,9 +665,9 @@ To remove a table from the store:
    - Edit `bin/store/src/database/schema/system_tables.rs`
    - Add the table name to the `SYSTEM_TABLES` array
 
-3. **Run the store proto generator**:
+3. **Run the store generator** (proto, gRPC controller, table enum):
    ```bash
-   make store-generate-proto
+   make store-generator-proto
    ```
 
 4. **Manually delete generated artifacts**:

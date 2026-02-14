@@ -5,6 +5,31 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.21
+### Author
+Kashan
+
+### Added
+  - ***Test table***:
+    - Added `test_products` table in `database/schema/tables/test_products.rs` for validating store-generator flow.
+    - Fields: `sku`, `price`, `in_stock` with indexes on `sku` (unique) and `price`.
+  - ***Standalone store-generator***:
+    - Moved all code-generation builders (schema, migration, model, proto, table_enum, grpc_controller) into the standalone `store-generator` crate.
+    - New Makefile targets: `store-generator-schema`, `store-generator-proto`, `store-generator-all` for running the standalone generator without building the store.
+
+### Removed
+  - ***Dead code cleanup (store-generator separation)***:
+    - Removed unused path constants from `constants/paths.rs`: `TABLE_ENUM_FILE`, `proto` module (`SOURCE_FILE`, `OUTPUT_DIR`, `BUILD_SCRIPT`), `grpc` module (`CONTROLLER_FILE`), `templates` module (`PROTO_FILE_NAME`).
+    - Removed dead code from `utils/helpers.rs`: `diesel_type_to_proto`, `to_singular`, `Table`, `Field`, `parse_tables` (previously used by proto_generator).
+    - Deleted `utils/case_convert.rs` and `macros/proto_generator.rs` (no longer needed; store-generator handles generation externally).
+    - Removed `singularize` dependency from `Cargo.toml`.
+
+### Changed
+  - ***System tables***:
+    - Added `#[allow(dead_code)]` to `SYSTEM_TABLES` and `is_system_table` in `database/schema/system_tables.rs`; file is still read by store-generator but not used within the store crate.
+  - ***Code generation workflow***:
+    - Schema and proto generation now use the standalone store-generator. Use `make store-generator-schema`, `make store-generator-proto`, or `make store-generator-all` instead of `store-generate-schema` and `store-generate-proto`.
+
 ## 0.2.20
 ### Author
 Kashan

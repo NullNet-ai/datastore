@@ -801,6 +801,34 @@ message DemoItems {
   optional string name = 25;
 }
 
+// TestProducts entity definition
+message TestProducts {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string sku = 22;
+  optional int32 price = 23;
+  optional string in_stock = 24;
+}
+
 // Create UserRoles request
 message CreateUserRolesRequest {
   UserRoles user_roles = 1;
@@ -3639,6 +3667,135 @@ message UpsertDemoItemsResponse {
   repeated DemoItems data = 4;
 }
 
+// Create TestProducts request
+message CreateTestProductsRequest {
+  TestProducts test_products = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create TestProducts response
+message CreateTestProductsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  TestProducts data = 4;
+}
+
+// Get TestProducts request
+message GetTestProductsRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get TestProducts response
+message GetTestProductsResponse {
+  bool success = 1;
+  string message = 2;
+  TestProducts data = 3;
+}
+
+// Update TestProducts request
+message UpdateTestProductsRequest {
+  TestProducts test_product = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update TestProducts response
+message UpdateTestProductsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  TestProducts data = 4;
+}
+
+// BatchUpdate TestProducts request
+message BatchUpdateTestProductsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  TestProducts updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate TestProducts response
+message BatchUpdateTestProductsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TestProducts data = 4;
+}
+
+// BatchDelete TestProducts request
+message BatchDeleteTestProductsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete TestProducts response
+message BatchDeleteTestProductsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  TestProducts data = 4;
+}
+
+// Delete TestProducts request
+message DeleteTestProductsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete TestProducts response
+message DeleteTestProductsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  TestProducts data = 4;
+}
+
+// BatchInsert TestProducts request
+message BatchInsertTestProductsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated TestProducts test_products = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert TestProducts response
+message BatchInsertTestProductsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TestProducts data = 4;
+}
+
+// Upsert TestProducts request
+message UpsertTestProductsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    TestProducts data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert TestProducts response
+message UpsertTestProductsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated TestProducts data = 4;
+}
+
 // Enum for aggregation types
 enum AggregationType {
   SUM = 0;
@@ -4287,6 +4444,30 @@ service StoreService {
 
   // Upsert a DemoItems (create if not exists, update if exists)
   rpc UpsertDemoItems(UpsertDemoItemsRequest) returns (UpsertDemoItemsResponse);
+
+  // Create a new TestProducts
+  rpc CreateTestProducts(CreateTestProductsRequest) returns (CreateTestProductsResponse);
+
+  // Get a TestProducts by ID
+  rpc GetTestProducts(GetTestProductsRequest) returns (GetTestProductsResponse);
+
+  // Update an existing TestProducts
+  rpc UpdateTestProducts(UpdateTestProductsRequest) returns (UpdateTestProductsResponse);
+
+  // Delete a TestProducts by ID
+  rpc DeleteTestProducts(DeleteTestProductsRequest) returns (DeleteTestProductsResponse);
+
+  // Batch insert multiple TestProductss
+  rpc BatchInsertTestProducts(BatchInsertTestProductsRequest) returns (BatchInsertTestProductsResponse);
+
+  // Batch update multiple TestProductss based on filters
+  rpc BatchUpdateTestProducts(BatchUpdateTestProductsRequest) returns (BatchUpdateTestProductsResponse);
+
+  // Batch delete multiple TestProductss based on filters
+  rpc BatchDeleteTestProducts(BatchDeleteTestProductsRequest) returns (BatchDeleteTestProductsResponse);
+
+  // Upsert a TestProducts (create if not exists, update if exists)
+  rpc UpsertTestProducts(UpsertTestProductsRequest) returns (UpsertTestProductsResponse);
 
   // Aggregation filter for advanced queries
   rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);

@@ -4,7 +4,7 @@
 
 /// Column names that need special handling (Diesel `columns` module, etc.).
 /// To add a new reserved keyword, simply add it to this array.
-pub const RESERVED_KEYWORDS: &[&str] = &["columns"];
+pub const RESERVED_KEYWORDS: &[&str] = &["columns", "box"];
 
 /// Returns true if the column name is a reserved keyword.
 pub fn is_reserved(name: &str) -> bool {

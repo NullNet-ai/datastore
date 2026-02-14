@@ -1,0 +1,609 @@
+//! Validation rules for table definition files.
+//!
+//! Enforces:
+//! - Table names must be plural (or uncountable)
+//! - File name must match table name (same entity, different casing)
+//! - Index names: idx_{table_name}_{column_name} (or idx_{table}_{col1}_{col2} for composite)
+//! - Foreign key names: fk_{table_name}_{column_name}
+
+use crate::utils::helpers::to_singular;
+use regex::Regex;
+use std::collections::HashSet;
+
+/// Uncountable nouns: same form for singular and plural. These pass plural validation.
+fn uncountable_words() -> HashSet<&'static str> {
+    [
+        // Common uncountable
+        "progress",
+        "information",
+        "advice",
+        "equipment",
+        "furniture",
+        "luggage",
+        "baggage",
+        "knowledge",
+        "news",
+        "research",
+        "work",
+        "homework",
+        "software",
+        "hardware",
+        "data",
+        "traffic",
+        "weather",
+        "music",
+        "art",
+        "feedback",
+        "metadata",
+        "analytics",
+        "logistics",
+        "content",
+        "feedback",
+        "series",
+        "species",
+        "aircraft",
+        "headquarters",
+        "premises",
+        "personnel",
+        "staff",
+        "equipment",
+        "machinery",
+        "clothing",
+        "jewelry",
+        "jewellery",
+        "footwear",
+        "underwear",
+        "mail",
+        "correspondence",
+        "stationery",
+        "stationary",
+        "merchandise",
+        "inventory",
+        "livestock",
+        "wildlife",
+        "foliage",
+        "scenery",
+        "evidence",
+        "documentation",
+        "media",
+        "currency",
+        "capital",
+        "revenue",
+        "income",
+        "expenditure",
+        "debt",
+        "wealth",
+        "real_estate",
+        "legislation",
+        "parliament",
+        "vocabulary",
+        "grammar",
+        "jargon",
+        "slang",
+        "rubbish",
+        "garbage",
+        "trash",
+        "pollution",
+        "energy",
+        "electricity",
+        "power",
+        "gas",
+        "oil",
+        "petrol",
+        "water",
+        "rice",
+        "bread",
+        "cheese",
+        "meat",
+        "fish",
+        "salmon",
+        "trout",
+        "cod",
+        "sugar",
+        "salt",
+        "pepper",
+        "flour",
+        "sand",
+        "dust",
+        "dirt",
+        "mud",
+        "grass",
+        "hair",
+        "glass",
+        "iron",
+        "steel",
+        "cotton",
+        "wool",
+        "silk",
+        "leather",
+        "plastic",
+        "rubber",
+        "wood",
+        "concrete",
+        "cement",
+        "cash",
+        "change",
+    ]
+    .into_iter()
+    .collect()
+}
+
+/// Check if a word is uncountable (same form for singular and plural).
+fn is_uncountable(word: &str) -> bool {
+    uncountable_words().contains(word.to_lowercase().as_str())
+}
+
+/// Result of table validation - collects all errors before aborting.
+#[derive(Debug, Default)]
+pub struct ValidationResult {
+    pub errors: Vec<String>,
+}
+
+impl ValidationResult {
+    pub fn new() -> Self {
+        Self {
+            errors: Vec::new(),
+        }
+    }
+
+    pub fn add_error(&mut self, msg: impl Into<String>) {
+        self.errors.push(msg.into());
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.errors.is_empty()
+    }
+
+    /// Consume and return. If invalid, returns Err with all messages joined.
+    pub fn into_result(self) -> Result<(), String> {
+        if self.is_valid() {
+            Ok(())
+        } else {
+            Err(self.errors.join("\n"))
+        }
+    }
+}
+
+/// Validate that a table name is plural or uncountable.
+/// - Plural: singularize(name) != name
+/// - Uncountable: words with same singular/plural form (progress, information, etc.)
+pub fn is_plural(table_name: &str) -> bool {
+    if is_uncountable(table_name) {
+        return true;
+    }
+    // Check last segment for compound names (e.g. "user_progress" -> "progress")
+    if let Some(last) = table_name.split('_').last() {
+        if is_uncountable(last) {
+            return true;
+        }
+    }
+    let singular = to_singular(table_name);
+    singular != table_name
+}
+
+/// Normalize file stem to table name format (snake_case).
+/// Removes _struct, _table, _catalog suffixes.
+pub fn normalize_file_stem_to_table_name(file_stem: &str) -> String {
+    file_stem
+        .replace("_struct", "")
+        .replace("_table", "")
+        .replace("_catalog", "")
+}
+
+/// Validate that file stem and table name from content refer to the same entity.
+/// Both should be snake_case and match (e.g. "test_products" == "test_products").
+pub fn validate_file_name_matches_table(
+    file_stem: &str,
+    table_name_from_content: &str,
+) -> Result<(), String> {
+    let normalized_file = normalize_file_stem_to_table_name(file_stem);
+    let table_snake = table_name_from_content.to_lowercase().replace("-", "_");
+
+    if normalized_file != table_snake {
+        return Err(format!(
+            "File name '{}' does not match table name '{}'. File stem (without .rs) must match table name in snake_case. Expected file: {}.rs",
+            file_stem,
+            table_name_from_content,
+            table_snake
+        ));
+    }
+    Ok(())
+}
+
+/// Validate table name is plural.
+pub fn validate_table_name_plural(table_name: &str) -> Result<(), String> {
+    if !is_plural(table_name) {
+        return Err(format!(
+            "Table name '{}' must be plural (e.g. 'test_products' not 'test_product', 'demo_items' not 'demo_item')",
+            table_name
+        ));
+    }
+    Ok(())
+}
+
+/// Expected index name: idx_{table_name}_{column_names_joined}.
+/// For single column: idx_{table}_{column}
+/// For composite: idx_{table}_{col1}_{col2}
+pub fn expected_index_name(table_name: &str, columns: &[String]) -> String {
+    let cols = columns.join("_");
+    format!("idx_{}_{}", table_name, cols)
+}
+
+/// Validate index name follows idx_{table_name}_{column_name(s)}.
+pub fn validate_index_name(
+    index_name: &str,
+    table_name: &str,
+    columns: &[String],
+) -> Result<(), String> {
+    let expected = expected_index_name(table_name, columns);
+    if index_name != expected {
+        return Err(format!(
+            "Index '{}' must follow format idx_{{table_name}}_{{column_name}}. Expected: '{}'",
+            index_name, expected
+        ));
+    }
+    Ok(())
+}
+
+/// Expected foreign key name: fk_{table_name}_{column_name}.
+pub fn expected_foreign_key_name(table_name: &str, column_name: &str) -> String {
+    format!("fk_{}_{}", table_name, column_name)
+}
+
+/// Validate foreign key constraint name follows fk_{table_name}_{column_name}.
+pub fn validate_foreign_key_name(
+    constraint_name: &str,
+    table_name: &str,
+    column_name: &str,
+) -> Result<(), String> {
+    let expected = expected_foreign_key_name(table_name, column_name);
+    if constraint_name != expected {
+        return Err(format!(
+            "Foreign key '{}' must follow format fk_{{table_name}}_{{column_name}}. Expected: '{}'",
+            constraint_name, expected
+        ));
+    }
+    Ok(())
+}
+
+/// Extract table name from system_indexes!("table_name") or system_foreign_keys!("table_name").
+pub fn extract_table_name_from_content(content: &str) -> Option<String> {
+    // system_indexes!("demo_items")
+    let re_indexes = Regex::new(r#"system_indexes!\("([^"]+)"\)"#).ok()?;
+    if let Some(cap) = re_indexes.captures(content) {
+        return Some(cap.get(1)?.as_str().to_string());
+    }
+    // system_foreign_keys!("demo_items")
+    let re_fk = Regex::new(r#"system_foreign_keys!\("([^"]+)"\)"#).ok()?;
+    if let Some(cap) = re_fk.captures(content) {
+        return Some(cap.get(1)?.as_str().to_string());
+    }
+    None
+}
+
+/// System FK columns - skip validation for these (from system_foreign_keys! macro).
+const SYSTEM_FK_COLUMNS: &[&str] = &[
+    "organization_id",
+    "created_by",
+    "updated_by",
+    "deleted_by",
+    "requested_by",
+];
+
+/// Run all table validations. Aborts process on first error (returns Err).
+pub fn validate_table_file(
+    file_stem: &str,
+    content: &str,
+    table_name: &str,
+    indexes: &[(String, Vec<String>, bool, Option<String>)],
+    foreign_keys: &[(String, String)], // (constraint_name, column)
+) -> Result<(), String> {
+    let mut result = ValidationResult::new();
+
+    // 1. Table name must be plural
+    if let Err(e) = validate_table_name_plural(table_name) {
+        result.add_error(e);
+    }
+
+    // 2. File name must match table name
+    let table_from_content =
+        extract_table_name_from_content(content).unwrap_or_else(|| table_name.to_string());
+    if let Err(e) = validate_file_name_matches_table(file_stem, &table_from_content) {
+        result.add_error(e);
+    }
+
+    // 3. Validate index names (skip system indexes - they have table prefix from macro)
+    for (index_name, columns, _, _) in indexes {
+        if columns.is_empty() {
+            result.add_error(format!("Index '{}' has no columns", index_name));
+        } else if let Err(e) = validate_index_name(index_name, table_name, columns) {
+            result.add_error(e);
+        }
+    }
+
+    // 4. Validate foreign key names (skip system FKs - organization_id, created_by, etc.)
+    for (constraint_name, column) in foreign_keys {
+        if SYSTEM_FK_COLUMNS.contains(&column.as_str()) {
+            continue;
+        }
+        if let Err(e) = validate_foreign_key_name(constraint_name, table_name, column) {
+            result.add_error(e);
+        }
+    }
+
+    result.into_result()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_plural() {
+        assert!(is_plural("test_products"));
+        assert!(is_plural("demo_items"));
+        assert!(is_plural("classroom_courses"));
+        assert!(is_plural("organizations"));
+        assert!(is_plural("files"));
+        assert!(!is_plural("test_product"));
+        assert!(!is_plural("demo_item"));
+        assert!(!is_plural("organization"));
+    }
+
+    #[test]
+    fn test_uncountable_words_pass_plural_validation() {
+        assert!(is_plural("progress"));
+        assert!(is_plural("information"));
+        assert!(is_plural("data"));
+        assert!(is_plural("equipment"));
+        assert!(is_plural("software"));
+        assert!(is_plural("feedback"));
+        assert!(is_plural("metadata"));
+        assert!(is_plural("analytics"));
+        assert!(is_plural("research"));
+        assert!(is_plural("user_progress"));
+        assert!(is_plural("project_information"));
+        assert!(is_plural("system_data"));
+        assert!(validate_table_name_plural("progress").is_ok());
+        assert!(validate_table_name_plural("user_progress").is_ok());
+        assert!(validate_table_name_plural("feedback").is_ok());
+    }
+
+    #[test]
+    fn test_normalize_file_stem() {
+        assert_eq!(normalize_file_stem_to_table_name("test_products"), "test_products");
+        assert_eq!(normalize_file_stem_to_table_name("demo_items_table"), "demo_items");
+        assert_eq!(normalize_file_stem_to_table_name("samples_struct"), "samples");
+    }
+
+    #[test]
+    fn test_validate_file_name_matches_table_ok() {
+        assert!(validate_file_name_matches_table("demo_items", "demo_items").is_ok());
+        assert!(validate_file_name_matches_table("test_products", "test_products").is_ok());
+    }
+
+    #[test]
+    fn test_validate_file_name_matches_table_err() {
+        assert!(validate_file_name_matches_table("demo_item", "demo_items").is_err());
+        assert!(validate_file_name_matches_table("test_products", "test_product").is_err());
+    }
+
+    #[test]
+    fn test_validate_table_name_plural_ok() {
+        assert!(validate_table_name_plural("test_products").is_ok());
+        assert!(validate_table_name_plural("demo_items").is_ok());
+    }
+
+    #[test]
+    fn test_validate_table_name_plural_err() {
+        assert!(validate_table_name_plural("test_product").is_err());
+        assert!(validate_table_name_plural("demo_item").is_err());
+    }
+
+    #[test]
+    fn test_expected_index_name() {
+        assert_eq!(
+            expected_index_name("demo_items", &["title".to_string()]),
+            "idx_demo_items_title"
+        );
+        assert_eq!(
+            expected_index_name("classroom_courses", &["classroom_id".to_string()]),
+            "idx_classroom_courses_classroom_id"
+        );
+        assert_eq!(
+            expected_index_name("samples", &["col1".to_string(), "col2".to_string()]),
+            "idx_samples_col1_col2"
+        );
+    }
+
+    #[test]
+    fn test_validate_index_name_ok() {
+        assert!(validate_index_name(
+            "idx_demo_items_title",
+            "demo_items",
+            &["title".to_string()]
+        )
+        .is_ok());
+        assert!(validate_index_name(
+            "idx_classroom_courses_classroom_id",
+            "classroom_courses",
+            &["classroom_id".to_string()]
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn test_validate_index_name_err() {
+        assert!(validate_index_name(
+            "idx_demo_items_title",
+            "demo_items",
+            &["name".to_string()]
+        )
+        .is_err());
+        assert!(validate_index_name(
+            "wrong_format",
+            "demo_items",
+            &["title".to_string()]
+        )
+        .is_err());
+        assert!(validate_index_name(
+            "idx_demo_item_title",
+            "demo_items",
+            &["title".to_string()]
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn test_expected_foreign_key_name() {
+        assert_eq!(
+            expected_foreign_key_name("classroom_courses", "classroom_id"),
+            "fk_classroom_courses_classroom_id"
+        );
+        assert_eq!(
+            expected_foreign_key_name("samples", "sample_with_reference_id"),
+            "fk_samples_sample_with_reference_id"
+        );
+    }
+
+    #[test]
+    fn test_validate_foreign_key_name_ok() {
+        assert!(validate_foreign_key_name(
+            "fk_classroom_courses_classroom_id",
+            "classroom_courses",
+            "classroom_id"
+        )
+        .is_ok());
+        assert!(validate_foreign_key_name(
+            "fk_samples_sample_with_reference_id",
+            "samples",
+            "sample_with_reference_id"
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn test_validate_foreign_key_name_err() {
+        assert!(validate_foreign_key_name(
+            "fk_classroom_courses_classroom_id",
+            "classroom_courses",
+            "other_column"
+        )
+        .is_err());
+        assert!(validate_foreign_key_name(
+            "wrong_format",
+            "samples",
+            "sample_with_reference_id"
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn test_extract_table_name_from_content() {
+        let content = r#"
+        system_indexes!("demo_items"),
+        something else
+        "#;
+        assert_eq!(
+            extract_table_name_from_content(content),
+            Some("demo_items".to_string())
+        );
+
+        let content2 = r#"system_foreign_keys!("test_products")"#;
+        assert_eq!(
+            extract_table_name_from_content(content2),
+            Some("test_products".to_string())
+        );
+
+        let content3 = "no macro here";
+        assert_eq!(extract_table_name_from_content(content3), None);
+    }
+
+    #[test]
+    fn test_validate_table_file_success() {
+        let content = r#"
+        define_table_schema! {
+            fields: { system_fields!() },
+            indexes: { system_indexes!("demo_items"), idx_demo_items_title: { columns: ["title"], unique: false, type: "btree" } },
+            foreign_keys: { system_foreign_keys!("demo_items") }
+        }
+        "#;
+        let indexes = vec![(
+            "idx_demo_items_title".to_string(),
+            vec!["title".to_string()],
+            false,
+            Some("btree".to_string()),
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+        assert!(validate_table_file(
+            "demo_items",
+            content,
+            "demo_items",
+            &indexes,
+            &foreign_keys
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn test_validate_table_file_plural_fail() {
+        let content = r#"system_indexes!("demo_item")"#;
+        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let foreign_keys: Vec<(String, String)> = vec![];
+        let result = validate_table_file("demo_item", content, "demo_item", &indexes, &foreign_keys);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must be plural"));
+    }
+
+    #[test]
+    fn test_validate_table_file_filename_mismatch() {
+        let content = r#"system_indexes!("demo_items")"#;
+        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let foreign_keys: Vec<(String, String)> = vec![];
+        let result = validate_table_file("wrong_name", content, "demo_items", &indexes, &foreign_keys);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not match"));
+    }
+
+    #[test]
+    fn test_validate_table_file_index_name_fail() {
+        let content = r#"system_indexes!("demo_items")"#;
+        let indexes = vec![(
+            "wrong_index_name".to_string(),
+            vec!["title".to_string()],
+            false,
+            None,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+        let result = validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Index"));
+    }
+
+    #[test]
+    fn test_validate_table_file_fk_name_fail() {
+        let content = r#"system_foreign_keys!("samples")"#;
+        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let foreign_keys = vec![(
+            "wrong_fk_name".to_string(),
+            "sample_with_reference_id".to_string(),
+        )];
+        let result = validate_table_file("samples", content, "samples", &indexes, &foreign_keys);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Foreign key"));
+    }
+
+    #[test]
+    fn test_validate_table_file_skips_system_fk_columns() {
+        let content = r#"system_foreign_keys!("demo_items")"#;
+        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        // System FK columns use different format - we skip validation for them
+        let foreign_keys = vec![(
+            "demo_items_organization_id_organizations_id_fk".to_string(),
+            "organization_id".to_string(),
+        )];
+        // Should pass - we skip system columns (organization_id)
+        let result = validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
+        assert!(result.is_ok());
+    }
+}
