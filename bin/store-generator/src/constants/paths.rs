@@ -26,6 +26,7 @@ lazy_static::lazy_static! {
     pub static ref PROTO_OUTPUT_DIR: String = format!("{}/src/generated/proto", store_dir());
     pub static ref SYSTEM_FIELDS_FILE: String = format!("{}/src/builders/generator/system_fields.rs", store_dir());
     pub static ref HYPERTABLES_FILE: String = format!("{}/src/database/schema/hypertables.rs", store_dir());
+    pub static ref SYSTEM_TABLES_FILE: String = format!("{}/src/database/schema/system_tables.rs", store_dir());
     pub static ref BUILD_SCRIPT: String = format!("{}/src/builders/generator/build_proto.rs", store_dir());
 }
 
@@ -33,7 +34,7 @@ pub mod database {
     pub use super::{
         BUILD_SCRIPT, GENERATED_DIR, GRPC_CONTROLLER_FILE, HYPERTABLES_FILE, MIGRATIONS_DIR,
         MODELS_DIR, MODELS_MOD_FILE, PROTO_OUTPUT_DIR, PROTO_SOURCE_FILE, SCHEMA_FILE,
-        SCHEMA_TABLES_DIR, SYSTEM_FIELDS_FILE, TABLE_ENUM_FILE,
+        SCHEMA_TABLES_DIR, SYSTEM_FIELDS_FILE, SYSTEM_TABLES_FILE, TABLE_ENUM_FILE,
     };
 
     pub const UP_SQL_FILE: &str = "up.sql";

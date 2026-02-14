@@ -1,34 +1,43 @@
-// Define an array of system table names
-// These tables are considered system tables and may have special handling
-// Use this to restrict access to mutate data for developers
-pub const SYSTEM_TABLES: &[&str] = &[
-    // CRDT related tables
-    "crdt_messages",
-    "crdt_merkles",
-    "sync_endpoints",
-    "queues",
-    "queue_items",
-    "transactions",
-    // User Define System Tables
-    "counters",
-    "entities",
-    "fields",
-    "entity_fields",
-    "permissions",
-    "encryption_keys",
-    "data_permissions",
-    "role_permissions",
-    "organization_domains",
-    "system_config_fields",
-    "record_permissions",
-    "role_permission",
-    "table_indexes",
-    "stream_queue",
-    "stream_queue_items",
-    "test",
-];
+//! Reads system tables from the store's system_tables.rs (single source of truth).
+//! Parses the store's `SYSTEM_TABLES` const array to extract table names.
 
-// Function to check if a table is a system table
+use crate::constants::paths::SYSTEM_TABLES_FILE;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use std::collections::HashSet;
+
+static SYSTEM_TABLES_SET: Lazy<HashSet<String>> = Lazy::new(|| {
+    let path = SYSTEM_TABLES_FILE.as_str();
+    let content = std::fs::read_to_string(path).unwrap_or_else(|e| {
+        log::warn!(
+            "Could not read system_tables from {}: {}. Using empty set.",
+            path,
+            e
+        );
+        String::new()
+    });
+    parse_system_tables_from_rust(&content)
+});
+
+fn parse_system_tables_from_rust(content: &str) -> HashSet<String> {
+    // Find the array body: between "= &[" and "];"
+    let start = match content.find("= &[") {
+        Some(i) => i + 4,
+        None => return HashSet::new(),
+    };
+    let rest = &content[start..];
+    let end = rest.find("];").unwrap_or(rest.len());
+    let body = &rest[..end];
+
+    let re = Regex::new(r#""([^"]+)""#).unwrap();
+    re.captures_iter(body)
+        .filter_map(|c| c.get(1))
+        .map(|m| m.as_str().to_string())
+        .collect()
+}
+
+/// Returns true if the table is a system table.
+/// Reads from the store's system_tables.rs file.
 pub fn is_system_table(table_name: &str) -> bool {
-    SYSTEM_TABLES.contains(&table_name)
+    SYSTEM_TABLES_SET.contains(table_name)
 }
