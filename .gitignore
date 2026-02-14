@@ -50,5 +50,5 @@ Thumbs.db
 /bin/store/raw_queries/*
 
 # Generated store files (keep schema.rs)
-/bin/store/src/generated/*
-!/bin/store/src/generated/schema.rs
+# /bin/store/src/generated/*
+# !/bin/store/src/generated/schema.rs
