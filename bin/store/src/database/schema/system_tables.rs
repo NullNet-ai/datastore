@@ -1,6 +1,6 @@
-// Define an array of system table names
-// These tables are considered system tables and may have special handling
-// Use this to restrict access to mutate data for developers
+// Define an array of system table names. Read by store-generator.
+// Use this to restrict access to mutate data for developers.
+#[allow(dead_code)]
 pub const SYSTEM_TABLES: &[&str] = &[
     // CRDT related tables
     "crdt_messages",
@@ -28,7 +28,8 @@ pub const SYSTEM_TABLES: &[&str] = &[
     "test",
 ];
 
-// Function to check if a table is a system table
+/// Check if a table is a system table.
+#[allow(dead_code)]
 pub fn is_system_table(table_name: &str) -> bool {
     SYSTEM_TABLES.contains(&table_name)
 }

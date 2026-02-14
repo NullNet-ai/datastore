@@ -1,6 +1,6 @@
 #![recursion_limit = "2056"]
 use dotenv::dotenv;
-mod builders;
+mod macros;
 mod config;
 mod constants;
 mod controllers;
@@ -15,8 +15,8 @@ mod structs;
 mod utils;
 
 // Re-export database module for use in other modules
-use crate::builders::generator::generator_service;
 use crate::lifecycle::bootstrap;
+use crate::lifecycle::code_generation;
 use crate::lifecycle::{
     logging::{LogConfig, LogLevel},
     manager::LifecycleManager,
@@ -95,7 +95,7 @@ async fn main() -> std::io::Result<()> {
         initialize_logging_and_cache(&parse_env_config());
 
         // Handle code generation (exits if any generation flags are set)
-        generator_service::handle_code_generation(&args).await;
+        code_generation::handle_code_generation(&args).await;
 
         bootstrap_with_lifecycle().await?;
     }

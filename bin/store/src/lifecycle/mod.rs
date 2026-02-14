@@ -1,3 +1,5 @@
+pub mod bootstrap;
+pub mod code_generation;
 pub mod health_service;
 pub mod logging;
 pub mod manager;
@@ -11,5 +13,3 @@ pub mod runtime_test;
 pub mod shutdown_callback_test;
 pub mod shutdown_integration_test;
 
-// old bootstrap
-pub mod bootstrap;

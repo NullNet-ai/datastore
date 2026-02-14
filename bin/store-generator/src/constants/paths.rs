@@ -24,7 +24,8 @@ lazy_static::lazy_static! {
     pub static ref GRPC_CONTROLLER_FILE: String = format!("{}/src/generated/grpc_controller.rs", store_dir());
     pub static ref PROTO_SOURCE_FILE: String = format!("{}/src/generated/proto/store.proto", store_dir());
     pub static ref PROTO_OUTPUT_DIR: String = format!("{}/src/generated/proto", store_dir());
-    pub static ref SYSTEM_FIELDS_FILE: String = format!("{}/src/builders/generator/system_fields.rs", store_dir());
+    pub static ref SYSTEM_FIELDS_FILE: String =
+        format!("{}/src/macros/system_fields/system_fields.rs", store_dir());
     pub static ref HYPERTABLES_FILE: String = format!("{}/src/database/schema/hypertables.rs", store_dir());
     pub static ref SYSTEM_TABLES_FILE: String = format!("{}/src/database/schema/system_tables.rs", store_dir());
     pub static ref BUILD_SCRIPT: String = format!("{}/src/builders/generator/build_proto.rs", store_dir());

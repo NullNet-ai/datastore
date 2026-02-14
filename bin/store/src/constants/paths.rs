@@ -13,61 +13,11 @@ pub mod database {
     /// Main schema file path
     pub const SCHEMA_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/schema.rs");
 
-    /// Table enum file path
-    pub const TABLE_ENUM_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/table_enum.rs");
-
-    /// Schema tables directory
-    pub const SCHEMA_TABLES_DIR: &str = "src/database/schema/tables";
-
-    /// System fields definition file
-    pub const SYSTEM_FIELDS_FILE: &str = "src/builders/generator/system_fields.rs";
-
-    /// Hypertables definition file
-    pub const HYPERTABLES_FILE: &str = "src/database/schema/hypertables.rs";
-
     /// Database initialization SQL file
     pub const INIT_SQL_FILE: &str = "src/database/schema/init.sql";
 
-    /// Models directory
-    pub const MODELS_DIR: &str = const_format::concatcp!(GENERATED_DIR, "/models");
-
-    /// Models module file
-    pub const MODELS_MOD_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/models/mod.rs");
-
     /// Database cleanup SQL file
     pub const CLEANUP_SQL_FILE: &str = "src/database/cleanup.sql";
-
-    /// Migrations directory
-    pub const MIGRATIONS_DIR: &str = "migrations";
-
-    /// Migration up SQL file
-    pub const UP_SQL_FILE: &str = "up.sql";
-}
-
-/// Proto generation path constants
-pub mod proto {
-    use super::GENERATED_DIR;
-
-    /// Proto source file
-    pub const SOURCE_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/proto/store.proto");
-    /// Proto output directory
-    pub const OUTPUT_DIR: &str = const_format::concatcp!(GENERATED_DIR, "/proto");
-    /// Proto build script location
-    pub const BUILD_SCRIPT: &str = "src/builders/generator/build_proto.rs";
-}
-
-/// gRPC controller path constants
-pub mod grpc {
-    use super::GENERATED_DIR;
-
-    /// Generated gRPC controller file path
-    pub const CONTROLLER_FILE: &str = const_format::concatcp!(GENERATED_DIR, "/grpc_controller.rs");
-}
-
-/// Template-related constants
-pub mod templates {
-    /// Proto file name
-    pub const PROTO_FILE_NAME: &str = "store.proto";
 }
 
 /// Legacy schema file path (for backward compatibility)

@@ -1,11 +1,4 @@
 use crate::{
-    builders::{
-        generator::generator_service::GeneratorService,
-        templates::{
-            grpc_controller::grpc_controller_generator, proto_generator,
-            table_enum::table_enum_generator,
-        },
-    },
     controllers::{
         organization_controller::OrganizationsController,
         pg_functions::pg_listener_controller::{
@@ -61,27 +54,10 @@ use crate::{
 use actix_web::{mime, web, App, HttpServer};
 use dotenv::dotenv;
 use env_logger::Env;
+use crate::utils::helpers::parse_command_args;
 use log::{error, info};
-use std::{env, process, sync::Arc, time::Duration};
+use std::{env, sync::Arc, time::Duration};
 use tokio::signal::unix::{signal, SignalKind};
-fn run_build_script() -> std::io::Result<()> {
-    use std::process::Command;
-
-    info!("Running build script manually...");
-
-    let output = Command::new("cargo").arg("build").arg("--quiet").output()?;
-
-    if output.status.success() {
-        info!("Build script executed successfully");
-    } else {
-        error!(
-            "Build script failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-
-    Ok(())
-}
 
 pub async fn exec() -> std::io::Result<()> {
     dotenv().ok();
@@ -94,12 +70,12 @@ pub async fn exec() -> std::io::Result<()> {
         }
     };
 
-    let generate_proto =
-        env::var("GENERATE_PROTO").unwrap_or_else(|_| "false".to_string()) == "true";
-    let generate_grpc = env::var("GENERATE_GRPC").unwrap_or_else(|_| "false".to_string()) == "true";
-    let generate_table_enum =
-        env::var("GENERATE_TABLE_ENUM").unwrap_or_else(|_| "false".to_string()) == "true";
-    let create_schema = env::var("CREATE_SCHEMA").unwrap_or_else(|_| "false".to_string()) == "true";
+    let command_args = parse_command_args();
+    let generate_proto = command_args.generate_proto;
+    let generate_grpc = command_args.generate_grpc;
+    let generate_table_enum = command_args.generate_table_enum;
+    let create_schema = command_args.create_schema;
+
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
@@ -113,7 +89,6 @@ pub async fn exec() -> std::io::Result<()> {
         .ok()
         .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
         .map(Duration::from_secs);
-    let args: Vec<String> = env::args().collect();
 
     CacheConfig::init(cache_type, redis_connection, ttl);
     log::info!(
@@ -124,9 +99,8 @@ pub async fn exec() -> std::io::Result<()> {
 
     let _ = cache.cache_type();
 
-    // Set boolean flags based on command-line arguments
-    let cleanup = args.contains(&"--cleanup".to_string());
-    let init_db = args.contains(&"--init-db".to_string());
+    let cleanup = command_args.cleanup;
+    let init_db = command_args.init_db;
     if cleanup {
         info!("Running cleanup operation only...");
         match schema::database_setup::setup_database(DatabaseSetupFlags {
@@ -154,46 +128,8 @@ pub async fn exec() -> std::io::Result<()> {
     TransactionService::initialize().await;
 
     if generate_proto || generate_grpc || generate_table_enum || create_schema {
-        info!("Starting code generation...");
-
-        // Proto generation
-        if generate_proto {
-            info!("Generating proto files");
-            proto_generator::generate_protos("src/schema/schema.rs", "src/proto");
-
-            if let Err(e) = run_build_script() {
-                error!("Failed to run build script: {}", e);
-            }
-        }
-
-        // gRPC controller generation
-        if generate_grpc {
-            info!("Generating gRPC controllers");
-            if let Err(e) = grpc_controller_generator::run_generator() {
-                error!("Error: {}", e);
-                process::exit(1);
-            }
-        }
-
-        // Table enum generation
-        if generate_table_enum {
-            info!("Generating table enums");
-            if let Err(e) = table_enum_generator::run_generator() {
-                error!("Failed to generate table enum: {}", e);
-            }
-        }
-
-        // Schema generation
-        if create_schema {
-            info!("Running schema generator");
-            if let Err(e) = GeneratorService::run() {
-                error!("Failed to generate schema: {}", e);
-                process::exit(1);
-            }
-        }
-
-        info!("Code generation completed successfully!");
-        process::exit(0);
+        crate::lifecycle::code_generation::handle_code_generation(&command_args).await;
+        unreachable!("handle_code_generation exits on success");
     }
 
     let background_sync_service = match background_sync::BackgroundSyncService::new().await {
