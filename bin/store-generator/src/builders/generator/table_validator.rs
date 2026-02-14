@@ -141,9 +141,7 @@ pub struct ValidationResult {
 
 impl ValidationResult {
     pub fn new() -> Self {
-        Self {
-            errors: Vec::new(),
-        }
+        Self { errors: Vec::new() }
     }
 
     pub fn add_error(&mut self, msg: impl Into<String>) {
@@ -371,9 +369,18 @@ mod tests {
 
     #[test]
     fn test_normalize_file_stem() {
-        assert_eq!(normalize_file_stem_to_table_name("test_products"), "test_products");
-        assert_eq!(normalize_file_stem_to_table_name("demo_items_table"), "demo_items");
-        assert_eq!(normalize_file_stem_to_table_name("samples_struct"), "samples");
+        assert_eq!(
+            normalize_file_stem_to_table_name("test_products"),
+            "test_products"
+        );
+        assert_eq!(
+            normalize_file_stem_to_table_name("demo_items_table"),
+            "demo_items"
+        );
+        assert_eq!(
+            normalize_file_stem_to_table_name("samples_struct"),
+            "samples"
+        );
     }
 
     #[test]
@@ -418,12 +425,10 @@ mod tests {
 
     #[test]
     fn test_validate_index_name_ok() {
-        assert!(validate_index_name(
-            "idx_demo_items_title",
-            "demo_items",
-            &["title".to_string()]
-        )
-        .is_ok());
+        assert!(
+            validate_index_name("idx_demo_items_title", "demo_items", &["title".to_string()])
+                .is_ok()
+        );
         assert!(validate_index_name(
             "idx_classroom_courses_classroom_id",
             "classroom_courses",
@@ -434,24 +439,15 @@ mod tests {
 
     #[test]
     fn test_validate_index_name_err() {
-        assert!(validate_index_name(
-            "idx_demo_items_title",
-            "demo_items",
-            &["name".to_string()]
-        )
-        .is_err());
-        assert!(validate_index_name(
-            "wrong_format",
-            "demo_items",
-            &["title".to_string()]
-        )
-        .is_err());
-        assert!(validate_index_name(
-            "idx_demo_item_title",
-            "demo_items",
-            &["title".to_string()]
-        )
-        .is_err());
+        assert!(
+            validate_index_name("idx_demo_items_title", "demo_items", &["name".to_string()])
+                .is_err()
+        );
+        assert!(validate_index_name("wrong_format", "demo_items", &["title".to_string()]).is_err());
+        assert!(
+            validate_index_name("idx_demo_item_title", "demo_items", &["title".to_string()])
+                .is_err()
+        );
     }
 
     #[test]
@@ -490,12 +486,10 @@ mod tests {
             "other_column"
         )
         .is_err());
-        assert!(validate_foreign_key_name(
-            "wrong_format",
-            "samples",
-            "sample_with_reference_id"
-        )
-        .is_err());
+        assert!(
+            validate_foreign_key_name("wrong_format", "samples", "sample_with_reference_id")
+                .is_err()
+        );
     }
 
     #[test]
@@ -535,14 +529,10 @@ mod tests {
             Some("btree".to_string()),
         )];
         let foreign_keys: Vec<(String, String)> = vec![];
-        assert!(validate_table_file(
-            "demo_items",
-            content,
-            "demo_items",
-            &indexes,
-            &foreign_keys
-        )
-        .is_ok());
+        assert!(
+            validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys)
+                .is_ok()
+        );
     }
 
     #[test]
@@ -550,7 +540,8 @@ mod tests {
         let content = r#"system_indexes!("demo_item")"#;
         let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
         let foreign_keys: Vec<(String, String)> = vec![];
-        let result = validate_table_file("demo_item", content, "demo_item", &indexes, &foreign_keys);
+        let result =
+            validate_table_file("demo_item", content, "demo_item", &indexes, &foreign_keys);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("must be plural"));
     }
@@ -560,7 +551,8 @@ mod tests {
         let content = r#"system_indexes!("demo_items")"#;
         let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
         let foreign_keys: Vec<(String, String)> = vec![];
-        let result = validate_table_file("wrong_name", content, "demo_items", &indexes, &foreign_keys);
+        let result =
+            validate_table_file("wrong_name", content, "demo_items", &indexes, &foreign_keys);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("does not match"));
     }
@@ -575,7 +567,8 @@ mod tests {
             None,
         )];
         let foreign_keys: Vec<(String, String)> = vec![];
-        let result = validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
+        let result =
+            validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Index"));
     }
@@ -603,7 +596,8 @@ mod tests {
             "organization_id".to_string(),
         )];
         // Should pass - we skip system columns (organization_id)
-        let result = validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
+        let result =
+            validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
         assert!(result.is_ok());
     }
 }

@@ -58,7 +58,8 @@ mod tests {
 
     #[test]
     fn test_parse_reserved_keywords_from_rust() {
-        let content = r#"pub const RESERVED_KEYWORDS: &[&str] = &["columns", "box", "type", "ref"];"#;
+        let content =
+            r#"pub const RESERVED_KEYWORDS: &[&str] = &["columns", "box", "type", "ref"];"#;
         let parsed = parse_reserved_keywords_from_rust(content);
         assert!(parsed.contains("columns"));
         assert!(parsed.contains("box"));
@@ -85,7 +86,9 @@ mod tests {
         // Find store path: STORE_DIR, bin/store, ../store (sibling), cwd
         let cwd = std::env::current_dir().unwrap_or_default();
         let candidates: Vec<std::path::PathBuf> = [
-            std::env::var("STORE_DIR").ok().map(std::path::PathBuf::from),
+            std::env::var("STORE_DIR")
+                .ok()
+                .map(std::path::PathBuf::from),
             Some(cwd.join("bin/store")),
             cwd.parent().map(|p| p.join("store")), // when in store-generator, ../store
             Some(cwd.clone()),
@@ -121,5 +124,4 @@ mod tests {
             parsed
         );
     }
-
 }

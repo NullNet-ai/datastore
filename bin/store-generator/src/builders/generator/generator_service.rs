@@ -1,9 +1,9 @@
 use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
 use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, TableDefinition};
-use crate::builders::generator::table_validator;
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
 use crate::builders::generator::schema_generator::SchemaGenerator;
+use crate::builders::generator::table_validator;
 use crate::constants::paths::database::{
     HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_FILE, SCHEMA_TABLES_DIR,
     SYSTEM_FIELDS_FILE,
@@ -474,11 +474,7 @@ impl GeneratorService {
                 let indexes = Self::extract_indexes_from_macro(&content).unwrap_or_default();
                 let fk_names = Self::extract_foreign_key_names_and_columns(&content)?;
                 if let Err(e) = table_validator::validate_table_file(
-                    file_stem,
-                    &content,
-                    &def.name,
-                    &indexes,
-                    &fk_names,
+                    file_stem, &content, &def.name, &indexes, &fk_names,
                 ) {
                     return Err(format!(
                         "Table validation failed for {}:\n{}\n\nAborting.",
@@ -930,7 +926,9 @@ impl GeneratorService {
                             }
                         }
                         if line.contains("unique:") {
-                            let unique_val = line.split("unique:").nth(1)
+                            let unique_val = line
+                                .split("unique:")
+                                .nth(1)
                                 .and_then(|s| s.split(',').next())
                                 .map(|s| s.trim())
                                 .unwrap_or("");
