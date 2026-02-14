@@ -1,6 +1,5 @@
 #![recursion_limit = "2056"]
 use dotenv::dotenv;
-mod macros;
 mod config;
 mod constants;
 mod controllers;
@@ -8,6 +7,7 @@ mod database;
 mod generated;
 mod initializers;
 mod lifecycle;
+mod macros;
 mod middlewares;
 mod providers;
 mod routers;

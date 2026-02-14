@@ -1,3 +1,4 @@
+use crate::utils::helpers::parse_command_args;
 use crate::{
     controllers::{
         organization_controller::OrganizationsController,
@@ -54,7 +55,6 @@ use crate::{
 use actix_web::{mime, web, App, HttpServer};
 use dotenv::dotenv;
 use env_logger::Env;
-use crate::utils::helpers::parse_command_args;
 use log::{error, info};
 use std::{env, sync::Arc, time::Duration};
 use tokio::signal::unix::{signal, SignalKind};
