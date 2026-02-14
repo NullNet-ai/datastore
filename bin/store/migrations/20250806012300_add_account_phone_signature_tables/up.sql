@@ -1,5 +1,4 @@
 -- Your SQL goes here
-
 CREATE TABLE "account_phone_numbers" (
     "account_profile_id" TEXT,
     "raw_phone_number" TEXT,
@@ -140,16 +139,7 @@ ALTER TABLE "files" ADD CONSTRAINT "files_deleted_by_account_organizations_id_fk
 --> statement-breakpoint
 ALTER TABLE "files" ADD CONSTRAINT "files_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
-ALTER TABLE "test_hypertable" ADD CONSTRAINT "test_hypertable_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
---> statement-breakpoint
-ALTER TABLE "test_hypertable" ADD CONSTRAINT "test_hypertable_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
---> statement-breakpoint
-ALTER TABLE "test_hypertable" ADD CONSTRAINT "test_hypertable_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
---> statement-breakpoint
-ALTER TABLE "test_hypertable" ADD CONSTRAINT "test_hypertable_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
---> statement-breakpoint
-ALTER TABLE "test_hypertable" ADD CONSTRAINT "test_hypertable_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
---> statement-breakpoint
+
 ALTER TABLE "account_signatures" ADD CONSTRAINT "account_signatures_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
 ALTER TABLE "account_signatures" ADD CONSTRAINT "account_signatures_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;

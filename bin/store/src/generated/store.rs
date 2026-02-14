@@ -185,34 +185,34 @@ pub struct AggregationFilterParams {
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UserRoles {
-    #[prost(string, optional, tag = "1")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "2")]
+    #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "3")]
+    #[prost(string, optional, tag = "2")]
     pub status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "4")]
+    #[prost(string, optional, tag = "3")]
     pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "5")]
+    #[prost(int32, optional, tag = "4")]
     pub version: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "6")]
+    #[prost(string, optional, tag = "5")]
     pub created_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "7")]
+    #[prost(string, optional, tag = "6")]
     pub created_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "8")]
+    #[prost(string, optional, tag = "7")]
     pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "9")]
+    #[prost(string, optional, tag = "8")]
     pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "10")]
+    #[prost(string, optional, tag = "9")]
     pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "11")]
+    #[prost(string, optional, tag = "10")]
     pub created_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "12")]
+    #[prost(string, optional, tag = "11")]
     pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "13")]
+    #[prost(string, optional, tag = "12")]
     pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "14")]
+    #[prost(string, optional, tag = "13")]
     pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "15")]
     pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     #[prost(string, repeated, tag = "16")]
@@ -220,17 +220,17 @@ pub struct UserRoles {
     #[prost(string, optional, tag = "17")]
     pub code: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "18")]
-    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "19")]
-    pub role: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "20")]
-    pub entity: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "21")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "22")]
+    #[prost(string, optional, tag = "20")]
     pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "23")]
+    #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
+    pub role: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub entity: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Sessions entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -489,16 +489,16 @@ pub struct Organizations {
     pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "13")]
     pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "14")]
-    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "15")]
-    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "16")]
-    pub code: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "17")]
-    pub id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "18")]
+    #[prost(string, optional, tag = "14")]
     pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "16")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(int32, optional, tag = "19")]
     pub sensitivity_level: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "20")]
@@ -506,15 +506,37 @@ pub struct Organizations {
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "23")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "24")]
-    pub organization_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "23")]
+    pub skyll_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub department_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "25")]
+    pub district_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
+    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "27")]
+    pub school_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
+    pub city: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
+    pub county: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "30")]
+    pub state: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "31")]
+    pub school_identifier: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "32")]
+    pub district_identifier: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "33")]
+    pub organization_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "34")]
     pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, repeated, tag = "26")]
-    pub path_level: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "35")]
+    pub path_level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "36")]
+    pub superintendent_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "37")]
+    pub principal_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// OrganizationContacts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1306,11 +1328,11 @@ pub struct Files {
     #[prost(int32, optional, tag = "37")]
     pub presigned_url_expire: ::core::option::Option<i32>,
 }
-/// TestHypertable entity definition
+/// TestHypertables entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct TestHypertable {
+pub struct TestHypertables {
     #[prost(int32, optional, tag = "1")]
     pub tombstone: ::core::option::Option<i32>,
     #[prost(string, optional, tag = "2")]
@@ -5882,23 +5904,23 @@ pub struct UpsertFilesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<Files>,
 }
-/// Create TestHypertable request
+/// Create TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateTestHypertableRequest {
+pub struct CreateTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
-    pub test_hypertable: ::core::option::Option<TestHypertable>,
+    pub test_hypertables: ::core::option::Option<TestHypertables>,
     #[prost(message, optional, tag = "2")]
     pub params: ::core::option::Option<CreateParams>,
     #[prost(message, optional, tag = "3")]
     pub query: ::core::option::Option<CreateQuery>,
 }
-/// Create TestHypertable response
+/// Create TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct CreateTestHypertableResponse {
+pub struct CreateTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(int32, tag = "2")]
@@ -5906,47 +5928,47 @@ pub struct CreateTestHypertableResponse {
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<TestHypertable>,
+    pub data: ::core::option::Option<TestHypertables>,
 }
-/// Get TestHypertable request
+/// Get TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetTestHypertableRequest {
+pub struct GetTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<GetParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<GetQuery>,
 }
-/// Get TestHypertable response
+/// Get TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GetTestHypertableResponse {
+pub struct GetTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "3")]
-    pub data: ::core::option::Option<TestHypertable>,
+    pub data: ::core::option::Option<TestHypertables>,
 }
-/// Update TestHypertable request
+/// Update TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateTestHypertableRequest {
+pub struct UpdateTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
-    pub test_hypertable: ::core::option::Option<TestHypertable>,
+    pub test_hypertable: ::core::option::Option<TestHypertables>,
     #[prost(message, optional, tag = "2")]
     pub params: ::core::option::Option<UpdateParams>,
     #[prost(message, optional, tag = "3")]
     pub query: ::core::option::Option<UpdateQuery>,
 }
-/// Update TestHypertable response
+/// Update TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateTestHypertableResponse {
+pub struct UpdateTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(int32, tag = "2")]
@@ -5954,22 +5976,22 @@ pub struct UpdateTestHypertableResponse {
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<TestHypertable>,
+    pub data: ::core::option::Option<TestHypertables>,
 }
-/// BatchUpdate TestHypertable request
+/// BatchUpdate TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateTestHypertableRequest {
+pub struct BatchUpdateTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchUpdateParams>,
     #[prost(message, optional, tag = "2")]
     pub body: ::core::option::Option<
-        batch_update_test_hypertable_request::BatchUpdateBody,
+        batch_update_test_hypertables_request::BatchUpdateBody,
     >,
 }
-/// Nested message and enum types in `BatchUpdateTestHypertableRequest`.
-pub mod batch_update_test_hypertable_request {
+/// Nested message and enum types in `BatchUpdateTestHypertablesRequest`.
+pub mod batch_update_test_hypertables_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
@@ -5977,14 +5999,14 @@ pub mod batch_update_test_hypertable_request {
         #[prost(message, repeated, tag = "1")]
         pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
         #[prost(message, optional, tag = "2")]
-        pub updates: ::core::option::Option<super::TestHypertable>,
+        pub updates: ::core::option::Option<super::TestHypertables>,
     }
 }
-/// BatchUpdate TestHypertable response
+/// BatchUpdate TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchUpdateTestHypertableResponse {
+pub struct BatchUpdateTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -5992,22 +6014,22 @@ pub struct BatchUpdateTestHypertableResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<TestHypertable>,
+    pub data: ::prost::alloc::vec::Vec<TestHypertables>,
 }
-/// BatchDelete TestHypertable request
+/// BatchDelete TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteTestHypertableRequest {
+pub struct BatchDeleteTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchDeleteParams>,
     #[prost(message, optional, tag = "2")]
     pub body: ::core::option::Option<
-        batch_delete_test_hypertable_request::BatchDeleteBody,
+        batch_delete_test_hypertables_request::BatchDeleteBody,
     >,
 }
-/// Nested message and enum types in `BatchDeleteTestHypertableRequest`.
-pub mod batch_delete_test_hypertable_request {
+/// Nested message and enum types in `BatchDeleteTestHypertablesRequest`.
+pub mod batch_delete_test_hypertables_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
@@ -6016,11 +6038,11 @@ pub mod batch_delete_test_hypertable_request {
         pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
     }
 }
-/// BatchDelete TestHypertable response
+/// BatchDelete TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchDeleteTestHypertableResponse {
+pub struct BatchDeleteTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -6028,23 +6050,23 @@ pub struct BatchDeleteTestHypertableResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<TestHypertable>,
+    pub data: ::core::option::Option<TestHypertables>,
 }
-/// Delete TestHypertable request
+/// Delete TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteTestHypertableRequest {
+pub struct DeleteTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<DeleteParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<DeleteQuery>,
 }
-/// Delete TestHypertable response
+/// Delete TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DeleteTestHypertableResponse {
+pub struct DeleteTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -6052,35 +6074,35 @@ pub struct DeleteTestHypertableResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, optional, tag = "4")]
-    pub data: ::core::option::Option<TestHypertable>,
+    pub data: ::core::option::Option<TestHypertables>,
 }
-/// BatchInsert TestHypertable request
+/// BatchInsert TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertTestHypertableRequest {
+pub struct BatchInsertTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<BatchInsertParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<BatchInsertQuery>,
     #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<batch_insert_test_hypertable_request::BatchBody>,
+    pub body: ::core::option::Option<batch_insert_test_hypertables_request::BatchBody>,
 }
-/// Nested message and enum types in `BatchInsertTestHypertableRequest`.
-pub mod batch_insert_test_hypertable_request {
+/// Nested message and enum types in `BatchInsertTestHypertablesRequest`.
+pub mod batch_insert_test_hypertables_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct BatchBody {
         #[prost(message, repeated, tag = "1")]
-        pub test_hypertable: ::prost::alloc::vec::Vec<super::TestHypertable>,
+        pub test_hypertables: ::prost::alloc::vec::Vec<super::TestHypertables>,
     }
 }
-/// BatchInsert TestHypertable response
+/// BatchInsert TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct BatchInsertTestHypertableResponse {
+pub struct BatchInsertTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -6088,22 +6110,22 @@ pub struct BatchInsertTestHypertableResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<TestHypertable>,
+    pub data: ::prost::alloc::vec::Vec<TestHypertables>,
 }
-/// Upsert TestHypertable request
+/// Upsert TestHypertables request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertTestHypertableRequest {
+pub struct UpsertTestHypertablesRequest {
     #[prost(message, optional, tag = "1")]
     pub params: ::core::option::Option<UpsertParams>,
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<UpsertQuery>,
     #[prost(message, optional, tag = "3")]
-    pub body: ::core::option::Option<upsert_test_hypertable_request::UpsertBody>,
+    pub body: ::core::option::Option<upsert_test_hypertables_request::UpsertBody>,
 }
-/// Nested message and enum types in `UpsertTestHypertableRequest`.
-pub mod upsert_test_hypertable_request {
+/// Nested message and enum types in `UpsertTestHypertablesRequest`.
+pub mod upsert_test_hypertables_request {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(default)]
     #[derive(Clone, PartialEq, ::prost::Message)]
@@ -6111,14 +6133,14 @@ pub mod upsert_test_hypertable_request {
         #[prost(string, repeated, tag = "1")]
         pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
         #[prost(message, optional, tag = "2")]
-        pub data: ::core::option::Option<super::TestHypertable>,
+        pub data: ::core::option::Option<super::TestHypertables>,
     }
 }
-/// Upsert TestHypertable response
+/// Upsert TestHypertables response
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpsertTestHypertableResponse {
+pub struct UpsertTestHypertablesResponse {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
@@ -6126,7 +6148,7 @@ pub struct UpsertTestHypertableResponse {
     #[prost(int32, tag = "3")]
     pub count: i32,
     #[prost(message, repeated, tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<TestHypertable>,
+    pub data: ::prost::alloc::vec::Vec<TestHypertables>,
 }
 /// Create AccountPhoneNumbers request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -8091,68 +8113,68 @@ pub mod store_service_server {
             tonic::Response<super::UpsertFilesResponse>,
             tonic::Status,
         >;
-        /// Create a new TestHypertable
-        async fn create_test_hypertable(
+        /// Create a new TestHypertables
+        async fn create_test_hypertables(
             &self,
-            request: tonic::Request<super::CreateTestHypertableRequest>,
+            request: tonic::Request<super::CreateTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::CreateTestHypertableResponse>,
+            tonic::Response<super::CreateTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Get a TestHypertable by ID
-        async fn get_test_hypertable(
+        /// Get a TestHypertables by ID
+        async fn get_test_hypertables(
             &self,
-            request: tonic::Request<super::GetTestHypertableRequest>,
+            request: tonic::Request<super::GetTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::GetTestHypertableResponse>,
+            tonic::Response<super::GetTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Update an existing TestHypertable
-        async fn update_test_hypertable(
+        /// Update an existing TestHypertables
+        async fn update_test_hypertables(
             &self,
-            request: tonic::Request<super::UpdateTestHypertableRequest>,
+            request: tonic::Request<super::UpdateTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::UpdateTestHypertableResponse>,
+            tonic::Response<super::UpdateTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Delete a TestHypertable by ID
-        async fn delete_test_hypertable(
+        /// Delete a TestHypertables by ID
+        async fn delete_test_hypertables(
             &self,
-            request: tonic::Request<super::DeleteTestHypertableRequest>,
+            request: tonic::Request<super::DeleteTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::DeleteTestHypertableResponse>,
+            tonic::Response<super::DeleteTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Batch insert multiple TestHypertables
-        async fn batch_insert_test_hypertable(
+        /// Batch insert multiple TestHypertabless
+        async fn batch_insert_test_hypertables(
             &self,
-            request: tonic::Request<super::BatchInsertTestHypertableRequest>,
+            request: tonic::Request<super::BatchInsertTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::BatchInsertTestHypertableResponse>,
+            tonic::Response<super::BatchInsertTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Batch update multiple TestHypertables based on filters
-        async fn batch_update_test_hypertable(
+        /// Batch update multiple TestHypertabless based on filters
+        async fn batch_update_test_hypertables(
             &self,
-            request: tonic::Request<super::BatchUpdateTestHypertableRequest>,
+            request: tonic::Request<super::BatchUpdateTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::BatchUpdateTestHypertableResponse>,
+            tonic::Response<super::BatchUpdateTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Batch delete multiple TestHypertables based on filters
-        async fn batch_delete_test_hypertable(
+        /// Batch delete multiple TestHypertabless based on filters
+        async fn batch_delete_test_hypertables(
             &self,
-            request: tonic::Request<super::BatchDeleteTestHypertableRequest>,
+            request: tonic::Request<super::BatchDeleteTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::BatchDeleteTestHypertableResponse>,
+            tonic::Response<super::BatchDeleteTestHypertablesResponse>,
             tonic::Status,
         >;
-        /// Upsert a TestHypertable (create if not exists, update if exists)
-        async fn upsert_test_hypertable(
+        /// Upsert a TestHypertables (create if not exists, update if exists)
+        async fn upsert_test_hypertables(
             &self,
-            request: tonic::Request<super::UpsertTestHypertableRequest>,
+            request: tonic::Request<super::UpsertTestHypertablesRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::UpsertTestHypertableResponse>,
+            tonic::Response<super::UpsertTestHypertablesResponse>,
             tonic::Status,
         >;
         /// Create a new AccountPhoneNumbers
@@ -15337,212 +15359,25 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/CreateTestHypertable" => {
+                "/store.StoreService/CreateTestHypertables" => {
                     #[allow(non_camel_case_types)]
-                    struct CreateTestHypertableSvc<T: StoreService>(pub Arc<T>);
+                    struct CreateTestHypertablesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<super::CreateTestHypertableRequest>
-                    for CreateTestHypertableSvc<T> {
-                        type Response = super::CreateTestHypertableResponse;
+                    > tonic::server::UnaryService<super::CreateTestHypertablesRequest>
+                    for CreateTestHypertablesSvc<T> {
+                        type Response = super::CreateTestHypertablesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::CreateTestHypertableRequest>,
+                            request: tonic::Request<super::CreateTestHypertablesRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::create_test_hypertable(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = CreateTestHypertableSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/GetTestHypertable" => {
-                    #[allow(non_camel_case_types)]
-                    struct GetTestHypertableSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::GetTestHypertableRequest>
-                    for GetTestHypertableSvc<T> {
-                        type Response = super::GetTestHypertableResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::GetTestHypertableRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::get_test_hypertable(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = GetTestHypertableSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/UpdateTestHypertable" => {
-                    #[allow(non_camel_case_types)]
-                    struct UpdateTestHypertableSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::UpdateTestHypertableRequest>
-                    for UpdateTestHypertableSvc<T> {
-                        type Response = super::UpdateTestHypertableResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::UpdateTestHypertableRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::update_test_hypertable(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = UpdateTestHypertableSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/DeleteTestHypertable" => {
-                    #[allow(non_camel_case_types)]
-                    struct DeleteTestHypertableSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<super::DeleteTestHypertableRequest>
-                    for DeleteTestHypertableSvc<T> {
-                        type Response = super::DeleteTestHypertableResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::DeleteTestHypertableRequest>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::delete_test_hypertable(&inner, request)
-                                    .await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let method = DeleteTestHypertableSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/store.StoreService/BatchInsertTestHypertable" => {
-                    #[allow(non_camel_case_types)]
-                    struct BatchInsertTestHypertableSvc<T: StoreService>(pub Arc<T>);
-                    impl<
-                        T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchInsertTestHypertableRequest,
-                    > for BatchInsertTestHypertableSvc<T> {
-                        type Response = super::BatchInsertTestHypertableResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::BatchInsertTestHypertableRequest,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as StoreService>::batch_insert_test_hypertable(
+                                <T as StoreService>::create_test_hypertables(
                                         &inner,
                                         request,
                                     )
@@ -15557,7 +15392,7 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = BatchInsertTestHypertableSvc(inner);
+                        let method = CreateTestHypertablesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -15573,28 +15408,71 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/BatchUpdateTestHypertable" => {
+                "/store.StoreService/GetTestHypertables" => {
                     #[allow(non_camel_case_types)]
-                    struct BatchUpdateTestHypertableSvc<T: StoreService>(pub Arc<T>);
+                    struct GetTestHypertablesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchUpdateTestHypertableRequest,
-                    > for BatchUpdateTestHypertableSvc<T> {
-                        type Response = super::BatchUpdateTestHypertableResponse;
+                    > tonic::server::UnaryService<super::GetTestHypertablesRequest>
+                    for GetTestHypertablesSvc<T> {
+                        type Response = super::GetTestHypertablesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<
-                                super::BatchUpdateTestHypertableRequest,
-                            >,
+                            request: tonic::Request<super::GetTestHypertablesRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_update_test_hypertable(
+                                <T as StoreService>::get_test_hypertables(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetTestHypertablesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateTestHypertables" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateTestHypertablesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateTestHypertablesRequest>
+                    for UpdateTestHypertablesSvc<T> {
+                        type Response = super::UpdateTestHypertablesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateTestHypertablesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_test_hypertables(
                                         &inner,
                                         request,
                                     )
@@ -15609,7 +15487,7 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = BatchUpdateTestHypertableSvc(inner);
+                        let method = UpdateTestHypertablesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -15625,28 +15503,25 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/BatchDeleteTestHypertable" => {
+                "/store.StoreService/DeleteTestHypertables" => {
                     #[allow(non_camel_case_types)]
-                    struct BatchDeleteTestHypertableSvc<T: StoreService>(pub Arc<T>);
+                    struct DeleteTestHypertablesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<
-                        super::BatchDeleteTestHypertableRequest,
-                    > for BatchDeleteTestHypertableSvc<T> {
-                        type Response = super::BatchDeleteTestHypertableResponse;
+                    > tonic::server::UnaryService<super::DeleteTestHypertablesRequest>
+                    for DeleteTestHypertablesSvc<T> {
+                        type Response = super::DeleteTestHypertablesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<
-                                super::BatchDeleteTestHypertableRequest,
-                            >,
+                            request: tonic::Request<super::DeleteTestHypertablesRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::batch_delete_test_hypertable(
+                                <T as StoreService>::delete_test_hypertables(
                                         &inner,
                                         request,
                                     )
@@ -15661,7 +15536,7 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = BatchDeleteTestHypertableSvc(inner);
+                        let method = DeleteTestHypertablesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -15677,25 +15552,31 @@ pub mod store_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/store.StoreService/UpsertTestHypertable" => {
+                "/store.StoreService/BatchInsertTestHypertables" => {
                     #[allow(non_camel_case_types)]
-                    struct UpsertTestHypertableSvc<T: StoreService>(pub Arc<T>);
+                    struct BatchInsertTestHypertablesSvc<T: StoreService>(pub Arc<T>);
                     impl<
                         T: StoreService,
-                    > tonic::server::UnaryService<super::UpsertTestHypertableRequest>
-                    for UpsertTestHypertableSvc<T> {
-                        type Response = super::UpsertTestHypertableResponse;
+                    > tonic::server::UnaryService<
+                        super::BatchInsertTestHypertablesRequest,
+                    > for BatchInsertTestHypertablesSvc<T> {
+                        type Response = super::BatchInsertTestHypertablesResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::UpsertTestHypertableRequest>,
+                            request: tonic::Request<
+                                super::BatchInsertTestHypertablesRequest,
+                            >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as StoreService>::upsert_test_hypertable(&inner, request)
+                                <T as StoreService>::batch_insert_test_hypertables(
+                                        &inner,
+                                        request,
+                                    )
                                     .await
                             };
                             Box::pin(fut)
@@ -15707,7 +15588,160 @@ pub mod store_service_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = UpsertTestHypertableSvc(inner);
+                        let method = BatchInsertTestHypertablesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateTestHypertables" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateTestHypertablesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateTestHypertablesRequest,
+                    > for BatchUpdateTestHypertablesSvc<T> {
+                        type Response = super::BatchUpdateTestHypertablesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateTestHypertablesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_test_hypertables(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateTestHypertablesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteTestHypertables" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteTestHypertablesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteTestHypertablesRequest,
+                    > for BatchDeleteTestHypertablesSvc<T> {
+                        type Response = super::BatchDeleteTestHypertablesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteTestHypertablesRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_test_hypertables(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteTestHypertablesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertTestHypertables" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertTestHypertablesSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertTestHypertablesRequest>
+                    for UpsertTestHypertablesSvc<T> {
+                        type Response = super::UpsertTestHypertablesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertTestHypertablesRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_test_hypertables(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertTestHypertablesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

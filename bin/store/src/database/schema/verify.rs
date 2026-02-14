@@ -8,8 +8,7 @@ const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
     // Use get_table_fields which handles #[sql_name] mapping (e.g. columns_data -> columns)
-    get_table_fields(table_name)
-        .map_or(false, |fields| fields.contains(&field_name.to_string()))
+    get_table_fields(table_name).map_or(false, |fields| fields.contains(&field_name.to_string()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,8 +69,7 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
             };
 
             for rust_id in &rust_identifiers {
-                let field_pattern =
-                    format!(r"(?m)^\s*{}\s*->\s*([^,\s]+)", regex::escape(rust_id));
+                let field_pattern = format!(r"(?m)^\s*{}\s*->\s*([^,\s]+)", regex::escape(rust_id));
                 let field_regex = match Regex::new(&field_pattern) {
                     Ok(re) => re,
                     Err(_) => continue,
@@ -79,66 +77,66 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 
                 // Extract the field type if found
                 if let Some(field_captures) = field_regex.captures(table_content) {
-                if let Some(field_type) = field_captures.get(1) {
-                    let type_str = field_type.as_str().to_string();
+                    if let Some(field_type) = field_captures.get(1) {
+                        let type_str = field_type.as_str().to_string();
 
-                    // Parse the type string to extract information
-                    let is_array = type_str.to_lowercase().contains("array");
-                    let is_nullable = type_str.to_lowercase().contains("nullable");
-                    let is_json = type_str.to_lowercase().contains("json")
-                        || type_str.to_lowercase().contains("jsonb");
+                        // Parse the type string to extract information
+                        let is_array = type_str.to_lowercase().contains("array");
+                        let is_nullable = type_str.to_lowercase().contains("nullable");
+                        let is_json = type_str.to_lowercase().contains("json")
+                            || type_str.to_lowercase().contains("jsonb");
 
-                    // Extract the base type - process the type string step by step
-                    let mut processed_type = type_str.clone();
+                        // Extract the base type - process the type string step by step
+                        let mut processed_type = type_str.clone();
 
-                    // First, handle array if present
-                    if is_array {
-                        let re = Regex::new(r"(?i)array<([^>]+)>?").unwrap();
-                        if let Some(caps) = re.captures(&processed_type) {
-                            if let Some(inner_type) = caps.get(1) {
-                                processed_type = inner_type.as_str().to_string();
+                        // First, handle array if present
+                        if is_array {
+                            let re = Regex::new(r"(?i)array<([^>]+)>?").unwrap();
+                            if let Some(caps) = re.captures(&processed_type) {
+                                if let Some(inner_type) = caps.get(1) {
+                                    processed_type = inner_type.as_str().to_string();
+                                }
                             }
                         }
-                    }
 
-                    // Then, handle nullable if present
-                    if is_nullable {
-                        let re = Regex::new(r"(?i)nullable<([^>]+)>?").unwrap();
-                        if let Some(caps) = re.captures(&processed_type) {
-                            if let Some(inner_type) = caps.get(1) {
-                                processed_type = inner_type.as_str().to_string();
+                        // Then, handle nullable if present
+                        if is_nullable {
+                            let re = Regex::new(r"(?i)nullable<([^>]+)>?").unwrap();
+                            if let Some(caps) = re.captures(&processed_type) {
+                                if let Some(inner_type) = caps.get(1) {
+                                    processed_type = inner_type.as_str().to_string();
+                                }
                             }
                         }
+
+                        // Simplify the base type
+                        let simplified_type = match processed_type.to_lowercase().as_str() {
+                            "int4" | "integer" => "integer".to_string(),
+                            "text" | "varchar" | "char" => "text".to_string(),
+                            "float" | "float4" | "float8" | "double" => "float".to_string(),
+                            "bool" => "bool".to_string(),
+                            "timestamp" | "timestamptz" => "timestamp".to_string(),
+                            "jsonb" | "json" => "json".to_string(),
+                            "inet" | "cidr" => "inet".to_string(),
+                            "uuid" => "uuid".to_string(),
+                            "bytea" => "bytea".to_string(),
+                            "numeric" | "decimal" => "numeric".to_string(),
+                            _ => processed_type.to_lowercase(),
+                        };
+
+                        log::debug!("type_str: {}", type_str);
+                        log::debug!("processed_type: {}", processed_type);
+                        log::debug!("is_array: {}", is_array);
+                        log::debug!("is_nullable: {}", is_nullable);
+                        log::debug!("simplified_type: {}", simplified_type);
+
+                        return Some(FieldTypeInfo {
+                            is_array,
+                            field_type: simplified_type,
+                            nullable: is_nullable,
+                            is_json,
+                        });
                     }
-
-                    // Simplify the base type
-                    let simplified_type = match processed_type.to_lowercase().as_str() {
-                        "int4" | "integer" => "integer".to_string(),
-                        "text" | "varchar" | "char" => "text".to_string(),
-                        "float" | "float4" | "float8" | "double" => "float".to_string(),
-                        "bool" => "bool".to_string(),
-                        "timestamp" | "timestamptz" => "timestamp".to_string(),
-                        "jsonb" | "json" => "json".to_string(),
-                        "inet" | "cidr" => "inet".to_string(),
-                        "uuid" => "uuid".to_string(),
-                        "bytea" => "bytea".to_string(),
-                        "numeric" | "decimal" => "numeric".to_string(),
-                        _ => processed_type.to_lowercase(),
-                    };
-
-                    log::debug!("type_str: {}", type_str);
-                    log::debug!("processed_type: {}", processed_type);
-                    log::debug!("is_array: {}", is_array);
-                    log::debug!("is_nullable: {}", is_nullable);
-                    log::debug!("simplified_type: {}", simplified_type);
-
-                    return Some(FieldTypeInfo {
-                        is_array,
-                        field_type: simplified_type,
-                        nullable: is_nullable,
-                        is_json,
-                    });
-                }
                 }
             }
         }
@@ -197,8 +195,7 @@ pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
             let table_content = table_body.as_str();
 
             // Match field definitions, including #[sql_name = "X"] for reserved names like "columns"
-            let field_pattern =
-                r#"(?ms)(?:#\[sql_name\s*=\s*"([^"]+)"\]\s*\n)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*->\s*[^,]*"#;
+            let field_pattern = r#"(?ms)(?:#\[sql_name\s*=\s*"([^"]+)"\]\s*\n)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*->\s*[^,]*"#;
             let field_regex = match Regex::new(field_pattern) {
                 Ok(re) => re,
                 Err(e) => {

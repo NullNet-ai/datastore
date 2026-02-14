@@ -29,6 +29,7 @@ pub struct AccountSignatureModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
+    pub image_url: Option<String>,
     pub account_profile_id: Option<String>,
     pub name: Option<String>,
     pub signature: Option<String>,

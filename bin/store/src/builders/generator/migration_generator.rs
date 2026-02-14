@@ -610,7 +610,10 @@ mod tests {
             Some("btree"),
         )
         .unwrap();
-        assert_eq!(sql, "CREATE INDEX \"idx_order\" ON \"episodes\" USING btree(\"order\");");
+        assert_eq!(
+            sql,
+            "CREATE INDEX \"idx_order\" ON \"episodes\" USING btree(\"order\");"
+        );
     }
 
     #[test]
@@ -622,6 +625,9 @@ mod tests {
             None,
         )
         .unwrap();
-        assert_eq!(sql, "CREATE INDEX \"idx_order_created\" ON \"episodes\"(\"order\", \"created_at\");");
+        assert_eq!(
+            sql,
+            "CREATE INDEX \"idx_order_created\" ON \"episodes\"(\"order\", \"created_at\");"
+        );
     }
 }

@@ -41,7 +41,7 @@ CREATE TABLE "files" (
     PRIMARY KEY ("id")
 );
 --> statement-breakpoint
-CREATE TABLE "test_hypertable" (
+CREATE TABLE "test_hypertables" (
     "timestamp" TIMESTAMPTZ,
     "hypertable_timestamp" TEXT,
     "sensor_id" TEXT,
@@ -71,7 +71,7 @@ CREATE TABLE "test_hypertable" (
     PRIMARY KEY ("timestamp", "id")
 );
 --> statement-breakpoint
-SELECT create_hypertable('test_hypertable', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+SELECT create_hypertable('test_hypertables', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
 --> statement-breakpoint
 CREATE INDEX "idx_files_tombstone" ON "files" USING btree(tombstone);
 --> statement-breakpoint
@@ -111,36 +111,49 @@ CREATE INDEX "idx_files_mimetype" ON "files" USING btree(mimetype);
 --> statement-breakpoint
 CREATE INDEX "idx_files_image_url" ON "files" USING btree(image_url);
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_tombstone" ON "test_hypertable" USING btree(tombstone);
+-- Your SQL goes here
+
+CREATE INDEX "idx_test_hypertables_tombstone" ON "test_hypertables" USING btree("tombstone");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_status" ON "test_hypertable" USING btree(status);
+CREATE INDEX "idx_test_hypertables_status" ON "test_hypertables" USING btree("status");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_previous_status" ON "test_hypertable" USING btree(previous_status);
+CREATE INDEX "idx_test_hypertables_previous_status" ON "test_hypertables" USING btree("previous_status");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_version" ON "test_hypertable" USING btree(version);
+CREATE INDEX "idx_test_hypertables_version" ON "test_hypertables" USING btree("version");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_created_date" ON "test_hypertable" USING btree(created_date);
+CREATE INDEX "idx_test_hypertables_created_date" ON "test_hypertables" USING btree("created_date");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_updated_date" ON "test_hypertable" USING btree(updated_date);
+CREATE INDEX "idx_test_hypertables_updated_date" ON "test_hypertables" USING btree("updated_date");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_organization_id" ON "test_hypertable" USING btree(organization_id);
+CREATE INDEX "idx_test_hypertables_organization_id" ON "test_hypertables" USING btree("organization_id");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_created_by" ON "test_hypertable" USING btree(created_by);
+CREATE INDEX "idx_test_hypertables_created_by" ON "test_hypertables" USING btree("created_by");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_updated_by" ON "test_hypertable" USING btree(updated_by);
+CREATE INDEX "idx_test_hypertables_updated_by" ON "test_hypertables" USING btree("updated_by");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_deleted_by" ON "test_hypertable" USING btree(deleted_by);
+CREATE INDEX "idx_test_hypertables_deleted_by" ON "test_hypertables" USING btree("deleted_by");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_requested_by" ON "test_hypertable" USING btree(requested_by);
+CREATE INDEX "idx_test_hypertables_requested_by" ON "test_hypertables" USING btree("requested_by");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_tags" ON "test_hypertable" USING btree(tags);
+CREATE INDEX "idx_test_hypertables_tags" ON "test_hypertables" USING btree("tags");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_categories" ON "test_hypertable" USING btree(categories);
+CREATE INDEX "idx_test_hypertables_categories" ON "test_hypertables" USING btree("categories");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_code" ON "test_hypertable" USING btree(code);
+CREATE INDEX "idx_test_hypertables_code" ON "test_hypertables" USING btree("code");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_sensitivity_level" ON "test_hypertable" USING btree(sensitivity_level);
+CREATE INDEX "idx_test_hypertables_sensitivity_level" ON "test_hypertables" USING btree("sensitivity_level");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_sensor" ON "test_hypertable" USING btree(sensor_id);
+CREATE INDEX "idx_test_hypertables_sensor" ON "test_hypertables" USING btree("sensor_id");
 --> statement-breakpoint
-CREATE INDEX "idx_test_hypertable_location" ON "test_hypertable" USING btree(location);
+CREATE INDEX "idx_test_hypertables_location" ON "test_hypertables" USING btree("location");
+
+ALTER TABLE "test_hypertables" ADD CONSTRAINT "test_hypertable_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "test_hypertables" ADD CONSTRAINT "test_hypertables_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "test_hypertables" ADD CONSTRAINT "test_hypertables_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "test_hypertables" ADD CONSTRAINT "test_hypertables_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "test_hypertables" ADD CONSTRAINT "test_hypertables_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint

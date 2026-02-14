@@ -660,7 +660,8 @@ impl SchemaGenerator {
             // Generate the new table body with properly ordered fields
             let mut new_table_body = String::new();
             for field in &ordered_fields {
-                new_table_body.push_str(&Self::format_schema_column(&field.name, &field.field_type));
+                new_table_body
+                    .push_str(&Self::format_schema_column(&field.name, &field.field_type));
                 new_table_body.push('\n');
             }
 

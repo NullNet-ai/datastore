@@ -645,6 +645,28 @@ make help
     make store
     ```
 
+## Table Deletion Process
+
+To remove a table from the store:
+
+1. **Delete the table definition** from the schema tables directory:
+   - Remove `bin/store/src/database/schema/tables/<table_name>.rs`
+
+2. **Add the table name to system_tables** so the generator skips creating controllers and `table_enum` for it:
+   - Edit `bin/store/src/database/schema/system_tables.rs`
+   - Add the table name to the `SYSTEM_TABLES` array
+
+3. **Run the store proto generator**:
+   ```bash
+   make store-generate-proto
+   ```
+
+4. **Manually delete generated artifacts**:
+   - Remove the table definition from `bin/store/src/generated/schema.rs`
+   - Remove the model file `bin/store/src/generated/models/<table_name>_model.rs`
+
+> **Note:** If the table exists in the database, create and run a migration to drop it (e.g. `DROP TABLE "<table_name>"`) before or after these steps.
+
 ## Contributing Guidelines
 
 1. Follow Rust's coding conventions

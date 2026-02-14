@@ -22,16 +22,6 @@ DROP INDEX IF EXISTS "idx_account_signatures_idx_account_signatures_previous_sta
 DROP INDEX IF EXISTS "idx_account_signatures_idx_account_signatures_status";
 DROP INDEX IF EXISTS "idx_account_signatures_idx_account_signatures_tombstone";
 DROP TABLE IF EXISTS "account_signatures";
-ALTER TABLE "test_hypertable" DROP CONSTRAINT IF EXISTS "test_hypertable_requested_by_account_organizations_id_fk";
-ALTER TABLE "test_hypertable" DROP CONSTRAINT IF EXISTS "test_hypertable_deleted_by_account_organizations_id_fk";
-ALTER TABLE "test_hypertable" DROP CONSTRAINT IF EXISTS "test_hypertable_updated_by_account_organizations_id_fk";
-ALTER TABLE "test_hypertable" DROP CONSTRAINT IF EXISTS "test_hypertable_created_by_account_organizations_id_fk";
-ALTER TABLE "test_hypertable" DROP CONSTRAINT IF EXISTS "test_hypertable_organization_id_organizations_id_fk";
-ALTER TABLE "files" DROP CONSTRAINT IF EXISTS "files_requested_by_account_organizations_id_fk";
-ALTER TABLE "files" DROP CONSTRAINT IF EXISTS "files_deleted_by_account_organizations_id_fk";
-ALTER TABLE "files" DROP CONSTRAINT IF EXISTS "files_updated_by_account_organizations_id_fk";
-ALTER TABLE "files" DROP CONSTRAINT IF EXISTS "files_created_by_account_organizations_id_fk";
-ALTER TABLE "files" DROP CONSTRAINT IF EXISTS "files_organization_id_organizations_id_fk";
 ALTER TABLE "account_phone_numbers" DROP CONSTRAINT IF EXISTS "account_phone_numbers_account_profile_id_account_profiles_id_fk";
 ALTER TABLE "account_phone_numbers" DROP CONSTRAINT IF EXISTS "account_phone_numbers_requested_by_account_organizations_id_fk";
 ALTER TABLE "account_phone_numbers" DROP CONSTRAINT IF EXISTS "account_phone_numbers_deleted_by_account_organizations_id_fk";

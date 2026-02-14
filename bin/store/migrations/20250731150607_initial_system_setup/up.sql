@@ -675,7 +675,49 @@ CREATE TABLE stream_queue_items (
     timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE "external_contacts" (
+    "id" text PRIMARY KEY NOT NULL,
+    "categories" text[] DEFAULT ARRAY[]::TEXT[],
+    "code" text,
+    "tombstone" integer DEFAULT 0,
+    "status" text DEFAULT 'Active',
+    "previous_status" text,
+    "version" integer DEFAULT 0,
+    "created_date" text,
+    "created_time" text,
+    "updated_date" text,
+    "updated_time" text,
+    "organization_id" text,
+    "created_by" text,
+    "updated_by" text,
+    "deleted_by" text,
+    "requested_by" text,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    "tags" text[] DEFAULT ARRAY[]::TEXT[],
+    "image_url" varchar(300),
+    "sensitivity_level" integer DEFAULT 1000,
+    "first_name" text,
+    "last_name" text,
+    "email" text
+);
 
+CREATE INDEX "external_contacts_id_idx" ON "external_contacts" USING btree ("id");--> statement-breakpoint
+CREATE INDEX "external_contacts_categories_idx" ON "external_contacts" USING btree ("categories");--> statement-breakpoint
+CREATE INDEX "external_contacts_code_idx" ON "external_contacts" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "external_contacts_tombstone_idx" ON "external_contacts" USING btree ("tombstone");--> statement-breakpoint
+CREATE INDEX "external_contacts_status_idx" ON "external_contacts" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "external_contacts_previous_status_idx" ON "external_contacts" USING btree ("previous_status");--> statement-breakpoint
+CREATE INDEX "external_contacts_version_idx" ON "external_contacts" USING btree ("version");--> statement-breakpoint
+CREATE INDEX "external_contacts_created_date_idx" ON "external_contacts" USING btree ("created_date");--> statement-breakpoint
+CREATE INDEX "external_contacts_updated_date_idx" ON "external_contacts" USING btree ("updated_date");--> statement-breakpoint
+CREATE INDEX "external_contacts_organization_id_idx" ON "external_contacts" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "external_contacts_created_by_idx" ON "external_contacts" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "external_contacts_updated_by_idx" ON "external_contacts" USING btree ("updated_by");--> statement-breakpoint
+CREATE INDEX "external_contacts_deleted_by_idx" ON "external_contacts" USING btree ("deleted_by");--> statement-breakpoint
+CREATE INDEX "external_contacts_requested_by_idx" ON "external_contacts" USING btree ("requested_by");--> statement-breakpoint
+CREATE INDEX "external_contacts_tags_idx" ON "external_contacts" USING btree ("tags");--> statement-breakpoint
+CREATE INDEX "external_contacts_image_url_idx" ON "external_contacts" USING btree ("image_url");--> statement-breakpoint
+CREATE INDEX "external_contacts_sensitivity_level_idx" ON "external_contacts" USING btree ("sensitivity_level");--> statement-breakpoint
 CREATE INDEX idx_stream_queue_items_queue_name ON stream_queue_items(queue_name);
 CREATE INDEX idx_stream_queue_items_timestamp ON stream_queue_items(timestamp);
 
@@ -1086,6 +1128,11 @@ ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_created_by_acc
 ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "postgres_channels" ADD CONSTRAINT "postgres_channels_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_created_by_account_organizations_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_updated_by_account_organizations_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_deleted_by_account_organizations_id_fk" FOREIGN KEY ("deleted_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_requested_by_account_organizations_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."account_organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 
 CREATE INDEX "allowed_fields_id_idx" ON "allowed_fields" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "allowed_fields_categories_idx" ON "allowed_fields" USING btree ("categories");--> statement-breakpoint

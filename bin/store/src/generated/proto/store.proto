@@ -104,29 +104,29 @@ message AggregationFilterParams {
 
 // UserRoles entity definition
 message UserRoles {
-  optional string id = 1;
-  optional int32 tombstone = 2;
-  optional string status = 3;
-  optional string previous_status = 4;
-  optional int32 version = 5;
-  optional string created_date = 6;
-  optional string created_time = 7;
-  optional string updated_date = 8;
-  optional string updated_time = 9;
-  optional string organization_id = 10;
-  optional string created_by = 11;
-  optional string updated_by = 12;
-  optional string deleted_by = 13;
-  optional string requested_by = 14;
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
   repeated string tags = 15;
   repeated string categories = 16;
   optional string code = 17;
-  optional string timestamp = 18;
-  optional string role = 19;
-  optional string entity = 20;
-  optional int32 sensitivity_level = 21;
-  optional string sync_status = 22;
-  optional bool is_batch = 23;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string role = 22;
+  optional string entity = 23;
 }
 
 // Sessions entity definition
@@ -260,19 +260,30 @@ message Organizations {
   optional string updated_by = 11;
   optional string deleted_by = 12;
   optional string requested_by = 13;
-  repeated string tags = 14;
-  repeated string categories = 15;
-  optional string code = 16;
-  optional string id = 17;
-  optional string timestamp = 18;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string parent_organization_id = 22;
-  optional string name = 23;
-  optional int32 organization_level = 24;
-  optional string root_organization_id = 25;
-  repeated string path_level = 26;
+  optional string name = 22;
+  optional string skyll_id = 23;
+  optional string department_id = 24;
+  optional string district_id = 25;
+  optional string parent_organization_id = 26;
+  optional string school_id = 27;
+  optional string city = 28;
+  optional string county = 29;
+  optional string state = 30;
+  optional string school_identifier = 31;
+  optional string district_identifier = 32;
+  optional int32 organization_level = 33;
+  optional string root_organization_id = 34;
+  optional string path_level = 35;
+  optional string superintendent_id = 36;
+  optional string principal_id = 37;
 }
 
 // OrganizationContacts entity definition
@@ -682,8 +693,8 @@ message Files {
   optional int32 presigned_url_expire = 37;
 }
 
-// TestHypertable entity definition
-message TestHypertable {
+// TestHypertables entity definition
+message TestHypertables {
   optional int32 tombstone = 1;
   optional string status = 2;
   optional string previous_status = 3;
@@ -3092,69 +3103,69 @@ message UpsertFilesResponse {
   repeated Files data = 4;
 }
 
-// Create TestHypertable request
-message CreateTestHypertableRequest {
-  TestHypertable test_hypertable = 1;
+// Create TestHypertables request
+message CreateTestHypertablesRequest {
+  TestHypertables test_hypertables = 1;
   CreateParams params = 2;
   CreateQuery query = 3;
 }
 
-// Create TestHypertable response
-message CreateTestHypertableResponse {
+// Create TestHypertables response
+message CreateTestHypertablesResponse {
   bool success = 1;
   int32 count = 2;
   string message = 3;
-  TestHypertable data = 4;
+  TestHypertables data = 4;
 }
 
-// Get TestHypertable request
-message GetTestHypertableRequest {
+// Get TestHypertables request
+message GetTestHypertablesRequest {
   GetParams params = 1;
   GetQuery query = 2;
 }
 
-// Get TestHypertable response
-message GetTestHypertableResponse {
+// Get TestHypertables response
+message GetTestHypertablesResponse {
   bool success = 1;
   string message = 2;
-  TestHypertable data = 3;
+  TestHypertables data = 3;
 }
 
-// Update TestHypertable request
-message UpdateTestHypertableRequest {
-  TestHypertable test_hypertable = 1;
+// Update TestHypertables request
+message UpdateTestHypertablesRequest {
+  TestHypertables test_hypertable = 1;
   UpdateParams params = 2;
   UpdateQuery query = 3;
 }
 
-// Update TestHypertable response
-message UpdateTestHypertableResponse {
+// Update TestHypertables response
+message UpdateTestHypertablesResponse {
   bool success = 1;
   int32 count = 2;
   string message = 3;
-  TestHypertable data = 4;
+  TestHypertables data = 4;
 }
 
-// BatchUpdate TestHypertable request
-message BatchUpdateTestHypertableRequest {
+// BatchUpdate TestHypertables request
+message BatchUpdateTestHypertablesRequest {
   BatchUpdateParams params = 1;
   message BatchUpdateBody {
     repeated FilterCriteria advance_filters = 1;
-  TestHypertable updates = 2;
+  TestHypertables updates = 2;
   }
   BatchUpdateBody body = 2;
 }
 
-// BatchUpdate TestHypertable response
-message BatchUpdateTestHypertableResponse {
+// BatchUpdate TestHypertables response
+message BatchUpdateTestHypertablesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated TestHypertable data = 4;
+  repeated TestHypertables data = 4;
 }
 
-// BatchDelete TestHypertable request
-message BatchDeleteTestHypertableRequest {
+// BatchDelete TestHypertables request
+message BatchDeleteTestHypertablesRequest {
   BatchDeleteParams params = 1;
   message BatchDeleteBody {
     repeated FilterCriteria advance_filters = 1;
@@ -3162,63 +3173,63 @@ message BatchDeleteTestHypertableRequest {
   BatchDeleteBody body = 2;
 }
 
-// BatchDelete TestHypertable response
-message BatchDeleteTestHypertableResponse {
+// BatchDelete TestHypertables response
+message BatchDeleteTestHypertablesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  TestHypertable data = 4;
+  TestHypertables data = 4;
 }
 
-// Delete TestHypertable request
-message DeleteTestHypertableRequest {
+// Delete TestHypertables request
+message DeleteTestHypertablesRequest {
   DeleteParams params = 1;
   DeleteQuery query = 2;
 }
 
-// Delete TestHypertable response
-message DeleteTestHypertableResponse {
+// Delete TestHypertables response
+message DeleteTestHypertablesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  TestHypertable data = 4;
+  TestHypertables data = 4;
 }
 
-// BatchInsert TestHypertable request
-message BatchInsertTestHypertableRequest {
+// BatchInsert TestHypertables request
+message BatchInsertTestHypertablesRequest {
   BatchInsertParams params = 1;
   BatchInsertQuery query = 2;
   message BatchBody {
-    repeated TestHypertable test_hypertable = 1;
+    repeated TestHypertables test_hypertables = 1;
   }
   BatchBody body = 3;
 }
 
-// BatchInsert TestHypertable response
-message BatchInsertTestHypertableResponse {
+// BatchInsert TestHypertables response
+message BatchInsertTestHypertablesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated TestHypertable data = 4;
+  repeated TestHypertables data = 4;
 }
 
-// Upsert TestHypertable request
-message UpsertTestHypertableRequest {
+// Upsert TestHypertables request
+message UpsertTestHypertablesRequest {
   UpsertParams params = 1;
   UpsertQuery query = 2;
   message UpsertBody {
     repeated string conflict_columns = 1;
-    TestHypertable data = 2;
+    TestHypertables data = 2;
   }
   UpsertBody body = 3;
 }
 
-// Upsert TestHypertable response
-message UpsertTestHypertableResponse {
+// Upsert TestHypertables response
+message UpsertTestHypertablesResponse {
   bool success = 1;
   string message = 2;
   int32 count = 3;
-  repeated TestHypertable data = 4;
+  repeated TestHypertables data = 4;
 }
 
 // Create AccountPhoneNumbers request
@@ -4032,29 +4043,29 @@ service StoreService {
   // Upsert a Files (create if not exists, update if exists)
   rpc UpsertFiles(UpsertFilesRequest) returns (UpsertFilesResponse);
 
-  // Create a new TestHypertable
-  rpc CreateTestHypertable(CreateTestHypertableRequest) returns (CreateTestHypertableResponse);
+  // Create a new TestHypertables
+  rpc CreateTestHypertables(CreateTestHypertablesRequest) returns (CreateTestHypertablesResponse);
 
-  // Get a TestHypertable by ID
-  rpc GetTestHypertable(GetTestHypertableRequest) returns (GetTestHypertableResponse);
+  // Get a TestHypertables by ID
+  rpc GetTestHypertables(GetTestHypertablesRequest) returns (GetTestHypertablesResponse);
 
-  // Update an existing TestHypertable
-  rpc UpdateTestHypertable(UpdateTestHypertableRequest) returns (UpdateTestHypertableResponse);
+  // Update an existing TestHypertables
+  rpc UpdateTestHypertables(UpdateTestHypertablesRequest) returns (UpdateTestHypertablesResponse);
 
-  // Delete a TestHypertable by ID
-  rpc DeleteTestHypertable(DeleteTestHypertableRequest) returns (DeleteTestHypertableResponse);
+  // Delete a TestHypertables by ID
+  rpc DeleteTestHypertables(DeleteTestHypertablesRequest) returns (DeleteTestHypertablesResponse);
 
-  // Batch insert multiple TestHypertables
-  rpc BatchInsertTestHypertable(BatchInsertTestHypertableRequest) returns (BatchInsertTestHypertableResponse);
+  // Batch insert multiple TestHypertabless
+  rpc BatchInsertTestHypertables(BatchInsertTestHypertablesRequest) returns (BatchInsertTestHypertablesResponse);
 
-  // Batch update multiple TestHypertables based on filters
-  rpc BatchUpdateTestHypertable(BatchUpdateTestHypertableRequest) returns (BatchUpdateTestHypertableResponse);
+  // Batch update multiple TestHypertabless based on filters
+  rpc BatchUpdateTestHypertables(BatchUpdateTestHypertablesRequest) returns (BatchUpdateTestHypertablesResponse);
 
-  // Batch delete multiple TestHypertables based on filters
-  rpc BatchDeleteTestHypertable(BatchDeleteTestHypertableRequest) returns (BatchDeleteTestHypertableResponse);
+  // Batch delete multiple TestHypertabless based on filters
+  rpc BatchDeleteTestHypertables(BatchDeleteTestHypertablesRequest) returns (BatchDeleteTestHypertablesResponse);
 
-  // Upsert a TestHypertable (create if not exists, update if exists)
-  rpc UpsertTestHypertable(UpsertTestHypertableRequest) returns (UpsertTestHypertableResponse);
+  // Upsert a TestHypertables (create if not exists, update if exists)
+  rpc UpsertTestHypertables(UpsertTestHypertablesRequest) returns (UpsertTestHypertablesResponse);
 
   // Create a new AccountPhoneNumbers
   rpc CreateAccountPhoneNumbers(CreateAccountPhoneNumbersRequest) returns (CreateAccountPhoneNumbersResponse);
