@@ -3,7 +3,7 @@
 # PHONY targets (targets that don't create files)
 .PHONY: all dev clean help install verify-install install-macos install-linux install-windows \
         server store store-clean-setup store-watch store-build store-prod \
-        store-generate-schema store-generate-proto \
+        store-generate-schema store-generate-proto store-generator-schema store-generator-proto store-generator-all \
         db-migrate-generate db-migrate-up db-migrate-revert \
         fmt fmt-check git-cleanup setup-hooks \
         jean-store-watch store-experimental store-initialize-device \
@@ -33,6 +33,9 @@ help:
 	@echo "  store-initialize-device - Initialize device and wait for PostgreSQL listener"
 	@echo "  store-generate-schema   - Generate store schema"
 	@echo "  store-generate-proto    - Generate store proto files"
+	@echo "  store-generator-schema  - Generate schema (standalone, no store build)"
+	@echo "  store-generator-proto   - Generate proto (standalone, no store build)"
+	@echo "  store-generator-all     - Generate all (standalone, no store build)"
 	@echo "  db-migrate-generate     - Generate new migration (requires NAME=name)"
 	@echo "  db-migrate-up           - Run database migrations"
 	@echo "  db-migrate-revert       - Revert last migration"
@@ -497,6 +500,21 @@ store-generate-proto:
 		exit 1; \
 	fi
 	@cd bin/store && GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true cargo run
+
+# Standalone store-generator (no store build dependency - use for fresh clone bootstrap)
+# Uses installed binary if available (cargo install store-generator), else cargo run -p store-generator
+STORE_GEN = $(shell command -v store-generator 2>/dev/null || echo "cargo run -p store-generator --")
+store-generator-schema:
+	@echo "📋 Generating store schema (standalone generator)..."
+	@STORE_DIR=bin/store CREATE_SCHEMA=true $(STORE_GEN)
+
+store-generator-proto:
+	@echo "🔧 Generating store proto (standalone generator)..."
+	@STORE_DIR=bin/store GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true $(STORE_GEN)
+
+store-generator-all:
+	@echo "🔧 Generating all store files (standalone generator)..."
+	@STORE_DIR=bin/store CREATE_SCHEMA=true GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true $(STORE_GEN)
 
 # =============================================================================
 # Database migration targets

@@ -10,6 +10,7 @@ pub mod contact_phone_number_model;
 pub mod counter_model;
 pub mod crdt_merkle_model;
 pub mod crdt_message_model;
+pub mod demo_item_model;
 pub mod device_model;
 pub mod entity_field_model;
 pub mod entity_model;

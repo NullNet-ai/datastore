@@ -903,3 +903,33 @@ table! {
 
 
 
+
+table! {
+    demo_items(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        title -> Nullable<Text>,
+        description -> Nullable<Text>,
+        quantity -> Nullable<Int4>,
+        name -> Nullable<Text>,
+}
+}

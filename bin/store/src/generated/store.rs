@@ -506,37 +506,17 @@ pub struct Organizations {
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub image_url: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub skyll_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub department_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "25")]
-    pub district_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "26")]
     pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "27")]
-    pub school_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "28")]
-    pub city: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "29")]
-    pub county: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "30")]
-    pub state: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "31")]
-    pub school_identifier: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "32")]
-    pub district_identifier: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "33")]
+    #[prost(int32, optional, tag = "25")]
     pub organization_level: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "34")]
+    #[prost(string, optional, tag = "26")]
     pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "35")]
+    #[prost(string, optional, tag = "27")]
     pub path_level: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "36")]
-    pub superintendent_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "37")]
-    pub principal_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// OrganizationContacts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -1492,11 +1472,69 @@ pub struct AccountSignatures {
     #[prost(bool, optional, tag = "21")]
     pub is_batch: ::core::option::Option<bool>,
     #[prost(string, optional, tag = "22")]
-    pub account_profile_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub image_url: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
-    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    pub account_profile_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
     pub signature: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// DemoItems entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DemoItems {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "16")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
+    pub title: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub description: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "24")]
+    pub quantity: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "25")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Create UserRoles request
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -6644,6 +6682,248 @@ pub struct UpsertAccountSignaturesResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<AccountSignatures>,
 }
+/// Create DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub demo_items: ::core::option::Option<DemoItems>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+}
+/// Create DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DemoItems>,
+}
+/// Get DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
+}
+/// Get DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<DemoItems>,
+}
+/// Update DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub demo_item: ::core::option::Option<DemoItems>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DemoItems>,
+}
+/// BatchUpdate DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_update_demo_items_request::BatchUpdateBody>,
+}
+/// Nested message and enum types in `BatchUpdateDemoItemsRequest`.
+pub mod batch_update_demo_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::DemoItems>,
+    }
+}
+/// BatchUpdate DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DemoItems>,
+}
+/// BatchDelete DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_demo_items_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteDemoItemsRequest`.
+pub mod batch_delete_demo_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+    }
+}
+/// BatchDelete DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DemoItems>,
+}
+/// Delete DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DemoItems>,
+}
+/// BatchInsert DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_demo_items_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertDemoItemsRequest`.
+pub mod batch_insert_demo_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(message, repeated, tag = "1")]
+        pub demo_items: ::prost::alloc::vec::Vec<super::DemoItems>,
+    }
+}
+/// BatchInsert DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DemoItems>,
+}
+/// Upsert DemoItems request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertDemoItemsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_demo_items_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertDemoItemsRequest`.
+pub mod upsert_demo_items_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::DemoItems>,
+    }
+}
+/// Upsert DemoItems response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertDemoItemsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DemoItems>,
+}
 /// Individual aggregation definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
@@ -8303,6 +8583,70 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertAccountSignaturesRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertAccountSignaturesResponse>,
+            tonic::Status,
+        >;
+        /// Create a new DemoItems
+        async fn create_demo_items(
+            &self,
+            request: tonic::Request<super::CreateDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Get a DemoItems by ID
+        async fn get_demo_items(
+            &self,
+            request: tonic::Request<super::GetDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing DemoItems
+        async fn update_demo_items(
+            &self,
+            request: tonic::Request<super::UpdateDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a DemoItems by ID
+        async fn delete_demo_items(
+            &self,
+            request: tonic::Request<super::DeleteDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple DemoItemss
+        async fn batch_insert_demo_items(
+            &self,
+            request: tonic::Request<super::BatchInsertDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple DemoItemss based on filters
+        async fn batch_update_demo_items(
+            &self,
+            request: tonic::Request<super::BatchUpdateDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple DemoItemss based on filters
+        async fn batch_delete_demo_items(
+            &self,
+            request: tonic::Request<super::BatchDeleteDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteDemoItemsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a DemoItems (create if not exists, update if exists)
+        async fn upsert_demo_items(
+            &self,
+            request: tonic::Request<super::UpsertDemoItemsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertDemoItemsResponse>,
             tonic::Status,
         >;
         /// Aggregation filter for advanced queries
@@ -16567,6 +16911,382 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertAccountSignaturesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateDemoItemsRequest>
+                    for CreateDemoItemsSvc<T> {
+                        type Response = super::CreateDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_demo_items(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetDemoItemsRequest>
+                    for GetDemoItemsSvc<T> {
+                        type Response = super::GetDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_demo_items(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateDemoItemsRequest>
+                    for UpdateDemoItemsSvc<T> {
+                        type Response = super::UpdateDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_demo_items(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteDemoItemsRequest>
+                    for DeleteDemoItemsSvc<T> {
+                        type Response = super::DeleteDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_demo_items(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertDemoItemsRequest>
+                    for BatchInsertDemoItemsSvc<T> {
+                        type Response = super::BatchInsertDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_demo_items(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateDemoItemsRequest>
+                    for BatchUpdateDemoItemsSvc<T> {
+                        type Response = super::BatchUpdateDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchUpdateDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_demo_items(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteDemoItemsRequest>
+                    for BatchDeleteDemoItemsSvc<T> {
+                        type Response = super::BatchDeleteDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_demo_items(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteDemoItemsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertDemoItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertDemoItemsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertDemoItemsRequest>
+                    for UpsertDemoItemsSvc<T> {
+                        type Response = super::UpsertDemoItemsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertDemoItemsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_demo_items(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertDemoItemsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

@@ -4,7 +4,8 @@ members = [
     "libs/merkle",
     "bin/main",
     "bin/store",
-    "bin/server"
+    "bin/server",
+    "bin/store-generator"
 ]
 resolver = "2"
 

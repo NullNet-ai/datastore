@@ -268,22 +268,12 @@ message Organizations {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string name = 22;
-  optional string skyll_id = 23;
-  optional string department_id = 24;
-  optional string district_id = 25;
-  optional string parent_organization_id = 26;
-  optional string school_id = 27;
-  optional string city = 28;
-  optional string county = 29;
-  optional string state = 30;
-  optional string school_identifier = 31;
-  optional string district_identifier = 32;
-  optional int32 organization_level = 33;
-  optional string root_organization_id = 34;
-  optional string path_level = 35;
-  optional string superintendent_id = 36;
-  optional string principal_id = 37;
+  optional string image_url = 22;
+  optional string name = 23;
+  optional string parent_organization_id = 24;
+  optional int32 organization_level = 25;
+  optional string root_organization_id = 26;
+  optional string path_level = 27;
 }
 
 // OrganizationContacts entity definition
@@ -776,9 +766,39 @@ message AccountSignatures {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_profile_id = 22;
-  optional string name = 23;
-  optional string signature = 24;
+  optional string image_url = 22;
+  optional string account_profile_id = 23;
+  optional string name = 24;
+  optional string signature = 25;
+}
+
+// DemoItems entity definition
+message DemoItems {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string title = 22;
+  optional string description = 23;
+  optional int32 quantity = 24;
+  optional string name = 25;
 }
 
 // Create UserRoles request
@@ -3490,6 +3510,135 @@ message UpsertAccountSignaturesResponse {
   repeated AccountSignatures data = 4;
 }
 
+// Create DemoItems request
+message CreateDemoItemsRequest {
+  DemoItems demo_items = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create DemoItems response
+message CreateDemoItemsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DemoItems data = 4;
+}
+
+// Get DemoItems request
+message GetDemoItemsRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get DemoItems response
+message GetDemoItemsResponse {
+  bool success = 1;
+  string message = 2;
+  DemoItems data = 3;
+}
+
+// Update DemoItems request
+message UpdateDemoItemsRequest {
+  DemoItems demo_item = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DemoItems response
+message UpdateDemoItemsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DemoItems data = 4;
+}
+
+// BatchUpdate DemoItems request
+message BatchUpdateDemoItemsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  DemoItems updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DemoItems response
+message BatchUpdateDemoItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DemoItems data = 4;
+}
+
+// BatchDelete DemoItems request
+message BatchDeleteDemoItemsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DemoItems response
+message BatchDeleteDemoItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DemoItems data = 4;
+}
+
+// Delete DemoItems request
+message DeleteDemoItemsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DemoItems response
+message DeleteDemoItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DemoItems data = 4;
+}
+
+// BatchInsert DemoItems request
+message BatchInsertDemoItemsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated DemoItems demo_items = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DemoItems response
+message BatchInsertDemoItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DemoItems data = 4;
+}
+
+// Upsert DemoItems request
+message UpsertDemoItemsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DemoItems data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DemoItems response
+message UpsertDemoItemsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DemoItems data = 4;
+}
+
 // Enum for aggregation types
 enum AggregationType {
   SUM = 0;
@@ -4114,6 +4263,30 @@ service StoreService {
 
   // Upsert a AccountSignatures (create if not exists, update if exists)
   rpc UpsertAccountSignatures(UpsertAccountSignaturesRequest) returns (UpsertAccountSignaturesResponse);
+
+  // Create a new DemoItems
+  rpc CreateDemoItems(CreateDemoItemsRequest) returns (CreateDemoItemsResponse);
+
+  // Get a DemoItems by ID
+  rpc GetDemoItems(GetDemoItemsRequest) returns (GetDemoItemsResponse);
+
+  // Update an existing DemoItems
+  rpc UpdateDemoItems(UpdateDemoItemsRequest) returns (UpdateDemoItemsResponse);
+
+  // Delete a DemoItems by ID
+  rpc DeleteDemoItems(DeleteDemoItemsRequest) returns (DeleteDemoItemsResponse);
+
+  // Batch insert multiple DemoItemss
+  rpc BatchInsertDemoItems(BatchInsertDemoItemsRequest) returns (BatchInsertDemoItemsResponse);
+
+  // Batch update multiple DemoItemss based on filters
+  rpc BatchUpdateDemoItems(BatchUpdateDemoItemsRequest) returns (BatchUpdateDemoItemsResponse);
+
+  // Batch delete multiple DemoItemss based on filters
+  rpc BatchDeleteDemoItems(BatchDeleteDemoItemsRequest) returns (BatchDeleteDemoItemsResponse);
+
+  // Upsert a DemoItems (create if not exists, update if exists)
+  rpc UpsertDemoItems(UpsertDemoItemsRequest) returns (UpsertDemoItemsResponse);
 
   // Aggregation filter for advanced queries
   rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);
