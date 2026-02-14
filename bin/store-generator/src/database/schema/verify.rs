@@ -47,7 +47,8 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
             let table_content = table_body.as_str();
 
             // Try field_name first; for reserved keywords also try rust_identifier (schema renames it)
-            let rust_identifiers: Vec<String> = if super::reserved_keywords::is_reserved(field_name) {
+            let rust_identifiers: Vec<String> = if super::reserved_keywords::is_reserved(field_name)
+            {
                 vec![
                     field_name.to_string(),
                     super::reserved_keywords::rust_identifier(field_name),
@@ -144,7 +145,8 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 /// * `Option<Vec<String>>` - Vector of field names if table exists, None otherwise
 ///
 pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
-    let schema_content = fs::read_to_string(Path::new(paths::database::SCHEMA_FILE.as_str())).ok()?;
+    let schema_content =
+        fs::read_to_string(Path::new(paths::database::SCHEMA_FILE.as_str())).ok()?;
 
     if schema_content.is_empty() {
         return None;
