@@ -18,7 +18,11 @@ const BLOBS_DIR: &str = ".mycheckpoints/blobs";
 const CKPTS_DIR: &str = ".mycheckpoints/checkpoints";
 
 #[derive(Parser)]
-#[command(name = "ckpt", version, about = "Local checkpoint tool (hash + manifest)")]
+#[command(
+    name = "ckpt",
+    version,
+    about = "Local checkpoint tool (hash + manifest)"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Command,
@@ -44,10 +48,7 @@ enum Command {
     List,
 
     /// Diff two checkpoints by id
-    Diff {
-        id_a: String,
-        id_b: String,
-    },
+    Diff { id_a: String, id_b: String },
 
     /// Restore a checkpoint by id
     Restore {
@@ -108,8 +109,7 @@ fn cmd_save(name: &str, files_csv: &str) -> Result<()> {
 
     for path in paths {
         let path_str = path.to_string_lossy().to_string();
-        let bytes = fs::read(&path)
-            .with_context(|| format!("read file: {}", path.display()))?;
+        let bytes = fs::read(&path).with_context(|| format!("read file: {}", path.display()))?;
         let hash = sha256_hex(&bytes);
 
         // Store blob if missing (dedupe)
@@ -165,7 +165,10 @@ fn cmd_list() -> Result<()> {
             serde_json::from_slice(&data).with_context(|| format!("parse {}", p.display()))?;
         println!(
             "id={}  at={}  name={}  files={}",
-            m.id, m.created_at, m.name, m.files.len()
+            m.id,
+            m.created_at,
+            m.name,
+            m.files.len()
         );
     }
 
@@ -178,7 +181,9 @@ fn load_manifest_by_id(id: &str) -> Result<Manifest> {
     let ckpts = Path::new(CKPTS_DIR);
 
     if !ckpts.exists() {
-        return Err(anyhow!("Checkpoints dir does not exist. Run `ckpt init` first."));
+        return Err(anyhow!(
+            "Checkpoints dir does not exist. Run `ckpt init` first."
+        ));
     }
 
     for entry in fs::read_dir(ckpts).context("read checkpoints dir")? {
@@ -198,10 +203,8 @@ fn load_manifest_by_id(id: &str) -> Result<Manifest> {
 fn cmd_diff(id_a: &str, id_b: &str) -> Result<()> {
     ensure_store()?;
 
-    let m_a = load_manifest_by_id(id_a)
-        .with_context(|| format!("load checkpoint {}", id_a))?;
-    let m_b = load_manifest_by_id(id_b)
-        .with_context(|| format!("load checkpoint {}", id_b))?;
+    let m_a = load_manifest_by_id(id_a).with_context(|| format!("load checkpoint {}", id_a))?;
+    let m_b = load_manifest_by_id(id_b).with_context(|| format!("load checkpoint {}", id_b))?;
 
     let set_a: HashSet<&String> = m_a.files.keys().collect();
     let set_b: HashSet<&String> = m_b.files.keys().collect();
@@ -251,8 +254,7 @@ fn cmd_restore(id: &str, delete_extra: bool) -> Result<()> {
             .with_context(|| format!("read blob {} (file: {})", hash, path_str))?;
 
         let target = Path::new(path_str);
-        atomic_write(target, &bytes)
-            .with_context(|| format!("restore file: {}", path_str))?;
+        atomic_write(target, &bytes).with_context(|| format!("restore file: {}", path_str))?;
     }
 
     if delete_extra {
