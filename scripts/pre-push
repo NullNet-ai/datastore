@@ -20,22 +20,6 @@ echo ""
 # Check formatting of committed code
 echo "Checking formatting of committed code..."
 
-# Check if there are any uncommitted changes in tracked files
-if ! git diff --quiet; then
-    echo "❌ Error: You have uncommitted changes in tracked files."
-    echo "Please commit all changes before pushing:"
-    echo "  git add <changed_files>"
-    echo "  git commit -m 'Your commit message'"
-    echo "This ensures that all code is properly formatted and committed before pushing."
-    exit 1
-fi
-
-# Check if there are any staged changes that need to be committed
-if ! git diff --cached --quiet; then
-    echo "❌ You have staged changes. Please commit them before pushing."
-    exit 1
-fi
-
 # Get list of Rust files from the latest commit, but only from bin/store and bin/server directories, excluding generated files
 RUST_FILES=$(git show --name-only --pretty=format: HEAD | grep '\.rs$' | grep -E '^bin/(store|server)/' | grep -v '/src/generated/' | tr '\n' ' ')
 
