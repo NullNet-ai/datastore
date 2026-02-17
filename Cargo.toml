@@ -5,7 +5,8 @@ members = [
     "bin/main",
     "bin/store",
     "bin/server",
-    "bin/store-generator"
+    "bin/store-generator",
+    "bin/ckpt"
 ]
 resolver = "2"
 
