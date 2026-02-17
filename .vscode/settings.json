@@ -28,12 +28,24 @@
         "PROTOC": "/opt/homebrew/bin/protoc"
     },
     "code-runner.executorMap": {
-        "rust": "export PROTOC=/opt/homebrew/bin/protoc && cargo test"
+        "rust": "/bin/bash ${workspaceFolder}/.vscode/vscode_test_runner.sh cargo test"
     },
     "code-runner.runInTerminal": true,
     "code-runner.preserveFocus": false,
     "code-runner.clearPreviousOutput": true,
     "terminal.integrated.env.osx": {
+        "PROTOC": "/opt/homebrew/bin/protoc",
+        "PATH": "$HOME/.cargo/bin:$PATH"
+    },
+    "rust-analyzer.server.path": "rust-analyzer",
+    "rust-analyzer.rustc.source": "discover",
+    "rust-analyzer.runnables.extraEnv": {
+        "PATH": "$HOME/.cargo/bin:$PATH",
+        "PROTOC": "/opt/homebrew/bin/protoc"
+    },
+    "rust-analyzer.runnables.command": "/bin/bash ${workspaceFolder}/.vscode/vscode_test_runner.sh cargo",
+    "rust-analyzer.cargo.extraEnv": {
+        "PATH": "$HOME/.cargo/bin:$PATH",
         "PROTOC": "/opt/homebrew/bin/protoc"
     }
 }
