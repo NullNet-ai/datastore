@@ -506,7 +506,7 @@ STORE_GEN = store-generator
 store-generator-schema:
 	@printf "Checkpoint name (timestamp appended): " && read name && \
 	timestamp=$$(date -u +%Y%m%d-%H%M%S) && \
-	fullname="$$name_$$timestamp" && \
+	fullname="$${name}_$${timestamp}" && \
 	gen_files=$$(find bin/store/src/generated -type f \( -name '*.rs' -o -name '*.proto' \) 2>/dev/null) && \
 	mig_files=$$(find bin/store/migrations -type f -name '*.sql' 2>/dev/null) && \
 	all_files=$$(echo "$$gen_files" "$$mig_files" | tr ' \n' '\n' | grep -v '^$$' | tr '\n' ',' | sed 's/,$$//') && \
@@ -522,8 +522,22 @@ store-generator-schema:
 	STORE_DIR=bin/store CREATE_SCHEMA=true $(STORE_GEN)
 
 store-generator-proto:
-	@echo "🔧 Generating store proto (standalone generator)..."
-	@STORE_DIR=bin/store GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true $(STORE_GEN)
+	@printf "Checkpoint name (timestamp appended): " && read name && \
+	timestamp=$$(date -u +%Y%m%d-%H%M%S) && \
+	fullname="$${name}_$${timestamp}" && \
+	gen_files=$$(find bin/store/src/generated -type f \( -name '*.rs' -o -name '*.proto' \) 2>/dev/null) && \
+	mig_files=$$(find bin/store/migrations -type f -name '*.sql' 2>/dev/null) && \
+	all_files=$$(echo "$$gen_files" "$$mig_files" | tr ' \n' '\n' | grep -v '^$$' | tr '\n' ',' | sed 's/,$$//') && \
+	CKPT_CMD=$$(command -v ckpt 2>/dev/null || echo "cargo run -p ckpt --release --"); \
+	$$CKPT_CMD init 2>/dev/null || true; \
+	if [ -n "$$all_files" ]; then \
+		$$CKPT_CMD save --name "$$fullname" --files "$$all_files" && \
+		echo "✅ Checkpoint saved: $$fullname"; \
+	else \
+		echo "⚠️  No store generated files found to checkpoint."; \
+	fi && \
+	echo "🔧 Generating store proto (standalone generator)..." && \
+	STORE_DIR=bin/store GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true $(STORE_GEN)
 
 store-generator-all:
 	@echo "🔧 Generating all store files (standalone generator)..."
