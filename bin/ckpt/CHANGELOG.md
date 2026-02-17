@@ -5,6 +5,14 @@ All notable changes to the ckpt crate will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.2
+### Author
+Kashan
+
+### Changed
+- **README**: Rewritten to be project-agnostic – generic examples and usage, no project-specific content.
+- **README**: Added full documentation for `restore --delete-extra`.
+
 ## 0.1.1
 ### Author
 Kashan
