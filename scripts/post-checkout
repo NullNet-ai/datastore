@@ -1,16 +1,11 @@
 #!/bin/bash
 
-# Post-checkout hook to automatically set up other hooks
-# This runs after git clone, git checkout, and git pull
+# Post-checkout hook: ensure hooks stay configured on every checkout/branch switch
+# Runs after: git clone, git checkout, git checkout -b
 
-# Only run setup if we're in the main working tree (not during rebase, etc.)
+# $3 = 1 for branch checkout, 0 for file checkout
 if [ "$3" = "1" ]; then
-    echo "Setting up development environment..."
-    
-    # Get the repository root
     REPO_ROOT="$(git rev-parse --show-toplevel)"
-    
-    # Run the setup script if it exists
     if [ -f "$REPO_ROOT/scripts/setup-hooks.sh" ]; then
         "$REPO_ROOT/scripts/setup-hooks.sh"
     fi

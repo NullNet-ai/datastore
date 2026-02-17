@@ -1,7 +1,23 @@
 #!/bin/bash
 
-# Pre-push hook to ensure committed code is formatted before pushing
+# Pre-push hook: run all tests and ensure committed code is formatted before pushing
 
+# Get the repository root
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Run all tests - block push if any fail
+echo "Running all tests..."
+if ! cargo test --workspace 2>&1; then
+    echo ""
+    echo "❌ Tests failed. Push aborted."
+    echo "Fix the failing tests and try again."
+    exit 1
+fi
+echo "✅ All tests passed!"
+echo ""
+
+# Check formatting of committed code
 echo "Checking formatting of committed code..."
 
 # Check if there are any uncommitted changes in tracked files
@@ -19,9 +35,6 @@ if ! git diff --cached --quiet; then
     echo "❌ You have staged changes. Please commit them before pushing."
     exit 1
 fi
-
-# Get the repository root
-REPO_ROOT="$(git rev-parse --show-toplevel)"
 
 # Get list of Rust files from the latest commit, but only from bin/store and bin/server directories, excluding generated files
 RUST_FILES=$(git show --name-only --pretty=format: HEAD | grep '\.rs$' | grep -E '^bin/(store|server)/' | grep -v '/src/generated/' | tr '\n' ' ')

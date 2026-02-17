@@ -5,7 +5,7 @@
         server store store-clean-setup store-watch store-build store-prod \
         store-generate-schema store-generate-proto store-generator-schema store-generator-proto store-generator-all \
         db-migrate-generate db-migrate-up db-migrate-revert \
-        fmt fmt-check git-cleanup setup-hooks \
+        fmt fmt-check git-cleanup setup-hooks ensure-hooks \
         jean-store-watch store-experimental store-initialize-device \
         pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete \
         docker-build-ubuntu docker-build-ubuntu-clean docker-build-ubuntu-fresh docker-build-centos docker-build-arch docker-build-all \
@@ -371,8 +371,8 @@ verify-install:
 # Development targets
 # =============================================================================
 
-# Run both server and store in parallel
-dev:
+# Run both server and store in parallel (ensure-hooks runs on first use after clone)
+dev: ensure-hooks
 	@echo "🚀 Starting server and store..."
 	@make -j 2 server store
 
@@ -622,10 +622,13 @@ git-cleanup:
 	@git branch -vv | grep ': gone]' | awk '{print $$1}' | xargs -r git branch -D || true
 	@echo "✅ Git cleanup complete!"
 
-# Setup git hooks
+# Setup git hooks (uses core.hooksPath → versioned scripts/)
 setup-hooks:
 	@echo "🪝 Setting up git hooks..."
 	@./scripts/setup-hooks.sh
+
+# Idempotent: ensure hooks are configured (runs automatically in dev/install)
+ensure-hooks: setup-hooks
 
 # Clean build artifacts
 clean:
