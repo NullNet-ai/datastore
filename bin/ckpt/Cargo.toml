@@ -1,6 +1,6 @@
 [package]
 name = "ckpt"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Kashan Ali Khalid <kashankhalid@dnamicro.com>"]
 edition = "2021"
 description = "Local checkpoint tool using content-addressed storage (hash + manifest). Save, restore, and diff file snapshots without git."
