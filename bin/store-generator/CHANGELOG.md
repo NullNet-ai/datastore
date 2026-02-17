@@ -5,6 +5,19 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.8
+### Author
+Kashan
+
+### Fixed
+- **Validation failure abort**: When any table fails validation (e.g. invalid index name), discovery now returns `Err` and aborts immediately instead of continuing with other tables and creating migrations.
+- **Index type in migrations**: `USING btree" }("column")` regression – migration generator now sanitizes `index_type` to strip stray `" }` from malformed extraction. `extract_quoted_value_after` also trims trailing ` }`, `},`.
+
+### Added
+- `test_validation_failure_aborts_discovery` – ensures discovery aborts on validation failure.
+- `test_organizations_style_index_sql_no_invalid_chars` – migration regression test for malformed index type.
+- `test_extract_indexes_organizations_style_single_line` – extraction regression for organizations-style single-line indexes.
+
 ## 0.1.7
 ### Author
 Kashan

@@ -32,11 +32,6 @@ define_table_schema! {
         system_indexes!("test_hypertables"),
 
         // Custom table-specific indexes
-        idx_test_hypertables_sensor: {
-            columns: ["sensor_id"],
-            unique: false,
-            type: "btree"
-        },
         idx_test_hypertables_location: {
             columns: ["location"],
             unique: false,

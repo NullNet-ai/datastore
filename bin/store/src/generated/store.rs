@@ -510,13 +510,35 @@ pub struct Organizations {
     #[prost(string, optional, tag = "23")]
     pub name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "24")]
-    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "25")]
-    pub organization_level: ::core::option::Option<i32>,
+    pub skyll_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub department_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "26")]
-    pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    pub district_id: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "27")]
+    pub parent_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "28")]
+    pub school_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "29")]
+    pub city: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "30")]
+    pub county: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "31")]
+    pub state: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "32")]
+    pub school_identifier: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "33")]
+    pub district_identifier: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "34")]
+    pub organization_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "35")]
+    pub root_organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "36")]
     pub path_level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "37")]
+    pub superintendent_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "38")]
+    pub principal_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// OrganizationContacts entity definition
 #[derive(serde::Serialize, serde::Deserialize)]

@@ -468,9 +468,19 @@ impl MigrationGenerator {
         column_names: &str,
         index_type: Option<&str>,
     ) -> Result<String, String> {
+        // Sanitize index_type: strip any stray " } or "}, from malformed extraction
+        let clean_index_type = index_type.map(|s| {
+            s.trim()
+                .trim_end_matches(|c: char| c == '"' || c == ' ' || c == '}' || c == ',')
+                .to_string()
+        });
         // The index_name already contains the full name from the macro
-        let using_clause = if let Some(idx_type) = index_type {
-            format!(" USING {}", idx_type)
+        let using_clause = if let Some(ref idx_type) = clean_index_type {
+            if idx_type.is_empty() {
+                String::new()
+            } else {
+                format!(" USING {}", idx_type)
+            }
         } else {
             String::new()
         };
@@ -665,5 +675,27 @@ mod tests {
                 )
             );
         }
+    }
+
+    #[test]
+    fn test_organizations_style_index_sql_no_invalid_chars() {
+        // Regression: organizations table single-line indexes (type: "btree" },) produced
+        // USING btree" }("column") - index_type sanitization must strip stray " }
+        let sql = MigrationGenerator::generate_create_index_sql(
+            "organizations",
+            "idx_organizations_name",
+            "name",
+            Some(r#"btree" }"#),
+        )
+        .unwrap();
+        assert!(
+            !sql.contains("\" }"),
+            "Generated SQL must not contain invalid '\" }}' - got: {}",
+            sql
+        );
+        assert_eq!(
+            sql,
+            "CREATE INDEX \"idx_organizations_name\" ON \"organizations\" USING btree(\"name\");"
+        );
     }
 }

@@ -77,7 +77,7 @@ woothee = "0.13.0"
 
 
 [dev-dependencies]
-store-generator = { version = "0.1.1", registry = "dnamicro" }
+store-generator = { version = "0.1.8", registry = "dnamicro" }
 
 
 [build-dependencies]

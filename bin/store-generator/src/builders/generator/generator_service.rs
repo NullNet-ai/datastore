@@ -25,7 +25,7 @@ impl GeneratorService {
         }
 
         // Find and process all table definition files
-        let all_discovered_tables = Self::discover_table_definitions()?;
+        let all_discovered_tables = Self::discover_table_definitions_in_dir(Path::new(SCHEMA_TABLES_DIR.as_str()))?;
 
         info!(
             "Discovered {} table definition(s)",
@@ -378,14 +378,13 @@ impl GeneratorService {
         Ok(())
     }
 
-    /// Discover all table definition files in the schema directory
-    fn discover_table_definitions() -> Result<Vec<TableDefinition>, String> {
-        let tables_dir = SCHEMA_TABLES_DIR.as_str();
+    /// Discover all table definition files in the schema directory.
+    /// Returns Err and aborts on validation failure (does not continue with other tables).
+    pub(crate) fn discover_table_definitions_in_dir(tables_dir: &Path) -> Result<Vec<TableDefinition>, String> {
+        debug!("Scanning directory: {}", tables_dir.display());
 
-        debug!("Scanning directory: {}", tables_dir);
-
-        if !Path::new(tables_dir).exists() {
-            debug!("Tables directory does not exist: {}", tables_dir);
+        if !tables_dir.exists() {
+            debug!("Tables directory does not exist: {}", tables_dir.display());
             return Ok(Vec::new());
         }
 
@@ -441,12 +440,11 @@ impl GeneratorService {
                 }
                 Err(e) if e.starts_with("Skipping table") => {
                     // Table was skipped due to validation error, continue with other tables
-
                     continue;
                 }
                 Err(e) => {
                     error!("Failed to parse table definition: {}", e);
-                    continue;
+                    return Err(e);
                 }
             }
         }
@@ -857,7 +855,11 @@ impl GeneratorService {
             .nth(1)
             .and_then(|s| s.trim().strip_prefix('"'))
             .and_then(|s| s.split('"').next())
-            .map(|s| s.trim().to_string())
+            .map(|s| {
+                s.trim()
+                    .trim_end_matches(|c: char| c == ' ' || c == '}' || c == ',')
+                    .to_string()
+            })
             .filter(|s| !s.is_empty())
     }
 
@@ -1619,6 +1621,7 @@ impl GeneratorService {
 #[cfg(test)]
 mod tests {
     use super::GeneratorService;
+    use std::path::Path;
 
     #[test]
     fn test_extract_indexes_single_line_format_postgres_channels() {
@@ -1756,6 +1759,43 @@ indexes: {
     }
 
     #[test]
+    fn test_extract_indexes_organizations_style_single_line() {
+        // Regression: organizations table format - single-line indexes with type: "btree" },
+        // must not capture " } in type value (produces invalid USING btree" }("col") in migrations)
+        let content = r#"
+define_table_schema! {
+    fields: { system_fields!() },
+    indexes: {
+        system_indexes!("organizations"),
+        idx_organizations_name: { columns: ["name"], unique: false, type: "btree" },
+        idx_organizations_skyll_id: { columns: ["skyll_id"], unique: false, type: "btree" },
+    },
+    foreign_keys: {}
+}
+"#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        let custom: Vec<_> = indexes
+            .iter()
+            .filter(|(name, _, _, _)| name.contains("organizations_name") || name.contains("organizations_skyll"))
+            .collect();
+        assert!(
+            custom.len() >= 2,
+            "Should have at least 2 custom indexes, got {}",
+            custom.len()
+        );
+        for (name, _cols, _u, ty) in custom {
+            let t = ty.as_deref().unwrap_or("");
+            assert!(
+                !t.contains('}') && !t.contains('"'),
+                "Index {} type must not contain }} or \" - got '{}'",
+                name,
+                t
+            );
+            assert_eq!(t, "btree", "Index {} type should be 'btree'", name);
+        }
+    }
+
+    #[test]
     fn test_extract_foreign_keys_multiple_formats() {
         // Format 1: Compact single-line with trailing brace
         let content1 = r#"foreign_keys: { fk_t1_org: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "no action", on_update: "no action" } }"#;
@@ -1795,5 +1835,46 @@ foreign_keys: {
         assert_eq!(fks3[0].column, "ref_id");
         assert_eq!(fks3[0].references_table, "refs");
         assert_eq!(fks3[0].references_column, "id");
+    }
+
+    /// Ensures that when any table fails validation (e.g. invalid index name),
+    /// discovery aborts and returns Err instead of continuing with other tables.
+    #[test]
+    fn test_validation_failure_aborts_discovery() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let tables_dir = temp.path();
+        let bad_table_path = tables_dir.join("bad_items.rs");
+
+        // Index name idx_bad_items_sensor does not match format idx_{table}_{column}.
+        // For column sensor_id, expected name is idx_bad_items_sensor_id.
+        let content = r#"
+define_table_schema! {
+    fields: {
+        system_fields!(),
+        sensor_id: nullable(text()),
+    },
+    indexes: {
+        system_indexes!("bad_items"),
+        idx_bad_items_sensor: { columns: ["sensor_id"], unique: false, type: "btree" }
+    },
+    foreign_keys: { system_foreign_keys!("bad_items") }
+}
+"#;
+        std::fs::write(&bad_table_path, content).expect("write bad_items.rs");
+
+        let result = GeneratorService::discover_table_definitions_in_dir(tables_dir);
+
+        assert!(result.is_err(), "discovery should fail when table has validation error");
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("validation failed") || err.contains("validation"),
+            "error should mention validation: {}",
+            err
+        );
+        assert!(
+            err.contains("Aborting"),
+            "error should indicate abort: {}",
+            err
+        );
     }
 }
