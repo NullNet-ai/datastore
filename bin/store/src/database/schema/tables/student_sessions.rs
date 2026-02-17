@@ -1,7 +1,5 @@
-use crate::schema::generator::diesel_schema_definition::{
-    DieselTableDefinition, types::*
-};
 use crate::define_table_schema;
+use crate::schema::generator::diesel_schema_definition::{types::*, DieselTableDefinition};
 
 pub struct StudentSessionsTable;
 

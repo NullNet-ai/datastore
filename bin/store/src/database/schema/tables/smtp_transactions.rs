@@ -1,5 +1,5 @@
 use crate::schema::generator::diesel_schema_definition::{
-    define_table_schema, foreign_key, index, nullable, text, timestamp, jsonb, boolean, integer
+    boolean, define_table_schema, foreign_key, index, integer, jsonb, nullable, text, timestamp,
 };
 
 define_table_schema! {
