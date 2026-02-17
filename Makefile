@@ -66,6 +66,7 @@ help:
 	@echo "  docker-compose-restart  - Restart Docker Compose services"
 	@echo "  docker-compose-logs     - Show logs from Docker Compose services"
 	@echo "  docker-compose-ps       - Show status of Docker Compose services"
+	@echo "  remove-schema-table-macros - Remove table macros from schema.rs based on tables dir"
 	@echo "  help                    - Show this help message"
 
 # =============================================================================
@@ -542,6 +543,10 @@ store-generator-proto:
 store-generator-all:
 	@echo "🔧 Generating all store files (standalone generator)..."
 	@STORE_DIR=bin/store CREATE_SCHEMA=true GENERATE_PROTO=true GENERATE_GRPC=true GENERATE_TABLE_ENUM=true $(STORE_GEN)
+
+remove-schema-table-macros:
+	@echo "🗑️  Removing orphaned table macros from schema.rs based on migration files..."
+	@cd bin/store && mkdir -p target && rustc src/script/remove_orphaned_schema_macros.rs -o target/remove_orphaned_schema_macros && ./target/remove_orphaned_schema_macros
 
 # =============================================================================
 # Database migration targets
