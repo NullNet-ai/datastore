@@ -652,7 +652,10 @@ mod tests {
         // type extraction capturing closing brace. All indexes must be valid SQL.
         for (col, index_name) in [
             ("channel_name", "idx_postgres_channels_channel_name"),
-            ("channel_timestamp", "idx_postgres_channels_channel_timestamp"),
+            (
+                "channel_timestamp",
+                "idx_postgres_channels_channel_timestamp",
+            ),
             ("function", "idx_postgres_channels_function"),
         ] {
             let sql = MigrationGenerator::generate_create_index_sql(

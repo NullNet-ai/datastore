@@ -25,7 +25,8 @@ impl GeneratorService {
         }
 
         // Find and process all table definition files
-        let all_discovered_tables = Self::discover_table_definitions_in_dir(Path::new(SCHEMA_TABLES_DIR.as_str()))?;
+        let all_discovered_tables =
+            Self::discover_table_definitions_in_dir(Path::new(SCHEMA_TABLES_DIR.as_str()))?;
 
         info!(
             "Discovered {} table definition(s)",
@@ -380,7 +381,9 @@ impl GeneratorService {
 
     /// Discover all table definition files in the schema directory.
     /// Returns Err and aborts on validation failure (does not continue with other tables).
-    pub(crate) fn discover_table_definitions_in_dir(tables_dir: &Path) -> Result<Vec<TableDefinition>, String> {
+    pub(crate) fn discover_table_definitions_in_dir(
+        tables_dir: &Path,
+    ) -> Result<Vec<TableDefinition>, String> {
         debug!("Scanning directory: {}", tables_dir.display());
 
         if !tables_dir.exists() {
@@ -972,7 +975,8 @@ impl GeneratorService {
                         in_index_def = true;
                     } else if in_index_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            let columns = Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            let columns =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"));
                             if let Some(ref mut index) = current_index {
                                 index.1 = columns;
                             }
@@ -987,7 +991,9 @@ impl GeneratorService {
                             if let Some(ref mut index) = current_index {
                                 index.2 = is_unique;
                             }
-                        } else if let Some(type_val) = Self::extract_quoted_value_after("type:", line) {
+                        } else if let Some(type_val) =
+                            Self::extract_quoted_value_after("type:", line)
+                        {
                             if let Some(ref mut index) = current_index {
                                 index.3 = Some(type_val);
                             }
@@ -1057,7 +1063,8 @@ impl GeneratorService {
                         in_fk_def = true;
                     } else if in_fk_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            let cols = Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            let cols =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"));
                             current_column = cols.join("_");
                         } else if line == "}" {
                             if !current_name.is_empty() && !current_column.is_empty() {
@@ -1154,7 +1161,12 @@ impl GeneratorService {
                             fk.references_table = v;
                         }
                         if line.contains("foreign_columns:") {
-                            if let Some(col) = Self::extract_bracketed_quoted_values(line, Some("foreign_columns:")).first() {
+                            if let Some(col) = Self::extract_bracketed_quoted_values(
+                                line,
+                                Some("foreign_columns:"),
+                            )
+                            .first()
+                            {
                                 fk.references_column = col.clone();
                             }
                         }
@@ -1169,8 +1181,11 @@ impl GeneratorService {
                         in_fk_def = true;
                     } else if in_fk_def {
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
-                            let cols = Self::extract_bracketed_quoted_values(line, Some("columns:"));
-                            if let (Some(ref mut fk), Some(col)) = (current_fk.as_mut(), cols.first()) {
+                            let cols =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            if let (Some(ref mut fk), Some(col)) =
+                                (current_fk.as_mut(), cols.first())
+                            {
                                 fk.column = col.clone();
                             }
                         } else if line.contains("foreign_table:") {
@@ -1181,8 +1196,13 @@ impl GeneratorService {
                                 fk.references_table = table_val;
                             }
                         } else if line.contains("foreign_columns:") {
-                            let cols = Self::extract_bracketed_quoted_values(line, Some("foreign_columns:"));
-                            if let (Some(ref mut fk), Some(col)) = (current_fk.as_mut(), cols.first()) {
+                            let cols = Self::extract_bracketed_quoted_values(
+                                line,
+                                Some("foreign_columns:"),
+                            );
+                            if let (Some(ref mut fk), Some(col)) =
+                                (current_fk.as_mut(), cols.first())
+                            {
                                 fk.references_column = col.clone();
                             }
                         } else if line.contains("on_delete:") {
@@ -1713,7 +1733,8 @@ foreign_keys: {
     #[test]
     fn test_extract_indexes_multiple_formats() {
         // Format 1: Single-line with trailing brace (regression case)
-        let content1 = r#"indexes: { idx_foo_bar: { columns: ["bar"], unique: false, type: "btree" } }"#;
+        let content1 =
+            r#"indexes: { idx_foo_bar: { columns: ["bar"], unique: false, type: "btree" } }"#;
         let idx1 = GeneratorService::extract_indexes_from_macro(content1).unwrap();
         assert_eq!(idx1.len(), 1);
         assert_eq!(idx1[0].0, "idx_foo_bar");
@@ -1751,7 +1772,8 @@ indexes: {
         assert_eq!(idx3[1].3.as_deref(), Some("hash"));
 
         // Format 4: Extra spacing, trailing comma
-        let content4 = r#"indexes: { idx_x_y: { columns: [ "y" ], unique: false , type: "btree" , } }"#;
+        let content4 =
+            r#"indexes: { idx_x_y: { columns: [ "y" ], unique: false , type: "btree" , } }"#;
         let idx4 = GeneratorService::extract_indexes_from_macro(content4).unwrap();
         assert_eq!(idx4.len(), 1);
         assert_eq!(idx4[0].1, vec!["y"]);
@@ -1776,7 +1798,9 @@ define_table_schema! {
         let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
         let custom: Vec<_> = indexes
             .iter()
-            .filter(|(name, _, _, _)| name.contains("organizations_name") || name.contains("organizations_skyll"))
+            .filter(|(name, _, _, _)| {
+                name.contains("organizations_name") || name.contains("organizations_skyll")
+            })
             .collect();
         assert!(
             custom.len() >= 2,
@@ -1864,7 +1888,10 @@ define_table_schema! {
 
         let result = GeneratorService::discover_table_definitions_in_dir(tables_dir);
 
-        assert!(result.is_err(), "discovery should fail when table has validation error");
+        assert!(
+            result.is_err(),
+            "discovery should fail when table has validation error"
+        );
         let err = result.unwrap_err();
         assert!(
             err.contains("validation failed") || err.contains("validation"),
