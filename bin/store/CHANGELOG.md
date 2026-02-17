@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.23
+### Author
+Kashan
+
+### Changed
+  - ***pre-push hook***:
+    - Treats compiler warnings as errors (`RUSTFLAGS="-D warnings"`): pushes blocked when build has any warnings.
+    - Removed uncommitted and staged checks: you can push commits even with WIP or staged changes.
+
 ## 0.2.22
 ### Author
 Kashan
