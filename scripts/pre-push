@@ -6,12 +6,13 @@
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-# Run all tests - block push if any fail
-echo "Running all tests..."
+# Run all tests - block push if any fail or if there are warnings
+echo "Running all tests (warnings treated as errors)..."
+export RUSTFLAGS="-D warnings"
 if ! cargo test --workspace 2>&1; then
     echo ""
-    echo "❌ Tests failed. Push aborted."
-    echo "Fix the failing tests and try again."
+    echo "❌ Tests failed or build has warnings. Push aborted."
+    echo "Fix any test failures and compiler warnings, then try again."
     exit 1
 fi
 echo "✅ All tests passed!"

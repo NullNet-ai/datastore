@@ -3,22 +3,6 @@
     "id"
   ],
   "pluck_object": {
-    "contacts": [
-      "id",
-      "code",
-      "categories",
-      "organization_id",
-      "first_name",
-      "middle_name",
-      "last_name",
-      "status",
-      "created_date",
-      "updated_date",
-      "created_time",
-      "updated_time",
-      "created_by",
-      "updated_by"
-    ],
     "created_by": [
       "id",
       "first_name",
@@ -36,6 +20,22 @@
       "updated_date",
       "created_time",
       "updated_time"
+    ],
+    "contacts": [
+      "id",
+      "code",
+      "categories",
+      "organization_id",
+      "first_name",
+      "middle_name",
+      "last_name",
+      "status",
+      "created_date",
+      "updated_date",
+      "created_time",
+      "updated_time",
+      "created_by",
+      "updated_by"
     ]
   },
   "pluck_group_object": {},
