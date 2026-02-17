@@ -11,11 +11,9 @@
       "created_time",
       "updated_time"
     ],
-    "created_by": [
+    "created_by_account_organizations": [
       "id",
-      "first_name",
-      "middle_name",
-      "last_name"
+      "contact_id"
     ],
     "contacts": [
       "id",
@@ -33,9 +31,11 @@
       "created_by",
       "updated_by"
     ],
-    "created_by_account_organizations": [
+    "created_by": [
       "id",
-      "contact_id"
+      "first_name",
+      "middle_name",
+      "last_name"
     ]
   },
   "pluck_group_object": {},

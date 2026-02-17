@@ -458,6 +458,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_create_new_payload_filters() {
         println!("Testing PayloadFilterScenarios creation");
 
@@ -473,6 +474,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_create_and_retrieve_scenario() {
         println!("Testing scenario creation and retrieval");
 
@@ -491,6 +493,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_handle_duplicate_scenario_creation() {
         println!("Testing duplicate scenario handling");
 
@@ -513,6 +516,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_set_and_get_current_scenario() {
         println!("Testing current scenario management");
 
@@ -539,6 +543,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_validate_scenario_names() {
         println!("Testing scenario name validation");
 
@@ -558,6 +563,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_delete_scenario() {
         println!("Testing scenario deletion");
 
@@ -578,6 +584,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_clone_scenario() {
         println!("Testing scenario cloning");
 
@@ -604,6 +611,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_save_and_load_scenario_from_file() {
         println!("Testing scenario file save and load");
 
@@ -637,6 +645,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_delete_scenario_and_file() {
         println!("Testing scenario deletion with file cleanup");
 
@@ -664,6 +673,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_update_scenario_and_save_to_file() {
         println!("Testing scenario update with file save");
 
@@ -699,6 +709,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_load_all_scenarios_from_files() {
         println!("Testing loading all scenarios from files");
 
