@@ -1641,7 +1641,6 @@ impl GeneratorService {
 #[cfg(test)]
 mod tests {
     use super::GeneratorService;
-    use std::path::Path;
 
     #[test]
     fn test_extract_indexes_single_line_format_postgres_channels() {
