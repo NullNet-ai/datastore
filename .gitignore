@@ -52,3 +52,6 @@ Thumbs.db
 # Generated store files (keep schema.rs)
 bin/store/src/generated/*
 !bin/store/src/generated/schema.rs
+
+# Checkpoint storage (ckpt tool)
+.mycheckpoints/
