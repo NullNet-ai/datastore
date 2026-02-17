@@ -3315,8 +3315,10 @@ mod tests {
 
     /// Test storage path structure and bucket creation
     mod storage_tests {
+        use serial_test::serial;
         /// Test that bucket name is correctly determined from environment variables
         #[test]
+        #[serial]
         fn test_bucket_name_creation() {
             // Clear any existing environment variables first
             std::env::remove_var("STORAGE_BUCKET_NAME");
@@ -3343,6 +3345,7 @@ mod tests {
 
         /// Test upload path structure with organization name
         #[test]
+        #[serial]
         fn test_upload_path_structure() {
             // Clear any existing environment variables first
             std::env::remove_var("STORAGE_BUCKET_NAME");
@@ -3370,13 +3373,14 @@ mod tests {
 
         /// Test download path structure
         #[test]
+        #[serial]
         fn test_download_path_structure() {
             // Clear any existing environment variables first
             std::env::remove_var("STORAGE_BUCKET_NAME");
             std::env::remove_var("DEFAULT_ORGANIZATION_NAME");
 
             // Set up test environment
-            std::env::set_var("DEFAULT_ORGANIZATION_NAME", "myorg");
+            std::env::set_var("DEFAULT_ORGANIZATION_NAME", "test-org");
 
             let file_id = "01KGRER1FH47DGESEH6XFPTZ0B";
             let extension = "png";
@@ -3389,7 +3393,7 @@ mod tests {
                 organization_name,
                 format!("{}.{}", file_id, extension)
             );
-            assert_eq!(download_path, "myorg/01KGRER1FH47DGESEH6XFPTZ0B.png");
+            assert_eq!(download_path, "test-org/01KGRER1FH47DGESEH6XFPTZ0B.png");
 
             // Test that download_path field should only contain the path without bucket name
             let metadata_download_path = format!("{}.{}", file_id, extension);
@@ -3422,6 +3426,7 @@ mod tests {
 
         /// Test environment variable fallbacks
         #[test]
+        #[serial]
         fn test_environment_variable_fallbacks() {
             // Clear any existing environment variables first
             std::env::remove_var("STORAGE_BUCKET_NAME");
