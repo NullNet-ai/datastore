@@ -476,7 +476,12 @@ impl GeneratorService {
                 let fk_names = Self::extract_foreign_key_names_and_columns(&content)?;
                 let field_names: Vec<String> = def.fields.iter().map(|f| f.name.clone()).collect();
                 if let Err(e) = table_validator::validate_table_file(
-                    file_stem, &content, &def.name, &field_names, &indexes, &fk_names,
+                    file_stem,
+                    &content,
+                    &def.name,
+                    &field_names,
+                    &indexes,
+                    &fk_names,
                 ) {
                     return Err(format!(
                         "Table validation failed for {}:\n{}\n\nAborting.",
@@ -813,7 +818,10 @@ impl GeneratorService {
                         };
 
                         // Error on duplicate field names (user must not redefine system fields)
-                        if fields.iter().any(|f: &FieldDefinition| f.name == field_name) {
+                        if fields
+                            .iter()
+                            .any(|f: &FieldDefinition| f.name == field_name)
+                        {
                             return Err(format!(
                                 "Duplicate field name '{}'. Do not redefine system fields or add the same field twice. Remove the duplicate.",
                                 field_name

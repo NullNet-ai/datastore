@@ -3,7 +3,6 @@ use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::generated::table_enum::Table;
 
 use diesel_async::AsyncPgConnection;
-use pluralizer::pluralize;
 use serde_json::json;
 use serde_json::{Map, Value};
 
@@ -116,7 +115,7 @@ fn parse_message_value_to_json(
     }
 
     // Parse string value to JSON first for consistent handling
-    let json_value = if is_array || is_plural_column(column) {
+    let json_value = if is_array {
         // Handle array parsing
         if value.starts_with('[') && value.ends_with(']') {
             // Try to parse as JSON array
@@ -181,7 +180,7 @@ fn parse_message_value_to_json(
     }
 
     // Handle array types
-    if is_array || is_plural_column(column) {
+    if is_array {
         if let serde_json::Value::Array(arr) = json_value {
             return Ok(serde_json::Value::Array(arr));
         } else {
@@ -237,10 +236,6 @@ pub fn clean_extra_quotes(mut map: Map<String, Value>) -> Map<String, Value> {
         }
     }
     map
-}
-
-fn is_plural_column(column: &str) -> bool {
-    pluralize(column, 2, false) == column
 }
 
 fn process_pg_array(value: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
