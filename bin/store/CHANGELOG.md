@@ -5,6 +5,14 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.26
+### Author
+Kashan
+
+### Added
+  - ***Root account token***:
+    - Root account JWT token payload now includes `signed_in_account` (same as regular logins); it was not present before.
+
 ## 0.2.25
 ### Author
 Kashan
