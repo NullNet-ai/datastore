@@ -158,6 +158,7 @@ impl SessionManager {
             sensitivity_level: None,
             sync_status: None,
             is_batch: None,
+            image_url: None,
             account_organization_id: None,
             device_name: None,
             browser_name: None,
@@ -337,6 +338,7 @@ impl SessionManager {
             sensitivity_level: session_json["sensitivity_level"].as_i64().map(|v| v as i32),
             sync_status: session_json["sync_status"].as_str().map(|s| s.to_string()),
             is_batch: session_json["is_batch"].as_bool(),
+            image_url: session_json["image_url"].as_str().map(|s| s.to_string()),
             account_organization_id: session_json["account_organization_id"]
                 .as_str()
                 .map(|s| s.to_string()),
@@ -543,6 +545,7 @@ pub async fn session_to_signed_in_activity(
         sensitivity_level: Some(1000), // Default sensitivity level
         sync_status: None,
         is_batch: Some(false),
+        image_url: None,
         account_organization_id: session.account_organization_id.clone(),
         device_name: session.device_name.clone(),
         browser_name: session.browser_name.clone(),

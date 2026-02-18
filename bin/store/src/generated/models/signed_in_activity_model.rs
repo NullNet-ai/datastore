@@ -26,7 +26,7 @@ pub struct SignedInActivityModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub account_organization_id: Option<String>,
+    pub image_url: Option<String>,    pub account_organization_id: Option<String>,
     pub device_name: Option<String>,
     pub browser_name: Option<String>,
     pub operating_system: Option<String>,

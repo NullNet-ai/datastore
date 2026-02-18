@@ -29,7 +29,7 @@ pub struct AccountPhoneNumberModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub account_profile_id: Option<String>,
+    pub image_url: Option<String>,    pub account_profile_id: Option<String>,
     pub raw_phone_number: Option<String>,
     pub is_primary: Option<bool>,
     pub iso_code: Option<String>,
