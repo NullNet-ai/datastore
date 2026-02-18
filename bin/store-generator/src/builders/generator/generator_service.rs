@@ -817,6 +817,16 @@ impl GeneratorService {
                             None
                         };
 
+                        // JSONB default validation: must use ::jsonb format; no default empty array
+                        let is_jsonb = rest.contains("nullable(jsonb())") || rest.contains("jsonb()");
+                        if is_jsonb {
+                            if let Err(e) =
+                                table_validator::validate_jsonb_default(&field_name, default_value.as_deref())
+                            {
+                                return Err(e);
+                            }
+                        }
+
                         // Error on duplicate field names (user must not redefine system fields)
                         if fields
                             .iter()

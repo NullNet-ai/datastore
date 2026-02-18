@@ -432,6 +432,35 @@ pub fn validate_table_file(
     result.into_result()
 }
 
+/// Validates JSONB column default value format.
+/// - If a default is set, it must include `::jsonb` (e.g. `default: "'[]'::jsonb"` or `default: "'{\"k\":1}'::jsonb"`).
+/// - Empty array default is not allowed: omit default (array is empty by default when no value).
+pub fn validate_jsonb_default(field_name: &str, default_value: Option<&str>) -> Result<(), String> {
+    let d = match default_value {
+        None => return Ok(()),
+        Some(d) => d.trim(),
+    };
+    if d.is_empty() {
+        return Ok(());
+    }
+    // JSONB default must include ::jsonb
+    if !d.contains("::jsonb") {
+        return Err(format!(
+            "JSONB column '{}' default must use format with '::jsonb' (e.g. default: \"'[]'::jsonb\"). Got: {}",
+            field_name, d
+        ));
+    }
+    // Do not allow default empty array — omit default (array is empty by default when no value)
+    let before_cast = d.split("::jsonb").next().unwrap_or("").trim().trim_matches('\'').trim();
+    if before_cast == "[]" {
+        return Err(format!(
+            "JSONB column '{}' must not have default empty array ('[]'::jsonb); omit default (array is empty by default when no value).",
+            field_name
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -781,5 +810,46 @@ mod tests {
         ];
         let err = validate_no_duplicate_foreign_keys(&dup_fks).unwrap_err();
         assert!(err.contains("Duplicate foreign key"));
+    }
+
+    #[test]
+    fn test_validate_jsonb_default_ok_no_default() {
+        assert!(validate_jsonb_default("tags", None).is_ok());
+        assert!(validate_jsonb_default("meta", Some("")).is_ok());
+    }
+
+    #[test]
+    fn test_validate_jsonb_default_ok_with_cast() {
+        assert!(validate_jsonb_default("tags", Some("'[1,2]'::jsonb")).is_ok());
+        assert!(validate_jsonb_default("data", Some("'{\"a\": 1}'::jsonb")).is_ok());
+        assert!(validate_jsonb_default("prefs", Some("'{}'::jsonb")).is_ok());
+    }
+
+    #[test]
+    fn test_validate_jsonb_default_err_missing_cast() {
+        let err = validate_jsonb_default("tags", Some("'[]'")).unwrap_err();
+        assert!(err.contains("::jsonb"), "error should require ::jsonb: {}", err);
+        assert!(err.contains("tags"), "error should mention field name: {}", err);
+    }
+
+    #[test]
+    fn test_validate_jsonb_default_err_empty_array_default() {
+        let err = validate_jsonb_default("tags", Some("'[]'::jsonb")).unwrap_err();
+        assert!(
+            err.contains("must not have default empty array"),
+            "error should reject empty array default: {}",
+            err
+        );
+        assert!(err.contains("tags"), "error should mention field name: {}", err);
+    }
+
+    #[test]
+    fn test_validate_jsonb_default_err_empty_array_no_quotes() {
+        let err = validate_jsonb_default("meta", Some("[]::jsonb")).unwrap_err();
+        assert!(
+            err.contains("must not have default empty array"),
+            "error should reject empty array default: {}",
+            err
+        );
     }
 }

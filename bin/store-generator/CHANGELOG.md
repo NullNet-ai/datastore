@@ -5,6 +5,17 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.10
+### Author
+Kashan
+
+### Added
+- **JSONB default validation**:
+  - JSONB columns with a default must use format including `::jsonb` (e.g. `default: "'[]'::jsonb"` or `default: "'{\"k\":1}'::jsonb"`).
+  - Empty-array default (`'[]'::jsonb`) is rejected; omit default (array is empty by default when no value).
+  - `validate_jsonb_default()` in `table_validator`; invoked during field extraction in `generator_service`.
+  - Tests: `test_validate_jsonb_default_ok_no_default`, `test_validate_jsonb_default_ok_with_cast`, `test_validate_jsonb_default_err_missing_cast`, `test_validate_jsonb_default_err_empty_array_default`, `test_validate_jsonb_default_err_empty_array_no_quotes`.
+
 ## 0.1.9
 ### Author
 Kashan
