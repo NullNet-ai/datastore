@@ -34,7 +34,12 @@ define_table_schema! {
         presigned_url: nullable(text()),
         presigned_url_expire: nullable(integer()),
 
-
+        // Sample for other datatypes
+        /**
+         * field_name: nullable(array(text())), default: "'[]'"
+         * field_name: nullable(boolean()), default: "false",
+         * field_name: nullable(jsonb()), default: "'[]'::jsonb",
+         */
     },
     indexes: {
         // System field indexes ( REQUIRED )

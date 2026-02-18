@@ -8,8 +8,8 @@ define_table_schema! {
     fields: {
         system_fields!(),
         title: nullable(text()),
-        topic_contact_categories: nullable(text()), default: "'{}'::text[]",
-        topic_contact_roles: nullable(text()), default: "'{}'::text[]",
+        topic_contact_categories: nullable(array(text())), default: "[]",
+        topic_contact_roles: nullable(array(text())), default: "[]",
         age_start: nullable(integer()),
         age_end: nullable(integer()),
         topic_status: nullable(text()),

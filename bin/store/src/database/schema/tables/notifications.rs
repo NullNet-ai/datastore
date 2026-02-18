@@ -24,7 +24,7 @@ define_table_schema! {
         source: nullable(text()),
         is_pinned: nullable(boolean()), default: "false",
         recipient_id: nullable(text()),
-        actions: nullable(jsonb()), default: "[]",
+        actions: nullable(jsonb()), default: "'[]'::jsonb",
         notification_status: nullable(text()), default: "'unread'",
         priority_label: nullable(text()), default: "'low'",
         priority_level: nullable(integer()), default: "0",

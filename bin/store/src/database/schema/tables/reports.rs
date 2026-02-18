@@ -7,7 +7,7 @@ define_table_schema! {
     hypertable: false,
     fields: {
         system_fields!(),
-        report_type: nullable(text()), default: "'{}'::text[]",
+        report_type: nullable(array(text())), default: "'[]'",
         job_status: nullable(text()),
         start_date: nullable(text()),
         start_time: nullable(text()), default: "'00:00'",
