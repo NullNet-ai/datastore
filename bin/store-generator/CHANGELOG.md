@@ -5,6 +5,21 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.9
+### Author
+Kashan
+
+### Added
+- **Duplicate validation (aborts on error)**:
+  - `validate_no_duplicate_fields`: Errors if a field name appears twice or user redefines a system field (organization_id, created_by, tags, etc.).
+  - `validate_no_duplicate_index_names`: Errors if an index name appears twice (e.g. user redefines an index from system_indexes!).
+  - `validate_no_duplicate_foreign_keys`: Errors if an FK constraint name appears twice or user adds an FK for a column already in system_foreign_keys! (organization_id, created_by, updated_by, deleted_by, requested_by).
+- `validate_table_file` now accepts `field_names` and runs all duplicate checks before format validation.
+- Tests: `test_validate_no_duplicate_fields`, `test_validate_no_duplicate_index_names`, `test_validate_no_duplicate_foreign_keys`.
+
+### Changed
+- Duplicate field handling in `extract_fields_from_macro`: now returns `Err` and aborts instead of replacing or skipping.
+
 ## 0.1.8
 ### Author
 Kashan

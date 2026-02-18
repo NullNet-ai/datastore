@@ -279,7 +279,8 @@ pub fn extract_table_name_from_content(content: &str) -> Option<String> {
     None
 }
 
-/// System FK columns - skip validation for these (from system_foreign_keys! macro).
+/// System FK columns (from system_foreign_keys! macro).
+/// User must not redefine these - validation errors if duplicate FK for these columns.
 const SYSTEM_FK_COLUMNS: &[&str] = &[
     "organization_id",
     "created_by",
@@ -288,11 +289,95 @@ const SYSTEM_FK_COLUMNS: &[&str] = &[
     "requested_by",
 ];
 
+/// System field names (from system_fields! macro).
+/// User must not redefine these - validation errors on duplicate field names.
+const SYSTEM_FIELD_NAMES: &[&str] = &[
+    "tombstone",
+    "status",
+    "previous_status",
+    "version",
+    "created_date",
+    "created_time",
+    "updated_date",
+    "updated_time",
+    "organization_id",
+    "created_by",
+    "updated_by",
+    "deleted_by",
+    "requested_by",
+    "timestamp",
+    "tags",
+    "categories",
+    "code",
+    "id",
+    "sensitivity_level",
+    "sync_status",
+    "is_batch",
+    "image_url",
+];
+
+/// Validate no duplicate field names. Errors if user redefines a system field or has duplicate fields.
+pub fn validate_no_duplicate_fields(field_names: &[String]) -> Result<(), String> {
+    let mut seen = std::collections::HashSet::new();
+    for name in field_names {
+        if !seen.insert(name) {
+            return Err(format!(
+                "Duplicate field name '{}'. Remove the duplicate or do not redefine system fields ({}).",
+                name,
+                SYSTEM_FIELD_NAMES.join(", ")
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Validate no duplicate index names.
+pub fn validate_no_duplicate_index_names(
+    indexes: &[(String, Vec<String>, bool, Option<String>)],
+) -> Result<(), String> {
+    let mut seen = std::collections::HashSet::new();
+    for (name, _, _, _) in indexes {
+        if !seen.insert(name) {
+            return Err(format!(
+                "Duplicate index name '{}'. Remove the duplicate - system_indexes! already defines indexes for system columns.",
+                name
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Validate no duplicate foreign key names or columns.
+/// Errors if user redefines a system FK (organization_id, created_by, etc.) or has duplicate FKs.
+pub fn validate_no_duplicate_foreign_keys(fk_names: &[(String, String)]) -> Result<(), String> {
+    let mut seen_names = std::collections::HashSet::new();
+    let mut seen_system_columns = std::collections::HashSet::new();
+
+    for (name, column) in fk_names {
+        if !seen_names.insert(name) {
+            return Err(format!(
+                "Duplicate foreign key constraint '{}'. Remove the duplicate - system_foreign_keys! may already define it.",
+                name
+            ));
+        }
+        if SYSTEM_FK_COLUMNS.contains(&column.as_str()) {
+            if !seen_system_columns.insert(column) {
+                return Err(format!(
+                    "Duplicate foreign key for column '{}'. This column is already defined in system_foreign_keys!. Remove the duplicate.",
+                    column
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Run all table validations. Aborts process on first error (returns Err).
 pub fn validate_table_file(
     file_stem: &str,
     content: &str,
     table_name: &str,
+    field_names: &[String],
     indexes: &[(String, Vec<String>, bool, Option<String>)],
     foreign_keys: &[(String, String)], // (constraint_name, column)
 ) -> Result<(), String> {
@@ -310,7 +395,22 @@ pub fn validate_table_file(
         result.add_error(e);
     }
 
-    // 3. Validate index names (skip system indexes - they have table prefix from macro)
+    // 3. No duplicate field names (user must not redefine system fields)
+    if let Err(e) = validate_no_duplicate_fields(field_names) {
+        result.add_error(e);
+    }
+
+    // 4. No duplicate index names (user must not redefine system indexes)
+    if let Err(e) = validate_no_duplicate_index_names(indexes) {
+        result.add_error(e);
+    }
+
+    // 5. No duplicate foreign key names or columns (user must not redefine system FKs)
+    if let Err(e) = validate_no_duplicate_foreign_keys(foreign_keys) {
+        result.add_error(e);
+    }
+
+    // 6. Validate index names (format)
     for (index_name, columns, _, _) in indexes {
         if columns.is_empty() {
             result.add_error(format!("Index '{}' has no columns", index_name));
@@ -319,7 +419,7 @@ pub fn validate_table_file(
         }
     }
 
-    // 4. Validate foreign key names (skip system FKs - organization_id, created_by, etc.)
+    // 7. Validate foreign key names format (skip system FKs - they use different format from macro)
     for (constraint_name, column) in foreign_keys {
         if SYSTEM_FK_COLUMNS.contains(&column.as_str()) {
             continue;
@@ -522,6 +622,7 @@ mod tests {
             foreign_keys: { system_foreign_keys!("demo_items") }
         }
         "#;
+        let field_names = vec!["id".to_string(), "title".to_string()];
         let indexes = vec![(
             "idx_demo_items_title".to_string(),
             vec!["title".to_string()],
@@ -529,19 +630,31 @@ mod tests {
             Some("btree".to_string()),
         )];
         let foreign_keys: Vec<(String, String)> = vec![];
-        assert!(
-            validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys)
-                .is_ok()
-        );
+        assert!(validate_table_file(
+            "demo_items",
+            content,
+            "demo_items",
+            &field_names,
+            &indexes,
+            &foreign_keys
+        )
+        .is_ok());
     }
 
     #[test]
     fn test_validate_table_file_plural_fail() {
         let content = r#"system_indexes!("demo_item")"#;
+        let field_names: Vec<String> = vec![];
         let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
         let foreign_keys: Vec<(String, String)> = vec![];
-        let result =
-            validate_table_file("demo_item", content, "demo_item", &indexes, &foreign_keys);
+        let result = validate_table_file(
+            "demo_item",
+            content,
+            "demo_item",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("must be plural"));
     }
@@ -549,10 +662,17 @@ mod tests {
     #[test]
     fn test_validate_table_file_filename_mismatch() {
         let content = r#"system_indexes!("demo_items")"#;
+        let field_names: Vec<String> = vec![];
         let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
         let foreign_keys: Vec<(String, String)> = vec![];
-        let result =
-            validate_table_file("wrong_name", content, "demo_items", &indexes, &foreign_keys);
+        let result = validate_table_file(
+            "wrong_name",
+            content,
+            "demo_items",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("does not match"));
     }
@@ -560,6 +680,7 @@ mod tests {
     #[test]
     fn test_validate_table_file_index_name_fail() {
         let content = r#"system_indexes!("demo_items")"#;
+        let field_names = vec!["id".to_string(), "title".to_string()];
         let indexes = vec![(
             "wrong_index_name".to_string(),
             vec!["title".to_string()],
@@ -567,8 +688,14 @@ mod tests {
             None,
         )];
         let foreign_keys: Vec<(String, String)> = vec![];
-        let result =
-            validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
+        let result = validate_table_file(
+            "demo_items",
+            content,
+            "demo_items",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Index"));
     }
@@ -576,12 +703,20 @@ mod tests {
     #[test]
     fn test_validate_table_file_fk_name_fail() {
         let content = r#"system_foreign_keys!("samples")"#;
+        let field_names = vec!["id".to_string(), "sample_with_reference_id".to_string()];
         let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
         let foreign_keys = vec![(
             "wrong_fk_name".to_string(),
             "sample_with_reference_id".to_string(),
         )];
-        let result = validate_table_file("samples", content, "samples", &indexes, &foreign_keys);
+        let result = validate_table_file(
+            "samples",
+            content,
+            "samples",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Foreign key"));
     }
@@ -589,15 +724,82 @@ mod tests {
     #[test]
     fn test_validate_table_file_skips_system_fk_columns() {
         let content = r#"system_foreign_keys!("demo_items")"#;
+        let field_names = vec!["id".to_string(), "organization_id".to_string()];
         let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
-        // System FK columns use different format - we skip validation for them
+        // System FK columns use different format - we skip format validation for them
         let foreign_keys = vec![(
             "demo_items_organization_id_organizations_id_fk".to_string(),
             "organization_id".to_string(),
         )];
-        // Should pass - we skip system columns (organization_id)
-        let result =
-            validate_table_file("demo_items", content, "demo_items", &indexes, &foreign_keys);
+        // Should pass - we skip format validation for system columns (organization_id)
+        let result = validate_table_file(
+            "demo_items",
+            content,
+            "demo_items",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_no_duplicate_fields() {
+        let unique = vec!["a".to_string(), "b".to_string()];
+        assert!(validate_no_duplicate_fields(&unique).is_ok());
+        let dup = vec!["a".to_string(), "b".to_string(), "a".to_string()];
+        let err = validate_no_duplicate_fields(&dup).unwrap_err();
+        assert!(err.contains("Duplicate field"));
+        assert!(err.contains("a"));
+    }
+
+    #[test]
+    fn test_validate_no_duplicate_index_names() {
+        let indexes = vec![
+            (
+                "idx_t_c1".to_string(),
+                vec!["c1".to_string()],
+                false,
+                None,
+            ),
+            (
+                "idx_t_c2".to_string(),
+                vec!["c2".to_string()],
+                false,
+                None,
+            ),
+        ];
+        assert!(validate_no_duplicate_index_names(&indexes).is_ok());
+        let dup_indexes = vec![
+            (
+                "idx_t_c1".to_string(),
+                vec!["c1".to_string()],
+                false,
+                None,
+            ),
+            (
+                "idx_t_c1".to_string(),
+                vec!["c1".to_string()],
+                false,
+                None,
+            ),
+        ];
+        let err = validate_no_duplicate_index_names(&dup_indexes).unwrap_err();
+        assert!(err.contains("Duplicate index"));
+    }
+
+    #[test]
+    fn test_validate_no_duplicate_foreign_keys() {
+        let fks = vec![
+            ("fk_t_col1".to_string(), "col1".to_string()),
+            ("fk_t_col2".to_string(), "col2".to_string()),
+        ];
+        assert!(validate_no_duplicate_foreign_keys(&fks).is_ok());
+        let dup_fks = vec![
+            ("fk_t_org".to_string(), "organization_id".to_string()),
+            ("fk_t_org2".to_string(), "organization_id".to_string()),
+        ];
+        let err = validate_no_duplicate_foreign_keys(&dup_fks).unwrap_err();
+        assert!(err.contains("Duplicate foreign key"));
     }
 }
