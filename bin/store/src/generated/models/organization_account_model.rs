@@ -31,11 +31,14 @@ pub struct OrganizationAccountModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-
+    pub image_url: Option<String>,
     pub organization_contact_id: Option<String>,
     pub account_id: Option<String>,
     pub account_secret: Option<String>,
     pub role_id: Option<String>,
     pub contact_id: Option<String>,
     pub device_id: Option<String>,
+    pub is_new_user: Option<bool>,
+    pub account_status: Option<String>,
+    pub external_contact_id: Option<String>,
 }

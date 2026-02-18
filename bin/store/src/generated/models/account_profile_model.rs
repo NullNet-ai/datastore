@@ -32,7 +32,7 @@ pub struct AccountProfileModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-
+    pub image_url: Option<String>,
     // Specific fields for account_profiles
     pub first_name: Option<String>,
     pub last_name: Option<String>,

@@ -31,7 +31,7 @@ pub struct ContactModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-
+    pub image_url: Option<String>,
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
