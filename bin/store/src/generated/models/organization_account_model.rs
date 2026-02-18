@@ -1,4 +1,3 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -22,23 +21,25 @@ pub struct OrganizationAccountModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
     pub id: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
-    #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
     pub organization_contact_id: Option<String>,
+    pub contact_id: Option<String>,
+    pub email: Option<String>,
+    pub password: Option<String>,
     pub account_id: Option<String>,
     pub account_secret: Option<String>,
     pub role_id: Option<String>,
-    pub contact_id: Option<String>,
-    pub device_id: Option<String>,
+    pub account_organization_id: Option<String>,
     pub is_new_user: Option<bool>,
     pub account_status: Option<String>,
     pub external_contact_id: Option<String>,
+    pub device_id: Option<String>,
 }

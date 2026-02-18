@@ -29,6 +29,7 @@ pub struct UserRoleModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub image_url: Option<String>,    pub role: Option<String>,
+    pub image_url: Option<String>,
+    pub role: Option<String>,
     pub entity: Option<String>,
 }
