@@ -31,7 +31,7 @@ define_table_schema! {
         system_foreign_keys!("account_signatures"),
 
         // Custom foreign keys
-        fk_account_signatures_profile_id: {
+        fk_account_signatures_account_profile_id: {
             columns: ["account_profile_id"],
             foreign_table: "account_profiles",
             foreign_columns: ["id"],

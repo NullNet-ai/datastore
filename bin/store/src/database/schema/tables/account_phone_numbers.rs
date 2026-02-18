@@ -32,7 +32,7 @@ define_table_schema! {
         system_foreign_keys!("account_phone_numbers"),
 
         // Custom foreign keys
-        fk_account_phone_numbers_profile_id: {
+        fk_account_phone_numbers_account_profile_id: {
             columns: ["account_profile_id"],
             foreign_table: "account_profiles",
             foreign_columns: ["id"],
