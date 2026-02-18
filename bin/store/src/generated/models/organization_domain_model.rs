@@ -32,7 +32,7 @@ pub struct OrganizationDomainModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-
+    pub image_url: Option<String>,
     // Specific fields
     pub domain_name: Option<String>,
 }

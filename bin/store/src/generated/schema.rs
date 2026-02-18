@@ -41,6 +41,8 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
+        
         role -> Nullable<Text>,
         entity -> Nullable<Text>,
 }
@@ -120,6 +122,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
         account_organization_id -> Nullable<Text>,
         device_name -> Nullable<Text>,
         browser_name -> Nullable<Text>,
@@ -175,6 +178,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
         account_organization_id -> Nullable<Text>,
         device_name -> Nullable<Text>,
         browser_name -> Nullable<Text>,
@@ -215,6 +219,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
@@ -367,6 +372,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         contact_id -> Nullable<Text>,
     }
@@ -395,6 +401,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         organization_contact_id -> Nullable<Text>,
         account_id -> Nullable<Text>,
@@ -402,6 +409,9 @@ table! {
         role_id -> Nullable<Text>,
         contact_id -> Nullable<Text>,
         device_id -> Nullable<Text>,
+        is_new_user -> Nullable<Bool>,
+        account_status -> Nullable<Text>,
+        external_contact_id -> Nullable<Text>,
     }
 }
 
@@ -428,6 +438,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,
@@ -462,6 +473,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         first_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
@@ -496,8 +508,8 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
-        account_id -> Nullable<Text>,
         image_url -> Nullable<Text>,
+        account_id -> Nullable<Text>,
         account_secret -> Nullable<Text>,
         account_status -> Nullable<Text>,
         is_new_user -> Nullable<Bool>,
@@ -528,6 +540,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         domain_name -> Nullable<Text>,
     }
@@ -561,6 +574,7 @@ table! {
          sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         id -> Nullable<Text>,
         address -> Nullable<Text>,
@@ -602,6 +616,7 @@ table! {
         sensitivity_level -> Nullable<Integer>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
         name -> Nullable<Text>,
         sample_text -> Nullable<Text>,
     }
@@ -630,6 +645,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         model -> Nullable<Text>,
         address_id -> Nullable<Text>,
@@ -669,6 +685,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         channel_name -> Nullable<Text>,
         function -> Nullable<Text>,
@@ -698,12 +715,13 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         first_name -> Nullable<Text>,
         middle_name -> Nullable<Text>,
         last_name -> Nullable<Text>,
         date_of_birth -> Nullable<Text>,
-        account_id -> Nullable<Text>
+        account_id -> Nullable<Text>,
     }
 }
 
@@ -730,6 +748,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         contact_id -> Nullable<Text>,
         phone_number_raw -> Nullable<Text>,
@@ -759,6 +778,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
 
         contact_id -> Nullable<Text>,
         email -> Nullable<Text>,
@@ -831,12 +851,13 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
         sensor_id -> Nullable<Text>,
         temperature -> Nullable<Int4>,
         humidity -> Nullable<Int4>,
         location -> Nullable<Text>,
-    }
+}
 }
 
 table! {
@@ -862,6 +883,7 @@ table! {
         sensitivity_level -> Nullable<Int4>,
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
         account_profile_id -> Nullable<Text>,
         raw_phone_number -> Nullable<Text>,
         is_primary -> Nullable<Bool>,
@@ -898,5 +920,34 @@ table! {
         account_profile_id -> Nullable<Text>,
         name -> Nullable<Text>,
         signature -> Nullable<Text>,
+    }
+}
+
+table! {
+    checkpoint_samples(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
+        label -> Nullable<Text>,
+        value -> Nullable<Int4>,
     }
 }

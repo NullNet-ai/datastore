@@ -447,6 +447,7 @@ CREATE TABLE "sessions" (
 	"sensitivity_level" integer,
 	"sync_status" text,
 	"is_batch" boolean,
+	"image_url" varchar(300),
 	"account_organization_id" text,
 	"device_name" text,
 	"browser_name" text,

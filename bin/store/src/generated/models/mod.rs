@@ -4,6 +4,7 @@ pub mod account_phone_number_model;
 pub mod account_profile_model;
 pub mod account_signature_model;
 pub mod address_model;
+pub mod checkpoint_sample_model;
 pub mod contact_email_model;
 pub mod contact_model;
 pub mod contact_phone_number_model;
