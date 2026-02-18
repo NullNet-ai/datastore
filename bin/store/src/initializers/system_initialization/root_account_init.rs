@@ -132,6 +132,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            sync_status: Some("complete".to_string()),
             ..Default::default()
         };
 
@@ -154,6 +155,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            sync_status: Some("complete".to_string()),
             ..Default::default()
         };
 
@@ -169,6 +171,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            sync_status: Some("complete".to_string()),
             ..Default::default()
         };
 
@@ -186,6 +189,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            sync_status: Some("complete".to_string()),
             ..Default::default()
         };
 

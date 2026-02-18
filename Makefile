@@ -374,8 +374,9 @@ verify-install:
 
 # Run both server and store in parallel (ensure-hooks runs on first use after clone)
 dev: ensure-hooks
-	@echo "🚀 Starting server and store..."
-	@make -j 2 server store
+	@export PATH="$$HOME/.cargo/bin:$$PATH" || true; \
+	echo "🚀 Starting server and store..."; \
+	make -j 2 server store
 
 # Run the server
 server:
