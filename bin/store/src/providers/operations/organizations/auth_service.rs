@@ -446,7 +446,8 @@ pub async fn root_auth(
         "sessionID": session_id,
         "sensitivity_level": sensitivity_level,
         "role_name":"".to_string(),
-        "previously_logged_in": previously_logged_in
+        "previously_logged_in": previously_logged_in,
+        "signed_in_account": account_organization
     });
 
     // Generate JWT token
