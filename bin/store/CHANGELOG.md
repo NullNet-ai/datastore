@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.25
+### Author
+Kashan
+
+### Changed
+  - ***Super admin vs root account_organizations***:
+    - Super admin (admin@dnamicro.com) now gets empty `account_organization_categories`; only the dedicated root account keeps `{Root}`.
+    - Clarifies distinction in DB: root = categories `{Root}`, super admin = categories `{}`.
+
 ## 0.2.24
 ### Author
 Kashan

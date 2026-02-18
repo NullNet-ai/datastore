@@ -884,7 +884,10 @@ mod tests {
         body.process_record("create", &test_auth(), true, "contacts");
         let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
         assert!(!id.is_empty(), "id should be assigned");
-        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+        assert!(
+            ulid::Ulid::from_string(id).is_ok(),
+            "id should be a valid ULID"
+        );
     }
 
     #[test]
@@ -895,7 +898,10 @@ mod tests {
         body.process_record("create", &test_auth(), true, "contacts");
         let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
         assert!(!id.is_empty(), "id should be assigned");
-        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+        assert!(
+            ulid::Ulid::from_string(id).is_ok(),
+            "id should be a valid ULID"
+        );
     }
 
     #[test]
@@ -906,7 +912,10 @@ mod tests {
         body.process_record("create", &test_auth(), true, "contacts");
         let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
         assert!(!id.is_empty(), "id should be assigned (was empty string)");
-        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+        assert!(
+            ulid::Ulid::from_string(id).is_ok(),
+            "id should be a valid ULID"
+        );
     }
 
     #[test]
@@ -916,8 +925,14 @@ mod tests {
         };
         body.process_record("create", &test_auth(), true, "contacts");
         let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
-        assert!(!id.trim().is_empty(), "id should be assigned (was whitespace)");
-        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+        assert!(
+            !id.trim().is_empty(),
+            "id should be assigned (was whitespace)"
+        );
+        assert!(
+            ulid::Ulid::from_string(id).is_ok(),
+            "id should be a valid ULID"
+        );
     }
 
     #[test]
