@@ -471,11 +471,12 @@ impl GeneratorService {
             // Parse the table definition
             let table_def = Self::parse_table_definition_content(&content, file_stem)?;
             if let Some(ref def) = table_def {
-                // Run validation (plural, file name match, index/FK naming)
+                // Run validation (plural, file name match, duplicate detection, index/FK naming)
                 let indexes = Self::extract_indexes_from_macro(&content).unwrap_or_default();
                 let fk_names = Self::extract_foreign_key_names_and_columns(&content)?;
+                let field_names: Vec<String> = def.fields.iter().map(|f| f.name.clone()).collect();
                 if let Err(e) = table_validator::validate_table_file(
-                    file_stem, &content, &def.name, &indexes, &fk_names,
+                    file_stem, &content, &def.name, &field_names, &indexes, &fk_names,
                 ) {
                     return Err(format!(
                         "Table validation failed for {}:\n{}\n\nAborting.",
@@ -811,16 +812,12 @@ impl GeneratorService {
                             None
                         };
 
-                        // Check for duplicate fields and replace if found
-                        if let Some(existing_index) = fields
-                            .iter()
-                            .position(|f: &FieldDefinition| f.name == field_name)
-                        {
-                            if fields[existing_index].diesel_type != field_type {
-                                fields.remove(existing_index);
-                            } else {
-                                continue;
-                            }
+                        // Error on duplicate field names (user must not redefine system fields)
+                        if fields.iter().any(|f: &FieldDefinition| f.name == field_name) {
+                            return Err(format!(
+                                "Duplicate field name '{}'. Do not redefine system fields or add the same field twice. Remove the duplicate.",
+                                field_name
+                            ));
                         }
 
                         // Create field definition with original type for migrations

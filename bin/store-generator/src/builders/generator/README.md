@@ -174,6 +174,16 @@ if MetricsTable::is_hypertable() {
 }
 ```
 
+### Duplicate Detection (Aborts on Error)
+
+The generator validates and **aborts** (does not continue) when it detects:
+
+- **Duplicate field names**: Do not redefine system fields (`organization_id`, `created_by`, `tags`, etc.) or add the same field twice.
+- **Duplicate index names**: Do not add an index that `system_indexes!` already defines (e.g. `idx_{table}_organization_id`).
+- **Duplicate foreign keys**: Do not add a foreign key for columns already in `system_foreign_keys!` (`organization_id`, `created_by`, `updated_by`, `deleted_by`, `requested_by`).
+
+On validation failure, the process stops and returns an error message.
+
 ## Available Diesel Types
 
 ### Helper Functions
