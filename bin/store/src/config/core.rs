@@ -265,7 +265,7 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "default_secret".to_string()),
             default_organization_admin_email: std::env::var("DEFAULT_ORGANIZATION_ADMIN_EMAIL")
                 .unwrap_or_else(|_| "admin@example.com".to_string()),
-                super_admin_id: std::env::var("SUPER_ADMIN_ID").unwrap_or_else(|_| "".to_string()),
+            super_admin_id: std::env::var("SUPER_ADMIN_ID").unwrap_or_else(|_| "".to_string()),
             system_device_ulid: std::env::var("SYSTEM_DEVICE_ULID")
                 .unwrap_or_else(|_| "01ARZ3NDEKTSV4RRFFQ69G5FAV".to_string()),
             initialize_device: std::env::var("INITIALIZE_DEVICE")
