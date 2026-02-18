@@ -131,6 +131,16 @@ impl RequestBody {
         }
     }
 
+    /// True if record has no id or id is null/empty/whitespace — then a new ULID will be assigned.
+    /// Pass `null` or `""` (or omit `id`) to get an auto-generated id.
+    fn id_absent_or_empty(record: &Value) -> bool {
+        match record.get("id") {
+            None => true,
+            Some(v) if v.is_null() => true,
+            Some(v) => v.as_str().map_or(true, |s| s.trim().is_empty()),
+        }
+    }
+
     // Helper method to add common fields
     fn add_common_fields(
         &mut self,
@@ -202,13 +212,8 @@ impl RequestBody {
             }
         }
 
-        if (operation == "create")
-            && (!self.record.get("id").is_some()
-                || self.record["id"].is_null()
-                || self.record["id"]
-                    .as_str()
-                    .map_or(true, |s| s.trim().is_empty()))
-        {
+        // Assign new ULID when id is missing, null, or empty/whitespace (pass null or "" to mean "generate id")
+        if operation == "create" && Self::id_absent_or_empty(&self.record) {
             self.record["id"] = json!(Ulid::new().to_string());
         }
     }
@@ -851,4 +856,78 @@ pub struct SearchSuggestionParams {
 
     #[serde(default = "default_time_format")]
     pub time_format: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Auth, RequestBody};
+    use serde_json::json;
+
+    fn test_auth() -> Auth {
+        Auth {
+            organization_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV".to_string(),
+            responsible_account: "01ARZ3NDEKTSV4RRFFQ69G5FAV".to_string(),
+            sensitivity_level: 1000,
+            role_name: "super_admin".to_string(),
+            account_organization_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV".to_string(),
+            role_id: "super_admin".to_string(),
+            is_root_account: true,
+            account_id: "admin@example.com".to_string(),
+        }
+    }
+
+    #[test]
+    fn process_record_create_assigns_id_when_id_missing() {
+        let mut body = RequestBody {
+            record: json!({ "name": "Test" }),
+        };
+        body.process_record("create", &test_auth(), true, "contacts");
+        let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
+        assert!(!id.is_empty(), "id should be assigned");
+        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+    }
+
+    #[test]
+    fn process_record_create_assigns_id_when_id_null() {
+        let mut body = RequestBody {
+            record: json!({ "id": null, "name": "Test" }),
+        };
+        body.process_record("create", &test_auth(), true, "contacts");
+        let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
+        assert!(!id.is_empty(), "id should be assigned");
+        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+    }
+
+    #[test]
+    fn process_record_create_assigns_id_when_id_empty_string() {
+        let mut body = RequestBody {
+            record: json!({ "id": "", "name": "Test" }),
+        };
+        body.process_record("create", &test_auth(), true, "contacts");
+        let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
+        assert!(!id.is_empty(), "id should be assigned (was empty string)");
+        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+    }
+
+    #[test]
+    fn process_record_create_assigns_id_when_id_whitespace_only() {
+        let mut body = RequestBody {
+            record: json!({ "id": "   ", "name": "Test" }),
+        };
+        body.process_record("create", &test_auth(), true, "contacts");
+        let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
+        assert!(!id.trim().is_empty(), "id should be assigned (was whitespace)");
+        assert!(ulid::Ulid::from_string(id).is_ok(), "id should be a valid ULID");
+    }
+
+    #[test]
+    fn process_record_create_preserves_id_when_non_empty() {
+        let existing_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+        let mut body = RequestBody {
+            record: json!({ "id": existing_id, "name": "Test" }),
+        };
+        body.process_record("create", &test_auth(), true, "contacts");
+        let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
+        assert_eq!(id, existing_id, "existing id should be preserved");
+    }
 }

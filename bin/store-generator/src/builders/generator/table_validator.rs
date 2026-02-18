@@ -756,33 +756,13 @@ mod tests {
     #[test]
     fn test_validate_no_duplicate_index_names() {
         let indexes = vec![
-            (
-                "idx_t_c1".to_string(),
-                vec!["c1".to_string()],
-                false,
-                None,
-            ),
-            (
-                "idx_t_c2".to_string(),
-                vec!["c2".to_string()],
-                false,
-                None,
-            ),
+            ("idx_t_c1".to_string(), vec!["c1".to_string()], false, None),
+            ("idx_t_c2".to_string(), vec!["c2".to_string()], false, None),
         ];
         assert!(validate_no_duplicate_index_names(&indexes).is_ok());
         let dup_indexes = vec![
-            (
-                "idx_t_c1".to_string(),
-                vec!["c1".to_string()],
-                false,
-                None,
-            ),
-            (
-                "idx_t_c1".to_string(),
-                vec!["c1".to_string()],
-                false,
-                None,
-            ),
+            ("idx_t_c1".to_string(), vec!["c1".to_string()], false, None),
+            ("idx_t_c1".to_string(), vec!["c1".to_string()], false, None),
         ];
         let err = validate_no_duplicate_index_names(&dup_indexes).unwrap_err();
         assert!(err.contains("Duplicate index"));

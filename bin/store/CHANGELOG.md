@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.24
+### Author
+Kashan
+
+### Changed
+  - ***Record id assignment (create)***:
+    - Id is now assigned when missing, `null`, or empty/whitespace string; pass `null` or `""` to get an auto-generated ULID.
+    - Centralized check in `id_absent_or_empty()` so empty string no longer bypasses id generation.
+
+### Added
+  - ***Tests***:
+    - Unit tests in `structs::core::tests` for create id assignment: missing id, `id: null`, `id: ""`, whitespace-only id, and preservation of existing non-empty id.
+
 ## 0.2.23
 ### Author
 Kashan
