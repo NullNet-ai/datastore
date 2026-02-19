@@ -883,8 +883,7 @@ mod tests {
             foreign_keys: vec![],
             is_hypertable: true,
         }];
-        let up_sql =
-            MigrationGenerator::generate_up_sql(&changes, &table_definitions).unwrap();
+        let up_sql = MigrationGenerator::generate_up_sql(&changes, &table_definitions).unwrap();
 
         assert!(
             up_sql.contains("CREATE TABLE \"events\""),
@@ -909,7 +908,9 @@ mod tests {
 
         let create_table_pos = up_sql.find("CREATE TABLE \"events\"").unwrap();
         let hypertable_pos = up_sql.find("create_hypertable").unwrap();
-        let index_pos = up_sql.find("CREATE INDEX \"idx_events_timestamp\"").unwrap();
+        let index_pos = up_sql
+            .find("CREATE INDEX \"idx_events_timestamp\"")
+            .unwrap();
         assert!(
             create_table_pos < hypertable_pos,
             "CREATE TABLE must appear before create_hypertable"
