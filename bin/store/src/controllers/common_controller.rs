@@ -329,6 +329,42 @@ pub async fn process_and_insert_record(
         )
     })?;
 
+    // If record has an id that already exists, perform update instead of insert (avoid duplicate key)
+    let id_to_check = record_value
+        .get("id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+    if let Some(id_val) = id_to_check {
+        let mut conn = db::get_async_connection().await;
+        let existing = table
+            .get_by_id(
+                &mut conn,
+                &id_val,
+                is_root_account,
+                Some(auth.organization_id.clone()),
+            )
+            .await
+            .map_err(|e| {
+                ApiError::new(
+                    http::StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to check existing record: {}", e),
+                )
+            })?;
+        if existing.is_some() {
+            return process_and_update_record(
+                table_name,
+                record_value,
+                &id_val,
+                pluck_fields,
+                "update",
+                auth,
+                is_root_account,
+            )
+            .await;
+        }
+    }
+
     // Insert record
     insert(&table_name.to_string(), record_value.clone())
         .await

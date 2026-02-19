@@ -451,7 +451,13 @@ pub fn validate_jsonb_default(field_name: &str, default_value: Option<&str>) -> 
         ));
     }
     // Do not allow default empty array — omit default (array is empty by default when no value)
-    let before_cast = d.split("::jsonb").next().unwrap_or("").trim().trim_matches('\'').trim();
+    let before_cast = d
+        .split("::jsonb")
+        .next()
+        .unwrap_or("")
+        .trim()
+        .trim_matches('\'')
+        .trim();
     if before_cast == "[]" {
         return Err(format!(
             "JSONB column '{}' must not have default empty array ('[]'::jsonb); omit default (array is empty by default when no value).",
@@ -828,8 +834,16 @@ mod tests {
     #[test]
     fn test_validate_jsonb_default_err_missing_cast() {
         let err = validate_jsonb_default("tags", Some("'[]'")).unwrap_err();
-        assert!(err.contains("::jsonb"), "error should require ::jsonb: {}", err);
-        assert!(err.contains("tags"), "error should mention field name: {}", err);
+        assert!(
+            err.contains("::jsonb"),
+            "error should require ::jsonb: {}",
+            err
+        );
+        assert!(
+            err.contains("tags"),
+            "error should mention field name: {}",
+            err
+        );
     }
 
     #[test]
@@ -840,7 +854,11 @@ mod tests {
             "error should reject empty array default: {}",
             err
         );
-        assert!(err.contains("tags"), "error should mention field name: {}", err);
+        assert!(
+            err.contains("tags"),
+            "error should mention field name: {}",
+            err
+        );
     }
 
     #[test]

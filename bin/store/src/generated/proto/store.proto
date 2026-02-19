@@ -125,8 +125,9 @@ message UserRoles {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string role = 22;
-  optional string entity = 23;
+  optional string image_url = 22;
+  optional string role = 23;
+  optional string entity = 24;
 }
 
 // Sessions entity definition
@@ -152,33 +153,34 @@ message Sessions {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_organization_id = 22;
-  optional string device_name = 23;
-  optional string browser_name = 24;
-  optional string operating_system = 25;
-  optional string authentication_method = 26;
-  optional string location = 27;
-  optional string ip_address = 28;
-  optional string session_started = 29;
-  optional string remark = 30;
-  optional string user_role_id = 31;
-  optional string user_account_id = 32;
-  optional bool user_is_root_user = 33;
-  optional string token = 34;
-  optional string cookie_path = 35;
-  optional string cookie_expire = 36;
-  optional bool cookie_http_only = 37;
-  optional string cookie_original_max_age = 38;
-  optional string origin_url = 39;
-  optional string origin_host = 40;
-  optional string origin_user_agent = 41;
-  optional string valid_pass_key = 42;
-  optional string role_permission = 43;
-  optional string field_permission = 44;
-  optional string record_permission = 45;
-  optional string expire = 46;
-  optional string application_accessed = 47;
-  optional string last_accessed = 48;
+  optional string image_url = 22;
+  optional string account_organization_id = 23;
+  optional string device_name = 24;
+  optional string browser_name = 25;
+  optional string operating_system = 26;
+  optional string authentication_method = 27;
+  optional string location = 28;
+  optional string ip_address = 29;
+  optional string session_started = 30;
+  optional string remark = 31;
+  optional string user_role_id = 32;
+  optional string user_account_id = 33;
+  optional bool user_is_root_user = 34;
+  optional string token = 35;
+  optional string cookie_path = 36;
+  optional string cookie_expire = 37;
+  optional bool cookie_http_only = 38;
+  optional string cookie_original_max_age = 39;
+  optional string origin_url = 40;
+  optional string origin_host = 41;
+  optional string origin_user_agent = 42;
+  optional string valid_pass_key = 43;
+  optional string role_permission = 44;
+  optional string field_permission = 45;
+  optional string record_permission = 46;
+  optional string expire = 47;
+  optional string application_accessed = 48;
+  optional string last_accessed = 49;
 }
 
 // SignedInActivities entity definition
@@ -204,17 +206,18 @@ message SignedInActivities {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_organization_id = 22;
-  optional string device_name = 23;
-  optional string browser_name = 24;
-  optional string operating_system = 25;
-  optional string authentication_method = 26;
-  optional string location = 27;
-  optional string ip_address = 28;
-  optional string session_started = 29;
-  optional string remark = 30;
-  optional string session_id = 31;
-  optional string hypertable_timestamp = 32;
+  optional string image_url = 22;
+  optional string account_organization_id = 23;
+  optional string device_name = 24;
+  optional string browser_name = 25;
+  optional string operating_system = 26;
+  optional string authentication_method = 27;
+  optional string location = 28;
+  optional string ip_address = 29;
+  optional string session_started = 30;
+  optional string remark = 31;
+  optional string session_id = 32;
+  optional string hypertable_timestamp = 33;
 }
 
 // ExternalContacts entity definition
@@ -240,9 +243,10 @@ message ExternalContacts {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string first_name = 22;
-  optional string last_name = 23;
-  optional string email = 24;
+  optional string image_url = 22;
+  optional string first_name = 23;
+  optional string last_name = 24;
+  optional string email = 25;
 }
 
 // Organizations entity definition
@@ -270,21 +274,10 @@ message Organizations {
   optional bool is_batch = 21;
   optional string image_url = 22;
   optional string name = 23;
-  optional string skyll_id = 24;
-  optional string department_id = 25;
-  optional string district_id = 26;
-  optional string parent_organization_id = 27;
-  optional string school_id = 28;
-  optional string city = 29;
-  optional string county = 30;
-  optional string state = 31;
-  optional string school_identifier = 32;
-  optional string district_identifier = 33;
-  optional int32 organization_level = 34;
-  optional string root_organization_id = 35;
-  optional string path_level = 36;
-  optional string superintendent_id = 37;
-  optional string principal_id = 38;
+  optional string parent_organization_id = 24;
+  optional int32 organization_level = 25;
+  optional string root_organization_id = 26;
+  optional string path_level = 27;
 }
 
 // OrganizationContacts entity definition
@@ -310,7 +303,8 @@ message OrganizationContacts {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string contact_id = 22;
+  optional string image_url = 22;
+  optional string contact_id = 23;
 }
 
 // OrganizationAccounts entity definition
@@ -336,12 +330,16 @@ message OrganizationAccounts {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string organization_contact_id = 22;
-  optional string account_id = 23;
-  optional string account_secret = 24;
-  optional string role_id = 25;
-  optional string contact_id = 26;
-  optional string device_id = 27;
+  optional string image_url = 22;
+  optional string organization_contact_id = 23;
+  optional string account_id = 24;
+  optional string account_secret = 25;
+  optional string role_id = 26;
+  optional string contact_id = 27;
+  optional string device_id = 28;
+  optional bool is_new_user = 29;
+  optional string account_status = 30;
+  optional string external_contact_id = 31;
 }
 
 // AccountOrganizations entity definition
@@ -367,13 +365,14 @@ message AccountOrganizations {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string contact_id = 22;
-  optional string email = 23;
-  optional string account_id = 24;
-  optional string role_id = 25;
-  optional string account_organization_status = 26;
-  optional bool is_invited = 27;
-  optional string device_id = 28;
+  optional string image_url = 22;
+  optional string contact_id = 23;
+  optional string email = 24;
+  optional string account_id = 25;
+  optional string role_id = 26;
+  optional string account_organization_status = 27;
+  optional bool is_invited = 28;
+  optional string device_id = 29;
 }
 
 // AccountProfiles entity definition
@@ -399,13 +398,14 @@ message AccountProfiles {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string first_name = 22;
-  optional string last_name = 23;
-  optional string email = 24;
-  optional string account_id = 25;
-  optional string date_of_birth = 26;
-  optional string middle_name = 27;
-  optional string auth_preference = 28;
+  optional string image_url = 22;
+  optional string first_name = 23;
+  optional string last_name = 24;
+  optional string email = 25;
+  optional string account_id = 26;
+  optional string date_of_birth = 27;
+  optional string middle_name = 28;
+  optional string auth_preference = 29;
 }
 
 // Accounts entity definition
@@ -431,8 +431,8 @@ message Accounts {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_id = 22;
-  optional string image_url = 23;
+  optional string image_url = 22;
+  optional string account_id = 23;
   optional string account_secret = 24;
   optional string account_status = 25;
   optional bool is_new_user = 26;
@@ -460,22 +460,23 @@ message Addresses {
   optional int32 sensitivity_level = 18;
   optional string sync_status = 19;
   optional bool is_batch = 20;
-  optional string id = 21;
-  optional string address = 22;
-  optional string address_line_one = 23;
-  optional string address_line_two = 24;
-  optional float latitude = 25;
-  optional float longitude = 26;
-  optional string place_id = 27;
-  optional string street_number = 28;
-  optional string street = 29;
-  optional string region = 30;
-  optional string region_code = 31;
-  optional string country_code = 32;
-  optional string postal_code = 33;
-  optional string country = 34;
-  optional string state = 35;
-  optional string city = 36;
+  optional string image_url = 21;
+  optional string id = 22;
+  optional string address = 23;
+  optional string address_line_one = 24;
+  optional string address_line_two = 25;
+  optional float latitude = 26;
+  optional float longitude = 27;
+  optional string place_id = 28;
+  optional string street_number = 29;
+  optional string street = 30;
+  optional string region = 31;
+  optional string region_code = 32;
+  optional string country_code = 33;
+  optional string postal_code = 34;
+  optional string country = 35;
+  optional string state = 36;
+  optional string city = 37;
 }
 
 // Samples entity definition
@@ -500,8 +501,9 @@ message Samples {
   optional int32 sensitivity_level = 18;
   optional string sync_status = 19;
   optional bool is_batch = 20;
-  optional string name = 21;
-  optional string sample_text = 22;
+  optional string image_url = 21;
+  optional string name = 22;
+  optional string sample_text = 23;
 }
 
 // Devices entity definition
@@ -527,18 +529,19 @@ message Devices {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string model = 22;
-  optional string address_id = 23;
-  optional string instance_name = 24;
-  optional bool is_connection_established = 25;
-  optional string system_id = 26;
-  optional string device_version = 27;
-  optional string last_heartbeat = 28;
-  optional bool is_monitoring_enabled = 29;
-  optional bool is_remote_access_enabled = 30;
-  optional string ip_address = 31;
-  optional string device_status = 32;
-  optional string device_gui_protocol = 33;
+  optional string image_url = 22;
+  optional string model = 23;
+  optional string address_id = 24;
+  optional string instance_name = 25;
+  optional bool is_connection_established = 26;
+  optional string system_id = 27;
+  optional string device_version = 28;
+  optional string last_heartbeat = 29;
+  optional bool is_monitoring_enabled = 30;
+  optional bool is_remote_access_enabled = 31;
+  optional string ip_address = 32;
+  optional string device_status = 33;
+  optional string device_gui_protocol = 34;
 }
 
 // PostgresChannels entity definition
@@ -564,8 +567,9 @@ message PostgresChannels {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string channel_name = 22;
-  optional string function = 23;
+  optional string image_url = 22;
+  optional string channel_name = 23;
+  optional string function = 24;
 }
 
 // Contacts entity definition
@@ -591,11 +595,12 @@ message Contacts {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string first_name = 22;
-  optional string middle_name = 23;
-  optional string last_name = 24;
-  optional string date_of_birth = 25;
-  optional string account_id = 26;
+  optional string image_url = 22;
+  optional string first_name = 23;
+  optional string middle_name = 24;
+  optional string last_name = 25;
+  optional string date_of_birth = 26;
+  optional string account_id = 27;
 }
 
 // ContactPhoneNumbers entity definition
@@ -621,8 +626,9 @@ message ContactPhoneNumbers {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string contact_id = 22;
-  optional string phone_number_raw = 23;
+  optional string image_url = 22;
+  optional string contact_id = 23;
+  optional string phone_number_raw = 24;
 }
 
 // ContactEmails entity definition
@@ -648,9 +654,10 @@ message ContactEmails {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string contact_id = 22;
-  optional string email = 23;
-  optional bool is_primary = 24;
+  optional string image_url = 22;
+  optional string contact_id = 23;
+  optional string email = 24;
+  optional bool is_primary = 25;
 }
 
 // Files entity definition
@@ -717,11 +724,12 @@ message TestHypertables {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string hypertable_timestamp = 22;
-  optional string sensor_id = 23;
-  optional int32 temperature = 24;
-  optional int32 humidity = 25;
-  optional string location = 26;
+  optional string image_url = 22;
+  optional string hypertable_timestamp = 23;
+  optional string sensor_id = 24;
+  optional int32 temperature = 25;
+  optional int32 humidity = 26;
+  optional string location = 27;
 }
 
 // AccountPhoneNumbers entity definition
@@ -747,11 +755,12 @@ message AccountPhoneNumbers {
   optional int32 sensitivity_level = 19;
   optional string sync_status = 20;
   optional bool is_batch = 21;
-  optional string account_profile_id = 22;
-  optional string raw_phone_number = 23;
-  optional bool is_primary = 24;
-  optional string iso_code = 25;
-  optional string country_code = 26;
+  optional string image_url = 22;
+  optional string account_profile_id = 23;
+  optional string raw_phone_number = 24;
+  optional bool is_primary = 25;
+  optional string iso_code = 26;
+  optional string country_code = 27;
 }
 
 // AccountSignatures entity definition
