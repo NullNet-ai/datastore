@@ -3500,7 +3500,7 @@ mod tests {
             Ok(r) if r.status().is_success() => {
                 let body: serde_json::Value = r.json().await.unwrap_or_default();
                 let t = body.get("token").and_then(|v| v.as_str()).map(String::from);
-                (t, t.is_some())
+                (t.clone(), t.is_some())
             }
             _ => (None, false),
         };
