@@ -174,15 +174,26 @@ impl MigrationGenerator {
             }
         }
 
+        // Group indexes by table so we can emit them right after each table (and its hypertable)
+        let mut indexes_by_table: std::collections::HashMap<String, Vec<&SchemaChange>> =
+            std::collections::HashMap::new();
+        for change in &new_indexes {
+            indexes_by_table
+                .entry(change.table_name.clone())
+                .or_default()
+                .push(change);
+        }
+        let tables_created_this_migration: std::collections::HashSet<String> =
+            new_tables.iter().map(|c| c.table_name.clone()).collect();
+
         let mut first_statement = true;
 
-        // Generate CREATE TABLE statements
+        // For each table: CREATE TABLE → create_hypertable (if hypertable) → CREATE INDEX for this table
         for change in new_tables {
             if !first_statement {
                 sql.push_str("--> statement-breakpoint\n");
             }
 
-            // Find the correct table definition for this table
             let table_def = table_definitions
                 .iter()
                 .find(|def| def.name == change.table_name)
@@ -197,12 +208,38 @@ impl MigrationGenerator {
             sql.push_str(&create_table_sql);
             sql.push_str("\n");
 
-            // Add hypertable creation if this is a hypertable
+            // Convert to hypertable before creating indexes (required for TimescaleDB)
             if table_def.is_hypertable {
                 sql.push_str("--> statement-breakpoint\n");
+                sql.push_str("-- Convert to hypertable before creating indexes\n");
                 let hypertable_sql = Self::generate_hypertable_sql(&change.table_name)?;
                 sql.push_str(&hypertable_sql);
                 sql.push_str("\n");
+            }
+
+            // Create indexes for this table (after table and hypertable, so indexes are on the hypertable)
+            if let Some(index_changes) = indexes_by_table.get(&change.table_name) {
+                for index_change in index_changes {
+                    if let (Some(index_name), Some(column_names)) =
+                        (&index_change.field_name, &index_change.field_definition)
+                    {
+                        sql.push_str("--> statement-breakpoint\n");
+                        let (columns, index_type) = if column_names.contains("|") {
+                            let parts: Vec<&str> = column_names.split("|").collect();
+                            (parts[0], Some(parts[1]))
+                        } else {
+                            (column_names.as_str(), None)
+                        };
+                        let index_sql = Self::generate_create_index_sql(
+                            &change.table_name,
+                            index_name,
+                            columns,
+                            index_type,
+                        )?;
+                        sql.push_str(&index_sql);
+                        sql.push_str("\n");
+                    }
+                }
             }
 
             first_statement = false;
@@ -241,15 +278,17 @@ impl MigrationGenerator {
             }
         }
 
-        // Generate CREATE INDEX statements
-        for change in new_indexes {
+        // Generate CREATE INDEX for tables that weren't in new_tables (e.g. indexes added in same migration for existing tables)
+        for change in &new_indexes {
+            if tables_created_this_migration.contains(&change.table_name) {
+                continue; // already emitted above with the table
+            }
             if let (Some(index_name), Some(column_names)) =
                 (&change.field_name, &change.field_definition)
             {
                 if !first_statement {
                     sql.push_str("--> statement-breakpoint\n");
                 }
-                // Parse index type from column_names if it contains type info
                 let (columns, index_type) = if column_names.contains("|") {
                     let parts: Vec<&str> = column_names.split("|").collect();
                     (parts[0], Some(parts[1]))
@@ -290,10 +329,11 @@ impl MigrationGenerator {
         Ok(sql)
     }
 
-    /// Generate the down.sql content
-    fn generate_down_sql(
+    /// Generate the down.sql content. When the table is a hypertable, uses CASCADE so TimescaleDB
+    /// cleans up chunks and catalog (avoids "cache lookup failed for relation _hyper_*_chunk").
+    pub(crate) fn generate_down_sql(
         changes: &[SchemaChange],
-        _table_definitions: &[TableDefinition],
+        table_definitions: &[TableDefinition],
     ) -> Result<String, String> {
         let mut sql = String::new();
         sql.push_str("-- This file should undo anything in `up.sql`\n\n");
@@ -310,10 +350,25 @@ impl MigrationGenerator {
             }
             match change.change_type {
                 SchemaChangeType::NewTable => {
-                    sql.push_str(&format!(
-                        "DROP TABLE IF EXISTS \"{}\";\n",
-                        change.table_name
-                    ));
+                    let is_hypertable = table_definitions
+                        .iter()
+                        .find(|def| def.name == change.table_name)
+                        .map(|def| def.is_hypertable)
+                        .unwrap_or(false);
+                    if is_hypertable {
+                        sql.push_str(
+                            "-- Drop hypertable in one go so TimescaleDB cleans up chunks and catalog.\n",
+                        );
+                        sql.push_str(&format!(
+                            "DROP TABLE IF EXISTS \"{}\" CASCADE;\n",
+                            change.table_name
+                        ));
+                    } else {
+                        sql.push_str(&format!(
+                            "DROP TABLE IF EXISTS \"{}\";\n",
+                            change.table_name
+                        ));
+                    }
                 }
                 SchemaChangeType::NewField => {
                     if let Some(field_name) = &change.field_name {
@@ -615,6 +670,82 @@ impl MigrationGenerator {
 #[cfg(test)]
 mod tests {
     use super::MigrationGenerator;
+    use crate::builders::generator::field_definition::{FieldDefinition, TableDefinition};
+    use crate::builders::generator::schema_generator::{SchemaChange, SchemaChangeType};
+
+    #[test]
+    fn test_down_sql_hypertable_uses_cascade() {
+        let table_name = "signed_in_activities";
+        let changes = vec![SchemaChange {
+            table_name: table_name.to_string(),
+            change_type: SchemaChangeType::NewTable,
+            field_name: None,
+            field_definition: None,
+        }];
+        let table_definitions = vec![TableDefinition {
+            name: table_name.to_string(),
+            fields: vec![FieldDefinition {
+                name: "id".to_string(),
+                diesel_type: "Text".to_string(),
+                rust_type: "String".to_string(),
+                is_primary_key: true,
+                is_indexed: false,
+                is_nullable: false,
+                is_array: false,
+                migration_nullable: false,
+                default_value: None,
+                migration_type: None,
+            }],
+            indexes: vec![],
+            foreign_keys: vec![],
+            is_hypertable: true,
+        }];
+        let down_sql = MigrationGenerator::generate_down_sql(&changes, &table_definitions).unwrap();
+        assert!(
+            down_sql.contains("CASCADE"),
+            "down SQL for hypertable should use CASCADE; got: {}",
+            down_sql
+        );
+        assert!(
+            down_sql.contains("TimescaleDB"),
+            "down SQL for hypertable should mention TimescaleDB in comment; got: {}",
+            down_sql
+        );
+        assert!(
+            down_sql.contains(&format!("DROP TABLE IF EXISTS \"{}\" CASCADE", table_name)),
+            "down SQL should drop the hypertable with CASCADE; got: {}",
+            down_sql
+        );
+    }
+
+    #[test]
+    fn test_down_sql_regular_table_no_cascade() {
+        let table_name = "contacts";
+        let changes = vec![SchemaChange {
+            table_name: table_name.to_string(),
+            change_type: SchemaChangeType::NewTable,
+            field_name: None,
+            field_definition: None,
+        }];
+        let table_definitions = vec![TableDefinition {
+            name: table_name.to_string(),
+            fields: vec![],
+            indexes: vec![],
+            foreign_keys: vec![],
+            is_hypertable: false,
+        }];
+        let down_sql = MigrationGenerator::generate_down_sql(&changes, &table_definitions).unwrap();
+        assert!(
+            !down_sql.contains("CASCADE"),
+            "down SQL for non-hypertable should not use CASCADE; got: {}",
+            down_sql
+        );
+        assert!(
+            down_sql.contains(&format!("DROP TABLE IF EXISTS \"{}\";", table_name)),
+            "down SQL should drop the table without CASCADE; got: {}",
+            down_sql
+        );
+    }
 
     #[test]
     fn test_index_sql_quotes_single_column_btree() {
@@ -699,6 +830,94 @@ mod tests {
         assert_eq!(
             sql,
             "CREATE INDEX \"idx_organizations_name\" ON \"organizations\" USING btree(\"name\");"
+        );
+    }
+
+    /// Ensures up.sql for a new hypertable with indexes has order: CREATE TABLE → create_hypertable → CREATE INDEX.
+    #[test]
+    fn test_up_sql_hypertable_indexes_after_create_hypertable() {
+        let table_name = "events";
+        let changes = vec![
+            SchemaChange {
+                table_name: table_name.to_string(),
+                change_type: SchemaChangeType::NewTable,
+                field_name: None,
+                field_definition: None,
+            },
+            SchemaChange {
+                table_name: table_name.to_string(),
+                change_type: SchemaChangeType::NewIndex,
+                field_name: Some("idx_events_timestamp".to_string()),
+                field_definition: Some("timestamp".to_string()),
+            },
+        ];
+        let table_definitions = vec![TableDefinition {
+            name: table_name.to_string(),
+            fields: vec![
+                FieldDefinition {
+                    name: "id".to_string(),
+                    diesel_type: "Text".to_string(),
+                    rust_type: "String".to_string(),
+                    is_primary_key: true,
+                    is_indexed: false,
+                    is_nullable: false,
+                    is_array: false,
+                    migration_nullable: false,
+                    default_value: None,
+                    migration_type: None,
+                },
+                FieldDefinition {
+                    name: "timestamp".to_string(),
+                    diesel_type: "Timestamptz".to_string(),
+                    rust_type: "String".to_string(),
+                    is_primary_key: false,
+                    is_indexed: false,
+                    is_nullable: false,
+                    is_array: false,
+                    migration_nullable: false,
+                    default_value: None,
+                    migration_type: None,
+                },
+            ],
+            indexes: vec![],
+            foreign_keys: vec![],
+            is_hypertable: true,
+        }];
+        let up_sql = MigrationGenerator::generate_up_sql(&changes, &table_definitions).unwrap();
+
+        assert!(
+            up_sql.contains("CREATE TABLE \"events\""),
+            "up SQL should create the table; got: {}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("create_hypertable"),
+            "up SQL should create hypertable; got: {}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("CREATE INDEX \"idx_events_timestamp\""),
+            "up SQL should create index on events; got: {}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("Convert to hypertable before creating indexes"),
+            "up SQL should include comment before create_hypertable; got: {}",
+            up_sql
+        );
+
+        let create_table_pos = up_sql.find("CREATE TABLE \"events\"").unwrap();
+        let hypertable_pos = up_sql.find("create_hypertable").unwrap();
+        let index_pos = up_sql
+            .find("CREATE INDEX \"idx_events_timestamp\"")
+            .unwrap();
+        assert!(
+            create_table_pos < hypertable_pos,
+            "CREATE TABLE must appear before create_hypertable"
+        );
+        assert!(
+            hypertable_pos < index_pos,
+            "create_hypertable must appear before CREATE INDEX for the hypertable"
         );
     }
 }

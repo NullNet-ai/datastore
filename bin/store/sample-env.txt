@@ -1,17 +1,17 @@
-DATABASE_URL=postgres://admin:admin@localhost:5432/nullnet
+DATABASE_URL=postgres://admin:admin@localhost:5433/template
 GROUP_ID=01JBHKXHYSKPP247HZZWHA3JBT
 JWT_SECRET=Ch@ng3m3Pl3@s3!!
-SYNC_ENABLED=false
+SYNC_ENABLED=true
 SYNC_TIMER_MS=60000
 RUST_LOG=info
-GRPC_PORT=6000
+GRPC_PORT=6001
 PORT=3000
 GRPC_URL=0.0.0.0
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=admin
-POSTGRES_DB=nullnet
+POSTGRES_DB=template
 POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+POSTGRES_PORT=5433
 BATCH_SYNC_ENABLED=true
 BATCH_SYNC_TYPE=round-robin
 BATCH_SYNC_SIZE=100
@@ -19,28 +19,40 @@ GENERATE_PROTO=false
 GENERATE_GRPC=false
 GENERATE_TABLE_ENUM=false
 CLEANUP_PASSWORD=admin
-EXPERIMENTAL_PERMISSIONS=true
-
+EXPERIMENTAL_PERMISSIONS=false
 
 #Organization setup
 DEFAULT_ORGANIZATION_ID=01JBHKXHYSKPP247HZZWHA3JCT
 DEFAULT_ORGANIZATION_NAME=global-organization
 DEFAULT_ORGANIZATION_ADMIN_PASSWORD=ch@ng3m3Pl3@s3!!
 
-
 #Cache setup
-REDIS_CONNECTION=redis://127.0.0.1:6380/
+REDIS_CONNECTION=redis://127.0.0.1:6378/
 CACHE_TTL=3600
 CACHE_TYPE=redis #inmemory
-
 
 #message stream
 BUCKET_CAPACITY=20
 
-
 #Data initialize
-INITIALIZE_ENTITY_DATA=true
-INITIALIZE_DEVICE=true
+INITIALIZE_ENTITY_DATA=false
+INITIALIZE_DEVICE=false
 
-#Protocol Buffers
-PROTOC=/opt/homebrew/opt/protobuf@3/bin/protoc
+#Generate schema
+CREATE_SCHEMA=false
+
+
+# File Storage
+## for s3 experiment
+DISABLE_STORAGE=true
+STORAGE_ENDPOINT="https://mastra-minio-api.app.dnaqa.net"
+STORAGE_ACCESS_KEY="minioadmin"
+STORAGE_SECRET_KEY="uA633fr9F9hQ"
+STORAGE_BUCKET_NAME="samples33"
+STORAGE_REGION="us-east-1"
+STORAGE_DISABLE_SSL_VERIFICATION="true"
+TZ=UTC
+# Temporary Allow Restrictions for these columns
+# This should not recommend to the developers
+TEMPORARY_ALLOWED_COLUMNS="device_details"
+SUPER_ADMIN_ID="01KHQB809JVN7FTK0H9WHCTDTC"
