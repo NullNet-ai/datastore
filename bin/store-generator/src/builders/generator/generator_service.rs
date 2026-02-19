@@ -818,11 +818,13 @@ impl GeneratorService {
                         };
 
                         // JSONB default validation: must use ::jsonb format; no default empty array
-                        let is_jsonb = rest.contains("nullable(jsonb())") || rest.contains("jsonb()");
+                        let is_jsonb =
+                            rest.contains("nullable(jsonb())") || rest.contains("jsonb()");
                         if is_jsonb {
-                            if let Err(e) =
-                                table_validator::validate_jsonb_default(&field_name, default_value.as_deref())
-                            {
+                            if let Err(e) = table_validator::validate_jsonb_default(
+                                &field_name,
+                                default_value.as_deref(),
+                            ) {
                                 return Err(e);
                             }
                         }

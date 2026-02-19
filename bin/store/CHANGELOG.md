@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.27
+### Author
+Kashan
+
+### Changed
+  - ***Create with existing id → update***:
+    - When creating a record (POST `/api/store/{table}` or root variant) with an `id` that already exists in the table, the store now performs an update instead of attempting an insert. This avoids duplicate-key errors and allows “create or overwrite” behavior when the client sends an existing id.
+  
+
+### Added
+  - ***Tests***:
+    - Integration test `create_with_existing_id_performs_update` in `store_controller_test`: verifies that POST create with an existing id performs an update (single record updated, no duplicate). Run with `cargo test create_with_existing_id_performs_update -- --ignored` when server is available.
+
 ## 0.2.26
 ### Author
 Kashan

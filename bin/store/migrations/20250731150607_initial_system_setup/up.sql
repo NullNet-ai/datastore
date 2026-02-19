@@ -498,6 +498,7 @@ CREATE TABLE "samples" (
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
 	"sensitivity_level" integer DEFAULT 1000,
 	"name" text,
+	"image_url" text,
 	"sample_text" text
 );
 

@@ -3461,4 +3461,112 @@ mod tests {
             assert_eq!(download_path, "01KGRER1FH47DGESEH6XFPTZ0B.png");
         }
     }
+
+    /// Test that POST create with an existing id performs an update instead of insert (create-with-id → update).
+    #[tokio::test]
+    #[ignore]
+    async fn create_with_existing_id_performs_update() {
+        use ulid::Ulid;
+
+        println!("Testing create with existing id performs update (upsert-like behavior)...");
+
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        let health = client
+            .get(&format!("{}/health", base_url))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+        if health.is_err() {
+            println!("  ⚠ Server not available, skipping test");
+            return;
+        }
+
+        let root_auth_payload = json!({
+            "data": {
+                "account_id": "admin@dnamicro.com",
+                "account_secret": "ch@ng3m3Pl3@s3!!"
+            }
+        });
+        let auth_resp = client
+            .post(&format!("{}/api/organizations/auth?is_root=true", base_url))
+            .json(&root_auth_payload)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await;
+        let (token, is_root) = match auth_resp {
+            Ok(r) if r.status().is_success() => {
+                let body: serde_json::Value = r.json().await.unwrap_or_default();
+                let t = body.get("token").and_then(|v| v.as_str()).map(String::from);
+                (t.clone(), t.is_some())
+            }
+            _ => (None, false),
+        };
+        if !is_root {
+            println!("  ⚠ Root auth failed, skipping test");
+            return;
+        }
+
+        let record_id = Ulid::new().to_string();
+        let create_url = format!("{}/api/store/root/samples", base_url);
+        let create1 = json!({ "id": record_id, "name": "Original" });
+        let create2 = json!({ "id": record_id, "name": "UpdatedByCreateWithId" });
+
+        let resp1 = client
+            .post(&create_url)
+            .bearer_auth(token.as_ref().unwrap())
+            .json(&create1)
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .expect("first create request");
+        assert!(
+            resp1.status().is_success(),
+            "first create should succeed: {}",
+            resp1.text().await.unwrap_or_default()
+        );
+
+        let resp2 = client
+            .post(&create_url)
+            .bearer_auth(token.as_ref().unwrap())
+            .json(&create2)
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .expect("second create (same id) request");
+        assert!(
+            resp2.status().is_success(),
+            "second create with same id should succeed (update): {}",
+            resp2.text().await.unwrap_or_default()
+        );
+
+        let get_url = format!("{}/api/store/root/samples/{}", base_url, record_id);
+        let get_resp = client
+            .get(&get_url)
+            .bearer_auth(token.as_ref().unwrap())
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+            .expect("get by id request");
+        assert!(
+            get_resp.status().is_success(),
+            "get by id should succeed: {}",
+            get_resp.text().await.unwrap_or_default()
+        );
+        let get_body: serde_json::Value = get_resp.json().await.expect("parse get response");
+        let name = get_body
+            .get("data")
+            .and_then(|d| d.get(0))
+            .and_then(|r| r.get("name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(
+            name, "UpdatedByCreateWithId",
+            "record should have been updated by second create; name = {:?}",
+            name
+        );
+        println!("  ✓ Create with existing id correctly performed update");
+    }
 }
