@@ -274,10 +274,21 @@ message Organizations {
   optional bool is_batch = 21;
   optional string image_url = 22;
   optional string name = 23;
-  optional string parent_organization_id = 24;
-  optional int32 organization_level = 25;
-  optional string root_organization_id = 26;
-  optional string path_level = 27;
+  optional string skyll_id = 24;
+  optional string department_id = 25;
+  optional string district_id = 26;
+  optional string parent_organization_id = 27;
+  optional string school_id = 28;
+  optional string city = 29;
+  optional string county = 30;
+  optional string state = 31;
+  optional string school_identifier = 32;
+  optional string district_identifier = 33;
+  optional int32 organization_level = 34;
+  optional string root_organization_id = 35;
+  optional string path_level = 36;
+  optional string superintendent_id = 37;
+  optional string principal_id = 38;
 }
 
 // OrganizationContacts entity definition

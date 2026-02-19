@@ -116,25 +116,25 @@ where
                 path.contains("/auth") && req.method() == actix_web::http::Method::POST;
 
             // If route is not login and there is no session_id, reject the request
-            if !is_login_route && session_id.is_none() {
-                let error_response = ApiResponse {
-                    success: false,
-                    message: "Session ID is required for this request, please login first"
-                        .to_string(),
-                    count: 0,
-                    data: vec![],
-                };
+            // if !is_login_route && session_id.is_none() {
+            //     let error_response = ApiResponse {
+            //         success: false,
+            //         message: "Session ID is required for this request, please login first"
+            //             .to_string(),
+            //         count: 0,
+            //         data: vec![],
+            //     };
 
-                let json_error = actix_web::HttpResponse::Unauthorized()
-                    .content_type("application/json")
-                    .json(error_response);
+            //     let json_error = actix_web::HttpResponse::Unauthorized()
+            //         .content_type("application/json")
+            //         .json(error_response);
 
-                return Err(actix_web::error::InternalError::from_response(
-                    "Unauthorized",
-                    json_error,
-                )
-                .into());
-            }
+            //     return Err(actix_web::error::InternalError::from_response(
+            //         "Unauthorized",
+            //         json_error,
+            //     )
+            //     .into());
+            // }
             let mut account_id_from_body: Option<String> = None;
 
             if is_login_route {
