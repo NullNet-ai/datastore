@@ -5,6 +5,14 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.11
+### Author
+Kashan
+
+### Added
+- **Migration up.sql order for new hypertables**: For each new table, up SQL is now emitted in order: CREATE TABLE → create_hypertable (if hypertable) → CREATE INDEX for that table, so indexes are created on the hypertable. Comment "Convert to hypertable before creating indexes" added before create_hypertable.
+- Test: `test_up_sql_hypertable_indexes_after_create_hypertable` – asserts CREATE TABLE, create_hypertable, and CREATE INDEX order and comment presence.
+
 ## 0.1.10
 ### Author
 Kashan
