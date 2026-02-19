@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.29
+### Author
+Jean
+
+### Changed
+  - ***Search suggestions – timezone precedence***:
+    - Search suggestion SQL now prioritizes the timezone provided in the request body over the header timezone when building date/time expressions.
+  - ***Search suggestions – parse_as text casting***:
+    - When an advance filter uses `parse_as: "text"`, the generated search suggestion SQL now casts the selected field to text (`::text AS value`) to ensure consistent text comparison semantics.
+
+### Added
+  - ***Tests***:
+    - Added unit tests in `search_suggestion_test` to cover `parse_as: "text"` behavior, ensure at least one advance_filter has `is_search = true`, and assert that generated SQL includes `::text` / `::text AS value` when applicable.
+
 ## 0.2.28
 ### Author
 Kashan

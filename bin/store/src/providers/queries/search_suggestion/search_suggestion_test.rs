@@ -7,7 +7,10 @@ mod tests {
     use crate::providers::queries::search_suggestion::utils::{
         format_filters, generate_concatenated_expressions, get_field_filters,
     };
-    use crate::structs::core::{ConcatenateField, FilterCriteria, FilterOperator, MatchPattern};
+    use crate::providers::queries::search_suggestion::sql_constructor::SQLConstructor as SearchSuggestionSQLConstructor;
+    use crate::structs::core::{
+        ConcatenateField, FilterCriteria, FilterOperator, MatchPattern, SearchSuggestionParams,
+    };
     use serde_json::json;
     use std::collections::HashMap;
     use std::env;
@@ -923,5 +926,144 @@ mod tests {
         assert!(profiles_map.contains_key("display_name"));
 
         println!("Multiple entities concatenated expressions test passed");
+    }
+
+    #[test]
+    fn should_cast_advance_filter_field_to_text_when_parse_as_text() {
+        let mut params = SearchSuggestionParams::default();
+        params.date_format = "YYYY-MM-DD".to_string();
+        params.time_format = "HH24:MI".to_string();
+        params.timezone = None;
+
+        let table = "users".to_string();
+        let mut sql_constructor =
+            SearchSuggestionSQLConstructor::new(params, table, true, None);
+
+        let filtered_fields = json!({ "users": ["name"] });
+
+        let filter = FilterCriteria::Criteria {
+            field: "name".to_string(),
+            entity: Some("users".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::Value::String("test_value".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: Some(MatchPattern::Contains),
+            is_search: Some(true),
+            has_group_count: Some(false),
+        };
+
+        let advance_filters = vec![serde_json::to_value(&filter).unwrap()];
+        let group_advance_filters: Vec<serde_json::Value> = Vec::new();
+
+        let concatenated_expressions: ConcatenatedExpressions = HashMap::new();
+
+        let sql = sql_constructor
+            .construct(
+                &filtered_fields,
+                &advance_filters,
+                &group_advance_filters,
+                "test_value",
+                &concatenated_expressions,
+            )
+            .expect("SQL should be constructed");
+
+        assert!(
+            sql.contains("::text"),
+            "SQL query should contain ::text cast when parse_as is text. Got: {}",
+            sql
+        );
+    }
+
+    #[test]
+    fn should_have_at_least_one_search_advance_filter() {
+        let payload = SearchSuggestionParams {
+            advance_filters: vec![
+                FilterCriteria::Criteria {
+                    field: "name".to_string(),
+                    entity: Some("users".to_string()),
+                    operator: FilterOperator::Equal,
+                    values: vec![serde_json::Value::String("test_value".to_string())],
+                    case_sensitive: Some(false),
+                    parse_as: "string".to_string(),
+                    match_pattern: Some(MatchPattern::Contains),
+                    is_search: Some(true),
+                    has_group_count: Some(false),
+                },
+                FilterCriteria::Criteria {
+                    field: "status".to_string(),
+                    entity: Some("users".to_string()),
+                    operator: FilterOperator::Equal,
+                    values: vec![serde_json::Value::String("Active".to_string())],
+                    case_sensitive: Some(false),
+                    parse_as: "string".to_string(),
+                    match_pattern: Some(MatchPattern::Exact),
+                    is_search: Some(false),
+                    has_group_count: Some(false),
+                },
+            ],
+            ..SearchSuggestionParams::default()
+        };
+
+        let search_filters: Vec<&FilterCriteria> = payload
+            .advance_filters
+            .iter()
+            .filter(|f| match f {
+                FilterCriteria::Criteria { is_search, .. } => is_search.unwrap_or(false),
+                _ => false,
+            })
+            .collect();
+
+        assert!(
+            !search_filters.is_empty(),
+            "Should have at least one advance_filter with is_search = true"
+        );
+    }
+
+    #[test]
+    fn should_cast_value_to_text_when_parse_as_text_in_advance_filter() {
+        let mut params = SearchSuggestionParams::default();
+        params.date_format = "YYYY-MM-DD".to_string();
+        params.time_format = "HH24:MI".to_string();
+        params.timezone = None;
+
+        let table = "users".to_string();
+        let mut sql_constructor =
+            SearchSuggestionSQLConstructor::new(params, table, true, None);
+
+        let filtered_fields = json!({ "users": ["name"] });
+
+        let filter = FilterCriteria::Criteria {
+            field: "name".to_string(),
+            entity: Some("users".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::Value::String("test_value".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: Some(MatchPattern::Contains),
+            is_search: Some(true),
+            has_group_count: Some(false),
+        };
+
+        let advance_filters = vec![serde_json::to_value(&filter).unwrap()];
+        let group_advance_filters: Vec<serde_json::Value> = Vec::new();
+
+        let concatenated_expressions: ConcatenatedExpressions = HashMap::new();
+
+        let sql = sql_constructor
+            .construct(
+                &filtered_fields,
+                &advance_filters,
+                &group_advance_filters,
+                "test_value",
+                &concatenated_expressions,
+            )
+            .expect("SQL should be constructed");
+
+        assert!(
+            sql.contains("::text AS value"),
+            "SQL query should contain '::text AS value' when parse_as is text. Got: {}",
+            sql
+        );
     }
 }
