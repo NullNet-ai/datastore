@@ -123,6 +123,36 @@ export async function initializers(app) {
     },
   });
 
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'device_ssh_sessions',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'RS',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'device_tty_sessions',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'RT',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+
+  await initializer.create(EInitializer.SYSTEM_CODE_CONFIG, {
+    entity: 'device_tunnels',
+    system_code_config: {
+      default_code: 100000,
+      prefix: 'RA',
+      counter: 0,
+      digits_number: 6,
+    },
+  });
+
   // ! This is a sample for the root account configuration
   await initializer.create(EInitializer.ROOT_ACCOUNT_CONFIG, {
     entity: 'account_organizations',
