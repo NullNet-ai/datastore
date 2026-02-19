@@ -5,6 +5,13 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.28
+### Author
+Kashan
+
+### Changed
+  - ***store-generator***: Dependency updated to 0.1.11. New migrations generated for hypertables now emit up.sql in the correct order: CREATE TABLE → create_hypertable → CREATE INDEX for that table (indexes on the hypertable), with comment "Convert to hypertable before creating indexes" before create_hypertable.
+
 ## 0.2.27
 ### Author
 Kashan

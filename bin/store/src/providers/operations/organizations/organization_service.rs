@@ -260,7 +260,14 @@ pub async fn register(
 
     if is_contact_account && (!is_invited || !is_request) {
         match async {
-                let user_id = if is_request { Ulid::new().to_string() } else { super_admin_id.clone() };
+                // Never use empty string for contact id (SUPER_ADMIN_ID may be unset in .env)
+                let user_id = if is_request {
+                    Ulid::new().to_string()
+                } else if super_admin_id.trim().is_empty() {
+                    Ulid::new().to_string()
+                } else {
+                    super_admin_id.clone()
+                };
 
                 let team_organization_id = team_organization_id.ok_or_else(|| {
                     ApiError::new(

@@ -38,6 +38,11 @@ CREATE TABLE "signed_in_activities" (
 
 -- Convert to TimescaleDB hypertable
 
+-- Convert to TimescaleDB hypertable FIRST
+SELECT create_hypertable('signed_in_activities', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+
+
+
 -- Add required indexes for signed_in_activities table
 CREATE INDEX "idx_signed_in_activities_tombstone" ON "signed_in_activities" USING btree ("tombstone");
 CREATE INDEX "idx_signed_in_activities_status" ON "signed_in_activities" USING btree ("status");
@@ -55,7 +60,4 @@ CREATE INDEX "idx_signed_in_activities_categories" ON "signed_in_activities" USI
 CREATE INDEX "idx_signed_in_activities_code" ON "signed_in_activities" USING btree ("code");
 CREATE INDEX "idx_signed_in_activities_sensitivity_level" ON "signed_in_activities" USING btree ("sensitivity_level");
 CREATE INDEX "idx_signed_in_activities_session_id" ON "signed_in_activities" USING btree ("session_id");
-
--- Convert to TimescaleDB hypertable FIRST
-SELECT create_hypertable('signed_in_activities', 'timestamp', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
 
