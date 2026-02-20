@@ -89,26 +89,26 @@ setup-env:
 	fi
 
 install-rust:
-	@# Install Rust 1.88.0 specifically
+	@# Install Rust 1.91.0 specifically
 	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
-		powershell -Command "if (!(Get-Command rustc -ErrorAction SilentlyContinue)) { Write-Host '🦀 Installing Rust 1.88.0...'; Invoke-WebRequest -Uri 'https://win.rustup.rs/' -OutFile 'rustup-init.exe'; .\rustup-init.exe -y --default-toolchain 1.88.0; Remove-Item rustup-init.exe } else { Write-Host '🔍 Checking Rust version...'; $$rustVersion = (rustc --version).Split(' ')[1]; if ($$rustVersion -ne '1.88.0') { Write-Host '⚠️  Current Rust version: ' + $$rustVersion + ', required: 1.88.0'; Write-Host '🔄 Installing Rust 1.88.0...'; rustup install 1.88.0; rustup default 1.88.0 } else { Write-Host '✅ Rust 1.88.0 already installed' } }"; \
+		powershell -Command "if (!(Get-Command rustc -ErrorAction SilentlyContinue)) { Write-Host '🦀 Installing Rust 1.91.0...'; Invoke-WebRequest -Uri 'https://win.rustup.rs/' -OutFile 'rustup-init.exe'; .\rustup-init.exe -y --default-toolchain 1.91.0; Remove-Item rustup-init.exe } else { Write-Host '🔍 Checking Rust version...'; $$rustVersion = (rustc --version).Split(' ')[1]; if ($$rustVersion -ne '1.91.0') { Write-Host '⚠️  Current Rust version: ' + $$rustVersion + ', required: 1.91.0'; Write-Host '🔄 Installing Rust 1.91.0...'; rustup install 1.91.0; rustup default 1.91.0 } else { Write-Host '✅ Rust 1.91.0 already installed' } }"; \
 	else \
 		if ! command -v rustc >/dev/null 2>&1; then \
-			echo "🦀 Installing Rust 1.88.0..."; \
-			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.88.0; \
+			echo "🦀 Installing Rust 1.91.0..."; \
+			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91.0; \
 			if [ -f "$$HOME/.cargo/env" ]; then \
 				. "$$HOME/.cargo/env"; \
 			fi; \
 		else \
 			echo "🔍 Checking Rust version..."; \
 			RUST_VERSION=$$(rustc --version | cut -d' ' -f2); \
-			if [ "$$RUST_VERSION" != "1.88.0" ]; then \
-				echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.88.0"; \
-				echo "🔄 Installing Rust 1.88.0..."; \
-				rustup install 1.88.0; \
-				rustup default 1.88.0; \
+			if [ "$$RUST_VERSION" != "1.91.0" ]; then \
+				echo "⚠️  Current Rust version: $$RUST_VERSION, required: 1.91.0"; \
+				echo "🔄 Installing Rust 1.91.0..."; \
+				rustup install 1.91.0; \
+				rustup default 1.91.0; \
 			else \
-				echo "✅ Rust 1.88.0 already installed"; \
+				echo "✅ Rust 1.91.0 already installed"; \
 			fi; \
 		fi; \
 	fi
@@ -188,7 +188,7 @@ install:
 	else \
 		echo "❌ Unsupported operating system: $$(uname)"; \
 		echo "Please install dependencies manually:"; \
-		echo "  - Rust 1.88.0 (https://rustup.rs/)"; \
+		echo "  - Rust 1.91.0 (https://rustup.rs/)"; \
 		echo "  - PostgreSQL"; \
 		echo "  - Protocol Buffers (protoc)"; \
 		echo "  - cargo-make, cargo-watch, diesel_cli"; \

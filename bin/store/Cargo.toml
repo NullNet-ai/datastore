@@ -2,7 +2,7 @@
 name = "store"
 version = "0.2.29"
 edition = "2021"
-rust-version = "1.88.0"
+rust-version = "1.91.0"
 
 authors = [
     "Kashan Ali Khalid <kashankhalid@dnamicro.com>",
@@ -34,7 +34,7 @@ merkle = { path = "../../libs/merkle" }
 jsonwebtoken = "8.3.0"
 log = "0.4.28"
 mime_guess = "2.0"
-actix-multipart = "0.6"
+actix-multipart = "=0.6.2"
 tokio = { version = "1.44.2", features = ["full"] }
 async-stream = "0.3"
 reqwest = { version = "0.12.15", features = ["json"] }

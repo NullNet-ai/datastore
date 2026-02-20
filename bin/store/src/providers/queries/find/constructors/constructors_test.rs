@@ -93,7 +93,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
         let expected_default_queries = format!("WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '01JBHKXHYSKPP247HZZWHA3JCT') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC NULLS FIRST LIMIT 10");
         let expected_query = format!(
-            "SELECT \"contacts\".\"id\", \"contacts\".\"first_name\" FROM {} {}",
+            "SELECT JSONB_BUILD_OBJECT('id', \"contacts\".\"id\", 'first_name', \"contacts\".\"first_name\", 'last_name', \"contacts\".\"last_name\") AS contacts FROM {} {}",
             &table, expected_default_queries
         );
 
@@ -202,7 +202,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         let expected_query = format!(
-            "SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
+            "SELECT COALESCE( ( SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\" LIMIT 1 ), 'null'::jsonb ) AS contact_emails",
             &env_config.default_organization_id
         );
 
@@ -287,7 +287,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         let expected_query = format!(
-            "SELECT \"contacts\".\"first_name\", COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
+            "SELECT JSONB_BUILD_OBJECT('first_name', \"contacts\".\"first_name\") AS contacts, COALESCE( ( SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\" LIMIT 1 ), 'null'::jsonb ) AS contact_emails",
             &env_config.default_organization_id
         );
 
@@ -1066,7 +1066,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", \"contacts\".\"first_name\", \"contacts\".\"last_name\", COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) AS elem FROM contact_emails ce_sample WHERE (ce_sample.tombstone = 0 AND ce_sample.organization_id IS NOT NULL AND ce_sample.organization_id = '{}') AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\") sub ), '[]' ) AS ce_sample FROM {}",
+        let expected_selections = format!("SELECT JSONB_BUILD_OBJECT('id', \"contacts\".\"id\", 'first_name', \"contacts\".\"first_name\", 'last_name', \"contacts\".\"last_name\") AS contacts, COALESCE( ( SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) FROM contact_emails ce_sample WHERE (ce_sample.tombstone = 0 AND ce_sample.organization_id IS NOT NULL AND ce_sample.organization_id = '{}') AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\" LIMIT 1 ), 'null'::jsonb ) AS ce_sample FROM {}",
             &env_config.default_organization_id, &table);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
