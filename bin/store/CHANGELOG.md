@@ -20,6 +20,8 @@ Bert
   - Add support for multiple values in contains/not-contains operators
   - Update test files to reflect changes and add new test cases
   - Ignore failing password update tests temporarily
+### Added
+  - Added in the cargo toml file to have a precise version of the AWS dependencies
 
 ## 0.2.28
 ### Author
