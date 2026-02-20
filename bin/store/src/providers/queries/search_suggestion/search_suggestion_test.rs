@@ -479,6 +479,7 @@ mod tests {
         println!("Generating concatenated expressions with custom separator: ' - '");
         let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
+        assert!(result.contains_key("users"));
         let users_map = result.get("users").unwrap();
         let field_expr = users_map.get("full_name").unwrap();
         println!(
@@ -953,7 +954,7 @@ mod tests {
             has_group_count: Some(false),
         };
 
-        let advance_filters = vec![serde_json::to_value(&filter).unwrap()];
+        let advance_filters = vec![serde_json::to_value(&filter).expect("Failed to serialize FilterCriteria to JSON for advance_filters")];
         let group_advance_filters: Vec<serde_json::Value> = Vec::new();
 
         let concatenated_expressions: ConcatenatedExpressions = HashMap::new();
@@ -1045,7 +1046,7 @@ mod tests {
             has_group_count: Some(false),
         };
 
-        let advance_filters = vec![serde_json::to_value(&filter).unwrap()];
+        let advance_filters = vec![serde_json::to_value(&filter).expect("Failed to serialize FilterCriteria to JSON for advance_filters")];
         let group_advance_filters: Vec<serde_json::Value> = Vec::new();
 
         let concatenated_expressions: ConcatenatedExpressions = HashMap::new();
