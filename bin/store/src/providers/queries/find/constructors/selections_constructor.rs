@@ -59,14 +59,23 @@ impl SelectionsConstructor {
             }
         }
 
-        // This is tested from the following:
-        // should_construct_selections_with_pluck_fields_pluck_object
-        // should_construct_selections_with_pluck_fields_joins_pluck_object
-        // should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity
-        println!("DEBUG: construct_selections called, pluck_object is empty: {}", request_body.get_pluck_object().is_empty());
+        // Determine if main table is in pluck_object
+        let main_in_pluck_object = request_body.get_pluck_object().contains_key(table);
+
+        // Include aggregated selections for related entities specified in pluck_object
         if !request_body.get_pluck_object().is_empty() {
-            // Handle main table and join tables with JSON aggregation
-            let join_selections = Self::construct_join_selections_with_main_table_support(
+            // If main table exists in pluck_object, add aggregated selection for it
+            if let Some(main_agg) = Self::build_main_table_aggregation(
+                request_body,
+                table,
+                timezone,
+                &get_field,
+                &build_system_where_clause,
+            ) {
+                selections.push(main_agg);
+            }
+
+            let join_selections = Self::construct_join_selections(
                 request_body,
                 table,
                 timezone,
@@ -78,16 +87,32 @@ impl SelectionsConstructor {
             );
             selections.extend(join_selections);
         }
-        // This is tested from from the following:
-        // should_construct_default_selections
-        else if !request_body.get_pluck().is_empty() {
-            return Self::construct_pluck(
+
+        // Include main table pluck fields when present, unless pluck_object already specifies main table
+        if !request_body.get_pluck().is_empty() && !main_in_pluck_object {
+            let pluck_sel = Self::construct_pluck(
                 request_body,
                 table,
                 timezone,
                 &get_field,
                 &get_field_with_parse_as,
             );
+            if !pluck_sel.is_empty() {
+                selections.push(pluck_sel);
+            }
+        }
+
+        // Fallback: if no selections were added, select main table id
+        if selections.is_empty() {
+            let default_id = get_field(
+                table,
+                "id",
+                request_body.get_date_format(),
+                table,
+                timezone,
+                false,
+            );
+            selections.push(default_id);
         }
 
         selections.join(", ")
@@ -235,8 +260,15 @@ impl SelectionsConstructor {
             pluck_selections.push(field_selection);
         }
 
-        // Handle concatenated fields
+        // Handle concatenated fields only for main table entity
         for concat_field in request_body.get_concatenate_fields() {
+            if concat_field
+                .aliased_entity
+                .as_deref()
+                .map(|a| a == table)
+                .unwrap_or(false)
+                || concat_field.entity == table
+            {
             let concatenated_expression = concat_field
                 .fields
                 .iter()
@@ -261,6 +293,7 @@ impl SelectionsConstructor {
                 "({}) AS {}",
                 concatenated_expression, concat_field.field_name
             ));
+            }
         }
         pluck_selections.join(", ")
     }
@@ -347,6 +380,85 @@ impl SelectionsConstructor {
                     ));
                 });
         }
+    }
+
+    /// Helper to build a nested aggregated selection for a child join embedded within a parent alias
+    fn build_nested_child_selection<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        parent_alias: &str,
+        child_join: &Join,
+        fields: &[String],
+        normalize_entity_name: &impl Fn(&str) -> String,
+        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
+        build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
+    ) -> String {
+        let to_alias = child_join
+            .field_relation
+            .to
+            .alias
+            .as_deref()
+            .unwrap_or(&child_join.field_relation.to.entity);
+        let target_table = &child_join.field_relation.to.entity;
+        let mut field_pairs = Self::build_field_pairs(
+            request_body,
+            table,
+            timezone,
+            fields,
+            to_alias,
+            get_field,
+        );
+        Self::add_concatenated_field_pairs(
+            request_body,
+            table,
+            timezone,
+            &mut field_pairs,
+            to_alias,
+            normalize_entity_name,
+            get_field,
+        );
+
+        let mut where_conditions = Vec::new();
+        let standard_where = match build_system_where_clause(to_alias) {
+            Ok(clause) => clause,
+            Err(_) => format!("({}.tombstone = 0)", to_alias),
+        };
+        where_conditions.push(standard_where);
+
+        // Child join condition referencing the parent alias
+        let join_condition = format!(
+            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+            to_alias,
+            child_join.field_relation.to.field,
+            parent_alias,
+            child_join.field_relation.from.field
+        );
+        where_conditions.push(join_condition);
+
+        // Add filters if present on child join
+        if !child_join.field_relation.to.filters.is_empty() {
+            if let Ok(filter_expression) =
+                build_infix_expression(&child_join.field_relation.to.filters)
+            {
+                if !filter_expression.is_empty() {
+                    where_conditions.push(filter_expression);
+                }
+            }
+        }
+
+        let combined_where = where_conditions.join(" AND ");
+        let order_by_clause = Self::build_join_order_by_clause(child_join, "elem");
+
+        format!(
+            "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' )",
+            order_by_clause,
+            field_pairs.join(", "),
+            target_table,
+            to_alias,
+            combined_where
+        )
     }
 
     /// Helper method to build the final join selection
@@ -579,8 +691,7 @@ impl SelectionsConstructor {
     }
 
     /// Constructs JOIN selections for related entities when pluck_object is provided
-    /// Note: Main table is handled separately by construct_pluck_with_object_for_main
-    fn construct_join_selections_with_main_table_support<T: QueryFilter>(
+    fn construct_join_selections<T: QueryFilter>(
         request_body: &T,
         table: &str,
         timezone: Option<&str>,
@@ -598,69 +709,19 @@ impl SelectionsConstructor {
             bool,
         ) -> String,
     ) -> Vec<String> {
-        println!("DEBUG: construct_join_selections_with_main_table_support called with table: {}", table);
         let mut join_selections = Vec::new();
-        println!("DEBUG: Starting main table processing, join_selections len: {}", join_selections.len());
-
         let mut added_entity_selection = std::collections::HashSet::new();
-        
-        // Handle main table when there are joins
-        println!("DEBUG: Processing main table '{}' with pluck_object", table);
-        println!("DEBUG: Available pluck_object keys: {:?}", request_body.get_pluck_object().keys().collect::<Vec<_>>());
-        if let Some(fields) = request_body.get_pluck_object().get(table) {
-            println!("DEBUG: Found fields for main table: {:?}", fields);
-            let mut field_pairs = Self::build_field_pairs(
-                request_body,
-                table,
-                timezone,
-                fields,
-                table,
-                get_field,
-            );
-            Self::add_concatenated_field_pairs(
-                request_body,
-                table,
-                timezone,
-                &mut field_pairs,
-                table,
-                normalize_entity_name,
-                get_field,
-            );
-            let mut where_conditions = Vec::new();
-            let standard_where = match build_system_where_clause(table) {
-                Ok(clause) => clause,
-                Err(_) => format!("({}.tombstone = 0)", table),
-            };
-            where_conditions.push(standard_where);
-            let self_condition = format!("\"{}\".\"id\" = \"{}\".\"id\"", table, table);
-            where_conditions.push(self_condition);
-            let combined_where = where_conditions.join(" AND ");
-            let main_table_selection = format!(
-                "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                field_pairs.join(", "),
-                table,
-                table,
-                combined_where,
-                table
-            );
-            println!("DEBUG: Generated main table selection: {}", main_table_selection);
-            join_selections.push(main_table_selection);
-        } else {
-            println!("DEBUG: No pluck_object found for main table '{}', using regular pluck", table);
-            // If no pluck_object for main table, use regular pluck
-            let pluck_selection = Self::construct_pluck(
-                request_body,
-                table,
-                timezone,
-                &get_field,
-                get_field_with_parse_as,
-            );
-            if !pluck_selection.is_empty() {
-                join_selections.push(pluck_selection);
-            }
-        }
-        
-        println!("DEBUG: Starting join processing, joins count: {}", request_body.get_joins().len());
+        // if request_body.get_pluck_object().contains_key(table) {
+        //     // If no pluck_object for main table, use regular pluck
+        //     let pluck_selection = Self::construct_pluck(
+        //         request_body,
+        //         table,
+        //         timezone,
+        //         &get_field,
+        //         get_field_with_parse_as,
+        //     );
+        //     join_selections.push(pluck_selection);
+        // }
         // Process each join
         for (join_index, join) in request_body.get_joins().iter().enumerate() {
             println!("DEBUG: Processing join {}: from={}, to={}", join_index, join.field_relation.from.entity, join.field_relation.to.entity);
@@ -715,6 +776,37 @@ impl SelectionsConstructor {
                         normalize_entity_name,
                         get_field,
                     );
+                    // Embed nested children selections that reference this alias
+                    for child_join in request_body
+                        .get_joins()
+                        .iter()
+                        .filter(|cj| cj.nested && cj.field_relation.from.entity == from_alias)
+                    {
+                        let child_to_alias = child_join
+                            .field_relation
+                            .to
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&child_join.field_relation.to.entity);
+                        if let Some(child_fields) =
+                            request_body.get_pluck_object().get(child_to_alias)
+                        {
+                            let nested_sel = Self::build_nested_child_selection(
+                                request_body,
+                                table,
+                                timezone,
+                                from_alias,
+                                child_join,
+                                child_fields,
+                                normalize_entity_name,
+                                get_field,
+                                build_system_where_clause,
+                                build_infix_expression,
+                            );
+                            field_pairs.push(format!("'{}', {}", child_to_alias, nested_sel));
+                            added_entity_selection.insert(child_to_alias.to_string());
+                        }
+                    }
                     let join_condition = Self::build_join_condition_for_from_alias(
                         request_body,
                         table,
@@ -821,5 +913,61 @@ impl SelectionsConstructor {
         }
 
         join_selections
+    }
+
+    /// Builds aggregated JSON selection for the main table when pluck_object includes it
+    fn build_main_table_aggregation<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
+    ) -> Option<String> {
+        if let Some(fields) = request_body.get_pluck_object().get(table) {
+            let joined_alias = format!("joined_{}", table);
+            // Build field pairs using the actual table name (not the joined alias)
+            let mut field_pairs = fields
+                .iter()
+                .map(|field| {
+                    let field_query = get_field(
+                        table,
+                        field,
+                        request_body.get_date_format(),
+                        table,
+                        timezone,
+                        false,
+                    );
+                    let parts: Vec<String> = field_query
+                        .split(" AS ")
+                        .map(|part| part.to_string())
+                        .collect::<Vec<String>>();
+                    let formatted_field = parts.first().unwrap().clone();
+                    format!("'{}', {}", field, formatted_field)
+                })
+                .collect::<Vec<String>>();
+
+            // Build WHERE with system constraints on the joined alias and correlate by id
+            let mut where_conditions = Vec::new();
+            let standard_where = match build_system_where_clause(&joined_alias) {
+                Ok(clause) => clause,
+                Err(_) => format!("({}.tombstone = 0)", joined_alias),
+            };
+            where_conditions.push(standard_where);
+            where_conditions.push(format!(
+                "\"{}\".\"id\" = \"{}\".\"id\"",
+                joined_alias, table
+            ));
+            let combined_where = where_conditions.join(" AND ");
+
+            return Some(format!(
+                "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
+                field_pairs.join(", "),
+                table,
+                joined_alias,
+                combined_where,
+                table
+            ));
+        }
+        None
     }
 }

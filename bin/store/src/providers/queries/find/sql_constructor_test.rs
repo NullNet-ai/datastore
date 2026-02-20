@@ -1502,6 +1502,10 @@ mod tests {
                 assert!(sql.contains("AS created_by"));
                 assert!(sql.contains("'first_name', \"created_by\".\"first_name\""));
                 assert!(sql.contains("'last_name', \"created_by\".\"last_name\""));
+                assert!(
+                    sql.contains("'full_name', ("),
+                    "created_by selection should include concatenated 'full_name'"
+                );
                 assert!(sql.contains("AS updated_by_account_organizations"));
                 assert!(sql
                     .contains("'contact_id', \"updated_by_account_organizations\".\"contact_id\""));
@@ -1511,8 +1515,11 @@ mod tests {
                 assert!(sql.contains("'last_name', \"updated_by\".\"last_name\""));
                 assert!(sql.contains("AS organizations"));
                 assert!(sql.contains("AS district_superintendent"));
-                assert!(sql.contains("'first_name', \"district_superintendent\".\"first_name\""));
-                assert!(sql.contains("'last_name', \"district_superintendent\".\"last_name\""));
+                // Nested join should be embedded under district_orgs selection, not as top-level
+                assert!(
+                    sql.contains("'district_superintendent', COALESCE"),
+                    "Nested 'district_superintendent' selection should be embedded inside 'district_orgs'"
+                );
                 assert!(sql.contains("AS superintendent"));
                 assert!(sql.contains("'first_name', \"superintendent\".\"first_name\""));
                 assert!(sql.contains("'last_name', \"superintendent\".\"last_name\""));

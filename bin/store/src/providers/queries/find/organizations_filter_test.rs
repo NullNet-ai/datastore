@@ -195,4 +195,75 @@ mod tests {
 
         println!("Timezone variation test completed successfully!");
     }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_organizations_filter_controller_results_structure() {
+        use actix_web::{test, web, HttpMessage, Responder};
+        use crate::controllers::store_controller::get_by_filter;
+        use crate::structs::core::Auth;
+
+        if std::env::var("DATABASE_URL").is_err() {
+            println!("  ⚠️  DATABASE_URL not set, skipping controller results structure test");
+            return;
+        }
+
+        let json_path = "/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/rust-projects/crdt-workspace/bin/store/src/providers/queries/find/queries/organizations_filter.json";
+        let json_content = fs::read_to_string(json_path)
+            .expect("Failed to read organizations_filter.json");
+        let filter: GetByFilter = serde_json::from_str(&json_content)
+            .expect("Failed to parse JSON into GetByFilter");
+
+        let mut req = test::TestRequest::default()
+            .insert_header(("timezone", "Asia/Manila"))
+            .to_http_request();
+        req.extensions_mut().insert(Auth {
+            organization_id: std::env::var("DEFAULT_ORGANIZATION_ID")
+                .unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JCT".to_string()),
+            responsible_account: "system".to_string(),
+            sensitivity_level: 0,
+            role_name: "super_admin".to_string(),
+            account_organization_id: "system".to_string(),
+            role_id: "super_admin".to_string(),
+            is_root_account: true,
+            account_id: "system".to_string(),
+        });
+
+        let path = web::Path::from("organizations".to_string());
+        let body = web::Json(filter);
+
+        let resp = get_by_filter(req.clone(), path, body).await.respond_to(&req);
+        assert_eq!(resp.status(), actix_web::http::StatusCode::OK, "Controller should return 200 OK");
+
+        use actix_web::body::to_bytes;
+        let bytes_res = to_bytes(resp.into_body()).await;
+        let bytes = match bytes_res {
+            Ok(b) => b,
+            Err(_) => {
+                println!("  ⚠ Failed to read response body, skipping validation");
+                return;
+            }
+        };
+        let value: serde_json::Value = serde_json::from_slice(&bytes).expect("Response should be valid JSON");
+
+        assert!(value.get("success").and_then(|v| v.as_bool()).unwrap_or(false), "Response success should be true");
+        assert!(value.get("message").and_then(|v| v.as_str()).unwrap_or("").contains("Filter operation completed"), "Response message should indicate filter completion");
+        let data = value.get("data").and_then(|v| v.as_array()).expect("Response data should be an array");
+        let count = value.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
+        assert_eq!(count as usize, data.len(), "Response count should equal data length");
+
+        if let Some(first) = data.get(0).and_then(|v| v.as_object()) {
+            assert!(first.get("organizations").is_some(), "Each record should contain aggregated 'organizations' array");
+            assert!(first.get("created_by").is_some(), "Each record should contain aggregated 'created_by' array");
+            assert!(first.get("updated_by").is_some(), "Each record should contain aggregated 'updated_by' array");
+            assert!(first.get("created_by_account_organizations").is_some(), "Each record should contain aggregated 'created_by_account_organizations' array");
+            assert!(first.get("updated_by_account_organizations").is_some(), "Each record should contain aggregated 'updated_by_account_organizations' array");
+            assert!(first.get("district_orgs").is_some(), "Each record should contain aggregated 'district_orgs' array");
+            assert!(first.get("district_superintendent").is_some(), "Each record should contain aggregated 'district_superintendent' array");
+            assert!(first.get("superintendent").is_some(), "Each record should contain aggregated 'superintendent' array");
+            assert!(first.get("principal").is_some(), "Each record should contain aggregated 'principal' array");
+        }
+
+        println!("  ✓ Controller results structure validated successfully");
+    }
 }

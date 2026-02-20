@@ -92,7 +92,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
         let expected_selection = format!(
-            "SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contacts\".\"id\", 'first_name', \"contacts\".\"first_name\", 'last_name', \"contacts\".\"last_name\") AS elem FROM contacts contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') AND \"contacts\".\"id\" = \"contacts\".\"id\") sub ), '[]' ) AS contacts",
+            "SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contacts\".\"id\", 'first_name', \"contacts\".\"first_name\", 'last_name', \"contacts\".\"last_name\") AS elem FROM contacts joined_contacts WHERE (joined_contacts.tombstone = 0 AND joined_contacts.organization_id IS NOT NULL AND joined_contacts.organization_id = '{}') AND \"joined_contacts\".\"id\" = \"contacts\".\"id\") sub ), '[]' ) AS contacts",
             &env_config.default_organization_id
         );
 
@@ -286,7 +286,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         let expected_main = format!(
-            "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('first_name', \"contacts\".\"first_name\") AS elem FROM contacts contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') AND \"contacts\".\"id\" = \"contacts\".\"id\") sub ), '[]' ) AS contacts",
+            "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('first_name', \"contacts\".\"first_name\") AS elem FROM contacts joined_contacts WHERE (joined_contacts.tombstone = 0 AND joined_contacts.organization_id IS NOT NULL AND joined_contacts.organization_id = '{}') AND \"joined_contacts\".\"id\" = \"contacts\".\"id\") sub ), '[]' ) AS contacts",
             &env_config.default_organization_id
         );
         let expected_join = format!(
@@ -1075,7 +1075,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contacts\".\"id\", 'first_name', \"contacts\".\"first_name\", 'last_name', \"contacts\".\"last_name\") AS elem FROM contacts contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') AND \"contacts\".\"id\" = \"contacts\".\"id\") sub ), '[]' ) AS contacts, COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) AS elem FROM contact_emails ce_sample WHERE (ce_sample.tombstone = 0 AND ce_sample.organization_id IS NOT NULL AND ce_sample.organization_id = '{}') AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\") sub ), '[]' ) AS ce_sample FROM {}",
+        let expected_selections = format!("SELECT COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contacts\".\"id\", 'first_name', \"contacts\".\"first_name\", 'last_name', \"contacts\".\"last_name\") AS elem FROM contacts joined_contacts WHERE (joined_contacts.tombstone = 0 AND joined_contacts.organization_id IS NOT NULL AND joined_contacts.organization_id = '{}') AND \"joined_contacts\".\"id\" = \"contacts\".\"id\") sub ), '[]' ) AS contacts, COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"ce_sample\".\"id\", 'email', \"ce_sample\".\"email\", 'id_status', (COALESCE(\"ce_sample\".\"id\", '') || ' ' || COALESCE(\"ce_sample\".\"status\", ''))) AS elem FROM contact_emails ce_sample WHERE (ce_sample.tombstone = 0 AND ce_sample.organization_id IS NOT NULL AND ce_sample.organization_id = '{}') AND \"contacts\".\"id\" = \"ce_sample\".\"contact_id\") sub ), '[]' ) AS ce_sample FROM {}",
             &env_config.default_organization_id, &env_config.default_organization_id, &table);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
