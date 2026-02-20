@@ -292,71 +292,79 @@ impl SelectionsConstructor {
             join_aliases.insert(alias.to_string());
         }
 
-        let fields_to_use: Vec<String> = if let Some(main_table_fields) =
-            request_body.get_pluck_object().get(table)
-        {
+        if let Some(main_table_fields) = request_body.get_pluck_object().get(table) {
             println!(
                 "Using pluck_object fields for table {}: {:?}",
                 table, main_table_fields
             );
-            main_table_fields
+            let filtered_fields: Vec<String> = main_table_fields
                 .iter()
                 .filter(|f| !join_aliases.contains(f.as_str()))
                 .cloned()
-                .collect()
-        } else {
-            println!("Using regular pluck fields: {:?}", request_body.get_pluck());
-            request_body.get_pluck().iter().cloned().collect()
-        };
-
-        // Handle the selected fields
-        for field in fields_to_use.iter() {
-            let with_alias = field.ends_with("_date")
-                || field.ends_with("_time")
-                || field.eq_ignore_ascii_case("timestamp");
-            let field_selection = get_field(
-                table,
-                field,
-                request_body.get_date_format(),
+                .collect();
+            let mut field_pairs = Self::build_field_pairs(
+                request_body,
                 table,
                 timezone,
-                with_alias,
+                &filtered_fields,
+                table,
+                get_field,
             );
-            pluck_selections.push(field_selection);
-        }
-
-        // Handle concatenated fields
-        for concat_field in request_body.get_concatenate_fields() {
-            if concat_field.entity != table {
-                continue;
+            Self::add_main_concatenated_field_pairs(
+                request_body,
+                table,
+                timezone,
+                &mut field_pairs,
+                table,
+                get_field_with_parse_as,
+            );
+            format!("JSONB_BUILD_OBJECT({}) AS {}", field_pairs.join(", "), table)
+        } else {
+            println!("Using regular pluck fields: {:?}", request_body.get_pluck());
+            for field in request_body.get_pluck().iter() {
+                let with_alias = field.ends_with("_date")
+                    || field.ends_with("_time")
+                    || field.eq_ignore_ascii_case("timestamp");
+                let field_selection = get_field(
+                    table,
+                    field,
+                    request_body.get_date_format(),
+                    table,
+                    timezone,
+                    with_alias,
+                );
+                pluck_selections.push(field_selection);
             }
-            let concatenated_expression = concat_field
-                .fields
-                .iter()
-                .map(|f| {
-                    format!(
-                        "COALESCE({}, '')",
-                        get_field_with_parse_as(
-                            table,
-                            f,
-                            request_body.get_date_format(),
-                            None,
-                            table,
-                            timezone,
-                            false,
+            for concat_field in request_body.get_concatenate_fields() {
+                if concat_field.entity != table {
+                    continue;
+                }
+                let concatenated_expression = concat_field
+                    .fields
+                    .iter()
+                    .map(|f| {
+                        format!(
+                            "COALESCE({}, '')",
+                            get_field_with_parse_as(
+                                table,
+                                f,
+                                request_body.get_date_format(),
+                                None,
+                                table,
+                                timezone,
+                                false,
+                            )
                         )
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join(&format!(" || '{}' || ", concat_field.separator));
-
-            pluck_selections.push(format!(
-                "({}) AS {}",
-                concatenated_expression, concat_field.field_name
-            ));
+                    })
+                    .collect::<Vec<_>>()
+                    .join(&format!(" || '{}' || ", concat_field.separator));
+                pluck_selections.push(format!(
+                    "({}) AS {}",
+                    concatenated_expression, concat_field.field_name
+                ));
+            }
+            pluck_selections.join(", ")
         }
-
-        pluck_selections.join(", ")
     }
 
     /// Constructs JOIN selections for related entities
@@ -380,7 +388,7 @@ impl SelectionsConstructor {
     ) -> Vec<String> {
         let mut join_selections = Vec::new();
         if request_body.get_joins().is_empty() {
-            join_selections.push(Self::construct_pluck(
+            join_selections.push(Self::construct_pluck_with_object_for_main(
                 request_body,
                 table,
                 timezone,
@@ -392,6 +400,20 @@ impl SelectionsConstructor {
         }
 
         let mut added_entity_selection = std::collections::HashSet::new();
+        if request_body
+            .get_pluck_object()
+            .contains_key(table)
+            && !added_entity_selection.contains(table)
+        {
+            join_selections.push(Self::construct_pluck_with_object_for_main(
+                request_body,
+                table,
+                timezone,
+                &get_field,
+                &get_field_with_parse_as,
+            ));
+            added_entity_selection.insert(table.to_string());
+        }
         // Process each join
         for (join_index, join) in request_body.get_joins().iter().enumerate() {
             let from_alias = join
@@ -582,11 +604,59 @@ impl SelectionsConstructor {
         }
     }
 
+    /// Helper method to add concatenated field pairs for the main table
+    fn add_main_concatenated_field_pairs<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        field_pairs: &mut Vec<String>,
+        main_alias: &str,
+        get_field_with_parse_as: &impl Fn(
+            &str,
+            &str,
+            &str,
+            Option<&str>,
+            &str,
+            Option<&str>,
+            bool,
+        ) -> String,
+    ) {
+        request_body
+            .get_concatenate_fields()
+            .iter()
+            .filter(|field| field.entity == table)
+            .for_each(|field| {
+                let concatenated_expression = field
+                    .fields
+                    .iter()
+                    .map(|f| {
+                        format!(
+                            "COALESCE({}, '')",
+                            get_field_with_parse_as(
+                                main_alias,
+                                f,
+                                request_body.get_date_format(),
+                                None,
+                                table,
+                                timezone,
+                                false,
+                            )
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(&format!(" || '{}' || ", field.separator));
+                field_pairs.push(format!(
+                    "'{}', ({})",
+                    field.field_name, concatenated_expression
+                ));
+            });
+    }
+
     /// Helper method to build the final join selection
     fn build_join_selection<T: QueryFilter>(
         _request_body: &T,
         join: &Join,
-        previous_join: Option<&Join>,
+        _previous_join: Option<&Join>,
         to_alias: &str,
         target_table: &str,
         field_pairs: &[String],
@@ -621,81 +691,39 @@ impl SelectionsConstructor {
 
         let combined_where = where_conditions.join(" AND ");
 
-        // Build order_by clause with join-specific override logic
-        let order_by_clause = Self::build_join_order_by_clause(join, "elem");
+        // Build order_by clause for direct table fields (object selection)
+        let order_by_clause_table = Self::build_join_order_by_clause_for_table(join, to_alias);
 
-        if join.nested {
-            if let Some(prev_join) = previous_join {
-                let _prev_join_to_alias = if prev_join.r#type == "self" {
-                    prev_join
-                        .field_relation
-                        .from
-                        .alias
-                        .as_deref()
-                        .unwrap_or(&prev_join.field_relation.to.entity)
-                } else {
-                    prev_join
-                        .field_relation
-                        .to
-                        .alias
-                        .as_deref()
-                        .unwrap_or(&prev_join.field_relation.to.entity)
-                };
-                format!(
-                    "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                    order_by_clause,
-                    field_pairs.join(", "),
-                    target_table,
-                    to_alias,
-                    combined_where,
-                    to_alias
-                )
-            } else {
-                // This should not happen for nested joins, but provide a fallback
-                format!(
-                    "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                    order_by_clause,
-                    field_pairs.join(", "),
-                    target_table,
-                    to_alias,
-                    combined_where,
-                    to_alias
-                )
-            }
-        } else {
-            format!(
-                "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                order_by_clause,
-                field_pairs.join(", "),
-                target_table,
-                to_alias,
-                combined_where,
-                to_alias
-            )
-        }
+        // Build object (not array) selection for pluck_object aliases
+        format!(
+            "COALESCE( ( SELECT JSONB_BUILD_OBJECT({}) FROM {} {} WHERE {}{} LIMIT 1 ), 'null'::jsonb ) AS {}",
+            field_pairs.join(", "),
+            target_table,
+            to_alias,
+            combined_where,
+            order_by_clause_table,
+            to_alias
+        )
     }
 
     /// Builds ORDER BY clause for join selections with join-specific override logic
-    fn build_join_order_by_clause(join: &Join, alias_elem: &str) -> String {
-        // Check if join has specific order_by and order_direction
+    // Removed old JSON element ordering helper (arrays no longer used for joins)
+
+    /// Builds ORDER BY clause for join selections based on table columns (for object selections)
+    fn build_join_order_by_clause_for_table(join: &Join, table_alias: &str) -> String {
         if let (Some(join_order_by), Some(join_order_direction)) = (
             &join.field_relation.to.order_by,
             &join.field_relation.to.order_direction,
         ) {
             if !join_order_by.is_empty() && !join_order_direction.is_empty() {
-                // Handle case sensitivity (default to case-insensitive for joins)
-                let final_field = format!("'{}'", join_order_by);
-
                 return format!(
-                    " ORDER BY {}->>{} {}",
-                    alias_elem,
-                    final_field,
+                    " ORDER BY LOWER({}.\"{}\") {}",
+                    table_alias,
+                    join_order_by,
                     join_order_direction.to_uppercase()
                 );
             }
         }
-
-        // Fallback to request body order_by if no join-specific ordering
         String::from("")
     }
 

@@ -6,18 +6,10 @@ use crate::providers::operations::message_stream::token_bucket::TokenBucket;
 use chrono;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use log::{info, warn};
-use serde::{Deserialize, Serialize};
 use socketioxide::extract::{Data, SocketRef};
 use socketioxide::SocketIo;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Account {
-    organization_id: String,
-    account_id: String,
-    organization_account_id: String,
-}
 
 #[derive(Debug, Clone)]
 pub struct ClientData {

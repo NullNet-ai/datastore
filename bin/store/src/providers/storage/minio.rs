@@ -7,25 +7,6 @@ pub struct AppState {
     pub bucket_name: String, // Store the default bucket name here
 }
 
-// Custom certificate verifier that accepts all certificates (for MinIO with self-signed certs)
-pub struct NoCertificateVerification {}
-
-impl rustls::client::ServerCertVerifier for NoCertificateVerification {
-    fn verify_server_cert(
-        &self,
-        _end_entity: &rustls::Certificate,
-        _intermediates: &[rustls::Certificate],
-        _server_name: &rustls::ServerName,
-        _scts: &mut dyn Iterator<Item = &[u8]>,
-        _ocsp: &[u8],
-        _now: std::time::SystemTime,
-    ) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
-        // WARNING: This disables all certificate verification!
-        // Only use this for development or trusted MinIO instances
-        Ok(rustls::client::ServerCertVerified::assertion())
-    }
-}
-
 pub async fn initialize() -> std::io::Result<(Client, String)> {
     // Check if storage is disabled
     let disable_storage = std::env::var("DISABLE_STORAGE")

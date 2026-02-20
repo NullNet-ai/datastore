@@ -1288,9 +1288,10 @@ pub async fn get_by_filter(
 
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
+    log::info!("QUERY: {:?}", query);
+    
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
-
-    log::info!("Final query: {:?}", final_query);
+    
     let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
         .await
@@ -1311,6 +1312,8 @@ pub async fn get_by_filter(
         .into_iter()
         .filter_map(|result| result.row_to_json)
         .collect();
+
+    log::info!("DATA: {:?}", data);
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
