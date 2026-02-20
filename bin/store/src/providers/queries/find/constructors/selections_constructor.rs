@@ -281,21 +281,36 @@ impl SelectionsConstructor {
     ) -> String {
         let mut pluck_selections = Vec::new();
 
-        // Check if main table has fields in pluck_object, otherwise use regular pluck
-        let fields_to_use =
-            if let Some(main_table_fields) = request_body.get_pluck_object().get(table) {
-                println!(
-                    "Using pluck_object fields for table {}: {:?}",
-                    table, main_table_fields
-                );
-                main_table_fields
-            } else {
-                println!("Using regular pluck fields: {:?}", request_body.get_pluck());
-                request_body.get_pluck()
-            };
+        let mut join_aliases = std::collections::HashSet::new();
+        for j in request_body.get_joins() {
+            let alias = j
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&j.field_relation.to.entity);
+            join_aliases.insert(alias.to_string());
+        }
+
+        let fields_to_use: Vec<String> = if let Some(main_table_fields) =
+            request_body.get_pluck_object().get(table)
+        {
+            println!(
+                "Using pluck_object fields for table {}: {:?}",
+                table, main_table_fields
+            );
+            main_table_fields
+                .iter()
+                .filter(|f| !join_aliases.contains(f.as_str()))
+                .cloned()
+                .collect()
+        } else {
+            println!("Using regular pluck fields: {:?}", request_body.get_pluck());
+            request_body.get_pluck().iter().cloned().collect()
+        };
 
         // Handle the selected fields
-        for field in fields_to_use {
+        for field in fields_to_use.iter() {
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
                 || field.eq_ignore_ascii_case("timestamp");
@@ -378,7 +393,7 @@ impl SelectionsConstructor {
 
         let mut added_entity_selection = std::collections::HashSet::new();
         // Process each join
-        for join in request_body.get_joins() {
+        for (join_index, join) in request_body.get_joins().iter().enumerate() {
             let from_alias = join
                 .field_relation
                 .from
@@ -412,21 +427,27 @@ impl SelectionsConstructor {
                 let target_table = &join.field_relation.to.entity;
 
                 // Find previous join in chain if exists
-                let previous_join = request_body.get_joins().iter().find(|j| {
-                    let j_to_ref = j
-                        .field_relation
-                        .to
-                        .alias
-                        .as_deref()
-                        .unwrap_or(&j.field_relation.to.entity);
-                    let current_from_ref = join
-                        .field_relation
-                        .from
-                        .alias
-                        .as_deref()
-                        .unwrap_or(&join.field_relation.from.entity);
-                    j_to_ref == current_from_ref
-                });
+                // For nested joins, the previous join is the immediately preceding one
+                // For non-nested joins, find any join that matches the from reference
+                let previous_join = if join.nested && join_index > 0 {
+                    Some(&request_body.get_joins()[join_index - 1])
+                } else {
+                    request_body.get_joins().iter().find(|j| {
+                        let j_to_ref = j
+                            .field_relation
+                            .to
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&j.field_relation.to.entity);
+                        let current_from_ref = join
+                            .field_relation
+                            .from
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&join.field_relation.from.entity);
+                        j_to_ref == current_from_ref
+                    })
+                };
 
                 let join_condition = Self::build_join_condition_for_alias(
                     request_body,
@@ -563,7 +584,7 @@ impl SelectionsConstructor {
 
     /// Helper method to build the final join selection
     fn build_join_selection<T: QueryFilter>(
-        request_body: &T,
+        _request_body: &T,
         join: &Join,
         previous_join: Option<&Join>,
         to_alias: &str,
@@ -604,26 +625,43 @@ impl SelectionsConstructor {
         let order_by_clause = Self::build_join_order_by_clause(join, "elem");
 
         if join.nested {
-            let prev_join = previous_join.unwrap();
-            let prev_join_to_alias = prev_join
-                .field_relation
-                .to
-                .alias
-                .as_deref()
-                .unwrap_or(&prev_join.field_relation.to.entity);
-
-            format!(
-                "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} LEFT JOIN {} {} ON {} WHERE {}) sub ), '[]' ) AS {}",
-                order_by_clause,
-                field_pairs.join(", "),
-                prev_join.field_relation.to.entity,
-                prev_join_to_alias,
-                target_table,
-                to_alias,
-                Self::build_join_condition_for_alias(request_body, "", to_alias, join, Some(join)),
-                combined_where,
-                to_alias
-            )
+            if let Some(prev_join) = previous_join {
+                let _prev_join_to_alias = if prev_join.r#type == "self" {
+                    prev_join
+                        .field_relation
+                        .from
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                } else {
+                    prev_join
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                };
+                format!(
+                    "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
+                    order_by_clause,
+                    field_pairs.join(", "),
+                    target_table,
+                    to_alias,
+                    combined_where,
+                    to_alias
+                )
+            } else {
+                // This should not happen for nested joins, but provide a fallback
+                format!(
+                    "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
+                    order_by_clause,
+                    field_pairs.join(", "),
+                    target_table,
+                    to_alias,
+                    combined_where,
+                    to_alias
+                )
+            }
         } else {
             format!(
                 "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
@@ -672,26 +710,33 @@ impl SelectionsConstructor {
         let is_nested = join.nested;
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
+        
+        // For nested joins, we need to build the correct join condition
         if is_nested {
             if let Some(prev_join) = previous_join {
-                // Use the previous join's alias if available
-                let prev_from_alias = prev_join
-                    .field_relation
-                    .from
-                    .alias
-                    .as_deref()
-                    .unwrap_or(&prev_join.field_relation.from.entity);
-                let prev_from_field = &prev_join.field_relation.from.field;
-                let prev_to_alias = prev_join
-                    .field_relation
-                    .to
-                    .alias
-                    .as_deref()
-                    .unwrap_or(&prev_join.field_relation.to.entity);
-                let prev_to_field = &prev_join.field_relation.to.field;
+                // For nested joins, the current join's "from" entity should reference the previous join's "to" result
+                let _prev_join_to_alias = if prev_join.r#type == "self" {
+                    prev_join
+                        .field_relation
+                        .from
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                } else {
+                    prev_join
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                };
+                
+                // The join condition should be: current_to_field = previous_from_field
+                // where current_to_field is the field in the current table being joined TO
+                // and previous_from_field is the field in the previous result that we're joining FROM
                 return format!(
                     "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                    prev_from_alias, prev_from_field, prev_to_alias, prev_to_field
+                    alias, to_field, _prev_join_to_alias, from_field
                 );
             }
         }

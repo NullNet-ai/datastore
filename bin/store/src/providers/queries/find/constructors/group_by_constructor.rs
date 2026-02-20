@@ -129,7 +129,13 @@ impl<'a> GroupByConstructor<'a> {
                 return format!(" GROUP BY {}", group_fields.join(", "));
             }
         }
-        // When group_by is entirely missing, default to GROUP BY main table id
+        // When group_by is entirely missing:
+        // - If joins are present, do not inject a default GROUP BY.
+        //   This avoids invalid queries where non-aggregated columns from join aliases are selected but only main id is grouped.
+        // - Otherwise, default to GROUP BY main table id.
+        if !_joins.is_empty() {
+            return String::from("");
+        }
         let mut group_fields: Vec<String> = vec![format!("\"{}\".\"id\"", self.table)];
         if is_hypertable(self.table) {
             group_fields.push("timestamp".to_string());

@@ -3,7 +3,7 @@ mod tests {
     use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
     use crate::structs::core::{
         ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
-        Join, LogicalOperator, SortOption,
+        Join, LogicalOperator, SortOption, FieldRelation, RelationEndpoint,
     };
     use serde_json::json;
     use std::collections::HashMap;
@@ -973,5 +973,460 @@ mod tests {
             "SQL should reference created_time for time filter. Got: {}",
             sql
         );
+    }
+
+    /// Tests SQL construction for the valid_filter_organizations.json scenario
+    /// This test verifies the complex join structure with self-joins and nested joins
+    /// that was causing the "missing FROM-clause entry for table 'district_orgs'" error
+    #[test]
+    fn should_construct_valid_filter_organizations_sql() {
+        println!("Testing SQL construction for valid_filter_organizations.json scenario...");
+
+        let mut mock_filter = MockQueryFilter::default();
+        mock_filter.pluck = vec![
+            "id".to_string(),
+            "code".to_string(),
+            "name".to_string(),
+            "categories".to_string(),
+            "district_id".to_string(),
+            "department_id".to_string(),
+            "city".to_string(),
+            "county".to_string(),
+            "state".to_string(),
+            "school_identifier".to_string(),
+            "district_identifier".to_string(),
+            "status".to_string(),
+            "superintendent_id".to_string(),
+            "principal_id".to_string(),
+            "created_date".to_string(),
+            "created_time".to_string(),
+            "created_by".to_string(),
+            "updated_date".to_string(),
+            "updated_time".to_string(),
+            "updated_by".to_string(),
+        ];
+
+        // Set up pluck_object
+        let mut pluck_object = HashMap::new();
+        pluck_object.insert("created_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
+        pluck_object.insert("created_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
+        pluck_object.insert("updated_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
+        pluck_object.insert("updated_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
+        pluck_object.insert("organizations".to_string(), vec![
+            "id".to_string(), "code".to_string(), "name".to_string(), "categories".to_string(),
+            "district_id".to_string(), "department_id".to_string(), "city".to_string(),
+            "county".to_string(), "state".to_string(), "school_identifier".to_string(),
+            "district_identifier".to_string(), "status".to_string(), "superintendent_id".to_string(),
+            "principal_id".to_string(), "created_date".to_string(), "created_time".to_string(),
+            "created_by".to_string(), "updated_date".to_string(), "updated_time".to_string(),
+            "updated_by".to_string()
+        ]);
+        pluck_object.insert("district_orgs".to_string(), vec![
+            "id".to_string(), "code".to_string(), "name".to_string(), "categories".to_string(),
+            "district_id".to_string(), "department_id".to_string(), "city".to_string(),
+            "county".to_string(), "state".to_string(), "school_identifier".to_string(),
+            "district_identifier".to_string(), "status".to_string(), "created_date".to_string(),
+            "created_time".to_string(), "created_by".to_string(), "updated_date".to_string(),
+            "updated_time".to_string(), "updated_by".to_string(), "superintendent_id".to_string(),
+            "principal_id".to_string()
+        ]);
+        pluck_object.insert("district_superintendent".to_string(), vec!["first_name".to_string(), "code".to_string(), "last_name".to_string(), "username".to_string()]);
+        pluck_object.insert("superintendent".to_string(), vec!["first_name".to_string(), "code".to_string(), "last_name".to_string(), "username".to_string()]);
+        pluck_object.insert("principal".to_string(), vec!["first_name".to_string(), "code".to_string(), "last_name".to_string(), "username".to_string()]);
+        mock_filter.pluck_object = pluck_object;
+
+        // Set up joins
+        mock_filter.joins = vec![
+            // created_by_account_organizations join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("created_by_account_organizations".to_string()),
+                        entity: "account_organizations".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: None,
+                        entity: "organizations".to_string(),
+                        field: "created_by".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: false,
+            },
+            // created_by nested join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("created_by".to_string()),
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: Some("created_by_account_organizations".to_string()),
+                        entity: "created_by_account_organizations".to_string(),
+                        field: "contact_id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: true,
+            },
+            // updated_by_account_organizations join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("updated_by_account_organizations".to_string()),
+                        entity: "account_organizations".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: None,
+                        entity: "organizations".to_string(),
+                        field: "updated_by".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: false,
+            },
+            // updated_by nested join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("updated_by".to_string()),
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: Some("updated_by_account_organizations".to_string()),
+                        entity: "updated_by_account_organizations".to_string(),
+                        field: "contact_id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: true,
+            },
+            // district_orgs self-join
+            Join {
+                r#type: "self".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: None,
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: Some("district_orgs".to_string()),
+                        entity: "organizations".to_string(),
+                        field: "district_id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: false,
+            },
+            // district_superintendent nested join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("district_superintendent".to_string()),
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: None,
+                        entity: "district_orgs".to_string(),
+                        field: "superintendent_id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: true,
+            },
+            // superintendent join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("superintendent".to_string()),
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: None,
+                        entity: "organizations".to_string(),
+                        field: "superintendent_id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: false,
+            },
+            // principal join
+            Join {
+                r#type: "left".to_string(),
+                field_relation: FieldRelation {
+                    to: RelationEndpoint {
+                        alias: Some("principal".to_string()),
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                    from: RelationEndpoint {
+                        alias: None,
+                        entity: "organizations".to_string(),
+                        field: "principal_id".to_string(),
+                        filters: vec![],
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                    },
+                },
+                nested: false,
+            },
+        ];
+
+        // Set up advance filters
+        mock_filter.advance_filters = vec![
+            FilterCriteria::Criteria {
+                field: "status".to_string(),
+                entity: None,
+                operator: FilterOperator::Equal,
+                values: vec![json!("Active"), json!("Draft")],
+                case_sensitive: None,
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: None,
+                has_group_count: None,
+            },
+            FilterCriteria::LogicalOperator { operator: LogicalOperator::And },
+            FilterCriteria::Criteria {
+                field: "categories".to_string(),
+                entity: None,
+                operator: FilterOperator::NotContains,
+                values: vec![json!("Personal"), json!("Root"), json!("Team")],
+                case_sensitive: None,
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: None,
+                has_group_count: None,
+            },
+        ];
+
+        // Set up concatenate fields
+        mock_filter.concatenate_fields = vec![
+            ConcatenateField {
+                fields: vec!["first_name".to_string(), "last_name".to_string()],
+                field_name: "full_name".to_string(),
+                separator: " ".to_string(),
+                entity: "contacts".to_string(),
+                aliased_entity: Some("created_by".to_string()),
+            },
+            ConcatenateField {
+                fields: vec!["first_name".to_string(), "last_name".to_string()],
+                field_name: "full_name".to_string(),
+                separator: " ".to_string(),
+                entity: "contacts".to_string(),
+                aliased_entity: Some("updated_by".to_string()),
+            },
+            ConcatenateField {
+                fields: vec!["first_name".to_string(), "last_name".to_string()],
+                field_name: "full_name".to_string(),
+                separator: " ".to_string(),
+                entity: "contacts".to_string(),
+                aliased_entity: Some("district_superintendent".to_string()),
+            },
+            ConcatenateField {
+                fields: vec!["first_name".to_string(), "last_name".to_string()],
+                field_name: "full_name".to_string(),
+                separator: " ".to_string(),
+                entity: "contacts".to_string(),
+                aliased_entity: Some("superintendent".to_string()),
+            },
+            ConcatenateField {
+                fields: vec!["first_name".to_string(), "last_name".to_string()],
+                field_name: "full_name".to_string(),
+                separator: " ".to_string(),
+                entity: "contacts".to_string(),
+                aliased_entity: Some("principal".to_string()),
+            },
+            ConcatenateField {
+                fields: vec!["created_date".to_string(), "created_time".to_string()],
+                field_name: "created_date_time".to_string(),
+                separator: " ".to_string(),
+                entity: "organizations".to_string(),
+                aliased_entity: None,
+            },
+            ConcatenateField {
+                fields: vec!["updated_date".to_string(), "updated_time".to_string()],
+                field_name: "updated_date_time".to_string(),
+                separator: " ".to_string(),
+                entity: "organizations".to_string(),
+                aliased_entity: None,
+            },
+        ];
+
+        // Set other parameters
+        mock_filter.order_by = "organizations.name".to_string();
+        mock_filter.order_direction = "asc".to_string();
+        mock_filter.limit = 100;
+        mock_filter.offset = 0;
+
+        println!("  ✓ Constructing SQL for complex organizations query");
+        let mut constructor = SQLConstructor::new(mock_filter, "organizations".to_string(), true, None);
+        
+        match constructor.construct() {
+            Ok(sql) => {
+                println!("Generated SQL query:");
+                println!("{}", sql);
+                
+                // Verify key components
+                assert!(sql.contains("FROM organizations"), "Should contain main table");
+                assert!(sql.contains("district_orgs"), "Should contain district_orgs alias");
+                assert!(sql.contains("district_superintendent"), "Should contain district_superintendent alias in selections");
+                assert!(sql.contains("LATERAL"), "Should contain LATERAL joins");
+                assert!(sql.contains("LEFT JOIN LATERAL"), "Should contain LEFT JOIN LATERAL for non-nested joins");
+                
+                // Check that district_superintendent selection references district_orgs within nested selection (not as separate LATERAL)
+                assert!(sql.contains("FROM contacts district_superintendent"),
+                    "Nested selection should query contacts as target and correlate to district_orgs");
+                assert!(sql.contains("\"district_superintendent\".\"id\" = \"district_orgs\".\"superintendent_id\""),
+                    "Should reference district_orgs in district_superintendent nested selection condition");
+                assert!(!sql.contains("joined_district_superintendent"),
+                    "Should not emit separate LATERAL join for nested district_superintendent");
+                
+                println!("  ✓ SQL construction successful - no missing FROM-clause errors!");
+            }
+            Err(e) => {
+                panic!("SQL construction failed: {}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn should_construct_sql_from_organizations_filter_json() {
+        use crate::providers::queries::find::sql_constructor::SQLConstructor;
+        use crate::structs::core::GetByFilter;
+        use std::fs;
+
+        let json_path = "src/providers/queries/find/queries/organizations_filter.json";
+        let file_contents =
+            fs::read_to_string(json_path).expect("organizations_filter.json should be readable");
+        let payload: GetByFilter =
+            serde_json::from_str(&file_contents).expect("JSON should parse into GetByFilter");
+
+        let mut constructor =
+            SQLConstructor::new(payload, "organizations".to_string(), true, None);
+
+        match constructor.construct() {
+            Ok(sql) => {
+                assert!(sql.contains("FROM organizations"));
+                assert!(sql.contains("ORDER BY LOWER(organizations.name) ASC"));
+                assert!(sql.contains("LIMIT 100"));
+                assert!(sql.contains("status"));
+                assert!(sql.contains("IN ('Active', 'Draft'") || sql.contains("IN ('Active','Draft'"));
+                assert!(sql.contains("categories"));
+                assert!(sql.contains("NOT ILIKE '%Personal%'"));
+                assert!(sql.contains("NOT ILIKE '%Root%'"));
+                assert!(sql.contains("NOT ILIKE '%Team%'"));
+                assert!(sql.contains("AS \"district_orgs\" ON TRUE"));
+                assert!(sql.contains("\"joined_district_orgs\".\"id\" = \"organizations\".\"district_id\""));
+                assert!(!sql.contains("AS \"organizations\" ON TRUE"));
+                assert!(sql.contains("AS created_by_account_organizations"));
+                assert!(sql.contains("'contact_id', \"created_by_account_organizations\".\"contact_id\""));
+                assert!(sql.contains("'id', \"created_by_account_organizations\".\"id\""));
+                assert!(sql.contains("AS created_by"));
+                assert!(sql.contains("'first_name', \"created_by\".\"first_name\""));
+                assert!(sql.contains("'last_name', \"created_by\".\"last_name\""));
+                assert!(sql.contains("AS updated_by_account_organizations"));
+                assert!(sql.contains("'contact_id', \"updated_by_account_organizations\".\"contact_id\""));
+                assert!(sql.contains("'id', \"updated_by_account_organizations\".\"id\""));
+                assert!(sql.contains("AS updated_by"));
+                assert!(sql.contains("'first_name', \"updated_by\".\"first_name\""));
+                assert!(sql.contains("'last_name', \"updated_by\".\"last_name\""));
+                assert!(sql.contains("AS organizations"));
+                assert!(sql.contains("AS district_superintendent"));
+                assert!(sql.contains("'first_name', \"district_superintendent\".\"first_name\""));
+                assert!(sql.contains("'last_name', \"district_superintendent\".\"last_name\""));
+                assert!(sql.contains("AS superintendent"));
+                assert!(sql.contains("'first_name', \"superintendent\".\"first_name\""));
+                assert!(sql.contains("'last_name', \"superintendent\".\"last_name\""));
+                assert!(sql.contains("AS principal"));
+                assert!(sql.contains("'first_name', \"principal\".\"first_name\""));
+                assert!(sql.contains("'last_name', \"principal\".\"last_name\""));
+            }
+            Err(e) => {
+                panic!("SQL construction failed: {}", e);
+            }
+        }
     }
 }

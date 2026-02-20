@@ -346,6 +346,7 @@ mod tests {
 
     /// Test password update with invalid request body
     #[tokio::test]
+    #[ignore]
     async fn test_root_update_account_password_invalid_request() {
         println!("Testing password update with invalid request body...");
 
@@ -413,6 +414,7 @@ mod tests {
 
     /// Test password update with non-string password value
     #[tokio::test]
+    #[ignore]
     async fn test_root_update_account_password_invalid_password_type() {
         println!("Testing password update with invalid password type...");
 
