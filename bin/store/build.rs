@@ -6,6 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_client(false) // Enable client code (default)
         .out_dir("src/generated")
         .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]")
+        .type_attribute(".", "#[allow(dead_code)]") // Allow dead code for all generated types
         .message_attribute(".", "#[serde(default)]") // Apply serde(default) only to message types (structs)
         .protoc_arg("--experimental_allow_proto3_optional") // Enable proto3 optional fields
         .compile_protos(&["src/generated/proto/store.proto"], &["src/generated"])?;
