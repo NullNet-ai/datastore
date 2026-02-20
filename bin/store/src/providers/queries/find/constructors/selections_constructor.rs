@@ -64,7 +64,8 @@ impl SelectionsConstructor {
         // should_construct_selections_with_pluck_fields_joins_pluck_object
         // should_construct_concatenated_fields_for_pluck_object_join_selections_with_aliased_entity
         if !request_body.get_pluck_object().is_empty() {
-            let join_selections = Self::construct_join_selections(
+            // When pluck_object is provided, ignore pluck and include both main table and joined entity fields
+            let join_selections = Self::construct_join_selections_with_main_table_support(
                 request_body,
                 table,
                 timezone,
@@ -773,5 +774,153 @@ impl SelectionsConstructor {
             "\"{}\".\"{}\" = \"{}\".\"{}\"",
             from_table_ref, from_field, alias, to_field
         )
+    }
+
+    /// Constructs JOIN selections for related entities, with proper main table handling when pluck_object is provided
+    fn construct_join_selections_with_main_table_support<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        normalize_entity_name: &impl Fn(&str) -> String,
+        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
+        build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
+        get_field_with_parse_as: &impl Fn(
+            &str,
+            &str,
+            &str,
+            Option<&str>,
+            &str,
+            Option<&str>,
+            bool,
+        ) -> String,
+    ) -> Vec<String> {
+        let mut join_selections = Vec::new();
+        
+        // Handle main table fields if present in pluck_object
+        if let Some(main_table_fields) = request_body.get_pluck_object().get(table) {
+            if !main_table_fields.is_empty() {
+                join_selections.push(Self::construct_pluck_with_object_for_main(
+                    request_body,
+                    table,
+                    timezone,
+                    get_field,
+                    get_field_with_parse_as,
+                ));
+            }
+        }
+        
+        if request_body.get_joins().is_empty() {
+            return join_selections;
+        }
+
+        let mut added_entity_selection = std::collections::HashSet::new();
+        // Process each join
+        for (join_index, join) in request_body.get_joins().iter().enumerate() {
+            let from_alias = join
+                .field_relation
+                .from
+                .alias
+                .as_deref()
+                .unwrap_or(&join.field_relation.from.entity);
+            let to_alias = join
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&join.field_relation.to.entity);
+
+            // Skip main table - already handled above
+            if from_alias == table || to_alias == table {
+                continue;
+            }
+
+            // Handle fields for this join tables from "from"
+            if request_body.get_pluck_object().contains_key(from_alias)
+                && !join.nested
+                && !added_entity_selection.contains(from_alias)
+            {
+                join_selections.push(Self::construct_pluck_with_object_for_main(
+                    request_body,
+                    from_alias,
+                    timezone,
+                    get_field,
+                    get_field_with_parse_as,
+                ));
+                added_entity_selection.insert(from_alias.to_string());
+            }
+
+            // Handle fields for this join tables from "to"
+            if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
+                let target_table = &join.field_relation.to.entity;
+
+                // Find previous join in chain if exists
+                let previous_join = if join.nested && join_index > 0 {
+                    Some(&request_body.get_joins()[join_index - 1])
+                } else {
+                    request_body.get_joins().iter().find(|j| {
+                        let j_to_ref = j
+                            .field_relation
+                            .to
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&j.field_relation.to.entity);
+                        let current_from_ref = join
+                            .field_relation
+                            .from
+                            .alias
+                            .as_deref()
+                            .unwrap_or(&join.field_relation.from.entity);
+                        j_to_ref == current_from_ref
+                    })
+                };
+
+                let join_condition = Self::build_join_condition_for_alias(
+                    request_body,
+                    table,
+                    to_alias,
+                    join,
+                    previous_join,
+                );
+
+                // Build field pairs for JSONB_BUILD_OBJECT
+                let mut field_pairs = Self::build_field_pairs(
+                    request_body,
+                    table,
+                    timezone,
+                    fields,
+                    to_alias,
+                    get_field,
+                );
+
+                // Add concatenated fields if any match this alias
+                Self::add_concatenated_field_pairs(
+                    request_body,
+                    table,
+                    timezone,
+                    &mut field_pairs,
+                    to_alias,
+                    normalize_entity_name,
+                    get_field,
+                );
+
+                // Build the selection
+                let selection = Self::build_join_selection(
+                    request_body,
+                    join,
+                    previous_join,
+                    to_alias,
+                    target_table,
+                    &field_pairs,
+                    &join_condition,
+                    build_system_where_clause,
+                    build_infix_expression,
+                );
+
+                join_selections.push(selection);
+            }
+        }
+
+        join_selections
     }
 }
