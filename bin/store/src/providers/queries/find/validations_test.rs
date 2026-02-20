@@ -873,11 +873,14 @@ mod tests {
         println!("Testing pluck_object validation with join alias");
 
         let mut request_body = create_default_get_by_filter();
-        
+
         // Add pluck_object with district_orgs (which is an alias in the join)
         request_body.pluck_object = std::collections::HashMap::new();
-        request_body.pluck_object.insert("district_orgs".to_string(), vec!["id".to_string(), "name".to_string()]);
-        
+        request_body.pluck_object.insert(
+            "district_orgs".to_string(),
+            vec!["id".to_string(), "name".to_string()],
+        );
+
         // Add the self-join that creates the district_orgs alias
         request_body.joins = vec![Join {
             r#type: "SELF".to_string(),
@@ -905,10 +908,13 @@ mod tests {
             },
             nested: false,
         }];
-        
+
         let table = "organizations".to_string();
 
-        println!("Creating validation for table: {} with district_orgs alias in pluck_object", table);
+        println!(
+            "Creating validation for table: {} with district_orgs alias in pluck_object",
+            table
+        );
         let validation = Validation::new(&request_body, &table);
 
         let result = validation.validate_pluck_object();
@@ -921,14 +927,18 @@ mod tests {
             "{} Test completed: should_validate_pluck_object_with_join_alias_successfully",
             checker
         );
-        
+
         // This should pass, but currently fails due to the validation bug
         if !result.success {
             println!("BUG REPRODUCED: {}", result.message);
         }
-        
+
         // The validation should now pass with the fix
-        assert!(result.success, "Expected validation to pass, but it failed: {}", result.message);
+        assert!(
+            result.success,
+            "Expected validation to pass, but it failed: {}",
+            result.message
+        );
     }
 
     /// Tests pluck_object validation with the exact scenario from valid_filter_organizations.json
@@ -937,16 +947,42 @@ mod tests {
         println!("Testing pluck_object validation with valid_filter_organizations.json scenario");
 
         let mut request_body = create_default_get_by_filter();
-        
+
         // Recreate the exact scenario from valid_filter_organizations.json
         request_body.pluck_object = std::collections::HashMap::new();
-        request_body.pluck_object.insert("created_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
-        request_body.pluck_object.insert("created_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
-        request_body.pluck_object.insert("updated_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
-        request_body.pluck_object.insert("updated_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
-        request_body.pluck_object.insert("organizations".to_string(), vec!["id".to_string(), "code".to_string(), "name".to_string()]);
-        request_body.pluck_object.insert("district_orgs".to_string(), vec!["id".to_string(), "name".to_string()]);
-        
+        request_body.pluck_object.insert(
+            "created_by_account_organizations".to_string(),
+            vec!["id".to_string(), "contact_id".to_string()],
+        );
+        request_body.pluck_object.insert(
+            "created_by".to_string(),
+            vec![
+                "id".to_string(),
+                "first_name".to_string(),
+                "last_name".to_string(),
+            ],
+        );
+        request_body.pluck_object.insert(
+            "updated_by_account_organizations".to_string(),
+            vec!["id".to_string(), "contact_id".to_string()],
+        );
+        request_body.pluck_object.insert(
+            "updated_by".to_string(),
+            vec![
+                "id".to_string(),
+                "first_name".to_string(),
+                "last_name".to_string(),
+            ],
+        );
+        request_body.pluck_object.insert(
+            "organizations".to_string(),
+            vec!["id".to_string(), "code".to_string(), "name".to_string()],
+        );
+        request_body.pluck_object.insert(
+            "district_orgs".to_string(),
+            vec!["id".to_string(), "name".to_string()],
+        );
+
         // Add the joins from the JSON file
         request_body.joins = vec![
             Join {
@@ -1080,7 +1116,7 @@ mod tests {
                 nested: false,
             },
         ];
-        
+
         let table = "organizations".to_string();
 
         println!("Creating validation for organizations table with complex joins");
@@ -1096,14 +1132,18 @@ mod tests {
             "{} Test completed: should_validate_valid_filter_organizations_scenario",
             checker
         );
-        
+
         // This should pass, but currently fails due to the validation bug
         if !result.success {
             println!("BUG REPRODUCED: {}", result.message);
         }
-        
+
         // The validation should now pass with the fix
-        assert!(result.success, "Expected validation to pass, but it failed: {}", result.message);
+        assert!(
+            result.success,
+            "Expected validation to pass, but it failed: {}",
+            result.message
+        );
     }
 
     /// Tests nested join validation where alias from previous join becomes entity in next join
@@ -1114,11 +1154,14 @@ mod tests {
         println!("Testing nested join validation with district_superintendent scenario");
 
         let mut request_body = create_default_get_by_filter();
-        
+
         // Add pluck_object with district_superintendent (which uses district_orgs as entity)
         request_body.pluck_object = std::collections::HashMap::new();
-        request_body.pluck_object.insert("district_superintendent".to_string(), vec!["first_name".to_string(), "last_name".to_string()]);
-        
+        request_body.pluck_object.insert(
+            "district_superintendent".to_string(),
+            vec!["first_name".to_string(), "last_name".to_string()],
+        );
+
         // Add the self-join that creates the district_orgs alias
         // Then add the nested left join that uses district_orgs as entity
         request_body.joins = vec![
@@ -1175,10 +1218,12 @@ mod tests {
                 nested: true,
             },
         ];
-        
+
         let table = "organizations".to_string();
 
-        println!("Creating validation for nested joins with district_orgs -> district_superintendent");
+        println!(
+            "Creating validation for nested joins with district_orgs -> district_superintendent"
+        );
         let validation = Validation::new(&request_body, &table);
 
         let result = validation.validate_pluck_object();
@@ -1191,13 +1236,17 @@ mod tests {
             "{} Test completed: should_validate_nested_join_alias_validation",
             checker
         );
-        
+
         if !result.success {
             println!("NESTED JOIN BUG REPRODUCED: {}", result.message);
         }
-        
+
         // This should pass, but might fail if validation doesn't handle nested joins properly
-        assert!(result.success, "Expected nested join validation to pass, but it failed: {}", result.message);
+        assert!(
+            result.success,
+            "Expected nested join validation to pass, but it failed: {}",
+            result.message
+        );
     }
 
     /// Tests join validation with the exact scenario from valid_filter_organizations.json
@@ -1207,7 +1256,7 @@ mod tests {
         println!("Testing join validation with district_orgs self-join scenario");
 
         let mut request_body = create_default_get_by_filter();
-        
+
         // Recreate the exact join scenario from valid_filter_organizations.json
         request_body.joins = vec![
             // Self-join that creates district_orgs alias
@@ -1265,7 +1314,7 @@ mod tests {
                 nested: true,
             },
         ];
-        
+
         let table = "organizations".to_string();
 
         println!("Creating validation for joins with district_orgs self-join");
@@ -1281,13 +1330,17 @@ mod tests {
             "{} Test completed: should_validate_joins_with_district_orgs_self_join_scenario",
             checker
         );
-        
+
         if !result.success {
             println!("JOIN VALIDATION BUG REPRODUCED: {}", result.message);
         }
-        
+
         // This should pass with the fix
-        assert!(result.success, "Expected join validation to pass, but it failed: {}", result.message);
+        assert!(
+            result.success,
+            "Expected join validation to pass, but it failed: {}",
+            result.message
+        );
     }
 
     /// Tests mixed join patterns: join → nestedJoin → join → nestedJoin
@@ -1297,7 +1350,7 @@ mod tests {
         println!("Testing mixed join patterns: join → nestedJoin → join → nestedJoin");
 
         let mut request_body = create_default_get_by_filter();
-        
+
         // Create a mixed join pattern
         request_body.joins = vec![
             // First join (not nested)
@@ -1409,7 +1462,7 @@ mod tests {
                 nested: true,
             },
         ];
-        
+
         let table = "contacts".to_string();
 
         println!("Creating validation for mixed join patterns");
@@ -1425,13 +1478,17 @@ mod tests {
             "{} Test completed: should_validate_mixed_join_patterns",
             checker
         );
-        
+
         if !result.success {
             println!("MIXED JOIN PATTERN BUG REPRODUCED: {}", result.message);
         }
-        
+
         // This should pass - mixed join patterns should be valid
-        assert!(result.success, "Expected mixed join patterns to be valid, but validation failed: {}", result.message);
+        assert!(
+            result.success,
+            "Expected mixed join patterns to be valid, but validation failed: {}",
+            result.message
+        );
     }
 
     /// Tests that consecutive nested joins are rejected
@@ -1442,7 +1499,7 @@ mod tests {
         println!("Testing that consecutive nested joins are rejected");
 
         let mut request_body = create_default_get_by_filter();
-        
+
         // Create a pattern with consecutive nested joins (which should be invalid)
         request_body.joins = vec![
             // First join (not nested)
@@ -1527,7 +1584,7 @@ mod tests {
                 nested: true, // This should be rejected
             },
         ];
-        
+
         let table = "contacts".to_string();
 
         println!("Creating validation for consecutive nested joins (should be rejected)");
@@ -1543,14 +1600,20 @@ mod tests {
             "{} Test completed: should_reject_consecutive_nested_joins",
             checker
         );
-        
+
         if result.success {
             println!("CONSECUTIVE NESTED JOINS NOT REJECTED - this might be a bug!");
         } else {
-            println!("Consecutive nested joins properly rejected: {}", result.message);
+            println!(
+                "Consecutive nested joins properly rejected: {}",
+                result.message
+            );
         }
-        
+
         // This should fail - consecutive nested joins should be rejected
-        assert!(!result.success, "Expected consecutive nested joins to be rejected, but validation passed");
+        assert!(
+            !result.success,
+            "Expected consecutive nested joins to be rejected, but validation passed"
+        );
     }
 }

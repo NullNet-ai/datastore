@@ -16,8 +16,8 @@ use crate::{
 };
 use serde_json::Value;
 
-use std::collections::HashMap;
 use crate::config::core::EnvConfig;
+use std::collections::HashMap;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria];
