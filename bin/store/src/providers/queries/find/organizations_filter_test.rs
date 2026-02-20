@@ -214,7 +214,7 @@ mod tests {
         let filter: GetByFilter = serde_json::from_str(&json_content)
             .expect("Failed to parse JSON into GetByFilter");
 
-        let mut req = test::TestRequest::default()
+        let req = test::TestRequest::default()
             .insert_header(("timezone", "Asia/Manila"))
             .to_http_request();
         req.extensions_mut().insert(Auth {

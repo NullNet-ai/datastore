@@ -699,7 +699,7 @@ impl SelectionsConstructor {
         get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
         build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
         build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
-        get_field_with_parse_as: &impl Fn(
+        _get_field_with_parse_as: &impl Fn(
             &str,
             &str,
             &str,
@@ -926,7 +926,7 @@ impl SelectionsConstructor {
         if let Some(fields) = request_body.get_pluck_object().get(table) {
             let joined_alias = format!("joined_{}", table);
             // Build field pairs using the actual table name (not the joined alias)
-            let mut field_pairs = fields
+            let field_pairs = fields
                 .iter()
                 .map(|field| {
                     let field_query = get_field(

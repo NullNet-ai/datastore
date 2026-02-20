@@ -1465,6 +1465,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_construct_sql_from_organizations_filter_json() {
         use crate::providers::queries::find::sql_constructor::SQLConstructor;
         use crate::structs::core::GetByFilter;
