@@ -1,31 +1,10 @@
 use aws_sdk_s3::config::{BehaviorVersion, Credentials, Region};
 use aws_sdk_s3::error::ProvideErrorMetadata;
 use aws_sdk_s3::{Client, Config};
-use aws_smithy_runtime::client::http::hyper_014::HyperClientBuilder;
-use std::sync::Arc;
 #[derive(Clone)]
 pub struct AppState {
     pub s3_client: Client,
     pub bucket_name: String, // Store the default bucket name here
-}
-
-// Custom certificate verifier that accepts all certificates (for MinIO with self-signed certs)
-pub struct NoCertificateVerification {}
-
-impl rustls::client::ServerCertVerifier for NoCertificateVerification {
-    fn verify_server_cert(
-        &self,
-        _end_entity: &rustls::Certificate,
-        _intermediates: &[rustls::Certificate],
-        _server_name: &rustls::ServerName,
-        _scts: &mut dyn Iterator<Item = &[u8]>,
-        _ocsp: &[u8],
-        _now: std::time::SystemTime,
-    ) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
-        // WARNING: This disables all certificate verification!
-        // Only use this for development or trusted MinIO instances
-        Ok(rustls::client::ServerCertVerified::assertion())
-    }
 }
 
 pub async fn initialize() -> std::io::Result<(Client, String)> {
@@ -83,49 +62,12 @@ pub async fn initialize() -> std::io::Result<(Client, String)> {
     // Create credentials
     let credentials = Credentials::new(access_key, secret_key, None, None, "custom-provider");
 
-    // Configure HTTP client with conditional SSL certificate verification
-    let http_client = if endpoint_url.starts_with("https://") {
-        // For HTTPS endpoints, configure TLS based on settings
-        let mut root_store = rustls::RootCertStore::empty();
-        root_store.add_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
-            rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
-                ta.subject,
-                ta.spki,
-                ta.name_constraints,
-            )
-        }));
-
-        let mut tls_config = rustls::ClientConfig::builder()
-            .with_safe_defaults()
-            .with_root_certificates(root_store)
-            .with_no_client_auth();
-
-        // Conditionally disable certificate verification based on environment variable
-        if disable_ssl_verification {
-            tls_config
-                .dangerous()
-                .set_certificate_verifier(Arc::new(NoCertificateVerification {}));
-        }
-
-        let connector = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_tls_config(tls_config)
-            .https_or_http()
-            .enable_http1()
-            .build();
-
-        HyperClientBuilder::new().build(connector)
-    } else {
-        // For HTTP endpoints, use default client
-        HyperClientBuilder::new().build_https()
-    };
-
     // Build S3 client configuration with MinIO-specific settings
     let s3_config = Config::builder()
         .behavior_version(BehaviorVersion::latest())
         .region(Region::new(region.clone()))
         .endpoint_url(endpoint_url.clone()) // MinIO endpoint URL
         .credentials_provider(credentials)
-        .http_client(http_client)
         // since MinIO uses path-style addressing, we need to force it
         .force_path_style(true) // Required for MinIO compatibility - uses path-style addressing
         .build();

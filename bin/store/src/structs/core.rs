@@ -295,15 +295,7 @@ impl Id {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Endpoint {
-    pub url: String,
-    pub username: Option<String>,
-    pub password: Option<String>,
-    pub id: Option<String>,
-    pub group_id: Option<String>,
-    pub status: Option<String>,
-}
+
 
 #[derive(Clone, Debug)]
 #[allow(warnings)]
@@ -816,10 +808,7 @@ pub enum FilterOperator {
     HasNoValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GetFileById {
-    pub id: String,
-}
+
 
 // #[derive(Deserialize)]
 // pub struct UploadFile {
