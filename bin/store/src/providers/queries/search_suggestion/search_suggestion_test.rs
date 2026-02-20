@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use crate::providers::queries::search_suggestion::sql_constructor::SQLConstructor as SearchSuggestionSQLConstructor;
     use crate::providers::queries::search_suggestion::structs::{
         AliasedJoinedEntity, ConcatenatedExpressions, FieldExpression, FieldFiltersResult,
         FormatFilterResponse, SearchSuggestionCache,
@@ -7,7 +8,6 @@ mod tests {
     use crate::providers::queries::search_suggestion::utils::{
         format_filters, generate_concatenated_expressions, get_field_filters,
     };
-    use crate::providers::queries::search_suggestion::sql_constructor::SQLConstructor as SearchSuggestionSQLConstructor;
     use crate::structs::core::{
         ConcatenateField, FilterCriteria, FilterOperator, MatchPattern, SearchSuggestionParams,
     };
@@ -162,7 +162,8 @@ mod tests {
             "Serializing field expression with expression: {}",
             field_expr.expression
         );
-        let serialized = serde_json::to_string(&field_expr).expect("Failed to serialize field expression to JSON");
+        let serialized = serde_json::to_string(&field_expr)
+            .expect("Failed to serialize field expression to JSON");
         println!("Serialized JSON: {}", serialized);
 
         assert!(serialized.contains("test_expression"));
@@ -436,10 +437,14 @@ mod tests {
 
         println!("Verifying result contains users entity");
         assert!(result.contains_key("users"));
-        let users_map = result.get("users").expect("Expected 'users' entry in result");
+        let users_map = result
+            .get("users")
+            .expect("Expected 'users' entry in result");
         assert!(users_map.contains_key("full_name"));
 
-        let field_expr = users_map.get("full_name").expect("Expected 'full_name' entry under 'users'");
+        let field_expr = users_map
+            .get("full_name")
+            .expect("Expected 'full_name' entry under 'users'");
         println!("Generated expression: {}", field_expr.expression);
         // The function uses PostgreSQL || operator, not CONCAT
         assert!(field_expr.expression.contains("COALESCE"));
@@ -811,11 +816,15 @@ mod tests {
         let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
         assert!(result.contains_key("users"));
-        let users_map = result.get("users").expect("Expected 'users' entry in result");
+        let users_map = result
+            .get("users")
+            .expect("Expected 'users' entry in result");
         assert!(users_map.contains_key("full_name"));
         assert!(users_map.contains_key("address"));
 
-        let address_expr = users_map.get("address").expect("Expected 'address' entry under 'users'");
+        let address_expr = users_map
+            .get("address")
+            .expect("Expected 'address' entry under 'users'");
         println!(
             "Address expression fields count: {}",
             address_expr.fields.len()
@@ -926,8 +935,12 @@ mod tests {
         assert!(result.contains_key("users"));
         assert!(result.contains_key("profiles"));
 
-        let users_map = result.get("users").expect("Expected 'users' entry in result");
-        let profiles_map = result.get("profiles").expect("Expected 'profiles' entry in result");
+        let users_map = result
+            .get("users")
+            .expect("Expected 'users' entry in result");
+        let profiles_map = result
+            .get("profiles")
+            .expect("Expected 'profiles' entry in result");
 
         println!("Verifying users entity has full_name field");
         assert!(users_map.contains_key("full_name"));
@@ -946,8 +959,7 @@ mod tests {
         params.timezone = None;
 
         let table = "users".to_string();
-        let mut sql_constructor =
-            SearchSuggestionSQLConstructor::new(params, table, true, None);
+        let mut sql_constructor = SearchSuggestionSQLConstructor::new(params, table, true, None);
 
         let filtered_fields = json!({ "users": ["name"] });
 
@@ -963,7 +975,8 @@ mod tests {
             has_group_count: Some(false),
         };
 
-        let advance_filters = vec![serde_json::to_value(&filter).expect("Failed to serialize FilterCriteria to JSON for advance_filters")];
+        let advance_filters = vec![serde_json::to_value(&filter)
+            .expect("Failed to serialize FilterCriteria to JSON for advance_filters")];
         let group_advance_filters: Vec<serde_json::Value> = Vec::new();
 
         let concatenated_expressions: ConcatenatedExpressions = HashMap::new();
@@ -1038,8 +1051,7 @@ mod tests {
         params.timezone = None;
 
         let table = "users".to_string();
-        let mut sql_constructor =
-            SearchSuggestionSQLConstructor::new(params, table, true, None);
+        let mut sql_constructor = SearchSuggestionSQLConstructor::new(params, table, true, None);
 
         let filtered_fields = json!({ "users": ["name"] });
 
@@ -1055,7 +1067,8 @@ mod tests {
             has_group_count: Some(false),
         };
 
-        let advance_filters = vec![serde_json::to_value(&filter).expect("Failed to serialize FilterCriteria to JSON for advance_filters")];
+        let advance_filters = vec![serde_json::to_value(&filter)
+            .expect("Failed to serialize FilterCriteria to JSON for advance_filters")];
         let group_advance_filters: Vec<serde_json::Value> = Vec::new();
 
         let concatenated_expressions: ConcatenatedExpressions = HashMap::new();

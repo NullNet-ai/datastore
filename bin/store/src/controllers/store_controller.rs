@@ -1289,9 +1289,9 @@ pub async fn get_by_filter(
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
     log::info!("QUERY: {:?}", query);
-    
+
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
-    
+
     let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
         .await
