@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
+    use crate::providers::queries::find::sql_constructor::{SQLConstructor};
     use crate::structs::core::GetByFilter;
     use std::fs;
     use std::process::Command;
