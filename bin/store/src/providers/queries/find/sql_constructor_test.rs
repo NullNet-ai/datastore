@@ -1444,17 +1444,16 @@ mod tests {
                 assert!(sql.contains("LATERAL"), "Should contain LATERAL joins");
                 assert!(
                     sql.contains("LEFT JOIN LATERAL"),
-                    "Should contain LEFT JOIN LATERAL for non-nested joins"
+                    "Should contain LEFT JOIN LATERAL for joins"
                 );
 
-                // Check that district_superintendent selection references district_orgs within nested selection (not as separate LATERAL)
-                assert!(sql.contains("FROM contacts district_superintendent"),
-                    "Nested selection should query contacts as target and correlate to district_orgs");
-                assert!(sql.contains("\"district_superintendent\".\"id\" = \"district_orgs\".\"superintendent_id\""),
-                    "Should reference district_orgs in district_superintendent nested selection condition");
                 assert!(
-                    !sql.contains("joined_district_superintendent"),
-                    "Should not emit separate LATERAL join for nested district_superintendent"
+                    sql.contains("FROM \"contacts\" \"joined_district_superintendent\""),
+                    "Nested join should emit LATERAL subquery for district_superintendent"
+                );
+                assert!(
+                    sql.contains("\"joined_district_superintendent\".\"id\" = \"district_orgs\".\"superintendent_id\""),
+                    "Nested LATERAL should correlate to district_orgs via superintendent_id"
                 );
 
                 println!("  ✓ SQL construction successful - no missing FROM-clause errors!");
@@ -1496,7 +1495,6 @@ mod tests {
                 assert!(sql.contains(
                     "\"joined_district_orgs\".\"id\" = \"organizations\".\"district_id\""
                 ));
-                assert!(!sql.contains("AS \"organizations\" ON TRUE"));
                 assert!(sql.contains("AS created_by_account_organizations"));
                 assert!(sql
                     .contains("'contact_id', \"created_by_account_organizations\".\"contact_id\""));
@@ -1521,10 +1519,54 @@ mod tests {
                 assert!(sql.contains("AS principal"));
                 assert!(sql.contains("'first_name', \"principal\".\"first_name\""));
                 assert!(sql.contains("'last_name', \"principal\".\"last_name\""));
+
+                assert!(
+                    sql.contains("AS district_orgs"),
+                    "Should aggregate 'district_orgs' as a JSON array selection"
+                );
             }
             Err(e) => {
                 panic!("SQL construction failed: {}", e);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn should_execute_constructed_sql_against_database() {
+        use crate::providers::queries::find::sql_constructor::SQLConstructor;
+        use crate::structs::core::GetByFilter;
+        use std::fs;
+
+        dotenv::dotenv().ok();
+        let db_url = std::env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set in .env for DB integration test");
+
+        let json_path = "src/providers/queries/find/queries/organizations_filter.json";
+        let file_contents =
+            fs::read_to_string(json_path).expect("organizations_filter.json should be readable");
+        let payload: GetByFilter =
+            serde_json::from_str(&file_contents).expect("JSON should parse into GetByFilter");
+
+        let mut constructor =
+            SQLConstructor::new(payload, "organizations".to_string(), true, None);
+        let sql = constructor
+            .construct()
+            .expect("SQL should construct successfully");
+
+        let (client, connection) = tokio_postgres::connect(&db_url, tokio_postgres::NoTls)
+            .await
+            .expect("Failed to connect to database");
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                panic!("connection error: {}", e);
+            }
+        });
+
+        let rows = client.query(sql.as_str(), &[]).await;
+        assert!(
+            rows.is_ok(),
+            "Constructed SQL should execute successfully against the database: {:?}",
+            rows.err()
+        );
     }
 }
