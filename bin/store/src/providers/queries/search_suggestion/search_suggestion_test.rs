@@ -162,7 +162,7 @@ mod tests {
             "Serializing field expression with expression: {}",
             field_expr.expression
         );
-        let serialized = serde_json::to_string(&field_expr).unwrap();
+        let serialized = serde_json::to_string(&field_expr).expect("Failed to serialize field expression to JSON");
         println!("Serialized JSON: {}", serialized);
 
         assert!(serialized.contains("test_expression"));
@@ -436,10 +436,10 @@ mod tests {
 
         println!("Verifying result contains users entity");
         assert!(result.contains_key("users"));
-        let users_map = result.get("users").unwrap();
+        let users_map = result.get("users").expect("Expected 'users' entry in result");
         assert!(users_map.contains_key("full_name"));
 
-        let field_expr = users_map.get("full_name").unwrap();
+        let field_expr = users_map.get("full_name").expect("Expected 'full_name' entry under 'users'");
         println!("Generated expression: {}", field_expr.expression);
         // The function uses PostgreSQL || operator, not CONCAT
         assert!(field_expr.expression.contains("COALESCE"));
@@ -479,9 +479,18 @@ mod tests {
         println!("Generating concatenated expressions with custom separator: ' - '");
         let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
-        assert!(result.contains_key("users"));
-        let users_map = result.get("users").unwrap();
-        let field_expr = users_map.get("full_name").unwrap();
+        assert!(
+            result.contains_key("users"),
+            "Expected result to contain key 'users'"
+        );
+
+        let users_map = result
+            .get("users")
+            .expect("Expected 'users' entry in result");
+
+        let field_expr = users_map
+            .get("full_name")
+            .expect("Expected 'full_name' entry under 'users'");
         println!(
             "Generated expression with separator: {}",
             field_expr.expression
@@ -802,11 +811,11 @@ mod tests {
         let result = generate_concatenated_expressions(concatenate_fields, None, None, "HH24:MI");
 
         assert!(result.contains_key("users"));
-        let users_map = result.get("users").unwrap();
+        let users_map = result.get("users").expect("Expected 'users' entry in result");
         assert!(users_map.contains_key("full_name"));
         assert!(users_map.contains_key("address"));
 
-        let address_expr = users_map.get("address").unwrap();
+        let address_expr = users_map.get("address").expect("Expected 'address' entry under 'users'");
         println!(
             "Address expression fields count: {}",
             address_expr.fields.len()
@@ -843,9 +852,9 @@ mod tests {
         assert!(result.contains_key("contacts"));
         let expr = result
             .get("contacts")
-            .unwrap()
+            .expect("Expected 'contacts' entry in result")
             .get("created_date_time")
-            .unwrap();
+            .expect("Expected 'created_date_time' entry under 'contacts'");
         assert!(
             expr.expression.contains("AT TIME ZONE 'Europe/Berlin'"),
             "Concatenated expression should contain AT TIME ZONE. Got: {}",
@@ -879,9 +888,9 @@ mod tests {
         assert!(result.contains_key("contacts"));
         let expr = result
             .get("contacts")
-            .unwrap()
+            .expect("Expected 'contacts' entry in result")
             .get("created_date_time")
-            .unwrap();
+            .expect("Expected 'created_date_time' entry under 'contacts'");
         assert!(
             expr.expression.contains("TO_CHAR"),
             "Expression should still contain TO_CHAR for date/time formatting"
@@ -917,8 +926,8 @@ mod tests {
         assert!(result.contains_key("users"));
         assert!(result.contains_key("profiles"));
 
-        let users_map = result.get("users").unwrap();
-        let profiles_map = result.get("profiles").unwrap();
+        let users_map = result.get("users").expect("Expected 'users' entry in result");
+        let profiles_map = result.get("profiles").expect("Expected 'profiles' entry in result");
 
         println!("Verifying users entity has full_name field");
         assert!(users_map.contains_key("full_name"));
