@@ -489,7 +489,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                         ),
                         count: 0,
                         data: vec![],
-                    }; 
+                    };
                 }
             }
         }
@@ -522,7 +522,9 @@ impl<'a, 'b> Validation<'a, 'b> {
                     })
                     .map(|join| {
                         // Return the entity name (not alias) that this entity references
-                        if join.field_relation.to.entity == *entity || join.field_relation.to.alias.as_ref() == Some(entity) {
+                        if join.field_relation.to.entity == *entity
+                            || join.field_relation.to.alias.as_ref() == Some(entity)
+                        {
                             join.field_relation.to.entity.clone()
                         } else {
                             join.field_relation.from.entity.clone()
@@ -699,10 +701,10 @@ impl<'a, 'b> Validation<'a, 'b> {
             if join.nested && join_index > 0 {
                 // Build a collection of all valid entities and aliases from previous joins
                 let mut valid_entities = std::collections::HashSet::new();
-                
+
                 // Add main table
                 valid_entities.insert(self.table.clone());
-                
+
                 // Add all entities and aliases from previous joins
                 for prev_join in &self.request_body.joins[0..join_index] {
                     // Add "to" endpoint entity and alias
@@ -710,14 +712,14 @@ impl<'a, 'b> Validation<'a, 'b> {
                     if let Some(alias) = &prev_join.field_relation.to.alias {
                         valid_entities.insert(alias.clone());
                     }
-                    
+
                     // Add "from" endpoint entity and alias (for self-joins)
                     valid_entities.insert(prev_join.field_relation.from.entity.clone());
                     if let Some(alias) = &prev_join.field_relation.from.alias {
                         valid_entities.insert(alias.clone());
                     }
                 }
-                
+
                 // Check if the from entity is valid
                 if !valid_entities.contains(from_entity) {
                     return ApiResponse {

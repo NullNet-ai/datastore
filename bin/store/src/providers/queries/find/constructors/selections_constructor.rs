@@ -318,7 +318,11 @@ impl SelectionsConstructor {
                 table,
                 get_field_with_parse_as,
             );
-            format!("JSONB_BUILD_OBJECT({}) AS {}", field_pairs.join(", "), table)
+            format!(
+                "JSONB_BUILD_OBJECT({}) AS {}",
+                field_pairs.join(", "),
+                table
+            )
         } else {
             println!("Using regular pluck fields: {:?}", request_body.get_pluck());
             for field in request_body.get_pluck().iter() {
@@ -400,9 +404,7 @@ impl SelectionsConstructor {
         }
 
         let mut added_entity_selection = std::collections::HashSet::new();
-        if request_body
-            .get_pluck_object()
-            .contains_key(table)
+        if request_body.get_pluck_object().contains_key(table)
             && !added_entity_selection.contains(table)
         {
             join_selections.push(Self::construct_pluck_with_object_for_main(
@@ -738,7 +740,7 @@ impl SelectionsConstructor {
         let is_nested = join.nested;
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
-        
+
         // For nested joins, we need to build the correct join condition
         if is_nested {
             if let Some(prev_join) = previous_join {
@@ -758,7 +760,7 @@ impl SelectionsConstructor {
                         .as_deref()
                         .unwrap_or(&prev_join.field_relation.to.entity)
                 };
-                
+
                 // The join condition should be: current_to_field = previous_from_field
                 // where current_to_field is the field in the current table being joined TO
                 // and previous_from_field is the field in the previous result that we're joining FROM

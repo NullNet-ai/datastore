@@ -295,8 +295,6 @@ impl Id {
     }
 }
 
-
-
 #[derive(Clone, Debug)]
 #[allow(warnings)]
 pub struct Auth {
@@ -807,8 +805,6 @@ pub enum FilterOperator {
     #[serde(rename = "has_no_value")]
     HasNoValue,
 }
-
-
 
 // #[derive(Deserialize)]
 // pub struct UploadFile {
