@@ -3,6 +3,7 @@
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+#[allow(dead_code)]
 pub struct Timestamp {
     /// Seconds since epoch
     #[prost(int64, tag = "1")]
