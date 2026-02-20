@@ -17,6 +17,7 @@ use crate::{
 use serde_json::Value;
 
 use std::collections::HashMap;
+use crate::config::core::EnvConfig;
 // Trait to define common interface for both GetByFilter and AggregationFilter
 pub trait QueryFilter {
     fn get_advance_filters(&self) -> &[FilterCriteria];
@@ -610,7 +611,10 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         // For non-root access, check organization constraints
         let organization_id = match &self.organization_id {
             Some(id) => format!("'{}'", id),
-            None => return Err("Organization ID is required".to_string()),
+            None => {
+                let default_id = EnvConfig::default().default_organization_id;
+                format!("'{}'", default_id)
+            }
         };
 
         Ok(format!(

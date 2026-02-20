@@ -461,11 +461,19 @@ impl<'a, 'b> Validation<'a, 'b> {
 
             // Add join entities and their aliases
             for join in &self.request_body.joins {
-                // Add the target entity
+                // Add the target entity (to endpoint)
                 valid_entities.insert(join.field_relation.to.entity.clone());
 
-                // Add the alias if it exists
+                // Add the alias if it exists (to endpoint)
                 if let Some(alias) = &join.field_relation.to.alias {
+                    valid_entities.insert(alias.clone());
+                }
+
+                // Add the source entity (from endpoint)
+                valid_entities.insert(join.field_relation.from.entity.clone());
+
+                // Add the alias if it exists (from endpoint)
+                if let Some(alias) = &join.field_relation.from.alias {
                     valid_entities.insert(alias.clone());
                 }
             }
@@ -481,7 +489,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                         ),
                         count: 0,
                         data: vec![],
-                    };
+                    }; 
                 }
             }
         }
@@ -509,8 +517,17 @@ impl<'a, 'b> Validation<'a, 'b> {
                     .find(|join| {
                         join.field_relation.to.entity == *entity
                             || join.field_relation.to.alias.as_ref() == Some(entity)
+                            || join.field_relation.from.entity == *entity
+                            || join.field_relation.from.alias.as_ref() == Some(entity)
                     })
-                    .map(|join| join.field_relation.to.entity.clone());
+                    .map(|join| {
+                        // Return the entity name (not alias) that this entity references
+                        if join.field_relation.to.entity == *entity || join.field_relation.to.alias.as_ref() == Some(entity) {
+                            join.field_relation.to.entity.clone()
+                        } else {
+                            join.field_relation.from.entity.clone()
+                        }
+                    });
 
                 match join_entity {
                     Some(table) => table,
@@ -649,28 +666,8 @@ impl<'a, 'b> Validation<'a, 'b> {
             // Validate field relations exist
             let from_entity = &join.field_relation.from.entity;
 
-            // For nested joins, validate that the from entity matches the previous join's to entity or alias
-            if join.nested && join_index > 0 {
-                let previous_join = &self.request_body.joins[join_index - 1];
-                let expected_from_entity =
-                    if let Some(alias) = &previous_join.field_relation.to.alias {
-                        alias
-                    } else {
-                        &previous_join.field_relation.to.entity
-                    };
-
-                if from_entity != expected_from_entity {
-                    return ApiResponse {
-                        success: false,
-                        message: format!(
-                            "joins[{}] > field_relation > from > entity > Nested join from entity '{}' must match previous join's to entity or alias '{}'",
-                            join_index, from_entity, expected_from_entity
-                        ),
-                        count: 0,
-                        data: vec![],
-                    };
-                }
-            } else if join.nested && join_index == 0 {
+            // Validate that nested joins are not the first join
+            if join.nested && join_index == 0 {
                 return ApiResponse {
                     success: false,
                     message: format!(
@@ -682,34 +679,56 @@ impl<'a, 'b> Validation<'a, 'b> {
                 };
             }
 
-            // Ensure the join to and from aliases must be present in pluck object
-            if join_type == "LEFT".to_string() {
-                if let Some(alias) = &join.field_relation.from.alias {
-                    if !self.request_body.pluck_group_object.contains_key(alias) {
-                        return ApiResponse {
-                                success: false,
-                                message: format!(
-                                    "joins[{}] > field_relation > from > alias > Alias '{}' must be present in pluck_group_object",
-                                    join_index, alias
-                                ),
-                                count: 0,
-                                data: vec![],
-                            };
+            // Validate that consecutive nested joins are not allowed
+            if join.nested && join_index > 0 {
+                let previous_join = &self.request_body.joins[join_index - 1];
+                if previous_join.nested {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "joins[{}] > nested > Consecutive nested joins are not allowed. Previous join at index {} is also nested",
+                            join_index, join_index - 1
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
+                }
+            }
+
+            // For nested joins, validate that the from entity is a valid previously defined entity or alias
+            if join.nested && join_index > 0 {
+                // Build a collection of all valid entities and aliases from previous joins
+                let mut valid_entities = std::collections::HashSet::new();
+                
+                // Add main table
+                valid_entities.insert(self.table.clone());
+                
+                // Add all entities and aliases from previous joins
+                for prev_join in &self.request_body.joins[0..join_index] {
+                    // Add "to" endpoint entity and alias
+                    valid_entities.insert(prev_join.field_relation.to.entity.clone());
+                    if let Some(alias) = &prev_join.field_relation.to.alias {
+                        valid_entities.insert(alias.clone());
+                    }
+                    
+                    // Add "from" endpoint entity and alias (for self-joins)
+                    valid_entities.insert(prev_join.field_relation.from.entity.clone());
+                    if let Some(alias) = &prev_join.field_relation.from.alias {
+                        valid_entities.insert(alias.clone());
                     }
                 }
-            } else if join_type == "SELF".to_string() {
-                if let Some(alias) = &join.field_relation.from.alias {
-                    if !self.request_body.pluck_group_object.contains_key(alias) {
-                        return ApiResponse {
-                            success: false,
-                            message: format!(
-                                "joins[{}] > field_relation > from > alias > Alias '{}' must be present in pluck_group_object",
-                                join_index, alias
-                            ),
-                            count: 0,
-                            data: vec![],
-                        };
-                    }
+                
+                // Check if the from entity is valid
+                if !valid_entities.contains(from_entity) {
+                    return ApiResponse {
+                        success: false,
+                        message: format!(
+                            "joins[{}] > field_relation > from > entity > Entity '{}' is not a valid previously defined entity or alias. Available entities: {:?}",
+                            join_index, from_entity, valid_entities
+                        ),
+                        count: 0,
+                        data: vec![],
+                    };
                 }
             }
 

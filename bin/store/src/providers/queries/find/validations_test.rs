@@ -865,4 +865,692 @@ mod tests {
         );
         assert!(result.success);
     }
+
+    /// Tests pluck_object validation with entities that are aliases in joins
+    /// This reproduces the issue where district_orgs (alias) should be valid
+    #[test]
+    fn should_validate_pluck_object_with_join_alias_successfully() {
+        println!("Testing pluck_object validation with join alias");
+
+        let mut request_body = create_default_get_by_filter();
+        
+        // Add pluck_object with district_orgs (which is an alias in the join)
+        request_body.pluck_object = std::collections::HashMap::new();
+        request_body.pluck_object.insert("district_orgs".to_string(), vec!["id".to_string(), "name".to_string()]);
+        
+        // Add the self-join that creates the district_orgs alias
+        request_body.joins = vec![Join {
+            r#type: "SELF".to_string(),
+            field_relation: FieldRelation {
+                from: RelationEndpoint {
+                    entity: "organizations".to_string(),
+                    field: "district_id".to_string(),
+                    alias: Some("district_orgs".to_string()), // This is the alias
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                to: RelationEndpoint {
+                    entity: "organizations".to_string(),
+                    field: "id".to_string(),
+                    alias: None,
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        }];
+        
+        let table = "organizations".to_string();
+
+        println!("Creating validation for table: {} with district_orgs alias in pluck_object", table);
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_pluck_object();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_pluck_object_with_join_alias_successfully",
+            checker
+        );
+        
+        // This should pass, but currently fails due to the validation bug
+        if !result.success {
+            println!("BUG REPRODUCED: {}", result.message);
+        }
+        
+        // The validation should now pass with the fix
+        assert!(result.success, "Expected validation to pass, but it failed: {}", result.message);
+    }
+
+    /// Tests pluck_object validation with the exact scenario from valid_filter_organizations.json
+    #[test]
+    fn should_validate_valid_filter_organizations_scenario() {
+        println!("Testing pluck_object validation with valid_filter_organizations.json scenario");
+
+        let mut request_body = create_default_get_by_filter();
+        
+        // Recreate the exact scenario from valid_filter_organizations.json
+        request_body.pluck_object = std::collections::HashMap::new();
+        request_body.pluck_object.insert("created_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
+        request_body.pluck_object.insert("created_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
+        request_body.pluck_object.insert("updated_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
+        request_body.pluck_object.insert("updated_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
+        request_body.pluck_object.insert("organizations".to_string(), vec!["id".to_string(), "code".to_string(), "name".to_string()]);
+        request_body.pluck_object.insert("district_orgs".to_string(), vec!["id".to_string(), "name".to_string()]);
+        
+        // Add the joins from the JSON file
+        request_body.joins = vec![
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "created_by".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "account_organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("created_by_account_organizations".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "created_by_account_organizations".to_string(),
+                        field: "contact_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("created_by".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "updated_by".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "account_organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("updated_by_account_organizations".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "updated_by_account_organizations".to_string(),
+                        field: "contact_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("updated_by".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+            Join {
+                r#type: "SELF".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "district_id".to_string(),
+                        alias: Some("district_orgs".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+        ];
+        
+        let table = "organizations".to_string();
+
+        println!("Creating validation for organizations table with complex joins");
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_pluck_object();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_valid_filter_organizations_scenario",
+            checker
+        );
+        
+        // This should pass, but currently fails due to the validation bug
+        if !result.success {
+            println!("BUG REPRODUCED: {}", result.message);
+        }
+        
+        // The validation should now pass with the fix
+        assert!(result.success, "Expected validation to pass, but it failed: {}", result.message);
+    }
+
+    /// Tests nested join validation where alias from previous join becomes entity in next join
+    /// This reproduces the district_superintendent scenario where district_orgs alias
+    /// from self-join becomes the entity in the nested left join
+    #[test]
+    fn should_validate_nested_join_alias_validation() {
+        println!("Testing nested join validation with district_superintendent scenario");
+
+        let mut request_body = create_default_get_by_filter();
+        
+        // Add pluck_object with district_superintendent (which uses district_orgs as entity)
+        request_body.pluck_object = std::collections::HashMap::new();
+        request_body.pluck_object.insert("district_superintendent".to_string(), vec!["first_name".to_string(), "last_name".to_string()]);
+        
+        // Add the self-join that creates the district_orgs alias
+        // Then add the nested left join that uses district_orgs as entity
+        request_body.joins = vec![
+            Join {
+                r#type: "SELF".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "district_id".to_string(),
+                        alias: Some("district_orgs".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "district_orgs".to_string(), // This is the alias from previous join
+                        field: "superintendent_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("district_superintendent".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+        ];
+        
+        let table = "organizations".to_string();
+
+        println!("Creating validation for nested joins with district_orgs -> district_superintendent");
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_pluck_object();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_nested_join_alias_validation",
+            checker
+        );
+        
+        if !result.success {
+            println!("NESTED JOIN BUG REPRODUCED: {}", result.message);
+        }
+        
+        // This should pass, but might fail if validation doesn't handle nested joins properly
+        assert!(result.success, "Expected nested join validation to pass, but it failed: {}", result.message);
+    }
+
+    /// Tests join validation with the exact scenario from valid_filter_organizations.json
+    /// This reproduces the district_orgs self-join followed by district_superintendent nested join
+    #[test]
+    fn should_validate_joins_with_district_orgs_self_join_scenario() {
+        println!("Testing join validation with district_orgs self-join scenario");
+
+        let mut request_body = create_default_get_by_filter();
+        
+        // Recreate the exact join scenario from valid_filter_organizations.json
+        request_body.joins = vec![
+            // Self-join that creates district_orgs alias
+            Join {
+                r#type: "SELF".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "district_id".to_string(),
+                        alias: Some("district_orgs".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            // Nested left join that uses district_orgs as entity
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "district_orgs".to_string(), // This should be valid now
+                        field: "superintendent_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("district_superintendent".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+        ];
+        
+        let table = "organizations".to_string();
+
+        println!("Creating validation for joins with district_orgs self-join");
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_joins();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_joins_with_district_orgs_self_join_scenario",
+            checker
+        );
+        
+        if !result.success {
+            println!("JOIN VALIDATION BUG REPRODUCED: {}", result.message);
+        }
+        
+        // This should pass with the fix
+        assert!(result.success, "Expected join validation to pass, but it failed: {}", result.message);
+    }
+
+    /// Tests mixed join patterns: join → nestedJoin → join → nestedJoin
+    /// This should be valid according to the user's question
+    #[test]
+    fn should_validate_mixed_join_patterns() {
+        println!("Testing mixed join patterns: join → nestedJoin → join → nestedJoin");
+
+        let mut request_body = create_default_get_by_filter();
+        
+        // Create a mixed join pattern
+        request_body.joins = vec![
+            // First join (not nested)
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "organization_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("org1".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            // Second join (nested)
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "org1".to_string(), // Reference the alias from previous join
+                        field: "district_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("district_orgs".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+            // Third join (not nested)
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "superintendent_id".to_string(),
+                        alias: Some("super".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            // Fourth join (nested)
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "super".to_string(), // Reference the alias from previous join
+                        field: "organization_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("super_org".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+        ];
+        
+        let table = "contacts".to_string();
+
+        println!("Creating validation for mixed join patterns");
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_joins();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_validate_mixed_join_patterns",
+            checker
+        );
+        
+        if !result.success {
+            println!("MIXED JOIN PATTERN BUG REPRODUCED: {}", result.message);
+        }
+        
+        // This should pass - mixed join patterns should be valid
+        assert!(result.success, "Expected mixed join patterns to be valid, but validation failed: {}", result.message);
+    }
+
+    /// Tests that consecutive nested joins are rejected
+    /// Pattern: join() .nestedJoin() .nestedJoin() .join() .nestedJoin() .nestedJoin()
+    /// This should be invalid according to the user's requirement
+    #[test]
+    fn should_reject_consecutive_nested_joins() {
+        println!("Testing that consecutive nested joins are rejected");
+
+        let mut request_body = create_default_get_by_filter();
+        
+        // Create a pattern with consecutive nested joins (which should be invalid)
+        request_body.joins = vec![
+            // First join (not nested)
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "organization_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("org1".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: false,
+            },
+            // Second join (nested) - this should be valid
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "org1".to_string(),
+                        field: "district_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "organizations".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("district_orgs".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true,
+            },
+            // Third join (nested) - this should be invalid (consecutive nested)
+            Join {
+                r#type: "LEFT".to_string(),
+                field_relation: FieldRelation {
+                    from: RelationEndpoint {
+                        entity: "district_orgs".to_string(),
+                        field: "superintendent_id".to_string(),
+                        alias: None,
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                    to: RelationEndpoint {
+                        entity: "contacts".to_string(),
+                        field: "id".to_string(),
+                        alias: Some("super".to_string()),
+                        order_direction: None,
+                        order_by: None,
+                        limit: None,
+                        offset: None,
+                        filters: vec![],
+                    },
+                },
+                nested: true, // This should be rejected
+            },
+        ];
+        
+        let table = "contacts".to_string();
+
+        println!("Creating validation for consecutive nested joins (should be rejected)");
+        let validation = Validation::new(&request_body, &table);
+
+        let result = validation.validate_joins();
+
+        println!("Validation result - Success: {}", result.success);
+        println!("Validation message: {}", result.message);
+
+        let checker = if result.success { "✓" } else { "✗" };
+        println!(
+            "{} Test completed: should_reject_consecutive_nested_joins",
+            checker
+        );
+        
+        if result.success {
+            println!("CONSECUTIVE NESTED JOINS NOT REJECTED - this might be a bug!");
+        } else {
+            println!("Consecutive nested joins properly rejected: {}", result.message);
+        }
+        
+        // This should fail - consecutive nested joins should be rejected
+        assert!(!result.success, "Expected consecutive nested joins to be rejected, but validation passed");
+    }
 }

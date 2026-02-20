@@ -21,6 +21,11 @@ impl JoinsConstructor {
 
             let joins = request_body.get_joins();
             for (index, join) in joins.iter().enumerate() {
+                // Skip emitting separate LATERAL clauses for nested joins.
+                // Nested relations are handled inside selections via JSONB aggregation referencing the previous alias.
+                if join.nested {
+                    continue;
+                }
                 match join.r#type.as_str() {
                     "left" => {
                         let join_clause = Self::build_left_join_lateral(
@@ -269,7 +274,12 @@ impl JoinsConstructor {
         };
 
         let to_alias = if is_self_join {
-            join.field_relation.to.alias.as_deref().unwrap_or(table)
+            // For self joins, prefer the alias specified on the 'from' side (JSON places alias there)
+            if let Some(from_alias) = &join.field_relation.from.alias {
+                from_alias.as_str()
+            } else {
+                join.field_relation.to.alias.as_deref().unwrap_or(table)
+            }
         } else {
             join.field_relation.to.alias.as_deref().unwrap_or(to_entity)
         };
@@ -329,8 +339,48 @@ impl JoinsConstructor {
         }
 
         // Determine the correct from table reference for the join condition
-        let from_table_ref = if let Some(alias) = &join.field_relation.from.alias {
-            alias.as_str()
+        // For self joins, always reference the main table (cannot reference the join alias inside its own lateral subquery)
+        let from_table_ref = if is_self_join {
+            table
+        } else if is_nested {
+            // For nested joins, we need to look at the previous join's alias
+            // Find the index of the current join to get the previous one
+            let joins = request_body.get_joins();
+            if let Some(current_index) = joins.iter().position(|j| std::ptr::eq(j, join)) {
+                if current_index > 0 {
+                    let prev_join = &joins[current_index - 1];
+                    prev_join
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(prev_join.field_relation.to.entity.as_str())
+                } else {
+                    // Fallback to the logic for non-nested joins
+                    let mut found_alias = None;
+                    for j in joins {
+                        if let Some(to_alias) = &j.field_relation.to.alias {
+                            if to_alias == from_entity {
+                                found_alias = Some(to_alias.as_str());
+                                break;
+                            }
+                        }
+                    }
+                    found_alias.unwrap_or(from_entity)
+                }
+            } else {
+                // Fallback to the logic for non-nested joins
+                let mut found_alias = None;
+                for j in joins {
+                    if let Some(to_alias) = &j.field_relation.to.alias {
+                        if to_alias == from_entity {
+                            found_alias = Some(to_alias.as_str());
+                            break;
+                        }
+                    }
+                }
+                found_alias.unwrap_or(from_entity)
+            }
         } else {
             // Check if from_entity matches any alias from previous joins
             let joins = request_body.get_joins();
@@ -343,7 +393,7 @@ impl JoinsConstructor {
                     }
                 }
             }
-            found_alias.unwrap_or(if is_self_join { table } else { from_entity })
+            found_alias.unwrap_or(from_entity)
         };
 
         format!(

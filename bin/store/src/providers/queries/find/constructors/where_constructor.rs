@@ -631,21 +631,29 @@ impl<'a> WhereConstructor<'a> {
                     "ILIKE"
                 };
 
-                if is_plural {
-                    return format!(
-                        "{}::text {} '%{}%'",
-                        field_with_table,
-                        like_op,
-                        values_str[0].trim_matches('\'')
-                    );
+                if values_str.len() > 1 {
+                    let conditions: Vec<String> = values_str
+                        .iter()
+                        .map(|v| {
+                            let clean = v.trim_matches('\'');
+                            if is_plural {
+                                format!("{}::text {} '%{}%'", field_with_table, like_op, clean)
+                            } else {
+                                format!("{} {} '%{}%'", field_with_table, like_op, clean)
+                            }
+                        })
+                        .collect();
+                    return format!("({})", conditions.join(" OR "));
+                } else {
+                    let clean = values_str[0].trim_matches('\'');
+                    if is_plural {
+                        return format!(
+                            "{}::text {} '%{}%'",
+                            field_with_table, like_op, clean
+                        );
+                    }
+                    format!("{} {} '%{}%'", field_with_table, like_op, clean)
                 }
-
-                format!(
-                    "{} {} '%{}%'",
-                    field_with_table,
-                    like_op,
-                    values_str[0].trim_matches('\'')
-                )
             }
             FilterOperator::NotContains => {
                 let like_op = if case_sensitive.unwrap_or(true) {
@@ -654,21 +662,29 @@ impl<'a> WhereConstructor<'a> {
                     "NOT ILIKE"
                 };
 
-                if is_plural {
-                    return format!(
-                        "{}::text {} '%{}%'",
-                        field_with_table,
-                        like_op,
-                        values_str[0].trim_matches('\'')
-                    );
+                if values_str.len() > 1 {
+                    let conditions: Vec<String> = values_str
+                        .iter()
+                        .map(|v| {
+                            let clean = v.trim_matches('\'');
+                            if is_plural {
+                                format!("{}::text {} '%{}%'", field_with_table, like_op, clean)
+                            } else {
+                                format!("{} {} '%{}%'", field_with_table, like_op, clean)
+                            }
+                        })
+                        .collect();
+                    return format!("({})", conditions.join(" AND "));
+                } else {
+                    let clean = values_str[0].trim_matches('\'');
+                    if is_plural {
+                        return format!(
+                            "{}::text {} '%{}%'",
+                            field_with_table, like_op, clean
+                        );
+                    }
+                    format!("{} {} '%{}%'", field_with_table, like_op, clean)
                 }
-
-                format!(
-                    "{} {} '%{}%'",
-                    field_with_table,
-                    like_op,
-                    values_str[0].trim_matches('\'')
-                )
             }
             FilterOperator::IsBetween => {
                 if values_str.len() >= 2 {
@@ -698,11 +714,29 @@ impl<'a> WhereConstructor<'a> {
                 } else {
                     "ILIKE"
                 };
-                let pattern = self.build_like_pattern(&values_str[0], match_pattern);
-                if is_plural {
-                    return format!("{}::text {} {}", field_with_table, like_op, pattern);
+                if values_str.len() > 1 {
+                    let patterns: Vec<String> = values_str
+                        .iter()
+                        .map(|v| self.build_like_pattern(v, match_pattern))
+                        .collect();
+                    let conditions: Vec<String> = patterns
+                        .iter()
+                        .map(|p| {
+                            if is_plural {
+                                format!("{}::text {} {}", field_with_table, like_op, p)
+                            } else {
+                                format!("{} {} {}", field_with_table, like_op, p)
+                            }
+                        })
+                        .collect();
+                    return format!("({})", conditions.join(" OR "));
+                } else {
+                    let pattern = self.build_like_pattern(&values_str[0], match_pattern);
+                    if is_plural {
+                        return format!("{}::text {} {}", field_with_table, like_op, pattern);
+                    }
+                    format!("{} {} {}", field_with_table, like_op, pattern)
                 }
-                format!("{} {} {}", field_with_table, like_op, pattern)
             }
             FilterOperator::HasNoValue => {
                 // Check if field is an array by looking for array indicators
