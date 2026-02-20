@@ -1,0 +1,169 @@
+{
+    "success": true,
+    "message": "Filter operation completed for table: organizations",
+    "count": 4,
+    "data": [
+        {
+            "categories": null,
+            "city": null,
+            "code": null,
+            "county": null,
+            "created_by": null,
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "created_date": "",
+            "created_date_time": "02/19/2026 05:31",
+            "created_time": null,
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": null,
+            "name": null,
+            "organizations": [],
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": null,
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": null,
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "updated_date": "",
+            "updated_date_time": "02/19/2026 05:31",
+            "updated_time": null
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "100002",
+            "county": null,
+            "created_by": "01KHT4WJ67JSDMBMMSWD7SYPD1",
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "created_date": "02/19/2026",
+            "created_date_time": "02/19/2026 05:32",
+            "created_time": "05:31",
+            "department_id": "01KHT60Z1BG6T3HAAVBRSKSWWH",
+            "district_id": null,
+            "district_identifier": "110141003",
+            "district_superintendent": [],
+            "id": "01KHT62RNSN8HA1TXJNB2E19AR",
+            "name": "Bald Eagle Area School District",
+            "organizations": [],
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "Pennsylvania",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": "01KHT4WJ67JSDMBMMSWD7SYPD1",
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "updated_date": "02/19/2026",
+            "updated_date_time": "02/19/2026 05:33",
+            "updated_time": "05:31"
+        },
+        {
+            "categories": null,
+            "city": null,
+            "code": null,
+            "county": null,
+            "created_by": null,
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "created_date": "",
+            "created_date_time": "02/19/2026 05:30",
+            "created_time": null,
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": null,
+            "name": null,
+            "organizations": [],
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": null,
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": null,
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "updated_date": "",
+            "updated_date_time": "02/19/2026 05:30",
+            "updated_time": null
+        },
+        {
+            "categories": null,
+            "city": null,
+            "code": null,
+            "county": null,
+            "created_by": null,
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "created_date": "",
+            "created_date_time": "02/20/2026 01:17",
+            "created_time": null,
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": null,
+            "name": null,
+            "organizations": [],
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": null,
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": null,
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01KHQB809JVN7FTK0H9WHCTDTC",
+                    "id": "01KHT4WJ67JSDMBMMSWD7SYPD1"
+                }
+            ],
+            "updated_date": "",
+            "updated_date_time": "02/20/2026 01:18",
+            "updated_time": null
+        }
+    ]
+}

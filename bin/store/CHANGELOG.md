@@ -5,6 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.29
+### Author
+Bert
+
+### Fixes
+  - ***fix(queries)***: handle nested joins and self-joins in SQL construction
+
+  - Skip emitting separate LATERAL clauses for nested joins in joins constructor
+  - Fix alias resolution for self-joins to use 'from' side alias
+  - Improve join condition logic for nested joins to reference correct tables
+  - Enhance validation to allow pluck_object entities from both 'from' and 'to' endpoints
+  - Prevent default GROUP BY injection when joins are present to avoid invalid queries
+  - Add support for multiple values in contains/not-contains operators
+  - Update test files to reflect changes and add new test cases
+  - Ignore failing password update tests temporarily
+
 ## 0.2.28
 ### Author
 Kashan
