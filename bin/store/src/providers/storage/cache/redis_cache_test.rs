@@ -806,38 +806,6 @@ mod redis_cache_tests {
 
     #[test]
     #[ignore]
-    fn test_serialization_error_handling() {
-        // Test with a value that might fail serialization
-        #[derive(Debug, Clone, PartialEq)]
-        struct UnserializableValue {
-            _data: *const u8, // Raw pointers can't be serialized
-        }
-
-        impl Serialize for UnserializableValue {
-            fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: serde::Serializer,
-            {
-                Err(serde::ser::Error::custom("Cannot serialize raw pointer"))
-            }
-        }
-
-        impl<'de> Deserialize<'de> for UnserializableValue {
-            fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                Err(serde::de::Error::custom("Cannot deserialize raw pointer"))
-            }
-        }
-
-        // This test verifies that the cache handles serialization errors gracefully
-        // The actual implementation should not panic on serialization failure
-        println!("Serialization error handling test completed");
-    }
-
-    #[test]
-    #[ignore]
     fn test_basic_cache_operations() {
         let cache = match create_test_redis_cache_with_db(0) {
             Some(cache) => cache,

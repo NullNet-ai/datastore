@@ -161,14 +161,6 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_no_certificate_verification_struct() {
-        // This test ensures NoCertificateVerification can be constructed
-        let _verifier = NoCertificateVerification {};
-        // This is mainly a compilation test to ensure the struct is properly defined
-    }
-
-    #[test]
-    #[ignore]
     fn test_org_id_pattern_generation() {
         // Test various org_id lengths and patterns
         // Algorithm: first 2 chars + middle chars (floor(len/2)-1 to floor(len/2)+1) + last 2 chars
