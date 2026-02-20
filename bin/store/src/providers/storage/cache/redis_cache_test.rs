@@ -809,7 +809,6 @@ mod redis_cache_tests {
     fn test_serialization_error_handling() {
         // Test with a value that might fail serialization
         #[derive(Debug, Clone, PartialEq)]
-        #[allow(dead_code)]
         struct UnserializableValue {
             _data: *const u8, // Raw pointers can't be serialized
         }

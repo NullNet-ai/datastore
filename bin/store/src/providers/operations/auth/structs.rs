@@ -1,6 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub message: String,
+    pub token: Option<String>,
+    pub account_organization_id: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     pub id: String,

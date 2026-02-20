@@ -2,8 +2,8 @@
 mod tests {
     use crate::providers::queries::find::sql_constructor::{QueryFilter, SQLConstructor};
     use crate::structs::core::{
-        ConcatenateField, FieldRelation, FilterCriteria, FilterOperator, GetByFilter,
-        GroupAdvanceFilter, GroupBy, Join, LogicalOperator, RelationEndpoint, SortOption,
+        ConcatenateField, FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, GroupBy,
+        Join, LogicalOperator, SortOption, FieldRelation, RelationEndpoint,
     };
     use serde_json::json;
     use std::collections::HashMap;
@@ -1008,107 +1008,31 @@ mod tests {
 
         // Set up pluck_object
         let mut pluck_object = HashMap::new();
-        pluck_object.insert(
-            "created_by_account_organizations".to_string(),
-            vec!["id".to_string(), "contact_id".to_string()],
-        );
-        pluck_object.insert(
-            "created_by".to_string(),
-            vec![
-                "id".to_string(),
-                "first_name".to_string(),
-                "last_name".to_string(),
-            ],
-        );
-        pluck_object.insert(
-            "updated_by_account_organizations".to_string(),
-            vec!["id".to_string(), "contact_id".to_string()],
-        );
-        pluck_object.insert(
-            "updated_by".to_string(),
-            vec![
-                "id".to_string(),
-                "first_name".to_string(),
-                "last_name".to_string(),
-            ],
-        );
-        pluck_object.insert(
-            "organizations".to_string(),
-            vec![
-                "id".to_string(),
-                "code".to_string(),
-                "name".to_string(),
-                "categories".to_string(),
-                "district_id".to_string(),
-                "department_id".to_string(),
-                "city".to_string(),
-                "county".to_string(),
-                "state".to_string(),
-                "school_identifier".to_string(),
-                "district_identifier".to_string(),
-                "status".to_string(),
-                "superintendent_id".to_string(),
-                "principal_id".to_string(),
-                "created_date".to_string(),
-                "created_time".to_string(),
-                "created_by".to_string(),
-                "updated_date".to_string(),
-                "updated_time".to_string(),
-                "updated_by".to_string(),
-            ],
-        );
-        pluck_object.insert(
-            "district_orgs".to_string(),
-            vec![
-                "id".to_string(),
-                "code".to_string(),
-                "name".to_string(),
-                "categories".to_string(),
-                "district_id".to_string(),
-                "department_id".to_string(),
-                "city".to_string(),
-                "county".to_string(),
-                "state".to_string(),
-                "school_identifier".to_string(),
-                "district_identifier".to_string(),
-                "status".to_string(),
-                "created_date".to_string(),
-                "created_time".to_string(),
-                "created_by".to_string(),
-                "updated_date".to_string(),
-                "updated_time".to_string(),
-                "updated_by".to_string(),
-                "superintendent_id".to_string(),
-                "principal_id".to_string(),
-            ],
-        );
-        pluck_object.insert(
-            "district_superintendent".to_string(),
-            vec![
-                "first_name".to_string(),
-                "code".to_string(),
-                "last_name".to_string(),
-                "username".to_string(),
-            ],
-        );
-        pluck_object.insert(
-            "superintendent".to_string(),
-            vec![
-                "first_name".to_string(),
-                "code".to_string(),
-                "last_name".to_string(),
-                "username".to_string(),
-            ],
-        );
-        pluck_object.insert(
-            "principal".to_string(),
-            vec![
-                "first_name".to_string(),
-                "code".to_string(),
-                "last_name".to_string(),
-                "username".to_string(),
-            ],
-        );
+        pluck_object.insert("created_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
+        pluck_object.insert("created_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
+        pluck_object.insert("updated_by_account_organizations".to_string(), vec!["id".to_string(), "contact_id".to_string()]);
+        pluck_object.insert("updated_by".to_string(), vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()]);
+        pluck_object.insert("organizations".to_string(), vec![
+            "id".to_string(), "code".to_string(), "name".to_string(), "categories".to_string(),
+            "district_id".to_string(), "department_id".to_string(), "city".to_string(),
+            "county".to_string(), "state".to_string(), "school_identifier".to_string(),
+            "district_identifier".to_string(), "status".to_string(), "superintendent_id".to_string(),
+            "principal_id".to_string(), "created_date".to_string(), "created_time".to_string(),
+            "created_by".to_string(), "updated_date".to_string(), "updated_time".to_string(),
+            "updated_by".to_string()
+        ]);
+        pluck_object.insert("district_orgs".to_string(), vec![
+            "id".to_string(), "code".to_string(), "name".to_string(), "categories".to_string(),
+            "district_id".to_string(), "department_id".to_string(), "city".to_string(),
+            "county".to_string(), "state".to_string(), "school_identifier".to_string(),
+            "district_identifier".to_string(), "status".to_string(), "created_date".to_string(),
+            "created_time".to_string(), "created_by".to_string(), "updated_date".to_string(),
+            "updated_time".to_string(), "updated_by".to_string(), "superintendent_id".to_string(),
+            "principal_id".to_string()
+        ]);
+        pluck_object.insert("district_superintendent".to_string(), vec!["first_name".to_string(), "code".to_string(), "last_name".to_string(), "username".to_string()]);
+        pluck_object.insert("superintendent".to_string(), vec!["first_name".to_string(), "code".to_string(), "last_name".to_string(), "username".to_string()]);
+        pluck_object.insert("principal".to_string(), vec!["first_name".to_string(), "code".to_string(), "last_name".to_string(), "username".to_string()]);
         mock_filter.pluck_object = pluck_object;
 
         // Set up joins
@@ -1344,9 +1268,7 @@ mod tests {
                 is_search: None,
                 has_group_count: None,
             },
-            FilterCriteria::LogicalOperator {
-                operator: LogicalOperator::And,
-            },
+            FilterCriteria::LogicalOperator { operator: LogicalOperator::And },
             FilterCriteria::Criteria {
                 field: "categories".to_string(),
                 entity: None,
@@ -1420,43 +1342,28 @@ mod tests {
         mock_filter.offset = 0;
 
         println!("  ✓ Constructing SQL for complex organizations query");
-        let mut constructor =
-            SQLConstructor::new(mock_filter, "organizations".to_string(), true, None);
-
+        let mut constructor = SQLConstructor::new(mock_filter, "organizations".to_string(), true, None);
+        
         match constructor.construct() {
             Ok(sql) => {
                 println!("Generated SQL query:");
                 println!("{}", sql);
-
+                
                 // Verify key components
-                assert!(
-                    sql.contains("FROM organizations"),
-                    "Should contain main table"
-                );
-                assert!(
-                    sql.contains("district_orgs"),
-                    "Should contain district_orgs alias"
-                );
-                assert!(
-                    sql.contains("district_superintendent"),
-                    "Should contain district_superintendent alias in selections"
-                );
+                assert!(sql.contains("FROM organizations"), "Should contain main table");
+                assert!(sql.contains("district_orgs"), "Should contain district_orgs alias");
+                assert!(sql.contains("district_superintendent"), "Should contain district_superintendent alias in selections");
                 assert!(sql.contains("LATERAL"), "Should contain LATERAL joins");
-                assert!(
-                    sql.contains("LEFT JOIN LATERAL"),
-                    "Should contain LEFT JOIN LATERAL for non-nested joins"
-                );
-
+                assert!(sql.contains("LEFT JOIN LATERAL"), "Should contain LEFT JOIN LATERAL for non-nested joins");
+                
                 // Check that district_superintendent selection references district_orgs within nested selection (not as separate LATERAL)
                 assert!(sql.contains("FROM contacts district_superintendent"),
                     "Nested selection should query contacts as target and correlate to district_orgs");
                 assert!(sql.contains("\"district_superintendent\".\"id\" = \"district_orgs\".\"superintendent_id\""),
                     "Should reference district_orgs in district_superintendent nested selection condition");
-                assert!(
-                    !sql.contains("joined_district_superintendent"),
-                    "Should not emit separate LATERAL join for nested district_superintendent"
-                );
-
+                assert!(!sql.contains("joined_district_superintendent"),
+                    "Should not emit separate LATERAL join for nested district_superintendent");
+                
                 println!("  ✓ SQL construction successful - no missing FROM-clause errors!");
             }
             Err(e) => {
@@ -1477,7 +1384,8 @@ mod tests {
         let payload: GetByFilter =
             serde_json::from_str(&file_contents).expect("JSON should parse into GetByFilter");
 
-        let mut constructor = SQLConstructor::new(payload, "organizations".to_string(), true, None);
+        let mut constructor =
+            SQLConstructor::new(payload, "organizations".to_string(), true, None);
 
         match constructor.construct() {
             Ok(sql) => {
@@ -1485,28 +1393,22 @@ mod tests {
                 assert!(sql.contains("ORDER BY LOWER(organizations.name) ASC"));
                 assert!(sql.contains("LIMIT 100"));
                 assert!(sql.contains("status"));
-                assert!(
-                    sql.contains("IN ('Active', 'Draft'") || sql.contains("IN ('Active','Draft'")
-                );
+                assert!(sql.contains("IN ('Active', 'Draft'") || sql.contains("IN ('Active','Draft'"));
                 assert!(sql.contains("categories"));
                 assert!(sql.contains("NOT ILIKE '%Personal%'"));
                 assert!(sql.contains("NOT ILIKE '%Root%'"));
                 assert!(sql.contains("NOT ILIKE '%Team%'"));
                 assert!(sql.contains("AS \"district_orgs\" ON TRUE"));
-                assert!(sql.contains(
-                    "\"joined_district_orgs\".\"id\" = \"organizations\".\"district_id\""
-                ));
+                assert!(sql.contains("\"joined_district_orgs\".\"id\" = \"organizations\".\"district_id\""));
                 assert!(!sql.contains("AS \"organizations\" ON TRUE"));
                 assert!(sql.contains("AS created_by_account_organizations"));
-                assert!(sql
-                    .contains("'contact_id', \"created_by_account_organizations\".\"contact_id\""));
+                assert!(sql.contains("'contact_id', \"created_by_account_organizations\".\"contact_id\""));
                 assert!(sql.contains("'id', \"created_by_account_organizations\".\"id\""));
                 assert!(sql.contains("AS created_by"));
                 assert!(sql.contains("'first_name', \"created_by\".\"first_name\""));
                 assert!(sql.contains("'last_name', \"created_by\".\"last_name\""));
                 assert!(sql.contains("AS updated_by_account_organizations"));
-                assert!(sql
-                    .contains("'contact_id', \"updated_by_account_organizations\".\"contact_id\""));
+                assert!(sql.contains("'contact_id', \"updated_by_account_organizations\".\"contact_id\""));
                 assert!(sql.contains("'id', \"updated_by_account_organizations\".\"id\""));
                 assert!(sql.contains("AS updated_by"));
                 assert!(sql.contains("'first_name', \"updated_by\".\"first_name\""));

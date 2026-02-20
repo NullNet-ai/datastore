@@ -115,8 +115,8 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             let header_timezone = self.sql_constructor.timezone.as_deref();
 
             match (header_timezone, body_timezone) {
-                (_, Some(tz)) => Some(tz.to_string()),
-                (Some(tz), None) => Some(tz.to_string()),
+                (Some(tz), _) => Some(tz.to_string()),
+                (None, Some(tz)) => Some(tz.to_string()),
                 (None, None) => None,
             }
         };
@@ -505,7 +505,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
     ) -> String {
         let clean_value = value.trim_matches('\"');
         format!(
-            "SELECT '{}' AS key, {}{} AS value, COUNT(*) AS count,
+            "SELECT '{}' AS key, {} AS value, COUNT(*) AS count,
             CASE
                 WHEN LOWER({}{}) = LOWER('{}') THEN 100  -- Exact match
                 WHEN LOWER({}{}) LIKE LOWER('{} %') THEN 90  -- Starts with '{} '
@@ -521,7 +521,6 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             ",
             field,
             entity_field,
-            parse_string,
             entity_field,
             parse_string,
             clean_value,
