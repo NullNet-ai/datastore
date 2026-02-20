@@ -292,22 +292,21 @@ impl SelectionsConstructor {
             join_aliases.insert(alias.to_string());
         }
 
-        let fields_to_use: Vec<String> = if let Some(main_table_fields) =
-            request_body.get_pluck_object().get(table)
-        {
-            println!(
-                "Using pluck_object fields for table {}: {:?}",
-                table, main_table_fields
-            );
-            main_table_fields
-                .iter()
-                .filter(|f| !join_aliases.contains(f.as_str()))
-                .cloned()
-                .collect()
-        } else {
-            println!("Using regular pluck fields: {:?}", request_body.get_pluck());
-            request_body.get_pluck().iter().cloned().collect()
-        };
+        let fields_to_use: Vec<String> =
+            if let Some(main_table_fields) = request_body.get_pluck_object().get(table) {
+                println!(
+                    "Using pluck_object fields for table {}: {:?}",
+                    table, main_table_fields
+                );
+                main_table_fields
+                    .iter()
+                    .filter(|f| !join_aliases.contains(f.as_str()))
+                    .cloned()
+                    .collect()
+            } else {
+                println!("Using regular pluck fields: {:?}", request_body.get_pluck());
+                request_body.get_pluck().iter().cloned().collect()
+            };
 
         // Handle the selected fields
         for field in fields_to_use.iter() {
@@ -710,7 +709,7 @@ impl SelectionsConstructor {
         let is_nested = join.nested;
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
-        
+
         // For nested joins, we need to build the correct join condition
         if is_nested {
             if let Some(prev_join) = previous_join {
@@ -730,7 +729,7 @@ impl SelectionsConstructor {
                         .as_deref()
                         .unwrap_or(&prev_join.field_relation.to.entity)
                 };
-                
+
                 // The join condition should be: current_to_field = previous_from_field
                 // where current_to_field is the field in the current table being joined TO
                 // and previous_from_field is the field in the previous result that we're joining FROM

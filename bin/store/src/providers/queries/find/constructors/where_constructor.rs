@@ -647,10 +647,7 @@ impl<'a> WhereConstructor<'a> {
                 } else {
                     let clean = values_str[0].trim_matches('\'');
                     if is_plural {
-                        return format!(
-                            "{}::text {} '%{}%'",
-                            field_with_table, like_op, clean
-                        );
+                        return format!("{}::text {} '%{}%'", field_with_table, like_op, clean);
                     }
                     format!("{} {} '%{}%'", field_with_table, like_op, clean)
                 }
@@ -678,10 +675,7 @@ impl<'a> WhereConstructor<'a> {
                 } else {
                     let clean = values_str[0].trim_matches('\'');
                     if is_plural {
-                        return format!(
-                            "{}::text {} '%{}%'",
-                            field_with_table, like_op, clean
-                        );
+                        return format!("{}::text {} '%{}%'", field_with_table, like_op, clean);
                     }
                     format!("{} {} '%{}%'", field_with_table, like_op, clean)
                 }
