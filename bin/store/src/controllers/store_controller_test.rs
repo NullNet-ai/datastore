@@ -5,12 +5,12 @@ mod tests {
         providers::queries::find::SQLConstructor,
         structs::core::{FilterCriteria, GetByFilter, MatchPattern},
     };
+    use dotenv::dotenv;
     use reqwest;
     use serde_json::json;
     use std::fs;
     use std::path::Path;
     use tokio;
-    use dotenv::dotenv;
 
     /// Authentication response structure for reusable login functionality
     #[derive(Debug, Clone)]
@@ -574,7 +574,10 @@ mod tests {
                 }
             }
             Ok(resp) => {
-                println!("    ⚠ Root auth request failed with status: {}", resp.status());
+                println!(
+                    "    ⚠ Root auth request failed with status: {}",
+                    resp.status()
+                );
                 let body_text = resp
                     .text()
                     .await
@@ -3735,12 +3738,12 @@ mod tests {
             .await
             .expect("request to switch_account with non-root token");
 
-
         let non_root_body = non_root_resp
             .text()
             .await
             .unwrap_or_else(|_| "Failed to read response body".to_string());
-       let body_json: serde_json::Value = serde_json::from_str(&non_root_body).unwrap_or_else(|_| serde_json::json!({}));
+        let body_json: serde_json::Value =
+            serde_json::from_str(&non_root_body).unwrap_or_else(|_| serde_json::json!({}));
 
         let message = body_json
             .get("message")
@@ -3795,7 +3798,6 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn switch_account_requires_token_and_organization_id() {
-
         use reqwest::StatusCode;
 
         println!("Testing switch_account validation for token and organization_id...");
@@ -3954,7 +3956,7 @@ mod tests {
             None,
         )
         .await;
- 
+
         match logged_account_result {
             Ok(Some(_logged_account)) => {
                 // Create a synthetic request.data.organization_id that is different

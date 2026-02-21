@@ -14,8 +14,7 @@ use crate::{
         store_controller::{
             aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
             count_by_filter, create_record, delete_record, download_file_by_id, get_by_filter,
-            get_by_id, get_file_by_id, search_suggestions, update_record,
-            upload_file, upsert,
+            get_by_id, get_file_by_id, search_suggestions, update_record, upload_file, upsert,
         },
     },
     database::{
