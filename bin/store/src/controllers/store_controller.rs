@@ -2247,9 +2247,9 @@ pub async fn switch_account(request: web::Json<SwitchAccountRequest>) -> impl Re
     // Extract account information from claims
     let account = &claims.account;
     let signed_in_account = claims
-        .previously_logged_in
-        .map(|s| json!({"account_id": s}))
-        .unwrap_or_else(|| json!({}));
+        .signed_in_account;
+        // .map(|s| json!({"account_id": s}))
+        // .unwrap_or_else(|| json!({}));
     let organization_id = &account.organization_id;
     let account_id = &account.account_id;
     let account_organization_id = Some(account.account_organization_id.as_str());
@@ -2309,7 +2309,7 @@ pub async fn switch_account(request: web::Json<SwitchAccountRequest>) -> impl Re
     let new_token_value = json!({
         "account": target_account,
         "signed_in_account": signed_in_account,
-        "as_root": false
+        "as_root": true
     });
 
     // Sign the new token

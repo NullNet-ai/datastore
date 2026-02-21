@@ -14,7 +14,7 @@ use crate::{
         store_controller::{
             aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
             count_by_filter, create_record, delete_record, download_file_by_id, get_by_filter,
-            get_by_id, get_file_by_id, search_suggestions, switch_account, update_record,
+            get_by_id, get_file_by_id, search_suggestions, update_record,
             upload_file, upsert,
         },
     },
@@ -288,6 +288,7 @@ pub async fn exec() -> std::io::Result<()> {
                     .wrap(Authentication)
                     .wrap(SessionMiddleware)
                     .route("/aggregate", web::post().to(root_aggregation_filter))
+                    .route("/switch_account", web::post().to(root_switch_account))
                     .route("/{table}", web::post().to(root_create_record))
                     .route("/upsert/{table}", web::post().to(root_upsert))
                     .route("/batch/{table}", web::patch().to(root_batch_update_records))
@@ -301,7 +302,6 @@ pub async fn exec() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(root_update_record))
                     .route("/{table}/{id}", web::delete().to(root_delete_record))
                     .route("/batch/{table}", web::post().to(root_batch_insert_records))
-                    .route("/switch_account", web::post().to(root_switch_account))
                     .route(
                         "/{table}/filter/suggestions",
                         web::post().to(root_search_suggestions),
@@ -327,7 +327,6 @@ pub async fn exec() -> std::io::Result<()> {
                     .route("/{table}/{id}", web::patch().to(update_record))
                     .route("/{table}/{id}", web::delete().to(delete_record))
                     .route("/batch/{table}", web::post().to(batch_insert_records))
-                    .route("/switch_account", web::post().to(switch_account))
                     .route(
                         "/{table}/filter/suggestions",
                         web::post().to(search_suggestions),
