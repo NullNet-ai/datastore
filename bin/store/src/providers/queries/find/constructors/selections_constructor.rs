@@ -64,16 +64,16 @@ impl SelectionsConstructor {
 
         // Include aggregated selections for related entities specified in pluck_object
         if !request_body.get_pluck_object().is_empty() {
-            // If main table exists in pluck_object, add aggregated selection for it
-            if let Some(main_agg) = Self::build_main_table_aggregation(
-                request_body,
-                table,
-                timezone,
-                &get_field,
-                &build_system_where_clause,
-            ) {
-                selections.push(main_agg);
-            }
+            // // If main table exists in pluck_object, add aggregated selection for it
+            // if let Some(main_agg) = Self::build_main_table_aggregation(
+            //     request_body,
+            //     table,
+            //     timezone,
+            //     &get_field,
+            //     &build_system_where_clause,
+            // ) {
+            //     selections.push(main_agg);
+            // }
 
             let join_selections = Self::construct_join_selections(
                 request_body,
@@ -1025,59 +1025,59 @@ impl SelectionsConstructor {
         join_selections
     }
 
-    /// Builds aggregated JSON selection for the main table when pluck_object includes it
-    fn build_main_table_aggregation<T: QueryFilter>(
-        request_body: &T,
-        table: &str,
-        timezone: Option<&str>,
-        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
-        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
-    ) -> Option<String> {
-        if let Some(fields) = request_body.get_pluck_object().get(table) {
-            let joined_alias = format!("joined_{}", table);
-            // Build field pairs using the actual table name (not the joined alias)
-            let field_pairs = fields
-                .iter()
-                .map(|field| {
-                    let field_query = get_field(
-                        table,
-                        field,
-                        request_body.get_date_format(),
-                        table,
-                        timezone,
-                        false,
-                    );
-                    let parts: Vec<String> = field_query
-                        .split(" AS ")
-                        .map(|part| part.to_string())
-                        .collect::<Vec<String>>();
-                    let formatted_field = parts.first().unwrap().clone();
-                    format!("'{}', {}", field, formatted_field)
-                })
-                .collect::<Vec<String>>();
+    // /// Builds aggregated JSON selection for the main table when pluck_object includes it
+    // fn build_main_table_aggregation<T: QueryFilter>(
+    //     request_body: &T,
+    //     table: &str,
+    //     timezone: Option<&str>,
+    //     get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+    //     build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
+    // ) -> Option<String> {
+    //     if let Some(fields) = request_body.get_pluck_object().get(table) {
+    //         let joined_alias = format!("joined_{}", table);
+    //         // Build field pairs using the actual table name (not the joined alias)
+    //         let field_pairs = fields
+    //             .iter()
+    //             .map(|field| {
+    //                 let field_query = get_field(
+    //                     table,
+    //                     field,
+    //                     request_body.get_date_format(),
+    //                     table,
+    //                     timezone,
+    //                     false,
+    //                 );
+    //                 let parts: Vec<String> = field_query
+    //                     .split(" AS ")
+    //                     .map(|part| part.to_string())
+    //                     .collect::<Vec<String>>();
+    //                 let formatted_field = parts.first().unwrap().clone();
+    //                 format!("'{}', {}", field, formatted_field)
+    //             })
+    //             .collect::<Vec<String>>();
 
-            // Build WHERE with system constraints on the joined alias and correlate by id
-            let mut where_conditions = Vec::new();
-            let standard_where = match build_system_where_clause(&joined_alias) {
-                Ok(clause) => clause,
-                Err(_) => format!("({}.tombstone = 0)", joined_alias),
-            };
-            where_conditions.push(standard_where);
-            where_conditions.push(format!(
-                "\"{}\".\"id\" = \"{}\".\"id\"",
-                joined_alias, table
-            ));
-            let combined_where = where_conditions.join(" AND ");
+    //         // Build WHERE with system constraints on the joined alias and correlate by id
+    //         let mut where_conditions = Vec::new();
+    //         let standard_where = match build_system_where_clause(&joined_alias) {
+    //             Ok(clause) => clause,
+    //             Err(_) => format!("({}.tombstone = 0)", joined_alias),
+    //         };
+    //         where_conditions.push(standard_where);
+    //         where_conditions.push(format!(
+    //             "\"{}\".\"id\" = \"{}\".\"id\"",
+    //             joined_alias, table
+    //         ));
+    //         let combined_where = where_conditions.join(" AND ");
 
-            return Some(format!(
-                "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                field_pairs.join(", "),
-                table,
-                joined_alias,
-                combined_where,
-                table
-            ));
-        }
-        None
-    }
+    //         return Some(format!(
+    //             "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
+    //             field_pairs.join(", "),
+    //             table,
+    //             joined_alias,
+    //             combined_where,
+    //             table
+    //         ));
+    //     }
+    //     None
+    // }
 }
