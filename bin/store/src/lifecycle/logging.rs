@@ -4,6 +4,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::RwLock;
+use tokio::fs::OpenOptions;
+use tokio::io::AsyncWriteExt;
+use std::env;
 
 /// Log levels for lifecycle events
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -261,14 +264,48 @@ impl LifecycleLogger {
     async fn output_to_file(&self, entry: &LogEntry) {
         if let Some(file_path) = &self.config.file_path {
             let formatted = self.format_entry(entry, true);
-
-            // TODO: Implement actual file writing
-            // This would typically involve:
-            // 1. Opening/creating the log file
-            // 2. Writing the formatted entry
-            // 3. Handling file rotation if needed
-
-            debug!("[LOGGING] Would write to file {}: {}", file_path, formatted);
+            
+            // Check if DEBUG environment variable is set to true
+            if env::var("DEBUG").unwrap_or_default().to_lowercase() == "true" {
+                let log_dir = std::path::Path::new("/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/rust-projects/crdt-workspace/logs");
+                
+                // Create logs directory if it doesn't exist
+                if let Err(e) = tokio::fs::create_dir_all(log_dir).await {
+                    error!("[LOGGING] Failed to create logs directory: {}", e);
+                    return;
+                }
+                
+                // Create the full file path
+                let full_path = log_dir.join(file_path);
+                
+                // Create parent directories if they don't exist
+                if let Some(parent) = full_path.parent() {
+                    if let Err(e) = tokio::fs::create_dir_all(parent).await {
+                        error!("[LOGGING] Failed to create parent directories: {}", e);
+                        return;
+                    }
+                }
+                
+                // Open the file in append mode
+                match OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&full_path)
+                    .await
+                {
+                    Ok(mut file) => {
+                        // Write the formatted entry with newline
+                        if let Err(e) = file.write_all(formatted.as_bytes()).await {
+                            error!("[LOGGING] Failed to write to log file: {}", e);
+                        } else if let Err(e) = file.write_all(b"\n").await {
+                            error!("[LOGGING] Failed to write newline to log file: {}", e);
+                        }
+                    }
+                    Err(e) => {
+                        error!("[LOGGING] Failed to open log file {}: {}", full_path.display(), e);
+                    }
+                }
+            }
         }
     }
 
@@ -454,6 +491,13 @@ impl LifecycleLogger {
 
         stats
     }
+
+}
+
+impl Default for LifecycleLogger {
+    fn default() -> Self {
+        Self::new(LogConfig::default())
+    }
 }
 
 /// Convenience macros for lifecycle logging
@@ -520,10 +564,4 @@ macro_rules! lifecycle_error_with_correlation {
     ($logger:expr, $category:expr, $component:expr, $correlation_id:expr, $($arg:tt)*) => {
         lifecycle_log_with_correlation!($logger, crate::lifecycle::logging::LogLevel::Error, $category, $component, $correlation_id, $($arg)*)
     };
-}
-
-impl Default for LifecycleLogger {
-    fn default() -> Self {
-        Self::new(LogConfig::default())
-    }
 }
