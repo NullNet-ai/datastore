@@ -1,12 +1,12 @@
 use log::{debug, error, info, warn, LevelFilter};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::sync::Arc;
 use std::time::SystemTime;
-use tokio::sync::RwLock;
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
-use std::env;
+use tokio::sync::RwLock;
 
 /// Log levels for lifecycle events
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -264,20 +264,20 @@ impl LifecycleLogger {
     async fn output_to_file(&self, entry: &LogEntry) {
         if let Some(file_path) = &self.config.file_path {
             let formatted = self.format_entry(entry, true);
-            
+
             // Check if DEBUG environment variable is set to true
             if env::var("DEBUG").unwrap_or_default().to_lowercase() == "true" {
                 let log_dir = std::path::Path::new("/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/rust-projects/crdt-workspace/logs");
-                
+
                 // Create logs directory if it doesn't exist
                 if let Err(e) = tokio::fs::create_dir_all(log_dir).await {
                     error!("[LOGGING] Failed to create logs directory: {}", e);
                     return;
                 }
-                
+
                 // Create the full file path
                 let full_path = log_dir.join(file_path);
-                
+
                 // Create parent directories if they don't exist
                 if let Some(parent) = full_path.parent() {
                     if let Err(e) = tokio::fs::create_dir_all(parent).await {
@@ -285,7 +285,7 @@ impl LifecycleLogger {
                         return;
                     }
                 }
-                
+
                 // Open the file in append mode
                 match OpenOptions::new()
                     .create(true)
@@ -302,7 +302,11 @@ impl LifecycleLogger {
                         }
                     }
                     Err(e) => {
-                        error!("[LOGGING] Failed to open log file {}: {}", full_path.display(), e);
+                        error!(
+                            "[LOGGING] Failed to open log file {}: {}",
+                            full_path.display(),
+                            e
+                        );
                     }
                 }
             }
@@ -491,7 +495,6 @@ impl LifecycleLogger {
 
         stats
     }
-
 }
 
 impl Default for LifecycleLogger {

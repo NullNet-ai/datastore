@@ -255,7 +255,7 @@ impl SelectionsConstructor {
     ) -> String {
         println!("Pluck fields: {:?}", request_body.get_pluck());
         let mut pluck_selections = Vec::new();
-        
+
         // Collect concatenated field names for this table to check for conflicts
         let concatenated_field_names: std::collections::HashSet<String> = request_body
             .get_concatenate_fields()
@@ -277,7 +277,7 @@ impl SelectionsConstructor {
             if concatenated_field_names.contains(field) {
                 continue;
             }
-            
+
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
                 || field.eq_ignore_ascii_case("timestamp");
@@ -348,7 +348,7 @@ impl SelectionsConstructor {
     ) -> String {
         println!("Pluck object fields: {:?}", request_body.get_pluck_object());
         let mut pluck_object_selections = Vec::new();
-        
+
         // Collect concatenated field names for this table to check for conflicts
         let concatenated_field_names: std::collections::HashSet<String> = request_body
             .get_concatenate_fields()
@@ -365,12 +365,16 @@ impl SelectionsConstructor {
             .collect();
 
         // Handle regular pluck fields - only add if not conflicting with concatenated fields
-        for field in request_body.get_pluck_object().get(table).unwrap_or(&Vec::new()) {
+        for field in request_body
+            .get_pluck_object()
+            .get(table)
+            .unwrap_or(&Vec::new())
+        {
             // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
             if concatenated_field_names.contains(field) {
                 continue;
             }
-            
+
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
                 || field.eq_ignore_ascii_case("timestamp");
@@ -527,14 +531,8 @@ impl SelectionsConstructor {
             .as_deref()
             .unwrap_or(&child_join.field_relation.to.entity);
         let target_table = &child_join.field_relation.to.entity;
-        let mut field_pairs = Self::build_field_pairs(
-            request_body,
-            table,
-            timezone,
-            fields,
-            to_alias,
-            get_field,
-        );
+        let mut field_pairs =
+            Self::build_field_pairs(request_body, table, timezone, fields, to_alias, get_field);
         Self::add_concatenated_field_pairs(
             request_body,
             table,
@@ -801,13 +799,7 @@ impl SelectionsConstructor {
                 }
                 None
             });
-            matching_alias.unwrap_or_else(|| {
-                if to_entity == table {
-                    table
-                } else {
-                    to_entity
-                }
-            })
+            matching_alias.unwrap_or_else(|| if to_entity == table { table } else { to_entity })
         };
         format!(
             "\"{}\".\"{}\" = \"{}\".\"{}\"",
@@ -838,7 +830,10 @@ impl SelectionsConstructor {
         let mut added_entity_selection = std::collections::HashSet::new();
         // Process each join
         for (join_index, join) in request_body.get_joins().iter().enumerate() {
-            println!("DEBUG: Processing join {}: from={}, to={}", join_index, join.field_relation.from.entity, join.field_relation.to.entity);
+            println!(
+                "DEBUG: Processing join {}: from={}, to={}",
+                join_index, join.field_relation.from.entity, join.field_relation.to.entity
+            );
             let from_alias = join
                 .field_relation
                 .from
@@ -858,7 +853,8 @@ impl SelectionsConstructor {
             // Handle fields for this join tables from "from"
             if request_body.get_pluck_object().contains_key(from_alias)
                 && !added_entity_selection.contains(from_alias)
-                && from_alias != table // Skip main table - it's handled separately
+                && from_alias != table
+            // Skip main table - it's handled separately
             {
                 if let Some(fields) = request_body.get_pluck_object().get(from_alias) {
                     let target_table: String = request_body
@@ -956,7 +952,7 @@ impl SelectionsConstructor {
                 if to_alias == table {
                     continue;
                 }
-                
+
                 let target_table = &join.field_relation.to.entity;
 
                 // Find previous join in chain if exists

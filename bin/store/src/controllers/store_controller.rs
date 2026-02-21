@@ -35,11 +35,11 @@ use serde_json::Value;
 use ulid::Ulid;
 // use std::collections::HashMap;
 // use diesel::prelude::*;
+use chrono::Local;
 use std::collections::BTreeMap;
 use std::fmt;
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
-use chrono::Local;
 // use diesel::sql_types::*;
 // use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
@@ -2629,21 +2629,24 @@ pub async fn search_suggestions(
 }
 
 /// Helper function to write query debug logs to file
-async fn write_query_to_debug_log(query: &str, table: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn write_query_to_debug_log(
+    query: &str,
+    table: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use std::path::Path;
-    
+
     // Create logs directory if it doesn't exist
     let logs_dir = Path::new("../../logs");
     tokio::fs::create_dir_all(logs_dir).await?;
-    
+
     // Create filename with current date
     let current_date = Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
     let log_file = logs_dir.join(format!("sql_queries_{}.log", current_date));
-    
+
     // Format the log entry
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
     let formatted_query = query.replace("\n", " ").trim().to_string();
-    
+
     let log_entry = format!(
         "[{}] Table: {}\nQuery: {}\n{}\n",
         timestamp,
@@ -2651,17 +2654,17 @@ async fn write_query_to_debug_log(query: &str, table: &str) -> Result<(), Box<dy
         formatted_query,
         "-".repeat(80)
     );
-    
+
     // Open file in append mode
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(log_file)
         .await?;
-    
+
     // Write the log entry
     file.write_all(log_entry.as_bytes()).await?;
     file.flush().await?;
-    
+
     Ok(())
 }
