@@ -1,7 +1,7 @@
 use crate::controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
     count_by_filter, create_record, delete_record, get_by_filter, get_by_id, search_suggestions,
-    switch_account, update_record, upsert,
+    update_record, upsert,
 };
 use crate::middlewares::auth_middleware::Authentication;
 use crate::middlewares::session_middleware::SessionMiddleware;
@@ -39,7 +39,6 @@ pub fn configure_store_routes(cfg: &mut ServiceConfig, app_state: AppState) {
             .route("/{table}/{id}", web::delete().to(delete_record))
             .route("/{table}/{id}/", web::delete().to(delete_record))
             .route("/batch/{table}", web::post().to(batch_insert_records))
-            .route("/switch_account", web::post().to(switch_account))
             .route(
                 "/{table}/filter/suggestions",
                 web::post().to(search_suggestions),

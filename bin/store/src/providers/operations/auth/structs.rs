@@ -43,6 +43,7 @@ pub struct Claims {
     pub sensitivity_level: Option<u32>,
     #[serde(default)]
     pub previously_logged_in: Option<String>,
+    pub signed_in_account: Account,
     exp: usize,
     iat: usize,
 }
