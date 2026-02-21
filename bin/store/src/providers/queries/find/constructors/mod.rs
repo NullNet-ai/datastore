@@ -7,3 +7,5 @@ pub mod selections_constructor;
 pub mod where_constructor;
 
 pub mod constructors_test;
+#[cfg(test)]
+pub mod selections_constructor_test;

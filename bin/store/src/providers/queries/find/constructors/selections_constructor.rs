@@ -256,25 +256,54 @@ impl SelectionsConstructor {
         println!("Pluck fields: {:?}", request_body.get_pluck());
         let mut pluck_selections = Vec::new();
 
-        // Collect concatenated field names for this table to check for conflicts
-        let concatenated_field_names: std::collections::HashSet<String> = request_body
-            .get_concatenate_fields()
-            .iter()
-            .filter(|concat_field| {
-                concat_field
-                    .aliased_entity
-                    .as_deref()
-                    .map(|a| a == table)
-                    .unwrap_or(false)
-                    || concat_field.entity == table
-            })
-            .map(|concat_field| concat_field.field_name.clone())
-            .collect();
+        // Collect concatenated field names and their individual fields for this table to check for conflicts
+        let mut concatenated_field_names = std::collections::HashSet::new();
+        let mut concatenated_source_fields = std::collections::HashSet::new();
+        let mut aliased_entities_for_table = std::collections::HashSet::new();
+
+        for concat_field in request_body.get_concatenate_fields() {
+            if concat_field
+                .aliased_entity
+                .as_deref()
+                .map(|a| a == table)
+                .unwrap_or(false)
+                || concat_field.entity == table
+            {
+                // Add the concatenated field name itself
+                concatenated_field_names.insert(concat_field.field_name.clone());
+                // Add all source fields that are part of this concatenation
+                for source_field in &concat_field.fields {
+                    concatenated_source_fields.insert(source_field.clone());
+                }
+                // Track aliased entities that should override pluck_object fields
+                if let Some(aliased_entity) = &concat_field.aliased_entity {
+                    if concat_field.entity == table {
+                        aliased_entities_for_table.insert(aliased_entity.clone());
+                    }
+                }
+            }
+        }
+        log::debug!(
+            "@@@@Concatenated field names: {:?}",
+            concatenated_field_names
+        );
+        log::debug!(
+            "@@@@Concatenated source fields: {:?}",
+            concatenated_source_fields
+        );
+        log::debug!(
+            "@@@@Aliased entities for table: {:?}",
+            aliased_entities_for_table
+        );
 
         // Handle regular pluck fields - only add if not conflicting with concatenated fields
         for field in request_body.get_pluck() {
             // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
-            if concatenated_field_names.contains(field) {
+            // Skip both concatenated field names, their source fields, and aliased entities to avoid conflicts
+            if concatenated_field_names.contains(field)
+                || concatenated_source_fields.contains(field)
+                || aliased_entities_for_table.contains(field)
+            {
                 continue;
             }
 
@@ -349,21 +378,41 @@ impl SelectionsConstructor {
         println!("Pluck object fields: {:?}", request_body.get_pluck_object());
         let mut pluck_object_selections = Vec::new();
 
-        // Collect concatenated field names for this table to check for conflicts
-        let concatenated_field_names: std::collections::HashSet<String> = request_body
-            .get_concatenate_fields()
-            .iter()
-            .filter(|concat_field| {
-                concat_field
-                    .aliased_entity
-                    .as_deref()
-                    .map(|a| a == table)
-                    .unwrap_or(false)
-                    || concat_field.entity == table
-            })
-            .map(|concat_field| concat_field.field_name.clone())
-            .collect();
+        // Collect concatenated field names and their individual fields for this table to check for conflicts
+        let mut concatenated_field_names = std::collections::HashSet::new();
+        let mut concatenated_source_fields = std::collections::HashSet::new();
+        let mut aliased_entities_for_table = std::collections::HashSet::new();
 
+        for concat_field in request_body.get_concatenate_fields() {
+            if concat_field
+                .aliased_entity
+                .as_deref()
+                .map(|a| a == table)
+                .unwrap_or(false)
+                || concat_field.entity == table
+            {
+                // Add the concatenated field name itself
+                concatenated_field_names.insert(concat_field.field_name.clone());
+                // Add all source fields that are part of this concatenation
+                for source_field in &concat_field.fields {
+                    concatenated_source_fields.insert(source_field.clone());
+                }
+                // Track aliased entities that should override pluck_object fields
+                if let Some(aliased_entity) = &concat_field.aliased_entity {
+                    if concat_field.entity == table {
+                        aliased_entities_for_table.insert(aliased_entity.clone());
+                    }
+                }
+            }
+        }
+        log::debug!(
+            "@@@@Concatenated field names: {:?}",
+            concatenated_field_names
+        );
+        log::debug!(
+            "@@@@Concatenated source fields: {:?}",
+            concatenated_source_fields
+        );
         // Handle regular pluck fields - only add if not conflicting with concatenated fields
         for field in request_body
             .get_pluck_object()
@@ -371,7 +420,11 @@ impl SelectionsConstructor {
             .unwrap_or(&Vec::new())
         {
             // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
-            if concatenated_field_names.contains(field) {
+            // Skip both concatenated field names, their source fields, and aliased entities to avoid conflicts
+            if concatenated_field_names.contains(field)
+                || concatenated_source_fields.contains(field)
+                || aliased_entities_for_table.contains(field)
+            {
                 continue;
             }
 

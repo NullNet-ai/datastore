@@ -1540,7 +1540,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn should_execute_constructed_sql_against_database() {
         use crate::providers::queries::find::sql_constructor::SQLConstructor;
         use crate::structs::core::GetByFilter;
