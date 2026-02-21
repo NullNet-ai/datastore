@@ -42,6 +42,7 @@ table! {
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
         image_url -> Nullable<Text>,
+        
         role -> Nullable<Text>,
         entity -> Nullable<Text>,
 }
@@ -912,6 +913,7 @@ table! {
         is_primary -> Nullable<Bool>,
         iso_code -> Nullable<Text>,
         country_code -> Nullable<Text>,
+
 }
 }
 
@@ -942,35 +944,6 @@ table! {
         account_profile_id -> Nullable<Text>,
         name -> Nullable<Text>,
         signature -> Nullable<Text>,
-    }
-}
-
-table! {
-    checkpoint_samples(id) {
-        tombstone -> Nullable<Int4>,
-        status -> Nullable<Text>,
-        previous_status -> Nullable<Text>,
-        version -> Nullable<Int4>,
-        created_date -> Nullable<Text>,
-        created_time -> Nullable<Text>,
-        updated_date -> Nullable<Text>,
-        updated_time -> Nullable<Text>,
-        organization_id -> Nullable<Text>,
-        created_by -> Nullable<Text>,
-        updated_by -> Nullable<Text>,
-        deleted_by -> Nullable<Text>,
-        requested_by -> Nullable<Text>,
-        timestamp -> Nullable<Timestamp>,
-        tags -> Nullable<Array<Text>>,
-        categories -> Nullable<Array<Text>>,
-        code -> Nullable<Text>,
-        id -> Nullable<Text>,
-        sensitivity_level -> Nullable<Int4>,
-        sync_status -> Nullable<Text>,
-        is_batch -> Nullable<Bool>,
-        image_url -> Nullable<Text>,
-        label -> Nullable<Text>,
-        value -> Nullable<Int4>,
     }
 }
 

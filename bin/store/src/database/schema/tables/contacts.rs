@@ -114,11 +114,6 @@ define_table_schema! {
             unique: false,
             type: "btree"
         },
-        idx_contacts_sensitivity_level: {
-            columns: ["sensitivity_level"],
-            unique: false,
-            type: "btree"
-        },
     },
     foreign_keys: {
         // System field foreign keys ( REQUIRED )

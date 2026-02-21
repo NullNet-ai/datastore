@@ -26,7 +26,6 @@ define_table_schema! {
     indexes: {
         system_indexes!("organization_accounts"),
         idx_organization_accounts_organization_contact_id: { columns: ["organization_contact_id"], unique: false, type: "btree" },
-        idx_organization_accounts_organization_id: { columns: ["organization_id"], unique: false, type: "btree" },
         idx_organization_accounts_contact_id: { columns: ["contact_id"], unique: false, type: "btree" },
         idx_organization_accounts_email: { columns: ["email"], unique: false, type: "btree" },
         idx_organization_accounts_password: { columns: ["password"], unique: false, type: "btree" },

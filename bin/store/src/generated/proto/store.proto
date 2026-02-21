@@ -821,34 +821,6 @@ message AccountSignatures {
   optional string signature = 25;
 }
 
-// CheckpointSamples entity definition
-message CheckpointSamples {
-  optional int32 tombstone = 1;
-  optional string status = 2;
-  optional string previous_status = 3;
-  optional int32 version = 4;
-  optional string created_date = 5;
-  optional string created_time = 6;
-  optional string updated_date = 7;
-  optional string updated_time = 8;
-  optional string organization_id = 9;
-  optional string created_by = 10;
-  optional string updated_by = 11;
-  optional string deleted_by = 12;
-  optional string requested_by = 13;
-  optional string timestamp = 14;
-  repeated string tags = 15;
-  repeated string categories = 16;
-  optional string code = 17;
-  optional string id = 18;
-  optional int32 sensitivity_level = 19;
-  optional string sync_status = 20;
-  optional bool is_batch = 21;
-  optional string image_url = 22;
-  optional string label = 23;
-  optional int32 value = 24;
-}
-
 // GameChoiceReports entity definition
 message GameChoiceReports {
   optional int32 tombstone = 1;
@@ -5577,135 +5549,6 @@ message UpsertAccountSignaturesResponse {
   string message = 2;
   int32 count = 3;
   repeated AccountSignatures data = 4;
-}
-
-// Create CheckpointSamples request
-message CreateCheckpointSamplesRequest {
-  CheckpointSamples checkpoint_samples = 1;
-  CreateParams params = 2;
-  CreateQuery query = 3;
-}
-
-// Create CheckpointSamples response
-message CreateCheckpointSamplesResponse {
-  bool success = 1;
-  int32 count = 2;
-  string message = 3;
-  CheckpointSamples data = 4;
-}
-
-// Get CheckpointSamples request
-message GetCheckpointSamplesRequest {
-  GetParams params = 1;
-  GetQuery query = 2;
-}
-
-// Get CheckpointSamples response
-message GetCheckpointSamplesResponse {
-  bool success = 1;
-  string message = 2;
-  CheckpointSamples data = 3;
-}
-
-// Update CheckpointSamples request
-message UpdateCheckpointSamplesRequest {
-  CheckpointSamples checkpoint_sample = 1;
-  UpdateParams params = 2;
-  UpdateQuery query = 3;
-}
-
-// Update CheckpointSamples response
-message UpdateCheckpointSamplesResponse {
-  bool success = 1;
-  int32 count = 2;
-  string message = 3;
-  CheckpointSamples data = 4;
-}
-
-// BatchUpdate CheckpointSamples request
-message BatchUpdateCheckpointSamplesRequest {
-  BatchUpdateParams params = 1;
-  message BatchUpdateBody {
-    repeated FilterCriteria advance_filters = 1;
-  CheckpointSamples updates = 2;
-  }
-  BatchUpdateBody body = 2;
-}
-
-// BatchUpdate CheckpointSamples response
-message BatchUpdateCheckpointSamplesResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  repeated CheckpointSamples data = 4;
-}
-
-// BatchDelete CheckpointSamples request
-message BatchDeleteCheckpointSamplesRequest {
-  BatchDeleteParams params = 1;
-  message BatchDeleteBody {
-    repeated FilterCriteria advance_filters = 1;
-  }
-  BatchDeleteBody body = 2;
-}
-
-// BatchDelete CheckpointSamples response
-message BatchDeleteCheckpointSamplesResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  CheckpointSamples data = 4;
-}
-
-// Delete CheckpointSamples request
-message DeleteCheckpointSamplesRequest {
-  DeleteParams params = 1;
-  DeleteQuery query = 2;
-}
-
-// Delete CheckpointSamples response
-message DeleteCheckpointSamplesResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  CheckpointSamples data = 4;
-}
-
-// BatchInsert CheckpointSamples request
-message BatchInsertCheckpointSamplesRequest {
-  BatchInsertParams params = 1;
-  BatchInsertQuery query = 2;
-  message BatchBody {
-    repeated CheckpointSamples checkpoint_samples = 1;
-  }
-  BatchBody body = 3;
-}
-
-// BatchInsert CheckpointSamples response
-message BatchInsertCheckpointSamplesResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  repeated CheckpointSamples data = 4;
-}
-
-// Upsert CheckpointSamples request
-message UpsertCheckpointSamplesRequest {
-  UpsertParams params = 1;
-  UpsertQuery query = 2;
-  message UpsertBody {
-    repeated string conflict_columns = 1;
-    CheckpointSamples data = 2;
-  }
-  UpsertBody body = 3;
-}
-
-// Upsert CheckpointSamples response
-message UpsertCheckpointSamplesResponse {
-  bool success = 1;
-  string message = 2;
-  int32 count = 3;
-  repeated CheckpointSamples data = 4;
 }
 
 // Create GameChoiceReports request
@@ -14072,30 +13915,6 @@ service StoreService {
 
   // Upsert a AccountSignatures (create if not exists, update if exists)
   rpc UpsertAccountSignatures(UpsertAccountSignaturesRequest) returns (UpsertAccountSignaturesResponse);
-
-  // Create a new CheckpointSamples
-  rpc CreateCheckpointSamples(CreateCheckpointSamplesRequest) returns (CreateCheckpointSamplesResponse);
-
-  // Get a CheckpointSamples by ID
-  rpc GetCheckpointSamples(GetCheckpointSamplesRequest) returns (GetCheckpointSamplesResponse);
-
-  // Update an existing CheckpointSamples
-  rpc UpdateCheckpointSamples(UpdateCheckpointSamplesRequest) returns (UpdateCheckpointSamplesResponse);
-
-  // Delete a CheckpointSamples by ID
-  rpc DeleteCheckpointSamples(DeleteCheckpointSamplesRequest) returns (DeleteCheckpointSamplesResponse);
-
-  // Batch insert multiple CheckpointSampless
-  rpc BatchInsertCheckpointSamples(BatchInsertCheckpointSamplesRequest) returns (BatchInsertCheckpointSamplesResponse);
-
-  // Batch update multiple CheckpointSampless based on filters
-  rpc BatchUpdateCheckpointSamples(BatchUpdateCheckpointSamplesRequest) returns (BatchUpdateCheckpointSamplesResponse);
-
-  // Batch delete multiple CheckpointSampless based on filters
-  rpc BatchDeleteCheckpointSamples(BatchDeleteCheckpointSamplesRequest) returns (BatchDeleteCheckpointSamplesResponse);
-
-  // Upsert a CheckpointSamples (create if not exists, update if exists)
-  rpc UpsertCheckpointSamples(UpsertCheckpointSamplesRequest) returns (UpsertCheckpointSamplesResponse);
 
   // Create a new GameChoiceReports
   rpc CreateGameChoiceReports(CreateGameChoiceReportsRequest) returns (CreateGameChoiceReportsResponse);

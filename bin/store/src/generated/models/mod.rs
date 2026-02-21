@@ -92,7 +92,6 @@ pub mod transport_provider_credential_model;
 pub mod transport_provider_model;
 pub mod user_progress_model;
 pub mod user_role_model;
-
 // Removed unused import: crate::generated::schema::*
 
 // diesel_ext --model --derive "Queryable, Selectable, Insertable, Serialize, Deserialize, Clone" --import-types "diesel::prelude::*" --import-types "serde::{Deserialize, Serialize}" --add-table-name > models.rs
