@@ -214,9 +214,18 @@ mod tests {
 
         // Create pluck object that includes the aliased entities
         let mut pluck_object = HashMap::new();
-        pluck_object.insert("created_by".to_string(), vec!["id", "first_name", "last_name"]);
-        pluck_object.insert("updated_by".to_string(), vec!["id", "first_name", "last_name"]);
-        pluck_object.insert("organizations".to_string(), vec!["id", "name", "created_by"]);
+        pluck_object.insert(
+            "created_by".to_string(),
+            vec!["id", "first_name", "last_name"],
+        );
+        pluck_object.insert(
+            "updated_by".to_string(),
+            vec!["id", "first_name", "last_name"],
+        );
+        pluck_object.insert(
+            "organizations".to_string(),
+            vec!["id", "name", "created_by"],
+        );
 
         let filter = create_test_filter(
             vec![], // empty pluck
@@ -276,8 +285,14 @@ mod tests {
 
         // Create pluck object that includes both entities
         let mut pluck_object = HashMap::new();
-        pluck_object.insert("created_by".to_string(), vec!["id", "first_name", "last_name"]);
-        pluck_object.insert("organizations".to_string(), vec!["id", "name", "description"]);
+        pluck_object.insert(
+            "created_by".to_string(),
+            vec!["id", "first_name", "last_name"],
+        );
+        pluck_object.insert(
+            "organizations".to_string(),
+            vec!["id", "name", "description"],
+        );
 
         let filter = create_test_filter(
             vec![], // empty pluck
@@ -320,19 +335,20 @@ mod tests {
     #[test]
     fn test_construct_selections_with_concatenated_fields_override_mixed_scenario() {
         // Create a mix of concatenated and regular fields
-        let concatenate_fields = vec![
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                Some("created_by"),
-            ),
-        ];
+        let concatenate_fields = vec![create_concatenate_field(
+            vec!["first_name", "last_name"],
+            "full_name",
+            " ",
+            "contacts",
+            Some("created_by"),
+        )];
 
         // Create pluck object with both concatenated and regular fields
         let mut pluck_object = HashMap::new();
-        pluck_object.insert("created_by".to_string(), vec!["id", "first_name", "last_name", "email"]);
+        pluck_object.insert(
+            "created_by".to_string(),
+            vec!["id", "first_name", "last_name", "email"],
+        );
         pluck_object.insert("organizations".to_string(), vec!["id", "name"]);
 
         let filter = create_test_filter(
@@ -377,19 +393,20 @@ mod tests {
     #[test]
     fn test_construct_selections_with_concatenated_fields_override_no_aliased_entity() {
         // Create concatenate fields without aliased entities (main table)
-        let concatenate_fields = vec![
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                None,
-            ),
-        ];
+        let concatenate_fields = vec![create_concatenate_field(
+            vec!["first_name", "last_name"],
+            "full_name",
+            " ",
+            "contacts",
+            None,
+        )];
 
         // Create pluck object for main table
         let mut pluck_object = HashMap::new();
-        pluck_object.insert("contacts".to_string(), vec!["id", "first_name", "last_name", "email"]);
+        pluck_object.insert(
+            "contacts".to_string(),
+            vec!["id", "first_name", "last_name", "email"],
+        );
 
         let filter = create_test_filter(
             vec![], // empty pluck
