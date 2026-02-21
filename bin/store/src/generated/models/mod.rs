@@ -6,7 +6,6 @@ pub mod account_signature_model;
 pub mod address_model;
 pub mod avatar_selection_model;
 pub mod chapter_event_model;
-pub mod checkpoint_sample_model;
 pub mod classroom_course_episode_model;
 pub mod classroom_course_stories_episode_model;
 pub mod classroom_course_story_model;
