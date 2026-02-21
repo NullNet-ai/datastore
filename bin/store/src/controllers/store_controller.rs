@@ -2637,7 +2637,7 @@ async fn write_query_to_debug_log(query: &str, table: &str) -> Result<(), Box<dy
     tokio::fs::create_dir_all(logs_dir).await?;
     
     // Create filename with current date
-    let current_date = Local::now().format("%Y-%m-%d").to_string();
+    let current_date = Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
     let log_file = logs_dir.join(format!("sql_queries_{}.log", current_date));
     
     // Format the log entry

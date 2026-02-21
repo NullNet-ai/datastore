@@ -89,7 +89,18 @@ impl SelectionsConstructor {
         }
 
         // Include main table pluck fields when present, unless pluck_object already specifies main table
-        if !request_body.get_pluck().is_empty() && !main_in_pluck_object {
+        if main_in_pluck_object && !request_body.get_pluck().is_empty() {
+            let pluck_sel = Self::construct_pluck_object(
+                request_body,
+                table,
+                timezone,
+                &get_field,
+                &get_field_with_parse_as,
+            );
+            if !pluck_sel.is_empty() {
+                selections.push(pluck_sel);
+            }
+        } else {
             let pluck_sel = Self::construct_pluck(
                 request_body,
                 table,
@@ -244,8 +255,29 @@ impl SelectionsConstructor {
     ) -> String {
         println!("Pluck fields: {:?}", request_body.get_pluck());
         let mut pluck_selections = Vec::new();
-        // Handle regular pluck fields
+        
+        // Collect concatenated field names for this table to check for conflicts
+        let concatenated_field_names: std::collections::HashSet<String> = request_body
+            .get_concatenate_fields()
+            .iter()
+            .filter(|concat_field| {
+                concat_field
+                    .aliased_entity
+                    .as_deref()
+                    .map(|a| a == table)
+                    .unwrap_or(false)
+                    || concat_field.entity == table
+            })
+            .map(|concat_field| concat_field.field_name.clone())
+            .collect();
+
+        // Handle regular pluck fields - only add if not conflicting with concatenated fields
         for field in request_body.get_pluck() {
+            // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
+            if concatenated_field_names.contains(field) {
+                continue;
+            }
+            
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
                 || field.eq_ignore_ascii_case("timestamp");
@@ -269,33 +301,126 @@ impl SelectionsConstructor {
                 .unwrap_or(false)
                 || concat_field.entity == table
             {
-            let concatenated_expression = concat_field
-                .fields
-                .iter()
-                .map(|f| {
-                    format!(
-                        "COALESCE({}, '')",
-                        get_field_with_parse_as(
-                            table,
-                            f,
-                            request_body.get_date_format(),
-                            None,
-                            table,
-                            timezone,
-                            false,
+                let concatenated_expression = concat_field
+                    .fields
+                    .iter()
+                    .map(|f| {
+                        format!(
+                            "COALESCE({}, '')",
+                            get_field_with_parse_as(
+                                table,
+                                f,
+                                request_body.get_date_format(),
+                                None,
+                                table,
+                                timezone,
+                                false,
+                            )
                         )
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join(&format!(" || '{}' || ", concat_field.separator));
+                    })
+                    .collect::<Vec<_>>()
+                    .join(&format!(" || '{}' || ", concat_field.separator));
 
-            pluck_selections.push(format!(
-                "({}) AS {}",
-                concatenated_expression, concat_field.field_name
-            ));
+                pluck_selections.push(format!(
+                    "({}) AS {}",
+                    concatenated_expression, concat_field.field_name
+                ));
             }
         }
         pluck_selections.join(", ")
+    }
+
+    /// Constructs PLUCK selections for specific fields in pluck_object
+    fn construct_pluck_object<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+        get_field_with_parse_as: &impl Fn(
+            &str,
+            &str,
+            &str,
+            Option<&str>,
+            &str,
+            Option<&str>,
+            bool,
+        ) -> String,
+    ) -> String {
+        println!("Pluck object fields: {:?}", request_body.get_pluck_object());
+        let mut pluck_object_selections = Vec::new();
+        
+        // Collect concatenated field names for this table to check for conflicts
+        let concatenated_field_names: std::collections::HashSet<String> = request_body
+            .get_concatenate_fields()
+            .iter()
+            .filter(|concat_field| {
+                concat_field
+                    .aliased_entity
+                    .as_deref()
+                    .map(|a| a == table)
+                    .unwrap_or(false)
+                    || concat_field.entity == table
+            })
+            .map(|concat_field| concat_field.field_name.clone())
+            .collect();
+
+        // Handle regular pluck fields - only add if not conflicting with concatenated fields
+        for field in request_body.get_pluck_object().get(table).unwrap_or(&Vec::new()) {
+            // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
+            if concatenated_field_names.contains(field) {
+                continue;
+            }
+            
+            let with_alias = field.ends_with("_date")
+                || field.ends_with("_time")
+                || field.eq_ignore_ascii_case("timestamp");
+            let field_selection = get_field(
+                table,
+                field,
+                request_body.get_date_format(),
+                table,
+                timezone,
+                with_alias,
+            );
+            pluck_object_selections.push(field_selection);
+        }
+
+        // Handle concatenated fields only for main table entity
+        for concat_field in request_body.get_concatenate_fields() {
+            if concat_field
+                .aliased_entity
+                .as_deref()
+                .map(|a| a == table)
+                .unwrap_or(false)
+                || concat_field.entity == table
+            {
+                let concatenated_expression = concat_field
+                    .fields
+                    .iter()
+                    .map(|f| {
+                        format!(
+                            "COALESCE({}, '')",
+                            get_field_with_parse_as(
+                                table,
+                                f,
+                                request_body.get_date_format(),
+                                None,
+                                table,
+                                timezone,
+                                false,
+                            )
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(&format!(" || '{}' || ", concat_field.separator));
+
+                pluck_object_selections.push(format!(
+                    "({}) AS {}",
+                    concatenated_expression, concat_field.field_name
+                ));
+            }
+        }
+        pluck_object_selections.join(", ")
     }
 
     /// Helper method to build field pairs for JSONB_BUILD_OBJECT
@@ -711,17 +836,6 @@ impl SelectionsConstructor {
     ) -> Vec<String> {
         let mut join_selections = Vec::new();
         let mut added_entity_selection = std::collections::HashSet::new();
-        // if request_body.get_pluck_object().contains_key(table) {
-        //     // If no pluck_object for main table, use regular pluck
-        //     let pluck_selection = Self::construct_pluck(
-        //         request_body,
-        //         table,
-        //         timezone,
-        //         &get_field,
-        //         get_field_with_parse_as,
-        //     );
-        //     join_selections.push(pluck_selection);
-        // }
         // Process each join
         for (join_index, join) in request_body.get_joins().iter().enumerate() {
             println!("DEBUG: Processing join {}: from={}, to={}", join_index, join.field_relation.from.entity, join.field_relation.to.entity);
