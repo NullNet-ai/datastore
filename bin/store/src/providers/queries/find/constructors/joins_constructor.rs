@@ -21,11 +21,6 @@ impl JoinsConstructor {
 
             let joins = request_body.get_joins();
             for (index, join) in joins.iter().enumerate() {
-                // Skip emitting separate LATERAL clauses for nested joins.
-                // Nested relations are handled inside selections via JSONB aggregation referencing the previous alias.
-                if join.nested {
-                    continue;
-                }
                 match join.r#type.as_str() {
                     "left" => {
                         let join_clause = Self::build_left_join_lateral(
