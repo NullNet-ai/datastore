@@ -13,6 +13,8 @@ WORKDIR /usr/src/crdt-workspace
 COPY . .
 
 # Build server
+RUN cargo install sccache --locked
+ENV RUSTC_WRAPPER=sccache
 WORKDIR /usr/src/crdt-workspace/bin/store
 RUN cargo build --release
 
