@@ -21,6 +21,7 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
                 web::patch().to(root_update_account_password),
             )
             .route("/aggregate", web::post().to(root_aggregation_filter))
+            .route("/switch_account", web::post().to(root_switch_account))
             .route("/{table}", web::post().to(root_create_record))
             .route("/upsert/{table}", web::post().to(root_upsert))
             .route("/batch/{table}", web::patch().to(root_batch_update_records))
@@ -34,7 +35,6 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
             .route("/{table}/{id}", web::patch().to(root_update_record))
             .route("/{table}/{id}", web::delete().to(root_delete_record))
             .route("/batch/{table}", web::post().to(root_batch_insert_records))
-            .route("/switch_account", web::post().to(root_switch_account))
             .route(
                 "/{table}/filter/suggestions",
                 web::post().to(root_search_suggestions),
