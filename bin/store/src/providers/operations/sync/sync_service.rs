@@ -119,7 +119,7 @@ pub async fn send_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessageModel>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    apply_messages(&mut tx, messages.clone()).await?;
+    apply_messages(&mut tx, messages.clone(), true).await?;
     let messages_value: Vec<Value> = messages
         .iter()
         .map(|msg| {
@@ -161,38 +161,54 @@ pub async fn send_messages(
 
     Ok(())
 }
+/// Apply messages to the dataset table and to crdt_messages (channel).
+/// - When `from_local_insert` is true: apply all and send all (no compare). Fast path.
+/// - When false (from server): compare first, only apply/send when we're the winner.
 async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessageModel>,
+    from_local_insert: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
+    let mut to_send: Vec<CrdtMessageModel> = Vec::new();
 
+    if from_local_insert {
+        for msg in &messages {
+            apply(&mut tx, msg).await?;
+            let inserted_timestamp: Clock =
+                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+            let mut updated_msg = msg.clone();
+            updated_msg.group_id =
+                std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+            updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+            to_send.push(updated_msg);
+        }
+    } else {
+        let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
+        for (msg, existing_msg) in &existing_messages {
+            let should_apply = match existing_msg {
+                None => true,
+                Some(existing) => existing.timestamp < msg.timestamp,
+            };
+            if should_apply {
+                apply(&mut tx, msg).await?;
+                let inserted_timestamp: Clock =
+                    HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+                let mut updated_msg = msg.clone();
+                updated_msg.group_id =
+                    std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+                updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+                to_send.push(updated_msg);
+            }
+        }
+    }
+
+    // Phase 2: only after all applies succeeded, send to channel (crdt_messages).
     let sender = get_sender().cloned().ok_or_else(|| {
         log::error!("Failed to send message: sender not available");
         std::io::Error::new(std::io::ErrorKind::Other, "sender not available")
     })?;
-
-    for (msg, existing_msg) in existing_messages {
-        let should_apply = match &existing_msg {
-            None => true,
-            Some(existing) => existing.timestamp < msg.timestamp,
-        };
-
-        if should_apply {
-            apply(&mut tx, &msg).await?;
-        }
-
-        if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
-            let inserted_timestamp: Clock =
-                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-
-            let mut updated_msg = msg;
-            updated_msg.group_id =
-                std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
-            updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
-
-            sender.send(updated_msg)?;
-        }
+    for msg in to_send {
+        sender.send(msg)?;
     }
 
     Ok(())
@@ -609,6 +625,14 @@ async fn sync(
     Ok(())
 }
 
+/// Normalize a message from either server format (flat: { timestamp, dataset, ... })
+/// or wrapped format ({ "message": { timestamp, ... } }) into the inner message value and timestamp.
+fn extract_message_and_timestamp(message: &Value) -> Option<(&Value, &str)> {
+    let inner = message.get("message").unwrap_or(message);
+    let timestamp = inner.get("timestamp").and_then(|t| t.as_str())?;
+    Some((inner, timestamp))
+}
+
 async fn receive_messages(
     conn: &mut AsyncPgConnection, // Must use async connection type
     messages: Vec<Value>,
@@ -620,24 +644,16 @@ async fn receive_messages(
                 let mut processed_messages = Vec::new();
 
                 for message in messages {
-                    // Error handling with context and better error messages
-                    let timestamp = message
-                        .get("message")
-                        .and_then(|m| m.get("timestamp"))
-                        .and_then(|t| t.as_str())
-                        .ok_or_else(|| DieselError::RollbackTransaction)?;
+                    let (inner_message, timestamp_str) =
+                        extract_message_and_timestamp(&message)
+                            .ok_or_else(|| DieselError::RollbackTransaction)?;
 
-                    // Async operation within transaction
-                    HlcService::recv(conn, timestamp.to_string())
+                    HlcService::recv(conn, timestamp_str.to_string())
                         .await
                         .map_err(|e| {
                             log::error!("Failed to receive HLC: {}", e);
                             DieselError::RollbackTransaction
                         })?;
-
-                    let inner_message = message
-                        .get("message")
-                        .ok_or_else(|| DieselError::RollbackTransaction)?;
 
                     let crdt_message: CrdtMessageModel =
                         serde_json::from_value(inner_message.clone())
@@ -651,6 +667,6 @@ async fn receive_messages(
         })
         .await?; // Critical: Must await the transaction
 
-    apply_messages(conn, inner_messages).await?;
+    apply_messages(conn, inner_messages, false).await?;
     Ok(())
 }

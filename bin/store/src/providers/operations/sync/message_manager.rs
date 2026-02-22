@@ -1,13 +1,20 @@
 use crate::database::db;
 use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::providers::operations::sync::message_service;
+use diesel::result::Error as DieselError;
 use once_cell::sync::OnceCell;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::mpsc;
-use tokio::time::{sleep, Duration};
+use tokio::time::timeout;
 
 use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Max messages per batch before flushing to DB.
+const BATCH_SIZE: usize = 300;
+/// When no message arrives for this long, flush any partial batch (avoids holding messages during low traffic).
+const BATCH_FLUSH_TIMEOUT: Duration = Duration::from_millis(5);
 
 lazy_static! {
     static ref QUEUE_EMPTY: AtomicBool = AtomicBool::new(true);
@@ -57,112 +64,111 @@ impl MessageManager {
         }
 
         self.initialized = true;
+        let mut batch: Vec<CrdtMessageModel> = Vec::with_capacity(BATCH_SIZE);
+        let mut channel_closed = false;
 
-        while let Some(message) = self.receiver.recv().await {
-            QUEUE_EMPTY.store(false, Ordering::SeqCst);
-            // Increment queue size when message is received
-            let current_size = QUEUE_SIZE.fetch_add(1, Ordering::SeqCst);
-            log::debug!("Message received. Queue size: {}", current_size + 1);
-
-            match self.process_message(message).await {
-                Ok(_) => {
-                    log::debug!("Successfully processed message");
+        while !channel_closed {
+            let (msg, closed) = if batch.is_empty() {
+                let m = self.receiver.recv().await;
+                let closed = m.is_none();
+                (m, closed)
+            } else {
+                match timeout(BATCH_FLUSH_TIMEOUT, self.receiver.recv()).await {
+                    Ok(Some(m)) => (Some(m), false),
+                    Ok(None) => (None, true),
+                    Err(_) => (None, false), // timeout: flush partial batch
                 }
-                Err(e) => {
-                    log::error!("Error processing message: {}", e);
+            };
+            if closed {
+                channel_closed = true;
+            }
+
+            let msg_is_none = msg.is_none();
+            if let Some(message) = msg {
+                QUEUE_EMPTY.store(false, Ordering::SeqCst);
+                QUEUE_SIZE.fetch_add(1, Ordering::SeqCst);
+                batch.push(message);
+            }
+
+            let should_flush = batch.len() >= BATCH_SIZE
+                || channel_closed
+                || (msg_is_none && !batch.is_empty());
+
+            if should_flush && !batch.is_empty() {
+                let n = batch.len();
+                match self.process_batch(std::mem::take(&mut batch)).await {
+                    Ok(_) => {
+                        log::debug!("Batch of {} messages stored", n);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to store message batch: {}", e);
+                    }
+                }
+                let prev = QUEUE_SIZE.fetch_sub(n, Ordering::SeqCst);
+                if prev <= n {
+                    QUEUE_EMPTY.store(true, Ordering::SeqCst);
                 }
             }
 
-            // Decrement queue size after processing
-            let new_size = QUEUE_SIZE.fetch_sub(1, Ordering::SeqCst) - 1;
-            if new_size == 0 {
-                QUEUE_EMPTY.store(true, Ordering::SeqCst);
+            if channel_closed {
+                break;
             }
-            log::debug!("Message processed. Queue size: {}", new_size);
-
-            // Add a small delay to prevent CPU overuse
-            sleep(Duration::from_millis(10)).await;
         }
         QUEUE_EMPTY.store(true, Ordering::SeqCst);
     }
 
-    async fn process_message(
+    async fn process_batch(
         &self,
-        message: CrdtMessageModel,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut conn = db::get_async_connection().await;
-
-        // Store the message
-        match message_service::insert_message(&mut conn, message).await {
-            Ok(_) => {
-                log::debug!("Message stored successfully");
-                Ok(())
-            }
-            Err(e) => {
-                log::error!("Failed to store message: {}", e);
-                Err(Box::new(e))
-            }
+        messages: Vec<CrdtMessageModel>,
+    ) -> Result<(), DieselError> {
+        if messages.is_empty() {
+            return Ok(());
         }
+        let mut conn = db::get_async_connection().await;
+        message_service::insert_messages_batch(&mut conn, &messages).await?;
+        Ok(())
     }
 }
 pub async fn save_pending_messages() -> Result<(), String> {
+    use tokio::time::sleep;
+
     log::info!("Waiting for message queue to drain...");
     let initial_size = get_queue_size();
     log::info!("Current message queue size: {}", initial_size);
 
-    // Add a maximum wait time (e.g., 30 seconds)
-    let max_wait_time = Duration::from_secs(30);
+    // Wait for the background MessageManager to process all messages; do not force-reset
+    // so that shutdown does not proceed with messages still in the channel.
+    let max_wait_time = Duration::from_secs(300);
     let start_time = std::time::Instant::now();
-    let mut last_size = initial_size;
-    let mut stuck_count = 0;
+    let mut last_log = std::time::Instant::now();
 
     while !is_queue_empty() {
-        // Check if we've exceeded the maximum wait time
         if start_time.elapsed() > max_wait_time {
-            log::warn!("Exceeded maximum wait time for queue drain. Forcing shutdown with {} messages remaining", get_queue_size());
-            // Force reset the counter to allow shutdown
-            QUEUE_SIZE.store(0, Ordering::SeqCst);
-            QUEUE_EMPTY.store(true, Ordering::SeqCst);
-            break;
+            log::error!(
+                "Exceeded maximum wait time ({}s) for queue drain. {} messages still pending. Shutting down anyway.",
+                max_wait_time.as_secs(),
+                get_queue_size()
+            );
+            return Err(format!(
+                "Queue did not drain in time: {} messages remaining",
+                get_queue_size()
+            ));
         }
 
-        // Wait a bit before checking again
         sleep(Duration::from_millis(100)).await;
 
-        // Log progress periodically
-        static mut COUNTER: u32 = 0;
-        unsafe {
-            COUNTER += 1;
-            if COUNTER % 50 == 0 {
-                // Log every ~5 seconds
-                let current_size = get_queue_size();
-                log::info!(
-                    "Still waiting for message queue to drain... ({} seconds) - {} messages remaining",
-                    COUNTER / 10,
-                    current_size
-                );
-
-                // Check if the size hasn't changed for multiple iterations
-                if current_size == last_size && current_size > 0 {
-                    stuck_count += 1;
-
-                    // If stuck for too long (15 seconds with no change), reset the counter
-                    if stuck_count >= 3 {
-                        log::warn!("Queue size hasn't changed for 15 seconds. Possible counter desynchronization. Resetting counter.");
-                        QUEUE_SIZE.store(0, Ordering::SeqCst);
-                        QUEUE_EMPTY.store(true, Ordering::SeqCst);
-                        break;
-                    }
-                } else {
-                    stuck_count = 0;
-                }
-
-                last_size = current_size;
-            }
+        if last_log.elapsed() >= Duration::from_secs(5) {
+            let current_size = get_queue_size();
+            log::info!(
+                "Still waiting for message queue to drain... ({:.0}s elapsed) - {} messages remaining",
+                start_time.elapsed().as_secs_f64(),
+                current_size
+            );
+            last_log = std::time::Instant::now();
         }
     }
 
-    log::info!("Message queue is empty or timeout reached, proceeding with shutdown");
+    log::info!("Message queue drained, proceeding with shutdown");
     Ok(())
 }
 

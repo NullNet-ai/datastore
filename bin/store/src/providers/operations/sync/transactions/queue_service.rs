@@ -11,6 +11,9 @@ use diesel_async::RunQueryDsl;
 use serde_json::Value;
 use ulid::Ulid;
 
+/// Lock the queue row so concurrent enqueuers get unique order values (avoids lost items under concurrency).
+use diesel::query_dsl::methods::LockingDsl;
+
 pub struct QueueService;
 
 impl QueueService {
@@ -57,8 +60,10 @@ impl QueueService {
     ) -> Result<i32, DieselError> {
         conn.transaction::<_, DieselError, _>(|conn| {
             Box::pin(async move {
+                // Lock the queue row so concurrent enqueuers get unique order values.
                 let queue = queues::table
                     .filter(queues::name.eq(queue_name))
+                    .for_update()
                     .first::<QueueModel>(conn)
                     .await
                     .optional()?;
