@@ -59,7 +59,6 @@ export { table as smtp_requests } from '../application/smtp_requests';
 export { table as smtp_responses } from '../application/smtp_responses';
 export { table as postgres_channels } from '../application/postgres_channels';
 export { table as resolutions } from '../application/resolutions'; // new entity
-export { table as device_ssh_keys } from '../application/device_ssh_keys';
 export { table as system_resources } from './system_resources';
 export { table as temp_system_resources } from './temp_system_resources';
 export { table as setup_instructions } from "./setup_instructions";
@@ -69,11 +68,6 @@ export { table as device_instances } from "./device_instances";
 export { table as temp_device_instances } from "./temp_device_instances"; 
 
 export { table as device_tunnels } from "./device_tunnels"; 
-
-export { table as device_ssh_sessions } from "./device_ssh_sessions"; 
-export { table as temp_device_ssh_sessions } from "./temp_device_ssh_sessions";
-export { table as device_tty_sessions } from "./device_tty_sessions"; 
-export { table as temp_device_tty_sessions } from "./temp_device_tty_sessions";
 
 // export { table as data_permissions } from '../application/data_permissions';
 export { table as versions } from './versions';
