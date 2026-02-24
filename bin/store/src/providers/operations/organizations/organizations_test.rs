@@ -34,6 +34,7 @@ mod tests {
             contact_categories: Some(vec!["contact_cat1".to_string()]),
             device_categories: Some(vec!["device_cat1".to_string()]),
             responsible_account_organization_id: Some("resp_acc_org_123".to_string()),
+            initial_personal_organization_id: None,
         }
     }
 
@@ -529,5 +530,164 @@ mod tests {
         assert!(debug_str.contains("test_token"));
 
         println!("LoginResponse Debug format test passed");
+    }
+
+    // --- Static initial personal organization ID (super admin / system device) ---
+
+    /// Expected static IDs used only by initializers (must match global_organization_init and system_device_init).
+    const EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID: &str = "01JSN4XA2C3A7RHN3MNZZJGBR4";
+    const EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID: &str = "01JSN4XA2C3A7RHN3MNZZJGBR5";
+
+    /// Register::default() must have initial_personal_organization_id None so normal flows never get a static ID.
+    #[tokio::test]
+    async fn initial_personal_organization_id_default_is_none() {
+        let register = Register::default();
+        assert_eq!(register.initial_personal_organization_id, None);
+    }
+
+    /// create_default_register (simulating API/register flow) must not set static ID.
+    #[tokio::test]
+    async fn normal_register_does_not_use_static_personal_org_id() {
+        let register = create_default_register();
+        assert_eq!(register.initial_personal_organization_id, None);
+    }
+
+    /// When set, initial_personal_organization_id is preserved (used by initializers).
+    #[tokio::test]
+    async fn initial_personal_organization_id_when_set_is_preserved() {
+        let mut register = create_default_register();
+        register.initial_personal_organization_id = Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string());
+        assert_eq!(
+            register.initial_personal_organization_id.as_deref(),
+            Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID)
+        );
+    }
+
+    /// Super-admin-style Register (as built by global_organization_init) must have the expected static ID.
+    #[tokio::test]
+    async fn super_admin_initializer_register_uses_expected_static_id() {
+        let register = Register {
+            account_type: Some(AccountType::Contact),
+            organization_id: Some("01JBHKXHYSKPP247HZZWHA3JCT".to_string()),
+            organization_name: Some("global-organization".to_string()),
+            account_id: "admin@dnamicro.com".to_string(),
+            account_secret: "password".to_string(),
+            first_name: "Super".to_string(),
+            last_name: "Admin".to_string(),
+            is_new_user: Some(true),
+            account_status: Some("Active".to_string()),
+            contact_categories: Some(vec!["Contact".to_string(), "User".to_string()]),
+            role_id: Some("super_admin".to_string()),
+            account_organization_categories: Some(vec![]),
+            id: None,
+            name: None,
+            contact_id: None,
+            email: None,
+            password: None,
+            parent_organization_id: None,
+            code: None,
+            categories: None,
+            is_invited: None,
+            account_organization_status: None,
+            account_organization_id: None,
+            device_categories: None,
+            responsible_account_organization_id: None,
+            initial_personal_organization_id: Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string()),
+        };
+        assert_eq!(
+            register.initial_personal_organization_id.as_deref(),
+            Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID)
+        );
+    }
+
+    /// System-device-style Register (as built by system_device_init) must have the expected static ID.
+    #[tokio::test]
+    async fn system_device_initializer_register_uses_expected_static_id() {
+        let register = Register {
+            account_type: Some(AccountType::Device),
+            organization_id: Some("01JBHKXHYSKPP247HZZWHA3JCT".to_string()),
+            organization_name: Some("global-organization".to_string()),
+            account_id: "system_device".to_string(),
+            account_secret: "secret".to_string(),
+            first_name: "".to_string(),
+            last_name: "".to_string(),
+            is_new_user: Some(true),
+            account_status: Some("Active".to_string()),
+            contact_categories: None,
+            role_id: Some("super_admin".to_string()),
+            id: None,
+            name: None,
+            contact_id: None,
+            email: None,
+            password: None,
+            parent_organization_id: None,
+            code: None,
+            categories: None,
+            is_invited: None,
+            account_organization_status: Some("Active".to_string()),
+            account_organization_categories: None,
+            account_organization_id: None,
+            device_categories: Some(vec!["Device".to_string()]),
+            responsible_account_organization_id: None,
+            initial_personal_organization_id: Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID.to_string()),
+        };
+        assert_eq!(
+            register.initial_personal_organization_id.as_deref(),
+            Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID)
+        );
+    }
+
+    /// Static IDs must be distinct (super admin vs system device).
+    #[tokio::test]
+    async fn static_ids_are_distinct() {
+        assert_ne!(
+            EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID,
+            EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID
+        );
+    }
+
+    /// Static IDs must look like ULIDs (26 chars, Crockford Base32).
+    #[tokio::test]
+    async fn static_ids_are_valid_ulid_format() {
+        fn valid_ulid_like(s: &str) -> bool {
+            s.len() == 26 && s.chars().all(|c| c.is_ascii_alphanumeric() && c != 'i' && c != 'l' && c != 'o' && c != 'u')
+        }
+        assert!(valid_ulid_like(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID));
+        assert!(valid_ulid_like(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID));
+    }
+
+    /// Failure scenario: Register with initial_personal_organization_id Some("") is still "set" (caller responsibility to not pass empty).
+    #[tokio::test]
+    async fn initial_personal_organization_id_empty_string_is_still_some() {
+        let mut register = Register::default();
+        register.initial_personal_organization_id = Some(String::new());
+        assert_eq!(register.initial_personal_organization_id, Some("".to_string()));
+    }
+
+    /// Serde: deserializing JSON without initial_personal_organization_id yields None (no static ID for API requests).
+    #[tokio::test]
+    async fn serde_deserialize_register_without_field_yields_none() {
+        let json = r#"{"account_id":"u@example.com","account_secret":"secret","first_name":"A","last_name":"B"}"#;
+        let register: Register = serde_json::from_str(json).unwrap();
+        assert_eq!(register.initial_personal_organization_id, None);
+    }
+
+    /// Serde: roundtrip with initial_personal_organization_id set preserves it.
+    #[tokio::test]
+    async fn serde_roundtrip_preserves_initial_personal_organization_id() {
+        let mut register = create_default_register();
+        register.initial_personal_organization_id = Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID.to_string());
+        let json = serde_json::to_string(&register).unwrap();
+        let back: Register = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.initial_personal_organization_id.as_deref(), Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID));
+    }
+
+    /// Clone preserves initial_personal_organization_id.
+    #[tokio::test]
+    async fn clone_preserves_initial_personal_organization_id() {
+        let mut register = create_default_register();
+        register.initial_personal_organization_id = Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string());
+        let cloned = register.clone();
+        assert_eq!(cloned.initial_personal_organization_id, register.initial_personal_organization_id);
     }
 }

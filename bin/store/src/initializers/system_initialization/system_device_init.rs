@@ -23,6 +23,9 @@ impl SystemDeviceInitializer {
         let default_device_secret = std::env::var("DEFAULT_DEVICE_SECRET")
             .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
 
+        // Static ID for system device's initial personal organization (never changes across setups).
+        const SYSTEM_DEVICE_PERSONAL_ORGANIZATION_ID: &str = "01JSN4XA2C3A7RHN3MNZZJGBR5";
+
         let default_device_setup = Register {
             account_type: Some(AccountType::Device),
             organization_id: Some(default_organization_id.clone()),
@@ -50,6 +53,7 @@ impl SystemDeviceInitializer {
             account_organization_id: None,
             device_categories: Some(vec!["Device".to_string()]),
             responsible_account_organization_id: None,
+            initial_personal_organization_id: Some(SYSTEM_DEVICE_PERSONAL_ORGANIZATION_ID.to_string()),
         };
 
         // Call the existing initialize function with our device setup

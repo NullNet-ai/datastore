@@ -17,7 +17,7 @@ use futures::Stream;
 use hlc;
 use log::{debug, info};
 use merkle::MerkleTree;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -559,11 +559,18 @@ async fn sync(
     } else {
         log::debug!("No new remote updates");
     }
+    log::debug!("Result: {:?}", result);
+    
     let result_merkle = result
         .get("merkle")
-        .and_then(|m| m.as_str())
-        .unwrap_or("")
-        .to_string();
+        .map(|m| {
+            if let Some(s) = m.as_str() {
+                s.to_string()
+            } else {
+                serde_json::to_string(m).unwrap_or_default()
+            }
+        })
+        .unwrap_or_default();
     if result_merkle.is_empty() {
         log::debug!("No Merkle tree found in the response");
     }

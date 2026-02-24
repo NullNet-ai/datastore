@@ -22,6 +22,9 @@ impl GlobalOrganizationInitializer {
             std::env::var("DEFAULT_ORGANIZATION_ADMIN_PASSWORD")
                 .unwrap_or_else(|_| "ch@ng3m3Pl3@s3!!".to_string());
 
+        // Static ID for super admin's initial personal organization (never changes across setups).
+        const SUPER_ADMIN_PERSONAL_ORGANIZATION_ID: &str = "01JSN4XA2C3A7RHN3MNZZJGBR4";
+
         // Create default account setup
         let default_account_setup = Register {
             account_type: Some(AccountType::Contact),
@@ -50,6 +53,7 @@ impl GlobalOrganizationInitializer {
             account_organization_id: None,
             device_categories: None,
             responsible_account_organization_id: None,
+            initial_personal_organization_id: Some(SUPER_ADMIN_PERSONAL_ORGANIZATION_ID.to_string()),
         };
 
         // Call the existing initialize function with our custom setup

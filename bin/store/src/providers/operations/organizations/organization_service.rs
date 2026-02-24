@@ -195,11 +195,11 @@ pub async fn register(
             }
         }
     } else {
-        //create a personal organization
+        //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
         let personal_organization_id = create_new_organization(
             "Personal Organization".to_string(),
             vec!["Personal".to_string()],
-            None,
+            params.initial_personal_organization_id.clone(),
             if organizations_counter.is_some() {
                 match helpers::generate_code("organizations").await {
                     Ok(code) => code,
@@ -743,6 +743,7 @@ pub async fn initialize(data: Option<Register>) -> Result<(), ApiError> {
         contact_categories: None,
         device_categories: None,
         responsible_account_organization_id: None,
+        initial_personal_organization_id: None,
     });
 
     // If default organization ID is not set, return early
