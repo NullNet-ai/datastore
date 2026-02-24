@@ -68,6 +68,7 @@ export { table as device_instances } from "./device_instances";
 export { table as temp_device_instances } from "./temp_device_instances"; 
 
 export { table as device_tunnels } from "./device_tunnels"; 
+export { table as temp_device_tunnels } from "./temp_device_tunnels"; 
 
 // export { table as data_permissions } from '../application/data_permissions';
 export { table as versions } from './versions';
