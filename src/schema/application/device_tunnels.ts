@@ -2,6 +2,7 @@ import {
   pgTable,
   text,
   primaryKey,
+  integer,
 } from 'drizzle-orm/pg-core';
 import * as path from 'path';
 import {
@@ -26,6 +27,8 @@ export const table = pgTable(
     tunnel_type: text('tunnel_type'),
     // @TODO:  key to `device_services` id
     service_id: text('service_id'),
+    tunnel_status: text('tunnel_status'),
+    last_accessed: integer('last_accessed').default(0),
   },
   config,
 );
