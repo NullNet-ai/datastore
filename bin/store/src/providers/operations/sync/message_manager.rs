@@ -6,6 +6,7 @@ use once_cell::sync::OnceCell;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 use tokio::time::timeout;
 
 use lazy_static::lazy_static;
@@ -15,10 +16,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 const BATCH_SIZE: usize = 300;
 /// When no message arrives for this long, flush any partial batch (avoids holding messages during low traffic).
 const BATCH_FLUSH_TIMEOUT: Duration = Duration::from_millis(5);
+/// Interval between retries of failed batches (local in-memory queue only).
+const FAILED_BATCH_RETRY_INTERVAL: Duration = Duration::from_secs(5 * 60);
 
 lazy_static! {
     static ref QUEUE_EMPTY: AtomicBool = AtomicBool::new(true);
     static ref QUEUE_SIZE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    /// In-memory queue of batches that failed to insert. Retried every 5 minutes.
+    static ref FAILED_BATCH_QUEUE: Arc<Mutex<Vec<Vec<CrdtMessageModel>>>> =
+        Arc::new(Mutex::new(Vec::new()));
 }
 
 pub fn is_queue_empty() -> bool {
@@ -101,7 +107,8 @@ impl MessageManager {
                         log::debug!("Batch of {} messages stored", n);
                     }
                     Err(e) => {
-                        log::error!("Failed to store message batch: {}", e);
+                        log::error!("Failed to store message batch: {} (batch queued for retry)", e);
+                        // Batch was already pushed to FAILED_BATCH_QUEUE inside process_batch
                     }
                 }
                 let prev = QUEUE_SIZE.fetch_sub(n, Ordering::SeqCst);
@@ -125,8 +132,14 @@ impl MessageManager {
             return Ok(());
         }
         let mut conn = db::get_async_connection().await;
-        message_service::insert_messages_batch(&mut conn, &messages).await?;
-        Ok(())
+        match message_service::insert_messages_batch(&mut conn, &messages).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                // Queue failed batch for retry (local in-memory only)
+                FAILED_BATCH_QUEUE.lock().await.push(messages);
+                Err(e)
+            }
+        }
     }
 }
 pub async fn save_pending_messages() -> Result<(), String> {
@@ -168,7 +181,114 @@ pub async fn save_pending_messages() -> Result<(), String> {
         }
     }
 
-    log::info!("Message queue drained, proceeding with shutdown");
+    log::info!("Message queue drained, waiting for failed-batch queue to flush...");
+
+    // Wait for failed-batch queue to empty: run retry passes until empty or timeout
+    let flush_start = std::time::Instant::now();
+    let mut last_flush_log = std::time::Instant::now();
+    loop {
+        let to_retry: Vec<Vec<CrdtMessageModel>> = {
+            let mut q = FAILED_BATCH_QUEUE.lock().await;
+            std::mem::take(q.as_mut())
+        };
+        if to_retry.is_empty() {
+            log::info!("Failed-batch queue flushed, proceeding with shutdown");
+            return Ok(());
+        }
+        if flush_start.elapsed() > max_wait_time {
+            let pending_count = to_retry.len();
+            let mut q = FAILED_BATCH_QUEUE.lock().await;
+            q.extend(to_retry);
+            log::error!(
+                "Exceeded maximum wait time ({}s) for failed-batch queue flush. {} batch(es) still pending. Shutting down anyway.",
+                max_wait_time.as_secs(),
+                pending_count
+            );
+            return Err(format!(
+                "Failed-batch queue did not flush in time: {} batch(es) remaining",
+                pending_count
+            ));
+        }
+        log::info!(
+            "Shutdown flush: retrying {} failed batch(es)",
+            to_retry.len()
+        );
+        let mut requeue = Vec::new();
+        for batch in to_retry {
+            if batch.is_empty() {
+                continue;
+            }
+            let n = batch.len();
+            match try_insert_batch(&batch).await {
+                Ok(_) => {
+                    log::debug!("Shutdown flush: batch of {} messages stored", n);
+                }
+                Err(e) => {
+                    log::warn!("Shutdown flush: batch of {} messages failed: {} (will requeue)", n, e);
+                    requeue.push(batch);
+                }
+            }
+        }
+        if !requeue.is_empty() {
+            let mut q = FAILED_BATCH_QUEUE.lock().await;
+            q.extend(requeue);
+        }
+        sleep(Duration::from_millis(100)).await;
+        if last_flush_log.elapsed() >= Duration::from_secs(5) {
+            let remaining = FAILED_BATCH_QUEUE.lock().await.len();
+            log::info!(
+                "Still waiting for failed-batch queue to flush... ({:.0}s elapsed) - {} batch(es) remaining",
+                flush_start.elapsed().as_secs_f64(),
+                remaining
+            );
+            last_flush_log = std::time::Instant::now();
+        }
+    }
+}
+
+/// Runs in the background: every 5 minutes, retries failed batches from the local in-memory queue.
+/// Successful inserts remove the batch; failures re-queue it for the next cycle.
+async fn run_failed_batch_retry_loop() {
+    use tokio::time::sleep;
+    loop {
+        sleep(FAILED_BATCH_RETRY_INTERVAL).await;
+        let to_retry: Vec<Vec<CrdtMessageModel>> = {
+            let mut q = FAILED_BATCH_QUEUE.lock().await;
+            std::mem::take(q.as_mut())
+        };
+        if to_retry.is_empty() {
+            continue;
+        }
+        log::info!(
+            "Retrying {} failed batch(es) from local queue",
+            to_retry.len()
+        );
+        let mut requeue = Vec::new();
+        for batch in to_retry {
+            if batch.is_empty() {
+                continue;
+            }
+            let n = batch.len();
+            match try_insert_batch(&batch).await {
+                Ok(_) => {
+                    log::info!("Retry succeeded for batch of {} messages", n);
+                }
+                Err(e) => {
+                    log::warn!("Retry failed for batch of {} messages: {} (will requeue)", n, e);
+                    requeue.push(batch);
+                }
+            }
+        }
+        if !requeue.is_empty() {
+            let mut q = FAILED_BATCH_QUEUE.lock().await;
+            q.extend(requeue);
+        }
+    }
+}
+
+async fn try_insert_batch(messages: &[CrdtMessageModel]) -> Result<(), DieselError> {
+    let mut conn = db::get_async_connection().await;
+    message_service::insert_messages_batch(&mut conn, messages).await?;
     Ok(())
 }
 
@@ -181,6 +301,9 @@ pub fn create_message_channel() -> mpsc::UnboundedSender<CrdtMessageModel> {
     tokio::spawn(async move {
         manager.start().await;
     });
+
+    // Spawn the failed-batch retry loop (local queue only, every 5 mins)
+    tokio::spawn(run_failed_batch_retry_loop());
 
     sender
 }
