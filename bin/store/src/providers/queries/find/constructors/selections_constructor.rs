@@ -283,7 +283,7 @@ impl SelectionsConstructor {
                     }
                 }
             }
-            
+
             // Collect all aliased entities that have concatenated fields
             if let Some(aliased_entity) = &concat_field.aliased_entity {
                 all_aliased_entities.insert(aliased_entity.clone());
@@ -351,7 +351,7 @@ impl SelectionsConstructor {
                 ));
             }
         }
-        
+
         selections
     }
 
@@ -405,15 +405,15 @@ impl SelectionsConstructor {
             .get_pluck_object()
             .get(table)
             .unwrap_or(&default_fields);
-         
-         let pluck_object_selections = Self::process_fields_with_concatenation(
-             fields,
-             request_body,
-             table,
-             timezone,
-             get_field,
-             get_field_with_parse_as,
-         );
+
+        let pluck_object_selections = Self::process_fields_with_concatenation(
+            fields,
+            request_body,
+            table,
+            timezone,
+            get_field,
+            get_field_with_parse_as,
+        );
         pluck_object_selections.join(", ")
     }
 
