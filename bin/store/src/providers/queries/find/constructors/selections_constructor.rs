@@ -237,8 +237,9 @@ impl SelectionsConstructor {
         acc_selections.join(", ")
     }
 
-    /// Constructs PLUCK selections for specific fields
-    fn construct_pluck<T: QueryFilter>(
+    /// Helper function to process fields with concatenated field prioritization
+    fn process_fields_with_concatenation<T: QueryFilter>(
+        fields: &[String],
         request_body: &T,
         table: &str,
         timezone: Option<&str>,
@@ -252,14 +253,14 @@ impl SelectionsConstructor {
             Option<&str>,
             bool,
         ) -> String,
-    ) -> String {
-        println!("Pluck fields: {:?}", request_body.get_pluck());
-        let mut pluck_selections = Vec::new();
+    ) -> Vec<String> {
+        let mut selections = Vec::new();
 
         // Collect concatenated field names and their individual fields for this table to check for conflicts
         let mut concatenated_field_names = std::collections::HashSet::new();
         let mut concatenated_source_fields = std::collections::HashSet::new();
         let mut aliased_entities_for_table = std::collections::HashSet::new();
+        let mut all_aliased_entities = std::collections::HashSet::new();
 
         for concat_field in request_body.get_concatenate_fields() {
             if concat_field
@@ -282,27 +283,21 @@ impl SelectionsConstructor {
                     }
                 }
             }
+            
+            // Collect all aliased entities that have concatenated fields
+            if let Some(aliased_entity) = &concat_field.aliased_entity {
+                all_aliased_entities.insert(aliased_entity.clone());
+            }
         }
-        log::debug!(
-            "@@@@Concatenated field names: {:?}",
-            concatenated_field_names
-        );
-        log::debug!(
-            "@@@@Concatenated source fields: {:?}",
-            concatenated_source_fields
-        );
-        log::debug!(
-            "@@@@Aliased entities for table: {:?}",
-            aliased_entities_for_table
-        );
 
         // Handle regular pluck fields - only add if not conflicting with concatenated fields
-        for field in request_body.get_pluck() {
+        for field in fields {
             // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
             // Skip both concatenated field names, their source fields, and aliased entities to avoid conflicts
             if concatenated_field_names.contains(field)
                 || concatenated_source_fields.contains(field)
                 || aliased_entities_for_table.contains(field)
+                || all_aliased_entities.contains(field)
             {
                 continue;
             }
@@ -318,7 +313,7 @@ impl SelectionsConstructor {
                 timezone,
                 with_alias,
             );
-            pluck_selections.push(field_selection);
+            selections.push(field_selection);
         }
 
         // Handle concatenated fields only for main table entity
@@ -350,12 +345,41 @@ impl SelectionsConstructor {
                     .collect::<Vec<_>>()
                     .join(&format!(" || '{}' || ", concat_field.separator));
 
-                pluck_selections.push(format!(
+                selections.push(format!(
                     "({}) AS {}",
                     concatenated_expression, concat_field.field_name
                 ));
             }
         }
+        
+        selections
+    }
+
+    /// Constructs PLUCK selections for specific fields
+    fn construct_pluck<T: QueryFilter>(
+        request_body: &T,
+        table: &str,
+        timezone: Option<&str>,
+        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
+        get_field_with_parse_as: &impl Fn(
+            &str,
+            &str,
+            &str,
+            Option<&str>,
+            &str,
+            Option<&str>,
+            bool,
+        ) -> String,
+    ) -> String {
+        println!("Pluck fields: {:?}", request_body.get_pluck());
+        let pluck_selections = Self::process_fields_with_concatenation(
+            request_body.get_pluck(),
+            request_body,
+            table,
+            timezone,
+            get_field,
+            get_field_with_parse_as,
+        );
         pluck_selections.join(", ")
     }
 
@@ -376,107 +400,20 @@ impl SelectionsConstructor {
         ) -> String,
     ) -> String {
         println!("Pluck object fields: {:?}", request_body.get_pluck_object());
-        let mut pluck_object_selections = Vec::new();
-
-        // Collect concatenated field names and their individual fields for this table to check for conflicts
-        let mut concatenated_field_names = std::collections::HashSet::new();
-        let mut concatenated_source_fields = std::collections::HashSet::new();
-        let mut aliased_entities_for_table = std::collections::HashSet::new();
-
-        for concat_field in request_body.get_concatenate_fields() {
-            if concat_field
-                .aliased_entity
-                .as_deref()
-                .map(|a| a == table)
-                .unwrap_or(false)
-                || concat_field.entity == table
-            {
-                // Add the concatenated field name itself
-                concatenated_field_names.insert(concat_field.field_name.clone());
-                // Add all source fields that are part of this concatenation
-                for source_field in &concat_field.fields {
-                    concatenated_source_fields.insert(source_field.clone());
-                }
-                // Track aliased entities that should override pluck_object fields
-                if let Some(aliased_entity) = &concat_field.aliased_entity {
-                    if concat_field.entity == table {
-                        aliased_entities_for_table.insert(aliased_entity.clone());
-                    }
-                }
-            }
-        }
-        log::debug!(
-            "@@@@Concatenated field names: {:?}",
-            concatenated_field_names
-        );
-        log::debug!(
-            "@@@@Concatenated source fields: {:?}",
-            concatenated_source_fields
-        );
-        // Handle regular pluck fields - only add if not conflicting with concatenated fields
-        for field in request_body
+        let default_fields = Vec::new();
+        let fields = request_body
             .get_pluck_object()
             .get(table)
-            .unwrap_or(&Vec::new())
-        {
-            // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
-            // Skip both concatenated field names, their source fields, and aliased entities to avoid conflicts
-            if concatenated_field_names.contains(field)
-                || concatenated_source_fields.contains(field)
-                || aliased_entities_for_table.contains(field)
-            {
-                continue;
-            }
-
-            let with_alias = field.ends_with("_date")
-                || field.ends_with("_time")
-                || field.eq_ignore_ascii_case("timestamp");
-            let field_selection = get_field(
-                table,
-                field,
-                request_body.get_date_format(),
-                table,
-                timezone,
-                with_alias,
-            );
-            pluck_object_selections.push(field_selection);
-        }
-
-        // Handle concatenated fields only for main table entity
-        for concat_field in request_body.get_concatenate_fields() {
-            if concat_field
-                .aliased_entity
-                .as_deref()
-                .map(|a| a == table)
-                .unwrap_or(false)
-                || concat_field.entity == table
-            {
-                let concatenated_expression = concat_field
-                    .fields
-                    .iter()
-                    .map(|f| {
-                        format!(
-                            "COALESCE({}, '')",
-                            get_field_with_parse_as(
-                                table,
-                                f,
-                                request_body.get_date_format(),
-                                None,
-                                table,
-                                timezone,
-                                false,
-                            )
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .join(&format!(" || '{}' || ", concat_field.separator));
-
-                pluck_object_selections.push(format!(
-                    "({}) AS {}",
-                    concatenated_expression, concat_field.field_name
-                ));
-            }
-        }
+            .unwrap_or(&default_fields);
+         
+         let pluck_object_selections = Self::process_fields_with_concatenation(
+             fields,
+             request_body,
+             table,
+             timezone,
+             get_field,
+             get_field_with_parse_as,
+         );
         pluck_object_selections.join(", ")
     }
 
