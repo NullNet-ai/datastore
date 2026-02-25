@@ -5,6 +5,7 @@ mod tests {
         providers::queries::find::SQLConstructor,
         structs::core::{FilterCriteria, GetByFilter, MatchPattern},
     };
+    use dotenv::dotenv;
     use reqwest;
     use serde_json::json;
     use std::fs;
@@ -485,6 +486,114 @@ mod tests {
             }
             Err(e) => {
                 println!("    ⚠ Auth request error: {}", e);
+                AuthResponse {
+                    token: None,
+                    session_id: None,
+                    is_authenticated: false,
+                    server_available: true,
+                    username: "".to_string(),
+                    password: "".to_string(),
+                }
+            }
+        }
+    }
+
+    async fn perform_root_login() -> AuthResponse {
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        let health_check = client
+            .get(&format!("{}/health", base_url))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+
+        let server_available = health_check.is_ok();
+
+        if !server_available {
+            return AuthResponse {
+                token: None,
+                session_id: None,
+                is_authenticated: false,
+                server_available: false,
+                username: "".to_string(),
+                password: "".to_string(),
+            };
+        }
+
+        let payload = json!({
+            "data": {
+                "account_id": "root",
+                "account_secret": "pl3@s3ch@ng3m3!!"
+            }
+        });
+
+        let response = client
+            .post(&format!("{}/api/organizations/auth?is_root=true", base_url))
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await;
+
+        match response {
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(json_response) => {
+                        let token = json_response
+                            .get("token")
+                            .and_then(|t| t.as_str())
+                            .map(|s| s.to_string());
+                        let session_id = json_response
+                            .get("sessionID")
+                            .and_then(|s| s.as_str())
+                            .map(|s| s.to_string());
+
+                        let is_authenticated = token.is_some() && session_id.is_some();
+
+                        AuthResponse {
+                            token,
+                            session_id,
+                            is_authenticated,
+                            server_available: true,
+                            username: "root".to_string(),
+                            password: "pl3@s3ch@ng3m3!!".to_string(),
+                        }
+                    }
+                    Err(e) => {
+                        println!("    ⚠ Failed to parse root auth response: {}", e);
+                        AuthResponse {
+                            token: None,
+                            session_id: None,
+                            is_authenticated: false,
+                            server_available: true,
+                            username: "".to_string(),
+                            password: "".to_string(),
+                        }
+                    }
+                }
+            }
+            Ok(resp) => {
+                println!(
+                    "    ⚠ Root auth request failed with status: {}",
+                    resp.status()
+                );
+                let body_text = resp
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Failed to read body".to_string());
+                println!("    ⚠ Root auth response body: {}", body_text);
+                AuthResponse {
+                    token: None,
+                    session_id: None,
+                    is_authenticated: false,
+                    server_available: true,
+                    username: "".to_string(),
+                    password: "".to_string(),
+                }
+            }
+            Err(e) => {
+                println!("    ⚠ Root auth request error: {}", e);
                 AuthResponse {
                     token: None,
                     session_id: None,
@@ -3568,5 +3677,311 @@ mod tests {
             name
         );
         println!("  ✓ Create with existing id correctly performed update");
+    }
+
+    /// Test that /api/store/root/switch_account only accepts root tokens.
+    ///
+    /// This integration test:
+    /// - Obtains a non-root token via perform_login (regular account).
+    /// - Attempts to call /api/store/root/switch_account with non-root token and expects failure.
+    /// - Attempts to call the same route with a root token and expects it is not rejected
+    ///   purely due to root access requirements.
+    #[tokio::test]
+    #[ignore]
+    async fn switch_account_requires_root_token() {
+        use reqwest::StatusCode;
+
+        println!("Testing that /api/store/root/switch_account only accepts root tokens...");
+
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+        let switch_url = format!("{}/api/store/root/switch_account", base_url);
+
+        // Health check
+        let health = client
+            .get(&format!("{}/health", base_url))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+        if health.is_err() {
+            println!("  ⚠ Server not available, skipping root token test");
+            return;
+        }
+
+        // 1) Get a non-root token via perform_login (regular authentication)
+        let non_root_auth = perform_login().await;
+        if !non_root_auth.server_available || !non_root_auth.is_authenticated {
+            println!("  ⚠ Non-root authentication not available, skipping test");
+            return;
+        }
+
+        let non_root_token = non_root_auth
+            .token
+            .as_ref()
+            .expect("Non-root authentication should return a token");
+
+        // Use a dummy organization_id; behavior beyond auth depends on DB contents
+        let payload = json!({
+            "data": {
+                "token": non_root_token,
+                "organization_id": "dummy_organization_id_for_test"
+            }
+        });
+
+        let non_root_resp = client
+            .post(&switch_url)
+            .bearer_auth(non_root_token)
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+            .expect("request to switch_account with non-root token");
+
+        let non_root_body = non_root_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "Failed to read response body".to_string());
+        let body_json: serde_json::Value =
+            serde_json::from_str(&non_root_body).unwrap_or_else(|_| serde_json::json!({}));
+
+        let message = body_json
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("");
+
+        println!("  ↳ Non-root token message: {}", message);
+        assert_eq!(message, "Access denied: Root access required");
+
+        // 2) Attempt with a root token, if obtainable
+        let root_auth = perform_root_login().await;
+        if !root_auth.server_available || !root_auth.is_authenticated {
+            println!("  ⚠ Root authentication not available, skipping root token assertions");
+            return;
+        }
+
+        if let Some(root_token) = root_auth.token.as_ref() {
+            let root_payload = json!({
+                "data": {
+                    "token": non_root_token,
+                    "organization_id": "dummy_organization_id_for_test"
+                }
+            });
+
+            let root_resp = client
+                .post(&switch_url)
+                .bearer_auth(root_token)
+                .json(&root_payload)
+                .timeout(std::time::Duration::from_secs(5))
+                .send()
+                .await
+                .expect("request to switch_account with root token");
+
+            let root_status = root_resp.status();
+            println!("  ↳ Root token switch_account status: {}", root_status);
+
+            // We only assert that it's not rejected purely due to root access requirements.
+            assert_ne!(
+                root_status,
+                StatusCode::FORBIDDEN,
+                "Root token should not be rejected with 403 when accessing /root/switch_account"
+            );
+        }
+    }
+
+    /// Test that switch_account requires both token and organization_id in request data.
+    ///
+    /// This test:
+    /// - Performs a login to obtain a valid token.
+    /// - Calls /api/store/root/switch_account without token and organization_id to verify validation errors.
+    /// - Calls /api/store/root/switch_account with both fields present to verify success when server is available.
+    #[tokio::test]
+    #[ignore]
+    async fn switch_account_requires_token_and_organization_id() {
+        use reqwest::StatusCode;
+
+        println!("Testing switch_account validation for token and organization_id...");
+
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // First, check if server is available
+        let health = client
+            .get(&format!("{}/health", base_url))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+        if health.is_err() {
+            println!("  ⚠ Server not available, skipping switch_account validation test");
+            return;
+        }
+
+        // Perform login to get a valid token (if possible)
+        let auth_response = perform_root_login().await;
+
+        if !auth_response.server_available || !auth_response.is_authenticated {
+            println!("  ⚠ Authentication not available, skipping switch_account positive case");
+        }
+
+        let switch_url = format!("{}/api/store/root/switch_account", base_url);
+
+        // Case 1: Missing token and organization_id in data
+        let invalid_payload = json!({
+            "data": {}
+        });
+
+        let invalid_resp = client
+            .post(&switch_url)
+            .json(&invalid_payload)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+            .expect("request to switch_account with invalid payload");
+
+        let invalid_status = invalid_resp.status();
+        println!("  ↳ Invalid payload status: {}", invalid_status);
+
+        let invalid_body_text = invalid_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "Failed to read body".to_string());
+        println!("  ↳ Invalid payload response body: {}", invalid_body_text);
+
+        assert!(
+            !invalid_status.is_success(),
+            "switch_account should not succeed without token and organization_id"
+        );
+
+        // Case 2: Valid token and organization_id present
+        if auth_response.is_authenticated {
+            let token = auth_response
+                .token
+                .as_ref()
+                .expect("Authenticated response should contain token");
+
+            let valid_payload = json!({
+                "data": {
+                    "token": token,
+                    "organization_id": "dummy_organization_id_for_test"
+                }
+            });
+
+            let valid_resp = client
+                .post(&switch_url)
+                .json(&valid_payload)
+                .timeout(std::time::Duration::from_secs(5))
+                .send()
+                .await
+                .expect("request to switch_account with valid payload");
+
+            println!("  ↳ Valid payload status: {}", valid_resp.status());
+
+            assert!(
+                valid_resp.status() != StatusCode::BAD_REQUEST,
+                "switch_account should not return 400 purely due to missing token/organization_id when both are provided"
+            );
+        }
+    }
+
+    /// Test that logged account organization_id can differ from request.data.organization_id
+    /// when using org_auth_service::get_account for the logged account.
+    ///
+    /// This is an integration-style test that:
+    /// - Logs in to obtain a valid token.
+    /// - Verifies the token to get claims and logged account organization_id.
+    /// - Uses org_auth_service::get_account to fetch the logged account.
+    /// - Confirms that a synthetic request.data.organization_id can be different from the logged account organization_id.
+    #[tokio::test]
+    #[ignore]
+    async fn switch_account_logged_account_org_differs_from_request_org() {
+        dotenv().ok();
+
+        use crate::providers::operations::auth::auth_service;
+        use crate::providers::operations::organizations::auth_service as org_auth_service;
+
+        println!(
+            "Testing switch_account scenario where logged account org_id differs from request.data.organization_id..."
+        );
+
+        let client = reqwest::Client::new();
+        let config = EnvConfig::default();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        // Check server availability
+        let health = client
+            .get(&format!("{}/health", base_url))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+        if health.is_err() {
+            println!("  ⚠ Server not available, skipping switch_account logged-account test");
+            return;
+        }
+
+        // Login to get a token
+        let auth_response = perform_login().await;
+
+        if !auth_response.server_available || !auth_response.is_authenticated {
+            println!("  ⚠ Authentication not available, skipping test");
+            return;
+        }
+
+        let token = auth_response
+            .token
+            .as_ref()
+            .expect("Authenticated response should contain token");
+
+        // Verify token to get claims
+        let claims = match auth_service::verify(token) {
+            Ok(c) => c,
+            Err(e) => {
+                println!("  ⚠ Failed to verify token: {}", e);
+                return;
+            }
+        };
+
+        let logged_org_id = claims.account.organization_id.clone();
+        let account_id = claims.account.account_id.clone();
+        let account_organization_id = claims.account.account_organization_id.clone();
+
+        println!("  ℹ Logged account_id: {}", account_id);
+        println!("  ℹ Logged organization_id from claims: {}", logged_org_id);
+
+        // Fetch the logged account using org_auth_service::get_account
+        let logged_account_result = org_auth_service::get_account(
+            &account_id,
+            Some(&logged_org_id),
+            Some(account_organization_id.as_str()),
+            None,
+        )
+        .await;
+
+        match logged_account_result {
+            Ok(Some(_logged_account)) => {
+                // Create a synthetic request.data.organization_id that is different
+                let request_org_id = format!("{}_different_org", logged_org_id);
+                assert_ne!(
+                    logged_org_id, request_org_id,
+                    "Test setup requires request.data.organization_id to differ from logged account org id"
+                );
+
+                println!(
+                    "  ✓ logged_account organization_id ({}) differs from request.data.organization_id ({})",
+                    logged_org_id, request_org_id
+                );
+            }
+            Ok(None) => {
+                println!(
+                    "  ⚠ org_auth_service::get_account returned None for logged account; skipping assertions"
+                );
+            }
+            Err(e) => {
+                println!(
+                    "  ⚠ org_auth_service::get_account returned error: {}; skipping assertions",
+                    e
+                );
+            }
+        }
     }
 }

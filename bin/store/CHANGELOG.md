@@ -5,7 +5,7 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased (fix/crdt – sync and CRDT changes since db-template)
+## 0.2.33
 
 ### Author
 Kashan
@@ -42,6 +42,31 @@ Kashan
     - **No recursive sync on timeline lag**: When the client detects a diff (timeline lag) between server and client merkle, it no longer recurses into another sync to “catch up”. That recursive sync was refetching and resending the same or overlapping messages and caused duplicate sends (e.g. 149 messages becoming 270/297). Catch-up is now left to the next `bg_sync` cycle or to the messages already returned in the current response.
 
 ---
+## 0.2.32
+### Author
+Bert
+
+### Fixes
+  - fix(store): prevent duplicate routes and preserve existing organization_id
+    - Remove duplicate trailing slash routes to avoid conflicts
+    - Only set organization_id if not already present in record
+
+## 0.2.31
+### Author
+Jean
+
+### Added
+  - ***Root switch_account tests***:
+    - Added integration tests in `store_controller_test` for `/api/store/root/switch_account` to ensure the route only accepts root tokens and behaves correctly when called with non-root credentials.
+    - Added validation tests to confirm `switch_account` requires both `token` and `organization_id` inside the request `data` payload.
+  - ***Auth helpers for tests***:
+    - Introduced `perform_root_login` helper alongside `perform_login` to obtain root tokens for HTTP integration tests in a consistent way.
+
+### Changed
+  - ***switch_account coverage***:
+    - Add signed_in_account field to JWT claims struct to track original account
+    - Update switch_account logic to use signed_in_account and set as_root to true
+    - Remove /switch_account route from Store Controller, just have it on Root Controller
 
 ## 0.2.30
 ### Author

@@ -125,7 +125,8 @@ impl MerkleManager {
 
             log::debug!(
                 "Saved tree for group {} with timestamp {}",
-                group_id, entry.timestamp
+                group_id,
+                entry.timestamp
             );
         }
 
