@@ -129,7 +129,7 @@ impl<'a> GroupByConstructor<'a> {
                 return format!(" GROUP BY {}", group_fields.join(", "));
             }
         }
-       
+
         let mut group_fields: Vec<String> = vec![format!("\"{}\".\"id\"", self.table)];
         if is_hypertable(self.table) {
             group_fields.push("timestamp".to_string());
